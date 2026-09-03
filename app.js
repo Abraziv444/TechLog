@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.03.00';
+const APP_VERSION = '1.03.01';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 const LS_KEY = 'techlog_state_v1';
@@ -557,7 +557,8 @@ function demoLogin(id){
   render(); checkPickupBanner(true);
 }
 const LOGIN_RE = /^[a-z0-9_.-]{3,32}$/;
-function loginToEmail(login){ return login + '@techlog.local'; }
+const AUTH_DOMAIN = (CFG.AUTH_EMAIL_DOMAIN || 'techlog.example.com').replace(/^@/,'');
+function loginToEmail(login){ return login + '@' + AUTH_DOMAIN; }
 async function sbSignIn(login, pass){
   login = String(login||'').trim().toLowerCase();
   if (!LOGIN_RE.test(login)){ toast(t('login_hint'), 'err'); return; }
