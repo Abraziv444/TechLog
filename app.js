@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.03.04';
+const APP_VERSION = '1.03.05';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -1020,19 +1020,23 @@ function viewLogin(){
     <div class="tiny">${t('app_sub')} ${APP_VERSION}</div>
     <hr class="sep">
     <div id="auth-signin">
-      <div class="form-row"><input id="li-login" placeholder="${t('login')}" autocomplete="username" autocapitalize="none"></div>
-      <div class="form-row"><input id="li-pass" type="password" placeholder="${t('password')}" autocomplete="current-password"></div>
+      <div class="form-row"><input id="li-login" placeholder="${t('login')}" autocomplete="username" autocapitalize="none"
+          autofocus enterkeyhint="go" onkeydown="App.enterKey(event,'in')"></div>
+      <div class="form-row"><input id="li-pass" type="password" placeholder="${t('password')}" autocomplete="current-password"
+          enterkeyhint="go" onkeydown="App.enterKey(event,'in')"></div>
       <button class="btn btn-green" onclick="App.signIn()">${t('sign_in')}</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="App.authMode(true)">${t('no_acc')}</button>
     </div>
     <div id="auth-signup" style="display:none">
-      <div class="form-row"><input id="su-name" placeholder="${t('display_name')}"></div>
+      <div class="form-row"><input id="su-name" placeholder="${t('display_name')}"
+          enterkeyhint="go" onkeydown="App.enterKey(event,'up')"></div>
       <div class="form-row"><input id="su-login" placeholder="${t('login')}" autocomplete="username" autocapitalize="none"
-          onblur="App.loginCheck()" oninput="App.loginTyped()">
+          onblur="App.loginCheck()" oninput="App.loginTyped()" enterkeyhint="go" onkeydown="App.enterKey(event,'up')">
         <div class="tiny" id="su-login-st">${t('login_hint')}</div></div>
       <div class="form-row"><input id="su-pass" type="password" placeholder="${t('password')}" autocomplete="new-password"
-          onfocus="App.loginCheck()"></div>
-      <div class="form-row"><input id="su-invite" placeholder="${t('invite_code')}" autocapitalize="characters"></div>
+          onfocus="App.loginCheck()" enterkeyhint="go" onkeydown="App.enterKey(event,'up')"></div>
+      <div class="form-row"><input id="su-invite" placeholder="${t('invite_code')}" autocapitalize="characters"
+          enterkeyhint="go" onkeydown="App.enterKey(event,'up')"></div>
       <button class="btn btn-blue" onclick="App.signUp()">${t('sign_up')}</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="App.authMode(false)">${t('have_acc')}</button>
     </div>
@@ -2177,6 +2181,11 @@ const App = {
   setRole, staffVis, saveVis,
   diag: showDiagnostics, copyDiag,
   loginCheck, loginTyped,
+  enterKey(e, mode){
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (mode === 'in') App.signIn(); else App.signUp();
+  },
   dirTab(v){ state.dirTab = v; render(); },
   openCp, cpTab(v){ state.cpTab = v; renderCpModal(); },
   editCpModal, saveCp, cpCustomToggle, cpSetPrice,
