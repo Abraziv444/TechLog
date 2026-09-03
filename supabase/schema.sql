@@ -3,8 +3,7 @@
 -- Выполните целиком в Supabase → SQL Editor → New query → Run
 -- =====================================================================
 
--- pgcrypto не обязателен: uuid и sha256 берём из встроенных функций Postgres
--- (gen_random_uuid и sha256 доступны в PG13+/PG11+ без расширений)
+create extension if not exists pgcrypto;
 
 -- ---------------------------------------------------------------------
 -- ПРОФИЛИ (роль: admin | manager | tech)
@@ -31,7 +30,7 @@ revoke all on public.app_secrets from anon, authenticated;
 
 -- хэш кода приглашения по умолчанию (сам код в файлах проекта не хранится).
 -- Сменить код: update public.app_secrets
---   set value = encode(sha256(convert_to('НОВЫЙ_КОД','UTF8')),'hex') where key='invite';
+--   set value = encode(digest('НОВЫЙ_КОД','sha256'),'hex') where key='invite';
 insert into public.app_secrets (key, value)
 values ('invite', 'a43915481c3b48d871d73fb0396701d3626c2cc5e5d1a95ec17e067cc8d3d7fe')
 on conflict (key) do update set value = excluded.value;
@@ -40,8 +39,7 @@ create or replace function public.is_valid_invite(code text)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.app_secrets
-    where key = 'invite'
-      and value = encode(sha256(convert_to(coalesce(code,''), 'UTF8')), 'hex')
+    where key = 'invite' and value = encode(digest(coalesce(code,''), 'sha256'), 'hex')
   )
 $$;
 
