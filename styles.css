@@ -415,3 +415,12 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 }
 .fab:active{transform:translateY(3px); box-shadow:0 2px 0 var(--green-dk)}
 @media (max-width:600px){ .fab{ right:16px } }
+
+/* ============ Диагностика ============ */
+.diag-pre{
+  background:var(--card); border:2px solid var(--line); border-radius:12px;
+  padding:10px 12px; font-size:.66rem; line-height:1.45; color:var(--text);
+  white-space:pre-wrap; word-break:break-word; max-height:52vh; overflow:auto;
+  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  margin-bottom:12px;
+}

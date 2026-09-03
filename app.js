@@ -4,9 +4,30 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.03.02';
+const APP_VERSION = '1.03.03';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+/* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
+const DIAG = [];
+function errStr(e){
+  if (!e) return 'null';
+  if (typeof e === 'string') return e;
+  const code = e.code || e.status || '';
+  const msg = e.message || e.msg || e.error_description || e.hint || '';
+  const det = e.details || '';
+  return [code, msg, det].filter(Boolean).join(' · ') || (()=>{ try{ return JSON.stringify(e); }catch(_){ return String(e); } })();
+}
+function dlog(){
+  const ts = new Date().toISOString().slice(0,19).replace('T',' ');
+  const head = `[TechLog ${APP_VERSION} ${ts}]`;
+  const parts = [...arguments].map(a => typeof a === 'string' ? a : errStr(a));
+  console.log(head, ...arguments);
+  DIAG.push(head + ' ' + parts.join(' '));
+  if (DIAG.length > 300) DIAG.shift();
+}
+window.addEventListener('error', e => dlog('⛔ window.error:', e.message, '@', (e.filename||'').split('/').pop() + ':' + e.lineno));
+window.addEventListener('unhandledrejection', e => dlog('⛔ unhandledrejection:', e.reason));
+
 const LS_KEY = 'techlog_state_v1';
 const LS_SESSION = 'techlog_session_v1';
 
@@ -90,6 +111,9 @@ const I18N = {
     back_today: 'Сегодня', navigate: 'Маршрут', copied_code: 'Код скопирован',
     draft_restored: 'Черновик восстановлен (несохранённые изменения)',
     pdf_blocked: 'PDF недоступен — заполните', batch_skipped: 'пропущено (не заполнены поля)',
+    diag: 'Диагностика', diag_copy: 'Скопировать отчёт', diag_running: 'Проверяю…',
+    srv_not_ready: 'Сервер не настроен: выполните supabase/schema.sql (нет функции check_invite)',
+    invite_check_err: 'Ошибка проверки кода', srv_rejected: 'Сервер отклонил регистрацию — детали в Диагностике',
     week_days: ['ПН','ВТ','СР','ЧТ','ПТ'],
     months: ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'],
   },
@@ -171,6 +195,9 @@ const I18N = {
     back_today: 'Today', navigate: 'Navigate', copied_code: 'Code copied',
     draft_restored: 'Draft restored (unsaved changes)',
     pdf_blocked: 'PDF blocked — fill in', batch_skipped: 'skipped (missing required fields)',
+    diag: 'Diagnostics', diag_copy: 'Copy report', diag_running: 'Checking…',
+    srv_not_ready: 'Server not configured: run supabase/schema.sql (check_invite function is missing)',
+    invite_check_err: 'Invite check error', srv_rejected: 'Server rejected sign-up — see Diagnostics',
     week_days: ['MO','TU','WE','TH','FR'],
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   }
@@ -401,17 +428,20 @@ async function sbLoadAll(){
 }
 
 async function syncNow(silent){
+  dlog('sync: старт', HAS_SB ? 'Supabase' : 'demo');
   if (!HAS_SB){ state.lastSync = nowStamp(); localStorage.setItem('techlog_lastsync', state.lastSync); if(!silent) toast('✓ ' + t('synced') + ': ' + state.lastSync); render(); return; }
   if (state.syncing) return;
   state.syncing = true; render();
   try {
     state.data = await sbLoadAll();
     saveLocal();
+    dlog('sync: ок,', TABLES.map(tb => tb + '=' + (state.data[tb]||[]).length).join(' '));
     state.lastSync = nowStamp();
     localStorage.setItem('techlog_lastsync', state.lastSync);
     if (!silent) toast('✓ ' + t('synced') + ': ' + state.lastSync);
   } catch (e) {
-    console.error(e); toast(t('sync_err') + ' — ' + t('offline_note'), 'err');
+    dlog('⛔ sync: ошибка:', e);
+    toast(t('sync_err') + ' — ' + t('offline_note'), 'err');
     if (!state.data) state.data = loadLocal() || seedDemoData();
   }
   state.syncing = false; render();
@@ -426,7 +456,7 @@ async function dbUpsert(table, row){
   saveLocal();
   if (HAS_SB) {
     const { error } = await state.sb.from(table).upsert(row);
-    if (error) { console.error(table, error); toast(t('sync_err') + ': ' + error.message, 'err'); }
+    if (error) { dlog('⛔ upsert', table + ':', error); toast(t('sync_err') + ': ' + error.message, 'err'); }
   }
 }
 async function dbDelete(table, id){
@@ -528,6 +558,7 @@ function calcTotal(fd, p, data){
    АВТОРИЗАЦИЯ
    ===================================================================== */
 async function initAuth(){
+  dlog('start:', HAS_SB ? 'режим Supabase, ' + (CFG.SUPABASE_URL||'').replace('https://','') : 'демо-режим (localStorage)');
   if (HAS_SB && !window.supabase) throw new Error('supabase-js не загрузился (CDN). Проверьте интернет и обновите страницу.');
   if (!HAS_SB){
     const saved = localStorage.getItem(LS_SESSION);
@@ -544,6 +575,7 @@ async function initAuth(){
   state.sb.auth.onAuthStateChange((_e, s) => { if (!s && state.user){ state.user = null; state.screen = 'login'; render(); } });
 }
 async function afterSbLogin(session){
+  dlog('auth: afterSbLogin, загружаю профиль…');
   const { data: prof } = await state.sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
   state.user = prof || { id: session.user.id, login: session.user.email, display_name: session.user.email, role: 'tech' };
   state.data = loadLocal();
@@ -563,27 +595,41 @@ function loginToEmail(login){ return login + '@' + AUTH_DOMAIN; }
 async function sbSignIn(login, pass){
   login = String(login||'').trim().toLowerCase();
   if (!LOGIN_RE.test(login)){ toast(t('login_hint'), 'err'); return; }
+  dlog('auth: вход', login, '→', loginToEmail(login));
   const { data, error } = await state.sb.auth.signInWithPassword({ email: loginToEmail(login), password: pass });
-  if (error){ toast(error.message, 'err'); return; }
+  if (error){ dlog('⛔ auth.signIn:', error); toast(error.message, 'err'); return; }
+  dlog('auth: вход ок, uid', data.session?.user?.id);
   await afterSbLogin(data.session); render(); checkPickupBanner(true);
 }
 async function sbSignUp(login, pass, name, invite){
   login = String(login||'').trim().toLowerCase();
   if (!LOGIN_RE.test(login)){ toast(t('login_hint'), 'err'); return; }
   if (!name || !pass){ toast(t('login_taken_or_err'), 'err'); return; }
-  // предпроверка кода приглашения по хэшу на сервере (RPC), сам код в коде не хранится
+  // предпроверка кода приглашения по хэшу на сервере (RPC); сам код в клиенте не хранится
+  dlog('auth: регистрация', login, '→', loginToEmail(login), '· проверяю код приглашения…');
   try{
     const { data: ok, error: e1 } = await state.sb.rpc('check_invite', { code: String(invite||'') });
-    if (e1 || !ok){ toast('⛔ ' + t('invite_bad'), 'err'); return; }
-  }catch(e){ toast('⛔ ' + t('invite_bad'), 'err'); return; }
+    dlog('auth: check_invite →', ok === true ? 'true' : ok === false ? 'false' : ok, e1 ? e1 : '');
+    if (e1){
+      const s = errStr(e1);
+      const noFn = /PGRST202|schema cache|does not exist|find the function/i.test(s);
+      toast('⛔ ' + (noFn ? t('srv_not_ready') : t('invite_check_err') + ': ' + s), 'err');
+      return;
+    }
+    if (!ok){ toast('⛔ ' + t('invite_bad'), 'err'); return; }
+  }catch(e){ dlog('⛔ check_invite exception:', e); toast('⛔ ' + t('invite_check_err') + ': ' + errStr(e), 'err'); return; }
   const { data, error } = await state.sb.auth.signUp({
     email: loginToEmail(login), password: pass,
     options: { data: { display_name: name, login, invite: String(invite||'') } }
   });
   if (error){
-    const msg = /database error/i.test(error.message) ? t('invite_bad') : (/already/i.test(error.message) ? t('login_taken_or_err') : error.message);
+    dlog('⛔ auth.signUp:', error);
+    const msg = /database error/i.test(error.message) ? t('srv_rejected')
+              : /already/i.test(error.message) ? t('login_taken_or_err')
+              : error.message;
     toast('⛔ ' + msg, 'err'); return;
   }
+  dlog('auth: signUp ок, session:', data.session ? 'есть' : 'нет (нужно подтверждение?)');
   if (data.session){ await afterSbLogin(data.session); render(); }
   else toast('✉️ ' + t('confirm_email'), 'inf');
 }
@@ -943,6 +989,7 @@ function viewLogin(){
           <span class="role-tag rt-${u.role}">${t('role_'+u.role)}</span>
         </button>`).join('')}
       <div class="tiny" style="margin-top:14px">Supabase: см. config.js и README</div>
+      <button class="btn btn-ghost" style="margin-top:14px" onclick="App.diag()">🩺 ${t('diag')}</button>
     </div>`;
   }
   return `<div class="login-wrap">
@@ -965,6 +1012,7 @@ function viewLogin(){
       <button class="btn btn-blue" onclick="App.signUp()">${t('sign_up')}</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="App.authMode(false)">${t('have_acc')}</button>
     </div>
+    <button class="btn btn-ghost" style="margin-top:14px" onclick="App.diag()">🩺 ${t('diag')}</button>
   </div>`;
 }
 
@@ -1771,6 +1819,7 @@ function viewSettings(){
       </div>
       <button class="btn btn-green sm" onclick="App.sync()">${t('sync')}</button>
     </div>
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.diag()">🩺 ${t('diag')}</button>
   </div>
 
   ${isAdmin() ? `
@@ -2102,6 +2151,7 @@ const App = {
   crewAdd, crewAll, crewRemove, navToCx, copyText,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis,
+  diag: showDiagnostics, copyDiag,
   dirTab(v){ state.dirTab = v; render(); },
   openCp, cpTab(v){ state.cpTab = v; renderCpModal(); },
   editCpModal, saveCp, cpCustomToggle, cpSetPrice,
@@ -2778,4 +2828,110 @@ function navToCx(cxId){
 }
 function copyText(s){
   navigator.clipboard?.writeText(s).then(()=>{ navigator.vibrate?.(20); toast('✓ ' + t('copied_code')); });
+}
+
+/* =====================================================================
+   ДИАГНОСТИКА: активные проверки сервера + отчёт в консоль и на экран
+   ===================================================================== */
+async function runDiagnostics(){
+  const L = [];
+  const put = (s) => { L.push(s); };
+  const mark = (ok) => ok ? '✅' : '⛔';
+  const now = new Date();
+  put(`TechLog v${APP_VERSION} · ${now.toLocaleDateString()} ${now.toLocaleTimeString()} (${now.toISOString()})`);
+  put(`URL: ${location.href}`);
+  put(`UA: ${navigator.userAgent}`);
+  put(`online: ${navigator.onLine ? 'да' : 'нет'} · язык UI: ${state.lang} · экран: ${state.screen}`);
+  put(`режим: ${HAS_SB ? 'Supabase' : 'ДЕМО (localStorage)'} · пользователь: ${state.user ? state.user.login + ' (' + state.user.role + ')' : '—'}`);
+  put(`последняя синхронизация: ${state.lastSync || '—'}`);
+  put('');
+
+  // версия на сервере
+  try{
+    const r = await fetch('./version.json?ts=' + Date.now(), { cache: 'no-store' });
+    const v = await r.json();
+    put(`${mark(true)} version.json на сервере: ${v.version}${v.version !== APP_VERSION ? ' (⚠ клиент ' + APP_VERSION + ' — обновите страницу)' : ''}`);
+  }catch(e){ put(`${mark(false)} version.json недоступен: ${errStr(e)}`); }
+
+  put(`${mark(!!window.supabase)} supabase-js ${window.supabase ? 'загружен' : 'НЕ загружен (CDN)'}`);
+  put(`${mark(!!window.jspdf)} jsPDF ${window.jspdf ? 'загружен' : 'не загружен'}`);
+  put(`${mark(!!window.L)} Leaflet ${window.L ? 'загружен' : 'не загружен'}`);
+
+  if (HAS_SB){
+    const base = CFG.SUPABASE_URL.replace(/\/$/, '');
+    put('');
+    put(`Supabase: ${base.replace('https://','')} · ключ: ${String(CFG.SUPABASE_ANON_KEY).slice(0,18)}… · почтовый домен: ${AUTH_DOMAIN}`);
+
+    // Auth API
+    try{
+      const r = await fetch(base + '/auth/v1/health', { headers: { apikey: CFG.SUPABASE_ANON_KEY } });
+      put(`${mark(r.ok)} Auth API (auth/v1/health): HTTP ${r.status}`);
+    }catch(e){ put(`${mark(false)} Auth API недоступен: ${errStr(e)}`); }
+
+    // REST API
+    try{
+      const r = await fetch(base + '/rest/v1/', { headers: { apikey: CFG.SUPABASE_ANON_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_ANON_KEY } });
+      put(`${mark(r.ok)} REST API (rest/v1): HTTP ${r.status}`);
+    }catch(e){ put(`${mark(false)} REST API недоступен: ${errStr(e)}`); }
+
+    // сессия
+    try{
+      const { data: { session } } = await state.sb.auth.getSession();
+      put(`${mark(true)} сессия: ${session ? 'активна (uid ' + session.user.id.slice(0,8) + '…, ' + (session.user.email||'') + ')' : 'нет (не выполнен вход)'}`);
+    }catch(e){ put(`${mark(false)} getSession: ${errStr(e)}`); }
+
+    // таблицы (главный признак невыполненного schema.sql)
+    try{
+      const { error, count } = await state.sb.from('profiles').select('id', { count: 'exact', head: true });
+      if (error){
+        const s = errStr(error);
+        put(`${mark(false)} таблица profiles: ${s}${/42P01|does not exist|schema cache/i.test(s) ? '  ← ТАБЛИЦ НЕТ: выполните supabase/schema.sql целиком' : ''}`);
+      } else put(`${mark(true)} таблица profiles: доступна${count!=null ? ' (видно строк: ' + count + ')' : ''}`);
+    }catch(e){ put(`${mark(false)} profiles: ${errStr(e)}`); }
+
+    // функция check_invite (пустой код → корректный ответ false)
+    try{
+      const { data, error } = await state.sb.rpc('check_invite', { code: '' });
+      if (error){
+        const s = errStr(error);
+        const noFn = /PGRST202|schema cache|does not exist|find the function/i.test(s);
+        put(`${mark(false)} функция check_invite: ${s}${noFn ? '  ← ФУНКЦИИ НЕТ: выполните supabase/schema.sql целиком' : ''}`);
+      } else put(`${mark(data === false)} функция check_invite: отвечает (пустой код → ${data})`);
+    }catch(e){ put(`${mark(false)} check_invite: ${errStr(e)}`); }
+
+    // справочник (виден и без входа? нет — RLS; ошибки 42P01 важнее)
+    try{
+      const { error } = await state.sb.from('work_types').select('id').limit(1);
+      if (error) put(`${mark(false)} таблица work_types: ${errStr(error)}`);
+      else put(`${mark(true)} таблица work_types: доступна`);
+    }catch(e){ put(`${mark(false)} work_types: ${errStr(e)}`); }
+  }
+
+  // хвост журнала
+  put('');
+  put('— последние события журнала —');
+  DIAG.slice(-20).forEach(s => put(s));
+
+  const report = L.join('\n');
+  console.group('%cTechLog · Диагностика', 'color:#58CC02;font-weight:bold');
+  console.log(report);
+  console.groupEnd();
+  return report;
+}
+
+async function showDiagnostics(){
+  toast('🩺 ' + t('diag_running'), 'inf');
+  let report = '';
+  try{ report = await runDiagnostics(); }
+  catch(e){ report = '⛔ Диагностика упала: ' + errStr(e); dlog(report); }
+  openModal(`
+    ${modalHead('🩺 ' + t('diag'))}
+    <pre class="diag-pre">${esc(report)}</pre>
+    <button class="btn btn-blue" onclick="App.copyDiag()">📋 ${t('diag_copy')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
+  `);
+  window.__lastDiag = report;
+}
+function copyDiag(){
+  navigator.clipboard?.writeText(window.__lastDiag || '').then(()=>toast('✓ ' + t('copied')));
 }
