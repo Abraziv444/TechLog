@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.03.05';
+const APP_VERSION = '1.03.07';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -117,6 +117,13 @@ const I18N = {
     login_taken: 'Такой логин уже существует', login_free: 'логин свободен', login_checking: 'проверяю логин…',
     srv500: 'Сервер отклонил регистрацию (500). Точная причина — в Supabase → Logs → Postgres; отчёт скопируйте в Диагностике',
     run_new_schema: 'выполните новую supabase/schema.sql',
+    install_app: 'Установить приложение', installed_ok: 'Приложение установлено',
+    already_installed: 'Открыто как установленное приложение',
+    install_declined: 'Установка отменена',
+    install_where_win: 'После установки ищите TechLog в меню «Пуск» (Windows) или на рабочем столе; список приложений Chrome: chrome://apps',
+    install_no_prompt: 'Браузер пока не предложил установку — проверьте раздел PWA в Диагностике',
+    reg_ok: 'Регистрация успешна', welcome: 'Добро пожаловать',
+    reg_now_signin: 'Аккаунт создан — теперь войдите',
     week_days: ['ПН','ВТ','СР','ЧТ','ПТ'],
     months: ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'],
   },
@@ -204,6 +211,13 @@ const I18N = {
     login_taken: 'This login already exists', login_free: 'login is free', login_checking: 'checking login…',
     srv500: 'Server rejected sign-up (500). See Supabase → Logs → Postgres; copy the report in Diagnostics',
     run_new_schema: 'run the new supabase/schema.sql',
+    install_app: 'Install app', installed_ok: 'App installed',
+    already_installed: 'Running as installed app',
+    install_declined: 'Install dismissed',
+    install_where_win: 'After install, find TechLog in the Start menu (Windows) or desktop; Chrome apps list: chrome://apps',
+    install_no_prompt: 'Browser has not offered install yet — check the PWA section in Diagnostics',
+    reg_ok: 'Sign-up successful', welcome: 'Welcome',
+    reg_now_signin: 'Account created — now sign in',
     week_days: ['MO','TU','WE','TH','FR'],
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   }
@@ -420,6 +434,17 @@ function loadLocal(){ try{ const s = localStorage.getItem(LS_KEY); return s ? JS
 
 const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','hidden_staff','jobs','placements'];
 
+function emptyData(){
+  const d = { org_settings: {
+    id: 'org', invoice_title: 'INVOICE #CC', header_city: 'ATLANTA',
+    assoc_line: 'atlanta apartment association',
+    addr1: 'PO BOX 920482', addr2: 'NORCROSS,', addr3: 'GA 30010',
+    company_name: 'Atlanta Global Renovations, LLC', company_short: 'AGR, LLC'
+  } };
+  TABLES.forEach(tb => d[tb] = []);
+  return d;
+}
+
 async function sbLoadAll(){
   const sb = state.sb; const out = {};
   const reqs = TABLES.map(tb => sb.from(tb).select('*'));
@@ -437,8 +462,10 @@ async function syncNow(silent){
   dlog('sync: старт', HAS_SB ? 'Supabase' : 'demo');
   if (!HAS_SB){ state.lastSync = nowStamp(); localStorage.setItem('techlog_lastsync', state.lastSync); if(!silent) toast('✓ ' + t('synced') + ': ' + state.lastSync); render(); return; }
   if (state.syncing) return;
-  state.syncing = true; render();
+  state.syncing = true;
   try {
+    if (!state.data) state.data = loadLocal() || emptyData();
+    render();
     state.data = await sbLoadAll();
     saveLocal();
     dlog('sync: ок,', TABLES.map(tb => tb + '=' + (state.data[tb]||[]).length).join(' '));
@@ -448,9 +475,10 @@ async function syncNow(silent){
   } catch (e) {
     dlog('⛔ sync: ошибка:', e);
     toast(t('sync_err') + ' — ' + t('offline_note'), 'err');
-    if (!state.data) state.data = loadLocal() || seedDemoData();
+    if (!state.data) state.data = loadLocal() || emptyData();
+  } finally {
+    state.syncing = false; render();
   }
-  state.syncing = false; render();
 }
 
 /* Универсальные записи: локально + (если есть) Supabase */
@@ -577,16 +605,41 @@ async function initAuth(){
   }
   state.sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
   const { data: { session } } = await state.sb.auth.getSession();
-  if (session){ await afterSbLogin(session); }
-  state.sb.auth.onAuthStateChange((_e, s) => { if (!s && state.user){ state.user = null; state.screen = 'login'; render(); } });
+  if (session){ try{ await afterSbLogin(session); }catch(e){ dlog('⛔ afterSbLogin(init):', e); } }
+  state.sb.auth.onAuthStateChange((ev, s) => {
+    dlog('auth: событие', ev);
+    if (!s && state.user){ state.user = null; state.screen = 'login'; render(); }
+    else if (s && !state.user && !loginInFlight){
+      afterSbLogin(s).then(()=>{ render(); checkPickupBanner(true); }).catch(e => dlog('⛔ onAuthStateChange:', e));
+    }
+  });
 }
+let loginInFlight = false;
 async function afterSbLogin(session){
-  dlog('auth: afterSbLogin, загружаю профиль…');
-  const { data: prof } = await state.sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-  state.user = prof || { id: session.user.id, login: session.user.email, display_name: session.user.email, role: 'tech' };
-  state.data = loadLocal();
-  state.screen = 'home';
-  await syncNow(true);
+  if (loginInFlight) return;
+  loginInFlight = true;
+  try {
+    dlog('auth: afterSbLogin, загружаю профиль…');
+    let prof = null;
+    try {
+      const r = await state.sb.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+      if (r.error) dlog('⛔ профиль:', r.error);
+      prof = r.data;
+    } catch(e){ dlog('⛔ профиль exception:', e); }
+    const md = session.user.user_metadata || {};
+    state.user = prof || {
+      id: session.user.id,
+      login: md.login || String(session.user.email||'').split('@')[0],
+      display_name: md.display_name || md.login || String(session.user.email||'').split('@')[0],
+      role: 'tech'
+    };
+    state.data = loadLocal() || emptyData();
+    state.screen = 'home';
+    if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
+    await syncNow(true);
+  } finally {
+    loginInFlight = false;
+  }
 }
 function demoLogin(id){
   const u = state.data.profiles.find(p => p.id === id);
@@ -605,7 +658,8 @@ async function sbSignIn(login, pass){
   const { data, error } = await state.sb.auth.signInWithPassword({ email: loginToEmail(login), password: pass });
   if (error){ dlog('⛔ auth.signIn:', error); toast(error.message, 'err'); return; }
   dlog('auth: вход ок, uid', data.session?.user?.id);
-  await afterSbLogin(data.session); render(); checkPickupBanner(true);
+  try{ await afterSbLogin(data.session); }catch(e){ dlog('⛔ afterSbLogin:', e); }
+  render(); checkPickupBanner(true);
 }
 async function sbSignUp(login, pass, name, invite){
   login = String(login||'').trim().toLowerCase();
@@ -652,8 +706,17 @@ async function sbSignUp(login, pass, name, invite){
     toast('⛔ ' + msg, 'err'); return;
   }
   dlog('auth: signUp ок, session:', data.session ? 'есть' : 'нет (нужно подтверждение?)');
-  if (data.session){ await afterSbLogin(data.session); render(); }
-  else toast('✉️ ' + t('confirm_email'), 'inf');
+  if (data.session){
+    dlog('auth: регистрация успешна —', login);
+    toast('✅ ' + t('reg_ok') + '! ' + t('welcome') + ', ' + shortName(name) + ' 👋');
+    try{ await afterSbLogin(data.session); }catch(e){ dlog('⛔ afterSbLogin:', e); }
+    render(); checkPickupBanner(true);
+  } else {
+    toast('✅ ' + t('reg_now_signin') + ' · ✉️ ' + t('confirm_email'), 'inf');
+    App.authMode(false);
+    const li = document.getElementById('li-login'); if (li) li.value = login;
+    document.getElementById('li-pass')?.focus();
+  }
 }
 function logout(){
   dictStop();
@@ -700,6 +763,7 @@ function pickupsOn(dateISO){
     .concat(visiblePlacements().filter(p => p.picked_up && p.picked_up_at && p.picked_up_at.slice(0,10) === dateISO));
 }
 function myDueCount(){
+  if (!state.data) return { due: 0, over: 0 };
   const today = todayISO();
   const mine = state.data.placements.filter(p => p.technician_id === state.user.id && !p.picked_up);
   return { due: mine.filter(p=>p.due_date===today).length, over: mine.filter(p=>p.due_date<today).length };
@@ -725,6 +789,7 @@ const ICONS = {
 function render(){
   const app = $('#app');
   if (!state.user){ app.innerHTML = viewLogin(); return; }
+  if (!state.data) state.data = loadLocal() || (HAS_SB ? emptyData() : seedDemoData());
   if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
   let body = '';
   if (state.screen === 'report') state.screen = 'reports'; // алиас старого экрана
@@ -1041,6 +1106,7 @@ function viewLogin(){
       <button class="btn btn-ghost" style="margin-top:8px" onclick="App.authMode(false)">${t('have_acc')}</button>
     </div>
     <button class="btn btn-ghost" style="margin-top:14px" onclick="App.diag()">🩺 ${t('diag')}</button>
+    <button id="pwa-install-btn" class="btn btn-blue" style="${pwaPrompt?'':'display:none'};margin-top:8px" onclick="App.installPwa()">⬇ ${t('install_app')}</button>
   </div>`;
 }
 
@@ -1863,7 +1929,10 @@ function viewSettings(){
   </div>` : ''}
 
   <div class="card">
-    <div class="settings-row"><div class="grow" style="flex:1"><b>📱 PWA</b><div class="d">${t('install_hint')}</div></div></div>
+    <div class="settings-row"><div class="grow" style="flex:1"><b>📱 PWA</b>
+      <div class="d">${isStandalone() ? '✓ ' + t('already_installed') : t('install_hint')}</div>
+      <div class="d">${t('install_where_win')}</div></div></div>
+    ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">⬇ ${t('install_app')}</button>` : ''}
     <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b><div class="d">TechLog v${APP_VERSION}</div></div></div>
   </div>
 
@@ -2181,6 +2250,7 @@ const App = {
   setRole, staffVis, saveVis,
   diag: showDiagnostics, copyDiag,
   loginCheck, loginTyped,
+  installPwa,
   enterKey(e, mode){
     if (e.key !== 'Enter') return;
     e.preventDefault();
@@ -2958,6 +3028,29 @@ async function runDiagnostics(){
     }catch(e){ put(`${mark(false)} work_types: ${errStr(e)}`); }
   }
 
+  // PWA / установка
+  put('');
+  put('— PWA —');
+  put(`${mark(true)} режим запуска: ${isStandalone() ? 'установленное приложение (standalone)' : 'вкладка браузера'}`);
+  try{
+    const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    put(`${mark(!!(reg && (reg.active||reg.installing||reg.waiting)))} service worker: ${reg ? (reg.active ? 'активен' : 'устанавливается') : 'не зарегистрирован'} · контролирует страницу: ${navigator.serviceWorker && navigator.serviceWorker.controller ? 'да' : 'нет (обновите страницу)'}`);
+  }catch(e){ put(`${mark(false)} service worker: ${errStr(e)}`); }
+  try{
+    const r = await fetch('./manifest.webmanifest', { cache: 'no-store' });
+    if (r.ok){
+      const m = await r.json();
+      put(`${mark(m.display === 'standalone')} манифест: ok · display=${m.display} · иконок: ${(m.icons||[]).length}`);
+    } else put(`${mark(false)} манифест: HTTP ${r.status}`);
+  }catch(e){ put(`${mark(false)} манифест: ${errStr(e)}`); }
+  for (const ic of ['./icons/icon-192.png','./icons/icon-512.png']){
+    try{
+      const r = await fetch(ic, { method: 'HEAD', cache: 'no-store' });
+      put(`${mark(r.ok)} ${ic.replace('./icons/','иконка ')}: HTTP ${r.status}${!r.ok ? '  ← файл не залит на сервер — установка невозможна' : ''}`);
+    }catch(e){ put(`${mark(false)} ${ic}: ${errStr(e)}`); }
+  }
+  put(`${mark(!!pwaPrompt || isStandalone())} предложение установки: ${isStandalone() ? 'не нужно (уже установлено)' : pwaPrompt ? 'получено — кнопка «Установить приложение» активна' : 'ещё не поступало от браузера'}`);
+
   // хвост журнала
   put('');
   put('— последние события журнала —');
@@ -3022,4 +3115,36 @@ async function loginCheck(){
     dlog('auth: login_available(' + login + ') →', free);
     setLoginStatus(free ? 'free' : 'taken');
   }catch(e){ dlog('⛔ login_available exception:', e); setLoginStatus('err'); }
+}
+
+/* =====================================================================
+   PWA: перехват установки + своя кнопка «Установить приложение»
+   ===================================================================== */
+let pwaPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  pwaPrompt = e;
+  dlog('PWA: beforeinstallprompt получен — критерии установки выполнены');
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.style.display = '';
+});
+window.addEventListener('appinstalled', () => {
+  dlog('PWA: appinstalled — приложение установлено');
+  pwaPrompt = null;
+  toast('✓ ' + t('installed_ok'));
+  render();
+});
+function isStandalone(){
+  return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+}
+async function installPwa(){
+  if (!pwaPrompt){ toast(t('install_no_prompt'), 'inf'); return; }
+  dlog('PWA: показываю системный диалог установки…');
+  pwaPrompt.prompt();
+  try{
+    const { outcome } = await pwaPrompt.userChoice;
+    dlog('PWA: результат установки →', outcome);
+    if (outcome !== 'accepted') toast(t('install_declined'), 'inf');
+  }catch(e){ dlog('⛔ PWA install:', e); }
+  pwaPrompt = null;
 }
