@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.03.03';
+const APP_VERSION = '1.03.04';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -114,6 +114,9 @@ const I18N = {
     diag: 'Диагностика', diag_copy: 'Скопировать отчёт', diag_running: 'Проверяю…',
     srv_not_ready: 'Сервер не настроен: выполните supabase/schema.sql (нет функции check_invite)',
     invite_check_err: 'Ошибка проверки кода', srv_rejected: 'Сервер отклонил регистрацию — детали в Диагностике',
+    login_taken: 'Такой логин уже существует', login_free: 'логин свободен', login_checking: 'проверяю логин…',
+    srv500: 'Сервер отклонил регистрацию (500). Точная причина — в Supabase → Logs → Postgres; отчёт скопируйте в Диагностике',
+    run_new_schema: 'выполните новую supabase/schema.sql',
     week_days: ['ПН','ВТ','СР','ЧТ','ПТ'],
     months: ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'],
   },
@@ -198,6 +201,9 @@ const I18N = {
     diag: 'Diagnostics', diag_copy: 'Copy report', diag_running: 'Checking…',
     srv_not_ready: 'Server not configured: run supabase/schema.sql (check_invite function is missing)',
     invite_check_err: 'Invite check error', srv_rejected: 'Server rejected sign-up — see Diagnostics',
+    login_taken: 'This login already exists', login_free: 'login is free', login_checking: 'checking login…',
+    srv500: 'Server rejected sign-up (500). See Supabase → Logs → Postgres; copy the report in Diagnostics',
+    run_new_schema: 'run the new supabase/schema.sql',
     week_days: ['MO','TU','WE','TH','FR'],
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   }
@@ -605,27 +611,43 @@ async function sbSignUp(login, pass, name, invite){
   login = String(login||'').trim().toLowerCase();
   if (!LOGIN_RE.test(login)){ toast(t('login_hint'), 'err'); return; }
   if (!name || !pass){ toast(t('login_taken_or_err'), 'err'); return; }
-  // предпроверка кода приглашения по хэшу на сервере (RPC); сам код в клиенте не хранится
-  dlog('auth: регистрация', login, '→', loginToEmail(login), '· проверяю код приглашения…');
+  // серверная предпроверка: логин-формат, код приглашения, занятость логина — одной RPC
+  dlog('auth: регистрация', login, '→', loginToEmail(login), '· signup_precheck…');
+  let prechecked = false;
   try{
-    const { data: ok, error: e1 } = await state.sb.rpc('check_invite', { code: String(invite||'') });
-    dlog('auth: check_invite →', ok === true ? 'true' : ok === false ? 'false' : ok, e1 ? e1 : '');
-    if (e1){
-      const s = errStr(e1);
-      const noFn = /PGRST202|schema cache|does not exist|find the function/i.test(s);
-      toast('⛔ ' + (noFn ? t('srv_not_ready') : t('invite_check_err') + ': ' + s), 'err');
-      return;
-    }
-    if (!ok){ toast('⛔ ' + t('invite_bad'), 'err'); return; }
-  }catch(e){ dlog('⛔ check_invite exception:', e); toast('⛔ ' + t('invite_check_err') + ': ' + errStr(e), 'err'); return; }
+    const { data: st, error: e0 } = await state.sb.rpc('signup_precheck', { p_login: login, p_invite: String(invite||'') });
+    dlog('auth: signup_precheck →', st, e0 ? e0 : '');
+    if (!e0){
+      prechecked = true;
+      if (st === 'LOGIN_TAKEN'){ toast('⛔ ' + t('login_taken'), 'err'); setLoginStatus('taken'); return; }
+      if (st === 'BAD_INVITE'){ toast('⛔ ' + t('invite_bad'), 'err'); return; }
+      if (st === 'BAD_LOGIN'){ toast('⛔ ' + t('login_hint'), 'err'); return; }
+      if (st !== 'OK'){ toast('⛔ ' + t('invite_check_err') + ': ' + st, 'err'); return; }
+    } else if (!/PGRST202|schema cache|find the function/i.test(errStr(e0))){
+      toast('⛔ ' + t('invite_check_err') + ': ' + errStr(e0), 'err'); return;
+    } else dlog('signup_precheck отсутствует — ' + t('run_new_schema') + '; использую check_invite');
+  }catch(e){ dlog('⛔ signup_precheck exception:', e); }
+  if (!prechecked){
+    try{
+      const { data: ok, error: e1 } = await state.sb.rpc('check_invite', { code: String(invite||'') });
+      dlog('auth: check_invite →', ok === true ? 'true' : ok === false ? 'false' : ok, e1 ? e1 : '');
+      if (e1){
+        const s = errStr(e1);
+        const noFn = /PGRST202|schema cache|does not exist|find the function/i.test(s);
+        toast('⛔ ' + (noFn ? t('srv_not_ready') : t('invite_check_err') + ': ' + s), 'err');
+        return;
+      }
+      if (!ok){ toast('⛔ ' + t('invite_bad'), 'err'); return; }
+    }catch(e){ dlog('⛔ check_invite exception:', e); toast('⛔ ' + t('invite_check_err') + ': ' + errStr(e), 'err'); return; }
+  }
   const { data, error } = await state.sb.auth.signUp({
     email: loginToEmail(login), password: pass,
     options: { data: { display_name: name, login, invite: String(invite||'') } }
   });
   if (error){
     dlog('⛔ auth.signUp:', error);
-    const msg = /database error/i.test(error.message) ? t('srv_rejected')
-              : /already/i.test(error.message) ? t('login_taken_or_err')
+    const msg = /database error/i.test(error.message) ? (prechecked ? t('srv500') : t('srv_rejected'))
+              : /already/i.test(error.message) ? t('login_taken')
               : error.message;
     toast('⛔ ' + msg, 'err'); return;
   }
@@ -1005,9 +1027,11 @@ function viewLogin(){
     </div>
     <div id="auth-signup" style="display:none">
       <div class="form-row"><input id="su-name" placeholder="${t('display_name')}"></div>
-      <div class="form-row"><input id="su-login" placeholder="${t('login')}" autocomplete="username" autocapitalize="none">
-        <div class="tiny">${t('login_hint')}</div></div>
-      <div class="form-row"><input id="su-pass" type="password" placeholder="${t('password')}" autocomplete="new-password"></div>
+      <div class="form-row"><input id="su-login" placeholder="${t('login')}" autocomplete="username" autocapitalize="none"
+          onblur="App.loginCheck()" oninput="App.loginTyped()">
+        <div class="tiny" id="su-login-st">${t('login_hint')}</div></div>
+      <div class="form-row"><input id="su-pass" type="password" placeholder="${t('password')}" autocomplete="new-password"
+          onfocus="App.loginCheck()"></div>
       <div class="form-row"><input id="su-invite" placeholder="${t('invite_code')}" autocapitalize="characters"></div>
       <button class="btn btn-blue" onclick="App.signUp()">${t('sign_up')}</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="App.authMode(false)">${t('have_acc')}</button>
@@ -2152,6 +2176,7 @@ const App = {
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis,
   diag: showDiagnostics, copyDiag,
+  loginCheck, loginTyped,
   dirTab(v){ state.dirTab = v; render(); },
   openCp, cpTab(v){ state.cpTab = v; renderCpModal(); },
   editCpModal, saveCp, cpCustomToggle, cpSetPrice,
@@ -2868,10 +2893,11 @@ async function runDiagnostics(){
       put(`${mark(r.ok)} Auth API (auth/v1/health): HTTP ${r.status}`);
     }catch(e){ put(`${mark(false)} Auth API недоступен: ${errStr(e)}`); }
 
-    // REST API
+    // REST API (401 без активной сессии — нормальный ответ)
     try{
       const r = await fetch(base + '/rest/v1/', { headers: { apikey: CFG.SUPABASE_ANON_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_ANON_KEY } });
-      put(`${mark(r.ok)} REST API (rest/v1): HTTP ${r.status}`);
+      const okish = r.ok || r.status === 401;
+      put(`${mark(okish)} REST API (rest/v1): HTTP ${r.status}${r.status === 401 ? ' (401 без входа — норма)' : ''}`);
     }catch(e){ put(`${mark(false)} REST API недоступен: ${errStr(e)}`); }
 
     // сессия
@@ -2898,6 +2924,22 @@ async function runDiagnostics(){
         put(`${mark(false)} функция check_invite: ${s}${noFn ? '  ← ФУНКЦИИ НЕТ: выполните supabase/schema.sql целиком' : ''}`);
       } else put(`${mark(data === false)} функция check_invite: отвечает (пустой код → ${data})`);
     }catch(e){ put(`${mark(false)} check_invite: ${errStr(e)}`); }
+
+    // функции регистрации v1.03.04
+    try{
+      const { data, error } = await state.sb.rpc('login_available', { p_login: 'zz_diag_probe_999' });
+      if (error){
+        const s = errStr(error);
+        put(`${mark(false)} функция login_available: ${s}${/PGRST202|find the function/i.test(s) ? '  ← выполните НОВУЮ schema.sql (v1.03.04)' : ''}`);
+      } else put(`${mark(data === true)} функция login_available: отвечает (тестовый логин свободен: ${data})`);
+    }catch(e){ put(`${mark(false)} login_available: ${errStr(e)}`); }
+    try{
+      const { data, error } = await state.sb.rpc('signup_precheck', { p_login: '', p_invite: '' });
+      if (error){
+        const s = errStr(error);
+        put(`${mark(false)} функция signup_precheck: ${s}${/PGRST202|find the function/i.test(s) ? '  ← выполните НОВУЮ schema.sql (v1.03.04)' : ''}`);
+      } else put(`${mark(data === 'BAD_LOGIN')} функция signup_precheck: отвечает (пустой ввод → ${data})`);
+    }catch(e){ put(`${mark(false)} signup_precheck: ${errStr(e)}`); }
 
     // справочник (виден и без входа? нет — RLS; ошибки 42P01 важнее)
     try{
@@ -2934,4 +2976,41 @@ async function showDiagnostics(){
 }
 function copyDiag(){
   navigator.clipboard?.writeText(window.__lastDiag || '').then(()=>toast('✓ ' + t('copied')));
+}
+
+/* ---- Живая проверка логина в форме регистрации ---- */
+let loginCheckT = null, loginCheckLast = '';
+function setLoginStatus(kind, extra){
+  const el = document.getElementById('su-login-st'); if (!el) return;
+  if (kind === 'hint'){ el.textContent = t('login_hint'); el.style.color = ''; }
+  else if (kind === 'checking'){ el.textContent = '… ' + t('login_checking'); el.style.color = ''; }
+  else if (kind === 'free'){ el.textContent = '✓ ' + t('login_free'); el.style.color = 'var(--green)'; }
+  else if (kind === 'taken'){ el.textContent = '⛔ ' + t('login_taken'); el.style.color = 'var(--red)'; }
+  else if (kind === 'bad'){ el.textContent = t('login_hint'); el.style.color = 'var(--yellow)'; }
+  else if (kind === 'err'){ el.textContent = '… ' + (extra||''); el.style.color = ''; }
+}
+function loginTyped(){
+  clearTimeout(loginCheckT);
+  setLoginStatus('hint');
+  loginCheckT = setTimeout(loginCheck, 600);
+}
+async function loginCheck(){
+  clearTimeout(loginCheckT);
+  const inp = document.getElementById('su-login'); if (!inp || !HAS_SB) return;
+  const login = inp.value.trim().toLowerCase();
+  if (!login) { setLoginStatus('hint'); return; }
+  if (!LOGIN_RE.test(login)){ setLoginStatus('bad'); return; }
+  if (login === loginCheckLast) return; // уже проверяли этот вариант
+  setLoginStatus('checking');
+  try{
+    const { data: free, error } = await state.sb.rpc('login_available', { p_login: login });
+    if (error){
+      dlog('login_available:', error);
+      setLoginStatus('err', /PGRST202|find the function/i.test(errStr(error)) ? t('run_new_schema') : '');
+      return;
+    }
+    loginCheckLast = login;
+    dlog('auth: login_available(' + login + ') →', free);
+    setLoginStatus(free ? 'free' : 'taken');
+  }catch(e){ dlog('⛔ login_available exception:', e); setLoginStatus('err'); }
 }

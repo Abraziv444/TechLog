@@ -32,9 +32,10 @@ revoke all on public.app_secrets from anon, authenticated;
 -- хэш кода приглашения по умолчанию (сам код в файлах проекта не хранится).
 -- Сменить код: update public.app_secrets
 --   set value = encode(sha256(convert_to('НОВЫЙ_КОД','UTF8')),'hex') where key='invite';
+-- do nothing: повторный запуск схемы НЕ сбрасывает уже изменённый вами код
 insert into public.app_secrets (key, value)
 values ('invite', 'a43915481c3b48d871d73fb0396701d3626c2cc5e5d1a95ec17e067cc8d3d7fe')
-on conflict (key) do update set value = excluded.value;
+on conflict (key) do nothing;
 
 create or replace function public.is_valid_invite(code text)
 returns boolean language sql stable security definer set search_path = public as $$
@@ -52,6 +53,30 @@ returns boolean language sql stable security definer set search_path = public as
 $$;
 grant execute on function public.check_invite(text) to anon, authenticated;
 
+-- Живая проверка «логин свободен?» для формы регистрации.
+-- Раскрывает занятость логинов; для внутреннего инструмента с кодом приглашения это приемлемо.
+create or replace function public.login_available(p_login text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select not exists (
+    select 1 from public.profiles where lower(login) = lower(coalesce(p_login,''))
+  )
+$$;
+grant execute on function public.login_available(text) to anon, authenticated;
+
+-- Полная предпроверка регистрации: возвращает точную причину отказа
+-- ('OK' | 'BAD_LOGIN' | 'BAD_INVITE' | 'LOGIN_TAKEN') — те же коды бросает и триггер.
+create or replace function public.signup_precheck(p_login text, p_invite text)
+returns text language plpgsql stable security definer set search_path = public as $$
+declare
+  v text := lower(coalesce(p_login,''));
+begin
+  if v !~ '^[a-z0-9_.-]{3,32}$' then return 'BAD_LOGIN'; end if;
+  if not public.is_valid_invite(p_invite) then return 'BAD_INVITE'; end if;
+  if exists (select 1 from public.profiles where lower(login) = v) then return 'LOGIN_TAKEN'; end if;
+  return 'OK';
+end $$;
+grant execute on function public.signup_precheck(text, text) to anon, authenticated;
+
 -- авто-создание профиля при регистрации + серверная проверка кода приглашения.
 -- Клиент шлёт login и invite в user_metadata; email формируется как login@<AUTH_EMAIL_DOMAIN из config.js>
 -- (по умолчанию login@techlog.example.com — домен зарезервирован IANA, писем на нём не бывает).
@@ -61,16 +86,23 @@ declare
   v_login text;
 begin
   if not public.is_valid_invite(new.raw_user_meta_data->>'invite') then
-    raise exception 'INVALID_INVITE_CODE';
+    raise exception 'BAD_INVITE';
   end if;
   v_login := lower(coalesce(new.raw_user_meta_data->>'login', split_part(new.email, '@', 1)));
   if v_login !~ '^[a-z0-9_.-]{3,32}$' then
-    raise exception 'INVALID_LOGIN';
+    raise exception 'BAD_LOGIN';
   end if;
-  insert into public.profiles (id, login, display_name, role)
-  values (new.id, v_login,
-          coalesce(new.raw_user_meta_data->>'display_name', v_login), 'tech')
-  on conflict (id) do nothing;
+  if exists (select 1 from public.profiles where lower(login) = v_login) then
+    raise exception 'LOGIN_TAKEN';
+  end if;
+  begin
+    insert into public.profiles (id, login, display_name, role)
+    values (new.id, v_login,
+            coalesce(new.raw_user_meta_data->>'display_name', v_login), 'tech');
+  exception
+    when unique_violation then raise exception 'LOGIN_TAKEN';
+    when others then raise exception 'PROFILE_CREATE_FAILED: %', sqlerrm;
+  end;
   return new;
 end $$;
 drop trigger if exists on_auth_user_created on auth.users;
