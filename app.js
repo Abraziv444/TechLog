@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.03.01';
+const APP_VERSION = '1.03.02';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 const LS_KEY = 'techlog_state_v1';
@@ -528,6 +528,7 @@ function calcTotal(fd, p, data){
    АВТОРИЗАЦИЯ
    ===================================================================== */
 async function initAuth(){
+  if (HAS_SB && !window.supabase) throw new Error('supabase-js не загрузился (CDN). Проверьте интернет и обновите страницу.');
   if (!HAS_SB){
     const saved = localStorage.getItem(LS_SESSION);
     state.data = loadLocal() || seedDemoData(); saveLocal();
@@ -2131,17 +2132,23 @@ const App = {
 window.App = App;
 
 (async function start(){
-  initSW();
-  if (HAS_SB){
-    try{
-      const cached = loadLocal();
-      if (cached && (cached.profiles||[]).some(p => String(p.id).startsWith('demo-'))) localStorage.removeItem(LS_KEY);
-    }catch(e){}
+  try {
+    initSW();
+    if (HAS_SB){
+      try{
+        const cached = loadLocal();
+        if (cached && (cached.profiles||[]).some(p => String(p.id).startsWith('demo-'))) localStorage.removeItem(LS_KEY);
+      }catch(e){}
+    }
+    await initAuth();
+    if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
+    render();
+    if (state.user) checkPickupBanner(true);
+  } catch (e) {
+    console.error('TechLog start failed:', e);
+    window.__tlErr = e && (e.message || String(e));
+    if (window.__tlPanic) window.__tlPanic('Ошибка запуска приложения'); 
   }
-  await initAuth();
-  if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
-  render();
-  if (state.user) checkPickupBanner(true);
 })();
 
 /* =====================================================================

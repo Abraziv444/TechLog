@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.03.01';
+const VERSION = '1.03.02';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -58,7 +58,21 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Свои статики: cache-first
+  // Свой JS/CSS: network-first (после деплоя код всегда свежий), офлайн — из кеша
+  if (url.origin === self.location.origin && /\.(js|css)$/.test(url.pathname)) {
+    e.respondWith(
+      fetch(req, { cache: 'no-cache' }).then((res) => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Остальные свои статики (иконки, манифест): cache-first
   if (url.origin === self.location.origin) {
     e.respondWith(
       caches.match(req).then((hit) => hit || fetch(req).then((res) => {

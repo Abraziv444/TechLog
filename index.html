@@ -24,10 +24,51 @@
 </head>
 <body>
 <div id="app" aria-live="polite">
-  <div class="login-wrap"><div class="logo"><span>TL</span></div>
-  <div class="hello">TechLog</div><div class="tiny">…</div></div>
+  <div class="login-wrap boot-splash"><div class="logo"><span>TL</span></div>
+  <div class="hello">TechLog</div><div class="tiny">загрузка…</div></div>
 </div>
 <div id="toasts"></div>
 <noscript>TechLog требует включённый JavaScript. / TechLog requires JavaScript.</noscript>
+<script>
+/* Сторож загрузки: если приложение не стартовало за 6 секунд — показывает диагностику.
+   Работает даже когда app.js вообще не загрузился (никаких зависимостей). */
+(function(){
+  window.__tlErr = null;
+  addEventListener('error', function(e){
+    window.__tlErr = (e.message||'script error') + (e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : '');
+  }, true);
+  addEventListener('unhandledrejection', function(e){
+    var r = e.reason; window.__tlErr = 'Promise: ' + (r && (r.message || r) || '?');
+  });
+  window.__tlReset = async function(){
+    try{ var regs = await navigator.serviceWorker.getRegistrations(); for (var i=0;i<regs.length;i++) await regs[i].unregister(); }catch(e){}
+    try{ var ks = await caches.keys(); for (var j=0;j<ks.length;j++) await caches.delete(ks[j]); }catch(e){}
+    try{ localStorage.removeItem('techlog_draft'); }catch(e){}
+    location.reload();
+  };
+  window.__tlPanic = async function(extra){
+    var app = document.getElementById('app');
+    var lines = [];
+    if (extra) lines.push(extra);
+    if (window.__tlErr) lines.push('⛔ ' + window.__tlErr);
+    lines.push('config.js: ' + (window.TECHLOG_CONFIG ? 'ок' : 'НЕ загружен (синтаксис?)'));
+    lines.push('supabase-js: ' + (window.supabase ? 'ок' : 'НЕ загружен (CDN/интернет)'));
+    try{ var a = await fetch('./app.js', {method:'HEAD', cache:'no-store'}); lines.push('app.js: HTTP ' + a.status); }
+    catch(e){ lines.push('app.js: недоступен'); }
+    try{ var r = await fetch('./version.json?ts=' + Date.now(), {cache:'no-store'}); var v = await r.json(); lines.push('на сервере версия: ' + v.version); }
+    catch(e){ lines.push('version.json: недоступен'); }
+    app.innerHTML = '<div class="login-wrap">' +
+      '<div class="logo"><span>TL</span></div>' +
+      '<div class="hello">Не удалось запустить</div>' +
+      '<div class="tiny" style="text-align:left;white-space:pre-line;background:#17232A;border:2px solid #31434C;border-radius:12px;padding:10px 12px;margin-top:10px">' + lines.join('\n') + '</div>' +
+      '<button class="btn btn-red" style="margin-top:14px" onclick="__tlReset()">Сбросить кеш и перезагрузить</button>' +
+      '<button class="btn btn-ghost" style="margin-top:8px" onclick="location.reload()">Просто обновить</button></div>';
+  };
+  setTimeout(function(){
+    var app = document.getElementById('app');
+    if (app && app.querySelector('.boot-splash')) window.__tlPanic(null);
+  }, 6000);
+})();
+</script>
 </body>
 </html>
