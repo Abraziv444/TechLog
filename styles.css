@@ -742,3 +742,14 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .staff-row .grow .tiny{overflow-wrap:anywhere}
 .staff-ctl{display:flex;align-items:center;gap:6px;margin-left:auto;flex:0 1 auto;max-width:100%}
 .staff-ctl select.role-sel{max-width:180px}
+
+/* ============ v1.07.06: сотрудники — блокировка и пароль; справочник «Цены» ============ */
+.staff-ctl .icon-btn{width:36px;height:36px;border-radius:10px}
+.ban-btn{color:var(--red);border-color:var(--red)}
+.ban-btn.off{color:var(--dim);border-color:var(--line)}          /* уже заблокирован → кнопка «разблокировать» */
+.ban-btn:active{transform:translateY(1px)}
+.key-btn{color:var(--yellow)}
+.chip-st{margin-left:8px;vertical-align:2px}
+.staff-row.is-blocked .avatar,
+.staff-row.is-blocked .grow b{opacity:.55}
+.staff-row.is-blocked .grow b{text-decoration:line-through}

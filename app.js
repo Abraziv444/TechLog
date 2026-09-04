@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.05';
+const APP_VERSION = '1.07.07';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -74,7 +74,7 @@ const I18N = {
     copied: 'Скопировано', nothing_due: 'Пикапов на эту дату нет', incl_overdue: 'включая просроченные',
     dirs: 'Справочники',
     d_counterparties: 'Контрагенты', d_complexes: 'Комплексы', d_worktypes: 'Виды работ',
-    d_equipment: 'Оборудование', d_aux: 'Доп. оборудование', d_price: 'PRICE',
+    d_equipment: 'Оборудование', d_aux: 'Доп. оборудование', d_price: 'Цены',
     std_price: 'Стандартная цена', custom_price: 'Индивидуальная цена', price_list: 'Прейскурант',
     name: 'Название', abbr: 'Сокращение', color: 'Цвет', address: 'Адрес', access_code: 'Код доступа',
     day_price: 'Цена $/сутки', needs_aux: 'Нужно доп. оборудование',
@@ -131,6 +131,26 @@ const I18N = {
     back_today: 'Сегодня', navigate: 'Маршрут', copied_code: 'Код скопирован',
     app_tag: 'учёт работ', copy_addr: 'Копировать адрес', copied_addr: 'Адрес скопирован',
     drag_hint: 'Удерживайте карточку и тяните вверх/вниз',
+    st_active: 'Активен', st_blocked: 'Заблокирован', block: 'Заблокировать', unblock: 'Разблокировать',
+    block_confirm: 'Заблокировать сотрудника? Он не сможет войти в приложение:',
+    blocked_done: 'Сотрудник заблокирован', unblocked_done: 'Сотрудник разблокирован',
+    blocked_msg: 'Доступ заблокирован администратором',
+    registered: 'в приложении с', cant_self: 'Нельзя выполнить для самого себя',
+    set_pass: 'Сменить пароль', new_pass: 'Новый пароль (мин. 6 символов)',
+    pass_short: 'Пароль — минимум 6 символов', pass_changed: 'Пароль изменён. Старые сессии сотрудника завершены',
+    rpc_missing: 'Обновите БД: выполните свежий supabase/schema.sql в SQL-редакторе Supabase',
+    demo_only_sb: 'В демо-режиме пароли не используются — доступно только с Supabase',
+    price_std_tab: 'Стандартные', price_ind_tab: 'Индивидуальные',
+    price_ind_hint: 'Галочка включает индивидуальную цену для выбранного контрагента; без галочки действует стандартная.',
+    add_staff: 'Добавить сотрудника', staff_login_lbl: 'Логин (латиница, 3–32)',
+    staff_created: 'Сотрудник создан — может входить с этим логином и паролем',
+    staff_created_demo: 'Сотрудник добавлен (демо: вход без пароля)',
+    bad_email_cfg: 'Почтовый домен не совпал — проверьте AUTH_EMAIL_DOMAIN в config.js',
+    invite_set_title: 'Код приглашения', invite_new_lbl: 'Новый код (2–64 символа)',
+    invite_hint: 'Действует для всех новых регистраций. Хранится только хэш — текущий код показать нельзя, только заменить. Стандартный код: APC.',
+    invite_saved: 'Код приглашения обновлён', invite_short: 'Код — от 2 до 64 символов',
+    my_pass_title: 'Смена пароля', pass_repeat: 'Повторите пароль', pass_mismatch: 'Пароли не совпадают',
+    own_pass_changed: 'Пароль изменён',
     draft_restored: 'Черновик восстановлен (несохранённые изменения)',
     pdf_blocked: 'PDF недоступен — заполните', batch_skipped: 'пропущено (не заполнены поля)',
     diag: 'Диагностика', diag_copy: 'Скопировать отчёт', diag_running: 'Проверяю…',
@@ -209,7 +229,7 @@ const I18N = {
     copied: 'Copied', nothing_due: 'No pickups for this date', incl_overdue: 'including overdue',
     dirs: 'Directory',
     d_counterparties: 'Counterparties', d_complexes: 'Complexes', d_worktypes: 'Work types',
-    d_equipment: 'Equipment', d_aux: 'Aux equipment', d_price: 'PRICE',
+    d_equipment: 'Equipment', d_aux: 'Aux equipment', d_price: 'Prices',
     std_price: 'Standard price', custom_price: 'Custom price', price_list: 'Price list',
     name: 'Name', abbr: 'Abbr', color: 'Color', address: 'Address', access_code: 'Access code',
     day_price: 'Price $/day', needs_aux: 'Needs aux equipment',
@@ -266,6 +286,26 @@ const I18N = {
     back_today: 'Today', navigate: 'Navigate', copied_code: 'Code copied',
     app_tag: 'work log', copy_addr: 'Copy address', copied_addr: 'Address copied',
     drag_hint: 'Press & hold a card, then drag up/down',
+    st_active: 'Active', st_blocked: 'Blocked', block: 'Block', unblock: 'Unblock',
+    block_confirm: 'Block this employee? They will not be able to sign in:',
+    blocked_done: 'Employee blocked', unblocked_done: 'Employee unblocked',
+    blocked_msg: 'Access blocked by the administrator',
+    registered: 'joined', cant_self: 'You can’t do this to yourself',
+    set_pass: 'Change password', new_pass: 'New password (min 6 chars)',
+    pass_short: 'Password must be at least 6 characters', pass_changed: 'Password changed. Old sessions were revoked',
+    rpc_missing: 'Update the DB: run the latest supabase/schema.sql in the Supabase SQL editor',
+    demo_only_sb: 'Demo mode has no passwords — available with Supabase only',
+    price_std_tab: 'Standard', price_ind_tab: 'Individual',
+    price_ind_hint: 'The checkbox enables an individual price for the selected counterparty; unchecked — the standard price applies.',
+    add_staff: 'Add employee', staff_login_lbl: 'Login (Latin, 3–32)',
+    staff_created: 'Employee created — they can sign in with this login and password',
+    staff_created_demo: 'Employee added (demo: sign-in without a password)',
+    bad_email_cfg: 'Email domain mismatch — check AUTH_EMAIL_DOMAIN in config.js',
+    invite_set_title: 'Invite code', invite_new_lbl: 'New code (2–64 chars)',
+    invite_hint: 'Applies to all new sign-ups. Only a hash is stored — the current code can’t be shown, only replaced. Default code: APC.',
+    invite_saved: 'Invite code updated', invite_short: 'Code must be 2–64 characters',
+    my_pass_title: 'Change password', pass_repeat: 'Repeat password', pass_mismatch: 'Passwords don’t match',
+    own_pass_changed: 'Password changed',
     draft_restored: 'Draft restored (unsaved changes)',
     pdf_blocked: 'PDF blocked — fill in', batch_skipped: 'skipped (missing required fields)',
     diag: 'Diagnostics', diag_copy: 'Copy report', diag_running: 'Checking…',
@@ -334,6 +374,7 @@ const state = {
   dictLang: localStorage.getItem('techlog_dictlang') || 'ru-RU',
   jobId: null,
   cpOpenId: null, cpTab: 'info',
+  priceMode: 'std', priceCp: '',   // v1.07.06: справочник «Цены»
   weekStart: null,            // ISO monday
   selDate: null,              // ISO yyyy-mm-dd
   reportDate: null,
@@ -482,9 +523,9 @@ function seedCatalogs(){
 function seedDemoData(){
   const cat = seedCatalogs();
   const profiles = [
-    { id: 'demo-admin',   login: 'ivan',   display_name: 'Ivan Petrov',   role: 'admin' },
-    { id: 'demo-manager', login: 'alexey', display_name: 'Alexey Smirnov', role: 'manager' },
-    { id: 'demo-tech',    login: 'sergey', display_name: 'Sergey Volkov', role: 'tech' },
+    { id: 'demo-admin',   login: 'ivan',   display_name: 'Ivan Petrov',   role: 'admin',   blocked: false, created_at: '2026-01-12T09:00:00Z' },
+    { id: 'demo-manager', login: 'alexey', display_name: 'Alexey Smirnov', role: 'manager', blocked: false, created_at: '2026-02-03T10:30:00Z' },
+    { id: 'demo-tech',    login: 'sergey', display_name: 'Sergey Volkov', role: 'tech',    blocked: false, created_at: '2026-03-18T15:45:00Z' },
   ];
   const cp1 = { id: uid(), name: 'Magnolia Group',  abbr: 'MG', notes: '' };
   const cp2 = { id: uid(), name: 'Cascade Living',  abbr: 'CL', notes: '' };
@@ -629,6 +670,16 @@ async function syncNow(silent){
     }
     state.lastSync = nowStamp();
     localStorage.setItem('techlog_lastsync', state.lastSync);
+    // v1.07.06: если админ заблокировал текущего пользователя — сразу выходим
+    const meProf = state.user && (state.data.profiles||[]).find(p => p.id === state.user.id);
+    if (meProf && meProf.blocked){
+      dlog('sync: текущий пользователь заблокирован — выход');
+      if (HAS_SB){ try{ await state.sb.auth.signOut(); }catch(e){} }
+      else localStorage.removeItem(LS_SESSION);
+      state.user = null; state.screen = 'login';
+      toast('⛔ ' + t('blocked_msg'), 'err');
+      return;
+    }
     if (!silent) toast('✓ ' + t('synced') + ': ' + state.lastSync);
   } catch (e) {
     dlog('⛔ sync: ошибка:', e);
@@ -811,6 +862,13 @@ async function afterSbLogin(session){
       if (r.error) dlog('⛔ профиль:', r.error);
       prof = r.data;
     } catch(e){ dlog('⛔ профиль exception:', e); }
+    if (prof && prof.blocked){
+      dlog('auth: профиль заблокирован — выходим');
+      try{ await state.sb.auth.signOut(); }catch(e){}
+      state.user = null; state.screen = 'login';
+      toast('⛔ ' + t('blocked_msg'), 'err');
+      return;
+    }
     const md = session.user.user_metadata || {};
     state.user = prof || {
       id: session.user.id,
@@ -829,6 +887,7 @@ async function afterSbLogin(session){
 function demoLogin(id){
   const u = state.data.profiles.find(p => p.id === id);
   if (!u) return;
+  if (u.blocked){ toast('⛔ ' + t('blocked_msg'), 'err'); return; }
   state.user = u; localStorage.setItem(LS_SESSION, id);
   state.screen = 'home'; state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate);
   render(); checkPickupBanner(true);
@@ -841,7 +900,11 @@ async function sbSignIn(login, pass){
   if (!LOGIN_RE.test(login)){ toast(t('login_hint'), 'err'); return; }
   dlog('auth: вход', login, '→', loginToEmail(login));
   const { data, error } = await state.sb.auth.signInWithPassword({ email: loginToEmail(login), password: pass });
-  if (error){ dlog('⛔ auth.signIn:', error); toast(error.message, 'err'); return; }
+  if (error){
+    dlog('⛔ auth.signIn:', error);
+    toast(/banned/i.test(error.message||'') ? '⛔ ' + t('blocked_msg') : error.message, 'err');
+    return;
+  }
   dlog('auth: вход ок, uid', data.session?.user?.id);
   try{ await afterSbLogin(data.session); }catch(e){ dlog('⛔ afterSbLogin:', e); }
   render(); checkPickupBanner(true);
@@ -984,6 +1047,7 @@ const ICONS = {
    контур stroke=currentColor — цвет наследуется от соседнего текста)
    ===================================================================== */
 const IC = {
+  ban: '<circle cx="12" cy="12" r="8.2"/><path d="M6.4 6.6 17.6 17.4"/>',
   steam: '<path d="M7 4.2C5.3 6.3 5.3 8.4 7 10.5c1.7 2.1 1.7 4.2 0 6.3"/><path d="M12 4.2c-1.7 2.1-1.7 4.2 0 6.3 1.7 2.1 1.7 4.2 0 6.3"/><path d="M17 4.2c-1.7 2.1-1.7 4.2 0 6.3 1.7 2.1 1.7 4.2 0 6.3"/><path d="M5.5 20.5h13"/>',
   sponge: '<rect x="3" y="10.5" width="18" height="9" rx="3"/><circle cx="8" cy="15" r="1"/><circle cx="12.5" cy="17" r="1"/><circle cx="15.8" cy="13.8" r="1"/><path d="M6.5 3.8v3.4M4.8 5.5h3.4"/><path d="M17.5 3v3.4M15.8 4.7h3.4"/>',
   wrench: '<path d="M20.8 7.2a4.9 4.9 0 0 1-6.3 4.7l-6.7 6.7a2.33 2.33 0 1 1-3.3-3.3l6.7-6.7a4.9 4.9 0 0 1 5.9-6.2L14 5.5l1.1 3.4 3.4 1.1 3.1-3.1c.14.74.2 1 .2 1.3z" transform="translate(0 -.5)"/>',
@@ -2404,15 +2468,52 @@ function dirAux(){
 
 function dirPrice(){
   const canEdit = isAdmin();
-  return `<div class="card">
-    <div style="font-weight:900;margin-bottom:6px">${ic('dollar')} ${t('price_list')} — ${t('std_price')}</div>
-    ${state.data.price_list.map(pr => `
-      <div class="rowline">
-        <div class="grow">${esc(pr.name)}<div class="tiny">${esc(pr.unit_label||'')}</div></div>
-        ${canEdit
-          ? `<input class="price-input" inputmode="decimal" value="${pr.price}" onchange="App.setStdPrice('${pr.id}', this.value)">`
-          : `<span class="money">${money(pr.price)}</span>`}
-      </div>`).join('')}
+  const mode = state.priceMode === 'ind' ? 'ind' : 'std';
+  const cps = state.data.counterparties;
+  const seg = `
+    <div class="lang-seg" style="margin-bottom:10px">
+      <button class="${mode==='std'?'on':''}" onclick="App.priceMode('std')">${t('price_std_tab')}</button>
+      <button class="${mode==='ind'?'on':''}" onclick="App.priceMode('ind')">${t('price_ind_tab')}</button>
+    </div>`;
+  if (mode === 'std'){
+    return seg + `<div class="card">
+      <div style="font-weight:900;margin-bottom:6px">${ic('dollar')} ${t('price_list')} — ${t('std_price')}</div>
+      ${state.data.price_list.map(pr => `
+        <div class="rowline">
+          <div class="grow">${esc(pr.name)}<div class="tiny">${esc(pr.unit_label||'')}</div></div>
+          ${canEdit
+            ? `<input class="price-input" inputmode="decimal" value="${pr.price}" onchange="App.setStdPrice('${pr.id}', this.value)">`
+            : `<span class="money">${money(pr.price)}</span>`}
+        </div>`).join('')}
+    </div>`;
+  }
+  /* индивидуальные: третья область — выпадающий список контрагентов */
+  if (!cps.length) return seg + `<div class="list-empty">${t('no_items')}</div>`;
+  if (!state.priceCp || !cps.find(c=>c.id===state.priceCp)) state.priceCp = cps[0].id;
+  const c = cpById(state.priceCp);
+  const cpSel = `
+    <div class="form-row"><span class="lbl">${t('counterparty')}</span>
+      <select onchange="App.priceCpSel(this.value)">
+        ${cps.map(x=>`<option value="${x.id}" ${x.id===state.priceCp?'selected':''}>${esc(x.name)}</option>`).join('')}
+      </select></div>`;
+  const rows = state.data.price_list.map(pr => {
+    const cpp = state.data.counterparty_prices.find(x => x.counterparty_id===c.id && x.key===pr.key);
+    const custom = cpp?.custom || false;
+    const val = custom ? cpp.price : pr.price;
+    return `<div class="rowline">
+      <div class="grow" style="font-size:.82rem">${custom?`<span class="money">●</span> `:''}${esc(pr.name)}
+        <div class="tiny">${t('std_price')}: ${money(pr.price)}</div></div>
+      ${canEdit
+        ? `<input type="checkbox" ${custom?'checked':''} title="${t('custom_price')}"
+             onchange="App.cpCustomToggle('${c.id}','${pr.key}', this.checked)">
+           <input class="price-input" inputmode="decimal" value="${val}" ${custom?'':'disabled'}
+             onchange="App.cpSetPrice('${c.id}','${pr.key}', this.value)">`
+        : `<span class="money">${money(val)}</span>`}
+    </div>`;
+  }).join('');
+  return seg + cpSel + `<div class="card">
+    <div class="tiny" style="margin-bottom:6px">${t('price_ind_hint')}</div>
+    ${rows}
   </div>`;
 }
 
@@ -2490,7 +2591,7 @@ async function cpCustomToggle(cpId, key, on){
   if (!row) row = { id: uid(), counterparty_id: cpId, key, custom: on, price: std ? std.price : 0 };
   else row = { ...row, custom: on, price: on ? row.price : (std ? std.price : row.price) };
   await dbUpsert('counterparty_prices', row);
-  renderCpModal();
+  if (document.getElementById('overlay') && state.cpOpenId) renderCpModal(); else render();
 }
 async function cpSetPrice(cpId, key, v){
   let row = state.data.counterparty_prices.find(x=>x.counterparty_id===cpId && x.key===key);
@@ -2666,6 +2767,11 @@ function viewSettings(){
       <input id="set-name" value="${esc(u.display_name)}" style="max-width:200px" onchange="App.saveMyName(this.value)">
     </div>
     <div class="settings-row">
+      <div class="grow" style="flex:1"><b>${ic('key')} ${t('my_pass_title')}</b>
+        ${HAS_SB ? '' : `<div class="d">${t('demo_only_sb')}</div>`}</div>
+      <button class="btn btn-ghost sm" onclick="App.ownPassModal()">${t('set_pass')}</button>
+    </div>
+    <div class="settings-row">
       <div class="grow" style="flex:1"><b>${t('language')}</b></div>
       <div class="lang-seg">
         <button class="${state.lang==='ru'?'on':''}" onclick="App.setLang('ru')">RU</button>
@@ -2702,6 +2808,14 @@ function viewSettings(){
       <input id="org-a1" value="${esc(org.addr1)}"><input id="org-a2" value="${esc(org.addr2)}"><input id="org-a3" value="${esc(org.addr3)}">
     </div>
     <button class="btn btn-blue sm" style="margin-top:8px" onclick="App.saveOrg()">${t('save')}</button>
+  </div>
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
+    <div class="tiny" style="margin-bottom:8px">${t('invite_hint')}</div>
+    <div class="form-row"><span class="lbl">${t('invite_new_lbl')}</span>
+      <input id="inv-code" autocomplete="off" autocapitalize="none" spellcheck="false" ${HAS_SB?'':'disabled'}></div>
+    ${HAS_SB ? '' : `<div class="tiny" style="margin:-4px 0 8px">${t('demo_only_sb')}</div>`}
+    <button class="btn btn-blue sm" onclick="App.inviteSave()" ${HAS_SB?'':'disabled'}>${t('save')}</button>
   </div>` : ''}
 
   <div class="card">
@@ -2727,243 +2841,15 @@ function makePdf(){
     const iss = jobIssues(jj);
     if (iss.length){ toast('⚠ ' + t('pdf_blocked') + ': ' + iss.map(k=>t('issue_'+k)).join(', '), 'err'); return; } }
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'mm', format: 'letter' }); // 215.9 × 279.4
   const j = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
-  const fd = j.form_data;
-  const cp = cpById(j.counterparty_id) || {name:''};
   const cx = cxById(j.complex_id) || {name:'', address:''};
-  const org = state.data.org_settings;
-  const p = priceResolver(j.counterparty_id);
-  const sec = calcSections(fd, p);
-  const grand = (j.status==='approved' && j.approved_total != null) ? j.approved_total : calcTotal(fd, p);
-
-  const L = 13, R = 203, W = R - L;
-  const C1 = L + 47;           // services | description
-  const C2 = R - 26;           // description | amount
-  const line = (x1,y1,x2,y2)=>doc.line(x1,y1,x2,y2);
-  const box = (x,y,on,s=3.6)=>{ doc.rect(x,y,s,s); if(on){ doc.setLineWidth(.5); line(x+.6,y+.6,x+s-.6,y+s-.6); line(x+s-.6,y+.6,x+.6,y+s-.6); doc.setLineWidth(.25);} };
-  const radio = (x,y,on)=>{ doc.circle(x,y,1.7); if(on) doc.circle(x,y,.9,'F'); };
-  const txt = (s,x,y,o)=>doc.text(String(s),x,y,o);
-  const F = (st,sz)=>{ doc.setFont('helvetica',st); doc.setFontSize(sz); };
-  const val = (s,x,y,o)=>{ F('bold',10); txt(s??'',x,y,o); };
-  const amount = (v,yBase)=>{ if(v>0){ F('bold',11); txt(String(Math.round(v*100)/100), R-3, yBase, {align:'right'}); } };
-
-  /* ---- Шапка ---- */
-  doc.setFillColor(20,20,20);
-  doc.triangle(L+2,34, L+16,15, L+30,34, 'F');
-  doc.setFillColor(255,255,255);
-  doc.triangle(L+11,34, L+16,26, L+21,34, 'F');
-  doc.setDrawColor(20,20,20); doc.setLineWidth(1.6);
-  line(L+26,20, L+34,31); line(L+29.5,18, L+37.5,29); line(L+33,16, L+41,27);
-  doc.setLineWidth(.25);
-  F('italic',8.5); txt(org.assoc_line || 'atlanta apartment association', L+1, 39);
-
-  F('bold',24); txt(org.invoice_title || 'INVOICE #CC', 118, 22, {align:'center'});
-  F('bold',13); txt(org.header_city || 'ATLANTA', 66, 32);
-  F('bold',8);  txt(org.addr1||'', 100, 28); txt(org.addr2||'', 100, 32); txt(org.addr3||'', 100, 36);
-
-  /* ---- Поля шапки ---- */
-  F('bold',11);
-  txt('Date:', L, 48);  line(L+12, 49, L+58, 49);  val(fmtUS(j.date), L+16, 47.6);
-  txt('Unit #:', 78, 48); line(92, 49, 126, 49);    val(j.unit_number || '', 96, 47.6);
-  box(140, 44.6, !!fd.vacant); F('bold',11); txt('Vacant', 145.5, 48);
-  box(166, 44.6, !!fd.occupied); txt('Occupied', 171.5, 48);
-  txt('Property/ Customer:', L, 56); line(L+42, 57, R, 57); val(cp.name + '  —  ' + cx.name, L+45, 55.6);
-  txt('Address:', L, 64); line(L+19, 65, R, 65); val(cx.address || '', L+22, 63.6);
-  txt('Technician:', L, 72); line(L+24, 73, R, 73); val(techNamesFor(j), L+27, 71.6);
-
-  /* ---- Таблица ---- */
-  let y = 78;
-  const rowTop = [];
-  const startRow = (h)=>{ rowTop.push([y,h]); const yy=y; y+=h; return yy; };
-  // заголовок
-  let ry = startRow(8);
-  doc.setLineWidth(.4); doc.rect(L, ry, W, 8); doc.setLineWidth(.25);
-  F('bold',11);
-  txt('SERVICES', L+23.5, ry+5.6, {align:'center'});
-  txt('DESCRIPTION', (C1+C2)/2, ry+5.6, {align:'center'});
-  txt('AMOUNT', (C2+R)/2, ry+5.6, {align:'center'});
-
-  const svc = (label, yy, on, withBox=true)=>{ F('bold',10); if(withBox){ box(L+2, yy, on); txt(label, L+7.5, yy+3);} else txt(label, L+2, yy+3); };
-  const dTxt = (s,x,yy,sz=9,st='bold')=>{ F(st,sz); txt(s,x,yy); };
-
-  // 1. Steam Clean
-  ry = startRow(8);
-  svc('Steam Clean', ry+2.2, fd.steam.deep_scrub||fd.steam.rotovac);
-  box(C1+4, ry+2.2, fd.steam.deep_scrub); dTxt('Deep Scrub', C1+9.5, ry+5.2);
-  box(C1+40, ry+2.2, fd.steam.rotovac);  dTxt('Rotovac', C1+45.5, ry+5.2);
-  if ((fd.steam.deep_scrub||fd.steam.rotovac) && fd.steam.rooms>1) dTxt('Rooms: '+fd.steam.rooms, C1+72, ry+5.2);
-  amount(sec.steam, ry+5.6);
-
-  // 2. Removals — ячейки-подписи
-  ry = startRow(10);
-  svc('Removals', ry+3.2, Object.keys(fd.removals).some(k=>k!=='on'&&fd.removals[k]));
-  const remCols = [['red_stain','Red Stain'],['wax','Wax'],['rust','Rust'],['ink','Ink'],['gum','Gum'],['paint','Paint Removal']];
-  const remW = (C2-C1)/6;
-  remCols.forEach(([k,lab],i)=>{
-    const x = C1 + i*remW;
-    if (i>0) line(x, ry, x, ry+10);
-    F('bold',7.6); txt(lab, x+remW/2, ry+3.4, {align:'center'});
-    box(x+remW/2-1.8, ry+5, fd.removals[k], 3.4);
-  });
-  amount(sec.removals, ry+6.6);
-
-  // 3. Repairs
-  ry = startRow(10);
-  svc('Repairs', ry+3.2, Object.keys(fd.repairs).some(k=>k!=='on'&&fd.repairs[k]));
-  const repCols = [['threshold','Threshold'],['stretch','Stretch'],['seam','Seam'],['patch','Patch']];
-  const repW = (C2-C1)/4;
-  repCols.forEach(([k,lab],i)=>{
-    const x = C1 + i*repW;
-    if (i>0) line(x, ry, x, ry+10);
-    F('bold',8); txt(lab, x+repW/2, ry+3.4, {align:'center'});
-    box(x+repW/2-1.8, ry+5, fd.repairs[k], 3.4);
-  });
-  amount(sec.repairs, ry+6.6);
-
-  // 4. Dye
-  ry = startRow(8);
-  svc('Dye', ry+2.2, fd.dye.spot||fd.dye.full);
-  box(C1+4, ry+2.2, fd.dye.spot); dTxt('Spot Dye', C1+9.5, ry+5.2);
-  box(C1+40, ry+2.2, fd.dye.full); dTxt('Full Dye', C1+45.5, ry+5.2);
-  amount(sec.dye, ry+5.6);
-
-  // 5. Other
-  ry = startRow(9);
-  svc('Other', ry+2.6, fd.other.trash_out||fd.other.pad_removal);
-  box(C1+4, ry+2.6, fd.other.trash_out); dTxt('Trash Out', C1+9.5, ry+5.6);
-  box(C1+34, ry+2.6, fd.other.pad_removal); dTxt('Pad', C1+39.5, ry+3.6, 7.6); dTxt('Removal', C1+39.5, ry+6.8, 7.6);
-  doc.rect(C1+62, ry+1.6, 8, 6); if (fd.other.pad_removal && !fd.other.all_unit){ F('bold',10); txt(String(fd.other.rooms||1), C1+66, ry+6.2, {align:'center'}); }
-  dTxt('Rooms', C1+72, ry+5.6);
-  box(C1+90, ry+2.6, fd.other.all_unit); dTxt('All', C1+95.5, ry+3.6, 7.6); dTxt('Unit', C1+95.5, ry+6.8, 7.6);
-  amount(sec.other, ry+6);
-
-  // 6. Fog / GOC
-  ry = startRow(8);
-  box(L+2, ry+2.2, fd.fog.fog); dTxt('Fog', L+7.5, ry+5.2, 10);
-  box(L+20, ry+2.2, fd.fog.goc); dTxt('GOC', L+25.5, ry+5.2, 10);
-  box(C1+4, ry+2.2, fd.fog.pet); dTxt('Pet', C1+9.5, ry+5.2);
-  box(C1+28, ry+2.2, fd.fog.smoke); dTxt('Smoke', C1+33.5, ry+5.2);
-  box(C1+58, ry+2.2, fd.fog.deodorizer); dTxt('Deodorizer', C1+63.5, ry+5.2);
-  amount(sec.fog, ry+5.6);
-
-  // 7. Treatments
-  ry = startRow(8);
-  svc('Treatments', ry+2.2, fd.treatments.sealant||fd.treatments.mold||fd.treatments.degreaser);
-  box(C1+4, ry+2.2, fd.treatments.sealant); dTxt('Sealant', C1+9.5, ry+5.2);
-  box(C1+34, ry+2.2, fd.treatments.mold); dTxt('Mold & Mildew', C1+39.5, ry+5.2);
-  box(C1+76, ry+2.2, fd.treatments.degreaser); dTxt('Degreaser', C1+81.5, ry+5.2);
-  amount(sec.treatments, ry+5.6);
-
-  // 8. Wet Vac / Flood
-  ry = startRow(11);
-  box(L+2, ry+3.6, fd.wetvac.wet_vac); dTxt('Wet Vac', L+7.5, ry+6.6, 10);
-  box(L+26, ry+3.6, fd.wetvac.flood); dTxt('Flood', L+31.5, ry+6.6, 10);
-  box(C1+12, ry+1, fd.wetvac.sewer, 3.2); dTxt('Sewer', C1+16.5, ry+3.6, 8);
-  box(C1+40, ry+1, fd.wetvac.fresh, 3.2); dTxt('Fresh Water', C1+44.5, ry+3.6, 8);
-  const wvAreas = [['ktc','Ktc'],['lr','Lr'],['dr','Dr'],['hall','Hall'],['brs',"Br's"],['all','All Unit']];
-  wvAreas.forEach(([k,lab],i)=>{
-    const x = C1 + 4 + i*17.5;
-    radio(x, ry+8.2, fd.wetvac.areas[k]);
-    dTxt(lab, x+2.6, ry+9.2, 8);
-  });
-  amount(sec.wetvac, ry+7);
-
-  // 9. Air Duct / Dryer Vent
-  ry = startRow(11);
-  box(L+2, ry+1.2, fd.airduct.air_duct, 3.2); dTxt('Air Duct Cleaning', L+6.5, ry+4, 9.4);
-  box(L+2, ry+6.4, fd.airduct.dryer_vent, 3.2); dTxt('Dryer Vent Cleaning', L+6.5, ry+9.2, 9.4);
-  doc.rect(C1+4, ry+2, 7, 6); if (fd.airduct.air_duct){ F('bold',10); txt(String(fd.airduct.bedrooms||1), C1+7.5, ry+6.4, {align:'center'}); }
-  dTxt('Bedrooms', C1+13, ry+6.4);
-  if (fd.airduct.note) { F('bolditalic',10); txt(fd.airduct.note, C1+34, ry+6.4); }
-  dTxt('Unit #', C2-38, ry+9.6, 8); dTxt('For', C2-20, ry+9.6, 8); doc.rect(C2-14, ry+5.8, 6, 5); dTxt('Days', C2-6.5, ry+9.6, 8);
-  amount(sec.airduct, ry+7);
-
-  // 10. Equipment Rental — строки по справочнику
-  const eqList = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0));
-  eqList.forEach((et, i)=>{
-    ry = startRow(8.4);
-    if (i === 0){ svc('Equipment Rental', ry+2.4, Object.values(fd.equipment).some(e=>+e.qty>0)); }
-    else { F('bold',9); txt('Unit #', L+23.5, ry+5.4, {align:'center'}); }
-    const e = fd.equipment[et.id] || {qty:0, days:0};
-    dTxt(et.name, C1+4, ry+5.4, 9.4);
-    dTxt('Qty', C1+42, ry+5.4, 8);
-    doc.rect(C1+49, ry+1.6, 7, 5.4); if (+e.qty>0){ F('bold',10); txt(String(e.qty), C1+52.5, ry+5.6, {align:'center'}); }
-    dTxt('For', C2-22, ry+5.4, 8);
-    doc.rect(C2-16, ry+1.6, 7, 5.4); if (+e.qty>0){ F('bold',10); txt(String(e.days||3), C2-12.5, ry+5.6, {align:'center'}); }
-    dTxt('Days', C2-7.5, ry+5.4, 8);
-    const lineSum = (+e.qty||0) * Math.max(1,+e.days||1) * eqDayPrice(et,p);
-    amount(lineSum, ry+5.6);
-  });
-
-  // 11. Pad Installation
-  ry = startRow(9);
-  svc('Pad Installation', ry+2.6, !!fd.pad.size || fd.pad.all_unit || fd.pad.rooms>0);
-  const sizes = [['q14','1/4'],['q12','1/2'],['q34','3/4'],['roll','1 Roll']];
-  sizes.forEach(([k,lab],i)=>{
-    const x = C1 + 6 + i*16;
-    radio(x, ry+4.4, fd.pad.size===k);
-    dTxt(lab, x+2.6, ry+5.4, 8.4);
-  });
-  doc.rect(C1+72, ry+1.6, 8, 6); if (fd.pad.rooms>0){ F('bold',10); txt(String(fd.pad.rooms), C1+76, ry+6.2, {align:'center'}); }
-  dTxt('Rooms', C1+82, ry+5.4);
-  radio(C1+100, ry+4.4, fd.pad.all_unit); dTxt('All', C1+103, ry+3.4, 7.4); dTxt('Unit', C1+103, ry+6.6, 7.4);
-  amount(sec.pad, ry+6);
-
-  // OTHER SERVICES: 3 строки; в 3-й — блок TOTAL
-  const others = fd.others || [];
-  ry = startRow(9.5);
-  F('bold',10.5); txt('OTHER SERVICES:', L+2, ry+6);
-  F('bolditalic',10.5); txt((others[0]?.desc)||'', L+42, ry+6);
-  line(L+40, ry+7.4, C2-1, ry+7.4);
-  amount(+others[0]?.amount||0, ry+6.4);
-  ry = startRow(9.5);
-  F('bolditalic',10.5); txt((others[1]?.desc)||'', L+3, ry+6);
-  line(L+2, ry+7.4, C2-1, ry+7.4);
-  amount(+others[1]?.amount||0, ry+6.4);
-  (fd.extra||[]).slice(0,6).forEach(it => {
-    ry = startRow(8);
-    F('bolditalic',10); txt(extraItemTextEn(it).slice(0,78), L+3, ry+5.4);
-    line(L+2, ry+6.6, C2-1, ry+6.6);
-    amount(extraLineTotal(it), ry+5.6);
-  });
-  ry = startRow(12);
-  F('bolditalic',10.5); txt((others[2]?.desc)||'', L+3, ry+6.4);
-  line(L+2, ry+8, 140, ry+8);
-  F('bold',13); txt('TOTAL DUE $', C2-2, ry+6.6, {align:'right'});
-  F('bold',7);  txt('NET DUE 30 DAYS', C2-2, ry+10, {align:'right'});
-  F('bold',14); txt(String(Math.round(grand*100)/100), R-3, ry+8, {align:'right'});
-
-  // сетка таблицы
-  const tableTop = rowTop[0][0];
-  const tableBot = y;
-  doc.setLineWidth(.4);
-  doc.rect(L, tableTop, W, tableBot - tableTop);
-  doc.setLineWidth(.25);
-  rowTop.forEach(([yy],i)=>{ if(i>0) line(L, yy, R, yy); });
-  line(C1, tableTop, C1, tableBot - 31);         // services|description (до OTHER SERVICES)
-  line(C2, tableTop, C2, tableBot);              // amount
-
-  /* ---- NOTES ---- */
-  if (j.note){
-    F('bold',8.5); txt('NOTES:', L, y+4.6);
-    F('bolditalic',8.5);
-    const nl = doc.splitTextToSize(j.note, R - L - 18).slice(0,2);
-    nl.forEach((s,i)=>txt(s, L+16, y+4.6+i*4));
-    y += 4 + nl.length*4;
-  }
-
-  /* ---- Условия и подписи ---- */
-  const terms = 'I AUTHORIZE ' + (org.company_name||'') + ' TO PERFORM THE WORK LISTED ABOVE. I AM SATISFIED WITH THE WORK AND AGREE WITH THE PRICE. PAYMENTS ARE DUE NET 30 DAYS FROM DATE OF SERVICE. LATE PAYMENTS ARE SUBJECT TO 1% MONTHLY CHARGE. ANY EQUIPMENT PLACED ON YOUR PROPERTY IS PROPERTY OF ' + (org.company_short||'') + '. CUSTOMER IS RESPONSIBLE FOR EQUIPMENT AND RESPONSIBILITY FOR THE REPLACEMENT VALUE OF THE EQUIPMENT LOST OR DAMAGED.';
-  F('bold',6.4);
-  const tl = doc.splitTextToSize(terms, 178);
-  tl.forEach((s,i)=>txt(s, 108, y+5+i*3, {align:'center'}));
-  let sy = y + 5 + tl.length*3 + 12;
-  F('bold',10);
-  txt('PRINT NAME', 118, sy); doc.setLineDashPattern([1.4,1],0); line(146, sy+1, R, sy+1);
-  sy += 12;
-  txt('SIGNATURE:', L, sy); line(L+27, sy+1, 118, sy+1); doc.setLineDashPattern([],0);
-
+  // v1.07.06: одиночный инвойс — тот же ВЕРТИКАЛЬНЫЙ бланк, по центру портретного Letter
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });          // 215.9 × 279.4
+  const left = (215.9 - INV_W) / 2, top = (279.4 - INV_H) / 2;
+  doc.setLineDashPattern([2,2],0); doc.setDrawColor(190);
+  doc.rect(left, top, INV_W, INV_H);                                 // контур половинки-бланка (линия отреза)
+  doc.setDrawColor(0); doc.setLineDashPattern([],0);
+  drawInvoiceVert(doc, j, left, top);
   const fname = 'Invoice_' + (cx.abbr||'UNIT') + '_' + (j.unit_number||'x') + '_' + j.date + '.pdf';
   doc.save(fname);
 }
@@ -3065,7 +2951,10 @@ const App = {
   noteModal, saveNote, auxToggle, sectionHelp: sectionHelpModal,
   crewAdd, crewAll, crewRemove, navToCx, copyText, copyCxAddr,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
-  setRole, staffVis, saveVis,
+  setRole, staffVis, saveVis, staffBlock, staffPassModal, staffSetPass,
+  staffAddModal, staffCreate, inviteSave, ownPassModal, ownPassSave,
+  priceMode(v){ state.priceMode = v; render(); },
+  priceCpSel(v){ state.priceCp = v; render(); },
   diag: showDiagnostics, copyDiag,
   faq: faqModal,
   translateEn: translateToEn,
@@ -3551,7 +3440,14 @@ function viewInvoicesReport(){
 /* =====================================================================
    ПАКЕТНЫЙ PDF: 2 инвойса на страницу Letter (по половине)
    ===================================================================== */
-function drawInvoiceHalf(doc, j, top){
+/* =====================================================================
+   v1.07.06: ВЕРТИКАЛЬНЫЙ бланк инвойса (как бумажная форма):
+   половина Letter в альбомной ориентации — 139.7 × 215.9 мм.
+   Используется и в одиночном PDF (по центру портретного листа),
+   и в пакетном отчёте (два бланка рядом, вертикальная линия отреза).
+   ===================================================================== */
+const INV_W = 139.7, INV_H = 215.9;
+function drawInvoiceVert(doc, j, left, top){
   const fd = Object.assign(emptyFormData(), j.form_data || {});
   const cp = cpById(j.counterparty_id) || {name:''};
   const cx = cxById(j.complex_id) || {name:'', address:''};
@@ -3560,201 +3456,217 @@ function drawInvoiceHalf(doc, j, top){
   const sec = calcSections(fd, p);
   const grand = (j.status==='approved' && j.approved_total != null) ? +j.approved_total : calcTotal(fd, p);
 
-  const L = 9, R = 207, W = R - L, C1 = L + 36, C2 = R - 19;
+  const L = left + 6, R = left + INV_W - 6, W = R - L;
+  const C1 = L + 27;              // SERVICES | DESCRIPTION
+  const C2 = R - 15;              // DESCRIPTION | AMOUNT
   const line = (a,b,c,d)=>doc.line(a,b,c,d);
   const F = (st,sz)=>{ doc.setFont('helvetica',st); doc.setFontSize(sz); };
   const txt = (s,x,y,o)=>doc.text(String(s??''),x,y,o);
-  const box = (x,y,on,s=2.7)=>{ doc.rect(x,y,s,s); if(on){ doc.setLineWidth(.45); line(x+.4,y+.4,x+s-.4,y+s-.4); line(x+s-.4,y+.4,x+.4,y+s-.4); doc.setLineWidth(.2);} };
+  const box = (x,y,on,sz=2.7)=>{ doc.rect(x,y,sz,sz); if(on){ doc.setLineWidth(.45); line(x+.4,y+.4,x+sz-.4,y+sz-.4); line(x+sz-.4,y+.4,x+.4,y+sz-.4); doc.setLineWidth(.2);} };
   const radio = (x,y,on)=>{ doc.circle(x,y,1.25); if(on) doc.circle(x,y,.65,'F'); };
-  const amt = (v,yy)=>{ if(v>0){ F('bold',7.6); txt(String(Math.round(v*100)/100), R-2, yy, {align:'right'}); } };
+  const amt = (v,yy)=>{ if(v>0){ F('bold',7.4); txt(String(Math.round(v*100)/100), R-1.5, yy, {align:'right'}); } };
 
   doc.setLineWidth(.2);
-  let y = top + 4;
+  let y = top + 6;
 
-  /* шапка */
+  /* ---- шапка ---- */
   doc.setFillColor(20,20,20);
-  doc.triangle(L+1, y+8.5, L+7.5, y+0.5, L+14, y+8.5, 'F');
+  doc.triangle(L+1, y+8, L+7, y+0.5, L+13, y+8, 'F');
   doc.setFillColor(255,255,255);
-  doc.triangle(L+5.4, y+8.5, L+7.5, y+5, L+9.6, y+8.5, 'F');
-  F('italic',5.2); txt(org.assoc_line||'', L, y+11.6);
-  F('bold',13); txt(org.invoice_title||'INVOICE #CC', (L+R)/2, y+5.5, {align:'center'});
-  F('bold',7); txt(org.header_city||'', (L+R)/2, y+10, {align:'center'});
-  F('bold',5.4);
-  txt(org.addr1||'', R-1, y+3, {align:'right'}); txt(org.addr2||'', R-1, y+6, {align:'right'}); txt(org.addr3||'', R-1, y+9, {align:'right'});
-  y += 14;
+  doc.triangle(L+5, y+8, L+7, y+4.7, L+9, y+8, 'F');
+  F('italic',4.9); txt(org.assoc_line||'', L, y+11.2);
+  F('bold',12); txt(org.invoice_title||'INVOICE #CC', L + W*0.55, y+4.6, {align:'center'});
+  F('bold',6.6); txt(org.header_city||'', L + W*0.55, y+9, {align:'center'});
+  F('bold',5);
+  txt(org.addr1||'', R-1, y+12.2, {align:'right'}); txt(org.addr2||'', R-1, y+15, {align:'right'}); txt(org.addr3||'', R-1, y+17.8, {align:'right'});
+  y += 20;
 
-  /* поля */
-  F('bold',7.4);
-  txt('Date:', L, y); F('bold',7.8); txt(fmtUS(j.date), L+9, y);
-  F('bold',7.4); txt('Unit #:', L+38, y); F('bold',7.8); txt(j.unit_number||'', L+49, y);
-  box(L+72, y-2.5, !!fd.vacant, 2.6); F('bold',7); txt('Vacant', L+75.6, y);
-  box(L+92, y-2.5, !!fd.occupied, 2.6); txt('Occupied', L+95.6, y);
-  F('bold',7); txt('Technician:', C2-42, y); F('bold',7.6); txt(techNamesFor(j).slice(0,26), C2-26, y);
+  /* ---- реквизиты ---- */
+  F('bold',7.2);
+  txt('Date:', L, y); F('bold',7.6); txt(fmtUS(j.date), L+9, y);
+  F('bold',7.2); txt('Unit #:', L+40, y); F('bold',7.6); txt(String(j.unit_number||''), L+51, y);
+  box(L+74, y-2.5, !!fd.vacant, 2.6); F('bold',6.8); txt('Vacant', L+77.6, y);
+  box(L+96, y-2.5, !!fd.occupied, 2.6); txt('Occupied', L+99.6, y);
+  y += 4.8;
+  F('bold',6.8); txt('Technician:', L, y);
+  F('bold',7.2); txt(techNamesFor(j).slice(0,44), L+16, y);
   y += 4.6;
-  F('bold',7); txt('Property/Customer:', L, y);
-  F('bold',7.4); txt((cp.name + ' — ' + cx.name).slice(0,58), L+27, y);
+  F('bold',6.8); txt('Property/Customer:', L, y);
+  F('bold',7); txt((cp.name + ' — ' + cx.name).slice(0,52), L+27, y);
   y += 4.4;
-  F('bold',7); txt('Address:', L, y);
-  F('bold',7.2); txt((cx.address||'').slice(0,70), L+13, y);
-  y += 3.4;
+  F('bold',6.8); txt('Address:', L, y);
+  F('bold',6.8); txt(String(cx.address||'').slice(0,60), L+12.5, y);
+  y += 3.2;
 
-  /* таблица */
+  /* ---- таблица ---- */
   const tTop = y;
   const rows = [];
   const row = (h)=>{ rows.push(y); const yy = y; y += h; return yy; };
 
-  let ry = row(4.4);
-  F('bold',7.2);
-  txt('SERVICES', L+18, ry+3.1, {align:'center'});
-  txt('DESCRIPTION', (C1+C2)/2, ry+3.1, {align:'center'});
-  txt('AMOUNT', (C2+R)/2, ry+3.1, {align:'center'});
+  let ry = row(4.6);
+  F('bold',7);
+  txt('SERVICES', (L+C1)/2, ry+3.2, {align:'center'});
+  txt('DESCRIPTION', (C1+C2)/2, ry+3.2, {align:'center'});
+  txt('AMOUNT', (C2+R)/2, ry+3.2, {align:'center'});
 
-  const svc = (label, yy, on)=>{ F('bold',6.8); box(L+1.5, yy+0.9, on, 2.7); txt(label, L+5.4, yy+3.1); };
-  const opt = (x, yy, on, label, fs=6.2)=>{ box(x, yy+0.9, on, 2.7); F('bold',fs); txt(label, x+3.5, yy+3.1); return x + 3.5 + doc.getTextWidth(label) + 3.2; };
+  const svc = (label, yy, on)=>{ F('bold',6.4); box(L+1.3, yy+0.9, on, 2.6); txt(label, L+4.8, yy+3.1); };
+  const opt = (x, yy, on, label, fs=6)=>{ box(x, yy+0.9, on, 2.6); F('bold',fs); txt(label, x+3.4, yy+3.1); return x + 3.4 + doc.getTextWidth(label) + 2.8; };
 
-  ry = row(4.8);
+  ry = row(5);
   svc('Steam Clean', ry, fd.steam.deep_scrub||fd.steam.rotovac);
   let x = opt(C1+2, ry, fd.steam.deep_scrub, 'Deep Scrub');
   x = opt(x, ry, fd.steam.rotovac, 'Rotovac');
-  if ((fd.steam.deep_scrub||fd.steam.rotovac) && fd.steam.rooms>1){ F('bold',6.2); txt('Rooms: '+fd.steam.rooms, x, ry+3.1); }
+  if ((fd.steam.deep_scrub||fd.steam.rotovac) && fd.steam.rooms>1){ F('bold',6); txt('Rooms: '+fd.steam.rooms, x, ry+3.1); }
   amt(sec.steam, ry+3.3);
 
-  ry = row(4.8);
+  ry = row(8.6);                              /* Removals — 6 опций в две строки */
   svc('Removals', ry, ['red_stain','wax','rust','ink','gum','paint'].some(k=>fd.removals[k]));
   x = C1+2;
-  [['red_stain','Red Stain'],['wax','Wax'],['rust','Rust'],['ink','Ink'],['gum','Gum'],['paint','Paint']].forEach(([k,l])=>{ x = opt(x, ry, fd.removals[k], l, 5.9); });
+  [['red_stain','Red Stain'],['wax','Wax'],['rust','Rust']].forEach(([k,l])=>{ x = opt(x, ry, fd.removals[k], l, 5.8); });
+  x = C1+2;
+  [['ink','Ink'],['gum','Gum'],['paint','Paint']].forEach(([k,l])=>{ x = opt(x, ry+3.9, fd.removals[k], l, 5.8); });
   amt(sec.removals, ry+3.3);
 
-  ry = row(4.8);
+  ry = row(5);
   svc('Repairs', ry, ['threshold','stretch','seam','patch'].some(k=>fd.repairs[k]));
   x = C1+2;
-  [['threshold','Threshold'],['stretch','Stretch'],['seam','Seam'],['patch','Patch']].forEach(([k,l])=>{ x = opt(x, ry, fd.repairs[k], l); });
+  [['threshold','Threshold'],['stretch','Stretch'],['seam','Seam'],['patch','Patch']].forEach(([k,l])=>{ x = opt(x, ry, fd.repairs[k], l, 5.8); });
   amt(sec.repairs, ry+3.3);
 
-  ry = row(4.8);
+  ry = row(5);
   svc('Dye', ry, fd.dye.spot||fd.dye.full);
   x = opt(C1+2, ry, fd.dye.spot, 'Spot Dye'); opt(x, ry, fd.dye.full, 'Full Dye');
   amt(sec.dye, ry+3.3);
 
-  ry = row(4.8);
+  ry = row(8.6);                              /* Other — две строки */
   svc('Other', ry, fd.other.trash_out||fd.other.pad_removal);
   x = opt(C1+2, ry, fd.other.trash_out, 'Trash Out');
-  x = opt(x, ry, fd.other.pad_removal, 'Pad Removal');
-  if (fd.other.pad_removal && !fd.other.all_unit){ F('bold',6.2); txt('Rooms: '+(fd.other.rooms||1), x, ry+3.1); x += 14; }
-  opt(x, ry, fd.other.all_unit, 'All Unit');
+  opt(x, ry, fd.other.pad_removal, 'Pad Removal');
+  x = C1+2;
+  if (fd.other.pad_removal && !fd.other.all_unit){ F('bold',6); txt('Rooms: '+(fd.other.rooms||1), x, ry+7); x += 15; }
+  opt(x, ry+3.9, fd.other.all_unit, 'All Unit');
   amt(sec.other, ry+3.3);
 
-  ry = row(4.8);
-  x = opt(L+1.5, ry, fd.fog.fog, 'Fog', 6.8); opt(x, ry, fd.fog.goc, 'GOC', 6.8);
+  ry = row(5);
+  x = opt(L+1.3, ry, fd.fog.fog, 'Fog', 6.4); opt(x, ry, fd.fog.goc, 'GOC', 6.4);
   x = opt(C1+2, ry, fd.fog.pet, 'Pet');
   x = opt(x, ry, fd.fog.smoke, 'Smoke');
   opt(x, ry, fd.fog.deodorizer, 'Deodorizer');
   amt(sec.fog, ry+3.3);
 
-  ry = row(4.8);
+  ry = row(8.6);                              /* Treatments — две строки */
   svc('Treatments', ry, fd.treatments.sealant||fd.treatments.mold||fd.treatments.degreaser);
   x = opt(C1+2, ry, fd.treatments.sealant, 'Sealant');
-  x = opt(x, ry, fd.treatments.mold, 'Mold & Mildew');
   opt(x, ry, fd.treatments.degreaser, 'Degreaser');
+  opt(C1+2, ry+3.9, fd.treatments.mold, 'Mold & Mildew');
   amt(sec.treatments, ry+3.3);
 
-  ry = row(7.8);
-  x = opt(L+1.5, ry, fd.wetvac.wet_vac, 'Wet Vac', 6.6); opt(x, ry, fd.wetvac.flood, 'Flood', 6.6);
+  ry = row(9.2);                              /* Wet Vac / Flood */
+  x = opt(L+1.3, ry, fd.wetvac.wet_vac, 'Wet Vac', 6.2); opt(x, ry, fd.wetvac.flood, 'Flood', 6.2);
   x = opt(C1+2, ry, fd.wetvac.sewer, 'Sewer');
   opt(x, ry, fd.wetvac.fresh, 'Fresh Water');
   x = C1+2;
   [['ktc','Ktc'],['lr','Lr'],['dr','Dr'],['hall','Hall'],['brs',"Br's"],['all','All Unit']].forEach(([k,l])=>{
-    radio(x+1.2, ry+5.8, fd.wetvac.areas[k]); F('bold',5.9); txt(l, x+3.2, ry+6.8); x += 3.2 + doc.getTextWidth(l) + 4.4;
+    radio(x+1.2, ry+6.4, fd.wetvac.areas[k]); F('bold',5.7); txt(l, x+3.1, ry+7.4); x += 3.1 + doc.getTextWidth(l) + 3.4;
   });
-  amt(sec.wetvac, ry+4.4);
+  amt(sec.wetvac, ry+4.6);
 
-  ry = row(7.2);
-  box(L+1.5, ry+0.7, fd.airduct.air_duct, 2.5); F('bold',6.2); txt('Air Duct Cleaning', L+4.8, ry+2.9);
-  box(L+1.5, ry+4.1, fd.airduct.dryer_vent, 2.5); txt('Dryer Vent Cleaning', L+4.8, ry+6.3);
-  F('bold',6.2); txt('Bedrooms:', C1+2, ry+3.1);
-  doc.rect(C1+15, ry+0.6, 5.5, 3.4); if (fd.airduct.air_duct){ F('bold',6.6); txt(String(fd.airduct.bedrooms||1), C1+17.7, ry+3.2, {align:'center'}); }
-  if (fd.airduct.note){ F('bolditalic',6.4); txt(String(fd.airduct.note).slice(0,52), C1+24, ry+3.1); }
+  ry = row(7.6);                              /* Air Duct / Dryer Vent */
+  box(L+1.3, ry+0.8, fd.airduct.air_duct, 2.5); F('bold',5.9); txt('Air Duct Cleaning', L+4.6, ry+3);
+  box(L+1.3, ry+4.3, fd.airduct.dryer_vent, 2.5); txt('Dryer Vent Cleaning', L+4.6, ry+6.5);
+  F('bold',6); txt('Bedrooms:', C1+2, ry+3.1);
+  doc.rect(C1+15, ry+0.6, 5.5, 3.4); if (fd.airduct.air_duct){ F('bold',6.4); txt(String(fd.airduct.bedrooms||1), C1+17.7, ry+3.2, {align:'center'}); }
+  if (fd.airduct.note){ F('bolditalic',5.9); txt(String(fd.airduct.note).slice(0,34), C1+2, ry+6.7); }
   amt(sec.airduct, ry+4);
 
   const eqList = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0)).slice(0,5);
   eqList.forEach((et, i)=>{
-    ry = row(4.5);
-    if (i===0) svc('Equipment Rental', ry, Object.values(fd.equipment).some(e=>+e.qty>0));
+    ry = row(4.7);
+    if (i===0) svc('Equipment', ry, Object.values(fd.equipment).some(e=>+e.qty>0));
+    if (i===1){ F('bold',6.4); txt('Rental', L+4.8, ry+3.1); }
     const e = fd.equipment[et.id] || {qty:0, days:0};
-    F('bold',6.4); txt(et.name, C1+2, ry+3.1);
-    F('bold',6); txt('Qty', C1+32, ry+3.1);
-    doc.rect(C1+38, ry+0.5, 5, 3.3); if (+e.qty>0){ F('bold',6.6); txt(String(e.qty), C1+40.5, ry+3.1, {align:'center'}); }
-    F('bold',6); txt('For', C2-19, ry+3.1);
-    doc.rect(C2-14, ry+0.5, 5, 3.3); if (+e.qty>0){ F('bold',6.6); txt(String(e.days||3), C2-11.5, ry+3.1, {align:'center'}); }
-    F('bold',6); txt('Days', C2-8, ry+3.1);
-    amt((+e.qty||0)*Math.max(1,+e.days||1)*eqDayPrice(et,p), ry+3.2);
+    F('bold',6.1); txt(String(et.name).slice(0,16), C1+2, ry+3.2);
+    F('bold',5.8); txt('Qty', C1+27, ry+3.2);
+    doc.rect(C1+32, ry+0.6, 5, 3.4); if (+e.qty>0){ F('bold',6.4); txt(String(e.qty), C1+34.5, ry+3.2, {align:'center'}); }
+    F('bold',5.8); txt('For', C2-16.5, ry+3.2);
+    doc.rect(C2-12, ry+0.6, 5, 3.4); if (+e.qty>0){ F('bold',6.4); txt(String(e.days||3), C2-9.5, ry+3.2, {align:'center'}); }
+    F('bold',5.8); txt('Days', C2-6, ry+3.2);
+    amt((+e.qty||0)*Math.max(1,+e.days||1)*eqDayPrice(et,p), ry+3.3);
   });
 
-  ry = row(5);
-  svc('Pad Installation', ry, !!fd.pad.size || fd.pad.all_unit || fd.pad.rooms>0);
+  ry = row(8.6);                              /* Pad Installation — две строки */
+  svc('Pad', ry, !!fd.pad.size || fd.pad.all_unit || fd.pad.rooms>0);
+  F('bold',6.4); txt('Installation', L+4.8, ry+6.6);
   x = C1+3;
   [['q14','1/4'],['q12','1/2'],['q34','3/4'],['roll','1 Roll']].forEach(([k,l])=>{
-    radio(x, ry+2.4, fd.pad.size===k); F('bold',6.2); txt(l, x+2, ry+3.3); x += 2 + doc.getTextWidth(l) + 4.6;
+    radio(x, ry+2.4, fd.pad.size===k); F('bold',6); txt(l, x+2, ry+3.3); x += 2 + doc.getTextWidth(l) + 3.6;
   });
-  F('bold',6.2); txt('Rooms:', x, ry+3.3);
-  doc.rect(x+9.5, ry+0.7, 5, 3.3); if (fd.pad.rooms>0){ F('bold',6.6); txt(String(fd.pad.rooms), x+12, ry+3.3, {align:'center'}); }
-  radio(x+18.5, ry+2.4, fd.pad.all_unit); txt('All Unit', x+20.5, ry+3.3);
+  x = C1+3;
+  F('bold',6); txt('Rooms:', x, ry+7.2);
+  doc.rect(x+9.5, ry+4.6, 5, 3.3); if (fd.pad.rooms>0){ F('bold',6.4); txt(String(fd.pad.rooms), x+12, ry+7.2, {align:'center'}); }
+  radio(x+19, ry+6.3, fd.pad.all_unit); txt('All Unit', x+21, ry+7.2);
   amt(sec.pad, ry+3.4);
 
+  /* OTHER SERVICES: строки переносим, ширина узкая */
   const oth = (fd.others||[]).filter(o => (o.desc && o.desc.trim()) || +o.amount > 0);
-  ry = row(4.6);
-  F('bold',6.8); txt('OTHER SERVICES:', L+1.5, ry+3.2);
-  if (oth[0]){ F('bolditalic',6.6); txt(String(oth[0].desc||'').slice(0,72), L+27, ry+3.2); amt(+oth[0].amount||0, ry+3.2); }
-  doc.setLineWidth(.15); line(L+26, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
+  ry = row(4.8);
+  F('bold',6.4); txt('OTHER SERVICES:', L+1.3, ry+3.2);
+  if (oth[0]){ F('bolditalic',6.2); txt(String(oth[0].desc||'').slice(0,46), L+26, ry+3.2); amt(+oth[0].amount||0, ry+3.2); }
+  doc.setLineWidth(.15); line(L+25, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
   const rest = oth.slice(1);
   const exList = (fd.extra||[]);
   if (rest.length || !exList.length){
-    ry = row(4.6);
+    ry = row(4.8);
     if (rest.length){
-      F('bolditalic',6.6);
-      txt(rest.map(o=>o.desc||'').join(' · ').slice(0,86), L+2, ry+3.2);
+      F('bolditalic',6.2);
+      txt(rest.map(o=>o.desc||'').join(' · ').slice(0,58), L+2, ry+3.2);
       amt(rest.reduce((s,o)=>s+(+o.amount||0),0), ry+3.2);
     }
-    doc.setLineWidth(.15); line(L+1.5, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
+    doc.setLineWidth(.15); line(L+1.3, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
   }
   if (exList.length){
     const head = exList[0];
-    ry = row(4.4);
-    F('bolditalic',6.4); txt(extraItemTextEn(head).slice(0,88), L+2, ry+3.1);
+    ry = row(4.6);
+    F('bolditalic',6.1); txt(extraItemTextEn(head).slice(0,60), L+2, ry+3.1);
     amt(extraLineTotal(head), ry+3.1);
     if (exList.length > 1){
-      ry = row(4.4);
+      ry = row(4.6);
       const tail = exList.slice(1);
-      F('bolditalic',6.2);
-      txt(tail.map(extraItemTextEn).join(' · ').slice(0,92), L+2, ry+3.1);
+      F('bolditalic',6);
+      txt(tail.map(extraItemTextEn).join(' · ').slice(0,62), L+2, ry+3.1);
       amt(tail.reduce((s,it)=>s+extraLineTotal(it),0), ry+3.1);
     }
   }
 
   if (j.note){
-    ry = row(4.6);
-    F('bold',6.6); txt('NOTES:', L+1.5, ry+3.2);
-    F('bolditalic',6.4); txt(String(j.note).replace(/\s+/g,' ').slice(0,100), L+12, ry+3.2);
+    const nl = doc.splitTextToSize(String(j.note).replace(/\s+/g,' '), W - 16).slice(0,2);
+    ry = row(2.2 + nl.length*2.8 + 1.6);
+    F('bold',6.2); txt('NOTES:', L+1.3, ry+3.1);
+    F('bolditalic',6);
+    nl.forEach((s2,i)=>txt(s2, L+11.5, ry+3.1+i*2.8));
   }
 
-  ry = row(6.6);
-  F('bold',8.6); txt('TOTAL DUE $', C2-2, ry+3.6, {align:'right'});
-  F('bold',4.6); txt('NET DUE 30 DAYS', C2-2, ry+5.9, {align:'right'});
-  F('bold',9.4); txt(String(Math.round(grand*100)/100), R-2, ry+4.4, {align:'right'});
+  ry = row(7);
+  F('bold',8.4); txt('TOTAL DUE $', C2-2, ry+3.8, {align:'right'});
+  F('bold',4.4); txt('NET DUE 30 DAYS', C2-2, ry+6.1, {align:'right'});
+  F('bold',9.2); txt(String(Math.round(grand*100)/100), R-1.5, ry+4.6, {align:'right'});
 
   const tBot = y;
   doc.setLineWidth(.35); doc.rect(L, tTop, W, tBot - tTop); doc.setLineWidth(.2);
   rows.forEach((yy,i)=>{ if (i>0) line(L, yy, R, yy); });
-  line(C1, tTop, C1, tBot - (j.note ? 15.8 : 11.2) - 4.6);
+  const c1Bot = rows[rows.length - (j.note ? 3 : 2)] ?? tBot;   /* колонка SERVICES не пересекает OTHER/NOTES/TOTAL */
+  line(C1, tTop, C1, c1Bot);
   line(C2, tTop, C2, tBot);
 
+  /* ---- условия и подписи ---- */
   const terms = 'I AUTHORIZE ' + (org.company_name||'') + ' TO PERFORM THE WORK LISTED ABOVE AND AGREE WITH THE PRICE. PAYMENTS ARE DUE NET 30 DAYS. EQUIPMENT PLACED ON THE PROPERTY REMAINS PROPERTY OF ' + (org.company_short||'') + '.';
-  F('bold',4.6);
-  doc.splitTextToSize(terms, 190).slice(0,2).forEach((s,i)=>txt(s, (L+R)/2, y+2.6+i*2.4, {align:'center'}));
-  y += 7.6;
+  F('bold',4.5);
+  doc.splitTextToSize(terms, W - 6).slice(0,3).forEach((s2,i)=>txt(s2, L + W/2, y+3+i*2.3, {align:'center'}));
+  y += 11;
   F('bold',6.6);
-  txt('PRINT NAME', L+2, y+2.2); doc.setLineDashPattern([1,0.8],0); line(L+18, y+2.8, L+88, y+2.8);
-  txt('SIGNATURE:', L+96, y+2.2); line(L+112, y+2.8, R-2, y+2.8); doc.setLineDashPattern([],0);
+  txt('PRINT NAME', L+2, y+2.2); doc.setLineDashPattern([1,0.8],0); line(L+18, y+2.8, R-2, y+2.8);
+  y += 6.4;
+  txt('SIGNATURE:', L+2, y+2.2); line(L+18, y+2.8, R-2, y+2.8); doc.setLineDashPattern([],0);
 }
 
 function batchPdf(){
@@ -3764,17 +3676,17 @@ function batchPdf(){
   const skipped = all.length - js.length;
   if (!js.length){ toast(t('rep_none') + (skipped?` · ⚠ ${skipped} ${t('batch_skipped')}`:''), 'err'); return; }
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'mm', format: 'letter' });
-  const HALF = 139.7;
+  // альбомный Letter: два ВЕРТИКАЛЬНЫХ бланка рядом, между ними линия отреза
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' }); // 279.4 × 215.9
   js.forEach((j, i) => {
     const pos = i % 2;
     if (i > 0 && pos === 0) doc.addPage();
     if (pos === 0){
       doc.setLineDashPattern([2,2],0); doc.setDrawColor(150);
-      doc.line(6, HALF, 210, HALF);
+      doc.line(INV_W, 5, INV_W, INV_H - 5);
       doc.setDrawColor(0); doc.setLineDashPattern([],0);
     }
-    drawInvoiceHalf(doc, j, pos * HALF);
+    drawInvoiceVert(doc, j, pos * INV_W, 0);
   });
   doc.save('Invoices_' + state.repFrom + '_' + state.repTo + '.pdf');
   toast('⬇ PDF: ' + js.length + (skipped?` · ⚠ ${skipped} ${t('batch_skipped')}`:''));
@@ -3785,23 +3697,160 @@ function batchPdf(){
    ===================================================================== */
 function dirStaff(){
   const list = [...state.data.profiles].sort((a,b)=>a.display_name.localeCompare(b.display_name));
-  return `<div class="card">` + list.map(u => `
-    <div class="rowline staff-row">
+  return `<div class="card">` + list.map(u => {
+    const me = u.id === state.user.id;
+    const reg = u.created_at ? fmtDMY(String(u.created_at).slice(0,10)) : '—';
+    return `
+    <div class="rowline staff-row ${u.blocked?'is-blocked':''}">
       <span class="avatar role-${u.role}">${esc(initials(u.display_name))}</span>
-      <div class="grow"><b>${esc(u.display_name)}</b><div class="tiny">@${esc(u.login)}</div></div>
+      <div class="grow">
+        <b>${esc(u.display_name)}</b>
+        <span class="chip ${u.blocked?'bad':'ok'} chip-st">${u.blocked?t('st_blocked'):t('st_active')}</span>
+        <div class="tiny">@${esc(u.login)} · ${t('registered')} ${reg}</div>
+      </div>
       <div class="staff-ctl">
-        <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${u.id===state.user.id?'disabled':''}>
+        <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${me?'disabled':''}>
           ${['tech','manager','admin'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
         </select>
         ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
+        ${me ? '' : `<button class="icon-btn key-btn" title="${t('set_pass')}" aria-label="${t('set_pass')}" onclick="App.staffPassModal('${u.id}')">${ic('key')}</button>
+        <button class="icon-btn ban-btn ${u.blocked?'off':''}" title="${u.blocked?t('unblock'):t('block')}" aria-label="${u.blocked?t('unblock'):t('block')}" onclick="App.staffBlock('${u.id}')">${ic('ban')}</button>`}
       </div>
-    </div>`).join('') + `</div>
+    </div>`; }).join('') + `</div>
+    <button class="btn btn-green" onclick="App.staffAddModal()">＋ ${t('add_staff')}</button>
     <div class="tiny">${t('vis_hint')}</div>`;
 }
 async function setRole(uid_, role){
   const u = state.data.profiles.find(p=>p.id===uid_); if (!u) return;
   await dbUpsert('profiles', { ...u, role });
   toast('✓ ' + t('saved')); render();
+}
+/* ---------- v1.07.06: блокировка сотрудника (красный перечёркнутый кружок) ---------- */
+function rpcFail(error, fn){
+  const s = errStr(error);
+  return /does not exist|schema cache|42883|404/i.test(s) ? t('rpc_missing') + ` (${fn})` : s;
+}
+async function staffBlock(uid_){
+  if (!isAdmin()) return;
+  const u = state.data.profiles.find(p=>p.id===uid_); if (!u) return;
+  if (u.id === state.user.id){ toast('⛔ ' + t('cant_self'), 'err'); return; }
+  const want = !u.blocked;
+  if (want && !confirm(t('block_confirm') + ' ' + u.display_name)) return;
+  if (HAS_SB){
+    // серверная часть: banned_until в auth + завершение сессий (RPC из schema.sql)
+    const { error } = await state.sb.rpc('admin_set_blocked', { target: uid_, p_blocked: want });
+    if (error){ dlog('⛔ admin_set_blocked:', error); toast('⚠ ' + rpcFail(error, 'admin_set_blocked'), 'err'); }
+  }
+  await dbUpsert('profiles', { ...u, blocked: want });   // флаг в profiles — приложение проверяет его при входе
+  navigator.vibrate?.(20);
+  toast(want ? '🚫 ' + t('blocked_done') : '✓ ' + t('unblocked_done'));
+  render();
+}
+/* ---------- v1.07.06: админ меняет пароль сотрудника ---------- */
+function staffPassModal(uid_){
+  const u = state.data.profiles.find(p=>p.id===uid_); if (!u) return;
+  openModal(`
+    ${modalHead(t('set_pass') + ' — ' + u.display_name, 'key')}
+    ${HAS_SB ? '' : `<div class="note-green" style="margin-bottom:10px">${t('demo_only_sb')}</div>`}
+    <div class="form-row"><span class="lbl">${t('new_pass')}</span>
+      <input id="sp-pass" type="text" autocomplete="new-password" placeholder="••••••"></div>
+    <button class="btn btn-green" onclick="App.staffSetPass('${u.id}')" ${HAS_SB?'':'disabled'}>${t('save')}</button>
+  `);
+  setTimeout(()=>$('#sp-pass')?.focus(), 50);
+}
+async function staffSetPass(uid_){
+  if (!isAdmin() || !HAS_SB) return;
+  const v = String($('#sp-pass').value || '');
+  if (v.length < 6){ toast('⛔ ' + t('pass_short'), 'err'); return; }
+  const { error } = await state.sb.rpc('admin_set_password', { target: uid_, new_password: v });
+  if (error){ dlog('⛔ admin_set_password:', error); toast('⛔ ' + rpcFail(error, 'admin_set_password'), 'err'); return; }
+  closeModal(); toast('✓ ' + t('pass_changed'));
+}
+/* ---------- v1.07.07: админ создаёт сотрудника (логин, пароль, имя, роль) ---------- */
+function staffAddModal(){
+  if (!isAdmin()) return;
+  openModal(`
+    ${modalHead(t('add_staff'), 'crew')}
+    <div class="form-row"><span class="lbl">${t('doc_name')}</span><input id="ns-name" autocomplete="off"></div>
+    <div class="form-row"><span class="lbl">${t('staff_login_lbl')}</span><input id="ns-login" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ivan.petrov"></div>
+    <div class="form-row"><span class="lbl">${t('new_pass')}</span><input id="ns-pass" type="text" autocomplete="new-password" placeholder="••••••" ${HAS_SB?'':'disabled'}></div>
+    ${HAS_SB ? '' : `<div class="tiny" style="margin:-4px 0 8px">${t('demo_only_sb')}</div>`}
+    <div class="form-row"><span class="lbl">${t('role_tech')} / ${t('role_manager')} / ${t('role_admin')}</span>
+      <select id="ns-role">
+        ${['tech','manager','admin'].map(r=>`<option value="${r}">${t('role_'+r)}</option>`).join('')}
+      </select></div>
+    <button class="btn btn-green" onclick="App.staffCreate()">${t('save')}</button>
+  `);
+  setTimeout(()=>$('#ns-name')?.focus(), 50);
+}
+async function staffCreate(){
+  if (!isAdmin()) return;
+  const name  = String($('#ns-name').value || '').trim();
+  const login = String($('#ns-login').value || '').trim().toLowerCase();
+  const pass  = String($('#ns-pass').value || '');
+  const role  = $('#ns-role').value;
+  if (!LOGIN_RE.test(login)){ toast('⛔ ' + t('login_hint'), 'err'); return; }
+  if (state.data.profiles.some(p => String(p.login).toLowerCase() === login)){ toast('⛔ ' + t('login_taken'), 'err'); return; }
+  if (HAS_SB){
+    if (pass.length < 6){ toast('⛔ ' + t('pass_short'), 'err'); return; }
+    const { data, error } = await state.sb.rpc('admin_create_user', {
+      p_login: login, p_email: loginToEmail(login), p_password: pass,
+      p_display_name: name || login, p_role: role
+    });
+    if (error){
+      dlog('⛔ admin_create_user:', error);
+      const s = errStr(error);
+      const msg = /LOGIN_TAKEN/.test(s) ? t('login_taken')
+        : /BAD_LOGIN/.test(s) ? t('login_hint')
+        : /WEAK_PASSWORD/.test(s) ? t('pass_short')
+        : /BAD_EMAIL/.test(s) ? t('bad_email_cfg')
+        : rpcFail(error, 'admin_create_user');
+      toast('⛔ ' + msg, 'err'); return;
+    }
+    // локальный кэш: строка profiles уже создана на сервере — добавляем зеркально
+    const row = { id: data, login, display_name: name || login, role, blocked: false, created_at: new Date().toISOString() };
+    const i = state.data.profiles.findIndex(p=>p.id===row.id);
+    if (i >= 0) state.data.profiles[i] = row; else state.data.profiles.push(row);
+    saveLocal();
+    closeModal(); toast('✓ ' + t('staff_created'));
+  } else {
+    await dbUpsert('profiles', { id: uid(), login, display_name: name || login, role, blocked: false, created_at: new Date().toISOString() });
+    closeModal(); toast('✓ ' + t('staff_created_demo'));
+  }
+  render();
+}
+/* ---------- v1.07.07: админ меняет код приглашения ---------- */
+async function inviteSave(){
+  if (!isAdmin()) return;
+  const v = String($('#inv-code')?.value || '').trim();
+  if (v.length < 2 || v.length > 64){ toast('⛔ ' + t('invite_short'), 'err'); return; }
+  if (!HAS_SB){ toast('ℹ ' + t('demo_only_sb'), 'inf'); return; }
+  const { error } = await state.sb.rpc('admin_set_invite', { new_code: v });
+  if (error){ dlog('⛔ admin_set_invite:', error); toast('⛔ ' + rpcFail(error, 'admin_set_invite'), 'err'); return; }
+  $('#inv-code').value = '';
+  toast('✓ ' + t('invite_saved'));
+}
+/* ---------- v1.07.07: смена собственного пароля в настройках ---------- */
+function ownPassModal(){
+  openModal(`
+    ${modalHead(t('my_pass_title'), 'key')}
+    ${HAS_SB ? '' : `<div class="note-green" style="margin-bottom:10px">${t('demo_only_sb')}</div>`}
+    <div class="form-row"><span class="lbl">${t('new_pass')}</span>
+      <input id="op-pass" type="password" autocomplete="new-password" placeholder="••••••"></div>
+    <div class="form-row"><span class="lbl">${t('pass_repeat')}</span>
+      <input id="op-pass2" type="password" autocomplete="new-password" placeholder="••••••"></div>
+    <button class="btn btn-green" onclick="App.ownPassSave()" ${HAS_SB?'':'disabled'}>${t('save')}</button>
+  `);
+  setTimeout(()=>$('#op-pass')?.focus(), 50);
+}
+async function ownPassSave(){
+  if (!HAS_SB) return;
+  const v1 = String($('#op-pass').value || ''), v2 = String($('#op-pass2').value || '');
+  if (v1.length < 6){ toast('⛔ ' + t('pass_short'), 'err'); return; }
+  if (v1 !== v2){ toast('⛔ ' + t('pass_mismatch'), 'err'); return; }
+  const { error } = await state.sb.auth.updateUser({ password: v1 });
+  if (error){ dlog('⛔ auth.updateUser:', error); toast('⛔ ' + errStr(error), 'err'); return; }
+  closeModal(); toast('✓ ' + t('own_pass_changed'));
 }
 function staffVis(managerId){
   const m = state.data.profiles.find(p=>p.id===managerId); if (!m) return;
@@ -4137,9 +4186,9 @@ function faqHtml(){
     <h4>${ic('book')} Directories</h4>
     <p><b>Counterparties</b> — apartment networks. <b>Complexes</b> — their properties: address, gate code, map coordinates. <b>Work types</b> — name, color and the extra gear it requires. <b>Equipment</b> — rental units (BLW, DHM, SCR, OZN) with a $/day price. <b>Extra gear</b> — what to bring along. <b>PRICE</b> — the standard price list. <b>Staff</b> (admin) — roles and per-manager visibility.</p>
     <h4>${ic('dollar')} Standard vs individual prices</h4>
-    <p>The <b>PRICE</b> tab is the default price list for everyone. To set special prices for a network: Directories → Counterparties → open one → <b>Prices</b> tab. Tick the checkbox next to a line to switch it to an <b>individual price</b> and type your value; untick — the standard price applies again. A new counterparty automatically receives a copy of the standard list.</p>
+    <p>Directories → <b>Prices</b> has two tabs. <b>Standard</b> — the default price list for everyone. <b>Individual</b> — pick a counterparty from the dropdown, tick the checkbox next to a line to switch it to an individual price and type your value; untick — the standard price applies again. The same prices are also editable inside the counterparty card. A new counterparty automatically receives a copy of the standard list.</p>
     <h4>${ic('archive')} Reports</h4>
-    <p>Per <b>unit</b>: open the job and press PDF. Per <b>period</b> (a day, a week, a month): bottom tab <b>Reports</b> → pick the dates → download a single PDF with all invoices, two per Letter page. Managers also get the <b>Pickups</b> report for any date.</p>
+    <p>Per <b>unit</b>: open the job and press PDF — a <b>vertical blank</b> (like the paper half-sheet) centered on a Letter page. Per <b>period</b>: bottom tab <b>Reports</b> → pick the dates → one PDF, landscape Letter with <b>two vertical blanks side by side</b> and a cut line between them. Managers also get the <b>Pickups</b> report for any date.</p>
     <h4>${ic('warn')} Priority & ordering</h4>
     <p>The queue number sits in the <b>top-left</b> corner of a card, the red <b>“!” triangle</b> — in the <b>top-right</b> (priority items float to the top; tapping the triangle toggles it). Reorder with the <b>▲▼</b> arrows on the left, or by gesture: <b>press & hold</b> a card for ~half a second and drag it up/down. The order is shared between jobs and pickups. The full address is shown on the card — the button next to it copies it, and the ${ic('key')}/${ic('callbox')} codes are copied with a tap.</p>
     <h4>${ic('key')} Access codes & requests</h4>
@@ -4147,16 +4196,32 @@ function faqHtml(){
     <h4>${ic('toolbox')} Note templates & purchases</h4>
     <p>In the Note block, <b>＋ Template</b> inserts items from the “Extra works” directory: a work flagged with a size shows an input in the right units (${ic('ruler')} “Sizes”: ft, sq ft, lb, pcs), while “${ic('cart')} Purchase” opens the “Products” list with quantity and a <b>price</b> that flows into the total and prints as its own PDF line. All three directories are admin-managed.</p>
     <h4>${ic('box')} Automatic pickups</h4>
-    <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. Everything can be shown on the <b>day map</b> with a Google Maps route.</p>`;
+    <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. Everything can be shown on the <b>day map</b> with a Google Maps route.</p>
+    <h4>${ic('eye')} Roles & access</h4>
+    <p><b>Tech</b> sees only their own jobs and pickups. <b>Manager</b> sees everyone (minus those hidden via ${ic('eye')} <b>Visibility</b>), has the Mine/All filter and the pickups report. <b>Admin</b> can do everything: approve, edit directories, manage <b>Staff</b> — roles, ${ic('ban')} <b>blocking</b> (a blocked employee can’t sign in; the red crossed circle toggles it), ${ic('key')} <b>password reset</b> for an employee who forgot theirs, plus code requests. The admin also <b>creates employees</b> right there: the “＋ Add employee” button — name, login, password and role; they can sign in immediately. The list shows each person’s status (Active/Blocked) and the date they joined the app.</p>
+    <h4>${ic('receipt')} Statuses & approval</h4>
+    <p>A job goes <b>Draft → Done → Approved</b>. Only an admin approves and may adjust the final amount. If a non-admin changes the price after approval, the approval is reset automatically. A yellow <b>“!”</b> means required fields are missing (complex, unit, at least one performer) — the PDF is blocked until they’re filled, and batch reports skip such jobs.</p>
+    <h4>${ic('calendar')} Week feed & day cards</h4>
+    <p>The 7-day strip shows colored dots per work type, a gray dot for pickups and a small “!” on dates with unfinished required fields; the <b>⌂ Today</b> button returns to today. Under the strip: day stats (jobs / pickups / to collect / overdue) and the <b>day map</b> button. On a card the queue number is top-left, the priority triangle top-right, the address is shown in full with a copy button, and access/callbox codes copy with a tap.</p>
+    <h4>${ic('refresh')} Sync, offline & updates</h4>
+    <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android, works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode.</p>
+    <h4>${ic('map')} Map</h4>
+    <p>The Map tab shows every complex as a dot colored by counterparty, with a filter and a popup (address, codes, Google Maps link). <b>Day mode</b> plots the selected date’s jobs (work-type colors) and pickups (gray, red when overdue) and builds a multi-stop <b>Google Maps route</b>. Coordinates are set in the complex card — “Find by address” or manually.</p>
+    <h4>${ic('chart')} Statistics</h4>
+    <p>The Stats tab: period chips (today/7/30 days or custom), Mine/All, big totals (jobs, revenue, approved, pickups) and a per-day bar chart.</p>
+    <h4>${ic('mic')} Notes, dictation & translation</h4>
+    <p>Every job and pickup has a note. The ${ic('mic')} microphone dictates in RU or EN (Chrome/Android), text is editable by hand, and the note prints on the PDF as the <b>NOTES</b> line. One tap translates a Russian note to English.</p>
+    <h4>${ic('wrench')} Account, settings & service</h4>
+    <p>Sign in with a login (Latin, 3–32 chars) and password; sign-up needs the <b>invite code</b> (set by the admin in Settings, default — APC). You change your own password under Settings → “Change password”; if you’re blocked or forgot it, the admin helps in Staff. Settings: UI language RU/EN (PDF is always EN), your display name, app install, event <b>log</b>, <b>diagnostics</b> (and DB diagnostics for admin). Android back button: closes a modal, saves and exits an open form, double-press exits the app.</p>`;
   return `
     <h4>${ic('compass')} Как всё устроено</h4>
     <p>Одна работа = один юнит в апарт-комплексе. Жмёте <b>＋</b>, выбираете дату → контрагента → комплекс → юнит → вид работы. Внутри работы отмечаете услуги галочками — цены подставляются сами, итог пересчитывается на лету. Отметили «выполнено» — админ может поставить апрув (с правкой итоговой суммы). Если после апрува не-админ меняет стоимость — апрув снимается. Кнопка <b>PDF</b> собирает инвойс, повторяющий бумажную форму.</p>
     <h4>${ic('book')} Какие есть справочники</h4>
     <p><b>Контрагенты</b> — сети апартаментов. <b>Комплексы</b> — их объекты: адрес, код доступа, координаты для карты. <b>Виды работ</b> — название, цвет и нужное доп. оборудование. <b>Оборудование</b> — то, что сдаётся в аренду (BLW, DHM, SCR, OZN) с ценой $/сутки. <b>Доп. оборудование</b> — что взять с собой на выезд. <b>PRICE</b> — стандартный прейскурант. <b>Сотрудники</b> (админ) — роли и видимость для менеджеров.</p>
     <h4>${ic('dollar')} Стандартные и индивидуальные цены</h4>
-    <p>Вкладка <b>PRICE</b> — базовый прейскурант, действует для всех. Чтобы задать особые цены сети апартаментов: Справочники → Контрагенты → откройте нужного → вкладка <b>Цены</b>. Чекбокс напротив позиции включает <b>индивидуальную цену</b> — вводите свою; сняли галочку — снова действует стандартная. Новому контрагенту прайс копируется автоматически.</p>
+    <p>Справочники → <b>Цены</b>: две вкладки. <b>Стандартные</b> — базовый прейскурант для всех. <b>Индивидуальные</b> — выбираете контрагента в выпадающем списке, чекбокс напротив позиции включает индивидуальную цену — вводите свою; сняли галочку — снова действует стандартная. Те же цены доступны и в карточке контрагента. Новому контрагенту прайс копируется автоматически.</p>
     <h4>${ic('archive')} Отчёты</h4>
-    <p>За <b>юнит</b>: откройте работу и нажмите PDF. За <b>период</b> (день, неделя, месяц): нижняя вкладка <b>Отчёты</b> → выбираете даты → скачиваете единый PDF со всеми инвойсами, по два на страницу Letter. Менеджеру доступен и отчёт по <b>пикапам</b> на любую дату.</p>
+    <p>За <b>юнит</b>: откройте работу и нажмите PDF — это <b>вертикальный бланк</b> (как бумажная половинка), по центру листа Letter. За <b>период</b>: нижняя вкладка <b>Отчёты</b> → выбираете даты → единый PDF: альбомный Letter, <b>два вертикальных бланка рядом</b> и линия отреза между ними. Менеджеру доступен и отчёт по <b>пикапам</b> на любую дату.</p>
     <h4>${ic('warn')} Приоритет и очерёдность</h4>
     <p>Номер очереди — в <b>левом верхнем</b> углу карточки, красный <b>треугольник «!»</b> приоритета — в <b>правом верхнем</b> (приоритетные всегда вверху списка, тап по треугольнику включает/выключает приоритет). Изменить порядок можно стрелками <b>▲▼</b> слева или жестом: <b>удерживайте карточку</b> ~полсекунды и тяните вверх/вниз. Порядок общий для работ и пикапов. Адрес на карточке показан целиком — кнопка рядом копирует его в буфер, коды ${ic('key')}/${ic('callbox')} копируются тапом.</p>
     <h4>${ic('key')} Коды доступа и заявки</h4>
@@ -4164,7 +4229,23 @@ function faqHtml(){
     <h4>${ic('toolbox')} Шаблоны заметки и покупки</h4>
     <p>В блоке «Заметка» кнопка <b>＋ Шаблон</b> подставляет позиции из справочника «Доп. работы»: у работы с флагом размера появляется поле в нужных единицах (${ic('ruler')} «Размеры»: футы, sq ft, паунды, штуки), а «${ic('cart')} Покупка товара» открывает выбор из справочника «Товары», количество и <b>цену</b> — она попадает в итог и печатается в PDF отдельной строкой. Все три справочника редактирует администратор.</p>
     <h4>${ic('box')} Пикапы формируются сами</h4>
-    <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. Всё это выводится на <b>карту дня</b> с маршрутом Google Maps.</p>`;
+    <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. Всё это выводится на <b>карту дня</b> с маршрутом Google Maps.</p>
+    <h4>${ic('eye')} Роли и доступ</h4>
+    <p><b>Сотрудник (tech)</b> видит только свои работы и пикапы. <b>Менеджер</b> — всех (кроме скрытых через ${ic('eye')} <b>Видимость</b>), у него есть фильтр «Мои/Все» и отчёт по пикапам. <b>Админ</b> может всё: апрув, справочники, управление <b>Сотрудниками</b> — роли, ${ic('ban')} <b>блокировка</b> (заблокированный не сможет войти; красный перечёркнутый кружок включает и снимает блокировку), ${ic('key')} <b>смена пароля</b> сотруднику, если тот его забыл, а также заявки на коды. Там же админ <b>создаёт сотрудников</b>: кнопка «＋ Добавить сотрудника» — имя, логин, пароль и роль, вход возможен сразу. В списке виден статус каждого (Активен/Заблокирован) и дата регистрации в приложении.</p>
+    <h4>${ic('receipt')} Статусы и апрув</h4>
+    <p>Работа проходит путь <b>Черновик → Выполнено → Апрув</b>. Апрув ставит только админ и может поправить итоговую сумму. Если после апрува не-админ меняет стоимость — апрув снимается автоматически. Жёлтый <b>«!»</b> — не заполнены обязательные поля (комплекс, юнит, хотя бы один исполнитель): PDF не сформируется, а в пакетном отчёте такая работа будет пропущена.</p>
+    <h4>${ic('calendar')} Лента недели и карточки дня</h4>
+    <p>Лента из 7 дней показывает цветные точки по видам работ, серую точку пикапов и маленький «!» на датах с незаполненными полями; кнопка <b>⌂ Сегодня</b> возвращает к текущему дню. Под лентой — счётчики дня (работ / пикапов / на вывоз / просрочено) и кнопка <b>карты дня</b>. На карточке: номер очереди слева-сверху, треугольник приоритета справа-сверху, адрес целиком с кнопкой копирования, коды доступа/callbox копируются тапом.</p>
+    <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
+    <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android, работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим.</p>
+    <h4>${ic('map')} Карта</h4>
+    <p>Вкладка «Карта» показывает все комплексы точками в цвет контрагента, с фильтром и попапом (адрес, коды, ссылка на Google Maps). <b>Режим дня</b> выводит работы выбранной даты (цвет вида работы) и пикапы (серые, красные при просрочке) и строит мультиточечный <b>маршрут Google Maps</b>. Координаты задаются в карточке комплекса — «Найти по адресу» или вручную.</p>
+    <h4>${ic('chart')} Статистика</h4>
+    <p>Вкладка «Статистика»: чипы периода (сегодня/7/30 дней или свой), «Мои/Все», крупные итоги (работы, выручка, апрувы, пикапы) и график по дням.</p>
+    <h4>${ic('mic')} Заметки, диктовка и перевод</h4>
+    <p>У каждой работы и пикапа есть заметка. Микрофон ${ic('mic')} диктует на RU или EN (Chrome/Android), текст правится руками и печатается в PDF строкой <b>NOTES</b>. Одним нажатием русскую заметку можно перевести на английский.</p>
+    <h4>${ic('wrench')} Аккаунт, настройки и сервис</h4>
+    <p>Вход — логин латиницей (3–32 символа) и пароль; для регистрации нужен <b>код приглашения</b> (задаёт админ в «Настройках», стандартный — APC). Свой пароль меняется в «Настройках» → «Смена пароля»; если вас заблокировали или пароль забыт — поможет админ во вкладке «Сотрудники». В «Настройках»: язык интерфейса RU/EN (PDF всегда на английском), ваше имя, установка приложения, <b>журнал</b> событий, <b>диагностика</b> (и БД-диагностика для админа). Кнопка «назад» на Android: закрывает модалку, сохраняет и закрывает открытую форму, двойное нажатие — выход из приложения.</p>`;
 }
 function faqModal(){
   openModal(`
