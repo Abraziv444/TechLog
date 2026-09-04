@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.06.05';
+const APP_VERSION = '1.07.00';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -56,7 +56,7 @@ const I18N = {
     date: 'Дата', counterparty: 'Контрагент', complex: 'Апарт-комплекс', unit: 'Юнит №',
     work_type: 'Вид работы', create: 'Создать', cancel: 'Отмена', save: 'Сохранить',
     delete: 'Удалить', edit: 'Изменить', close: 'Закрыть', back: 'Назад', add: 'Добавить',
-    tab_home: 'Главная', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Настройки', tab_faq: 'FAQ',
+    tab_home: 'Главная', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Настройки', tab_faq: 'FAQ', tab_stats: 'Статистика',
     mine: 'Мои', all: 'Все',
     status_draft: 'Черновик', status_done: 'Выполнено', status_approved: 'Апрув',
     job_done_chk: 'Работа выполнена',
@@ -166,6 +166,13 @@ const I18N = {
     no_templates: 'Справочник «Доп. работы» пуст — админ заполнит его в Справочниках',
     extra_section: 'Доп. работы и покупки',
     price_lbl: 'Цена', price_per_size: 'за 1 ед. размера', custom_size: 'свой размер',
+    stats_title: 'Статистика', period_all: 'Всё время',
+    st_done: 'Работ выполнено', st_total: 'создано', st_earned: 'Заработано',
+    st_approved_sum: 'из них апрувлено', st_avg: 'Средний чек',
+    st_miles: '≈ миль в пути', st_miles_hint: 'сумма прямых отрезков между объектами дня; реальный пробег больше',
+    st_picked: 'Пикапов собрано', st_ontime: 'вовремя', st_late: 'с опозданием',
+    st_visited: 'Объектов посещено', st_eq: 'Оборудования размещено', st_units: 'шт·разм.',
+    st_purchases: 'Покупок на', chart_earn: 'Заработок по дням',
     sync_partial: 'Синхронизация частичная — ошибки в таблицах', sync_dur: 'за',
     write_err: 'Ошибка записи', tables_failed: 'таблиц с ошибкой',
     week_days: ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'],
@@ -178,7 +185,7 @@ const I18N = {
     date: 'Date', counterparty: 'Counterparty', complex: 'Apartment complex', unit: 'Unit #',
     work_type: 'Work type', create: 'Create', cancel: 'Cancel', save: 'Save',
     delete: 'Delete', edit: 'Edit', close: 'Close', back: 'Back', add: 'Add',
-    tab_home: 'Home', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'Settings', tab_faq: 'FAQ',
+    tab_home: 'Home', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'Settings', tab_faq: 'FAQ', tab_stats: 'Stats',
     mine: 'Mine', all: 'All',
     status_draft: 'Draft', status_done: 'Done', status_approved: 'Approved',
     job_done_chk: 'Work completed',
@@ -288,6 +295,13 @@ const I18N = {
     no_templates: 'The "Extra works" directory is empty — an admin can fill it in Directories',
     extra_section: 'Extra works & purchases',
     price_lbl: 'Price', price_per_size: 'per 1 size unit', custom_size: 'custom size',
+    stats_title: 'Statistics', period_all: 'All time',
+    st_done: 'Jobs completed', st_total: 'created', st_earned: 'Earned',
+    st_approved_sum: 'approved of it', st_avg: 'Avg invoice',
+    st_miles: '≈ miles traveled', st_miles_hint: 'straight-line legs between the day\'s stops; real mileage is higher',
+    st_picked: 'Pickups collected', st_ontime: 'on time', st_late: 'late',
+    st_visited: 'Sites visited', st_eq: 'Equipment placed', st_units: 'pcs·plc.',
+    st_purchases: 'Purchases', chart_earn: 'Earnings by day',
     sync_partial: 'Partial sync — table errors', sync_dur: 'in',
     write_err: 'Write error', tables_failed: 'tables failed',
     week_days: ['MO','TU','WE','TH','FR','SA','SU'],
@@ -303,6 +317,7 @@ const state = {
   dirTab: 'counterparties',
   repTab: 'invoices',
   repFrom: null, repTo: null, repStatus: 'all', repCp: '',
+  statFrom: null, statTo: null, statMine: true,
   mapCp: '', mapDay: false, mapDate: null,
   dictLang: localStorage.getItem('techlog_dictlang') || 'ru-RU',
   jobId: null,
@@ -944,6 +959,7 @@ const ICONS = {
   report: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
   dirs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2z"/><path d="M11 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.4a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.4h4l.4-2.4a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.06-.4.1-.8.1-1.2z"/></svg>',
+  stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   q: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.2a2.7 2.7 0 1 1 3.7 2.5c-.8.35-1.1.9-1.1 1.8"/><path d="M12 17h.01"/></svg>',
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
   pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 14h8M8 17.5h5"/></svg>',
@@ -961,6 +977,7 @@ function render(){
   else if (state.screen === 'job') body = viewJob();
   else if (state.screen === 'map') body = viewMap();
   else if (state.screen === 'reports') body = viewReports();
+  else if (state.screen === 'stats') body = viewStats();
   else if (state.screen === 'dirs') body = viewDirs();
   else if (state.screen === 'settings') body = viewSettings();
   app.innerHTML = viewHeader() + body + viewTabbar();
@@ -1004,6 +1021,7 @@ function viewTabbar(){
     ['home', ICONS.home, t('tab_home')],
     ['map', ICONS.map, t('tab_map')],
     ['reports', ICONS.pdf, t('tab_reports')],
+    ['stats', ICONS.stats, t('tab_stats')],
     ['dirs', ICONS.dirs, t('tab_dirs')],
     ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
@@ -2535,6 +2553,9 @@ const App = {
   repFrom(v){ state.repFrom = v; render(); }, repTo(v){ state.repTo = v; render(); },
   repRange(f,to){ state.repFrom = f; state.repTo = to; render(); },
   repCp(v){ state.repCp = v; render(); }, repStatus(v){ state.repStatus = v; render(); },
+  statRange(f, to){ state.statFrom = f; state.statTo = to; render(); },
+  statFrom(v){ state.statFrom = v; render(); }, statTo(v){ state.statTo = v; render(); },
+  statMine(v){ state.statMine = v; render(); },
   batchPdf,
   mapSetCp(v){ state.mapCp = v; render(); },
   mapToggleDay(v){ state.mapDay = v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
@@ -4151,4 +4172,144 @@ function homeStatsHtml(){
     <div class="stat c-green"><div class="n">${due}</div><div class="l">${t('stats_due')}</div></div>
     <div class="stat c-red"><div class="n">${over}</div><div class="l">${t('stats_over')}</div></div>
   </div>`;
+}
+
+/* =====================================================================
+   v1.07: ЭКРАН СТАТИСТИКИ — работы, деньги, «мили», пикапы и прочее
+   ===================================================================== */
+function haversineMi(a, b){
+  const R = 3958.8; // радиус Земли в милях
+  const toR = d => d * Math.PI / 180;
+  const dLat = toR(b.lat - a.lat), dLng = toR(b.lng - a.lng);
+  const s = Math.sin(dLat/2)**2 + Math.cos(toR(a.lat)) * Math.cos(toR(b.lat)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+function statScopeJobs(){
+  let js = scopeFilter(state.data.jobs, 'technician_id');
+  if (state.statMine) js = js.filter(j => j.technician_id === state.user.id || (j.helper_ids||[]).includes(state.user.id));
+  return js;
+}
+function statScopePlacements(){
+  let ps = scopeFilter(state.data.placements, 'technician_id');
+  if (state.statMine) ps = ps.filter(p => p.technician_id === state.user.id);
+  return ps;
+}
+function inRange(iso, from, to){
+  if (!iso) return false;
+  const d = String(iso).slice(0,10);
+  return (!from || d >= from) && (!to || d <= to);
+}
+function tripPointsForDate(iso, jobsAll, plAll){
+  // порядок дня: приоритет → sort_order; координаты берём у комплексов
+  const ids = [];
+  jobsAll.filter(j => j.date === iso).forEach(j => { if (!ids.includes(j.id)) ids.push(j.id); });
+  plAll.filter(p => !p.picked_up ? p.due_date === iso : String(p.picked_up_at||'').slice(0,10) === iso)
+       .forEach(p => { if (!ids.includes(p.job_id)) ids.push(p.job_id); });
+  ids.sort((a,b) => jobSortCmp(
+    state.data.jobs.find(x=>x.id===a) || {sort_order:999},
+    state.data.jobs.find(x=>x.id===b) || {sort_order:999}));
+  const pts = [];
+  for (const jid of ids){
+    const j = state.data.jobs.find(x=>x.id===jid);
+    const cxId = j ? j.complex_id : (plAll.find(p=>p.job_id===jid)||{}).complex_id;
+    const cx = cxById(cxId);
+    if (cx && cx.lat != null && cx.lng != null){
+      const last = pts[pts.length-1];
+      if (!last || last.cx !== cx.id) pts.push({ cx: cx.id, lat:+cx.lat, lng:+cx.lng });
+    }
+  }
+  return pts;
+}
+function statData(){
+  const from = state.statFrom || '';
+  const to = state.statTo || todayISO();
+  const jobs = statScopeJobs().filter(j => inRange(j.date, from, to));
+  const done = jobs.filter(j => j.status !== 'draft');
+  const earned = done.reduce((s,j) => s + jobGrand(j), 0);
+  const approvedSum = jobs.filter(j => j.status === 'approved').reduce((s,j) => s + (+j.approved_total || +j.total || 0), 0);
+  const purchases = jobs.reduce((s,j) => s + ((j.form_data && j.form_data.extra) || [])
+    .filter(it => it.kind === 'purchase').reduce((a,it) => a + extraLineTotal(it), 0), 0);
+
+  const plAll = statScopePlacements();
+  const placed = plAll.filter(p => inRange(p.placed_date, from, to));
+  const eqUnits = placed.reduce((s,p) => s + (+p.qty || 0), 0);
+  const picked = plAll.filter(p => p.picked_up && inRange(String(p.picked_up_at||'').slice(0,10), from, to));
+  const onTime = picked.filter(p => String(p.picked_up_at).slice(0,10) <= p.due_date).length;
+
+  // дни с поездками: работы + пикапы (собранные считаем по дате сбора)
+  const daySet = new Set();
+  jobs.forEach(j => daySet.add(j.date));
+  plAll.forEach(p => {
+    if (p.picked_up){ const d = String(p.picked_up_at||'').slice(0,10); if (inRange(d, from, to)) daySet.add(d); }
+    else if (inRange(p.due_date, from, to)) daySet.add(p.due_date);
+  });
+  let miles = 0;
+  const visited = new Set();
+  for (const iso of daySet){
+    const pts = tripPointsForDate(iso, jobs, plAll);
+    pts.forEach(pt => visited.add(pt.cx));
+    for (let i = 1; i < pts.length; i++) miles += haversineMi(pts[i-1], pts[i]);
+  }
+  // заработок по дням для мини-графика (последние ≤14 дней с работами)
+  const byDay = {};
+  done.forEach(j => { byDay[j.date] = (byDay[j.date] || 0) + jobGrand(j); });
+  const chart = Object.entries(byDay).sort((a,b)=>a[0].localeCompare(b[0])).slice(-14);
+
+  return { from, to, jobsTotal: jobs.length, doneCnt: done.length, earned, approvedSum,
+           avg: done.length ? earned / done.length : 0, purchases,
+           miles, eqUnits, pickedCnt: picked.length, onTime, late: picked.length - onTime,
+           visited: visited.size, chart };
+}
+function viewStats(){
+  if (!state.statTo) state.statTo = todayISO();
+  const d = statData();
+  const today = todayISO();
+  const chips = [
+    ['7д', addDaysISO(today,-6), today],
+    ['30д', addDaysISO(today,-29), today],
+    ['90д', addDaysISO(today,-89), today],
+    [t('period_all'), '', today],
+  ].map(([l,f,to]) => `<button class="tabbtn ${state.statFrom===f&&state.statTo===to?'active':''}" onclick="App.statRange('${f}','${to}')">${l}</button>`).join('');
+  const maxBar = Math.max(1, ...d.chart.map(([,v])=>v));
+  const bars = d.chart.map(([iso,v]) => `
+    <div class="bar-col" title="${fmtDMY(iso)} · ${money(v)}">
+      <div class="bar" style="height:${Math.max(6, Math.round(v/maxBar*100))}%"></div>
+      <div class="bar-l">${iso.slice(8,10)}</div>
+    </div>`).join('');
+  return `
+  <div class="section-title">${ICONS.stats} ${t('stats_title')}</div>
+  <div class="card">
+    <div class="tabs">${chips}</div>
+    <div class="grid-2">
+      <div class="form-row"><span class="lbl">${t('from')}</span>
+        <input type="date" value="${state.statFrom||''}" onchange="App.statFrom(this.value)"></div>
+      <div class="form-row"><span class="lbl">${t('to')}</span>
+        <input type="date" value="${state.statTo}" onchange="App.statTo(this.value)"></div>
+    </div>
+    ${isManager() ? `<div class="tabs">
+      <button class="tabbtn ${state.statMine?'active':''}" onclick="App.statMine(true)">${t('mine')}</button>
+      <button class="tabbtn ${!state.statMine?'active':''}" onclick="App.statMine(false)">${t('all')}</button>
+    </div>` : ''}
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-lg c-green"><div class="n">${money(d.earned)}</div><div class="l">💰 ${t('st_earned')}</div>
+      <div class="s">${t('st_approved_sum')}: ${money(d.approvedSum)}</div></div>
+    <div class="stat-lg c-blue"><div class="n">${d.doneCnt}</div><div class="l">✅ ${t('st_done')}</div>
+      <div class="s">${t('st_total')}: ${d.jobsTotal} · ${t('st_avg')}: ${money(d.avg)}</div></div>
+    <div class="stat-lg c-purple"><div class="n">${d.miles.toFixed(1)}</div><div class="l">🚗 ${t('st_miles')}</div>
+      <div class="s">${t('st_miles_hint')}</div></div>
+    <div class="stat-lg c-gray"><div class="n">${d.pickedCnt}</div><div class="l">📦 ${t('st_picked')}</div>
+      <div class="s">✓ ${t('st_ontime')}: ${d.onTime} · ⏰ ${t('st_late')}: ${d.late}</div></div>
+    <div class="stat-lg c-teal"><div class="n">${d.visited}</div><div class="l">🏢 ${t('st_visited')}</div>
+      <div class="s">🧰 ${t('st_eq')}: ${d.eqUnits} ${t('st_units')}</div></div>
+    <div class="stat-lg c-yellow"><div class="n">${money(d.purchases)}</div><div class="l">🛒 ${t('st_purchases')}</div>
+      <div class="s">&nbsp;</div></div>
+  </div>
+
+  ${d.chart.length ? `
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:8px">📈 ${t('chart_earn')}</div>
+    <div class="bar-chart">${bars}</div>
+  </div>` : ''}`;
 }

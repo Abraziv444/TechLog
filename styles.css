@@ -616,3 +616,29 @@ span.pri{display:grid;place-items:center;width:26px;height:24px}
   .eq-line .stepper .val{min-width:22px}
   .eq-line .eq-sum{min-width:36px;font-size:.78rem}
 }
+
+/* ============ v1.07: статистика ============ */
+.section-title svg{width:20px;height:20px;vertical-align:-4px;color:var(--blue)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:10px;margin-bottom:12px}
+.stat-lg{
+  background:var(--panel);border:2px solid var(--line);border-radius:16px;
+  padding:12px 12px 10px;
+}
+.stat-lg .n{font-size:1.45rem;font-weight:900;line-height:1.1}
+.stat-lg .l{font-size:.74rem;font-weight:900;margin-top:2px}
+.stat-lg .s{font-size:.64rem;color:var(--dim);margin-top:4px;line-height:1.35}
+.stat-lg.c-green .n{color:var(--green)} .stat-lg.c-green{border-color:var(--green)}
+.stat-lg.c-blue .n{color:var(--blue)}
+.stat-lg.c-purple .n{color:var(--purple)}
+.stat-lg.c-teal .n{color:var(--teal)}
+.stat-lg.c-yellow .n{color:var(--yellow)}
+.stat-lg.c-gray .n{color:var(--dim)}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:110px;padding-top:6px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;min-width:0}
+.bar{width:100%;max-width:26px;background:linear-gradient(180deg,var(--green),var(--green-dk));border-radius:6px 6px 3px 3px;box-shadow:0 2px 0 #0007}
+.bar-l{font-size:.56rem;color:var(--dim-2);font-weight:800}
+
+/* нижняя панель из 7 вкладок */
+.tab span{font-size:.5rem}
+@media (max-width:400px){ .tab{padding:6px 0} .tab svg{width:18px;height:18px} }
+@media (max-width:358px){ .tab span{display:none} .tab{padding:9px 0} .tab svg{width:21px;height:21px} }
