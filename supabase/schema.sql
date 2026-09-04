@@ -177,6 +177,7 @@ create table if not exists public.extra_works (
   kind text not null default 'work' check (kind in ('work','purchase')),
   needs_size boolean not null default false,
   size_type_id uuid references public.size_types(id) on delete set null,
+  price numeric not null default 0,
   sort int not null default 0
 );
 
@@ -481,10 +482,10 @@ insert into public.size_types (id, name, unit, sort) values
 on conflict (id) do nothing;
 
 -- доп. виды работ (шаблоны заметки)
-insert into public.extra_works (id, name, kind, needs_size, size_type_id, sort) values
- ('c2000000-0000-4000-8000-000000000001','Вырезка стен / Wall cutout','work',true,'c1000000-0000-4000-8000-000000000002',1),
- ('c2000000-0000-4000-8000-000000000002','Вырезка потолка / Ceiling cutout','work',true,'c1000000-0000-4000-8000-000000000002',2),
- ('c2000000-0000-4000-8000-000000000003','Покупка товара / Purchase','purchase',false,null,3)
+insert into public.extra_works (id, name, kind, needs_size, size_type_id, price, sort) values
+ ('c2000000-0000-4000-8000-000000000001','Вырезка стен / Wall cutout','work',true,'c1000000-0000-4000-8000-000000000002',3,1),
+ ('c2000000-0000-4000-8000-000000000002','Вырезка потолка / Ceiling cutout','work',true,'c1000000-0000-4000-8000-000000000002',4,2),
+ ('c2000000-0000-4000-8000-000000000003','Покупка товара / Purchase','purchase',false,null,0,3)
 on conflict (id) do nothing;
 
 -- виды товара
@@ -570,6 +571,7 @@ alter table public.jobs      add column if not exists priority boolean not null 
 alter table public.jobs      add column if not exists sort_order int not null default 0;
 alter table public.complexes add column if not exists callbox_code text default '';
 alter table public.complexes add column if not exists callbox_gate boolean not null default false;
+alter table public.extra_works add column if not exists price numeric not null default 0;
 
 -- =====================================================================
 -- ПОСЛЕ СОЗДАНИЯ ПОЛЬЗОВАТЕЛЕЙ назначьте роли (пример):

@@ -571,3 +571,18 @@ span.pri{display:grid;place-items:center;width:26px;height:24px}
 /* нижняя панель из 6 вкладок */
 .tab span{font-size:.56rem}
 @media (max-width:400px){ .tab span{font-size:.5rem} .tab svg{width:19px;height:19px} }
+
+/* ============ v1.06.04: кнопки инвойса и размеры-пресеты ============ */
+.back-top{
+  display:inline-flex;align-items:center;gap:6px;margin-bottom:10px;
+  background:var(--panel);border:2px solid var(--line);color:var(--dim);
+  border-radius:999px;padding:7px 14px;font:inherit;font-weight:900;font-size:.78rem;cursor:pointer;
+}
+.back-top:active{transform:translateY(1px)}
+.btn-row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.btn-row3 .btn{font-size:.76rem;padding:12px 4px;letter-spacing:.2px}
+.chip-preset{
+  border:2px solid var(--line);background:var(--panel);color:var(--dim);
+  border-radius:999px;padding:6px 12px;font:inherit;font-weight:900;font-size:.76rem;cursor:pointer;
+}
+.chip-preset.on{border-color:var(--green);color:var(--green);background:rgba(88,204,2,.08)}

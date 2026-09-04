@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.06.03';
+const APP_VERSION = '1.06.04';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -55,7 +55,7 @@ const I18N = {
     add_task: 'Добавить задание', no_items: 'На этот день пусто', tap_add: 'Нажмите «Добавить задание»',
     date: 'Дата', counterparty: 'Контрагент', complex: 'Апарт-комплекс', unit: 'Юнит №',
     work_type: 'Вид работы', create: 'Создать', cancel: 'Отмена', save: 'Сохранить',
-    delete: 'Удалить', edit: 'Изменить', close: 'Закрыть', add: 'Добавить',
+    delete: 'Удалить', edit: 'Изменить', close: 'Закрыть', back: 'Назад', add: 'Добавить',
     tab_home: 'Главная', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Настройки', tab_faq: 'FAQ',
     mine: 'Мои', all: 'Все',
     status_draft: 'Черновик', status_done: 'Выполнено', status_approved: 'Апрув',
@@ -165,6 +165,7 @@ const I18N = {
     product: 'Товар', qty: 'Кол-во', default_price: 'Цена по умолч.',
     no_templates: 'Справочник «Доп. работы» пуст — админ заполнит его в Справочниках',
     extra_section: 'Доп. работы и покупки',
+    price_lbl: 'Цена', price_per_size: 'за 1 ед. размера', custom_size: 'свой размер',
     sync_partial: 'Синхронизация частичная — ошибки в таблицах', sync_dur: 'за',
     write_err: 'Ошибка записи', tables_failed: 'таблиц с ошибкой',
     week_days: ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'],
@@ -176,7 +177,7 @@ const I18N = {
     add_task: 'Add task', no_items: 'Nothing for this day', tap_add: 'Tap "Add task"',
     date: 'Date', counterparty: 'Counterparty', complex: 'Apartment complex', unit: 'Unit #',
     work_type: 'Work type', create: 'Create', cancel: 'Cancel', save: 'Save',
-    delete: 'Delete', edit: 'Edit', close: 'Close', add: 'Add',
+    delete: 'Delete', edit: 'Edit', close: 'Close', back: 'Back', add: 'Add',
     tab_home: 'Home', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'Settings', tab_faq: 'FAQ',
     mine: 'Mine', all: 'All',
     status_draft: 'Draft', status_done: 'Done', status_approved: 'Approved',
@@ -286,6 +287,7 @@ const I18N = {
     product: 'Product', qty: 'Qty', default_price: 'Default price',
     no_templates: 'The "Extra works" directory is empty — an admin can fill it in Directories',
     extra_section: 'Extra works & purchases',
+    price_lbl: 'Price', price_per_size: 'per 1 size unit', custom_size: 'custom size',
     sync_partial: 'Partial sync — table errors', sync_dur: 'in',
     write_err: 'Write error', tables_failed: 'tables failed',
     week_days: ['MO','TU','WE','TH','FR','SA','SU'],
@@ -439,9 +441,9 @@ function seedCatalogs(){
     { id:'sz4', name:'Количество / Quantity', unit:'pcs', sort:4 },
   ];
   const extra_works = [
-    { id:'ew1', name:'Вырезка стен / Wall cutout', kind:'work', needs_size:true, size_type_id:'sz2', sort:1 },
-    { id:'ew2', name:'Вырезка потолка / Ceiling cutout', kind:'work', needs_size:true, size_type_id:'sz2', sort:2 },
-    { id:'ew3', name:'Покупка товара / Purchase', kind:'purchase', needs_size:false, size_type_id:null, sort:3 },
+    { id:'ew1', name:'Вырезка стен / Wall cutout', kind:'work', needs_size:true, size_type_id:'sz2', price:3, sort:1 },
+    { id:'ew2', name:'Вырезка потолка / Ceiling cutout', kind:'work', needs_size:true, size_type_id:'sz2', price:4, sort:2 },
+    { id:'ew3', name:'Покупка товара / Purchase', kind:'purchase', needs_size:false, size_type_id:null, price:0, sort:3 },
   ];
   const product_types = [
     { id:'pt1', name:'Решётка / Vent grille', default_price:25, sort:1 },
@@ -735,7 +737,7 @@ function calcSections(fd, p, data){
   s.pad = (fd.pad.size ? p(padMap[fd.pad.size]) : 0)
         + (fd.pad.all_unit ? p('pad_install_all') : (+fd.pad.rooms > 0 ? (+fd.pad.rooms) * p('pad_install_room') : 0));
   s.others = fd.others.reduce((a,o)=>a + (+o.amount || 0), 0);
-  s.extra = (fd.extra||[]).reduce((a,it)=> a + (it.kind==='purchase' ? (Math.max(1, parseInt(it.qty)||1) * (parseFloat(it.price)||0)) : 0), 0);
+  s.extra = (fd.extra||[]).reduce((a,it)=> a + extraLineTotal(it), 0);
   return s;
 }
 function calcTotal(fd, p, data){
@@ -1378,6 +1380,7 @@ function viewJob(){
   }).join('');
 
   return `
+  <button class="back-top" onclick="App.go('home')">← ${t('back')}</button>
   <div class="card" style="border-left:6px solid ${wt.color}">
     <div style="display:flex;gap:10px;align-items:center">
       <div class="abbr" style="border-color:${wt.color}">${esc(cx.abbr||'—')}</div>
@@ -1529,12 +1532,14 @@ function viewJob(){
 
   <div class="total-bar"><span>${t('total')}</span><span class="sum" id="jb-total">${money(total)}</span></div>
 
-  <div class="grid-2">
-    <button class="btn btn-ghost" onclick="App.go('home')">← ${t('close')}</button>
-    <button class="btn btn-green" onclick="App.saveJob()">${t('save')}</button>
+  <button class="btn btn-green" onclick="App.saveJob()">💾 ${t('save')}</button>
+  <div class="btn-row3">
+    <button class="btn btn-blue" onclick="App.makePdf()">⬇ ${t('pdf')}</button>
+    <button class="btn btn-ghost" onclick="App.go('home')">← ${t('back')}</button>
+    ${(isAdmin() || j.technician_id===state.user.id)
+      ? `<button class="btn btn-red" onclick="App.deleteJob()">🗑 ${t('delete')}</button>`
+      : `<span></span>`}
   </div>
-  <button class="btn btn-blue" style="margin-top:8px" onclick="App.makePdf()">⬇ ${t('pdf')}</button>
-  ${(isAdmin() || j.technician_id===state.user.id) ? `<button class="btn btn-red" style="margin-top:8px" onclick="App.deleteJob()">🗑 ${t('delete')}</button>` : ''}
   `;
 }
 function amtWrap(id, v){ return `<span class="amt" data-amt="${id}">${v>0?money(v):'—'}</span>`; }
@@ -1569,7 +1574,6 @@ function bindJobForm(){
     else if (el.id === 'jb-note'){ jobDraft.note = el.value; }
     else if (el.matches('[data-oth-d]')){ fd().others[+el.dataset.othD].desc = el.value; }
     else if (el.matches('[data-oth-a]')){ fd().others[+el.dataset.othA].amount = parseFloat(el.value)||0; recalcJob(); }
-    else if (el.matches('[data-ex-size]')){ fd().extra[+el.dataset.exSize].size_value = el.value.trim(); }
     else if (el.matches('[data-ex-qty]')){ const it=fd().extra[+el.dataset.exQty]; it.qty = Math.max(1, parseInt(el.value)||1); recalcJob(); }
     else if (el.matches('[data-ex-price]')){ const it=fd().extra[+el.dataset.exPrice]; it.price = parseFloat(el.value)||0; recalcJob(); }
     else if (el.matches('[data-ex-prod]')){
@@ -1612,6 +1616,15 @@ function bindJobForm(){
     else if (id === 'other-rooms') fd().other.rooms = v;
     else if (id === 'ad-bedrooms') fd().airduct.bedrooms = v;
     else if (id === 'pad-rooms') fd().pad.rooms = v;
+    else if (id.startsWith('exa-') || id.startsWith('exb-')){
+      const idx = +id.slice(4);
+      const it = fd().extra[idx]; if (!it) return;
+      if (id.startsWith('exa-')) it.size_a = v; else it.size_b = v;
+      it.size_value = exSizeVal(it);
+      const szEl = document.querySelector('[data-exsz="'+idx+'"]'); if (szEl) szEl.textContent = it.size_value;
+      recalcJob(); autosaveDraft();
+      return;
+    }
     else if (id.startsWith('eq-q-') || id.startsWith('eq-d-')){
       const etId = id.slice(5);
       const cur = fd().equipment[etId] || { qty:0, days:3 };
@@ -2540,6 +2553,11 @@ const App = {
   togglePriority, moveJob,
   codeHistory: codeHistoryModal, proposeCode: proposeCodeModal, pcGate, submitCode,
   extraPicker: extraPickerModal, exAdd, exDel,
+  exPreset(i, n){
+    const it = jobDraft && jobDraft.form_data.extra[i]; if (!it) return;
+    it.size_a = n; it.size_b = n; it.size_value = exSizeVal(it);
+    refreshExtraList();
+  },
   editEwModal, saveEw, editSzModal, saveSz, editPtModal, savePt,
   decideReq: decideCodeReq,
   dbDiag: showDbDiagnostics,
@@ -3898,18 +3916,37 @@ function extraItemTextEn(it){
     const q = Math.max(1, parseInt(it.qty)||1);
     return enName(it.product_name || it.name) + (q > 1 ? ' x' + q : '');
   }
-  const sz = it.size_value ? ' — ' + it.size_value + ' ' + (it.size_unit||'') : '';
+  let sz = '';
+  if (it.needs_size){
+    const a = Math.max(1, parseInt(it.size_a)||0), b = Math.max(1, parseInt(it.size_b)||0);
+    const v = exSizeVal(it);
+    sz = ' — ' + ((it.size_a && b > 1) ? a + 'x' + b + ' = ' : '') + v + ' ' + (it.size_unit||'');
+  }
   return enName(it.name) + sz;
 }
+function exSizeVal(it){
+  if (!it.needs_size) return 1;
+  if (it.size_a || it.size_b){
+    return Math.max(1, parseInt(it.size_a)||1) * Math.max(1, parseInt(it.size_b)||1);
+  }
+  return parseFloat(it.size_value) || 1; // совместимость со старыми записями
+}
 function extraLineTotal(it){
-  return it.kind === 'purchase' ? Math.max(1, parseInt(it.qty)||1) * (parseFloat(it.price)||0) : 0;
+  if (it.kind === 'purchase') return Math.max(1, parseInt(it.qty)||1) * (parseFloat(it.price)||0);
+  const rate = parseFloat(it.price)||0;
+  return it.needs_size ? exSizeVal(it) * rate : rate;
 }
 function extraItemText(it){
   if (it.kind === 'purchase'){
     const q = Math.max(1, parseInt(it.qty)||1);
     return (it.product_name || it.name) + (q > 1 ? ' ×' + q : '');
   }
-  const sz = it.size_value ? ' — ' + it.size_value + ' ' + (it.size_unit||'') : '';
+  let sz = '';
+  if (it.needs_size){
+    const a = Math.max(1, parseInt(it.size_a)||0), b = Math.max(1, parseInt(it.size_b)||0);
+    const v = exSizeVal(it);
+    sz = ' — ' + ((it.size_a && b > 1) ? a + '×' + b + ' = ' : '') + v + ' ' + (it.size_unit||'');
+  }
   return it.name + sz;
 }
 
@@ -3934,14 +3971,26 @@ function extraListHtml(){
         </div>
       </div>`;
     }
+    const lineSum = extraLineTotal(it);
     return `<div class="ex-item">
       <div class="ex-head"><b>🧰 ${esc(it.name)}</b>
         <button class="ex-del" onclick="App.exDel(${i})">✕</button></div>
-      ${it.needs_size ? `<div class="qty-line">
-        <span class="tiny">${esc(it.size_name||t('size_type'))}:</span>
-        <input data-ex-size="${i}" inputmode="decimal" value="${esc(it.size_value||'')}" style="width:90px;text-align:right">
-        <span class="tiny"><b>${esc(it.size_unit||'')}</b></span>
+      ${it.needs_size ? `
+      <div class="qty-line size-presets">
+        ${[1,2,3].map(n=>`<button type="button" class="chip-preset ${(+it.size_a===n && +it.size_b===n)?'on':''}" onclick="App.exPreset(${i},${n})">${n}×${n}</button>`).join('')}
+        <span class="tiny">· ${t('custom_size')} ↓</span>
+      </div>
+      <div class="qty-line">
+        ${stepperHtml('exa-'+i, Math.max(1, parseInt(it.size_a)||1))}
+        <span class="tiny">×</span>
+        ${stepperHtml('exb-'+i, Math.max(1, parseInt(it.size_b)||1))}
+        <span class="tiny">= <b data-exsz="${i}">${exSizeVal(it)}</b> ${esc(it.size_unit||'')}</span>
       </div>` : ''}
+      <div class="qty-line">
+        <span class="tiny">${t('price_lbl')}${it.needs_size ? ' <b>' + t('price_per_size') + '</b>' : ''}:</span>
+        <input data-ex-price="${i}" class="price-input" inputmode="decimal" value="${it.price||''}" placeholder="$">
+        <span class="money" data-exline="${i}" style="margin-left:auto;min-width:52px;text-align:right">${lineSum>0?money(lineSum):'—'}</span>
+      </div>
     </div>`;
   }).join('');
 }
@@ -3971,8 +4020,10 @@ function exAdd(ewId){
   const it = {
     id: uid(), ew_id: w.id, name: w.name, kind: w.kind,
     needs_size: !!w.needs_size,
-    size_name: sz ? sz.name : '', size_unit: sz ? sz.unit : '', size_value: '',
-    product_id: null, product_name: '', qty: 1, price: 0
+    size_name: sz ? sz.name : '', size_unit: sz ? sz.unit : '',
+    size_a: 1, size_b: 1, size_value: 1,
+    product_id: null, product_name: '', qty: 1,
+    price: +w.price || 0
   };
   jobDraft.form_data.extra = jobDraft.form_data.extra || [];
   jobDraft.form_data.extra.push(it);
@@ -4017,7 +4068,7 @@ function dirExtraWorks(){
     const sz = szById(w.size_type_id);
     return `<div class="rowline">
       <div class="grow">${w.kind==='purchase'?'🛒':'🧰'} <b>${esc(w.name)}</b>
-        <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : t('kind_work')}${w.needs_size && sz ? ' · 📏 ' + esc(sz.name) + ' (' + esc(sz.unit) + ')' : ''}</div></div>
+        <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : t('kind_work')}${w.needs_size && sz ? ' · 📏 ' + esc(sz.name) + ' (' + esc(sz.unit) + ')' : ''}${+w.price ? ' · 💲 ' + money(+w.price) + (w.needs_size ? '/' + esc((sz||{}).unit||'ед.') : '') : ''}</div></div>
       <button class="btn btn-ghost sm" onclick="App.editEwModal('${w.id}')">${t('edit')}</button>
     </div>`;
   }).join('') || `<div class="tiny">—</div>`) + `</div>
@@ -4035,6 +4086,8 @@ function editEwModal(id){
         <button class="tabbtn ${w.kind==='purchase'?'active':''}" data-kind="purchase" onclick="(this.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')), this.classList.add('active'), document.getElementById('ew-kind').value='purchase')">🛒 ${t('kind_purchase')}</button>
       </div>
       <input type="hidden" id="ew-kind" value="${w.kind}"></div>
+    <div class="form-row"><span class="lbl">${t('price_lbl')} <span class="tiny">(${t('price_per_size')} — если включён размер)</span></span>
+      <input id="ew-price" class="price-input" inputmode="decimal" value="${w.price||''}" style="width:120px"></div>
     <label class="opt ${w.needs_size?'on':''}" style="margin-bottom:8px"><input type="checkbox" id="ew-size" ${w.needs_size?'checked':''} onchange="this.closest('.opt').classList.toggle('on', this.checked)"> 📏 ${t('needs_size')}</label>
     <div class="form-row"><span class="lbl">${t('size_type')}</span>
       <select id="ew-szt">
@@ -4052,6 +4105,7 @@ async function saveEw(id, sort){
     kind: $('#ew-kind').value === 'purchase' ? 'purchase' : 'work',
     needs_size: $('#ew-size').checked,
     size_type_id: $('#ew-szt').value || null,
+    price: parseFloat($('#ew-price').value) || 0,
     sort
   });
   closeModal(); toast('✓ ' + t('saved')); render();
