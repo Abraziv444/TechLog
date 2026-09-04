@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.10';
+const APP_VERSION = '1.07.11';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -102,7 +102,7 @@ const I18N = {
     confirm_del: 'Удалить безвозвратно?',
     days: 'дн.', qty: 'Кол-во', for_days: 'Дней',
     tech: 'Техник', no_access: 'Нет доступа', stats_jobs: 'работ', stats_pk: 'пикапов',
-    stats_due: 'на вывоз', stats_over: 'просрочено',
+    stats_due: 'на вывоз', stats_over: 'просрочено', day_empty: 'на этот день нет',
     sync_err: 'Ошибка синхронизации', offline_note: 'Оффлайн: показаны сохранённые данные',
     not_selected: 'Не выбрано', aux_take_hint: 'нажмите то, что нужно взять',
     back_exit_hint: 'Чтобы выйти из приложения, нажмите «назад» ещё раз', help_title: 'Справка',
@@ -266,7 +266,7 @@ const I18N = {
     confirm_del: 'Delete permanently?',
     days: 'd.', qty: 'Qty', for_days: 'Days',
     tech: 'Technician', no_access: 'No access', stats_jobs: 'jobs', stats_pk: 'pickups',
-    stats_due: 'to pick up', stats_over: 'overdue',
+    stats_due: 'to pick up', stats_over: 'overdue', day_empty: 'none for this day',
     sync_err: 'Sync error', offline_note: 'Offline: showing cached data',
     not_selected: 'Not selected', aux_take_hint: 'tap what you need to take',
     back_exit_hint: 'Press back again to exit the app', help_title: 'Help',
@@ -4315,7 +4315,11 @@ function faqHtml(){
     <h4>${ic('receipt')} Statuses & approval</h4>
     <p>A job goes <b>Draft → Done → Approved</b>. Only an admin approves and may adjust the final amount. If a non-admin changes the price after approval, the approval is reset automatically. A yellow <b>“!”</b> means required fields are missing (complex, unit, at least one performer) — the PDF is blocked until they’re filled, and batch reports skip such jobs.</p>
     <h4>${ic('calendar')} Week feed & day cards</h4>
-    <p>The 7-day strip shows colored dots per work type, a gray dot for pickups and a small “!” on dates with unfinished required fields; today’s cell is outlined in green and labeled “today”; the <b>⌂ Today</b> button returns to it from any week. Under the strip: day stats (jobs / pickups / to collect / overdue) and the <b>day map</b> button. On a card the queue number is top-left, the priority triangle top-right, the address is shown in full with a copy button, and access/callbox codes copy with a tap.</p>
+    <p>The 7-day strip shows colored dots per work type, a gray dot for pickups and a small “!” on dates with unfinished required fields; today’s cell is outlined in green and labeled “today”; the <b>⌂ Today</b> button returns to it from any week. Under the strip: the <b>day cards</b> (jobs by work type and pickups by equipment — see the next section) and the <b>day map</b> button. On a card the queue number is top-left, the priority triangle top-right, the address is shown in full with a copy button, and access/callbox codes copy with a tap.</p>
+    <h4>${ic('chart')} Day cards under the strip</h4>
+    <p>Two cards summarize the <b>day selected in the strip</b> (today by default). Left — <b>jobs</b>: the big number is the day’s total, below it a breakdown by work type, each labeled in its own color. Right — <b>pickups</b>: the big number is how many equipment units must be collected that day; each icon is an equipment type (its abbreviation inside the circle: BLW — blower, DHM — dehumidifier, SCR — air scrubber, OZN — ozone machine), the number under the icon — how many units. A red “overdue” chip appears when something should have been collected earlier and still wasn’t. A sample day:</p>
+    <div class="faq-example">${faqDayCardsExample()}</div>
+    <p>Reading the sample: <b>7 jobs</b> are planned — Steam Clean 4, Air Duct 2, Vetvag 1. <b>8 equipment units</b> to collect — 5 blowers (BLW), 2 dehumidifiers (DHM) and 1 air scrubber (SCR) — and one pickup is already overdue. The numbers come from the same lists shown below on the screen: flip the strip to another day and the cards recalculate; for managers they respect the Mine/All filter.</p>
     <h4>${ic('refresh')} Sync, offline & updates</h4>
     <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android, works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode.</p>
     <h4>${ic('map')} Map</h4>
@@ -4348,7 +4352,11 @@ function faqHtml(){
     <h4>${ic('receipt')} Статусы и апрув</h4>
     <p>Работа проходит путь <b>Черновик → Выполнено → Апрув</b>. Апрув ставит только админ и может поправить итоговую сумму. Если после апрува не-админ меняет стоимость — апрув снимается автоматически. Жёлтый <b>«!»</b> — не заполнены обязательные поля (комплекс, юнит, хотя бы один исполнитель): PDF не сформируется, а в пакетном отчёте такая работа будет пропущена.</p>
     <h4>${ic('calendar')} Лента недели и карточки дня</h4>
-    <p>Лента из 7 дней показывает цветные точки по видам работ, серую точку пикапов и маленький «!» на датах с незаполненными полями; сегодняшний день подсвечен зелёной рамкой и подписан «сегодня», кнопка <b>⌂ Сегодня</b> возвращает к нему из любой недели. Под лентой — счётчики дня (работ / пикапов / на вывоз / просрочено) и кнопка <b>карты дня</b>. На карточке: номер очереди слева-сверху, треугольник приоритета справа-сверху, адрес целиком с кнопкой копирования, коды доступа/callbox копируются тапом.</p>
+    <p>Лента из 7 дней показывает цветные точки по видам работ, серую точку пикапов и маленький «!» на датах с незаполненными полями; сегодняшний день подсвечен зелёной рамкой и подписан «сегодня», кнопка <b>⌂ Сегодня</b> возвращает к нему из любой недели. Под лентой — <b>карточки дня</b> (работы по видам и пикапы по оборудованию — подробно в следующем разделе) и кнопка <b>карты дня</b>. На карточке: номер очереди слева-сверху, треугольник приоритета справа-сверху, адрес целиком с кнопкой копирования, коды доступа/callbox копируются тапом.</p>
+    <h4>${ic('chart')} Карточки дня под лентой</h4>
+    <p>Две карточки — сводка по <b>выбранному в ленте дню</b> (при открытии приложения это сегодня). Слева — <b>работы</b>: большая цифра — сколько всего работ на день, под ней разбивка по видам, каждый вид подписан своим цветом. Справа — <b>пикапы</b>: большая цифра — сколько единиц оборудования нужно забрать в этот день; каждая иконка — тип оборудования (внутри кружка его сокращение: BLW — блоуэр, DHM — осушитель, SCR — скруббер, OZN — озонатор), под иконкой — количество единиц. Красная плашка «просрочено» появляется, если что-то должны были забрать раньше, но ещё не забрали. Вот пример одного дня:</p>
+    <div class="faq-example">${faqDayCardsExample()}</div>
+    <p>Читаем пример: на день запланировано <b>7 работ</b> — Steam Clean 4, Air Duct 2, Vetvag 1. Забрать нужно <b>8 единиц оборудования</b> — 5 блоуэров (BLW), 2 осушителя (DHM) и 1 скруббер (SCR), при этом один пикап уже просрочен. Цифры считаются по тем же спискам, что показаны ниже на экране: листаете ленту на другой день — карточки пересчитываются, а у менеджера они подчиняются фильтру «Мои/Все».</p>
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
     <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android, работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим.</p>
     <h4>${ic('map')} Карта</h4>
@@ -5100,17 +5108,62 @@ async function savePt(id, sort){
 }
 
 /* Статистика на главной (перенесена из настроек) */
-function homeStatsHtml(){
-  const u = state.user;
-  const myJobs = state.data.jobs.filter(j=>j.technician_id===u.id || (j.helper_ids||[]).includes(u.id)).length;
-  const myPk = state.data.placements.filter(p=>p.technician_id===u.id).length;
-  const { due, over } = myDueCount();
-  return `<div class="stats">
-    <div class="stat c-blue"><div class="n">${myJobs}</div><div class="l">${t('stats_jobs')}</div></div>
-    <div class="stat c-gray"><div class="n">${myPk}</div><div class="l">${t('stats_pk')}</div></div>
-    <div class="stat c-green"><div class="n">${due}</div><div class="l">${t('stats_due')}</div></div>
-    <div class="stat c-red"><div class="n">${over}</div><div class="l">${t('stats_over')}</div></div>
+/* v1.07.11: карточки выбранного дня — работы по видам и пикапы по оборудованию.
+   Общий рендер используется и на главной, и в примере внутри FAQ. */
+function dayStatsCardsHtml(jobsByWt, eqByType, over){
+  const totalJobs = jobsByWt.reduce((s, x) => s + x.count, 0);
+  const totalPk = eqByType.reduce((s, x) => s + x.count, 0);
+  const wtLines = jobsByWt.map(x => `
+      <span class="wt-line"><i class="wt-dot" style="background:${x.color}"></i><span class="wt-nm" style="color:${x.color}" title="${esc(x.name)}">${esc(x.name)}</span><b>${x.count}</b></span>`).join('');
+  const eqBadges = eqByType.map(x => `
+      <span class="eq-badge" title="${esc(x.name)}">
+        <span class="icon-circle" style="background:${x.color};color:${textColorFor(x.color)}">${esc(x.abbr)}</span>
+        <b>${x.count}</b>
+      </span>`).join('');
+  return `<div class="stats-day">
+    <div class="dcard c-blue">
+      <div class="dcard-head"><span class="n">${totalJobs}</span><span class="l">${t('stats_jobs')}</span></div>
+      ${jobsByWt.length ? `<div class="wt-lines">${wtLines}</div>` : `<div class="tiny dim-empty">${t('day_empty')}</div>`}
+    </div>
+    <div class="dcard c-gray">
+      <div class="dcard-head"><span class="n">${totalPk}</span><span class="l">${t('stats_pk')}</span>${over > 0 ? `<span class="chip bad sm-chip">${t('stats_over')}: ${over}</span>` : ''}</div>
+      ${eqByType.length ? `<div class="eq-badges">${eqBadges}</div>` : `<div class="tiny dim-empty">${t('day_empty')}</div>`}
+    </div>
   </div>`;
+}
+
+function homeStatsHtml(){
+  const iso = state.selDate || todayISO();
+  const today = todayISO();
+  // Работы выбранного дня, сгруппированные по видам (те же, что в списке ниже)
+  const byWt = {};
+  jobsOn(iso).forEach(j => { byWt[j.work_type_id] = (byWt[j.work_type_id] || 0) + 1; });
+  const jobsByWt = Object.entries(byWt)
+    .map(([id, count]) => { const wt = wtById(id) || { name: '?', color: '#8B9AA3' }; return { name: wt.name, color: wt.color, count }; })
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  // Пикапы, которые нужно забрать в этот день (для «сегодня» — включая просроченные)
+  const rows = visiblePlacements().filter(p => !p.picked_up && (p.due_date === iso || (iso === today && p.due_date < today)));
+  const byEq = {}; let over = 0;
+  rows.forEach(p => {
+    byEq[p.equipment_type_id] = (byEq[p.equipment_type_id] || 0) + (+p.qty || 1);
+    if (p.due_date < iso) over++;
+  });
+  const eqByType = Object.entries(byEq)
+    .map(([id, count]) => { const et = state.data.equipment_types.find(e => e.id === id) || { abbr: '?', color: '#8B9AA3', name: '?' }; return { abbr: et.abbr, color: et.color, name: et.name, count }; })
+    .sort((a, b) => b.count - a.count || String(a.abbr).localeCompare(String(b.abbr)));
+  return dayStatsCardsHtml(jobsByWt, eqByType, over);
+}
+
+/* Пример дня для FAQ: Steam Clean 4 · Air Duct 2 · Vetvag 1; BLW 5, DHM 2, SCR 1, 1 просрочен */
+function faqDayCardsExample(){
+  return dayStatsCardsHtml(
+    [ { name: 'STEAM CLEAN', color: '#FF9600', count: 4 },
+      { name: 'AIR DUCT', color: '#FF4B4B', count: 2 },
+      { name: 'VETVAG (water extraction)', color: '#58CC02', count: 1 } ],
+    [ { abbr: 'BLW', color: '#58CC02', name: 'Blower', count: 5 },
+      { abbr: 'DHM', color: '#1CB0F6', name: 'Dehumidifier', count: 2 },
+      { abbr: 'SCR', color: '#FF4B4B', name: 'Air Scrubber', count: 1 } ],
+    1);
 }
 
 /* =====================================================================

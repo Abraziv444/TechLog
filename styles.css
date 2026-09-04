@@ -184,6 +184,27 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .stat.c-red{border-color:var(--red)} .stat.c-red .n{color:var(--red)}
 .stat.c-gray .n{color:var(--text)}
 
+/* v1.07.11: карточки дня — работы по видам и пикапы по оборудованию */
+.stats-day{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.dcard{border:2px solid var(--line);border-radius:14px;padding:8px 10px;background:var(--panel);min-width:0}
+.dcard.c-blue{border-color:var(--blue)} .dcard.c-blue .n{color:var(--blue)}
+.dcard.c-gray .n{color:var(--text)}
+.dcard-head{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.dcard-head .n{font-weight:900;font-size:1.25rem}
+.dcard-head .l{font-size:.62rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.dcard-head .sm-chip{margin-left:auto;padding:1px 8px;font-size:.62rem}
+.wt-lines{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.wt-line{display:flex;align-items:center;gap:6px;font-size:.72rem;font-weight:800;min-width:0}
+.wt-line .wt-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.wt-line b{color:var(--text)}
+.wt-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.eq-badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.eq-badge{display:flex;flex-direction:column;align-items:center;gap:2px}
+.eq-badge b{font-size:.78rem}
+.dim-empty{margin-top:6px}
+.faq-example{border:2px dashed var(--line);border-radius:14px;padding:8px 10px;margin:6px 0 10px}
+.faq-example .stats-day{margin:4px 0}
+
 /* ---------- Баннер пикапов ---------- */
 .banner{
   border:2px solid var(--green);border-radius:var(--r);
