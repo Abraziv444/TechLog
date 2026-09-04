@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.06.04';
+const APP_VERSION = '1.06.05';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -1368,14 +1368,17 @@ function viewJob(){
   const eqRows = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0)).map(et => {
     const e = fd.equipment[et.id] || { qty:0, days:3 };
     const line = (+e.qty||0) * Math.max(1,+e.days||1) * eqDayPrice(et,p);
-    return `<div class="qty-line">
-      <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>
-      <span class="name">${esc(et.name)} <span class="tiny">${money(eqDayPrice(et,p))}/${t('days')}</span></span>
+    return `<div class="qty-line eq-line">
+      <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}" title="${esc(et.name)}">${esc(et.abbr)}</span>
+      <span class="eq-name" title="${esc(et.name)} · ${money(eqDayPrice(et,p))}/${t('days')}">
+        <b class="nm">${esc(et.name)}</b>
+        <span class="pr">${money(eqDayPrice(et,p))}/${t('days')}</span>
+      </span>
       ${stepperHtml('eq-q-'+et.id, e.qty||0)}
-      <span class="tiny">×</span>
+      <span class="tiny eq-x">×</span>
       ${stepperHtml('eq-d-'+et.id, e.days||3)}
-      <span class="tiny">${t('days')}</span>
-      <span class="money" data-eqline="${et.id}" style="min-width:52px;text-align:right">${line>0?money(line):'—'}</span>
+      <span class="tiny eq-dlbl">${t('days')}</span>
+      <span class="money eq-sum" data-eqline="${et.id}">${line>0?money(line):'—'}</span>
     </div>`;
   }).join('');
 

@@ -331,6 +331,25 @@ create table if not exists public.placements (
 create index if not exists placements_due_idx on public.placements(due_date, picked_up);
 create index if not exists placements_tech_idx on public.placements(technician_id);
 
+-- =====================================================================
+-- МИГРАЦИЯ (если схема уже создавалась раньше) — ВЫПОЛНЯЕТСЯ ДО СИДОВ,
+-- чтобы insert-ы ниже видели новые колонки. Безопасно повторять.
+-- =====================================================================
+-- Смена организации по умолчанию AGR → APC (только если стоят старые значения)
+update public.org_settings
+   set company_name = 'APC, LLC', company_short = 'APC'
+ where id = 'org' and company_short in ('AGR, LLC', 'AGR');
+alter table public.complexes add column if not exists lat double precision;
+alter table public.complexes add column if not exists lng double precision;
+alter table public.jobs      add column if not exists note text not null default '';
+alter table public.jobs      add column if not exists helper_ids jsonb not null default '[]'::jsonb;
+alter table public.jobs      add column if not exists priority boolean not null default false;
+alter table public.jobs      add column if not exists sort_order int not null default 0;
+alter table public.complexes add column if not exists callbox_code text default '';
+alter table public.complexes add column if not exists callbox_gate boolean not null default false;
+alter table public.extra_works add column if not exists price numeric not null default 0;
+
+
 -- ---------------------------------------------------------------------
 -- RLS
 -- ---------------------------------------------------------------------
@@ -555,23 +574,6 @@ insert into public.counterparty_prices (counterparty_id, key, custom, price)
 select c.id, p.key, false, p.price
 from public.counterparties c cross join public.price_list p
 on conflict (counterparty_id, key) do nothing;
-
--- =====================================================================
--- МИГРАЦИЯ С v1.01 (если схема уже была создана раньше) — безопасно повторять
--- =====================================================================
--- Смена организации по умолчанию AGR → APC (только если стоят старые значения)
-update public.org_settings
-   set company_name = 'APC, LLC', company_short = 'APC'
- where id = 'org' and company_short in ('AGR, LLC', 'AGR');
-alter table public.complexes add column if not exists lat double precision;
-alter table public.complexes add column if not exists lng double precision;
-alter table public.jobs      add column if not exists note text not null default '';
-alter table public.jobs      add column if not exists helper_ids jsonb not null default '[]'::jsonb;
-alter table public.jobs      add column if not exists priority boolean not null default false;
-alter table public.jobs      add column if not exists sort_order int not null default 0;
-alter table public.complexes add column if not exists callbox_code text default '';
-alter table public.complexes add column if not exists callbox_gate boolean not null default false;
-alter table public.extra_works add column if not exists price numeric not null default 0;
 
 -- =====================================================================
 -- ПОСЛЕ СОЗДАНИЯ ПОЛЬЗОВАТЕЛЕЙ назначьте роли (пример):

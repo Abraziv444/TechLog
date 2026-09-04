@@ -586,3 +586,33 @@ span.pri{display:grid;place-items:center;width:26px;height:24px}
   border-radius:999px;padding:6px 12px;font:inherit;font-weight:900;font-size:.76rem;cursor:pointer;
 }
 .chip-preset.on{border-color:var(--green);color:var(--green);background:rgba(88,204,2,.08)}
+
+/* ============ v1.06.05: строка оборудования на маленьких экранах ============ */
+.eq-line{flex-wrap:nowrap;gap:7px}
+.eq-line .icon-circle{flex:0 0 auto}
+.eq-name{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;line-height:1.12}
+.eq-name .nm{font-size:.84rem;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eq-name .pr{font-size:.66rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eq-line .stepper{flex:0 0 auto}
+.eq-line .stepper .val{min-width:26px}          /* кнопки 34px не трогаем — ужимаем только табло */
+.eq-line .eq-sum{flex:0 0 auto;min-width:46px;text-align:right}
+.eq-line .eq-x,.eq-line .eq-dlbl{flex:0 0 auto}
+
+@media (max-width:430px){                        /* «дн.» дублирует цену и заголовок */
+  .eq-line{gap:6px}
+  .eq-line .eq-dlbl{display:none}
+  .eq-line .eq-sum{min-width:42px;font-size:.82rem}
+}
+@media (max-width:412px){                        /* цена уходит в title и заголовок секции */
+  .eq-name .pr{display:none}
+  .eq-name .nm{font-size:.8rem}
+}
+@media (max-width:394px){                        /* остаётся иконка с 3-буквенным кодом */
+  .eq-name{display:none}
+  .eq-line .eq-x{display:none}
+}
+@media (max-width:342px){                        /* сверхузкие: чуть компактнее, но тапабельно */
+  .eq-line .stepper button{width:30px;height:32px}
+  .eq-line .stepper .val{min-width:22px}
+  .eq-line .eq-sum{min-width:36px;font-size:.78rem}
+}
