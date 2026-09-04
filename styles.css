@@ -203,9 +203,8 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 /* ---------- Модалки ---------- */
 .overlay{
   position:fixed;inset:0;background:rgba(5,10,13,.72);z-index:60;
-  display:flex;align-items:flex-end;justify-content:center;padding:12px;
+  display:flex;align-items:center;justify-content:center;padding:12px;
 }
-@media(min-width:480px){.overlay{align-items:center}}
 .modal{
   width:100%;max-width:480px;max-height:92dvh;overflow:auto;
   background:var(--panel);border:2px solid var(--line);border-radius:20px;padding:14px;
@@ -676,3 +675,70 @@ h3 .ic{width:21px;height:21px}
 .help-row{padding:9px 0;border-bottom:2px solid var(--line-soft)}
 .help-row:last-child{border-bottom:none}
 .help-row b{display:block;margin-bottom:2px}
+
+/* ============ v1.07.05: карточки дня, шапка, неделя на ПК, DnD, справочники ============ */
+
+/* --- шапка: подпись «учёт работ» рядом с названием --- */
+.brand .name{display:flex;align-items:baseline;gap:8px;min-width:0;white-space:nowrap}
+.brand .name .name-tag{
+  font-size:.66rem;font-weight:800;color:var(--dim);letter-spacing:.3px;
+  overflow:hidden;text-overflow:ellipsis;
+}
+@media (max-width:380px){ .brand .name .name-tag{font-size:.58rem} }
+
+/* --- неделя: на широких экранах дни растягиваются на всю ширину (без «дырки») --- */
+.week-days .day-cell{flex:1 0 54px}
+@media (max-width:400px){ .week-days .day-cell{flex:1 0 50px} }
+
+/* --- карточка задания: № в левом верхнем углу, «!» — в правом, без 3-буквенного бейджа --- */
+.item{
+  padding:26px 12px 10px;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+}
+.item .row-num.corner{
+  position:absolute;top:6px;left:8px;height:20px;min-width:20px;z-index:2;
+}
+.pri.corner{
+  position:absolute;top:7px;right:8px;z-index:2;width:26px;height:20px;
+}
+.item .info .t{white-space:normal;overflow:visible;text-overflow:clip}
+.item .info .s.addr{
+  display:flex;align-items:flex-start;gap:6px;
+  white-space:normal;overflow:visible;text-overflow:clip;
+}
+.item .info .s.addr .addr-txt{flex:1;min-width:0;overflow-wrap:anywhere}
+.item .info .s.codes{white-space:normal;overflow:visible;text-overflow:clip;display:flex;flex-wrap:wrap;gap:2px 10px}
+.copy-mini{
+  flex:0 0 auto;width:24px;height:24px;border-radius:8px;border:2px solid var(--line);
+  background:var(--panel-2);color:var(--blue);display:grid;place-items:center;
+  cursor:pointer;padding:0;margin-top:-3px;
+}
+.copy-mini .ic{width:14px;height:14px;vertical-align:0}
+.copy-mini:active{transform:translateY(1px);border-color:var(--blue)}
+
+/* --- перетаскивание карточек (long-press) --- */
+.item.dragging{
+  z-index:30;border-color:var(--blue);opacity:.97;
+  box-shadow:0 10px 24px #000c, 0 0 0 3px rgba(28,176,246,.25);
+  transition:none;
+}
+body.dnd-on{cursor:grabbing}
+body.dnd-on, body.dnd-on *{-webkit-user-select:none!important;user-select:none!important}
+
+/* --- справочники: стрелки по бокам вкладок + drag-скролл --- */
+.tabs-nav{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.tabs-nav .tabs{flex:1;min-width:0;margin-bottom:0;padding-bottom:2px;cursor:grab}
+.tabs-nav .tabs.grabbing{cursor:grabbing}
+.tabs-arr{
+  flex:0 0 auto;width:30px;height:38px;border:2px solid var(--line);border-radius:10px;
+  background:var(--panel);color:var(--dim);font-weight:900;font-size:1.05rem;padding:0;
+}
+.tabs-arr:active{color:var(--blue);transform:translateY(1px)}
+
+/* --- справочник «Сотрудники»: без нахлёста имени и селекта --- */
+select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
+.staff-row{flex-wrap:wrap;row-gap:8px}
+.staff-row .grow{flex:1 1 150px}
+.staff-row .grow .tiny{overflow-wrap:anywhere}
+.staff-ctl{display:flex;align-items:center;gap:6px;margin-left:auto;flex:0 1 auto;max-width:100%}
+.staff-ctl select.role-sel{max-width:180px}

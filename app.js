@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.04';
+const APP_VERSION = '1.07.05';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -129,6 +129,8 @@ const I18N = {
     invite_code: 'Код приглашения', invite_bad: 'Неверный код приглашения',
     login_taken_or_err: 'Логин занят или ошибка регистрации',
     back_today: 'Сегодня', navigate: 'Маршрут', copied_code: 'Код скопирован',
+    app_tag: 'учёт работ', copy_addr: 'Копировать адрес', copied_addr: 'Адрес скопирован',
+    drag_hint: 'Удерживайте карточку и тяните вверх/вниз',
     draft_restored: 'Черновик восстановлен (несохранённые изменения)',
     pdf_blocked: 'PDF недоступен — заполните', batch_skipped: 'пропущено (не заполнены поля)',
     diag: 'Диагностика', diag_copy: 'Скопировать отчёт', diag_running: 'Проверяю…',
@@ -262,6 +264,8 @@ const I18N = {
     invite_code: 'Invite code', invite_bad: 'Invalid invite code',
     login_taken_or_err: 'Login is taken or sign-up failed',
     back_today: 'Today', navigate: 'Navigate', copied_code: 'Code copied',
+    app_tag: 'work log', copy_addr: 'Copy address', copied_addr: 'Address copied',
+    drag_hint: 'Press & hold a card, then drag up/down',
     draft_restored: 'Draft restored (unsaved changes)',
     pdf_blocked: 'PDF blocked — fill in', batch_skipped: 'skipped (missing required fields)',
     diag: 'Diagnostics', diag_copy: 'Copy report', diag_running: 'Checking…',
@@ -1391,6 +1395,9 @@ function render(){
   if (state.screen === 'home'){
     try { document.querySelector('.day-cell.sel')?.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch(e){}
   }
+  if (state.screen === 'dirs'){
+    try { document.querySelector('#dir-tabs .tabbtn.active')?.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch(e){}
+  }
   if (state.screen === 'job') bindJobForm();
   if (state.screen === 'map') initMapView();
 }
@@ -1402,8 +1409,8 @@ function viewHeader(){
   <div class="topbar">
     <div class="logo"><span>TL</span></div>
     <div class="brand">
-      <div class="name">Tech<b>Log</b></div>
-      <div class="sub">by ${esc(org.company_short || 'APC')} · ${t('app_sub')} · v${APP_VERSION}</div>
+      <div class="name">Tech<b>Log</b><span class="name-tag">${t('app_tag')}</span></div>
+      <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
     <button class="icon-btn ${state.syncing?'spin':''}" onclick="App.sync()" title="${t('sync')}" aria-label="${t('sync')}">${ICONS.sync}</button>
     <div class="avatar-wrap">
@@ -1474,19 +1481,31 @@ function viewWeek(){
    ЭКРАН: ГЛАВНАЯ (день: работы + пикапы)
    ===================================================================== */
 function triHtml(on, jobId, canEdit){
+  // v1.07.05: треугольник приоритета живёт в правом верхнем углу карточки
   if (!on && !canEdit) return '';
-  const cls = 'pri' + (on ? ' on' : '');
+  const cls = 'pri corner' + (on ? ' on' : '');
   return canEdit
     ? `<button class="${cls}" title="${t('priority')}" onclick="event.stopPropagation();App.togglePriority('${jobId}')"><span class="tri">!</span></button>`
     : `<span class="${cls}"><span class="tri">!</span></span>`;
 }
 function railHtml(j){
   const can = canReorder(j);
+  if (!can) return '';
   return `<div class="rail" onclick="event.stopPropagation()">
-    ${triHtml(!!j.priority, j.id, can)}
-    ${can ? `<button class="mv" title="${t('move_up')}" onclick="App.moveJob('${j.id}',-1)">▲</button>
-             <button class="mv" title="${t('move_down')}" onclick="App.moveJob('${j.id}',1)">▼</button>` : ''}
+    <button class="mv" title="${t('move_up')}" onclick="App.moveJob('${j.id}',-1)">▲</button>
+    <button class="mv" title="${t('move_down')}" onclick="App.moveJob('${j.id}',1)">▼</button>
   </div>`;
+}
+/* Адрес целиком + кнопка копирования; коды доступа/callbox целиком, копирование тапом */
+function addrLineHtml(cx){
+  if (!cx || !cx.address) return '';
+  return `<div class="s addr"><span class="addr-txt">${esc(cx.address)}</span>
+    <button class="copy-mini" title="${t('copy_addr')}" aria-label="${t('copy_addr')}"
+      onclick="event.stopPropagation();App.copyCxAddr('${cx.id}')">${ic('clipboard')}</button></div>`;
+}
+function codesLineHtml(cx){
+  if (!cx || (!cx.access_code && !cx.callbox_code)) return '';
+  return `<div class="s codes">${codeLineHtml(cx, true)}</div>`;
 }
 function eqDotsFor(list){
   const agg = {};
@@ -1516,7 +1535,7 @@ function dayNumbering(iso){
   jobs.forEach(j => { jobNum[j.id] = ++n; });
   return { jobs, pkGroups, pkDone, pkNum, jobNum, count: n };
 }
-function rowNumHtml(n){ return `<span class="row-num">${n}</span>`; }
+function rowNumHtml(n){ return `<span class="row-num corner">${n}</span>`; }
 
 function viewHome(){
   const iso = state.selDate;
@@ -1542,14 +1561,15 @@ function viewHome(){
     const overdue = p0.due_date < today;
     const pkJob = state.data.jobs.find(x=>x.id===jobId) || { id: jobId, priority:false, technician_id: p0.technician_id, sort_order: 999 };
     return `
-    <div class="item" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}">
-      ${railHtml(pkJob)}
+    <div class="item" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}">
       ${rowNumHtml(num.pkNum[jobId])}
-      <div class="abbr">${esc(cx.abbr||cx.name.slice(0,3).toUpperCase())}</div>
+      ${triHtml(!!pkJob.priority, jobId, canReorder(pkJob))}
+      ${railHtml(pkJob)}
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
-        <div class="s">${esc(cx.address||'')}</div>
+        ${addrLineHtml(cx)}
         <div class="s">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)} ${overdue?`<span class="chip bad">${t('overdue')}</span>`:''} ${!state.filterMine?'· '+esc(profName(p0.technician_id)):''}</div>
+        ${codesLineHtml(cx)}
         ${(state.data.jobs.find(x=>x.id===jobId)||{}).note ? `<div class="s note-line">${ic('note')} ${esc((state.data.jobs.find(x=>x.id===jobId)||{}).note)}</div>` : ''}
       </div>
       <div class="right">
@@ -1569,7 +1589,6 @@ function viewHome(){
       const p0 = list[0]; const cx = cxById(p0.complex_id) || {abbr:'?',name:'?'};
       return `<div class="item" style="border-left-color:#3a4a52;opacity:.6">
         ${rowNumHtml(num.count + di + 1)}
-        <div class="abbr">${esc(cx.abbr)}</div>
         <div class="info"><div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
         <div class="s">✓ ${t('picked')}</div></div>
         <div class="eq-dots">${eqDotsFor(list)}</div>
@@ -1582,14 +1601,15 @@ function viewHome(){
     const cx = cxById(j.complex_id) || { abbr:'?', name:'?', address:'' };
     const total = (j.status==='approved' && j.approved_total != null) ? j.approved_total : j.total;
     return `
-    <div class="item clicky" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
-      ${railHtml(j)}
+    <div class="item clicky" data-drag-id="${j.id}" data-can="${canReorder(j)?1:0}" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
       ${rowNumHtml(num.jobNum[j.id])}
-      <div class="abbr" style="border-color:${wt.color}">${esc(cx.abbr||'—')}</div>
+      ${triHtml(!!j.priority, j.id, canReorder(j))}
+      ${railHtml(j)}
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number||'—')}</div>
-        <div class="s">${esc(cx.address||'')}</div>
+        ${addrLineHtml(cx)}
         <div class="s"><span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span>${!state.filterMine?' · '+esc(j.technician_name||profName(j.technician_id)):''}</div>
+        ${codesLineHtml(cx)}
       </div>
       <div class="right">
         <span class="badge-status st-${j.status}">${jobIssues(j).length ? warnIcon() : ''}${t('status_'+j.status)}</span>
@@ -1684,7 +1704,7 @@ async function createTask(){
   const job = {
     id: uid(), date, counterparty_id: cpId, complex_id: cxId, unit_number: unit,
     work_type_id: ntWt, technician_id: state.user.id, technician_name: shortName(state.user.display_name), helper_ids: [], priority: false, sort_order: jobsOn(date).length,
-    priority: false, sort_order: 1, status: 'draft', note: '', form_data: emptyFormData(), total: 0,
+    status: 'draft', note: '', form_data: emptyFormData(), total: 0,
     approved_total: null, approved_by: null, approved_at: null,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString()
   };
@@ -2295,8 +2315,12 @@ function viewDirs(){
     ['price', t('d_price'), true],
   ].filter(x=>x[2]);
   if (!tabs.find(x=>x[0]===state.dirTab)) state.dirTab = tabs[0][0];
-  const nav = `<div class="tabs">` + tabs.map(([id,l]) =>
-    `<button class="tabbtn ${state.dirTab===id?'active':''}" onclick="App.dirTab('${id}')">${l}</button>`).join('') + `</div>`;
+  const nav = `<div class="tabs-nav">
+    <button class="tabs-arr" onclick="App.dirTabsScroll(-1)" aria-label="◀">‹</button>
+    <div class="tabs" id="dir-tabs">` + tabs.map(([id,l]) =>
+    `<button class="tabbtn ${state.dirTab===id?'active':''}" onclick="App.dirTab('${id}')">${l}</button>`).join('') + `</div>
+    <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="▶">›</button>
+  </div>`;
   const body = { staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
                  equipment: dirEquipment, aux: dirAux, price: dirPrice,
                  extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts }[state.dirTab]();
@@ -3039,7 +3063,7 @@ const App = {
   geocodeCx, gmapsCx,
   dictToggle, dictLang(l){ state.dictLang = l; localStorage.setItem('techlog_dictlang', l); document.querySelectorAll('.dict-row .lang-seg button').forEach(b=>b.classList.toggle('on', b.textContent === (l==='ru-RU'?'RU':'EN'))); },
   noteModal, saveNote, auxToggle, sectionHelp: sectionHelpModal,
-  crewAdd, crewAll, crewRemove, navToCx, copyText,
+  crewAdd, crewAll, crewRemove, navToCx, copyText, copyCxAddr,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis,
   diag: showDiagnostics, copyDiag,
@@ -3067,6 +3091,10 @@ const App = {
     if (mode === 'in') App.signIn(); else App.signUp();
   },
   dirTab(v){ state.dirTab = v; render(); },
+  dirTabsScroll(dir){
+    const el = document.getElementById('dir-tabs'); if (!el) return;
+    el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: 'smooth' });
+  },
   openCp, cpTab(v){ state.cpTab = v; renderCpModal(); },
   editCpModal, saveCp, cpCustomToggle, cpSetPrice,
   editCxModal, saveCx, editWtModal, saveWt, editEtModal, saveEt, editAuxModal, saveAux,
@@ -3125,6 +3153,8 @@ function initBackGuard(){
   try {
     initSW();
     initBackGuard();
+    initDragSort();
+    initTabsDrag();
     if (HAS_SB){
       try{
         const cached = loadLocal();
@@ -3756,13 +3786,15 @@ function batchPdf(){
 function dirStaff(){
   const list = [...state.data.profiles].sort((a,b)=>a.display_name.localeCompare(b.display_name));
   return `<div class="card">` + list.map(u => `
-    <div class="rowline">
+    <div class="rowline staff-row">
       <span class="avatar role-${u.role}">${esc(initials(u.display_name))}</span>
       <div class="grow"><b>${esc(u.display_name)}</b><div class="tiny">@${esc(u.login)}</div></div>
-      <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${u.id===state.user.id?'disabled':''}>
-        ${['tech','manager','admin'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
-      </select>
-      ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
+      <div class="staff-ctl">
+        <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${u.id===state.user.id?'disabled':''}>
+          ${['tech','manager','admin'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
+        </select>
+        ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
+      </div>
     </div>`).join('') + `</div>
     <div class="tiny">${t('vis_hint')}</div>`;
 }
@@ -3859,6 +3891,11 @@ function navToCx(cxId){
 }
 function copyText(s){
   navigator.clipboard?.writeText(s).then(()=>{ navigator.vibrate?.(20); toast('✓ ' + t('copied_code')); });
+}
+/* v1.07.05: копирование адреса комплекса из строки на главном экране */
+function copyCxAddr(cxId){
+  const cx = cxById(cxId); if (!cx || !cx.address) return;
+  navigator.clipboard?.writeText(cx.address).then(()=>{ navigator.vibrate?.(20); toast('✓ ' + t('copied_addr')); });
 }
 
 /* =====================================================================
@@ -4104,7 +4141,7 @@ function faqHtml(){
     <h4>${ic('archive')} Reports</h4>
     <p>Per <b>unit</b>: open the job and press PDF. Per <b>period</b> (a day, a week, a month): bottom tab <b>Reports</b> → pick the dates → download a single PDF with all invoices, two per Letter page. Managers also get the <b>Pickups</b> report for any date.</p>
     <h4>${ic('warn')} Priority & ordering</h4>
-    <p>Every trip card has a control rail: the red <b>“!” triangle</b> marks a “go first” object (priority items float to the top), and <b>▲▼</b> arrows reorder trips within the day. The order is shared between jobs and pickups.</p>
+    <p>The queue number sits in the <b>top-left</b> corner of a card, the red <b>“!” triangle</b> — in the <b>top-right</b> (priority items float to the top; tapping the triangle toggles it). Reorder with the <b>▲▼</b> arrows on the left, or by gesture: <b>press & hold</b> a card for ~half a second and drag it up/down. The order is shared between jobs and pickups. The full address is shown on the card — the button next to it copies it, and the ${ic('key')}/${ic('callbox')} codes are copied with a tap.</p>
     <h4>${ic('key')} Access codes & requests</h4>
     <p>A complex has two codes: ${ic('key')} general and ${ic('callbox')} callbox (a toggle marks it as the ${ic('gate')} <b>gate</b> code). Anyone can edit: admins apply instantly, others submit a <b>request</b> the admin approves or rejects (inbox at the top of the Complexes tab). The ${ic('book')} button shows the full <b>history</b> — who entered which code and when; next to the current code you see since when it’s valid and who added it.</p>
     <h4>${ic('toolbox')} Note templates & purchases</h4>
@@ -4121,7 +4158,7 @@ function faqHtml(){
     <h4>${ic('archive')} Отчёты</h4>
     <p>За <b>юнит</b>: откройте работу и нажмите PDF. За <b>период</b> (день, неделя, месяц): нижняя вкладка <b>Отчёты</b> → выбираете даты → скачиваете единый PDF со всеми инвойсами, по два на страницу Letter. Менеджеру доступен и отчёт по <b>пикапам</b> на любую дату.</p>
     <h4>${ic('warn')} Приоритет и очерёдность</h4>
-    <p>Слева на каждой карточке поездки — рельса управления: красный <b>треугольник «!»</b> помечает объект «ехать первым» (приоритетные всегда вверху списка), стрелки <b>▲▼</b> меняют очерёдность внутри дня. Порядок общий для работ и пикапов.</p>
+    <p>Номер очереди — в <b>левом верхнем</b> углу карточки, красный <b>треугольник «!»</b> приоритета — в <b>правом верхнем</b> (приоритетные всегда вверху списка, тап по треугольнику включает/выключает приоритет). Изменить порядок можно стрелками <b>▲▼</b> слева или жестом: <b>удерживайте карточку</b> ~полсекунды и тяните вверх/вниз. Порядок общий для работ и пикапов. Адрес на карточке показан целиком — кнопка рядом копирует его в буфер, коды ${ic('key')}/${ic('callbox')} копируются тапом.</p>
     <h4>${ic('key')} Коды доступа и заявки</h4>
     <p>У комплекса два кода: ${ic('key')} общий и ${ic('callbox')} callbox (переключателем помечается, что это код от ${ic('gate')} <b>ворот</b>). Изменить может каждый: админ — сразу, остальные отправляют <b>заявку</b>, которую админ подтверждает или отклоняет (входящие — вверху вкладки «Комплексы»). Кнопка ${ic('book')} показывает <b>историю</b> изменений: кто, когда и какой код вводил; рядом с текущим кодом видно, с какой даты он действует и кто его добавил.</p>
     <h4>${ic('toolbox')} Шаблоны заметки и покупки</h4>
@@ -4323,6 +4360,143 @@ async function moveJob(id, dir){
   }
   navigator.vibrate?.(15);
   render();
+}
+
+/* =====================================================================
+   v1.07.05: перетаскивание карточек дня жестом — зажать и тянуть ▲▼
+   Работает и пальцем (long-press ~0.34 c), и мышью. Кнопки ▲▼ остаются.
+   ===================================================================== */
+let dnd = null;              // { el, id, pid, x, y, active, timer, staticTop, grabDY }
+let dndClickBlock = 0;       // подавить клик, случившийся сразу после drag
+function dndItems(){ return [...document.querySelectorAll('#app .item[data-drag-id]')]; }
+function dndCalib(){
+  if (!dnd) return;
+  const tr = dnd.el.style.transform;
+  dnd.el.style.transform = 'none';
+  dnd.staticTop = dnd.el.getBoundingClientRect().top;
+  dnd.el.style.transform = tr;
+}
+function dndPlace(clientY){
+  dnd.el.style.transform = `translateY(${(clientY - dnd.grabDY) - dnd.staticTop}px)`;
+}
+function dndActivate(){
+  if (!dnd || dnd.active) return;
+  dnd.active = true;
+  try{ dnd.el.setPointerCapture(dnd.pid); }catch(e){}
+  dnd.el.classList.add('dragging');
+  document.body.classList.add('dnd-on');
+  dndCalib();
+  dnd.grabDY = dnd.y - dnd.staticTop;
+  dndPlace(dnd.y);
+  navigator.vibrate?.(30);
+}
+function dndDown(e){
+  if (dnd || state.screen !== 'home') return;
+  if (e.button != null && e.button !== 0) return;
+  const el = e.target.closest('.item[data-drag-id]');
+  if (!el || el.dataset.can !== '1') return;
+  if (e.target.closest('button,select,input,a,textarea,.key-copy')) return;
+  dnd = { el, id: el.dataset.dragId, pid: e.pointerId, x: e.clientX, y: e.clientY,
+          active: false, timer: setTimeout(dndActivate, 340) };
+}
+function dndMove(e){
+  if (!dnd) return;
+  if (!dnd.active){
+    // палец «поехал» до срабатывания long-press — это скролл, а не перетаскивание
+    if (Math.abs(e.clientY - dnd.y) > 8 || Math.abs(e.clientX - dnd.x) > 8){ clearTimeout(dnd.timer); dnd = null; }
+    return;
+  }
+  if (e.cancelable) e.preventDefault();
+  // автопрокрутка страницы у верхнего/нижнего края
+  if (e.clientY < 90){ window.scrollBy(0, -14); dndCalib(); }
+  else if (e.clientY > window.innerHeight - 110){ window.scrollBy(0, 14); dndCalib(); }
+  dndPlace(e.clientY);
+  const over = dndItems().find(o => {
+    if (o === dnd.el) return false;
+    const r = o.getBoundingClientRect();
+    return e.clientY >= r.top && e.clientY <= r.bottom;
+  });
+  if (over){
+    const r = over.getBoundingClientRect();
+    const before = e.clientY < r.top + r.height / 2;
+    const p = over.parentNode;
+    if (before && over.previousElementSibling !== dnd.el){
+      p.insertBefore(dnd.el, over); dndCalib(); dndPlace(e.clientY);
+    } else if (!before && over.nextElementSibling !== dnd.el){
+      p.insertBefore(dnd.el, over.nextElementSibling); dndCalib(); dndPlace(e.clientY);
+    }
+  }
+}
+function dndFinish(apply){
+  if (!dnd) return;
+  clearTimeout(dnd.timer);
+  const was = dnd.active;
+  if (was){
+    dnd.el.classList.remove('dragging');
+    dnd.el.style.transform = '';
+    document.body.classList.remove('dnd-on');
+    dndClickBlock = Date.now() + 350;
+  }
+  const ids = (was && apply) ? [...new Set(dndItems().map(el => el.dataset.dragId))] : null;
+  dnd = null;
+  if (ids) applyDayOrder(ids);
+  else if (was) render(); // отмена — вернуть как было
+}
+async function applyDayOrder(ids){
+  for (let i = 0; i < ids.length; i++){
+    const j = state.data.jobs.find(x => x.id === ids[i]);
+    if (!j || (j.sort_order || 0) === i) continue;
+    if (canReorder(j)) await dbUpsert('jobs', { ...j, sort_order: i, updated_at: new Date().toISOString() });
+    else j.sort_order = i; // чужие — только локально для отображения
+  }
+  navigator.vibrate?.(15);
+  dlog('dnd: порядок дня обновлён перетаскиванием');
+  render();
+}
+function initDragSort(){
+  document.addEventListener('pointerdown', dndDown, { passive: true });
+  document.addEventListener('pointermove', dndMove, { passive: false });
+  document.addEventListener('pointerup', () => dndFinish(true));
+  document.addEventListener('pointercancel', () => dndFinish(false));
+  // пока карточка «в руке» — не даём странице скроллиться под пальцем
+  document.addEventListener('touchmove', e => { if (dnd && dnd.active && e.cancelable) e.preventDefault(); }, { passive: false });
+  document.addEventListener('contextmenu', e => { if (dnd) e.preventDefault(); });
+  document.addEventListener('click', e => {
+    if (Date.now() < dndClickBlock){ e.preventDefault(); e.stopPropagation(); }
+  }, true);
+}
+
+/* ---------- v1.07.05: вкладки справочников — drag-скролл мышью ----------
+   (пальцем полоса вкладок скроллится нативно; стрелки ‹ › — App.dirTabsScroll) */
+let tdrag = null, tabsClickBlock = 0;
+function initTabsDrag(){
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse') return;
+    const el = e.target.closest('.tabs');
+    if (!el || el.scrollWidth <= el.clientWidth + 4) return;
+    tdrag = { el, x: e.clientX, left: el.scrollLeft, moved: false, pid: e.pointerId };
+  }, { passive: true });
+  document.addEventListener('pointermove', e => {
+    if (!tdrag) return;
+    const dx = e.clientX - tdrag.x;
+    if (!tdrag.moved && Math.abs(dx) > 6){
+      tdrag.moved = true;
+      tdrag.el.classList.add('grabbing');
+      try{ tdrag.el.setPointerCapture(tdrag.pid); }catch(_){}
+    }
+    if (tdrag.moved) tdrag.el.scrollLeft = tdrag.left - dx;
+  });
+  const tEnd = () => {
+    if (!tdrag) return;
+    tdrag.el.classList.remove('grabbing');
+    if (tdrag.moved) tabsClickBlock = Date.now() + 300;
+    tdrag = null;
+  };
+  document.addEventListener('pointerup', tEnd);
+  document.addEventListener('pointercancel', tEnd);
+  document.addEventListener('click', e => {
+    if (Date.now() < tabsClickBlock && e.target.closest('.tabs')){ e.preventDefault(); e.stopPropagation(); }
+  }, true);
 }
 
 /* =====================================================================
