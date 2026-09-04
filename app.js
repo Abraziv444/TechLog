@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.02';
+const APP_VERSION = '1.07.03';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -97,6 +97,7 @@ const I18N = {
     tech: 'Техник', no_access: 'Нет доступа', stats_jobs: 'работ', stats_pk: 'пикапов',
     stats_due: 'на вывоз', stats_over: 'просрочено',
     sync_err: 'Ошибка синхронизации', offline_note: 'Оффлайн: показаны сохранённые данные',
+    not_selected: 'Не выбрано', aux_take_hint: 'нажмите то, что нужно взять',
     select: '— выбрать —', install_hint: 'Меню браузера → «Установить приложение» / «Добавить на главный экран»',
     tab_map: 'Карта', tab_reports: 'Отчёты',
     map_title: 'Карта апарт-комплексов', all_counterparties: 'Все контрагенты',
@@ -228,6 +229,7 @@ const I18N = {
     tech: 'Technician', no_access: 'No access', stats_jobs: 'jobs', stats_pk: 'pickups',
     stats_due: 'to pick up', stats_over: 'overdue',
     sync_err: 'Sync error', offline_note: 'Offline: showing cached data',
+    not_selected: 'Not selected', aux_take_hint: 'tap what you need to take',
     select: '— select —', install_hint: 'Browser menu → "Install app" / "Add to Home screen"',
     tab_map: 'Map', tab_reports: 'Reports',
     map_title: 'Apartment complexes map', all_counterparties: 'All counterparties',
@@ -709,6 +711,7 @@ function emptyFormData(){
     pad: { on:false, size:null, rooms:0, all_unit:false },   // size: q14|q12|q34|roll
     others: [ {desc:'',amount:0}, {desc:'',amount:0}, {desc:'',amount:0} ],
     extra: [],
+    aux_take: {},                  // { [aux_id]: true } — отмеченное «взять с собой»
   };
 }
 
@@ -1094,18 +1097,33 @@ function eqDotsFor(list){
   }).join('');
 }
 
-function viewHome(){
-  const iso = state.selDate;
-  const today = todayISO();
+/* ---------- Сквозная нумерация строк дня ----------
+   Порядок как на главном экране: сначала пикапы (в порядке показа), затем работы,
+   забранные пикапы продолжают счёт. Эти же номера показываются на карте дня. */
+function dayNumbering(iso){
   const jobs = jobsOn(iso);
   const pkAll = pickupsOn(iso);
   const pkOpen = pkAll.filter(p=>!p.picked_up);
   const pkDone = pkAll.filter(p=>p.picked_up);
-  const { due, over } = myDueCount();
-
-  // группировка пикапов по job (комплекс+юнит)
   const groups = {};
   pkOpen.forEach(p => { (groups[p.job_id] = groups[p.job_id] || []).push(p); });
+  const pkGroups = Object.entries(groups).sort((a,b) => jobSortCmp(
+    state.data.jobs.find(x=>x.id===a[0]) || {sort_order:999},
+    state.data.jobs.find(x=>x.id===b[0]) || {sort_order:999}));
+  let n = 0;
+  const pkNum = {}, jobNum = {};
+  pkGroups.forEach(([jobId]) => { pkNum[jobId] = ++n; });
+  jobs.forEach(j => { jobNum[j.id] = ++n; });
+  return { jobs, pkGroups, pkDone, pkNum, jobNum, count: n };
+}
+function rowNumHtml(n){ return `<span class="row-num">${n}</span>`; }
+
+function viewHome(){
+  const iso = state.selDate;
+  const today = todayISO();
+  const num = dayNumbering(iso);
+  const { jobs, pkGroups, pkDone } = num;
+  const { due, over } = myDueCount();
 
   const banner = (due+over) > 0 ? `
     <div class="banner ${over?'b-red':''}" role="status">🔔
@@ -1118,11 +1136,7 @@ function viewHome(){
       <button class="${!state.filterMine?'on':''}" onclick="App.setMine(false)">${t('all')}</button>
     </div>` : '';
 
-  const pkHtml = Object.entries(groups)
-    .sort((a,b) => jobSortCmp(
-      state.data.jobs.find(x=>x.id===a[0]) || {sort_order:999},
-      state.data.jobs.find(x=>x.id===b[0]) || {sort_order:999}))
-    .map(([jobId, list]) => {
+  const pkHtml = pkGroups.map(([jobId, list]) => {
     const p0 = list[0];
     const cx = cxById(p0.complex_id) || {abbr:'?', name:'?', address:''};
     const overdue = p0.due_date < today;
@@ -1130,6 +1144,7 @@ function viewHome(){
     return `
     <div class="item" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}">
       ${railHtml(pkJob)}
+      ${rowNumHtml(num.pkNum[jobId])}
       <div class="abbr">${esc(cx.abbr||cx.name.slice(0,3).toUpperCase())}</div>
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
@@ -1150,9 +1165,10 @@ function viewHome(){
 
   const pkDoneHtml = pkDone.length ? (() => {
     const g = {}; pkDone.forEach(p => (g[p.job_id] = g[p.job_id]||[]).push(p));
-    return Object.values(g).map(list => {
+    return Object.values(g).map((list, di) => {
       const p0 = list[0]; const cx = cxById(p0.complex_id) || {abbr:'?',name:'?'};
       return `<div class="item" style="border-left-color:#3a4a52;opacity:.6">
+        ${rowNumHtml(num.count + di + 1)}
         <div class="abbr">${esc(cx.abbr)}</div>
         <div class="info"><div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
         <div class="s">✓ ${t('picked')}</div></div>
@@ -1168,6 +1184,7 @@ function viewHome(){
     return `
     <div class="item clicky" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
       ${railHtml(j)}
+      ${rowNumHtml(num.jobNum[j.id])}
       <div class="abbr" style="border-color:${wt.color}">${esc(cx.abbr||'—')}</div>
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number||'—')}</div>
@@ -1181,7 +1198,7 @@ function viewHome(){
     </div>`;
   }).join('');
 
-  const empty = (!jobs.length && !pkOpen.length && !pkDone.length)
+  const empty = (!jobs.length && !pkGroups.length && !pkDone.length)
     ? `<div class="list-empty"><div class="big">🦉</div>${t('no_items')}<br><span class="tiny">${t('tap_add')}</span></div>` : '';
 
   const dayBar = `
@@ -1190,7 +1207,7 @@ function viewHome(){
       <button class="mini-nav" onclick="App.openDayMap()">🗺 ${t('map_of_day')}</button>
     </div>`;
   return banner + viewWeek() + dayBar + homeStatsHtml() + filter
-    + (pkOpen.length ? `<div class="section-title">${t('pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
+    + (pkGroups.length ? `<div class="section-title">${t('pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
     + (jobs.length ? `<div class="section-title">${t('jobs')}</div>` + jobsHtml : '')
     + pkDoneHtml + empty
     + `<button class="btn btn-green" style="margin-top:12px" onclick="App.addTaskModal()">＋ ${t('add_task')}</button>
@@ -1245,7 +1262,13 @@ function ntCpChange(){
 let ntWt = null;
 function ntPickWt(btn){
   ntWt = btn.dataset.id;
-  btn.parentElement.querySelectorAll('.opt').forEach(b=>b.style.background='');
+  // сброс всех кнопок: не только фон, но и цвет текста, иначе после
+  // повторных нажатий текст оставался тёмным и «исчезал» на тёмном фоне
+  btn.parentElement.querySelectorAll('.opt').forEach(b=>{
+    const w0 = wtById(b.dataset.id);
+    b.style.background = '';
+    b.style.color = w0 ? w0.color : '';
+  });
   const w = wtById(ntWt);
   btn.style.background = w.color; btn.style.color = textColorFor(w.color);
 }
@@ -1253,7 +1276,11 @@ async function createTask(){
   const date = $('#nt-date').value || state.selDate;
   const cpId = $('#nt-cp').value, cxId = $('#nt-cx').value;
   const unit = $('#nt-unit').value.trim();
-  if (!cpId || !cxId || !ntWt){ toast(t('select'), 'err'); return; }
+  const missing = [];
+  if (!cpId) missing.push(t('counterparty'));
+  if (!cxId) missing.push(t('complex'));
+  if (!ntWt) missing.push(t('work_type'));
+  if (missing.length){ toast('⚠ ' + t('not_selected') + ': ' + missing.join(', '), 'err'); return; }
   const job = {
     id: uid(), date, counterparty_id: cpId, complex_id: cxId, unit_number: unit,
     work_type_id: ntWt, technician_id: state.user.id, technician_name: shortName(state.user.display_name), helper_ids: [], priority: false, sort_order: jobsOn(date).length,
@@ -1382,8 +1409,19 @@ function viewJob(){
   const sec = calcSections(fd, p);
   const total = calcTotal(fd, p);
   const isApproved = j.status === 'approved';
-  const aux = (wt.needs_aux && (wt.aux_ids||[]).length)
-    ? `<div class="note-green">🧰 ${t('aux_needed')}: ${(wt.aux_ids||[]).map(id => esc((state.data.aux_equipment.find(a=>a.id===id)||{}).name || '')).filter(Boolean).join(' · ')}</div>` : '';
+  const auxList = (wt.needs_aux && (wt.aux_ids||[]).length)
+    ? (wt.aux_ids||[]).map(id => state.data.aux_equipment.find(a=>a.id===id)).filter(Boolean) : [];
+  const auxTake = fd.aux_take || {};
+  /* Доп. оборудование теперь опционально: не обязательное требование,
+     а чек-лист — техник отмечает, что реально нужно взять на этот выезд */
+  const aux = auxList.length ? `
+    <div class="note-green" style="display:block">
+      <div style="font-weight:900;margin-bottom:6px">🧰 ${t('aux_needed')} <span class="tiny" style="font-weight:400">· ${t('aux_take_hint')}</span></div>
+      <div class="opt-grid">${auxList.map(a=>`
+        <button type="button" class="opt ${auxTake[a.id]?'on':''}" data-aux="${a.id}"
+          onclick="App.auxToggle('${a.id}')"><span class="aux-mk">${auxTake[a.id]?'✅':'⬜'}</span> ${esc(a.name)}</button>`).join('')}
+      </div>
+    </div>` : '';
 
   const amt = (v) => v > 0 ? `<span class="amt">${money(v)}</span>` : '<span class="amt" style="color:var(--dim-2)">—</span>';
 
@@ -2600,7 +2638,7 @@ const App = {
   mapRoute,
   geocodeCx, gmapsCx,
   dictToggle, dictLang(l){ state.dictLang = l; localStorage.setItem('techlog_dictlang', l); document.querySelectorAll('.dict-row .lang-seg button').forEach(b=>b.classList.toggle('on', b.textContent === (l==='ru-RU'?'RU':'EN'))); },
-  noteModal, saveNote,
+  noteModal, saveNote, auxToggle,
   crewAdd, crewAll, crewRemove, navToCx, copyText,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis,
@@ -2783,6 +2821,20 @@ function dictToggle(taId){
   const h = document.getElementById('mic-hint-'+taId); if (h) h.textContent = t('listening');
 }
 
+/* Переключатель «взять с собой» доп. оборудования (опционально, на конкретный выезд) */
+function auxToggle(id){
+  if (!jobDraft) return;
+  const fd = jobDraft.form_data;
+  fd.aux_take = fd.aux_take || {};
+  fd.aux_take[id] = !fd.aux_take[id];
+  const b = document.querySelector(`[data-aux="${id}"]`);
+  if (b){
+    b.classList.toggle('on', !!fd.aux_take[id]);
+    const mk = b.querySelector('.aux-mk'); if (mk) mk.textContent = fd.aux_take[id] ? '✅' : '⬜';
+  }
+  autosaveDraft();
+}
+
 /* Заметка из карточки пикапа (та же заметка работы, попадает в PDF) */
 function noteModal(jobId){
   const j = state.data.jobs.find(x=>x.id===jobId); if (!j) return;
@@ -2811,24 +2863,27 @@ function cpColor(cpId){
 }
 function mapDayItems(){
   const iso = state.mapDate || state.selDate || todayISO();
-  const jobs = jobsOn(iso);
-  const pks = pickupsOn(iso).filter(p=>!p.picked_up);
+  const num = dayNumbering(iso);   // те же номера, что в строках на главном экране
   const pts = [];
-  jobs.forEach(j => {
+  num.pkGroups.forEach(([jobId, list]) => {
+    const p0 = list[0];
+    const cx = cxById(p0.complex_id);
+    if (cx && cx.lat != null && cx.lng != null){
+      const over = list.some(p => p.due_date < todayISO());
+      const eq = list.map(p => `${p.qty}×${(etById(p.equipment_type_id)||{abbr:'?'}).abbr}`).join(' ');
+      pts.push({ num: num.pkNum[jobId], lat:+cx.lat, lng:+cx.lng, color: over ? '#FF4B4B' : '#8AA0AB',
+        label: `📦 ${t('pickup')} Unit ${p0.unit_number||'—'} · ${eq}`, cx, kind:'pickup' });
+    }
+  });
+  num.jobs.forEach(j => {
     const cx = cxById(j.complex_id);
     if (cx && cx.lat != null && cx.lng != null){
       const wt = wtById(j.work_type_id) || {color:'#888', name:''};
-      pts.push({ lat:+cx.lat, lng:+cx.lng, color: wt.color, label: `🛠 Unit ${j.unit_number||'—'} · ${wt.name}`, cx, kind:'job' });
+      pts.push({ num: num.jobNum[j.id], lat:+cx.lat, lng:+cx.lng, color: wt.color,
+        label: `🛠 Unit ${j.unit_number||'—'} · ${wt.name}`, cx, kind:'job' });
     }
   });
-  pks.forEach(p => {
-    const cx = cxById(p.complex_id);
-    if (cx && cx.lat != null && cx.lng != null){
-      const over = p.due_date < todayISO();
-      const et = etById(p.equipment_type_id) || {abbr:'?'};
-      pts.push({ lat:+cx.lat, lng:+cx.lng, color: over ? '#FF4B4B' : '#8AA0AB', label: `📦 ${t('pickup')} Unit ${p.unit_number||'—'} · ${p.qty}×${et.abbr}`, cx, kind:'pickup' });
-    }
-  });
+  pts.sort((a,b)=>a.num-b.num);
   return { iso, pts };
 }
 function viewMap(){
@@ -2840,7 +2895,7 @@ function viewMap(){
   const legend = state.mapDay
     ? (day.pts.length
         ? day.pts.map(p=>`<button class="rowline map-row" onclick="App.mapFocus(${p.lat},${p.lng})">
-            <span class="dot" style="background:${p.color}"></span>
+            <span class="dot num" style="background:${p.color};color:${textColorFor(p.color)}">${p.num}</span>
             <div class="grow">${esc(p.label)}<div class="tiny">${esc(p.cx.name)}</div></div></button>`).join('')
         : `<div class="list-empty">${t('no_items')}</div>`)
     : list.map(cx=>{
@@ -2884,8 +2939,11 @@ function initMapView(){
   }).addTo(mapObj);
 
   const marks = [];
-  const mk = (lat, lng, color, html) => {
-    const m = L.circleMarker([lat, lng], { radius: 9, color: '#0F171B', weight: 2, fillColor: color, fillOpacity: .95 }).addTo(mapObj);
+  const mk = (lat, lng, color, html, numTxt) => {
+    const m = numTxt != null
+      ? L.marker([lat, lng], { icon: L.divIcon({ className: '', iconSize: null,
+          html: `<div class="map-pin" style="background:${color};color:${textColorFor(color)}">${numTxt}</div>` }) }).addTo(mapObj)
+      : L.circleMarker([lat, lng], { radius: 9, color: '#0F171B', weight: 2, fillColor: color, fillOpacity: .95 }).addTo(mapObj);
     m.bindPopup(html);
     marks.push([lat, lng]);
   };
@@ -2896,10 +2954,12 @@ function initMapView(){
     const byCx = {};
     pts.forEach(p => (byCx[p.cx.id] = byCx[p.cx.id] || { cx: p.cx, items: [], color: p.color }).items.push(p));
     Object.values(byCx).forEach(g => {
+      g.items.sort((a,b)=>(a.num||0)-(b.num||0));
       const cx = g.cx;
       const html = `<b>${esc(cx.name)}</b><br>${esc(cx.address||'')}${cx.access_code?'<br>🔑 '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?'🚧 ':'📟 ')+esc(cx.callbox_code):''}<hr style="margin:4px 0">` +
-        g.items.map(i=>`<span style="color:${i.color}">●</span> ${esc(i.label)}`).join('<br>') + `<br>${gm(cx)}`;
-      mk(+cx.lat, +cx.lng, g.items.find(i=>i.kind==='job')?.color || g.items[0].color, html);
+        g.items.map(i=>`<b>#${i.num}</b> <span style="color:${i.color}">●</span> ${esc(i.label)}`).join('<br>') + `<br>${gm(cx)}`;
+      const numTxt = g.items.map(i=>i.num).join('·');
+      mk(+cx.lat, +cx.lng, g.items.find(i=>i.kind==='job')?.color || g.items[0].color, html, numTxt);
     });
   } else {
     state.data.complexes

@@ -345,6 +345,23 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   border-radius:12px; margin-bottom:6px; padding:8px 10px; color:var(--text); cursor:pointer}
 .map-row:active{transform:translateY(1px)}
 .map-row .dot{width:14px; height:14px; border-radius:50%; flex:none; box-shadow:0 0 0 3px rgba(255,255,255,.06)}
+.map-row .dot.num{
+  width:auto;min-width:22px;height:22px;padding:0 5px;border-radius:11px;
+  display:grid;place-items:center;font-weight:900;font-size:.7rem
+}
+/* Сквозной номер строки на главном экране */
+.row-num{
+  flex:0 0 auto;align-self:center;min-width:22px;height:22px;padding:0 5px;
+  border-radius:11px;background:var(--panel-2);border:2px solid var(--line);
+  color:var(--dim);display:grid;place-items:center;font-weight:900;font-size:.72rem
+}
+/* Нумерованный пин на карте дня (Leaflet divIcon) */
+.map-pin{
+  min-width:26px;height:26px;padding:0 6px;border-radius:13px;
+  border:2px solid #0F171B;box-shadow:0 2px 6px rgba(0,0,0,.45);
+  display:grid;place-items:center;font-weight:900;font-size:.74rem;
+  white-space:nowrap;transform:translate(-50%,-50%)
+}
 
 /* ============ Заметки + диктовка ============ */
 .note-ta{
