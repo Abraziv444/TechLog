@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.09';
+const APP_VERSION = '1.07.10';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -38,6 +38,13 @@ let WRITE_ERRORS = [];  // последние ошибки записи (upsert/
 function noteWriteError(op, table, id, e){
   WRITE_ERRORS.push({ at: new Date().toISOString().slice(11,19), op, table, id: String(id||'').slice(0,8), err: errStr(e) });
   if (WRITE_ERRORS.length > 20) WRITE_ERRORS.shift();
+}
+/* v1.07.10: если БД ещё не обновлена (нет новой колонки), PostgREST возвращает
+   "Could not find the 'xxx' column …". Достаём имя колонки, чтобы повторить запись без неё. */
+function missingColumnOf(e){
+  const m = String((e && e.message) || e || '');
+  const a = /find the '([A-Za-z0-9_]+)' column/.exec(m) || /column "([A-Za-z0-9_]+)"/.exec(m);
+  return a ? a[1] : null;
 }
 let PLOG = [];
 try { PLOG = JSON.parse(localStorage.getItem('techlog_log') || '[]') || []; } catch(e){ PLOG = []; }
@@ -125,6 +132,14 @@ const I18N = {
     no_coords_yet: 'Нет координат',
     req_missing: 'Не заполнено', issue_complex: 'апарт-комплекс', issue_unit: 'номер юнита', issue_tech: 'сотрудник',
     crew: 'Кто выполнял', add_helper: '＋ добавить сотрудника', all_staff: 'Все',
+    shared_chk: 'Общий доступ к документу для коворкера',
+    shared_hint: 'Коворкеры из списка «Кто выполнял» увидят эту работу у себя и смогут её редактировать',
+    shared_chip: 'Общий',
+    shared_on_info: 'Автор включил общий доступ — вы можете редактировать этот документ',
+    shared_set_title: 'Общий доступ к документам',
+    shared_set_chk: 'Разрешить общий доступ к документам для коворкеров',
+    shared_set_hint: 'Если выключить — каждый работает только со своими документами: галочка «Общий доступ» в работах скрывается и перестаёт действовать. Сами отметки в документах сохраняются и снова заработают после включения.',
+    db_needs_update: 'Обновите БД: выполните supabase/update-to-1_07_10.sql в SQL-редакторе Supabase',
     login: 'Логин', login_hint: 'Латиница/цифры, 3–32 символа. Вход по логину и паролю.',
     invite_code: 'Код приглашения', invite_bad: 'Неверный код приглашения',
     login_taken_or_err: 'Логин занят или ошибка регистрации',
@@ -281,6 +296,14 @@ const I18N = {
     no_coords_yet: 'No coordinates',
     req_missing: 'Missing', issue_complex: 'apartment complex', issue_unit: 'unit number', issue_tech: 'technician',
     crew: 'Performed by', add_helper: '＋ add employee', all_staff: 'All',
+    shared_chk: 'Shared document access for co-worker',
+    shared_hint: 'Co-workers from “Performed by” will see this job in their own list and can edit it',
+    shared_chip: 'Shared',
+    shared_on_info: 'The author enabled shared access — you can edit this document',
+    shared_set_title: 'Shared document access',
+    shared_set_chk: 'Allow shared document access for co-workers',
+    shared_set_hint: 'When off, everyone works only with their own documents: the “Shared access” checkbox in jobs is hidden and stops working. The marks saved in documents are kept and work again after re-enabling.',
+    db_needs_update: 'Update the DB: run supabase/update-to-1_07_10.sql in the Supabase SQL editor',
     login: 'Login', login_hint: 'Latin/digits, 3–32 chars. Sign in with login & password.',
     invite_code: 'Invite code', invite_bad: 'Invalid invite code',
     login_taken_or_err: 'Login is taken or sign-up failed',
@@ -502,7 +525,8 @@ function seedCatalogs(){
     id: 'org', invoice_title: 'INVOICE #CC', header_city: 'ATLANTA',
     assoc_line: 'atlanta apartment association',
     addr1: 'PO BOX 920482', addr2: 'NORCROSS,', addr3: 'GA 30010',
-    company_name: 'APC, LLC', company_short: 'APC'
+    company_name: 'APC, LLC', company_short: 'APC',
+    allow_shared_jobs: true
   };
   const size_types = [
     { id:'sz1', name:'Длина / Length', unit:'ft', sort:1 },
@@ -557,13 +581,13 @@ function seedDemoData(){
   fd.others[0] = { desc: 'cut ceiling toilet 2x7, living room ceiling 7x7, bedroom 7x7', amount: 200 };
   const job1 = {
     id: uid(), date: d3, counterparty_id: cp1.id, complex_id: complexes[0].id, unit_number: '916',
-    work_type_id: wtVet.id, technician_id: 'demo-admin', technician_name: 'Ivan P., Alexey S.', helper_ids: ['demo-manager'],
+    work_type_id: wtVet.id, technician_id: 'demo-admin', technician_name: 'Ivan P., Alexey S.', helper_ids: ['demo-manager'], shared_with_helpers: true,
     priority: true, sort_order: 0, status: 'done', note: 'Key at leasing office. Dog in unit — call tenant 30 min before pickup.', form_data: fd, total: 0, approved_total: null, approved_by: null, approved_at: null,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString()
   };
   const job2 = {
     id: uid(), date: today, counterparty_id: cp2.id, complex_id: complexes[2].id, unit_number: '204',
-    work_type_id: wtSteam.id, technician_id: 'demo-tech', technician_name: 'Sergey V.', helper_ids: [],
+    work_type_id: wtSteam.id, technician_id: 'demo-tech', technician_name: 'Sergey V.', helper_ids: [], shared_with_helpers: false,
     status: 'draft', note: '', form_data: emptyFormData(), total: 0, approved_total: null, approved_by: null, approved_at: null,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString()
   };
@@ -604,7 +628,8 @@ function emptyData(){
     id: 'org', invoice_title: 'INVOICE #CC', header_city: 'ATLANTA',
     assoc_line: 'atlanta apartment association',
     addr1: 'PO BOX 920482', addr2: 'NORCROSS,', addr3: 'GA 30010',
-    company_name: 'APC, LLC', company_short: 'APC'
+    company_name: 'APC, LLC', company_short: 'APC',
+    allow_shared_jobs: true
   } };
   TABLES.forEach(tb => d[tb] = []);
   return d;
@@ -704,6 +729,17 @@ async function dbUpsert(table, row){
     try {
       const { error } = await state.sb.from(table).upsert(row);
       if (error) {
+        // v1.07.10: БД без новой колонки — повторяем запись без неё, данные не теряются
+        const miss = missingColumnOf(error);
+        if (miss && Object.prototype.hasOwnProperty.call(row, miss)){
+          const clean = { ...row }; delete clean[miss];
+          const r2 = await Promise.resolve(state.sb.from(table).upsert(clean)).catch(e2 => ({ error: e2 }));
+          if (!r2.error){
+            dlog('⚠ upsert', table, 'сохранено без колонки', miss, '— выполните supabase/update-to-1_07_10.sql');
+            toast('⚠ ' + t('db_needs_update'), 'err');
+            return;
+          }
+        }
         noteWriteError('upsert', table, row.id, error);
         dlog('⛔ upsert', table, 'id=' + String(row.id||'').slice(0,8) + ':', error, '· ' + (Date.now()-ts) + ' мс');
         toast(t('write_err') + ' (' + table + '): ' + error.message, 'err');
@@ -742,13 +778,60 @@ async function dbSaveOrg(org){
   state.data.org_settings = org; saveLocal();
   if (HAS_SB) {
     const { error } = await state.sb.from('org_settings').upsert(org);
-    if (error) toast(t('sync_err') + ': ' + error.message, 'err');
+    if (error){
+      // v1.07.10: БД без новой колонки — сохраняем остальное и подсказываем выполнить апдейт
+      const miss = missingColumnOf(error);
+      if (miss && Object.prototype.hasOwnProperty.call(org, miss)){
+        const clean = { ...org }; delete clean[miss];
+        const r2 = await Promise.resolve(state.sb.from('org_settings').upsert(clean)).catch(e2 => ({ error: e2 }));
+        if (!r2.error){ toast('⚠ ' + t('db_needs_update'), 'err'); return; }
+      }
+      toast(t('sync_err') + ': ' + error.message, 'err');
+    }
   }
 }
 
 /* ---------------- Роли ---------------- */
 const isAdmin = () => state.user?.role === 'admin';
 const isManager = () => state.user?.role === 'manager' || isAdmin();
+
+/* ---------------- v1.07.10: общий доступ к документам для коворкеров ---------------- */
+/* Глобальный выключатель функции (галочка админа в «Настройках», org_settings.allow_shared_jobs). */
+function sharedJobsEnabled(){
+  const org = state.data && state.data.org_settings;
+  return !org || org.allow_shared_jobs !== false;   // по умолчанию включено
+}
+/* Я — коворкер этой работы, и автор включил в ней «Общий доступ» (и функция не выключена админом) */
+function isJobSharedWithMe(j){
+  return !!j && sharedJobsEnabled() && !!j.shared_with_helpers
+      && state.user && j.technician_id !== state.user.id
+      && (j.helper_ids || []).includes(state.user.id);
+}
+function isPlacementSharedWithMe(p){
+  if (!p || !state.data) return false;
+  const j = state.data.jobs.find(x => x.id === p.job_id);
+  return isJobSharedWithMe(j);
+}
+/* Чип «Общий» на карточке работы: виден автору и коворкерам, пока общий доступ действует */
+function jobSharedChipHtml(j){
+  if (!sharedJobsEnabled() || !j.shared_with_helpers || !(j.helper_ids || []).length) return '';
+  return ` <span class="chip info shared-chip" title="${esc(t('shared_hint'))}">${ic('share')} ${t('shared_chip')}</span>`;
+}
+/* Блок «Общий доступ» в форме работы: автору/админу — галочка, коворкеру — пометка */
+function sharedAccessBoxHtml(j){
+  if (!sharedJobsEnabled()) return '';          // функция выключена админом — блок скрыт целиком
+  if (isAdmin() || j.technician_id === state.user.id){
+    return `
+      <label class="opt shared-opt ${j.shared_with_helpers?'on':''}" style="margin-top:8px">
+        <input type="checkbox" id="jb-shared" ${j.shared_with_helpers?'checked':''}> ${ic('share')} ${t('shared_chk')}
+      </label>
+      <div class="tiny" style="margin-top:4px">${t('shared_hint')}</div>`;
+  }
+  if (isJobSharedWithMe(j)){
+    return `<div class="tiny shared-note" style="margin-top:8px">${ic('share')} ${t('shared_on_info')}</div>`;
+  }
+  return '';
+}
 
 /* =====================================================================
    МОДЕЛЬ ФОРМЫ ИНВОЙСА + РАСЧЁТ
@@ -998,12 +1081,18 @@ function scopeFilter(list, techKey){
 }
 function visibleJobs(){
   let js = scopeFilter(state.data.jobs, 'technician_id');
-  if (!isManager() || state.filterMine) js = js.filter(j => j.technician_id === state.user.id);
+  // v1.07.10: работы с общим доступом, где я коворкер, видны наравне со своими
+  const shared = state.data.jobs.filter(j => isJobSharedWithMe(j) && !js.includes(j));
+  if (shared.length) js = js.concat(shared);
+  if (!isManager() || state.filterMine) js = js.filter(j => j.technician_id === state.user.id || isJobSharedWithMe(j));
   return js;
 }
 function visiblePlacements(){
   let ps = scopeFilter(state.data.placements, 'technician_id');
-  if (!isManager() || state.filterMine) ps = ps.filter(p => p.technician_id === state.user.id);
+  // v1.07.10: пикапы работ с общим доступом тоже видны коворкеру
+  const shared = state.data.placements.filter(p => isPlacementSharedWithMe(p) && !ps.includes(p));
+  if (shared.length) ps = ps.concat(shared);
+  if (!isManager() || state.filterMine) ps = ps.filter(p => p.technician_id === state.user.id || isPlacementSharedWithMe(p));
   return ps;
 }
 function jobSortCmp(a, b){
@@ -1021,7 +1110,7 @@ function pickupsOn(dateISO){
 function myDueCount(){
   if (!state.data) return { due: 0, over: 0 };
   const today = todayISO();
-  const mine = state.data.placements.filter(p => p.technician_id === state.user.id && !p.picked_up);
+  const mine = state.data.placements.filter(p => (p.technician_id === state.user.id || isPlacementSharedWithMe(p)) && !p.picked_up);
   return { due: mine.filter(p=>p.due_date===today).length, over: mine.filter(p=>p.due_date<today).length };
 }
 function checkPickupBanner(withToast){
@@ -1070,6 +1159,7 @@ const IC = {
   callbox: '<rect x="6" y="3.2" width="12" height="17.6" rx="2.5"/><path d="M9.2 6.8h5.6"/><g fill="currentColor" stroke="none"><circle cx="9" cy="11.4" r="1.05"/><circle cx="12" cy="11.4" r="1.05"/><circle cx="15" cy="11.4" r="1.05"/><circle cx="9" cy="15.2" r="1.05"/><circle cx="12" cy="15.2" r="1.05"/><circle cx="15" cy="15.2" r="1.05"/></g>',
   gate: '<path d="M5 20.6V7.4"/><circle cx="5" cy="5.2" r="1.9"/><path d="M6.9 5.9l13.3 4.3-.8 2.4L6.6 8.4"/><path d="M11.2 7.3l-.8 2.4"/><path d="M15.2 8.6l-.8 2.4"/><path d="M3 20.6h4"/>',
   crew: '<circle cx="12" cy="8.6" r="3.6"/><path d="M5.2 20.4a6.8 6.8 0 0 1 13.6 0"/>',
+  share: '<circle cx="6" cy="12" r="2.7"/><circle cx="17.4" cy="5.8" r="2.7"/><circle cx="17.4" cy="18.2" r="2.7"/><path d="M8.4 10.7l6.6-3.6"/><path d="M8.4 13.3l6.6 3.6"/>',
   toolbox: '<rect x="3.4" y="8.4" width="17.2" height="11" rx="2"/><path d="M9 8.4V7a3 3 0 0 1 6 0v1.4"/><path d="M3.4 13h17.2"/><path d="M10.4 13v2.6h3.2V13"/>',
   save: '<path d="M5.6 4h10.8L20 7.6V18.4A1.6 1.6 0 0 1 18.4 20H5.6A1.6 1.6 0 0 1 4 18.4V5.6A1.6 1.6 0 0 1 5.6 4z"/><path d="M8 4v4.6h7V4"/><path d="M8 20v-6.4h8V20"/>',
   download: '<path d="M12 3.8v10.4"/><path d="M7.4 9.8l4.6 4.6 4.6-4.6"/><path d="M4.4 19.6h15.2"/>',
@@ -1634,7 +1724,7 @@ function viewHome(){
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
         ${addrLineHtml(cx)}
-        <div class="s">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)} ${overdue?`<span class="chip bad">${t('overdue')}</span>`:''} ${!state.filterMine?'· '+esc(profName(p0.technician_id)):''}</div>
+        <div class="s">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)} ${overdue?`<span class="chip bad">${t('overdue')}</span>`:''} ${(!state.filterMine || isPlacementSharedWithMe(p0))?'· '+esc(profName(p0.technician_id)):''}</div>
         ${codesLineHtml(cx)}
         ${(state.data.jobs.find(x=>x.id===jobId)||{}).note ? `<div class="s note-line">${ic('note')} ${esc((state.data.jobs.find(x=>x.id===jobId)||{}).note)}</div>` : ''}
       </div>
@@ -1674,7 +1764,7 @@ function viewHome(){
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number||'—')}</div>
         ${addrLineHtml(cx)}
-        <div class="s"><span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span>${!state.filterMine?' · '+esc(j.technician_name||profName(j.technician_id)):''}</div>
+        <div class="s"><span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}${jobSharedChipHtml(j)}</div>
         ${codesLineHtml(cx)}
       </div>
       <div class="right">
@@ -1769,7 +1859,7 @@ async function createTask(){
   if (missing.length){ toast('⚠ ' + t('not_selected') + ': ' + missing.join(', '), 'err'); return; }
   const job = {
     id: uid(), date, counterparty_id: cpId, complex_id: cxId, unit_number: unit,
-    work_type_id: ntWt, technician_id: state.user.id, technician_name: shortName(state.user.display_name), helper_ids: [], priority: false, sort_order: jobsOn(date).length,
+    work_type_id: ntWt, technician_id: state.user.id, technician_name: shortName(state.user.display_name), helper_ids: [], shared_with_helpers: false, priority: false, sort_order: jobsOn(date).length,
     status: 'draft', note: '', form_data: emptyFormData(), total: 0,
     approved_total: null, approved_by: null, approved_at: null,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString()
@@ -1786,7 +1876,7 @@ async function pickupGroup(jobId){
   if (!confirm(t('pickup_confirm'))) return;
   const now = new Date().toISOString();
   const list = state.data.placements.filter(p => p.job_id === jobId && !p.picked_up)
-    .filter(p => isManager() || p.technician_id === state.user.id);
+    .filter(p => isManager() || p.technician_id === state.user.id || isPlacementSharedWithMe(p));
   for (const p of list){
     const upd = { ...p, picked_up: true, picked_up_at: now, picked_up_by: state.user.id };
     await dbUpsert('placements', upd);
@@ -1859,7 +1949,7 @@ let jobDraft = null; // рабочая копия
 function openJob(id){
   const j = state.data.jobs.find(x=>x.id===id);
   if (!j) return;
-  if (!isManager() && j.technician_id !== state.user.id){ toast(t('no_access'), 'err'); return; }
+  if (!isManager() && j.technician_id !== state.user.id && !isJobSharedWithMe(j)){ toast(t('no_access'), 'err'); return; }
   jobDraft = JSON.parse(JSON.stringify(j));
   try{
     const saved = JSON.parse(localStorage.getItem('techlog_draft')||'null');
@@ -1870,6 +1960,7 @@ function openJob(id){
   // мердж на случай новых полей формы
   jobDraft.form_data = Object.assign(emptyFormData(), jobDraft.form_data || {});
   jobDraft.helper_ids = jobDraft.helper_ids || [];
+  jobDraft.shared_with_helpers = !!jobDraft.shared_with_helpers;   // v1.07.10
   state.screen = 'job'; state.jobId = id; render();
   window.scrollTo(0,0);
 }
@@ -1895,6 +1986,8 @@ function viewJob(){
   const sec = calcSections(fd, p);
   const total = calcTotal(fd, p);
   const isApproved = j.status === 'approved';
+  // v1.07.10: коворкер с общим доступом правит содержимое работы, но не состав бригады и не саму галочку доступа
+  const crewEditable = isManager() || j.technician_id === state.user.id;
   const auxList = (wt.needs_aux && (wt.aux_ids||[]).length)
     ? (wt.aux_ids||[]).map(id => state.data.aux_equipment.find(a=>a.id===id)).filter(Boolean) : [];
   const auxTake = fd.aux_take || {};
@@ -1955,6 +2048,7 @@ function viewJob(){
     <div class="crew-box">
       <div class="tiny" style="font-weight:900;margin-bottom:6px">${(j.technician_id||(j.helper_ids||[]).length)?'':warnIcon()}${ic('crew')} ${t('crew')}</div>
       <div class="crew-chips" id="crew-chips">${crewChipsHtml(j)}</div>
+      ${crewEditable ? `
       <div class="crew-add">
         <select id="crew-sel" onchange="App.crewAdd(this.value)">
           <option value="">${t('add_helper')}</option>
@@ -1962,7 +2056,8 @@ function viewJob(){
             .map(p=>`<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_'+p.role)})</option>`).join('')}
         </select>
         <button class="btn btn-ghost sm" onclick="App.crewAll()">${t('all_staff')}</button>
-      </div>
+      </div>` : ''}
+      ${sharedAccessBoxHtml(j)}
     </div>
     ${aux}
   </div>
@@ -2121,6 +2216,7 @@ function bindJobForm(){
     else if (el.id === 'jb-unit'){ jobDraft.unit_number = el.value.trim(); }
     else if (el.id === 'jb-adnote'){ fd().airduct.note = el.value; }
     else if (el.id === 'jb-note'){ jobDraft.note = el.value; }
+    else if (el.id === 'jb-shared'){ jobDraft.shared_with_helpers = el.checked; el.closest('.opt')?.classList.toggle('on', el.checked); }
     else if (el.matches('[data-oth-d]')){ fd().others[+el.dataset.othD].desc = el.value; }
     else if (el.matches('[data-oth-a]')){ fd().others[+el.dataset.othA].amount = parseFloat(el.value)||0; recalcJob(); }
     else if (el.matches('[data-ex-qty]')){ const it=fd().extra[+el.dataset.exQty]; it.qty = Math.max(1, parseInt(el.value)||1); recalcJob(); }
@@ -2812,6 +2908,13 @@ function viewSettings(){
     <button class="btn btn-blue sm" style="margin-top:8px" onclick="App.saveOrg()">${t('save')}</button>
   </div>
   <div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('share')} ${t('shared_set_title')}</div>
+    <label class="opt ${org.allow_shared_jobs!==false?'on':''}">
+      <input type="checkbox" id="org-shared" ${org.allow_shared_jobs!==false?'checked':''} onchange="App.setSharedJobs(this.checked)"> ${t('shared_set_chk')}
+    </label>
+    <div class="tiny" style="margin-top:6px">${t('shared_set_hint')}</div>
+  </div>
+  <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
     <div class="tiny" style="margin-bottom:8px">${t('invite_hint')}</div>
     <div class="form-row"><span class="lbl">${t('invite_new_lbl')}</span>
@@ -3006,6 +3109,11 @@ const App = {
       assoc_line: $('#org-assoc').value.trim(),
       addr1: $('#org-a1').value.trim(), addr2: $('#org-a2').value.trim(), addr3: $('#org-a3').value.trim() };
     dbSaveOrg(org); toast('✓ ' + t('saved'));
+  },
+  setSharedJobs(v){
+    // v1.07.10: админ включает/выключает общий доступ к документам для всей команды
+    const org = { ...state.data.org_settings, allow_shared_jobs: !!v };
+    dbSaveOrg(org); toast('✓ ' + t('saved')); render();
   },
   demoLogin, logout,
   signIn(){ sbSignIn($('#li-login').value, $('#li-pass').value); },
@@ -3355,7 +3463,10 @@ function gmapsCx(){
    ЭКРАН: ОТЧЁТЫ — вкладки «Инвойсы (PDF)» и «Пикапы»
    ===================================================================== */
 function repScopeJobs(){
-  return scopeFilter(state.data.jobs, 'technician_id');
+  let js = scopeFilter(state.data.jobs, 'technician_id');
+  // v1.07.10: работы с общим доступом видны коворкеру и в отчётах
+  const shared = state.data.jobs.filter(j => isJobSharedWithMe(j) && !js.includes(j));
+  return shared.length ? js.concat(shared) : js;
 }
 function repJobs(){
   if (!state.repFrom) state.repFrom = addDaysISO(todayISO(), -6);
@@ -3888,12 +3999,13 @@ async function saveVis(managerId){
 function crewChipsHtml(j){
   const ids = [j.technician_id, ...(j.helper_ids||[])].filter(Boolean);
   if (!ids.length) return `<span class="tiny">—</span>`;
+  const editable = isManager() || j.technician_id === state.user.id;   // v1.07.10: коворкер не меняет состав бригады
   return ids.map((id, i) => {
     const pr = state.data.profiles.find(p=>p.id===id);
     const nm = pr ? shortName(pr.display_name) : '?';
     const primary = i === 0;
     return `<span class="chip-tech ${primary?'primary':''}">
-      ${esc(nm)}${primary ? '' : ` <button class="x" onclick="App.crewRemove('${id}')" aria-label="remove">✕</button>`}
+      ${esc(nm)}${(primary || !editable) ? '' : ` <button class="x" onclick="App.crewRemove('${id}')" aria-label="remove">✕</button>`}
     </span>`;
   }).join('');
 }

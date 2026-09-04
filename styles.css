@@ -162,6 +162,11 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .chip.warn{border-color:var(--orange);color:var(--orange)}
 .chip.bad{border-color:var(--red);color:var(--red)}
 .chip.info{border-color:var(--blue);color:var(--blue)}
+/* v1.07.10: общий доступ к документу для коворкеров */
+.shared-chip{padding:1px 8px;gap:4px;vertical-align:1px}
+.shared-chip .ic{width:.95em;height:.95em}
+.shared-note{color:var(--blue);font-weight:800}
+.shared-opt{width:100%;justify-content:flex-start}
 .badge-status{font-size:.68rem;font-weight:900;border-radius:8px;padding:2px 8px;text-transform:uppercase}
 .st-draft{background:#33454C;color:#cfe0e8}
 .st-done{background:var(--blue);color:#04314A}

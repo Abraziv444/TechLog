@@ -1,5 +1,5 @@
 -- =====================================================================
--- TechLog v1.01.01 — схема Supabase
+-- TechLog v1.07.10 — схема Supabase
 -- Выполните целиком в Supabase → SQL Editor → New query → Run
 -- =====================================================================
 
@@ -369,7 +369,8 @@ create table if not exists public.org_settings (
   addr2 text default 'NORCROSS,',
   addr3 text default 'GA 30010',
   company_name text default 'APC, LLC',
-  company_short text default 'APC'
+  company_short text default 'APC',
+  allow_shared_jobs boolean not null default true  -- v1.07.10: выключатель общего доступа (галочка админа)
 );
 
 -- ---------------------------------------------------------------------
@@ -428,6 +429,7 @@ create table if not exists public.jobs (
   technician_id uuid not null references public.profiles(id) on delete cascade,
   technician_name text default '',
   helper_ids jsonb not null default '[]'::jsonb,
+  shared_with_helpers boolean not null default false,  -- v1.07.10: общий доступ к документу для коворкеров
   priority boolean not null default false,
   sort_order int not null default 0,
   status text not null default 'draft' check (status in ('draft','done','approved')),
@@ -501,6 +503,34 @@ alter table public.jobs      add column if not exists sort_order int not null de
 alter table public.complexes add column if not exists callbox_code text default '';
 alter table public.complexes add column if not exists callbox_gate boolean not null default false;
 alter table public.extra_works add column if not exists price numeric not null default 0;
+-- v1.07.10: общий доступ к документам для коворкеров
+alter table public.jobs         add column if not exists shared_with_helpers boolean not null default false;
+alter table public.org_settings add column if not exists allow_shared_jobs   boolean not null default true;
+
+-- ---------------------------------------------------------------------
+-- v1.07.10: ОБЩИЙ ДОСТУП К ДОКУМЕНТАМ ДЛЯ КОВОРКЕРОВ
+-- Автор ставит в работе галочку «Общий доступ к документу для коворкера» —
+-- сотрудники из helper_ids видят и редактируют эту работу. Админ может
+-- выключить функцию целиком (org_settings.allow_shared_jobs).
+-- ---------------------------------------------------------------------
+create or replace function public.shared_jobs_enabled()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select allow_shared_jobs from public.org_settings where id = 'org'), true)
+$$;
+
+-- Текущий пользователь — коворкер работы с включённым общим доступом?
+-- security definer: читает jobs в обход RLS, чтобы политики placements
+-- не зависели от политик jobs и не было рекурсии.
+create or replace function public.is_shared_job_helper(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.shared_jobs_enabled()
+     and exists (
+       select 1 from public.jobs j
+       where j.id = p_job
+         and j.shared_with_helpers
+         and j.helper_ids ? auth.uid()::text
+     )
+$$;
 
 
 -- ---------------------------------------------------------------------
@@ -584,35 +614,54 @@ create policy complexes_wr on public.complexes for all to authenticated
   using (public.my_role() in ('admin','manager'))
   with check (public.my_role() in ('admin','manager'));
 
--- работы: сотрудник видит/правит только свои; менеджер видит все; админ — всё
+-- работы: сотрудник видит/правит свои и общие (где он коворкер и включён
+-- общий доступ, v1.07.10); менеджер видит все; админ — всё
 drop policy if exists jobs_sel on public.jobs;
 create policy jobs_sel on public.jobs for select to authenticated
-  using (technician_id = auth.uid() or public.my_role() in ('admin','manager'));
+  using (
+    technician_id = auth.uid()
+    or public.my_role() in ('admin','manager')
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  );
 drop policy if exists jobs_ins on public.jobs;
 create policy jobs_ins on public.jobs for insert to authenticated
   with check (technician_id = auth.uid() or public.my_role() = 'admin');
 drop policy if exists jobs_upd on public.jobs;
 create policy jobs_upd on public.jobs for update to authenticated
-  using (technician_id = auth.uid() or public.my_role() = 'admin')
-  with check (technician_id = auth.uid() or public.my_role() = 'admin');
+  using (
+    technician_id = auth.uid()
+    or public.my_role() = 'admin'
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  )
+  with check (
+    technician_id = auth.uid()
+    or public.my_role() = 'admin'
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  );
 drop policy if exists jobs_del on public.jobs;
 create policy jobs_del on public.jobs for delete to authenticated
   using (technician_id = auth.uid() or public.my_role() = 'admin');
 
--- размещения/пикапы: сотрудник — свои; менеджер и админ — все
+-- размещения/пикапы: сотрудник — свои и по общим работам (v1.07.10);
+-- менеджер и админ — все
 drop policy if exists pl_sel on public.placements;
 create policy pl_sel on public.placements for select to authenticated
-  using (technician_id = auth.uid() or public.my_role() in ('admin','manager'));
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+         or public.is_shared_job_helper(job_id));
 drop policy if exists pl_ins on public.placements;
 create policy pl_ins on public.placements for insert to authenticated
-  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager'));
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+              or public.is_shared_job_helper(job_id));
 drop policy if exists pl_upd on public.placements;
 create policy pl_upd on public.placements for update to authenticated
-  using (technician_id = auth.uid() or public.my_role() in ('admin','manager'))
-  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager'));
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+         or public.is_shared_job_helper(job_id))
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+              or public.is_shared_job_helper(job_id));
 drop policy if exists pl_del on public.placements;
 create policy pl_del on public.placements for delete to authenticated
-  using (technician_id = auth.uid() or public.my_role() = 'admin');
+  using (technician_id = auth.uid() or public.my_role() = 'admin'
+         or public.is_shared_job_helper(job_id));
 
 -- =====================================================================
 -- СИД-ДАННЫЕ
