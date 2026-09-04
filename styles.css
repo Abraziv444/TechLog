@@ -659,3 +659,20 @@ span.pri{display:grid;place-items:center;width:26px;height:24px}
 .tab span{font-size:.5rem}
 @media (max-width:400px){ .tab{padding:6px 0} .tab svg{width:18px;height:18px} }
 @media (max-width:358px){ .tab span{display:none} .tab{padding:9px 0} .tab svg{width:21px;height:21px} }
+
+/* ---------- Собственные контурные иконки ---------- */
+.ic{width:1.1em;height:1.1em;display:inline-block;vertical-align:-.18em;flex:0 0 auto}
+.inv-head .ic{width:19px;height:19px}
+.mic .ic{width:20px;height:20px;vertical-align:-.28em}
+.list-empty .big .ic{width:46px;height:46px}
+h3 .ic{width:21px;height:21px}
+/* ---------- Кнопка справки секции ---------- */
+.help-btn{
+  width:20px;height:20px;border-radius:50%;border:2px solid var(--line);
+  background:var(--panel);color:var(--dim);font-weight:900;font-size:.66rem;
+  line-height:1;padding:0;margin-left:2px;flex:0 0 auto;cursor:pointer
+}
+.help-btn:active{color:var(--blue);border-color:var(--blue)}
+.help-row{padding:9px 0;border-bottom:2px solid var(--line-soft)}
+.help-row:last-child{border-bottom:none}
+.help-row b{display:block;margin-bottom:2px}

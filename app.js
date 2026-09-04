@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.03';
+const APP_VERSION = '1.07.04';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -98,6 +98,7 @@ const I18N = {
     stats_due: 'на вывоз', stats_over: 'просрочено',
     sync_err: 'Ошибка синхронизации', offline_note: 'Оффлайн: показаны сохранённые данные',
     not_selected: 'Не выбрано', aux_take_hint: 'нажмите то, что нужно взять',
+    back_exit_hint: 'Чтобы выйти из приложения, нажмите «назад» ещё раз', help_title: 'Справка',
     select: '— выбрать —', install_hint: 'Меню браузера → «Установить приложение» / «Добавить на главный экран»',
     tab_map: 'Карта', tab_reports: 'Отчёты',
     map_title: 'Карта апарт-комплексов', all_counterparties: 'Все контрагенты',
@@ -230,6 +231,7 @@ const I18N = {
     stats_due: 'to pick up', stats_over: 'overdue',
     sync_err: 'Sync error', offline_note: 'Offline: showing cached data',
     not_selected: 'Not selected', aux_take_hint: 'tap what you need to take',
+    back_exit_hint: 'Press back again to exit the app', help_title: 'Help',
     select: '— select —', install_hint: 'Browser menu → "Install app" / "Add to Home screen"',
     tab_map: 'Map', tab_reports: 'Reports',
     map_title: 'Apartment complexes map', all_counterparties: 'All counterparties',
@@ -973,6 +975,404 @@ const ICONS = {
   sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>',
 };
 
+/* =====================================================================
+   СОБСТВЕННЫЕ КОНТУРНЫЕ ИКОНКИ (нарисованы вручную, стиль как у таббара:
+   контур stroke=currentColor — цвет наследуется от соседнего текста)
+   ===================================================================== */
+const IC = {
+  steam: '<path d="M7 4.2C5.3 6.3 5.3 8.4 7 10.5c1.7 2.1 1.7 4.2 0 6.3"/><path d="M12 4.2c-1.7 2.1-1.7 4.2 0 6.3 1.7 2.1 1.7 4.2 0 6.3"/><path d="M17 4.2c-1.7 2.1-1.7 4.2 0 6.3 1.7 2.1 1.7 4.2 0 6.3"/><path d="M5.5 20.5h13"/>',
+  sponge: '<rect x="3" y="10.5" width="18" height="9" rx="3"/><circle cx="8" cy="15" r="1"/><circle cx="12.5" cy="17" r="1"/><circle cx="15.8" cy="13.8" r="1"/><path d="M6.5 3.8v3.4M4.8 5.5h3.4"/><path d="M17.5 3v3.4M15.8 4.7h3.4"/>',
+  wrench: '<path d="M20.8 7.2a4.9 4.9 0 0 1-6.3 4.7l-6.7 6.7a2.33 2.33 0 1 1-3.3-3.3l6.7-6.7a4.9 4.9 0 0 1 5.9-6.2L14 5.5l1.1 3.4 3.4 1.1 3.1-3.1c.14.74.2 1 .2 1.3z" transform="translate(0 -.5)"/>',
+  palette: '<path d="M12 3.2a8.8 8.8 0 1 0 .4 17.6c1.6 0 2.1-1 2.1-1.9 0-.8-.6-1.3-.6-2.1 0-1 .8-1.8 2-1.8h1.9c2.1 0 3.5-1.5 3.5-3.4C21.3 6.6 17.1 3.2 12 3.2z"/><circle cx="7.8" cy="9.2" r="1.1"/><circle cx="12" cy="7.2" r="1.1"/><circle cx="16.2" cy="9.2" r="1.1"/><circle cx="7" cy="13.8" r="1.1"/>',
+  box: '<path d="M3.6 7.8L12 3.8l8.4 4v8.4l-8.4 4-8.4-4z"/><path d="M3.6 7.8l8.4 4 8.4-4"/><path d="M12 11.8v8.4"/>',
+  fog: '<path d="M7.2 14.8a3.6 3.6 0 1 1 .5-7.15A5.1 5.1 0 0 1 17.6 8.4a3.35 3.35 0 0 1-.5 6.6l-9.9-.2z"/><path d="M5 18.6h8"/><path d="M15.6 18.6H19"/>',
+  flask: '<path d="M9.3 3.4h5.4"/><path d="M10.4 3.4v5.3L5.5 17a2.4 2.4 0 0 0 2.1 3.6h8.8a2.4 2.4 0 0 0 2.1-3.6l-4.9-8.3V3.4"/><path d="M7.4 14.6h9.2"/>',
+  drop: '<path d="M12 3.4c3.2 4 5.7 7 5.7 9.9a5.7 5.7 0 1 1-11.4 0C6.3 10.4 8.8 7.4 12 3.4z"/>',
+  vent: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9.2h8"/><path d="M8 12.5h8"/><path d="M8 15.8h8"/>',
+  fan: '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="1.9"/><path d="M12 10.1V4.6"/><path d="M10.4 13l-4.8 2.8"/><path d="M13.6 13l4.8 2.8"/>',
+  layers: '<path d="M4 8.4l8-4 8 4-8 4z"/><path d="M4 12.4l8 4 8-4"/><path d="M4 16.4l8 4 8-4"/>',
+  pen: '<path d="M4.4 19.6l1-4L15.6 5.4l3 3L8.4 18.6z"/><path d="M13.7 7.3l3 3"/><path d="M17.3 3.7l3 3"/>',
+  note: '<path d="M14 3.4H7a2 2 0 0 0-2 2v13.2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.4z"/><path d="M14 3.4v5h5"/><path d="M8.5 13h7"/><path d="M8.5 16.5h4.5"/>',
+  mic: '<rect x="9" y="3.2" width="6" height="10.6" rx="3"/><path d="M5.6 11.4a6.4 6.4 0 0 0 12.8 0"/><path d="M12 17.8v2.6"/><path d="M9.4 20.4h5.2"/>',
+  globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.6 2.4 3.9 5.2 3.9 8.5s-1.3 6.1-3.9 8.5c-2.6-2.4-3.9-5.2-3.9-8.5s1.3-6.1 3.9-8.5z"/>',
+  compass: '<circle cx="12" cy="12" r="8.5"/><path d="M15.6 8.4l-1.9 5.3-5.3 1.9 1.9-5.3z"/>',
+  key: '<circle cx="7.3" cy="15.7" r="3.9"/><path d="M10.1 12.9L20.2 2.8"/><path d="M15.3 7.7l3.1 3.1"/><path d="M12.6 10.4l2.1 2.1"/>',
+  callbox: '<rect x="6" y="3.2" width="12" height="17.6" rx="2.5"/><path d="M9.2 6.8h5.6"/><g fill="currentColor" stroke="none"><circle cx="9" cy="11.4" r="1.05"/><circle cx="12" cy="11.4" r="1.05"/><circle cx="15" cy="11.4" r="1.05"/><circle cx="9" cy="15.2" r="1.05"/><circle cx="12" cy="15.2" r="1.05"/><circle cx="15" cy="15.2" r="1.05"/></g>',
+  gate: '<path d="M5 20.6V7.4"/><circle cx="5" cy="5.2" r="1.9"/><path d="M6.9 5.9l13.3 4.3-.8 2.4L6.6 8.4"/><path d="M11.2 7.3l-.8 2.4"/><path d="M15.2 8.6l-.8 2.4"/><path d="M3 20.6h4"/>',
+  crew: '<circle cx="12" cy="8.6" r="3.6"/><path d="M5.2 20.4a6.8 6.8 0 0 1 13.6 0"/>',
+  toolbox: '<rect x="3.4" y="8.4" width="17.2" height="11" rx="2"/><path d="M9 8.4V7a3 3 0 0 1 6 0v1.4"/><path d="M3.4 13h17.2"/><path d="M10.4 13v2.6h3.2V13"/>',
+  save: '<path d="M5.6 4h10.8L20 7.6V18.4A1.6 1.6 0 0 1 18.4 20H5.6A1.6 1.6 0 0 1 4 18.4V5.6A1.6 1.6 0 0 1 5.6 4z"/><path d="M8 4v4.6h7V4"/><path d="M8 20v-6.4h8V20"/>',
+  download: '<path d="M12 3.8v10.4"/><path d="M7.4 9.8l4.6 4.6 4.6-4.6"/><path d="M4.4 19.6h15.2"/>',
+  trash: '<path d="M4.4 6.4h15.2"/><path d="M9 6.4V4.9a1.4 1.4 0 0 1 1.4-1.4h3.2A1.4 1.4 0 0 1 15 4.9v1.5"/><path d="M6.4 6.4l1 13.1a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l1-13.1"/><path d="M10 10.4v6.2"/><path d="M14 10.4v6.2"/>',
+  star: '<path d="M12 3.6l2.6 5.2 5.7.8-4.1 4 1 5.7-5.2-2.7-5.2 2.7 1-5.7-4.1-4 5.7-.8z"/>',
+  bell: '<path d="M6.2 18.4h11.6c-1.3-1.6-1.8-3.2-1.8-5.2v-2.6a4 4 0 1 0-8 0v2.6c0 2-.5 3.6-1.8 5.2z"/><path d="M12 3.4v1.8"/><path d="M10 21a2.2 2.2 0 0 0 4 0"/>',
+  owl: '<path d="M4.6 6.6C4.6 3.7 7 3.2 7.6 5.3 8.8 4.1 10.3 3.5 12 3.5s3.2.6 4.4 1.8c.6-2.1 3-1.6 3 1.3.6 1.3 1 2.8 1 4.4 0 5-3.7 8.6-8.4 8.6S3.6 16 3.6 11c0-1.6.4-3.1 1-4.4z"/><circle cx="9" cy="10.4" r="2.4"/><circle cx="15" cy="10.4" r="2.4"/><path d="M12 13l-1.2 1.6h2.4z"/>',
+  map: '<path d="M3.6 6.4l5.4-2 6 2 5.4-2v13.2l-5.4 2-6-2-5.4 2z"/><path d="M9 4.4v13.2"/><path d="M15 6.4v13.2"/>',
+  calendar: '<rect x="4" y="5.4" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M8.4 3.4v4"/><path d="M15.6 3.4v4"/>',
+  pin: '<path d="M12 21s-6.6-6.1-6.6-10.7a6.6 6.6 0 0 1 13.2 0C18.6 14.9 12 21 12 21z"/><circle cx="12" cy="10.2" r="2.3"/>',
+  book: '<path d="M12 6.4C10.5 4.9 8.5 4.4 5.5 4.4c-.9 0-1.5.6-1.5 1.4v11.6c0 .8.6 1.4 1.5 1.4 3 0 5 .5 6.5 2 1.5-1.5 3.5-2 6.5-2 .9 0 1.5-.6 1.5-1.4V5.8c0-.8-.6-1.4-1.5-1.4-3 0-5 .5-6.5 2z"/><path d="M12 6.4v14.4"/>',
+  clipboard: '<path d="M9 4.6H6.6A1.6 1.6 0 0 0 5 6.2v13.2A1.6 1.6 0 0 0 6.6 21h10.8a1.6 1.6 0 0 0 1.6-1.6V6.2a1.6 1.6 0 0 0-1.6-1.6H15"/><rect x="9" y="3" width="6" height="3.4" rx="1.2"/><path d="M8.6 11.4h6.8"/><path d="M8.6 15h4.8"/>',
+  dollar: '<path d="M16.2 7.6a4.4 4.4 0 0 0-3.8-1.8c-2.3 0-4.2 1.2-4.2 3s1.8 2.5 4.2 3 4.2 1.3 4.2 3.1-1.9 3-4.2 3a4.4 4.4 0 0 1-3.8-1.9"/><path d="M12.4 3.4v17.2"/>',
+  receipt: '<path d="M6 3.4h12V20l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8h6"/><path d="M9 11.4h6"/><path d="M9 14.8h4"/>',
+  building: '<path d="M5 21V4h14v17"/><path d="M3.6 21h16.8"/><path d="M9 8h1.6M13.4 8H15M9 12h1.6M13.4 12H15M9 16h1.6M13.4 16H15"/><path d="M11 21v-2.6h2V21"/>',
+  eye: '<path d="M2.8 12S6.5 5.8 12 5.8 21.2 12 21.2 12 17.5 18.2 12 18.2 2.8 12 2.8 12z"/><circle cx="12" cy="12" r="2.8"/>',
+  hand: '<path d="M7.6 12.4V7a1.35 1.35 0 0 1 2.7 0v4M10.3 11V5.4a1.35 1.35 0 0 1 2.7 0V11M13 11V6.2a1.35 1.35 0 0 1 2.7 0v5.6"/><path d="M15.7 11.8l1.5-2.2a1.3 1.3 0 0 1 2.2 1.4l-2.5 5a5.9 5.9 0 0 1-5.3 3.4c-3.2 0-4.5-1.7-6.1-4.9l-1.4-2.7a1.35 1.35 0 0 1 2.3-1.4l1.2 1.9"/>',
+  mail: '<rect x="3.4" y="5.4" width="17.2" height="13.2" rx="2"/><path d="M4.4 7l7.6 6 7.6-6"/>',
+  send: '<path d="M20.6 3.4L3.4 10.3l7.1 2.4 2.4 7.1z"/><path d="M20.6 3.4L10.5 12.7"/>',
+  inbox: '<path d="M3.4 13.4h4.7l1.7 2.6h4.4l1.7-2.6h4.7"/><path d="M5.6 5.4h12.8l2.2 8v5.2a1.5 1.5 0 0 1-1.5 1.5H4.9a1.5 1.5 0 0 1-1.5-1.5v-5.2z"/>',
+  archive: '<rect x="3.4" y="4.4" width="17.2" height="5" rx="1.2"/><path d="M5 9.4v8.7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.4"/><path d="M10 13.4h4"/>',
+  chk_on: '<rect x="4" y="4" width="16" height="16" rx="3.6"/><path d="M8.2 12.4l2.6 2.6 5-5.4"/>',
+  chk_off: '<rect x="4" y="4" width="16" height="16" rx="3.6"/>',
+  font: '<path d="M3.6 19L8.2 5.4h1L13.8 19"/><path d="M5.4 14.4h6.6"/><circle cx="18" cy="15.6" r="3.2"/><path d="M21.2 12.4V19"/>',
+  pencil: '<path d="M4 20l.9-3.6L15.6 5.7l2.7 2.7L7.6 19.1z"/><path d="M14.3 7l2.7 2.7"/>',
+  phone: '<rect x="7" y="3" width="10" height="18" rx="2.6"/><path d="M11 17.8h2"/>',
+  car: '<path d="M4.4 16.4v-4L6.3 8a2 2 0 0 1 1.9-1.3h7.6A2 2 0 0 1 17.7 8l1.9 4.4v4"/><path d="M4.4 12.4h15.2"/><circle cx="8" cy="16.9" r="1.9"/><circle cx="16" cy="16.9" r="1.9"/><path d="M9.9 16.9h4.2"/>',
+  steth: '<path d="M5.4 3.6v4.8a4.4 4.4 0 0 0 8.8 0V3.6"/><path d="M4 3.6h2.8M12.8 3.6h2.8"/><path d="M9.8 12.8v3.6a4.1 4.1 0 0 0 8.2 0v-1.6"/><circle cx="18" cy="12.2" r="2.5"/>',
+  cart: '<circle cx="9.6" cy="19.4" r="1.6"/><circle cx="17" cy="19.4" r="1.6"/><path d="M3.4 4.4H6l2.3 10.3a1.8 1.8 0 0 0 1.8 1.4h6.5a1.8 1.8 0 0 0 1.8-1.4l2-6.7H7"/>',
+  ruler: '<g transform="rotate(-35 12 12)"><rect x="2.8" y="9.2" width="18.4" height="5.6" rx="1.3"/><path d="M7 9.2v2.4M10.4 9.2v2.4M13.8 9.2v2.4M17.2 9.2v2.4"/></g>',
+  help: '<circle cx="12" cy="12" r="8.5"/><path d="M9.4 9.2a2.7 2.7 0 0 1 5.3.7c0 1.8-2.7 2.2-2.7 3.9"/><circle cx="12" cy="17" r=".4"/>',
+  refresh: '<path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/>',
+  chart: '<path d="M4 19.6h16"/><path d="M7 19.6v-6.2"/><path d="M12 19.6V9"/><path d="M17 19.6V4.8"/>',
+  warn: '<path d="M12 3.8L21.5 20.2H2.5z"/><path d="M12 10v4.6"/><path d="M12 17.6v.2"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3.2 2"/>'
+};
+function ic(n, style){
+  const p = IC[n]; if (!p) return '';
+  return `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${style?` style="${style}"`:''}>${p}</svg>`;
+}
+function helpBtn(key){
+  return `<button type="button" class="help-btn" onclick="event.stopPropagation();App.sectionHelp('${key}')" title="${t('help_title')}">?</button>`;
+}
+
+/* =====================================================================
+   СПРАВКА ПО СЕКЦИЯМ ИНВОЙСА («?» в заголовке секции)
+   ===================================================================== */
+const SECTION_HELP = {
+ "steam": {
+  "title": "Steam Clean",
+  "items": [
+   {
+    "t": "Deep Scrub",
+    "r": "Глубокая паровая чистка ковра с механическим скрабированием (предварительная обработка + агитация щёткой). Цена за комнату.",
+    "e": "Deep steam cleaning with pre-spray and mechanical brush agitation. Priced per room."
+   },
+   {
+    "t": "Rotovac",
+    "r": "Чистка роторной экстракционной машиной Rotovac — сотни проходов в минуту, для сильно загрязнённых ковров. Цена за комнату.",
+    "e": "Cleaning with a Rotovac rotary extractor — for heavily soiled carpet. Priced per room."
+   },
+   {
+    "t": "Rooms",
+    "r": "Количество комнат — множитель для отмеченных услуг секции.",
+    "e": "Number of rooms — a multiplier for the checked services."
+   }
+  ]
+ },
+ "removals": {
+  "title": "Removals",
+  "items": [
+   {
+    "t": "Red Stain",
+    "r": "Выведение красных пятен (соки, вино, Kool-Aid) термопереносом.",
+    "e": "Red stain removal (juice, wine, Kool-Aid) via heat transfer."
+   },
+   {
+    "t": "Wax",
+    "r": "Удаление воска и парафина (свечи).",
+    "e": "Wax and paraffin removal (candles)."
+   },
+   {
+    "t": "Rust",
+    "r": "Удаление пятен ржавчины (от мебели, гвоздей).",
+    "e": "Rust stain removal (furniture legs, nails)."
+   },
+   {
+    "t": "Ink",
+    "r": "Удаление чернил, маркера, ручки.",
+    "e": "Ink, marker and pen removal."
+   },
+   {
+    "t": "Gum",
+    "r": "Удаление жвачки (заморозка + счистка).",
+    "e": "Chewing gum removal (freeze and scrape)."
+   },
+   {
+    "t": "Paint Removal",
+    "r": "Удаление пятен краски с ковра.",
+    "e": "Paint spot removal from carpet."
+   }
+  ]
+ },
+ "repairs": {
+  "title": "Repairs",
+  "items": [
+   {
+    "t": "Threshold",
+    "r": "Порожек в дверном проёме: закрепление или замена перехода ковра.",
+    "e": "Doorway threshold: re-securing or replacing the carpet transition."
+   },
+   {
+    "t": "Stretch",
+    "r": "Перетяжка ковра (power stretch) — устранение волн и складок с повторным закреплением.",
+    "e": "Carpet power stretch — removing ripples and re-securing the carpet."
+   },
+   {
+    "t": "Seam",
+    "r": "Ремонт разошедшегося шва ковра (термолента).",
+    "e": "Repairing a separated carpet seam (heat-bond tape)."
+   },
+   {
+    "t": "Patch",
+    "r": "Заплатка: вырезка повреждённого участка и вклейка донорского куска.",
+    "e": "Patch: cutting out damage and bonding in a donor piece."
+   }
+  ]
+ },
+ "dye": {
+  "title": "Dye",
+  "items": [
+   {
+    "t": "Spot Dye",
+    "r": "Подкраска осветлённого/выцветшего пятна (например, от отбеливателя) в цвет ковра.",
+    "e": "Spot dyeing a bleached or faded spot to match the carpet colour."
+   },
+   {
+    "t": "Full Dye",
+    "r": "Полная покраска ковра в комнате целиком.",
+    "e": "Full carpet dye of the entire room."
+   }
+  ]
+ },
+ "other": {
+  "title": "Other",
+  "items": [
+   {
+    "t": "Trash Out",
+    "r": "Вынос мусора и брошенных вещей из юнита.",
+    "e": "Removing trash and abandoned items from the unit."
+   },
+   {
+    "t": "Pad Removal",
+    "r": "Демонтаж старой подложки ковра. Цена за комнату либо фикс за весь юнит (All Unit).",
+    "e": "Removing old carpet pad. Priced per room, or flat for the whole unit (All Unit)."
+   },
+   {
+    "t": "All Unit",
+    "r": "Подложка снимается во всём юните — применяется фиксированная цена вместо поштучной.",
+    "e": "Pad removed in the entire unit — a flat price applies instead of per-room."
+   },
+   {
+    "t": "Rooms",
+    "r": "Число комнат для Pad Removal (когда не выбран All Unit).",
+    "e": "Room count for Pad Removal (when All Unit is not selected)."
+   }
+  ]
+ },
+ "fog": {
+  "title": "Fog / GOC",
+  "items": [
+   {
+    "t": "Fog",
+    "r": "Обработка помещения дезинфицирующим/дезодорирующим туманом (фоггером). Отметка в инвойсе без отдельной цены.",
+    "e": "Treating the unit with a disinfecting/deodorising fog (fogger). Invoice mark without a separate price."
+   },
+   {
+    "t": "GOC",
+    "r": "?????",
+    "e": "?????"
+   },
+   {
+    "t": "Pet",
+    "r": "Обработка от запахов и меток животных (энзимы).",
+    "e": "Pet odour and urine treatment (enzymes)."
+   },
+   {
+    "t": "Smoke",
+    "r": "Устранение запаха дыма и табака.",
+    "e": "Smoke and tobacco odour removal."
+   },
+   {
+    "t": "Deodorizer",
+    "r": "Дезодорация помещения после чистки.",
+    "e": "Deodorising the unit after cleaning."
+   }
+  ]
+ },
+ "treatments": {
+  "title": "Treatments",
+  "items": [
+   {
+    "t": "Sealant",
+    "r": "Защитная пропитка ковра после чистки (грязе- и влагоотталкивающая).",
+    "e": "Protective carpet sealant after cleaning (soil and moisture repellent)."
+   },
+   {
+    "t": "Mold & Mildew",
+    "r": "Антисептическая обработка от плесени и грибка.",
+    "e": "Anti-microbial treatment for mold and mildew."
+   },
+   {
+    "t": "Degreaser",
+    "r": "Обезжиривающая обработка (кухни, жирные загрязнения).",
+    "e": "Degreasing treatment (kitchens, greasy soils)."
+   }
+  ]
+ },
+ "wetvac": {
+  "title": "Wet Vac / Flood",
+  "items": [
+   {
+    "t": "Wet Vac",
+    "r": "Сбор воды с ковра экстрактором после протечки.",
+    "e": "Extracting water from carpet after a leak."
+   },
+   {
+    "t": "Flood",
+    "r": "Затопление: откачка воды по зонам юнита.",
+    "e": "Flood: water extraction by unit areas."
+   },
+   {
+    "t": "Sewer",
+    "r": "Канализационная вода — доплата за загрязнённую категорию воды.",
+    "e": "Sewage water — surcharge for contaminated water category."
+   },
+   {
+    "t": "Fresh Water",
+    "r": "Чистая вода (водопровод) — отметка категории, без доплаты.",
+    "e": "Fresh (supply) water — category mark, no surcharge."
+   },
+   {
+    "t": "Ktc / Lr / Dr / Hall / Br's",
+    "r": "Зоны: Kitchen — кухня, Living room — гостиная, Dining room — столовая, Hall — коридор, Bedrooms — спальни. Цена за каждую отмеченную зону.",
+    "e": "Areas: Kitchen, Living room, Dining room, Hall, Bedrooms. Priced per checked area."
+   },
+   {
+    "t": "All Unit",
+    "r": "Весь юнит — фиксированная цена вместо оплаты по зонам.",
+    "e": "Entire unit — flat price instead of per-area."
+   }
+  ]
+ },
+ "airduct": {
+  "title": "Air Duct / Dryer Vent",
+  "items": [
+   {
+    "t": "Air Duct Cleaning",
+    "r": "Чистка вентиляционных каналов; цена за каждую спальню (Bedrooms).",
+    "e": "Air duct cleaning; priced per bedroom."
+   },
+   {
+    "t": "Dryer Vent Cleaning",
+    "r": "Чистка вентканала сушильной машины.",
+    "e": "Dryer vent cleaning."
+   },
+   {
+    "t": "Bedrooms",
+    "r": "Число спален — множитель для Air Duct.",
+    "e": "Bedroom count — multiplier for Air Duct."
+   },
+   {
+    "t": "note…",
+    "r": "Примечание к секции, попадает в PDF-инвойс.",
+    "e": "Section note, appears in the PDF invoice."
+   }
+  ]
+ },
+ "equipment": {
+  "title": "Equipment Rental",
+  "items": [
+   {
+    "t": "Формула / Formula",
+    "r": "Аренда сушильного оборудования: количество × дни × цена в сутки.",
+    "e": "Drying equipment rental: quantity × days × price per day."
+   },
+   {
+    "t": "Blower (BLW)",
+    "r": "Вентилятор для просушки (air mover).",
+    "e": "Air mover fan for drying."
+   },
+   {
+    "t": "Dehumidifier (DHM)",
+    "r": "Осушитель воздуха — убирает влагу из помещения.",
+    "e": "Dehumidifier — removes moisture from the air."
+   },
+   {
+    "t": "Air Scrubber (SCR)",
+    "r": "Очиститель воздуха с HEPA-фильтром.",
+    "e": "Air scrubber with HEPA filtration."
+   },
+   {
+    "t": "Ozone Machine (OZN)",
+    "r": "Озонатор — устранение стойких запахов (работает в пустом помещении).",
+    "e": "Ozone generator — removes persistent odours (runs in an empty unit)."
+   }
+  ]
+ },
+ "pad": {
+  "title": "Pad Installation",
+  "items": [
+   {
+    "t": "1/4 · 1/2 · 3/4 · 1 Roll",
+    "r": "Количество материала подложки: четверть, половина, три четверти или целый рулон.",
+    "e": "Amount of pad material: quarter, half, three-quarters or a full roll."
+   },
+   {
+    "t": "Rooms",
+    "r": "Установка подложки — цена за каждую комнату.",
+    "e": "Pad installation — priced per room."
+   },
+   {
+    "t": "All Unit",
+    "r": "Установка во всём юните — фиксированная цена.",
+    "e": "Installation in the entire unit — flat price."
+   }
+  ]
+ },
+ "others": {
+  "title": "Other services",
+  "items": [
+   {
+    "t": "Описание + $",
+    "r": "Свободные строки: любая услуга словами и её сумма — попадают в инвойс как есть.",
+    "e": "Free-form lines: any service in words plus its amount — go to the invoice as-is."
+   }
+  ]
+ },
+ "note": {
+  "title": "Заметка · Доп. работы и покупки / Note",
+  "items": [
+   {
+    "t": "Заметка / Note",
+    "r": "Текст попадает в PDF-инвойс (строка NOTES).",
+    "e": "The text goes into the PDF invoice (NOTES line)."
+   },
+   {
+    "t": "＋ Шаблон / Template",
+    "r": "Подставляет позиции из справочника «Доп. работы и покупки»: у работ с размером появляется поле размера, цена считается автоматически и попадает в раздел Extra.",
+    "e": "Inserts items from the “Extra works & purchases” directory: sized works get a size input, the price is calculated automatically into the Extra section."
+   },
+   {
+    "t": "Микрофон / Mic",
+    "r": "Голосовая диктовка заметки (RU/EN).",
+    "e": "Voice dictation of the note (RU/EN)."
+   },
+   {
+    "t": "Перевести на EN / Translate",
+    "r": "Переводит текст заметки на английский для инвойса.",
+    "e": "Translates the note into English for the invoice."
+   }
+  ]
+ }
+};
+function sectionHelpModal(key){
+  const s = SECTION_HELP[key]; if (!s) return;
+  const L = state.lang === 'ru' ? 'r' : 'e';
+  const rows = s.items.map(it => it.r === '?????'
+    ? `<div class="help-row"><b>${esc(it.t)}</b><div class="tiny">?????</div><div style="height:2.4em"></div></div>`
+    : `<div class="help-row"><b>${esc(it.t)}</b><div class="tiny">${esc(it[L])}</div></div>`).join('');
+  openModal(`${modalHead(s.title, 'help')}<div class="card" style="padding:4px 12px">${rows}</div>`);
+}
+
 function render(){
   const app = $('#app');
   if (!state.user){ app.innerHTML = viewLogin(); return; }
@@ -1126,7 +1526,7 @@ function viewHome(){
   const { due, over } = myDueCount();
 
   const banner = (due+over) > 0 ? `
-    <div class="banner ${over?'b-red':''}" role="status">🔔
+    <div class="banner ${over?'b-red':''}" role="status">${ic('bell')}
       <div>${t('banner_pickups')}: <b>${due}</b>${over?` · ${t('banner_overdue')}: <b>${over}</b>`:''}</div>
     </div>` : '';
 
@@ -1150,13 +1550,13 @@ function viewHome(){
         <div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
         <div class="s">${esc(cx.address||'')}</div>
         <div class="s">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)} ${overdue?`<span class="chip bad">${t('overdue')}</span>`:''} ${!state.filterMine?'· '+esc(profName(p0.technician_id)):''}</div>
-        ${(state.data.jobs.find(x=>x.id===jobId)||{}).note ? `<div class="s note-line">📝 ${esc((state.data.jobs.find(x=>x.id===jobId)||{}).note)}</div>` : ''}
+        ${(state.data.jobs.find(x=>x.id===jobId)||{}).note ? `<div class="s note-line">${ic('note')} ${esc((state.data.jobs.find(x=>x.id===jobId)||{}).note)}</div>` : ''}
       </div>
       <div class="right">
         <div class="eq-dots">${eqDotsFor(list)}</div>
         <div style="display:flex;gap:6px;margin-top:6px">
-          <button class="btn btn-ghost sm" title="${t('navigate')}" onclick="App.navToCx('${p0.complex_id}')">🧭</button>
-          <button class="btn btn-ghost sm" title="${t('note')}" onclick="App.noteModal('${jobId}')">📝</button>
+          <button class="btn btn-ghost sm" title="${t('navigate')}" onclick="App.navToCx('${p0.complex_id}')">${ic('compass')}</button>
+          <button class="btn btn-ghost sm" title="${t('note')}" onclick="App.noteModal('${jobId}')">${ic('note')}</button>
           <button class="btn btn-green sm" onclick="App.pickupGroup('${jobId}','${iso}')">${t('pick_up')}</button>
         </div>
       </div>
@@ -1199,12 +1599,12 @@ function viewHome(){
   }).join('');
 
   const empty = (!jobs.length && !pkGroups.length && !pkDone.length)
-    ? `<div class="list-empty"><div class="big">🦉</div>${t('no_items')}<br><span class="tiny">${t('tap_add')}</span></div>` : '';
+    ? `<div class="list-empty"><div class="big">${ic('owl')}</div>${t('no_items')}<br><span class="tiny">${t('tap_add')}</span></div>` : '';
 
   const dayBar = `
     <div class="day-bar">
       <b>${fmtDMY(iso)}</b>
-      <button class="mini-nav" onclick="App.openDayMap()">🗺 ${t('map_of_day')}</button>
+      <button class="mini-nav" onclick="App.openDayMap()">${ic('map')} ${t('map_of_day')}</button>
     </div>`;
   return banner + viewWeek() + dayBar + homeStatsHtml() + filter
     + (pkGroups.length ? `<div class="section-title">${t('pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
@@ -1226,7 +1626,7 @@ function openModal(html){
   document.body.appendChild(ov);
 }
 function closeModal(){ $('#overlay')?.remove(); maybeApplyPendingUpdate(); }
-function modalHead(title){ return `<h3><button class="back-x" onclick="App.closeModal()">←</button> ${esc(title)}</h3>`; }
+function modalHead(title, iconName){ return `<h3><button class="back-x" onclick="App.closeModal()">←</button> ${iconName?ic(iconName)+' ':''}${esc(title)}</h3>`; }
 
 /* ---------- Добавить задание ---------- */
 function addTaskModal(){
@@ -1320,7 +1720,7 @@ function viewLogin(){
       <div class="hello">TechLog</div>
       <div class="tiny">${t('app_sub')} ${APP_VERSION}</div>
       <hr class="sep">
-      <div class="note-green" style="text-align:left;margin-bottom:12px">🧪 ${t('demo_note')}</div>
+      <div class="note-green" style="text-align:left;margin-bottom:12px">${ic('flask')} ${t('demo_note')}</div>
       ${users.map(u=>`
         <button class="demo-user" onclick="App.demoLogin('${u.id}')">
           <span class="avatar role-${u.role}">${esc(initials(u.display_name))}</span>
@@ -1331,7 +1731,7 @@ function viewLogin(){
           <span class="role-tag rt-${u.role}">${t('role_'+u.role)}</span>
         </button>`).join('')}
       <div class="tiny" style="margin-top:14px">Supabase: см. config.js и README</div>
-      <button class="btn btn-ghost" style="margin-top:14px" onclick="App.diag()">🩺 ${t('diag')}</button>
+      <button class="btn btn-ghost" style="margin-top:14px" onclick="App.diag()">${ic('steth')} ${t('diag')}</button>
     </div>`;
   }
   return `<div class="login-wrap">
@@ -1360,8 +1760,8 @@ function viewLogin(){
       <button class="btn btn-blue" onclick="App.signUp()">${t('sign_up')}</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="App.authMode(false)">${t('have_acc')}</button>
     </div>
-    <button class="btn btn-ghost" style="margin-top:14px" onclick="App.diag()">🩺 ${t('diag')}</button>
-    <button id="pwa-install-btn" class="btn btn-blue" style="${pwaPrompt?'':'display:none'};margin-top:8px" onclick="App.installPwa()">⬇ ${t('install_app')}</button>
+    <button class="btn btn-ghost" style="margin-top:14px" onclick="App.diag()">${ic('steth')} ${t('diag')}</button>
+    <button id="pwa-install-btn" class="btn btn-blue" style="${pwaPrompt?'':'display:none'};margin-top:8px" onclick="App.installPwa()">${ic('download')} ${t('install_app')}</button>
   </div>`;
 }
 
@@ -1416,10 +1816,10 @@ function viewJob(){
      а чек-лист — техник отмечает, что реально нужно взять на этот выезд */
   const aux = auxList.length ? `
     <div class="note-green" style="display:block">
-      <div style="font-weight:900;margin-bottom:6px">🧰 ${t('aux_needed')} <span class="tiny" style="font-weight:400">· ${t('aux_take_hint')}</span></div>
+      <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('aux_needed')} <span class="tiny" style="font-weight:400">· ${t('aux_take_hint')}</span></div>
       <div class="opt-grid">${auxList.map(a=>`
         <button type="button" class="opt ${auxTake[a.id]?'on':''}" data-aux="${a.id}"
-          onclick="App.auxToggle('${a.id}')"><span class="aux-mk">${auxTake[a.id]?'✅':'⬜'}</span> ${esc(a.name)}</button>`).join('')}
+          onclick="App.auxToggle('${a.id}')"><span class="aux-mk">${auxTake[a.id]?ic('chk_on'):ic('chk_off')}</span> ${esc(a.name)}</button>`).join('')}
       </div>
     </div>` : '';
 
@@ -1452,7 +1852,7 @@ function viewJob(){
           <input id="jb-unit" value="${esc(j.unit_number||'')}" style="width:76px;display:inline-block;padding:4px 8px">
           <span id="jb-warn-unit">${String(j.unit_number||'').trim()?'':warnIcon()}</span></div>
         <div class="tiny">${esc(cp.name)} · ${esc(cx.address||'')}
-          ${(cx.lat!=null||cx.address)?`<button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">🧭 ${t('navigate')}</button>`:''}</div>
+          ${(cx.lat!=null||cx.address)?`<button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button>`:''}</div>
         ${(cx.access_code||cx.callbox_code)?`<div class="tiny">${codeLineHtml(cx, true)}</div>`:''}
         <div class="tiny" style="color:${wt.color};font-weight:800">${esc(wt.name)}</div>
       </div>
@@ -1467,7 +1867,7 @@ function viewJob(){
         </div></div>
     </div>
     <div class="crew-box">
-      <div class="tiny" style="font-weight:900;margin-bottom:6px">${(j.technician_id||(j.helper_ids||[]).length)?'':warnIcon()}👷 ${t('crew')}</div>
+      <div class="tiny" style="font-weight:900;margin-bottom:6px">${(j.technician_id||(j.helper_ids||[]).length)?'':warnIcon()}${ic('crew')} ${t('crew')}</div>
       <div class="crew-chips" id="crew-chips">${crewChipsHtml(j)}</div>
       <div class="crew-add">
         <select id="crew-sel" onchange="App.crewAdd(this.value)">
@@ -1481,47 +1881,47 @@ function viewJob(){
     ${aux}
   </div>
 
-  <div class="inv-sec"><div class="inv-head">🧼 Steam Clean ${amtWrap('steam',sec.steam)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('steam')} Steam Clean ${helpBtn('steam')} ${amtWrap('steam',sec.steam)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('steam','deep_scrub','Deep Scrub')} ${chk('steam','rotovac','Rotovac')}
       <span class="qty-line"><span class="tiny">Rooms</span>${stepperHtml('steam-rooms', fd.steam.rooms||1)}</span>
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">🧽 Removals ${amtWrap('removals',sec.removals)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('sponge')} Removals ${helpBtn('removals')} ${amtWrap('removals',sec.removals)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('removals','red_stain','Red Stain')} ${chk('removals','wax','Wax')} ${chk('removals','rust','Rust')}
       ${chk('removals','ink','Ink')} ${chk('removals','gum','Gum')} ${chk('removals','paint','Paint Removal')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">🔧 Repairs ${amtWrap('repairs',sec.repairs)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('wrench')} Repairs ${helpBtn('repairs')} ${amtWrap('repairs',sec.repairs)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('repairs','threshold','Threshold')} ${chk('repairs','stretch','Stretch')}
       ${chk('repairs','seam','Seam')} ${chk('repairs','patch','Patch')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">🎨 Dye ${amtWrap('dye',sec.dye)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('palette')} Dye ${helpBtn('dye')} ${amtWrap('dye',sec.dye)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('dye','spot','Spot Dye')} ${chk('dye','full','Full Dye')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">📦 Other ${amtWrap('other',sec.other)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('box')} Other ${helpBtn('other')} ${amtWrap('other',sec.other)}</div>
     <div class="inv-body">
       <div class="opt-grid">${chk('other','trash_out','Trash Out')} ${chk('other','pad_removal','Pad Removal')} ${chk('other','all_unit','All Unit')}</div>
       <div class="qty-line"><span class="tiny">Rooms</span>${stepperHtml('other-rooms', fd.other.rooms||1)}</div>
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">💨 Fog / GOC ${amtWrap('fog',sec.fog)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('fog')} Fog / GOC ${helpBtn('fog')} ${amtWrap('fog',sec.fog)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('fog','fog','Fog')} ${chk('fog','goc','GOC')} ${chk('fog','pet','Pet')}
       ${chk('fog','smoke','Smoke')} ${chk('fog','deodorizer','Deodorizer')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">🧪 Treatments ${amtWrap('treatments',sec.treatments)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('flask')} Treatments ${helpBtn('treatments')} ${amtWrap('treatments',sec.treatments)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('treatments','sealant','Sealant')} ${chk('treatments','mold','Mold & Mildew')} ${chk('treatments','degreaser','Degreaser')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">💧 Wet Vac / Flood ${amtWrap('wetvac',sec.wetvac)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('drop')} Wet Vac / Flood ${helpBtn('wetvac')} ${amtWrap('wetvac',sec.wetvac)}</div>
     <div class="inv-body">
       <div class="opt-grid">${chk('wetvac','wet_vac','Wet Vac')} ${chk('wetvac','flood','Flood')}
         ${chk('wetvac','sewer','Sewer')} ${chk('wetvac','fresh','Fresh Water')}</div>
@@ -1534,20 +1934,20 @@ function viewJob(){
       </div>
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">🌀 Air Duct / Dryer Vent ${amtWrap('airduct',sec.airduct)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('vent')} Air Duct / Dryer Vent ${helpBtn('airduct')} ${amtWrap('airduct',sec.airduct)}</div>
     <div class="inv-body">
       <div class="opt-grid">${chk('airduct','air_duct','Air Duct Cleaning')} ${chk('airduct','dryer_vent','Dryer Vent Cleaning')}</div>
       <div class="qty-line"><span class="tiny">Bedrooms</span>${stepperHtml('ad-bedrooms', fd.airduct.bedrooms||1)}
         <input id="jb-adnote" placeholder="note…" value="${esc(fd.airduct.note||'')}" style="flex:1"></div>
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">🛠 Equipment Rental ${amtWrap('equipment',sec.equipment)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('fan')} Equipment Rental ${helpBtn('equipment')} ${amtWrap('equipment',sec.equipment)}</div>
     <div class="inv-body">
       <div class="tiny">${t('equipment')}</div>
       ${eqRows}
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">🧵 Pad Installation ${amtWrap('pad',sec.pad)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('layers')} Pad Installation ${helpBtn('pad')} ${amtWrap('pad',sec.pad)}</div>
     <div class="inv-body">
       <div class="opt-grid">
         ${['q14','q12','q34','roll'].map(s=>{
@@ -1560,7 +1960,7 @@ function viewJob(){
       <div class="qty-line"><span class="tiny">Rooms</span>${stepperHtml('pad-rooms', fd.pad.rooms||0)}</div>
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">✍️ Other services ${amtWrap('others',sec.others)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('pen')} Other services ${helpBtn('others')} ${amtWrap('others',sec.others)}</div>
     <div class="inv-body">
       ${fd.others.map((o,i)=>`
         <div class="qty-line">
@@ -1569,7 +1969,7 @@ function viewJob(){
         </div>`).join('')}
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">📝 ${t('note')} · ${t('extra_section')} ${amtWrap('extra',sec.extra)}</div>
+  <div class="inv-sec"><div class="inv-head">${ic('note')} ${t('note')} · ${t('extra_section')} ${helpBtn('note')} ${amtWrap('extra',sec.extra)}</div>
     <div class="inv-body">
       ${dictationHTML('jb-note', j.note || '')}
       <div class="tiny">${t('note_hint')}</div>
@@ -1583,7 +1983,7 @@ function viewJob(){
 
   ${isAdmin() ? `
   <div class="card" style="border-color:var(--yellow)">
-    <div style="font-weight:900;margin-bottom:6px">⭐ ${t('approve')}</div>
+    <div style="font-weight:900;margin-bottom:6px">${ic('star')} ${t('approve')}</div>
     <div class="qty-line">
       <span class="name">${t('approved_total')}</span>
       <input id="jb-approved" class="price-input" inputmode="decimal" value="${j.approved_total ?? total}">
@@ -1595,12 +1995,12 @@ function viewJob(){
 
   <div class="total-bar"><span>${t('total')}</span><span class="sum" id="jb-total">${money(total)}</span></div>
 
-  <button class="btn btn-green" onclick="App.saveJob()">💾 ${t('save')}</button>
+  <button class="btn btn-green" onclick="App.saveJob()">${ic('save')} ${t('save')}</button>
   <div class="btn-row3">
-    <button class="btn btn-blue" onclick="App.makePdf()">⬇ ${t('pdf')}</button>
     <button class="btn btn-ghost" onclick="App.go('home')">← ${t('back')}</button>
+    <button class="btn btn-blue" onclick="App.makePdf()">${ic('download')} ${t('pdf')}</button>
     ${(isAdmin() || j.technician_id===state.user.id)
-      ? `<button class="btn btn-red" onclick="App.deleteJob()">🗑 ${t('delete')}</button>`
+      ? `<button class="btn btn-red" onclick="App.deleteJob()">${ic('trash')} ${t('delete')}</button>`
       : `<span></span>`}
   </div>
   `;
@@ -1823,7 +2223,7 @@ function viewPickupsReport(){
           <div style="font-weight:900">${esc(cx.name)}</div>
           <div class="tiny">${esc(cx.address||'')} · ${codeLineHtml(cx, true)}</div>
         </div>
-        <button class="btn btn-ghost sm" onclick="App.navToCx('${cxId}')">🧭</button>
+        <button class="btn btn-ghost sm" onclick="App.navToCx('${cxId}')">${ic('compass')}</button>
       </div>
       ${Object.values(byJob).map(jl => {
         const p0 = jl[0];
@@ -1857,9 +2257,9 @@ function viewPickupsReport(){
     <div class="tabs">${quick}</div>
     <div class="tiny">${dateISO>=todayISO() ? t('incl_overdue') : ''}</div>
   </div>
-  ${blocks || `<div class="list-empty"><div class="big">📭</div>${t('nothing_due')}</div>`}
+  ${blocks || `<div class="list-empty"><div class="big">${ic('inbox')}</div>${t('nothing_due')}</div>`}
   ${cnt ? `<div class="card"><div style="font-weight:900;margin-bottom:6px">Σ ${t('stats_due')}: ${cnt}</div><div class="color-dots" style="gap:6px">${totals}</div></div>
-  <button class="btn btn-blue" onclick="App.copyReport()">📋 ${t('copy_report')}</button>` : ''}`;
+  <button class="btn btn-blue" onclick="App.copyReport()">${ic('clipboard')} ${t('copy_report')}</button>` : ''}`;
 }
 function copyReport(){
   const dateISO = state.reportDate;
@@ -1930,10 +2330,10 @@ function dirComplexes(){
             <div class="tiny">${esc(cx.address||'')}</div>
             <div class="tiny">${codeLineHtml(cx, true)}
               ${(()=>{ const m=lastCodeMeta(cx.id); return m?` · <span style="color:var(--dim-2)">${t('last_code_upd')} ${fmtDMY(String(m.date).slice(0,10))}</span>`:''; })()}</div></div>
-          <button class="btn btn-ghost sm" title="${t('history')}" onclick="App.codeHistory('${cx.id}')">📖</button>
+          <button class="btn btn-ghost sm" title="${t('history')}" onclick="App.codeHistory('${cx.id}')">${ic('book')}</button>
           ${canEdit
             ? `<button class="btn btn-ghost sm" onclick="App.editCxModal('${cx.id}')">${t('edit')}</button>`
-            : `<button class="btn btn-ghost sm" title="${t('propose_code')}" onclick="App.proposeCode('${cx.id}')">🔑</button>`}
+            : `<button class="btn btn-ghost sm" title="${t('propose_code')}" onclick="App.proposeCode('${cx.id}')">${ic('key')}</button>`}
         </div>`).join('') || `<div class="tiny">—</div>`}
     </div>`).join('');
   return inbox + blocks + (canEdit ? `<button class="btn btn-green" onclick="App.editCxModal()">＋ ${t('add')}</button>` : '');
@@ -1952,7 +2352,7 @@ function dirWorkTypes(){
     <div class="rowline">
       <span class="icon-circle" style="background:${w.color};color:${textColorFor(w.color)}">●</span>
       <div class="grow"><b style="color:${w.color}">${esc(w.name)}</b>
-        ${w.needs_aux?`<div class="tiny">🧰 ${(w.aux_ids||[]).map(id=>esc((state.data.aux_equipment.find(a=>a.id===id)||{}).name||'')).join(' · ')}</div>`:''}</div>
+        ${w.needs_aux?`<div class="tiny">${ic('toolbox')} ${(w.aux_ids||[]).map(id=>esc((state.data.aux_equipment.find(a=>a.id===id)||{}).name||'')).join(' · ')}</div>`:''}</div>
       <button class="btn btn-ghost sm" onclick="App.editWtModal('${w.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
     <button class="btn btn-green" onclick="App.editWtModal()">＋ ${t('add')}</button>`;
@@ -1972,7 +2372,7 @@ function dirEquipment(){
 
 function dirAux(){
   return `<div class="card">` + state.data.aux_equipment.map(a => `
-    <div class="rowline"><div class="grow">🧰 ${esc(a.name)}</div>
+    <div class="rowline"><div class="grow">${ic('toolbox')} ${esc(a.name)}</div>
       <button class="btn btn-ghost sm" onclick="App.editAuxModal('${a.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
     <button class="btn btn-green" onclick="App.editAuxModal()">＋ ${t('add')}</button>`;
@@ -1981,7 +2381,7 @@ function dirAux(){
 function dirPrice(){
   const canEdit = isAdmin();
   return `<div class="card">
-    <div style="font-weight:900;margin-bottom:6px">💲 ${t('price_list')} — ${t('std_price')}</div>
+    <div style="font-weight:900;margin-bottom:6px">${ic('dollar')} ${t('price_list')} — ${t('std_price')}</div>
     ${state.data.price_list.map(pr => `
       <div class="rowline">
         <div class="grow">${esc(pr.name)}<div class="tiny">${esc(pr.unit_label||'')}</div></div>
@@ -2043,13 +2443,13 @@ function renderCpModal(){
           data-cpprice="${pr.key}" onchange="App.cpSetPrice('${c.id}','${pr.key}', this.value)">
       </div>`;
     }).join('');
-    body = `<div class="tiny" style="margin-bottom:6px">☑ = ${t('custom_price')}</div>${rows}`;
+    body = `<div class="tiny" style="margin-bottom:6px">${ic('chk_on')} = ${t('custom_price')}</div>${rows}`;
   } else {
     const list = state.data.complexes.filter(x=>x.counterparty_id===c.id);
     body = list.map(cx=>`
       <div class="rowline">
         <div class="abbr" style="min-width:44px;height:38px">${esc(cx.abbr||'—')}</div>
-        <div class="grow"><b>${esc(cx.name)}</b><div class="tiny">${esc(cx.address||'')} ${cx.access_code?'· 🔑 '+esc(cx.access_code):''}</div></div>
+        <div class="grow"><b>${esc(cx.name)}</b><div class="tiny">${esc(cx.address||'')} ${cx.access_code?'· '+ic('key')+' '+esc(cx.access_code):''}</div></div>
         <button class="btn btn-ghost sm" onclick="App.editCxModal('${cx.id}','${c.id}')">${t('edit')}</button>
       </div>`).join('') || `<div class="tiny">—</div>`;
     body += `<button class="btn btn-green" style="margin-top:10px" onclick="App.editCxModal(null,'${c.id}')">＋ ${t('add')}</button>`;
@@ -2089,19 +2489,19 @@ function editCxModal(id, cpId){
       ${firstSeenLine(cx.id,'callbox',cx.callbox_code)}</div>
     <div class="form-row"><span class="lbl">${t('code_target')}</span>
       <div class="tabs">
-        <button class="tabbtn ${!cx.callbox_gate?'active':''}" data-gate="0" onclick="App.pcGate(this)">📟 ${t('target_callbox')}</button>
-        <button class="tabbtn ${cx.callbox_gate?'active':''}" data-gate="1" onclick="App.pcGate(this)">🚧 ${t('target_gate')}</button>
+        <button class="tabbtn ${!cx.callbox_gate?'active':''}" data-gate="0" onclick="App.pcGate(this)">${ic('callbox')} ${t('target_callbox')}</button>
+        <button class="tabbtn ${cx.callbox_gate?'active':''}" data-gate="1" onclick="App.pcGate(this)">${ic('gate')} ${t('target_gate')}</button>
       </div>
       <input type="hidden" id="pc-gate" value="${cx.callbox_gate?1:0}"></div>
-    ${(()=>{ const m=lastCodeMeta(cx.id); return m?`<div class="tiny" style="margin:-4px 0 8px">📖 ${t('last_code_upd')}: ${fmtDMY(String(m.date).slice(0,10))} · ${esc(profName(m.by))}</div>`:''; })()}
-    <button class="btn btn-ghost sm" style="margin-bottom:10px" onclick="App.codeHistory('${cx.id}')">📖 ${t('history')}</button>
+    ${(()=>{ const m=lastCodeMeta(cx.id); return m?`<div class="tiny" style="margin:-4px 0 8px">${ic('book')} ${t('last_code_upd')}: ${fmtDMY(String(m.date).slice(0,10))} · ${esc(profName(m.by))}</div>`:''; })()}
+    <button class="btn btn-ghost sm" style="margin-bottom:10px" onclick="App.codeHistory('${cx.id}')">${ic('book')} ${t('history')}</button>
     <div class="grid-2">
       <div class="form-row"><span class="lbl">${t('lat')}</span><input id="cx-lat" inputmode="decimal" value="${cx.lat ?? ''}" placeholder="33.78"></div>
       <div class="form-row"><span class="lbl">${t('lng')}</span><input id="cx-lng" inputmode="decimal" value="${cx.lng ?? ''}" placeholder="-84.38"></div>
     </div>
     <div class="grid-2" style="margin-bottom:10px">
-      <button class="btn btn-blue sm" onclick="App.geocodeCx()">📍 ${t('geocode')}</button>
-      <button class="btn btn-ghost sm" onclick="App.gmapsCx()">🗺 ${t('open_gmaps')}</button>
+      <button class="btn btn-blue sm" onclick="App.geocodeCx()">${ic('pin')} ${t('geocode')}</button>
+      <button class="btn btn-ghost sm" onclick="App.gmapsCx()">${ic('map')} ${t('open_gmaps')}</button>
     </div>
     <button class="btn btn-green" onclick="App.saveCx('${cx.id}')">${t('save')}</button>
     ${id?`<button class="btn btn-red" style="margin-top:8px" onclick="App.delRow('complexes','${cx.id}')">${t('delete')}</button>`:''}
@@ -2249,28 +2649,28 @@ function viewSettings(){
       </div>
     </div>
     <div class="settings-row">
-      <div class="grow" style="flex:1"><b>🔤 ${t('font_soon').split(' — ')[0]}</b><div class="d">${t('font_soon')}</div></div>
+      <div class="grow" style="flex:1"><b>${ic('font')} ${t('font_soon').split(' — ')[0]}</b><div class="d">${t('font_soon')}</div></div>
     </div>
   </div>
 
   <div class="card" style="border-color:var(--green)">
     <div class="settings-row" style="border:none">
       <div class="grow" style="flex:1">
-        <b>🔄 ${t('sync')}</b>
+        <b>${ic('refresh')} ${t('sync')}</b>
         <div class="d">${t('synced')}: ${state.lastSync || t('never')} · ${HAS_SB?'Supabase':'DEMO / localStorage'}</div>
         ${SYNC_ERRORS.length ? `<div class="d" style="color:var(--red)">⚠ ${SYNC_ERRORS.length} ${t('tables_failed')}: ${SYNC_ERRORS.map(x=>x.tb).join(', ')}</div>` : ''}
-        ${WRITE_ERRORS.length ? `<div class="d" style="color:var(--yellow)">✎ ${t('write_err')}: ${WRITE_ERRORS.length}</div>` : ''}
+        ${WRITE_ERRORS.length ? `<div class="d" style="color:var(--yellow)">${ic('pencil')} ${t('write_err')}: ${WRITE_ERRORS.length}</div>` : ''}
       </div>
       <button class="btn btn-green sm" onclick="App.sync()">${t('sync')}</button>
     </div>
-    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.diag()">🩺 ${t('diag')}</button>
-    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.showLog()">🧾 ${t('log_title')}</button>
-    ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">🗄 ${t('db_diag')}</button>` : ''}
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.diag()">${ic('steth')} ${t('diag')}</button>
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.showLog()">${ic('receipt')} ${t('log_title')}</button>
+    ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
   </div>
 
   ${isAdmin() ? `
   <div class="card">
-    <div style="font-weight:900;margin-bottom:6px">🏢 ${t('org')}</div>
+    <div style="font-weight:900;margin-bottom:6px">${ic('building')} ${t('org')}</div>
     <div class="form-row"><span class="lbl">${t('org_name')}</span><input id="org-name" value="${esc(org.company_name)}"></div>
     <div class="form-row"><span class="lbl">${t('org_short')}</span><input id="org-short" value="${esc(org.company_short)}"></div>
     <div class="form-row"><span class="lbl">${t('org_assoc')}</span><input id="org-assoc" value="${esc(org.assoc_line)}"></div>
@@ -2281,13 +2681,13 @@ function viewSettings(){
   </div>` : ''}
 
   <div class="card">
-    <div class="settings-row"><div class="grow" style="flex:1"><b>📱 PWA</b>
+    <div class="settings-row"><div class="grow" style="flex:1"><b>${ic('phone')} PWA</b>
       <div class="d">${isStandalone() ? '✓ ' + t('already_installed') : t('install_hint')}</div>
       <div class="d">${t('install_where_win')}</div></div></div>
-    ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">⬇ ${t('install_app')}</button>` : ''}
+    ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">${ic('download')} ${t('install_app')}</button>` : ''}
     <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b>
       <div class="d">TechLog v${APP_VERSION}${state.lastUpdCheck ? ' · ' + t('upd_last') + ' ' + state.lastUpdCheck : ''}${state.updAvail ? ' · ⬆ ' + t('upd_found') + ': ' + state.updAvail : ''}</div></div>
-      <button class="btn btn-ghost sm" onclick="App.updCheck()">🔄 ${t('upd_check')}</button></div>
+      <button class="btn btn-ghost sm" onclick="App.updCheck()">${ic('refresh')} ${t('upd_check')}</button></div>
   </div>
 
   <button class="btn btn-red" onclick="App.logout()">✕ ${t('logout')}</button>
@@ -2638,7 +3038,7 @@ const App = {
   mapRoute,
   geocodeCx, gmapsCx,
   dictToggle, dictLang(l){ state.dictLang = l; localStorage.setItem('techlog_dictlang', l); document.querySelectorAll('.dict-row .lang-seg button').forEach(b=>b.classList.toggle('on', b.textContent === (l==='ru-RU'?'RU':'EN'))); },
-  noteModal, saveNote, auxToggle,
+  noteModal, saveNote, auxToggle, sectionHelp: sectionHelpModal,
   crewAdd, crewAll, crewRemove, navToCx, copyText,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis,
@@ -2695,9 +3095,36 @@ const App = {
 };
 window.App = App;
 
+
+/* =====================================================================
+   СИСТЕМНАЯ КНОПКА «НАЗАД» (Android):
+   модалка → закрыть; инвойс → сохранить и на главную; иначе — двойное
+   нажатие для выхода из приложения (с подсказкой).
+   ===================================================================== */
+let backExitAt = 0;
+function initBackGuard(){
+  if (!window.history || !history.pushState) return;
+  try{ history.pushState({ tl: 1 }, ''); }catch(e){ return; }
+  window.addEventListener('popstate', async () => {
+    const rearm = () => { try{ history.pushState({ tl: 1 }, ''); }catch(e){} };
+    if (document.getElementById('overlay')){ closeModal(); rearm(); return; }
+    if (state.user && state.screen === 'job' && jobDraft){
+      rearm();
+      try{ await saveJob(); }catch(e){ App.go('home'); }  // сохранить черновик и выйти на главную
+      return;
+    }
+    const now = Date.now();
+    if (now - backExitAt < 2200){ history.back(); return; } // второе нажатие — выход
+    backExitAt = now;
+    toast(t('back_exit_hint'), 'inf');
+    rearm();
+  });
+}
+
 (async function start(){
   try {
     initSW();
+    initBackGuard();
     if (HAS_SB){
       try{
         const cached = loadLocal();
@@ -2726,12 +3153,12 @@ function dictationHTML(taId, value){
   return `<div class="dict-wrap">
     <textarea id="${taId}" class="note-ta" rows="3" placeholder="${t('note')}…">${esc(value||'')}</textarea>
     <div class="dict-row">
-      <button type="button" class="mic ${dictTa===taId?'rec':''}" id="mic-${taId}" onclick="App.dictToggle('${taId}')" title="${t('dictate')}">🎤</button>
+      <button type="button" class="mic ${dictTa===taId?'rec':''}" id="mic-${taId}" onclick="App.dictToggle('${taId}')" title="${t('dictate')}">${ic('mic')}</button>
       <div class="lang-seg sm">
         <button type="button" class="${state.dictLang==='ru-RU'?'on':''}" onclick="App.dictLang('ru-RU')">RU</button>
         <button type="button" class="${state.dictLang==='en-US'?'on':''}" onclick="App.dictLang('en-US')">EN</button>
       </div>
-      <button type="button" class="btn btn-ghost sm" onclick="App.translateEn('${taId}')">🌐 ${t('translate_en')}</button>
+      <button type="button" class="btn btn-ghost sm" onclick="App.translateEn('${taId}')">${ic('globe')} ${t('translate_en')}</button>
       <span class="tiny" id="mic-hint-${taId}">${dictTa===taId ? t('listening') : ''}</span>
     </div>
   </div>`;
@@ -2830,7 +3257,7 @@ function auxToggle(id){
   const b = document.querySelector(`[data-aux="${id}"]`);
   if (b){
     b.classList.toggle('on', !!fd.aux_take[id]);
-    const mk = b.querySelector('.aux-mk'); if (mk) mk.textContent = fd.aux_take[id] ? '✅' : '⬜';
+    const mk = b.querySelector('.aux-mk'); if (mk) mk.innerHTML = fd.aux_take[id] ? ic('chk_on') : ic('chk_off');
   }
   autosaveDraft();
 }
@@ -2839,7 +3266,7 @@ function auxToggle(id){
 function noteModal(jobId){
   const j = state.data.jobs.find(x=>x.id===jobId); if (!j) return;
   openModal(`
-    ${modalHead('📝 ' + t('note'))}
+    ${modalHead(t('note'), 'note')}
     ${dictationHTML('pk-note', j.note || '')}
     <div class="tiny" style="margin-bottom:10px">${t('note_hint')}</div>
     <button class="btn btn-green" onclick="App.saveNote('${jobId}')">${t('save')}</button>
@@ -2872,7 +3299,7 @@ function mapDayItems(){
       const over = list.some(p => p.due_date < todayISO());
       const eq = list.map(p => `${p.qty}×${(etById(p.equipment_type_id)||{abbr:'?'}).abbr}`).join(' ');
       pts.push({ num: num.pkNum[jobId], lat:+cx.lat, lng:+cx.lng, color: over ? '#FF4B4B' : '#8AA0AB',
-        label: `📦 ${t('pickup')} Unit ${p0.unit_number||'—'} · ${eq}`, cx, kind:'pickup' });
+        label: `${t('pickup')} Unit ${p0.unit_number||'—'} · ${eq}`, cx, kind:'pickup' });
     }
   });
   num.jobs.forEach(j => {
@@ -2880,7 +3307,7 @@ function mapDayItems(){
     if (cx && cx.lat != null && cx.lng != null){
       const wt = wtById(j.work_type_id) || {color:'#888', name:''};
       pts.push({ num: num.jobNum[j.id], lat:+cx.lat, lng:+cx.lng, color: wt.color,
-        label: `🛠 Unit ${j.unit_number||'—'} · ${wt.name}`, cx, kind:'job' });
+        label: `Unit ${j.unit_number||'—'} · ${wt.name}`, cx, kind:'job' });
     }
   });
   pts.sort((a,b)=>a.num-b.num);
@@ -2896,7 +3323,7 @@ function viewMap(){
     ? (day.pts.length
         ? day.pts.map(p=>`<button class="rowline map-row" onclick="App.mapFocus(${p.lat},${p.lng})">
             <span class="dot num" style="background:${p.color};color:${textColorFor(p.color)}">${p.num}</span>
-            <div class="grow">${esc(p.label)}<div class="tiny">${esc(p.cx.name)}</div></div></button>`).join('')
+            <div class="grow">${p.kind==='job'?ic('wrench'):ic('box')} ${esc(p.label)}<div class="tiny">${esc(p.cx.name)}</div></div></button>`).join('')
         : `<div class="list-empty">${t('no_items')}</div>`)
     : list.map(cx=>{
         const has = cx.lat != null && cx.lng != null;
@@ -2904,7 +3331,7 @@ function viewMap(){
           <span class="dot" style="background:${cpColor(cx.counterparty_id)}"></span>
           <div class="grow"><b>${esc(cx.name)}</b> <span class="tiny">${esc((cpById(cx.counterparty_id)||{}).abbr||'')}</span>
             <div class="tiny">${has ? esc(cx.address||'') : '⚠ ' + t('map_no_coords')}</div></div>
-          ${cx.access_code?`<span class="tiny key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.access_code)}')">🔑 ${esc(cx.access_code)}</span>`:''}
+          ${cx.access_code?`<span class="tiny key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.access_code)}')">${ic('key')} ${esc(cx.access_code)}</span>`:''}
         </button>`;
       }).join('');
 
@@ -2917,13 +3344,13 @@ function viewMap(){
         ${cps.map(c=>`<option value="${c.id}" ${state.mapCp===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
       </select></div>
     <div class="tabs" style="margin-top:8px">
-      <button class="tabbtn ${!state.mapDay?'active':''}" onclick="App.mapMode(false)">🗺 ${t('map_mode_all')}</button>
-      <button class="tabbtn ${state.mapDay?'active':''}" onclick="App.mapMode(true)">📅 ${t('map_mode_day')}</button>
+      <button class="tabbtn ${!state.mapDay?'active':''}" onclick="App.mapMode(false)">${ic('map')} ${t('map_mode_all')}</button>
+      <button class="tabbtn ${state.mapDay?'active':''}" onclick="App.mapMode(true)">${ic('calendar')} ${t('map_mode_day')}</button>
     </div>
     ${state.mapDay ? `
       <div class="form-row" style="margin-top:8px"><span class="lbl">${t('map_day_hint')}</span>
         <input type="date" value="${state.mapDate || state.selDate}" onchange="App.mapSetDate(this.value)"></div>
-      ${day.pts.length ? `<button class="btn btn-blue sm" onclick="App.mapRoute()">🧭 ${t('route_gmaps')}</button>` : ''}` : ''}
+      ${day.pts.length ? `<button class="btn btn-blue sm" onclick="App.mapRoute()">${ic('compass')} ${t('route_gmaps')}</button>` : ''}` : ''}
   </div>
   <div id="map" class="map-box"></div>
   ${legend}
@@ -2956,8 +3383,8 @@ function initMapView(){
     Object.values(byCx).forEach(g => {
       g.items.sort((a,b)=>(a.num||0)-(b.num||0));
       const cx = g.cx;
-      const html = `<b>${esc(cx.name)}</b><br>${esc(cx.address||'')}${cx.access_code?'<br>🔑 '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?'🚧 ':'📟 ')+esc(cx.callbox_code):''}<hr style="margin:4px 0">` +
-        g.items.map(i=>`<b>#${i.num}</b> <span style="color:${i.color}">●</span> ${esc(i.label)}`).join('<br>') + `<br>${gm(cx)}`;
+      const html = `<b>${esc(cx.name)}</b><br>${esc(cx.address||'')}${cx.access_code?'<br>'+ic('key')+' '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?ic('gate')+' ':ic('callbox')+' ')+esc(cx.callbox_code):''}<hr style="margin:4px 0">` +
+        g.items.map(i=>`<b>#${i.num}</b> <span style="color:${i.color}">${i.kind==='job'?ic('wrench'):ic('box')}</span> ${esc(i.label)}`).join('<br>') + `<br>${gm(cx)}`;
       const numTxt = g.items.map(i=>i.num).join('·');
       mk(+cx.lat, +cx.lng, g.items.find(i=>i.kind==='job')?.color || g.items[0].color, html, numTxt);
     });
@@ -2967,7 +3394,7 @@ function initMapView(){
       .forEach(cx => {
         const cp = cpById(cx.counterparty_id) || {name:''};
         mk(+cx.lat, +cx.lng, cpColor(cx.counterparty_id),
-          `<b>${esc(cx.name)}</b> (${esc(cx.abbr||'')})<br>${esc(cp.name)}<br>${esc(cx.address||'')}${cx.access_code?'<br>🔑 '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?'🚧 ':'📟 ')+esc(cx.callbox_code):''}<br>${gm(cx)}`);
+          `<b>${esc(cx.name)}</b> (${esc(cx.abbr||'')})<br>${esc(cp.name)}<br>${esc(cx.address||'')}${cx.access_code?'<br>'+ic('key')+' '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?ic('gate')+' ':ic('callbox')+' ')+esc(cx.callbox_code):''}<br>${gm(cx)}`);
       });
   }
   if (marks.length) mapObj.fitBounds(marks, { padding: [30,30], maxZoom: 14 });
@@ -3085,10 +3512,10 @@ function viewInvoicesReport(){
         <div class="grow" style="flex:1"><b>${t('rep_found')}: ${js.length}</b>
           <div class="tiny">${t('rep_sum')} <b class="money">${money(sum)}</b> · ${t('rep_half_hint')}</div></div>
       </div>
-      <button class="btn btn-green" style="margin-top:10px" onclick="App.batchPdf()">⬇ ${t('rep_download')} (${js.length})</button>
+      <button class="btn btn-green" style="margin-top:10px" onclick="App.batchPdf()">${ic('download')} ${t('rep_download')} (${js.length})</button>
     </div>
     ${listHtml}`
-  : `<div class="list-empty"><div class="big">🗂</div>${t('rep_none')}</div>`}`;
+  : `<div class="list-empty"><div class="big">${ic('archive')}</div>${t('rep_none')}</div>`}`;
 }
 
 /* =====================================================================
@@ -3335,7 +3762,7 @@ function dirStaff(){
       <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${u.id===state.user.id?'disabled':''}>
         ${['tech','manager','admin'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
       </select>
-      ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">👁 ${t('vis_btn')}</button>` : ''}
+      ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
     </div>`).join('') + `</div>
     <div class="tiny">${t('vis_hint')}</div>`;
 }
@@ -3349,7 +3776,7 @@ function staffVis(managerId){
   const hid = hiddenSetFor(managerId);
   const others = state.data.profiles.filter(p => p.id !== managerId);
   openModal(`
-    ${modalHead('👁 ' + t('visibility') + ' — ' + esc(m.display_name))}
+    ${modalHead(t('visibility') + ' — ' + m.display_name, 'eye')}
     <div class="tiny" style="margin-bottom:8px">${t('vis_hint')}</div>
     ${others.map(p=>`
       <label class="opt ${hid.has(p.id)?'':'on'}" style="width:100%;justify-content:flex-start;margin-bottom:6px">
@@ -3581,9 +4008,9 @@ async function showDiagnostics(){
   try{ report = await runDiagnostics(); }
   catch(e){ report = '⛔ Диагностика упала: ' + errStr(e); dlog(report); }
   openModal(`
-    ${modalHead('🩺 ' + t('diag'))}
+    ${modalHead(t('diag'), 'steth')}
     <pre class="diag-pre">${esc(report)}</pre>
-    <button class="btn btn-blue" onclick="App.copyDiag()">📋 ${t('diag_copy')}</button>
+    <button class="btn btn-blue" onclick="App.copyDiag()">${ic('clipboard')} ${t('diag_copy')}</button>
     <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
   `);
   window.__lastDiag = report;
@@ -3668,43 +4095,43 @@ async function installPwa(){
 /* ---------- Мини-FAQ ---------- */
 function faqHtml(){
   if (state.lang === 'en') return `
-    <h4>🧭 How it works</h4>
+    <h4>${ic('compass')} How it works</h4>
     <p>One job = one unit in an apartment complex. Tap <b>＋</b>, pick date → counterparty → complex → unit → work type. Inside the job you check the services — prices fill in automatically and the total recalculates live. Mark it done; an admin can approve it (editing the final amount). If a non-admin changes the price after approval, the approval is reset. The <b>PDF</b> button builds an invoice that mirrors the paper form.</p>
-    <h4>📚 Directories</h4>
+    <h4>${ic('book')} Directories</h4>
     <p><b>Counterparties</b> — apartment networks. <b>Complexes</b> — their properties: address, gate code, map coordinates. <b>Work types</b> — name, color and the extra gear it requires. <b>Equipment</b> — rental units (BLW, DHM, SCR, OZN) with a $/day price. <b>Extra gear</b> — what to bring along. <b>PRICE</b> — the standard price list. <b>Staff</b> (admin) — roles and per-manager visibility.</p>
-    <h4>💲 Standard vs individual prices</h4>
+    <h4>${ic('dollar')} Standard vs individual prices</h4>
     <p>The <b>PRICE</b> tab is the default price list for everyone. To set special prices for a network: Directories → Counterparties → open one → <b>Prices</b> tab. Tick the checkbox next to a line to switch it to an <b>individual price</b> and type your value; untick — the standard price applies again. A new counterparty automatically receives a copy of the standard list.</p>
-    <h4>🗂 Reports</h4>
+    <h4>${ic('archive')} Reports</h4>
     <p>Per <b>unit</b>: open the job and press PDF. Per <b>period</b> (a day, a week, a month): bottom tab <b>Reports</b> → pick the dates → download a single PDF with all invoices, two per Letter page. Managers also get the <b>Pickups</b> report for any date.</p>
-    <h4>⚠️ Priority & ordering</h4>
+    <h4>${ic('warn')} Priority & ordering</h4>
     <p>Every trip card has a control rail: the red <b>“!” triangle</b> marks a “go first” object (priority items float to the top), and <b>▲▼</b> arrows reorder trips within the day. The order is shared between jobs and pickups.</p>
-    <h4>🔑 Access codes & requests</h4>
-    <p>A complex has two codes: 🔑 general and 📟 callbox (a toggle marks it as the 🚧 <b>gate</b> code). Anyone can edit: admins apply instantly, others submit a <b>request</b> the admin approves or rejects (inbox at the top of the Complexes tab). The 📖 button shows the full <b>history</b> — who entered which code and when; next to the current code you see since when it’s valid and who added it.</p>
-    <h4>🧰 Note templates & purchases</h4>
-    <p>In the Note block, <b>＋ Template</b> inserts items from the “Extra works” directory: a work flagged with a size shows an input in the right units (📏 “Sizes”: ft, sq ft, lb, pcs), while “🛒 Purchase” opens the “Products” list with quantity and a <b>price</b> that flows into the total and prints as its own PDF line. All three directories are admin-managed.</p>
-    <h4>📦 Automatic pickups</h4>
+    <h4>${ic('key')} Access codes & requests</h4>
+    <p>A complex has two codes: ${ic('key')} general and ${ic('callbox')} callbox (a toggle marks it as the ${ic('gate')} <b>gate</b> code). Anyone can edit: admins apply instantly, others submit a <b>request</b> the admin approves or rejects (inbox at the top of the Complexes tab). The ${ic('book')} button shows the full <b>history</b> — who entered which code and when; next to the current code you see since when it’s valid and who added it.</p>
+    <h4>${ic('toolbox')} Note templates & purchases</h4>
+    <p>In the Note block, <b>＋ Template</b> inserts items from the “Extra works” directory: a work flagged with a size shows an input in the right units (${ic('ruler')} “Sizes”: ft, sq ft, lb, pcs), while “${ic('cart')} Purchase” opens the “Products” list with quantity and a <b>price</b> that flows into the total and prints as its own PDF line. All three directories are admin-managed.</p>
+    <h4>${ic('box')} Automatic pickups</h4>
     <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. Everything can be shown on the <b>day map</b> with a Google Maps route.</p>`;
   return `
-    <h4>🧭 Как всё устроено</h4>
+    <h4>${ic('compass')} Как всё устроено</h4>
     <p>Одна работа = один юнит в апарт-комплексе. Жмёте <b>＋</b>, выбираете дату → контрагента → комплекс → юнит → вид работы. Внутри работы отмечаете услуги галочками — цены подставляются сами, итог пересчитывается на лету. Отметили «выполнено» — админ может поставить апрув (с правкой итоговой суммы). Если после апрува не-админ меняет стоимость — апрув снимается. Кнопка <b>PDF</b> собирает инвойс, повторяющий бумажную форму.</p>
-    <h4>📚 Какие есть справочники</h4>
+    <h4>${ic('book')} Какие есть справочники</h4>
     <p><b>Контрагенты</b> — сети апартаментов. <b>Комплексы</b> — их объекты: адрес, код доступа, координаты для карты. <b>Виды работ</b> — название, цвет и нужное доп. оборудование. <b>Оборудование</b> — то, что сдаётся в аренду (BLW, DHM, SCR, OZN) с ценой $/сутки. <b>Доп. оборудование</b> — что взять с собой на выезд. <b>PRICE</b> — стандартный прейскурант. <b>Сотрудники</b> (админ) — роли и видимость для менеджеров.</p>
-    <h4>💲 Стандартные и индивидуальные цены</h4>
+    <h4>${ic('dollar')} Стандартные и индивидуальные цены</h4>
     <p>Вкладка <b>PRICE</b> — базовый прейскурант, действует для всех. Чтобы задать особые цены сети апартаментов: Справочники → Контрагенты → откройте нужного → вкладка <b>Цены</b>. Чекбокс напротив позиции включает <b>индивидуальную цену</b> — вводите свою; сняли галочку — снова действует стандартная. Новому контрагенту прайс копируется автоматически.</p>
-    <h4>🗂 Отчёты</h4>
+    <h4>${ic('archive')} Отчёты</h4>
     <p>За <b>юнит</b>: откройте работу и нажмите PDF. За <b>период</b> (день, неделя, месяц): нижняя вкладка <b>Отчёты</b> → выбираете даты → скачиваете единый PDF со всеми инвойсами, по два на страницу Letter. Менеджеру доступен и отчёт по <b>пикапам</b> на любую дату.</p>
-    <h4>⚠️ Приоритет и очерёдность</h4>
+    <h4>${ic('warn')} Приоритет и очерёдность</h4>
     <p>Слева на каждой карточке поездки — рельса управления: красный <b>треугольник «!»</b> помечает объект «ехать первым» (приоритетные всегда вверху списка), стрелки <b>▲▼</b> меняют очерёдность внутри дня. Порядок общий для работ и пикапов.</p>
-    <h4>🔑 Коды доступа и заявки</h4>
-    <p>У комплекса два кода: 🔑 общий и 📟 callbox (переключателем помечается, что это код от 🚧 <b>ворот</b>). Изменить может каждый: админ — сразу, остальные отправляют <b>заявку</b>, которую админ подтверждает или отклоняет (входящие — вверху вкладки «Комплексы»). Кнопка 📖 показывает <b>историю</b> изменений: кто, когда и какой код вводил; рядом с текущим кодом видно, с какой даты он действует и кто его добавил.</p>
-    <h4>🧰 Шаблоны заметки и покупки</h4>
-    <p>В блоке «Заметка» кнопка <b>＋ Шаблон</b> подставляет позиции из справочника «Доп. работы»: у работы с флагом размера появляется поле в нужных единицах (📏 «Размеры»: футы, sq ft, паунды, штуки), а «🛒 Покупка товара» открывает выбор из справочника «Товары», количество и <b>цену</b> — она попадает в итог и печатается в PDF отдельной строкой. Все три справочника редактирует администратор.</p>
-    <h4>📦 Пикапы формируются сами</h4>
+    <h4>${ic('key')} Коды доступа и заявки</h4>
+    <p>У комплекса два кода: ${ic('key')} общий и ${ic('callbox')} callbox (переключателем помечается, что это код от ${ic('gate')} <b>ворот</b>). Изменить может каждый: админ — сразу, остальные отправляют <b>заявку</b>, которую админ подтверждает или отклоняет (входящие — вверху вкладки «Комплексы»). Кнопка ${ic('book')} показывает <b>историю</b> изменений: кто, когда и какой код вводил; рядом с текущим кодом видно, с какой даты он действует и кто его добавил.</p>
+    <h4>${ic('toolbox')} Шаблоны заметки и покупки</h4>
+    <p>В блоке «Заметка» кнопка <b>＋ Шаблон</b> подставляет позиции из справочника «Доп. работы»: у работы с флагом размера появляется поле в нужных единицах (${ic('ruler')} «Размеры»: футы, sq ft, паунды, штуки), а «${ic('cart')} Покупка товара» открывает выбор из справочника «Товары», количество и <b>цену</b> — она попадает в итог и печатается в PDF отдельной строкой. Все три справочника редактирует администратор.</p>
+    <h4>${ic('box')} Пикапы формируются сами</h4>
     <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. Всё это выводится на <b>карту дня</b> с маршрутом Google Maps.</p>`;
 }
 function faqModal(){
   openModal(`
-    ${modalHead('❓ ' + t('faq'))}
+    ${modalHead(t('faq'), 'help')}
     <div class="faq-body">${faqHtml()}</div>
     <button class="btn btn-ghost" onclick="App.closeModal()">${t('close')}</button>
   `);
@@ -3773,10 +4200,10 @@ function showLogModal(){
   const txt = PLOG.slice(-220).join('\n') || '—';
   window.__lastLog = txt;
   openModal(`
-    ${modalHead('🧾 ' + t('log_title'))}
+    ${modalHead(t('log_title'), 'receipt')}
     <pre class="diag-pre">${esc(txt)}</pre>
-    <button class="btn btn-blue" onclick="App.copyLog()">📋 ${t('diag_copy')}</button>
-    <button class="btn btn-red" style="margin-top:8px" onclick="App.clearLog()">🗑 ${t('clear')}</button>
+    <button class="btn btn-blue" onclick="App.copyLog()">${ic('clipboard')} ${t('diag_copy')}</button>
+    <button class="btn btn-red" style="margin-top:8px" onclick="App.clearLog()">${ic('trash')} ${t('clear')}</button>
     <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
   `);
 }
@@ -3848,9 +4275,9 @@ async function showDbDiagnostics(){
   catch(e){ report = '⛔ ' + errStr(e); dlog('⛔ db-diag:', e); }
   window.__lastDiag = report;
   openModal(`
-    ${modalHead('🗄 ' + t('db_diag'))}
+    ${modalHead(t('db_diag'), 'archive')}
     <pre class="diag-pre">${esc(report)}</pre>
-    <button class="btn btn-blue" onclick="App.copyDiag()">📋 ${t('diag_copy')}</button>
+    <button class="btn btn-blue" onclick="App.copyDiag()">${ic('clipboard')} ${t('diag_copy')}</button>
     <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
   `);
 }
@@ -3903,8 +4330,8 @@ async function moveJob(id, dir){
    ===================================================================== */
 function codeLineHtml(cx, compact){
   const parts = [];
-  if (cx.access_code) parts.push(`<button class="key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.access_code)}')">🔑 ${esc(cx.access_code)}</button>`);
-  if (cx.callbox_code) parts.push(`<button class="key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.callbox_code)}')">${cx.callbox_gate ? '🚧' : '📟'} ${esc(cx.callbox_code)}</button>`);
+  if (cx.access_code) parts.push(`<button class="key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.access_code)}')">${ic('key')} ${esc(cx.access_code)}</button>`);
+  if (cx.callbox_code) parts.push(`<button class="key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.callbox_code)}')">${cx.callbox_gate ? ic('gate') : ic('callbox')} ${esc(cx.callbox_code)}</button>`);
   return parts.join(compact ? ' · ' : ' &nbsp; ');
 }
 function cxHistory(cxId){
@@ -3935,20 +4362,20 @@ function codeHistoryModal(cxId){
   const cx = cxById(cxId); if (!cx) return;
   const rows = cxHistory(cxId);
   const cur = `
-    <div class="rowline"><div class="grow">🔑 ${esc(cx.access_code||'—')} ${firstSeenLine(cxId,'access',cx.access_code)}</div></div>
-    <div class="rowline"><div class="grow">${cx.callbox_gate?'🚧':'📟'} ${esc(cx.callbox_code||'—')}
+    <div class="rowline"><div class="grow">${ic('key')} ${esc(cx.access_code||'—')} ${firstSeenLine(cxId,'access',cx.access_code)}</div></div>
+    <div class="rowline"><div class="grow">${cx.callbox_gate?ic('gate'):ic('callbox')} ${esc(cx.callbox_code||'—')}
       <span class="tiny">(${cx.callbox_gate ? t('target_gate') : t('target_callbox')})</span> ${firstSeenLine(cxId,'callbox',cx.callbox_code)}</div></div>`;
   const hist = rows.length ? rows.map(h => `
     <div class="rowline">
       <div class="grow" style="font-size:.8rem">
-        ${h.field==='access'?'🔑':(h.gate?'🚧':'📟')}
+        ${h.field==='access'?ic('key'):(h.gate?ic('gate'):ic('callbox'))}
         <s style="color:var(--dim-2)">${esc(h.old_value||'—')}</s> → <b>${esc(h.new_value||'—')}</b>
         ${h.source==='request' ? `<span class="chip">${t('req_by')}</span>` : ''}
         <div class="tiny">${fmtDMY(String(h.changed_at).slice(0,10))} ${String(h.changed_at).slice(11,16)} · ${t('by_word')}: ${esc(profName(h.changed_by))}</div>
       </div>
     </div>`).join('') : `<div class="tiny">${t('no_history')}</div>`;
   openModal(`
-    ${modalHead('📖 ' + t('code_history') + ' — ' + esc(cx.name))}
+    ${modalHead(t('code_history') + ' — ' + cx.name, 'book')}
     ${cur}
     <hr class="sep">
     ${hist}
@@ -3960,19 +4387,19 @@ function codeHistoryModal(cxId){
 function proposeCodeModal(cxId){
   const cx = cxById(cxId); if (!cx) return;
   openModal(`
-    ${modalHead('🔑 ' + t('propose_code') + ' — ' + esc(cx.name))}
+    ${modalHead(t('propose_code') + ' — ' + cx.name, 'key')}
     <div class="form-row"><span class="lbl">${t('access_code')}</span>
       <input id="pc-access" value="${esc(cx.access_code||'')}"></div>
     <div class="form-row"><span class="lbl">${t('callbox')}</span>
       <input id="pc-callbox" value="${esc(cx.callbox_code||'')}"></div>
     <div class="form-row"><span class="lbl">${t('code_target')}</span>
       <div class="tabs">
-        <button class="tabbtn ${!cx.callbox_gate?'active':''}" data-gate="0" onclick="App.pcGate(this)">📟 ${t('target_callbox')}</button>
-        <button class="tabbtn ${cx.callbox_gate?'active':''}" data-gate="1" onclick="App.pcGate(this)">🚧 ${t('target_gate')}</button>
+        <button class="tabbtn ${!cx.callbox_gate?'active':''}" data-gate="0" onclick="App.pcGate(this)">${ic('callbox')} ${t('target_callbox')}</button>
+        <button class="tabbtn ${cx.callbox_gate?'active':''}" data-gate="1" onclick="App.pcGate(this)">${ic('gate')} ${t('target_gate')}</button>
       </div>
       <input type="hidden" id="pc-gate" value="${cx.callbox_gate?1:0}"></div>
-    <button class="btn btn-green" onclick="App.submitCode('${cx.id}')">${isAdmin() ? t('save') : '📨 ' + t('propose_code')}</button>
-    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal();App.codeHistory('${cx.id}')">📖 ${t('history')}</button>
+    <button class="btn btn-green" onclick="App.submitCode('${cx.id}')">${isAdmin() ? t('save') : ic('send')+' ' + t('propose_code')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal();App.codeHistory('${cx.id}')">${ic('book')} ${t('history')}</button>
   `);
 }
 function pcGate(btn){
@@ -4044,13 +4471,13 @@ function codeRequestsHtml(){
   const list = pendingCodeRequests();
   if (!list.length) return '';
   return `<div class="card" style="border-color:var(--yellow)">
-    <div style="font-weight:900;margin-bottom:6px">🔔 ${t('code_requests')} (${list.length})</div>
+    <div style="font-weight:900;margin-bottom:6px">${ic('bell')} ${t('code_requests')} (${list.length})</div>
     ${list.map(r => {
       const cx = cxById(r.complex_id) || {name:'?'};
       const ch = [];
-      if (r.access_code !== null && r.access_code !== undefined) ch.push(`🔑 ${esc(cx.access_code||'—')} → <b>${esc(r.access_code)}</b>`);
-      if (r.callbox_code !== null && r.callbox_code !== undefined) ch.push(`📟 ${esc(cx.callbox_code||'—')} → <b>${esc(r.callbox_code)}</b>`);
-      if (r.callbox_gate !== null && r.callbox_gate !== undefined) ch.push(`${r.callbox_gate?'🚧 '+t('target_gate'):'📟 '+t('target_callbox')}`);
+      if (r.access_code !== null && r.access_code !== undefined) ch.push(`${ic('key')} ${esc(cx.access_code||'—')} → <b>${esc(r.access_code)}</b>`);
+      if (r.callbox_code !== null && r.callbox_code !== undefined) ch.push(`${ic('callbox')} ${esc(cx.callbox_code||'—')} → <b>${esc(r.callbox_code)}</b>`);
+      if (r.callbox_gate !== null && r.callbox_gate !== undefined) ch.push(`${r.callbox_gate?ic('gate')+' '+t('target_gate'):ic('callbox')+' '+t('target_callbox')}`);
       return `<div class="rowline">
         <div class="grow" style="font-size:.82rem">
           <b>${esc(cx.name)}</b> · <span class="tiny">${t('req_by')} ${esc(profName(r.requested_by))} · ${fmtDMY(String(r.requested_at).slice(0,10))}</span>
@@ -4125,7 +4552,7 @@ function extraListHtml(){
     if (it.kind === 'purchase'){
       const prods = [...(state.data.product_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
       return `<div class="ex-item">
-        <div class="ex-head"><b>🛒 ${esc(it.name)}</b>
+        <div class="ex-head"><b>${ic('cart')} ${esc(it.name)}</b>
           <button class="ex-del" onclick="App.exDel(${i})">✕</button></div>
         <div class="qty-line">
           <select data-ex-prod="${i}" style="flex:1;min-width:130px">
@@ -4141,7 +4568,7 @@ function extraListHtml(){
     }
     const lineSum = extraLineTotal(it);
     return `<div class="ex-item">
-      <div class="ex-head"><b>🧰 ${esc(it.name)}</b>
+      <div class="ex-head"><b>${ic('toolbox')} ${esc(it.name)}</b>
         <button class="ex-del" onclick="App.exDel(${i})">✕</button></div>
       ${it.needs_size ? `
       <div class="qty-line size-presets">
@@ -4173,7 +4600,7 @@ function extraPickerModal(){
     ${modalHead('＋ ' + t('template'))}
     ${list.length ? list.map(w => `
       <button class="demo-user" onclick="App.exAdd('${w.id}')">
-        <span style="font-size:1.2rem">${w.kind==='purchase'?'🛒':'🧰'}</span>
+        <span style="font-size:1.2rem">${w.kind==='purchase'?ic('cart'):ic('toolbox')}</span>
         <span class="grow" style="flex:1;text-align:left">
           <div style="font-weight:900">${esc(w.name)}</div>
           <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : (w.needs_size ? (szById(w.size_type_id)||{}).name || t('needs_size') : t('kind_work'))}</div>
@@ -4209,7 +4636,7 @@ function dirSizes(){
   const list = [...(state.data.size_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
   return `<div class="card">` + (list.map(s => `
     <div class="rowline">
-      <div class="grow">📏 <b>${esc(s.name)}</b> <span class="tiny">· ${esc(s.unit)}</span></div>
+      <div class="grow">${ic('ruler')} <b>${esc(s.name)}</b> <span class="tiny">· ${esc(s.unit)}</span></div>
       <button class="btn btn-ghost sm" onclick="App.editSzModal('${s.id}')">${t('edit')}</button>
     </div>`).join('') || `<div class="tiny">—</div>`) + `</div>
     <button class="btn btn-green" onclick="App.editSzModal()">＋ ${t('add')}</button>`;
@@ -4217,7 +4644,7 @@ function dirSizes(){
 function editSzModal(id){
   const s = id ? szById(id) : { id: uid(), name:'', unit:'', sort: (state.data.size_types||[]).length+1 };
   openModal(`
-    ${modalHead('📏 ' + t('d_sizes'))}
+    ${modalHead(t('d_sizes'), 'ruler')}
     <div class="form-row"><span class="lbl">${t('name')}</span><input id="sz-name" value="${esc(s.name)}" placeholder="Площадь / Area"></div>
     <div class="form-row"><span class="lbl">${t('unit_lbl')}</span><input id="sz-unit" value="${esc(s.unit)}" placeholder="sq ft"></div>
     <button class="btn btn-green" onclick="App.saveSz('${s.id}', ${s.sort||0})">${t('save')}</button>
@@ -4235,8 +4662,8 @@ function dirExtraWorks(){
   return `<div class="card">` + (list.map(w => {
     const sz = szById(w.size_type_id);
     return `<div class="rowline">
-      <div class="grow">${w.kind==='purchase'?'🛒':'🧰'} <b>${esc(w.name)}</b>
-        <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : t('kind_work')}${w.needs_size && sz ? ' · 📏 ' + esc(sz.name) + ' (' + esc(sz.unit) + ')' : ''}${+w.price ? ' · 💲 ' + money(+w.price) + (w.needs_size ? '/' + esc((sz||{}).unit||'ед.') : '') : ''}</div></div>
+      <div class="grow">${w.kind==='purchase'?ic('cart'):ic('toolbox')} <b>${esc(w.name)}</b>
+        <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : t('kind_work')}${w.needs_size && sz ? ' · ' + ic('ruler') + ' ' + esc(sz.name) + ' (' + esc(sz.unit) + ')' : ''}${+w.price ? ' · ' + ic('dollar') + ' ' + money(+w.price) + (w.needs_size ? '/' + esc((sz||{}).unit||'ед.') : '') : ''}</div></div>
       <button class="btn btn-ghost sm" onclick="App.editEwModal('${w.id}')">${t('edit')}</button>
     </div>`;
   }).join('') || `<div class="tiny">—</div>`) + `</div>
@@ -4246,17 +4673,17 @@ function editEwModal(id){
   const w = id ? ewById(id) : { id: uid(), name:'', kind:'work', needs_size:false, size_type_id:null, sort:(state.data.extra_works||[]).length+1 };
   const sizes = [...(state.data.size_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
   openModal(`
-    ${modalHead('🧰 ' + t('d_extraworks'))}
+    ${modalHead(t('d_extraworks'), 'toolbox')}
     <div class="form-row"><span class="lbl">${t('name')}</span><input id="ew-name" value="${esc(w.name)}" placeholder="Вырезка стен / Wall cutout"></div>
     <div class="form-row"><span class="lbl">&nbsp;</span>
       <div class="tabs">
-        <button class="tabbtn ${w.kind!=='purchase'?'active':''}" data-kind="work" onclick="App.pcGate ? (this.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')), this.classList.add('active'), document.getElementById('ew-kind').value='work') : null">🧰 ${t('kind_work')}</button>
-        <button class="tabbtn ${w.kind==='purchase'?'active':''}" data-kind="purchase" onclick="(this.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')), this.classList.add('active'), document.getElementById('ew-kind').value='purchase')">🛒 ${t('kind_purchase')}</button>
+        <button class="tabbtn ${w.kind!=='purchase'?'active':''}" data-kind="work" onclick="App.pcGate ? (this.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')), this.classList.add('active'), document.getElementById('ew-kind').value='work') : null">${ic('toolbox')} ${t('kind_work')}</button>
+        <button class="tabbtn ${w.kind==='purchase'?'active':''}" data-kind="purchase" onclick="(this.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')), this.classList.add('active'), document.getElementById('ew-kind').value='purchase')">${ic('cart')} ${t('kind_purchase')}</button>
       </div>
       <input type="hidden" id="ew-kind" value="${w.kind}"></div>
     <div class="form-row"><span class="lbl">${t('price_lbl')} <span class="tiny">(${t('price_per_size')} — если включён размер)</span></span>
       <input id="ew-price" class="price-input" inputmode="decimal" value="${w.price||''}" style="width:120px"></div>
-    <label class="opt ${w.needs_size?'on':''}" style="margin-bottom:8px"><input type="checkbox" id="ew-size" ${w.needs_size?'checked':''} onchange="this.closest('.opt').classList.toggle('on', this.checked)"> 📏 ${t('needs_size')}</label>
+    <label class="opt ${w.needs_size?'on':''}" style="margin-bottom:8px"><input type="checkbox" id="ew-size" ${w.needs_size?'checked':''} onchange="this.closest('.opt').classList.toggle('on', this.checked)"> ${ic('ruler')} ${t('needs_size')}</label>
     <div class="form-row"><span class="lbl">${t('size_type')}</span>
       <select id="ew-szt">
         <option value="">—</option>
@@ -4283,7 +4710,7 @@ function dirProducts(){
   const list = [...(state.data.product_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
   return `<div class="card">` + (list.map(p => `
     <div class="rowline">
-      <div class="grow">🛒 <b>${esc(p.name)}</b><div class="tiny">${t('default_price')}: ${money(+p.default_price||0)}</div></div>
+      <div class="grow">${ic('cart')} <b>${esc(p.name)}</b><div class="tiny">${t('default_price')}: ${money(+p.default_price||0)}</div></div>
       <button class="btn btn-ghost sm" onclick="App.editPtModal('${p.id}')">${t('edit')}</button>
     </div>`).join('') || `<div class="tiny">—</div>`) + `</div>
     <button class="btn btn-green" onclick="App.editPtModal()">＋ ${t('add')}</button>`;
@@ -4291,7 +4718,7 @@ function dirProducts(){
 function editPtModal(id){
   const p = id ? ptById(id) : { id: uid(), name:'', default_price:0, sort:(state.data.product_types||[]).length+1 };
   openModal(`
-    ${modalHead('🛒 ' + t('d_products'))}
+    ${modalHead(t('d_products'), 'cart')}
     <div class="form-row"><span class="lbl">${t('name')}</span><input id="pt-name" value="${esc(p.name)}" placeholder="Решётка / Vent grille"></div>
     <div class="form-row"><span class="lbl">${t('default_price')}</span><input id="pt-price" class="price-input" inputmode="decimal" value="${p.default_price||''}"></div>
     <button class="btn btn-green" onclick="App.savePt('${p.id}', ${p.sort||0})">${t('save')}</button>
@@ -4437,23 +4864,23 @@ function viewStats(){
   </div>
 
   <div class="stat-grid">
-    <div class="stat-lg c-green"><div class="n">${money(d.earned)}</div><div class="l">💰 ${t('st_earned')}</div>
+    <div class="stat-lg c-green"><div class="n">${money(d.earned)}</div><div class="l">${ic('dollar')} ${t('st_earned')}</div>
       <div class="s">${t('st_approved_sum')}: ${money(d.approvedSum)}</div></div>
-    <div class="stat-lg c-blue"><div class="n">${d.doneCnt}</div><div class="l">✅ ${t('st_done')}</div>
+    <div class="stat-lg c-blue"><div class="n">${d.doneCnt}</div><div class="l">${ic('chk_on')} ${t('st_done')}</div>
       <div class="s">${t('st_total')}: ${d.jobsTotal} · ${t('st_avg')}: ${money(d.avg)}</div></div>
-    <div class="stat-lg c-purple"><div class="n">${d.miles.toFixed(1)}</div><div class="l">🚗 ${t('st_miles')}</div>
+    <div class="stat-lg c-purple"><div class="n">${d.miles.toFixed(1)}</div><div class="l">${ic('car')} ${t('st_miles')}</div>
       <div class="s">${t('st_miles_hint')}</div></div>
-    <div class="stat-lg c-gray"><div class="n">${d.pickedCnt}</div><div class="l">📦 ${t('st_picked')}</div>
-      <div class="s">✓ ${t('st_ontime')}: ${d.onTime} · ⏰ ${t('st_late')}: ${d.late}</div></div>
-    <div class="stat-lg c-teal"><div class="n">${d.visited}</div><div class="l">🏢 ${t('st_visited')}</div>
-      <div class="s">🧰 ${t('st_eq')}: ${d.eqUnits} ${t('st_units')}</div></div>
-    <div class="stat-lg c-yellow"><div class="n">${money(d.purchases)}</div><div class="l">🛒 ${t('st_purchases')}</div>
+    <div class="stat-lg c-gray"><div class="n">${d.pickedCnt}</div><div class="l">${ic('box')} ${t('st_picked')}</div>
+      <div class="s">✓ ${t('st_ontime')}: ${d.onTime} · ${ic('clock')} ${t('st_late')}: ${d.late}</div></div>
+    <div class="stat-lg c-teal"><div class="n">${d.visited}</div><div class="l">${ic('building')} ${t('st_visited')}</div>
+      <div class="s">${ic('toolbox')} ${t('st_eq')}: ${d.eqUnits} ${t('st_units')}</div></div>
+    <div class="stat-lg c-yellow"><div class="n">${money(d.purchases)}</div><div class="l">${ic('cart')} ${t('st_purchases')}</div>
       <div class="s">&nbsp;</div></div>
   </div>
 
   ${d.chart.length ? `
   <div class="card">
-    <div style="font-weight:900;margin-bottom:8px">📈 ${t('chart_earn')}</div>
+    <div style="font-weight:900;margin-bottom:8px">${ic('chart')} ${t('chart_earn')}</div>
     <div class="bar-chart">${bars}</div>
   </div>` : ''}`;
 }
