@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.07';
+const APP_VERSION = '1.07.08';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -130,6 +130,7 @@ const I18N = {
     login_taken_or_err: 'Логин занят или ошибка регистрации',
     back_today: 'Сегодня', navigate: 'Маршрут', copied_code: 'Код скопирован',
     app_tag: 'учёт работ', copy_addr: 'Копировать адрес', copied_addr: 'Адрес скопирован',
+    today_tag: 'сегодня',
     drag_hint: 'Удерживайте карточку и тяните вверх/вниз',
     st_active: 'Активен', st_blocked: 'Заблокирован', block: 'Заблокировать', unblock: 'Разблокировать',
     block_confirm: 'Заблокировать сотрудника? Он не сможет войти в приложение:',
@@ -285,6 +286,7 @@ const I18N = {
     login_taken_or_err: 'Login is taken or sign-up failed',
     back_today: 'Today', navigate: 'Navigate', copied_code: 'Code copied',
     app_tag: 'work log', copy_addr: 'Copy address', copied_addr: 'Address copied',
+    today_tag: 'today',
     drag_hint: 'Press & hold a card, then drag up/down',
     st_active: 'Active', st_blocked: 'Blocked', block: 'Block', unblock: 'Unblock',
     block_confirm: 'Block this employee? They will not be able to sign in:',
@@ -1479,7 +1481,7 @@ function viewHeader(){
     <button class="icon-btn ${state.syncing?'spin':''}" onclick="App.sync()" title="${t('sync')}" aria-label="${t('sync')}">${ICONS.sync}</button>
     <div class="avatar-wrap">
       <button class="avatar role-${u.role}" onclick="App.go('settings')" aria-label="${t('settings')}">${esc(initials(u.display_name))}</button>
-      <div class="login-pill">${esc(u.login)}</div>
+      <div class="login-pill role-${u.role}">${esc(u.login)}</div>
     </div>
   </div>`;
 }
@@ -1528,7 +1530,7 @@ function viewWeek(){
         ${hasIssue ? warnIcon(true) : ''}
         <div class="dow">${t('week_days')[i]}</div>
         <div class="dom">${d.getDate()}</div>
-        <div class="mon">${t('months')[d.getMonth()]}</div>
+        <div class="mon">${iso===today ? `<span class="today-tag">${t('today_tag')}</span>` : t('months')[d.getMonth()]}</div>
         <div class="dot-row">${jobDots.slice(0,4).map(c=>`<span class="dot" style="background:${c}"></span>`).join('')}</div>
       </button>`);
   }
@@ -2367,6 +2369,7 @@ function copyReport(){
    ===================================================================== */
 function viewDirs(){
   const tabs = [
+    ['price', t('d_price'), true],
     ['staff', t('d_staff'), isAdmin()],
     ['counterparties', t('d_counterparties'), isAdmin()],
     ['complexes', t('d_complexes'), true],
@@ -2376,7 +2379,6 @@ function viewDirs(){
     ['extraworks', t('d_extraworks'), isAdmin()],
     ['sizes', t('d_sizes'), isAdmin()],
     ['products', t('d_products'), isAdmin()],
-    ['price', t('d_price'), true],
   ].filter(x=>x[2]);
   if (!tabs.find(x=>x[0]===state.dirTab)) state.dirTab = tabs[0][0];
   const nav = `<div class="tabs-nav">
@@ -3717,8 +3719,7 @@ function dirStaff(){
         <button class="icon-btn ban-btn ${u.blocked?'off':''}" title="${u.blocked?t('unblock'):t('block')}" aria-label="${u.blocked?t('unblock'):t('block')}" onclick="App.staffBlock('${u.id}')">${ic('ban')}</button>`}
       </div>
     </div>`; }).join('') + `</div>
-    <button class="btn btn-green" onclick="App.staffAddModal()">＋ ${t('add_staff')}</button>
-    <div class="tiny">${t('vis_hint')}</div>`;
+    <button class="btn btn-green" onclick="App.staffAddModal()">＋ ${t('add_staff')}</button>`;
 }
 async function setRole(uid_, role){
   const u = state.data.profiles.find(p=>p.id===uid_); if (!u) return;
@@ -4202,7 +4203,7 @@ function faqHtml(){
     <h4>${ic('receipt')} Statuses & approval</h4>
     <p>A job goes <b>Draft → Done → Approved</b>. Only an admin approves and may adjust the final amount. If a non-admin changes the price after approval, the approval is reset automatically. A yellow <b>“!”</b> means required fields are missing (complex, unit, at least one performer) — the PDF is blocked until they’re filled, and batch reports skip such jobs.</p>
     <h4>${ic('calendar')} Week feed & day cards</h4>
-    <p>The 7-day strip shows colored dots per work type, a gray dot for pickups and a small “!” on dates with unfinished required fields; the <b>⌂ Today</b> button returns to today. Under the strip: day stats (jobs / pickups / to collect / overdue) and the <b>day map</b> button. On a card the queue number is top-left, the priority triangle top-right, the address is shown in full with a copy button, and access/callbox codes copy with a tap.</p>
+    <p>The 7-day strip shows colored dots per work type, a gray dot for pickups and a small “!” on dates with unfinished required fields; today’s cell is outlined in green and labeled “today”; the <b>⌂ Today</b> button returns to it from any week. Under the strip: day stats (jobs / pickups / to collect / overdue) and the <b>day map</b> button. On a card the queue number is top-left, the priority triangle top-right, the address is shown in full with a copy button, and access/callbox codes copy with a tap.</p>
     <h4>${ic('refresh')} Sync, offline & updates</h4>
     <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android, works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode.</p>
     <h4>${ic('map')} Map</h4>
@@ -4235,7 +4236,7 @@ function faqHtml(){
     <h4>${ic('receipt')} Статусы и апрув</h4>
     <p>Работа проходит путь <b>Черновик → Выполнено → Апрув</b>. Апрув ставит только админ и может поправить итоговую сумму. Если после апрува не-админ меняет стоимость — апрув снимается автоматически. Жёлтый <b>«!»</b> — не заполнены обязательные поля (комплекс, юнит, хотя бы один исполнитель): PDF не сформируется, а в пакетном отчёте такая работа будет пропущена.</p>
     <h4>${ic('calendar')} Лента недели и карточки дня</h4>
-    <p>Лента из 7 дней показывает цветные точки по видам работ, серую точку пикапов и маленький «!» на датах с незаполненными полями; кнопка <b>⌂ Сегодня</b> возвращает к текущему дню. Под лентой — счётчики дня (работ / пикапов / на вывоз / просрочено) и кнопка <b>карты дня</b>. На карточке: номер очереди слева-сверху, треугольник приоритета справа-сверху, адрес целиком с кнопкой копирования, коды доступа/callbox копируются тапом.</p>
+    <p>Лента из 7 дней показывает цветные точки по видам работ, серую точку пикапов и маленький «!» на датах с незаполненными полями; сегодняшний день подсвечен зелёной рамкой и подписан «сегодня», кнопка <b>⌂ Сегодня</b> возвращает к нему из любой недели. Под лентой — счётчики дня (работ / пикапов / на вывоз / просрочено) и кнопка <b>карты дня</b>. На карточке: номер очереди слева-сверху, треугольник приоритета справа-сверху, адрес целиком с кнопкой копирования, коды доступа/callbox копируются тапом.</p>
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
     <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android, работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим.</p>
     <h4>${ic('map')} Карта</h4>

@@ -62,10 +62,12 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   width:44px;height:44px;border-radius:50%;
   border:3px solid var(--blue);
   background:var(--panel-2);
-  display:grid;place-items:center;font-weight:900;color:var(--yellow);
+  display:grid;place-items:center;font-weight:900;color:var(--blue);
 }
-.avatar.role-admin{border-color:var(--yellow)}
-.avatar.role-manager{border-color:var(--purple)}
+/* v1.07.08: палитра ролей — сотрудник синий, менеджер красный, админ фиолетовый */
+.avatar.role-tech{border-color:var(--blue);color:var(--blue)}
+.avatar.role-manager{border-color:var(--red);color:var(--red)}
+.avatar.role-admin{border-color:var(--purple);color:var(--purple)}
 .login-pill{
   margin-top:-7px;background:var(--bg);border:2px solid var(--line);
   border-radius:999px;padding:1px 7px;font-size:.6rem;color:var(--dim);
@@ -96,7 +98,6 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .day-cell .mon{font-size:.62rem}
 .day-cell.sel{border-color:var(--blue);background:rgba(28,176,246,.12);color:var(--blue)}
 .day-cell.sel .dom{color:var(--blue)}
-.day-cell.today:not(.sel){border-color:var(--dim-2)}
 .day-cell .dot-row{display:flex;justify-content:center;gap:3px;height:6px;margin-top:3px}
 .day-cell .dot{width:6px;height:6px;border-radius:50%}
 
@@ -753,3 +754,14 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .staff-row.is-blocked .avatar,
 .staff-row.is-blocked .grow b{opacity:.55}
 .staff-row.is-blocked .grow b{text-decoration:line-through}
+
+
+/* ============ v1.07.08: подпись логина в цвет роли; чипы ролей; «сегодня» ============ */
+.login-pill.role-tech{border-color:var(--blue);color:var(--blue)}
+.login-pill.role-manager{border-color:var(--red);color:var(--red)}
+.login-pill.role-admin{border-color:var(--purple);color:var(--purple)}
+.rt-admin{background:var(--purple);color:#2e0b4d}
+.rt-manager{background:var(--red);color:#5a0f10}
+.day-cell.today{border-color:var(--green)}
+.day-cell.today:not(.sel) .dom{color:var(--green)}
+.today-tag{color:var(--green);font-weight:900;letter-spacing:.2px}
