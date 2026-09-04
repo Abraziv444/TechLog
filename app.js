@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.00';
+const APP_VERSION = '1.07.02';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -85,6 +85,8 @@ const I18N = {
     org_short: 'Короткое имя (APC)', org_assoc: 'Ассоциация (шапка)', org_addr: 'Адрес (шапка, по строке)',
     logout: 'Выйти', version: 'Версия приложения', updated_to: 'Приложение обновлено до версии',
     update_after_form: 'Есть обновление — применю после закрытия формы',
+    upd_check: 'Проверить обновления', upd_latest: 'Версия актуальна',
+    upd_found: 'Доступно обновление', upd_last: 'проверено',
     login_title: 'Вход в TechLog', demo_note: 'Демо-режим: Supabase не настроен (config.js). Данные хранятся локально.',
     email: 'Email', password: 'Пароль', sign_in: 'Войти', sign_up: 'Регистрация',
     display_name: 'Имя (для документов)', have_acc: 'Уже есть аккаунт? Войти', no_acc: 'Нет аккаунта? Регистрация',
@@ -214,6 +216,8 @@ const I18N = {
     org_short: 'Short name (APC)', org_assoc: 'Association (header)', org_addr: 'Address (header, per line)',
     logout: 'Log out', version: 'App version', updated_to: 'App updated to version',
     update_after_form: 'Update ready — will apply after you close the form',
+    upd_check: 'Check for updates', upd_latest: 'You are up to date',
+    upd_found: 'Update available', upd_last: 'checked',
     login_title: 'Sign in to TechLog', demo_note: 'Demo mode: Supabase is not configured (config.js). Data is stored locally.',
     email: 'Email', password: 'Password', sign_in: 'Sign in', sign_up: 'Sign up',
     display_name: 'Name (for documents)', have_acc: 'Have an account? Sign in', no_acc: 'No account? Sign up',
@@ -1204,7 +1208,7 @@ function openModal(html){
   ov.addEventListener('click', e => { if (e.target === ov) closeModal(); });
   document.body.appendChild(ov);
 }
-function closeModal(){ $('#overlay')?.remove(); }
+function closeModal(){ $('#overlay')?.remove(); maybeApplyPendingUpdate(); }
 function modalHead(title){ return `<h3><button class="back-x" onclick="App.closeModal()">←</button> ${esc(title)}</h3>`; }
 
 /* ---------- Добавить задание ---------- */
@@ -2243,7 +2247,9 @@ function viewSettings(){
       <div class="d">${isStandalone() ? '✓ ' + t('already_installed') : t('install_hint')}</div>
       <div class="d">${t('install_where_win')}</div></div></div>
     ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">⬇ ${t('install_app')}</button>` : ''}
-    <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b><div class="d">TechLog v${APP_VERSION}</div></div></div>
+    <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b>
+      <div class="d">TechLog v${APP_VERSION}${state.lastUpdCheck ? ' · ' + t('upd_last') + ' ' + state.lastUpdCheck : ''}${state.updAvail ? ' · ⬆ ' + t('upd_found') + ': ' + state.updAvail : ''}</div></div>
+      <button class="btn btn-ghost sm" onclick="App.updCheck()">🔄 ${t('upd_check')}</button></div>
   </div>
 
   <button class="btn btn-red" onclick="App.logout()">✕ ${t('logout')}</button>
@@ -2503,11 +2509,41 @@ function makePdf(){
 /* =====================================================================
    ОБНОВЛЕНИЯ / SERVICE WORKER
    ===================================================================== */
+function editingBusy(){
+  return state.screen === 'job' || !!document.getElementById('overlay') || !!dictTa;
+}
 function maybeApplyPendingUpdate(){
-  if (state.pendingUpdate && state.screen !== 'job'){
+  if (state.pendingUpdate && !editingBusy()){
+    dlog('update: применяю отложенное обновление', state.pendingUpdate);
     sessionStorage.setItem('techlog_updated', '1');
     location.reload();
   }
+}
+
+/* ---------- Плановая проверка обновлений ----------
+   старт приложения · каждое переключение вкладки · открытие настроек · таймер раз в 10 минут.
+   Во время заполнения инвойса/модалок/диктовки проверки молчат, обновление откладывается. */
+let updLastCheck = 0;
+async function checkForUpdate(reason, force){
+  if (!force && Date.now() - updLastCheck < 15000) return;      // защита от спама при быстрых кликах
+  if (!force && editingBusy()) return;                          // не мешаем заполнению документов
+  updLastCheck = Date.now();
+  try{
+    const r = await fetch('./version.json?ts=' + Date.now(), { cache: 'no-store' });
+    const v = await r.json();
+    state.lastUpdCheck = new Date().toTimeString().slice(0,5);
+    if (v.version && v.version !== APP_VERSION){
+      state.updAvail = v.version;
+      dlog('update: найдена версия', v.version, '· причина: ' + reason);
+      const reg = navigator.serviceWorker ? await navigator.serviceWorker.getRegistration() : null;
+      if (reg) reg.update();                                    // дальше сработает SW_ACTIVATED → перезагрузка или отложка
+      else if (!editingBusy()){ sessionStorage.setItem('techlog_updated','1'); location.reload(); }
+      else { state.pendingUpdate = v.version; toast('⬆ ' + t('update_after_form'), 'inf'); }
+    } else {
+      state.updAvail = null;
+      dlog('update: версия актуальна · причина: ' + reason);
+    }
+  }catch(e){ dlog('update: проверка не удалась (' + reason + '):', e); }
 }
 function initSW(){
   if (!('serviceWorker' in navigator)) return;
@@ -2515,17 +2551,11 @@ function initSW(){
   navigator.serviceWorker.addEventListener('message', (e) => {
     if (e.data?.type !== 'SW_ACTIVATED') return;
     if (e.data.version === APP_VERSION) return;
-    if (state.screen === 'job'){ state.pendingUpdate = e.data.version; toast('⬆ ' + t('update_after_form'), 'inf'); }
+    if (editingBusy()){ state.pendingUpdate = e.data.version; toast('⬆ ' + t('update_after_form'), 'inf'); }
     else { sessionStorage.setItem('techlog_updated', '1'); location.reload(); }
   });
-  // проверка версии при каждом открытии страницы
-  fetch('./version.json?ts=' + Date.now(), { cache: 'no-store' })
-    .then(r=>r.json())
-    .then(v => {
-      if (v.version && v.version !== APP_VERSION){
-        navigator.serviceWorker.getRegistration().then(reg => reg && reg.update());
-      }
-    }).catch(()=>{});
+  // проверка версии при каждом открытии приложения
+  checkForUpdate('открытие приложения', true);
   if (sessionStorage.getItem('techlog_updated')){
     sessionStorage.removeItem('techlog_updated');
     setTimeout(()=>toast('✓ ' + t('updated_to') + ' ' + APP_VERSION), 600);
@@ -2541,11 +2571,12 @@ const App = {
     if (state.screen==='job' && s!=='job') { state.jobId=null; localStorage.removeItem('techlog_draft'); }
     if (state.screen==='map' && s!=='map' && mapObj){ try{ mapObj.remove(); }catch(e){} mapObj=null; }
     state.screen = s; render(); maybeApplyPendingUpdate();
+    checkForUpdate('переключение → ' + s, s === 'settings');
   },
   selDay(iso){ state.selDate = iso; render(); },
   shiftWeek(n){ state.weekStart = addDaysISO(state.weekStart, n*7); const cand = addDaysISO(state.selDate, n*7); state.selDate = cand; render(); },
   setMine(v){ state.filterMine = v; render(); },
-  sync(){ syncNow(false); },
+  sync(){ syncNow(false); checkForUpdate('кнопка синхронизации', true); },
   addTaskModal, ntCpChange, ntPickWt, createTask, closeModal,
   openJob, saveJob, approveJob, deleteJob, makePdf, pickupGroup,
   setReportDate(v){ state.reportDate = v; render(); }, copyReport,
@@ -2556,6 +2587,11 @@ const App = {
   statRange(f, to){ state.statFrom = f; state.statTo = to; render(); },
   statFrom(v){ state.statFrom = v; render(); }, statTo(v){ state.statTo = v; render(); },
   statMine(v){ state.statMine = v; render(); },
+  async updCheck(){
+    await checkForUpdate('вручную', true);
+    toast(state.updAvail ? '⬆ ' + t('upd_found') + ': ' + state.updAvail : '✓ ' + t('upd_latest'), state.updAvail ? 'inf' : undefined);
+    render();
+  },
   batchPdf,
   mapSetCp(v){ state.mapCp = v; render(); },
   mapToggleDay(v){ state.mapDay = v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
@@ -2634,6 +2670,7 @@ window.App = App;
     if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
     render();
     if (state.user) checkPickupBanner(true);
+    setInterval(() => checkForUpdate('таймер 10 мин'), 10 * 60 * 1000);
   } catch (e) {
     console.error('TechLog start failed:', e);
     window.__tlErr = e && (e.message || String(e));
@@ -2644,7 +2681,8 @@ window.App = App;
 /* =====================================================================
    ГОЛОСОВАЯ ДИКТОВКА ЗАМЕТОК (Web Speech API, ru-RU / en-US)
    ===================================================================== */
-let dictRec = null, dictTa = null, dictBase = '', dictFinal = '';
+let dictRec = null, dictTa = null, dictBase = '', dictWant = false;
+const DICT_ANDROID = /android/i.test(navigator.userAgent);
 function dictSupported(){ return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
 function dictationHTML(taId, value){
   return `<div class="dict-wrap">
@@ -2661,7 +2699,8 @@ function dictationHTML(taId, value){
   </div>`;
 }
 function dictStop(){
-  if (dictRec){ try{ dictRec.onend = null; dictRec.stop(); }catch(e){} }
+  dictWant = false;
+  if (dictRec){ try{ dictRec.onresult = null; dictRec.onend = null; dictRec.onerror = null; dictRec.stop(); }catch(e){} }
   const prev = dictTa;
   dictRec = null; dictTa = null;
   if (prev){
@@ -2669,32 +2708,77 @@ function dictStop(){
     const h = document.getElementById('mic-hint-'+prev); if (h) h.textContent = '';
   }
 }
+/* Фикс «спама слов» на Android Chrome: движок там дублирует финальные результаты
+   и глючит в continuous-режиме, из-за чего фразы повторялись по многу раз.
+   Теперь: финальный текст на каждом событии пересобирается заново из полного
+   списка e.results (а не накапливается +=), подряд идущие одинаковые куски
+   отбрасываются, а на Android распознавание идёт короткими сессиями
+   с авто-перезапуском — диктовка при этом не прерывается. */
 function dictToggle(taId){
   if (dictTa === taId){ dictStop(); return; }
   dictStop();
   if (!dictSupported()){ toast(t('dict_unsupported'), 'err'); return; }
   const ta = document.getElementById(taId); if (!ta) return;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  dictRec = new SR();
-  dictRec.lang = state.dictLang;
-  dictRec.continuous = true;
-  dictRec.interimResults = true;
-  dictTa = taId;
+  dictTa = taId; dictWant = true;
   dictBase = ta.value ? ta.value.replace(/\s+$/,'') + ' ' : '';
-  dictFinal = '';
-  dictRec.onresult = (e) => {
-    let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++){
-      const tr = e.results[i][0].transcript;
-      if (e.results[i].isFinal) dictFinal += tr + ' ';
-      else interim += tr;
-    }
-    ta.value = (dictBase + dictFinal + interim).replace(/\s+/g,' ').trimStart();
-    ta.dispatchEvent(new Event('input', { bubbles: true }));
+  const norm = s => s.replace(/\s+/g,' ').trim().toLowerCase();
+
+  const startSession = () => {
+    if (!dictWant || dictTa !== taId) return;
+    dictRec = new SR();
+    dictRec.lang = state.dictLang;
+    dictRec.continuous = !DICT_ANDROID;   // continuous на Android дублирует текст
+    dictRec.interimResults = true;
+    let sessionFinal = '';
+
+    dictRec.onresult = (e) => {
+      let fin = '', prevChunk = '', interim = '';
+      for (let i = 0; i < e.results.length; i++){
+        const res = e.results[i];
+        const tr = ((res[0] && res[0].transcript) || '').trim();
+        if (!tr) continue;
+        if (res.isFinal){
+          if (DICT_ANDROID && norm(tr) === norm(prevChunk)) continue; // дубль финала (баг Android)
+          fin += tr + ' ';
+          prevChunk = tr;
+        } else {
+          interim = tr;                    // берём последнюю гипотезу целиком, не суммируем
+        }
+      }
+      sessionFinal = fin;
+      if (interim && norm(fin).endsWith(norm(interim))) interim = '';
+      ta.value = (dictBase + fin + interim).replace(/\s+/g,' ').trimStart();
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    const commit = () => {
+      const chunk = sessionFinal.replace(/\s+/g,' ').trim();
+      sessionFinal = '';
+      if (!chunk) return;
+      if (DICT_ANDROID && norm(dictBase).endsWith(norm(chunk))) return; // уже записано
+      dictBase = (dictBase.replace(/\s+$/,'') + ' ' + chunk).trimStart() + ' ';
+      ta.value = dictBase.replace(/\s+$/,'');
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    dictRec.onerror = (e) => {
+      const fatal = ['not-allowed','service-not-allowed','audio-capture','language-not-supported'].includes(e.error);
+      if (fatal){ commit(); dictStop(); }
+      // 'no-speech' / 'aborted' / 'network' — onend сам перезапустит сессию
+    };
+
+    dictRec.onend = () => {
+      commit();
+      if (dictWant && dictTa === taId) setTimeout(startSession, 250); // авто-перезапуск
+      else if (dictTa === taId) dictStop();
+    };
+
+    try { dictRec.start(); } catch(err){ dictStop(); }
   };
-  dictRec.onerror = () => dictStop();
-  dictRec.onend = () => { if (dictTa === taId) dictStop(); };
-  try { dictRec.start(); } catch(e){ dictStop(); return; }
+
+  startSession();
+  if (!dictRec) return; // start() не удался
   document.getElementById('mic-'+taId)?.classList.add('rec');
   const h = document.getElementById('mic-hint-'+taId); if (h) h.textContent = t('listening');
 }

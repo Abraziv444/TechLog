@@ -253,7 +253,7 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .stepper .val{min-width:34px;text-align:center;font-weight:900}
 .money{font-weight:900;color:var(--green)}
 .total-bar{
-  position:sticky;bottom:calc(64px + env(safe-area-inset-bottom));z-index:30;
+  /* без position:sticky — раньше панель плавала поверх полей формы и перекрывала их */
   display:flex;align-items:center;gap:10px;
   background:var(--panel-2);border:2px solid var(--green);border-radius:var(--r);
   padding:10px 12px;margin:12px 0;font-weight:900
