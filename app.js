@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.11';
+const APP_VERSION = '1.07.12';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -139,7 +139,22 @@ const I18N = {
     shared_set_title: 'Общий доступ к документам',
     shared_set_chk: 'Разрешить общий доступ к документам для коворкеров',
     shared_set_hint: 'Если выключить — каждый работает только со своими документами: галочка «Общий доступ» в работах скрывается и перестаёт действовать. Сами отметки в документах сохраняются и снова заработают после включения.',
-    db_needs_update: 'Обновите БД: выполните supabase/update-to-1_07_10.sql в SQL-редакторе Supabase',
+    db_needs_update: 'Обновите БД: выполните supabase/update-to-1_07_12.sql в SQL-редакторе Supabase',
+    open_invoice: 'Открыть инвойс', job_history: 'История работы',
+    what_where: 'Что и откуда вывозим',
+    extend_rent: 'Продлить аренду', extend_title: 'Продление аренды',
+    ext_all: 'Продлить всё', ext_partial: 'Выборочно',
+    ext_days_lbl: 'На сколько дней', ext_new_due: 'новый срок вывоза',
+    ext_chip: 'продление', ext_done: 'Аренда продлена',
+    ext_nothing: 'Нечего продлевать: всё уже забрано',
+    ext_qty_hint: 'Отметьте степперами, сколько единиц продлить (остальное — забрать в срок)',
+    ext_invoice_note: 'Инвойс не меняется автоматически: при необходимости добавьте дни в секции Equipment Rental самой работы',
+    ext_summary: 'Продлеваем', units_short: 'ед.',
+    hist_invoice: 'Инвойс', hist_created: 'создан', hist_workdate: 'дата работы',
+    hist_pickup: 'Пикап', hist_ext: 'Продление аренды', hist_placed: 'размещено',
+    hist_due_lbl: 'срок вывоза', hist_picked_at: 'забрано', hist_superseded: 'закрыт продлением',
+    hist_pending: 'ожидает вывоза', hist_none: 'Пикапов по этой работе нет',
+    pick_now: 'Забрать сейчас', pick_all_btn: 'Забрать всё',
     login: 'Логин', login_hint: 'Латиница/цифры, 3–32 символа. Вход по логину и паролю.',
     invite_code: 'Код приглашения', invite_bad: 'Неверный код приглашения',
     login_taken_or_err: 'Логин занят или ошибка регистрации',
@@ -303,7 +318,22 @@ const I18N = {
     shared_set_title: 'Shared document access',
     shared_set_chk: 'Allow shared document access for co-workers',
     shared_set_hint: 'When off, everyone works only with their own documents: the “Shared access” checkbox in jobs is hidden and stops working. The marks saved in documents are kept and work again after re-enabling.',
-    db_needs_update: 'Update the DB: run supabase/update-to-1_07_10.sql in the Supabase SQL editor',
+    db_needs_update: 'Update the DB: run supabase/update-to-1_07_12.sql in the Supabase SQL editor',
+    open_invoice: 'Open invoice', job_history: 'Job history',
+    what_where: 'What to collect & where from',
+    extend_rent: 'Extend rental', extend_title: 'Rental extension',
+    ext_all: 'Extend all', ext_partial: 'Selected only',
+    ext_days_lbl: 'For how many days', ext_new_due: 'new pickup date',
+    ext_chip: 'extension', ext_done: 'Rental extended',
+    ext_nothing: 'Nothing to extend: everything is collected',
+    ext_qty_hint: 'Use the steppers to choose how many units to extend (the rest — pick up on time)',
+    ext_invoice_note: 'The invoice is not changed automatically: add days in the job’s Equipment Rental section if needed',
+    ext_summary: 'Extending', units_short: 'pcs',
+    hist_invoice: 'Invoice', hist_created: 'created', hist_workdate: 'work date',
+    hist_pickup: 'Pickup', hist_ext: 'Rental extension', hist_placed: 'placed',
+    hist_due_lbl: 'pickup due', hist_picked_at: 'picked up', hist_superseded: 'closed by extension',
+    hist_pending: 'awaiting pickup', hist_none: 'No pickups for this job',
+    pick_now: 'Pick up now', pick_all_btn: 'Pick up all',
     login: 'Login', login_hint: 'Latin/digits, 3–32 chars. Sign in with login & password.',
     invite_code: 'Invite code', invite_bad: 'Invalid invite code',
     login_taken_or_err: 'Login is taken or sign-up failed',
@@ -727,22 +757,27 @@ async function dbUpsert(table, row){
   if (HAS_SB) {
     const ts = Date.now();
     try {
-      const { error } = await state.sb.from(table).upsert(row);
+      let { error } = await state.sb.from(table).upsert(row);
       if (error) {
-        // v1.07.10: БД без новой колонки — повторяем запись без неё, данные не теряются
-        const miss = missingColumnOf(error);
-        if (miss && Object.prototype.hasOwnProperty.call(row, miss)){
-          const clean = { ...row }; delete clean[miss];
+        // v1.07.10+: БД без новых колонок — убираем их по одной и повторяем (данные не теряются)
+        let clean = row, guard = 0, stripped = false;
+        while (error && guard++ < 4){
+          const miss = missingColumnOf(error);
+          if (!miss || !Object.prototype.hasOwnProperty.call(clean, miss)) break;
+          clean = { ...clean }; delete clean[miss]; stripped = true;
           const r2 = await Promise.resolve(state.sb.from(table).upsert(clean)).catch(e2 => ({ error: e2 }));
-          if (!r2.error){
-            dlog('⚠ upsert', table, 'сохранено без колонки', miss, '— выполните supabase/update-to-1_07_10.sql');
-            toast('⚠ ' + t('db_needs_update'), 'err');
-            return;
-          }
+          error = r2.error || null;
         }
-        noteWriteError('upsert', table, row.id, error);
-        dlog('⛔ upsert', table, 'id=' + String(row.id||'').slice(0,8) + ':', error, '· ' + (Date.now()-ts) + ' мс');
-        toast(t('write_err') + ' (' + table + '): ' + error.message, 'err');
+        if (!error && stripped){
+          dlog('⚠ upsert', table, 'сохранено без новых колонок — выполните supabase/update-to-1_07_12.sql');
+          toast('⚠ ' + t('db_needs_update'), 'err');
+          return;
+        }
+        if (error){
+          noteWriteError('upsert', table, row.id, error);
+          dlog('⛔ upsert', table, 'id=' + String(row.id||'').slice(0,8) + ':', error, '· ' + (Date.now()-ts) + ' мс');
+          toast(t('write_err') + ' (' + table + '): ' + error.message, 'err');
+        }
       } else if (Date.now() - ts > 1500) {
         dlog('🐢 upsert', table, 'медленно: ' + (Date.now()-ts) + ' мс');
       }
@@ -812,6 +847,10 @@ function isPlacementSharedWithMe(p){
   const j = state.data.jobs.find(x => x.id === p.job_id);
   return isJobSharedWithMe(j);
 }
+/* v1.07.12: размещение «в ожидании вывоза» — не забрано и не закрыто продлением */
+function pkPending(p){ return !p.picked_up && !p.superseded; }
+/* Кто может забирать/продлевать этот пикап */
+function canTouchPk(p){ return isManager() || p.technician_id === state.user.id || isPlacementSharedWithMe(p); }
 /* Чип «Общий» на карточке работы: виден автору и коворкерам, пока общий доступ действует */
 function jobSharedChipHtml(j){
   if (!sharedJobsEnabled() || !j.shared_with_helpers || !(j.helper_ids || []).length) return '';
@@ -1104,13 +1143,13 @@ function canReorder(j){ return j && (isAdmin() || j.technician_id === state.user
 function jobsOn(dateISO){ return visibleJobs().filter(j => j.date === dateISO).sort(jobSortCmp); }
 function pickupsOn(dateISO){
   const today = todayISO();
-  return visiblePlacements().filter(p => !p.picked_up && (p.due_date === dateISO || (dateISO === today && p.due_date < today)))
+  return visiblePlacements().filter(p => pkPending(p) && (p.due_date === dateISO || (dateISO === today && p.due_date < today)))
     .concat(visiblePlacements().filter(p => p.picked_up && p.picked_up_at && p.picked_up_at.slice(0,10) === dateISO));
 }
 function myDueCount(){
   if (!state.data) return { due: 0, over: 0 };
   const today = todayISO();
-  const mine = state.data.placements.filter(p => (p.technician_id === state.user.id || isPlacementSharedWithMe(p)) && !p.picked_up);
+  const mine = state.data.placements.filter(p => (p.technician_id === state.user.id || isPlacementSharedWithMe(p)) && pkPending(p));
   return { due: mine.filter(p=>p.due_date===today).length, over: mine.filter(p=>p.due_date<today).length };
 }
 function checkPickupBanner(withToast){
@@ -1717,14 +1756,14 @@ function viewHome(){
     const overdue = p0.due_date < today;
     const pkJob = state.data.jobs.find(x=>x.id===jobId) || { id: jobId, priority:false, technician_id: p0.technician_id, sort_order: 999 };
     return `
-    <div class="item" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}">
+    <div class="item clicky" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}" onclick="App.pickupModal('${jobId}','${iso}',event)">
       ${rowNumHtml(num.pkNum[jobId])}
       ${triHtml(!!pkJob.priority, jobId, canReorder(pkJob))}
       ${railHtml(pkJob)}
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
         ${addrLineHtml(cx)}
-        <div class="s">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)} ${overdue?`<span class="chip bad">${t('overdue')}</span>`:''} ${(!state.filterMine || isPlacementSharedWithMe(p0))?'· '+esc(profName(p0.technician_id)):''}</div>
+        <div class="s">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)} ${overdue?`<span class="chip bad">${t('overdue')}</span>`:''}${list.some(p=>p.ext_of)?` <span class="chip info">${t('ext_chip')}</span>`:''} ${(!state.filterMine || isPlacementSharedWithMe(p0))?'· '+esc(profName(p0.technician_id)):''}</div>
         ${codesLineHtml(cx)}
         ${(state.data.jobs.find(x=>x.id===jobId)||{}).note ? `<div class="s note-line">${ic('note')} ${esc((state.data.jobs.find(x=>x.id===jobId)||{}).note)}</div>` : ''}
       </div>
@@ -1875,14 +1914,190 @@ async function createTask(){
 async function pickupGroup(jobId){
   if (!confirm(t('pickup_confirm'))) return;
   const now = new Date().toISOString();
-  const list = state.data.placements.filter(p => p.job_id === jobId && !p.picked_up)
-    .filter(p => isManager() || p.technician_id === state.user.id || isPlacementSharedWithMe(p));
+  const list = state.data.placements.filter(p => p.job_id === jobId && pkPending(p))
+    .filter(p => canTouchPk(p));
   for (const p of list){
     const upd = { ...p, picked_up: true, picked_up_at: now, picked_up_by: state.user.id };
     await dbUpsert('placements', upd);
   }
   navigator.vibrate?.([30,40,30]);
+  closeModal();
   toast('✓ ' + t('picked')); render();
+}
+
+/* =====================================================================
+   v1.07.12: МОДАЛКА ПИКАПА · ПРОДЛЕНИЕ АРЕНДЫ · ИСТОРИЯ РАБОТЫ
+   ===================================================================== */
+/* Ожидающие строки пикапа этой работы на выбранный день (для «сегодня» — с просрочкой) */
+function pkRowsFor(jobId, dateISO){
+  const today = todayISO();
+  return state.data.placements
+    .filter(p => p.job_id === jobId && pkPending(p) && (p.due_date === dateISO || (dateISO === today && p.due_date < today)))
+    .filter(p => canTouchPk(p));
+}
+function pkLineHtml(p, withDue){
+  const et = state.data.equipment_types.find(e => e.id === p.equipment_type_id) || { abbr:'?', color:'#8B9AA3', name:'?' };
+  const od = pkPending(p) && p.due_date < todayISO();
+  return `<div class="qty-line pk-line">
+    <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>
+    <span class="name">${esc(et.name)}${p.ext_of ? ` <span class="chip info">${t('ext_chip')}</span>` : ''}</span>
+    <b>× ${+p.qty || 1}</b>
+    ${withDue ? `<span class="tiny">${t('due')}: ${fmtDMY(p.due_date)}${od ? ` <span class="chip bad">${t('overdue')}</span>` : ''}</span>` : ''}
+  </div>`;
+}
+
+function pickupModal(jobId, dateISO, ev){
+  // клик по кнопкам внутри карточки не должен открывать модалку
+  if (ev && ev.target && ev.target.closest && ev.target.closest('button,select,input,a')) return;
+  const rows = pkRowsFor(jobId, dateISO);
+  if (!rows.length) return;
+  const p0 = rows[0];
+  const cx = cxById(p0.complex_id) || { name:'?', address:'', abbr:'' };
+  const cp = cpById(p0.counterparty_id) || { name:'' };
+  openModal(`
+    ${modalHead(t('pickup').toUpperCase() + ' · Unit ' + (p0.unit_number || '—'), 'box')}
+    <div class="tiny" style="margin:-4px 0 8px">${esc(cx.name)}${cp.name ? ' · ' + esc(cp.name) : ''}<br>${esc(cx.address||'')}
+      ${(cx.lat != null || cx.address) ? `<button class="mini-nav" onclick="App.navToCx('${p0.complex_id}')">${ic('compass')} ${t('navigate')}</button>` : ''}</div>
+    ${(cx.access_code || cx.callbox_code) ? `<div class="tiny" style="margin-bottom:8px">${codeLineHtml(cx, true)}</div>` : ''}
+    <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('what_where')}</div>
+    <div class="card" style="padding:8px 10px;margin-bottom:10px">${rows.map(p => pkLineHtml(p, true)).join('')}</div>
+    <button class="btn btn-blue" onclick="App.extendModal('${jobId}','${dateISO}')">${ic('calendar')} ${t('extend_rent')}</button>
+    <button class="btn btn-green" onclick="App.pickupGroup('${jobId}','${dateISO}')">${ic('chk_on')} ${t('pick_all_btn')}</button>
+    <div class="btn-row3" style="grid-template-columns:1fr 1fr">
+      <button class="btn btn-ghost" onclick="App.closeModal();App.openJob('${jobId}')">${ic('receipt')} ${t('open_invoice')}</button>
+      <button class="btn btn-ghost" onclick="App.jobHistory('${jobId}')">${ic('clock')} ${t('job_history')}</button>
+    </div>
+  `);
+}
+
+/* ---------- Продление аренды ---------- */
+let extDraft = null;
+function extendModal(jobId, dateISO){
+  const rows = pkRowsFor(jobId, dateISO);
+  if (!rows.length){ toast(t('ext_nothing'), 'err'); return; }
+  const sel = {}; rows.forEach(p => sel[p.id] = +p.qty || 1);
+  extDraft = { jobId, dateISO, mode: 'all', daysN: 1, rows, sel };
+  renderExtendModal();
+}
+/* Просроченные продлеваем от выбранного дня, остальные — от их срока */
+function extBaseDue(p){ return p.due_date > extDraft.dateISO ? p.due_date : extDraft.dateISO; }
+function renderExtendModal(){
+  const d = extDraft; if (!d) return;
+  const total = d.rows.reduce((s, p) => s + (d.mode === 'all' ? (+p.qty || 1) : (d.sel[p.id] || 0)), 0);
+  const lines = d.rows.map(p => {
+    const et = state.data.equipment_types.find(e => e.id === p.equipment_type_id) || { abbr:'?', color:'#8B9AA3', name:'?' };
+    const q = d.mode === 'all' ? (+p.qty || 1) : (d.sel[p.id] || 0);
+    return `<div class="qty-line pk-line">
+      <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>
+      <span class="name">${esc(et.name)}${p.ext_of ? ` <span class="chip info">${t('ext_chip')}</span>` : ''}<span class="tiny"> · ${t('due')}: ${fmtDMY(p.due_date)}</span></span>
+      ${d.mode === 'all'
+        ? `<b>× ${+p.qty || 1}</b>`
+        : `<span class="stepper"><button type="button" onclick="App.extQty('${p.id}',-1)">−</button><span class="val">${q}</span><button type="button" onclick="App.extQty('${p.id}',1)">＋</button></span><span class="tiny">/ ${+p.qty || 1}</span>`}
+    </div>`;
+  }).join('');
+  const newDue = addDaysISO(extBaseDue(d.rows[0]), d.daysN);
+  openModal(`
+    ${modalHead(t('extend_title'), 'calendar')}
+    <div class="lang-seg" style="margin-bottom:10px">
+      <button class="${d.mode==='all'?'on':''}" onclick="App.extMode('all')">${t('ext_all')}</button>
+      <button class="${d.mode==='sel'?'on':''}" onclick="App.extMode('sel')">${t('ext_partial')}</button>
+    </div>
+    ${d.mode==='sel' ? `<div class="tiny" style="margin-bottom:6px">${t('ext_qty_hint')}</div>` : ''}
+    <div class="card" style="padding:8px 10px">${lines}</div>
+    <div class="qty-line" style="margin:10px 0">
+      <span class="name">${t('ext_days_lbl')}</span>
+      <span class="stepper"><button type="button" onclick="App.extDays(-1)">−</button><span class="val">${d.daysN}</span><button type="button" onclick="App.extDays(1)">＋</button></span>
+      <span class="tiny">${t('days')}</span>
+    </div>
+    <div class="note-green" style="display:block">${t('ext_summary')}: <b>${total} ${t('units_short')}</b> · +${d.daysN} ${t('days')} · ${t('ext_new_due')}: <b>${fmtDMY(newDue)}</b></div>
+    <div class="tiny" style="margin:6px 0 10px">${t('ext_invoice_note')}</div>
+    <button class="btn btn-blue" onclick="App.extApply()" ${total > 0 ? '' : 'disabled'}>${ic('chk_on')} ${t('extend_rent')}</button>
+    <button class="btn btn-ghost" onclick="App.pickupModal('${d.jobId}','${d.dateISO}')">← ${t('back')}</button>
+  `);
+}
+function extMode(v){ if (extDraft){ extDraft.mode = v; renderExtendModal(); } }
+function extDays(dv){ if (extDraft){ extDraft.daysN = Math.max(1, extDraft.daysN + dv); renderExtendModal(); } }
+function extQty(pid, dv){
+  if (!extDraft) return;
+  const p = extDraft.rows.find(x => x.id === pid); if (!p) return;
+  extDraft.sel[pid] = Math.min(+p.qty || 1, Math.max(0, (extDraft.sel[pid] || 0) + dv));
+  renderExtendModal();
+}
+async function extApply(){
+  const d = extDraft; if (!d) return;
+  const N = d.daysN; let made = 0;
+  for (const p of d.rows){
+    const q = d.mode === 'all' ? (+p.qty || 1) : Math.min(+p.qty || 1, d.sel[p.id] || 0);
+    if (q <= 0) continue;
+    const base = extBaseDue(p);
+    // «второй пикап»: новое размещение-продление, привязанное к исходному через ext_of
+    const ext = { ...p, id: uid(), qty: q, days: N, placed_date: base, due_date: addDaysISO(base, N),
+      picked_up: false, picked_up_at: null, picked_up_by: null,
+      ext_of: p.id, superseded: false, superseded_at: null };
+    await dbUpsert('placements', ext);
+    if (q >= (+p.qty || 1)){
+      // продлили всё количество — исходный пикап закрыт продлением (остаётся в истории)
+      await dbUpsert('placements', { ...p, superseded: true, superseded_at: new Date().toISOString() });
+    } else {
+      // продлили часть — остаток забрать в исходный срок
+      await dbUpsert('placements', { ...p, qty: (+p.qty || 1) - q });
+    }
+    made += q;
+  }
+  extDraft = null; closeModal();
+  navigator.vibrate?.(30);
+  toast('✓ ' + t('ext_done'));
+  render();
+}
+
+/* ---------- История работы: инвойс → пикапы → продления ---------- */
+function jobHistory(jobId){
+  const id = jobId || state.jobId || (jobDraft && jobDraft.id);
+  const j = state.data.jobs.find(x => x.id === id); if (!j) return;
+  const wt = wtById(j.work_type_id) || { name:'', color:'#8B9AA3' };
+  const cx = cxById(j.complex_id) || { name:'—' };
+  const fmtTs = (ts) => ts ? String(ts).slice(0,16).replace('T',' ') : '—';
+  const pls = state.data.placements.filter(p => p.job_id === j.id)
+    .sort((a,b) => (a.ext_of?1:0) - (b.ext_of?1:0)
+      || String(a.placed_date||'').localeCompare(String(b.placed_date||''))
+      || String(a.due_date||'').localeCompare(String(b.due_date||'')));
+  const plHtml = pls.map(p => {
+    const stateHtml = p.picked_up
+      ? `<span class="chip ok">✓ ${t('hist_picked_at')}: ${fmtTs(p.picked_up_at)}</span>`
+      : p.superseded
+        ? `<span class="chip info">${t('hist_superseded')}</span>`
+        : `<span class="chip warn">${t('hist_pending')}</span>${p.due_date < todayISO() ? ` <span class="chip bad">${t('overdue')}</span>` : ''}`;
+    return `<div class="hist-item ${p.ext_of ? 'hist-ext' : ''}">
+      <div class="hist-t">${p.ext_of ? ic('calendar') + ' ' + t('hist_ext') + ` <b>+${+p.days||1} ${t('days')}</b>` : ic('box') + ' ' + t('hist_pickup')}</div>
+      ${pkLineHtml(p, false)}
+      <div class="tiny">${t('hist_placed')}: ${fmtDMY(p.placed_date)} · ${t('hist_due_lbl')}: <b>${fmtDMY(p.due_date)}</b></div>
+      <div style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${stateHtml}
+        ${(pkPending(p) && canTouchPk(p)) ? `<button class="btn btn-green sm" onclick="App.pickupOne('${p.id}','${j.id}')">${t('pick_now')}</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  openModal(`
+    ${modalHead(t('job_history'), 'clock')}
+    <div class="hist-item">
+      <div class="hist-t">${ic('receipt')} ${t('hist_invoice')} · <span style="color:${wt.color}">${esc(wt.name)}</span></div>
+      <div class="tiny">${esc(cx.name)} · Unit ${esc(j.unit_number || '—')}</div>
+      <div class="tiny">${t('hist_created')}: ${fmtTs(j.created_at)} · ${t('hist_workdate')}: <b>${fmtDMY(j.date)}</b></div>
+      <div style="margin-top:4px"><span class="badge-status st-${j.status}">${t('status_' + j.status)}</span>${j.status === 'approved' && j.approved_at ? ` <span class="tiny">✓ ${esc(profName(j.approved_by))} · ${fmtTs(j.approved_at)}</span>` : ''}</div>
+      <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.closeModal();App.openJob('${j.id}')">${ic('receipt')} ${t('open_invoice')}</button>
+    </div>
+    ${pls.length ? plHtml : `<div class="tiny" style="margin-top:8px">${t('hist_none')}</div>`}
+    <button class="btn btn-ghost" style="margin-top:10px" onclick="App.closeModal()">${t('close')}</button>
+  `);
+}
+/* «Забрать сейчас» из истории: досрочный вывоз = аннулирование пикапа/продления */
+async function pickupOne(pid, jobId){
+  const p = state.data.placements.find(x => x.id === pid); if (!p) return;
+  if (!confirm(t('pickup_confirm'))) return;
+  await dbUpsert('placements', { ...p, picked_up: true, picked_up_at: new Date().toISOString(), picked_up_by: state.user.id });
+  navigator.vibrate?.(30);
+  toast('✓ ' + t('picked'));
+  render();
+  jobHistory(jobId || p.job_id);
 }
 
 /* =====================================================================
@@ -2174,6 +2389,8 @@ function viewJob(){
     <div class="tiny">${t('approve_reset_note')}</div>
   </div>` : (isApproved ? `<div class="note-green">✓ ${t('status_approved')}: ${esc(profName(j.approved_by))} — ${money(j.approved_total ?? total)}</div>` : '')}
 
+  <button class="btn btn-ghost" style="margin-bottom:8px" onclick="App.jobHistory('${j.id}')">${ic('clock')} ${t('job_history')}</button>
+
   <div class="total-bar"><span>${t('total')}</span><span class="sum" id="jb-total">${money(total)}</span></div>
 
   <button class="btn btn-green" onclick="App.saveJob()">${ic('save')} ${t('save')}</button>
@@ -2334,14 +2551,20 @@ async function saveJob(goHome){
   maybeApplyPendingUpdate();
 }
 
-/* Пикапы из секции Equipment Rental: qty>0 → размещение с due=дата+дни */
+/* Пикапы из секции Equipment Rental: qty>0 → размещение с due=дата+дни.
+   v1.07.12: продления (ext_of) и строки, закрытые продлением или уже продлённые
+   частично, живут своей жизнью — форма работы их не пересоздаёт и не удаляет. */
 async function syncPlacementsForJob(j){
-  const existing = state.data.placements.filter(p => p.job_id === j.id);
+  const all = state.data.placements.filter(p => p.job_id === j.id);
+  const originals = all.filter(p => !p.ext_of);
+  const touchedByExt = (p) => p.superseded || all.some(x => x.ext_of === p.id);
   const want = Object.entries(j.form_data.equipment).filter(([,e]) => (+e.qty||0) > 0);
   for (const [etId, e] of want){
     const days = Math.max(1, +e.days || 3);
-    const found = existing.find(p => p.equipment_type_id === etId);
+    const found = originals.find(p => p.equipment_type_id === etId);
+    if (found && touchedByExt(found)) continue;   // этим типом уже управляет история продлений
     const row = {
+      ...(found || {}),
       id: found ? found.id : uid(), job_id: j.id, equipment_type_id: etId,
       qty: +e.qty, days, placed_date: j.date, due_date: addDaysISO(j.date, days),
       picked_up: found ? found.picked_up : false,
@@ -2352,7 +2575,8 @@ async function syncPlacementsForJob(j){
     };
     await dbUpsert('placements', row);
   }
-  for (const p of existing){
+  for (const p of originals){
+    if (touchedByExt(p)) continue;                // историю продлений не удаляем
     if (!want.find(([etId]) => etId === p.equipment_type_id)) await dbDelete('placements', p.id);
   }
 }
@@ -2382,7 +2606,7 @@ async function deleteJob(){
    ===================================================================== */
 function reportRows(dateISO){
   const today = todayISO();
-  const rows = scopeFilter(state.data.placements, 'technician_id').filter(p => !p.picked_up && (p.due_date === dateISO || (dateISO >= today && p.due_date < today)));
+  const rows = scopeFilter(state.data.placements, 'technician_id').filter(p => pkPending(p) && (p.due_date === dateISO || (dateISO >= today && p.due_date < today)));
   const byCx = {};
   rows.forEach(p => { (byCx[p.complex_id] = byCx[p.complex_id] || []).push(p); });
   return byCx;
@@ -3055,6 +3279,7 @@ const App = {
   dictToggle, dictLang(l){ state.dictLang = l; localStorage.setItem('techlog_dictlang', l); document.querySelectorAll('.dict-row .lang-seg button').forEach(b=>b.classList.toggle('on', b.textContent === (l==='ru-RU'?'RU':'EN'))); },
   noteModal, saveNote, auxToggle, sectionHelp: sectionHelpModal,
   crewAdd, crewAll, crewRemove, navToCx, copyText, copyCxAddr,
+  pickupModal, extendModal, extMode, extDays, extQty, extApply, jobHistory, pickupOne,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis, staffBlock, staffPassModal, staffSetPass,
   staffAddModal, staffCreate, inviteSave, ownPassModal, ownPassSave,
@@ -4309,7 +4534,7 @@ function faqHtml(){
     <h4>${ic('toolbox')} Note templates & purchases</h4>
     <p>In the Note block, <b>＋ Template</b> inserts items from the “Extra works” directory: a work flagged with a size shows an input in the right units (${ic('ruler')} “Sizes”: ft, sq ft, lb, pcs), while “${ic('cart')} Purchase” opens the “Products” list with quantity and a <b>price</b> that flows into the total and prints as its own PDF line. All three directories are admin-managed.</p>
     <h4>${ic('box')} Automatic pickups</h4>
-    <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. Everything can be shown on the <b>day map</b> with a Google Maps route.</p>
+    <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. <b>Tap a pickup card</b> to open the details: what to collect and how much, where from (address, codes, route), plus buttons “Open invoice”, “Job history”, “Pick up all” and <b>“Extend rental”</b> — all units or selected ones, with a day stepper (1 by default); the extension appears on the new day as a separate pickup with an “extension” chip. <b>Job history</b> (the button is also inside the invoice) shows the whole chain: the invoice with its dates, pickups and extensions with statuses; any pending line can be <b>collected early</b> via “Pick up now” — that’s how both a pickup and an extension are cancelled ahead of time. Everything can be shown on the <b>day map</b> with a Google Maps route.</p>
     <h4>${ic('eye')} Roles & access</h4>
     <p><b>Tech</b> sees only their own jobs and pickups. <b>Manager</b> sees everyone (minus those hidden via ${ic('eye')} <b>Visibility</b>), has the Mine/All filter and the pickups report. <b>Admin</b> can do everything: approve, edit directories, manage <b>Staff</b> — roles, ${ic('ban')} <b>blocking</b> (a blocked employee can’t sign in; the red crossed circle toggles it), ${ic('key')} <b>password reset</b> for an employee who forgot theirs, plus code requests. The admin also <b>creates employees</b> right there: the “＋ Add employee” button — name, login, password and role; they can sign in immediately. The list shows each person’s status (Active/Blocked) and the date they joined the app.</p>
     <h4>${ic('receipt')} Statuses & approval</h4>
@@ -4346,7 +4571,7 @@ function faqHtml(){
     <h4>${ic('toolbox')} Шаблоны заметки и покупки</h4>
     <p>В блоке «Заметка» кнопка <b>＋ Шаблон</b> подставляет позиции из справочника «Доп. работы»: у работы с флагом размера появляется поле в нужных единицах (${ic('ruler')} «Размеры»: футы, sq ft, паунды, штуки), а «${ic('cart')} Покупка товара» открывает выбор из справочника «Товары», количество и <b>цену</b> — она попадает в итог и печатается в PDF отдельной строкой. Все три справочника редактирует администратор.</p>
     <h4>${ic('box')} Пикапы формируются сами</h4>
-    <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. Всё это выводится на <b>карту дня</b> с маршрутом Google Maps.</p>
+    <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. <b>Тап по карточке пикапа</b> открывает подробности: что и сколько вывозить, откуда (адрес, коды, маршрут), кнопки «Открыть инвойс», «История работы», «Забрать всё» и <b>«Продлить аренду»</b> — целиком или выборочно, степпером выбираете количество дней (по умолчанию 1), и задача-продление появляется в новый день как отдельный пикап с чипом «продление». В <b>истории работы</b> (кнопка есть и в инвойсе) видна вся цепочка: инвойс с датами, пикапы и продления со статусами; любую ожидающую строку можно <b>забрать досрочно</b> кнопкой «Забрать сейчас» — так аннулируются и пикап, и продление. Всё это выводится на <b>карту дня</b> с маршрутом Google Maps.</p>
     <h4>${ic('eye')} Роли и доступ</h4>
     <p><b>Сотрудник (tech)</b> видит только свои работы и пикапы. <b>Менеджер</b> — всех (кроме скрытых через ${ic('eye')} <b>Видимость</b>), у него есть фильтр «Мои/Все» и отчёт по пикапам. <b>Админ</b> может всё: апрув, справочники, управление <b>Сотрудниками</b> — роли, ${ic('ban')} <b>блокировка</b> (заблокированный не сможет войти; красный перечёркнутый кружок включает и снимает блокировку), ${ic('key')} <b>смена пароля</b> сотруднику, если тот его забыл, а также заявки на коды. Там же админ <b>создаёт сотрудников</b>: кнопка «＋ Добавить сотрудника» — имя, логин, пароль и роль, вход возможен сразу. В списке виден статус каждого (Активен/Заблокирован) и дата регистрации в приложении.</p>
     <h4>${ic('receipt')} Статусы и апрув</h4>
@@ -5142,7 +5367,7 @@ function homeStatsHtml(){
     .map(([id, count]) => { const wt = wtById(id) || { name: '?', color: '#8B9AA3' }; return { name: wt.name, color: wt.color, count }; })
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   // Пикапы, которые нужно забрать в этот день (для «сегодня» — включая просроченные)
-  const rows = visiblePlacements().filter(p => !p.picked_up && (p.due_date === iso || (iso === today && p.due_date < today)));
+  const rows = visiblePlacements().filter(p => pkPending(p) && (p.due_date === iso || (iso === today && p.due_date < today)));
   const byEq = {}; let over = 0;
   rows.forEach(p => {
     byEq[p.equipment_type_id] = (byEq[p.equipment_type_id] || 0) + (+p.qty || 1);
@@ -5223,7 +5448,7 @@ function statData(){
     .filter(it => it.kind === 'purchase').reduce((a,it) => a + extraLineTotal(it), 0), 0);
 
   const plAll = statScopePlacements();
-  const placed = plAll.filter(p => inRange(p.placed_date, from, to));
+  const placed = plAll.filter(p => !p.superseded && inRange(p.placed_date, from, to));
   const eqUnits = placed.reduce((s,p) => s + (+p.qty || 0), 0);
   const picked = plAll.filter(p => p.picked_up && inRange(String(p.picked_up_at||'').slice(0,10), from, to));
   const onTime = picked.filter(p => String(p.picked_up_at).slice(0,10) <= p.due_date).length;

@@ -1,5 +1,5 @@
 -- =====================================================================
--- TechLog v1.07.10 — схема Supabase
+-- TechLog v1.07.12 — схема Supabase
 -- Выполните целиком в Supabase → SQL Editor → New query → Run
 -- =====================================================================
 
@@ -481,9 +481,13 @@ create table if not exists public.placements (
   technician_id uuid not null references public.profiles(id) on delete cascade,
   complex_id uuid references public.complexes(id) on delete set null,
   counterparty_id uuid references public.counterparties(id) on delete set null,
-  unit_number text default ''
+  unit_number text default '',
+  ext_of uuid references public.placements(id) on delete set null,  -- v1.07.12: продление аренды («второй пикап»)
+  superseded boolean not null default false,                        -- v1.07.12: исходный пикап закрыт продлением
+  superseded_at timestamptz
 );
 create index if not exists placements_due_idx on public.placements(due_date, picked_up);
+create index if not exists placements_ext_idx on public.placements(ext_of);
 create index if not exists placements_tech_idx on public.placements(technician_id);
 
 -- =====================================================================
@@ -506,6 +510,10 @@ alter table public.extra_works add column if not exists price numeric not null d
 -- v1.07.10: общий доступ к документам для коворкеров
 alter table public.jobs         add column if not exists shared_with_helpers boolean not null default false;
 alter table public.org_settings add column if not exists allow_shared_jobs   boolean not null default true;
+-- v1.07.12: продление аренды оборудования
+alter table public.placements add column if not exists ext_of uuid references public.placements(id) on delete set null;
+alter table public.placements add column if not exists superseded boolean not null default false;
+alter table public.placements add column if not exists superseded_at timestamptz;
 
 -- ---------------------------------------------------------------------
 -- v1.07.10: ОБЩИЙ ДОСТУП К ДОКУМЕНТАМ ДЛЯ КОВОРКЕРОВ
