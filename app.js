@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.06.02';
+const APP_VERSION = '1.06.03';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -56,7 +56,7 @@ const I18N = {
     date: 'Дата', counterparty: 'Контрагент', complex: 'Апарт-комплекс', unit: 'Юнит №',
     work_type: 'Вид работы', create: 'Создать', cancel: 'Отмена', save: 'Сохранить',
     delete: 'Удалить', edit: 'Изменить', close: 'Закрыть', add: 'Добавить',
-    tab_home: 'Главная', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Ещё',
+    tab_home: 'Главная', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Настройки', tab_faq: 'FAQ',
     mine: 'Мои', all: 'Все',
     status_draft: 'Черновик', status_done: 'Выполнено', status_approved: 'Апрув',
     job_done_chk: 'Работа выполнена',
@@ -177,7 +177,7 @@ const I18N = {
     date: 'Date', counterparty: 'Counterparty', complex: 'Apartment complex', unit: 'Unit #',
     work_type: 'Work type', create: 'Create', cancel: 'Cancel', save: 'Save',
     delete: 'Delete', edit: 'Edit', close: 'Close', add: 'Add',
-    tab_home: 'Home', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'More',
+    tab_home: 'Home', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'Settings', tab_faq: 'FAQ',
     mine: 'Mine', all: 'All',
     status_draft: 'Draft', status_done: 'Done', status_approved: 'Approved',
     job_done_chk: 'Work completed',
@@ -942,6 +942,7 @@ const ICONS = {
   report: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
   dirs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2z"/><path d="M11 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.4a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.4h4l.4-2.4a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.06-.4.1-.8.1-1.2z"/></svg>',
+  q: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.2a2.7 2.7 0 1 1 3.7 2.5c-.8.35-1.1.9-1.1 1.8"/><path d="M12 17h.01"/></svg>',
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
   pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 14h8M8 17.5h5"/></svg>',
   sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>',
@@ -949,7 +950,7 @@ const ICONS = {
 
 function render(){
   const app = $('#app');
-  if (!state.user){ app.innerHTML = viewLogin() + viewFooter(); return; }
+  if (!state.user){ app.innerHTML = viewLogin(); return; }
   if (!state.data) state.data = loadLocal() || (HAS_SB ? emptyData() : seedDemoData());
   if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
   let body = '';
@@ -960,7 +961,10 @@ function render(){
   else if (state.screen === 'reports') body = viewReports();
   else if (state.screen === 'dirs') body = viewDirs();
   else if (state.screen === 'settings') body = viewSettings();
-  app.innerHTML = viewHeader() + body + viewFooter() + viewTabbar();
+  app.innerHTML = viewHeader() + body + viewTabbar();
+  if (state.screen === 'home'){
+    try { document.querySelector('.day-cell.sel')?.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch(e){}
+  }
   if (state.screen === 'job') bindJobForm();
   if (state.screen === 'map') initMapView();
 }
@@ -999,10 +1003,12 @@ function viewTabbar(){
     ['map', ICONS.map, t('tab_map')],
     ['reports', ICONS.pdf, t('tab_reports')],
     ['dirs', ICONS.dirs, t('tab_dirs')],
+    ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
   ];
-  return `<nav class="tabbar">` + items.map(([id, ic, label]) => `
-    <button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" onclick="App.go('${id}')">
+  return `<nav class="tabbar">` + items.map(([id, ic, label]) => id === 'faq'
+    ? `<button class="tab" onclick="App.faq()">${ic}<span>${label}</span></button>`
+    : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" onclick="App.go('${id}')">
       ${ic}<span>${label}</span>
     </button>`).join('') + `</nav>`;
 }
@@ -1031,7 +1037,7 @@ function viewWeek(){
   return `
   <div class="week">
     <button class="wk-arrow" onclick="App.shiftWeek(-1)" aria-label="prev week">‹</button>
-    <div class="days">${days.join('')}</div>
+    <div class="week-days" id="week-days">${days.join('')}</div>
     <button class="wk-arrow" onclick="App.shiftWeek(1)" aria-label="next week">›</button>
   </div>
   ${state.selDate!==today ? `<button class="today-jump" onclick="App.jumpToday()">⌂ ${t('back_today')}</button>` : ''}`;
@@ -1159,12 +1165,11 @@ function viewHome(){
       <b>${fmtDMY(iso)}</b>
       <button class="mini-nav" onclick="App.openDayMap()">🗺 ${t('map_of_day')}</button>
     </div>`;
-  return banner + viewWeek() + dayBar + filter
+  return banner + viewWeek() + dayBar + homeStatsHtml() + filter
     + (pkOpen.length ? `<div class="section-title">${t('pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
     + (jobs.length ? `<div class="section-title">${t('jobs')}</div>` + jobsHtml : '')
     + pkDoneHtml + empty
     + `<button class="btn btn-green" style="margin-top:12px" onclick="App.addTaskModal()">＋ ${t('add_task')}</button>
-       <button class="btn btn-ghost" style="margin-top:10px" onclick="App.faq()">❓ ${t('faq')}</button>
        <button class="fab" onclick="App.addTaskModal()" aria-label="${t('add_task')}">＋</button>`;
 }
 
@@ -2145,17 +2150,8 @@ async function delRow(table, id){
 function viewSettings(){
   const u = state.user;
   const org = state.data.org_settings;
-  const myJobs = state.data.jobs.filter(j=>j.technician_id===u.id).length;
-  const myPk = state.data.placements.filter(p=>p.technician_id===u.id).length;
-  const { due, over } = myDueCount();
   return `
   <div class="section-title">${t('settings')}</div>
-  <div class="stats">
-    <div class="stat c-blue"><div class="n">${myJobs}</div><div class="l">${t('stats_jobs')}</div></div>
-    <div class="stat c-gray"><div class="n">${myPk}</div><div class="l">${t('stats_pk')}</div></div>
-    <div class="stat c-green"><div class="n">${due}</div><div class="l">${t('stats_due')}</div></div>
-    <div class="stat c-red"><div class="n">${over}</div><div class="l">${t('stats_over')}</div></div>
-  </div>
 
   <div class="card">
     <div class="settings-row">
@@ -2194,7 +2190,6 @@ function viewSettings(){
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.diag()">🩺 ${t('diag')}</button>
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.showLog()">🧾 ${t('log_title')}</button>
     ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">🗄 ${t('db_diag')}</button>` : ''}
-    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.faq()">❓ ${t('faq')}</button>
   </div>
 
   ${isAdmin() ? `
@@ -2217,7 +2212,8 @@ function viewSettings(){
     <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b><div class="d">TechLog v${APP_VERSION}</div></div></div>
   </div>
 
-  <button class="btn btn-red" onclick="App.logout()">✕ ${t('logout')}</button>`;
+  <button class="btn btn-red" onclick="App.logout()">✕ ${t('logout')}</button>
+  ${viewFooter()}`;
 }
 
 /* =====================================================================
@@ -2538,11 +2534,6 @@ const App = {
   diag: showDiagnostics, copyDiag,
   faq: faqModal,
   translateEn: translateToEn,
-  swipeDay(dir){
-    state.selDate = shiftWorkday(state.selDate, dir);
-    state.weekStart = mondayOf(state.selDate);
-    render();
-  },
   openDayMap(){ state.mapDay = true; state.mapDate = state.selDate; App.go('map'); },
   mapMode(v){ state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
   showLog: showLogModal, copyLog, clearLog,
@@ -2591,7 +2582,6 @@ window.App = App;
 (async function start(){
   try {
     initSW();
-    initSwipes();
     if (HAS_SB){
       try{
         const cached = loadLocal();
@@ -4090,4 +4080,18 @@ async function savePt(id, sort){
   const name = $('#pt-name').value.trim(); if (!name) return;
   await dbUpsert('product_types', { id, name, default_price: parseFloat($('#pt-price').value)||0, sort });
   closeModal(); toast('✓ ' + t('saved')); render();
+}
+
+/* Статистика на главной (перенесена из настроек) */
+function homeStatsHtml(){
+  const u = state.user;
+  const myJobs = state.data.jobs.filter(j=>j.technician_id===u.id || (j.helper_ids||[]).includes(u.id)).length;
+  const myPk = state.data.placements.filter(p=>p.technician_id===u.id).length;
+  const { due, over } = myDueCount();
+  return `<div class="stats">
+    <div class="stat c-blue"><div class="n">${myJobs}</div><div class="l">${t('stats_jobs')}</div></div>
+    <div class="stat c-gray"><div class="n">${myPk}</div><div class="l">${t('stats_pk')}</div></div>
+    <div class="stat c-green"><div class="n">${due}</div><div class="l">${t('stats_due')}</div></div>
+    <div class="stat c-red"><div class="n">${over}</div><div class="l">${t('stats_over')}</div></div>
+  </div>`;
 }

@@ -547,3 +547,27 @@ span.pri{display:grid;place-items:center;width:26px;height:24px}
   .day-cell .dow{font-size:.52rem}
   .color-dots .dot{width:5px;height:5px}
 }
+
+/* ============ v1.06.03: неделя в одну прокручиваемую строку ============ */
+.week{gap:6px}
+.week .wk-arrow{flex:0 0 auto;width:30px}
+.week-days{
+  display:flex;gap:6px;flex:1;min-width:0;
+  overflow-x:auto;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+  scrollbar-width:none;padding:2px 1px;
+}
+.week-days::-webkit-scrollbar{display:none}
+.week-days .day-cell{
+  flex:0 0 54px;min-width:54px;scroll-snap-align:center;
+  padding:8px 3px;
+}
+.week-days .day-cell .dow{font-size:.6rem}
+.week-days .day-cell .dom{font-size:1rem}
+@media (max-width:400px){
+  .week-days .day-cell{flex-basis:50px;min-width:50px}
+}
+
+/* нижняя панель из 6 вкладок */
+.tab span{font-size:.56rem}
+@media (max-width:400px){ .tab span{font-size:.5rem} .tab svg{width:19px;height:19px} }
