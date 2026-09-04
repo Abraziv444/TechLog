@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.03.07';
+const APP_VERSION = '1.06.02';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -15,16 +15,32 @@ function errStr(e){
   const code = e.code || e.status || '';
   const msg = e.message || e.msg || e.error_description || e.hint || '';
   const det = e.details || '';
-  return [code, msg, det].filter(Boolean).join(' · ') || (()=>{ try{ return JSON.stringify(e); }catch(_){ return String(e); } })();
+  const hint = e.hint || '';
+  return [code, msg, det, hint].filter(Boolean).join(' · ') || (()=>{ try{ return JSON.stringify(e); }catch(_){ return String(e); } })();
 }
 function dlog(){
   const ts = new Date().toISOString().slice(0,19).replace('T',' ');
   const head = `[TechLog ${APP_VERSION} ${ts}]`;
   const parts = [...arguments].map(a => typeof a === 'string' ? a : errStr(a));
   console.log(head, ...arguments);
-  DIAG.push(head + ' ' + parts.join(' '));
+  const line = head + ' ' + parts.join(' ');
+  DIAG.push(line);
   if (DIAG.length > 300) DIAG.shift();
+  try {
+    PLOG.push(line);
+    if (PLOG.length > 250) PLOG.splice(0, PLOG.length - 250);
+    clearTimeout(dlog._t);
+    dlog._t = setTimeout(() => { try{ localStorage.setItem('techlog_log', JSON.stringify(PLOG)); }catch(e){} }, 400);
+  } catch(e){}
 }
+let SYNC_ERRORS = [];   // ошибки таблиц последней синхронизации
+let WRITE_ERRORS = [];  // последние ошибки записи (upsert/delete), кольцо 20
+function noteWriteError(op, table, id, e){
+  WRITE_ERRORS.push({ at: new Date().toISOString().slice(11,19), op, table, id: String(id||'').slice(0,8), err: errStr(e) });
+  if (WRITE_ERRORS.length > 20) WRITE_ERRORS.shift();
+}
+let PLOG = [];
+try { PLOG = JSON.parse(localStorage.getItem('techlog_log') || '[]') || []; } catch(e){ PLOG = []; }
 window.addEventListener('error', e => dlog('⛔ window.error:', e.message, '@', (e.filename||'').split('/').pop() + ':' + e.lineno));
 window.addEventListener('unhandledrejection', e => dlog('⛔ unhandledrejection:', e.reason));
 
@@ -40,7 +56,7 @@ const I18N = {
     date: 'Дата', counterparty: 'Контрагент', complex: 'Апарт-комплекс', unit: 'Юнит №',
     work_type: 'Вид работы', create: 'Создать', cancel: 'Отмена', save: 'Сохранить',
     delete: 'Удалить', edit: 'Изменить', close: 'Закрыть', add: 'Добавить',
-    tab_home: 'Сегодня', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Ещё',
+    tab_home: 'Главная', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Ещё',
     mine: 'Мои', all: 'Все',
     status_draft: 'Черновик', status_done: 'Выполнено', status_approved: 'Апрув',
     job_done_chk: 'Работа выполнена',
@@ -66,7 +82,7 @@ const I18N = {
     settings: 'Настройки', profile: 'Профиль', doc_name: 'Имя в документах и работах',
     language: 'Язык интерфейса', sync: 'Синхронизировать', synced: 'Синхронизировано',
     never: 'ещё не было', org: 'Организация (для PDF)', org_name: 'Название компании (в тексте условий)',
-    org_short: 'Короткое имя (AGR)', org_assoc: 'Ассоциация (шапка)', org_addr: 'Адрес (шапка, по строке)',
+    org_short: 'Короткое имя (APC)', org_assoc: 'Ассоциация (шапка)', org_addr: 'Адрес (шапка, по строке)',
     logout: 'Выйти', version: 'Версия приложения', updated_to: 'Приложение обновлено до версии',
     update_after_form: 'Есть обновление — применю после закрытия формы',
     login_title: 'Вход в TechLog', demo_note: 'Демо-режим: Supabase не настроен (config.js). Данные хранятся локально.',
@@ -124,7 +140,34 @@ const I18N = {
     install_no_prompt: 'Браузер пока не предложил установку — проверьте раздел PWA в Диагностике',
     reg_ok: 'Регистрация успешна', welcome: 'Добро пожаловать',
     reg_now_signin: 'Аккаунт создан — теперь войдите',
-    week_days: ['ПН','ВТ','СР','ЧТ','ПТ'],
+    quick_title: 'Быстрые настройки', font_soon: 'Настройка шрифта — скоро',
+    all_settings: 'Все настройки',
+    footer_rights: '© Никакие права не защищены', footer_city: 'Альфаретта',
+    faq: 'Как это работает (FAQ)',
+    map_mode_all: 'Общая карта', map_mode_day: 'Карта дня', map_of_day: 'Карта этого дня',
+    translate_en: 'Перевести на EN', translating: 'Перевожу…', translate_err: 'Перевод не удался (сеть или дневной лимит)',
+    log_title: 'Журнал событий', clear: 'Очистить',
+    db_diag: 'Диагностика БД (все таблицы)', admin_only: 'Доступно только администратору',
+    checking_tables: 'Проверяю таблицы…',
+    priority: 'Приоритет', move_up: 'Выше', move_down: 'Ниже',
+    callbox: 'Код callbox', code_target: 'Этот код открывает', target_callbox: 'Домофон', target_gate: 'Ворота',
+    history: 'История', code_history: 'История кодов',
+    propose_code: 'Предложить код', request_sent: 'Заявка отправлена админу',
+    code_requests: 'Заявки на коды', reject: 'Отклонить',
+    req_by: 'заявка от', no_changes: 'без изменений',
+    req_approved: 'Заявка одобрена, код обновлён', req_rejected: 'Заявка отклонена',
+    no_history: 'Изменений ещё не было', since: 'с', by_word: 'добавил',
+    last_code_upd: 'код обновлён', code_pending_note: 'Ваша заявка ждёт решения админа',
+    template: 'Шаблон', pick_template: 'Выберите шаблон',
+    d_extraworks: 'Доп. работы', d_sizes: 'Размеры', d_products: 'Товары',
+    kind_work: 'Работа', kind_purchase: 'Покупка товара',
+    needs_size: 'Указывать размер', size_type: 'Вид размера', unit_lbl: 'Ед. изм.',
+    product: 'Товар', qty: 'Кол-во', default_price: 'Цена по умолч.',
+    no_templates: 'Справочник «Доп. работы» пуст — админ заполнит его в Справочниках',
+    extra_section: 'Доп. работы и покупки',
+    sync_partial: 'Синхронизация частичная — ошибки в таблицах', sync_dur: 'за',
+    write_err: 'Ошибка записи', tables_failed: 'таблиц с ошибкой',
+    week_days: ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'],
     months: ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'],
   },
   en: {
@@ -134,7 +177,7 @@ const I18N = {
     date: 'Date', counterparty: 'Counterparty', complex: 'Apartment complex', unit: 'Unit #',
     work_type: 'Work type', create: 'Create', cancel: 'Cancel', save: 'Save',
     delete: 'Delete', edit: 'Edit', close: 'Close', add: 'Add',
-    tab_home: 'Today', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'More',
+    tab_home: 'Home', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'More',
     mine: 'Mine', all: 'All',
     status_draft: 'Draft', status_done: 'Done', status_approved: 'Approved',
     job_done_chk: 'Work completed',
@@ -160,7 +203,7 @@ const I18N = {
     settings: 'Settings', profile: 'Profile', doc_name: 'Name in documents & jobs',
     language: 'Interface language', sync: 'Sync now', synced: 'Synced',
     never: 'never', org: 'Organization (for PDF)', org_name: 'Company name (terms text)',
-    org_short: 'Short name (AGR)', org_assoc: 'Association (header)', org_addr: 'Address (header, per line)',
+    org_short: 'Short name (APC)', org_assoc: 'Association (header)', org_addr: 'Address (header, per line)',
     logout: 'Log out', version: 'App version', updated_to: 'App updated to version',
     update_after_form: 'Update ready — will apply after you close the form',
     login_title: 'Sign in to TechLog', demo_note: 'Demo mode: Supabase is not configured (config.js). Data is stored locally.',
@@ -218,7 +261,34 @@ const I18N = {
     install_no_prompt: 'Browser has not offered install yet — check the PWA section in Diagnostics',
     reg_ok: 'Sign-up successful', welcome: 'Welcome',
     reg_now_signin: 'Account created — now sign in',
-    week_days: ['MO','TU','WE','TH','FR'],
+    quick_title: 'Quick settings', font_soon: 'Font size — coming soon',
+    all_settings: 'All settings',
+    footer_rights: '© No rights reserved', footer_city: 'Alpharetta',
+    faq: 'How it works (FAQ)',
+    map_mode_all: 'All complexes', map_mode_day: 'Day map', map_of_day: 'Map of this day',
+    translate_en: 'Translate to EN', translating: 'Translating…', translate_err: 'Translation failed (network or daily limit)',
+    log_title: 'Event log', clear: 'Clear',
+    db_diag: 'DB diagnostics (all tables)', admin_only: 'Admins only',
+    checking_tables: 'Checking tables…',
+    priority: 'Priority', move_up: 'Up', move_down: 'Down',
+    callbox: 'Callbox code', code_target: 'This code opens', target_callbox: 'Callbox', target_gate: 'Gate',
+    history: 'History', code_history: 'Code history',
+    propose_code: 'Propose code', request_sent: 'Request sent to admin',
+    code_requests: 'Code requests', reject: 'Reject',
+    req_by: 'request by', no_changes: 'no changes',
+    req_approved: 'Approved, code updated', req_rejected: 'Request rejected',
+    no_history: 'No changes yet', since: 'since', by_word: 'added by',
+    last_code_upd: 'code updated', code_pending_note: 'Your request awaits admin decision',
+    template: 'Template', pick_template: 'Pick a template',
+    d_extraworks: 'Extra works', d_sizes: 'Sizes', d_products: 'Products',
+    kind_work: 'Work', kind_purchase: 'Purchase',
+    needs_size: 'Requires size', size_type: 'Size type', unit_lbl: 'Unit',
+    product: 'Product', qty: 'Qty', default_price: 'Default price',
+    no_templates: 'The "Extra works" directory is empty — an admin can fill it in Directories',
+    extra_section: 'Extra works & purchases',
+    sync_partial: 'Partial sync — table errors', sync_dur: 'in',
+    write_err: 'Write error', tables_failed: 'tables failed',
+    week_days: ['MO','TU','WE','TH','FR','SA','SU'],
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   }
 };
@@ -360,9 +430,24 @@ function seedCatalogs(){
     id: 'org', invoice_title: 'INVOICE #CC', header_city: 'ATLANTA',
     assoc_line: 'atlanta apartment association',
     addr1: 'PO BOX 920482', addr2: 'NORCROSS,', addr3: 'GA 30010',
-    company_name: 'Atlanta Global Renovations, LLC', company_short: 'AGR, LLC'
+    company_name: 'APC, LLC', company_short: 'APC'
   };
-  return { aux_equipment: aux, work_types, equipment_types, price_list, org_settings: org };
+  const size_types = [
+    { id:'sz1', name:'Длина / Length', unit:'ft', sort:1 },
+    { id:'sz2', name:'Площадь / Area', unit:'sq ft', sort:2 },
+    { id:'sz3', name:'Вес / Weight', unit:'lb', sort:3 },
+    { id:'sz4', name:'Количество / Quantity', unit:'pcs', sort:4 },
+  ];
+  const extra_works = [
+    { id:'ew1', name:'Вырезка стен / Wall cutout', kind:'work', needs_size:true, size_type_id:'sz2', sort:1 },
+    { id:'ew2', name:'Вырезка потолка / Ceiling cutout', kind:'work', needs_size:true, size_type_id:'sz2', sort:2 },
+    { id:'ew3', name:'Покупка товара / Purchase', kind:'purchase', needs_size:false, size_type_id:null, sort:3 },
+  ];
+  const product_types = [
+    { id:'pt1', name:'Решётка / Vent grille', default_price:25, sort:1 },
+    { id:'pt2', name:'Химия для ковра / Carpet chemicals', default_price:45, sort:2 },
+  ];
+  return { aux_equipment: aux, work_types, equipment_types, price_list, org_settings: org, size_types, extra_works, product_types };
 }
 
 function seedDemoData(){
@@ -401,7 +486,7 @@ function seedDemoData(){
   const job1 = {
     id: uid(), date: d3, counterparty_id: cp1.id, complex_id: complexes[0].id, unit_number: '916',
     work_type_id: wtVet.id, technician_id: 'demo-admin', technician_name: 'Ivan P., Alexey S.', helper_ids: ['demo-manager'],
-    status: 'done', note: 'Key at leasing office. Dog in unit — call tenant 30 min before pickup.', form_data: fd, total: 0, approved_total: null, approved_by: null, approved_at: null,
+    priority: true, sort_order: 0, status: 'done', note: 'Key at leasing office. Dog in unit — call tenant 30 min before pickup.', form_data: fd, total: 0, approved_total: null, approved_by: null, approved_at: null,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString()
   };
   const job2 = {
@@ -419,7 +504,7 @@ function seedDemoData(){
       complex_id: complexes[0].id, counterparty_id: cp1.id, unit_number: '916' },
   ];
   const data = {
-    profiles, counterparties, complexes, counterparty_prices, hidden_staff: [],
+    profiles, counterparties, complexes, counterparty_prices, hidden_staff: [], code_requests: [], complex_code_history: [],
     jobs: [job1, job2], placements, ...cat
   };
   job1.total = calcTotal(job1.form_data, priceResolver(cp1.id, data), data);
@@ -429,32 +514,67 @@ function seedDemoData(){
 /* =====================================================================
    ХРАНИЛИЩЕ / СИНХРОНИЗАЦИЯ
    ===================================================================== */
-function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state.data)); }catch(e){} }
-function loadLocal(){ try{ const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; } }
+function saveLocal(){
+  try { return saveLocalUnsafe(); }
+  catch(e){ dlog('⛔ saveLocal (квота localStorage?):', e); }
+}
+function saveLocalUnsafe(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state.data)); }catch(e){} }
+function loadLocal(){
+  try { return loadLocalUnsafe(); }
+  catch(e){ dlog('⛔ loadLocal (битый кеш):', e); return null; }
+}
+function loadLocalUnsafe(){ try{ const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; } }
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','hidden_staff','jobs','placements'];
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','hidden_staff','code_requests','complex_code_history','jobs','placements'];
 
 function emptyData(){
   const d = { org_settings: {
     id: 'org', invoice_title: 'INVOICE #CC', header_city: 'ATLANTA',
     assoc_line: 'atlanta apartment association',
     addr1: 'PO BOX 920482', addr2: 'NORCROSS,', addr3: 'GA 30010',
-    company_name: 'Atlanta Global Renovations, LLC', company_short: 'AGR, LLC'
+    company_name: 'APC, LLC', company_short: 'APC'
   } };
   TABLES.forEach(tb => d[tb] = []);
   return d;
 }
 
 async function sbLoadAll(){
-  const sb = state.sb; const out = {};
-  const reqs = TABLES.map(tb => sb.from(tb).select('*'));
-  reqs.push(sb.from('org_settings').select('*').limit(1));
-  const res = await Promise.all(reqs);
-  res.forEach((r, i) => {
-    if (r.error) throw r.error;
-    if (i < TABLES.length) out[TABLES[i]] = r.data || [];
-    else out.org_settings = (r.data && r.data[0]) || seedCatalogs().org_settings;
+  const sb = state.sb;
+  const out = {};
+  SYNC_ERRORS = [];
+  const prev = state.data || {};
+  const names = [...TABLES, 'org_settings'];
+  const t0 = Date.now();
+  const reqs = names.map(tb => {
+    const q = tb === 'org_settings' ? sb.from(tb).select('*').limit(1) : sb.from(tb).select('*');
+    const ts = Date.now();
+    return Promise.resolve(q)
+      .then(r => ({ tb, ms: Date.now() - ts, data: r.data, error: r.error }))
+      .catch(e => ({ tb, ms: Date.now() - ts, data: null, error: e }));
   });
+  const res = await Promise.all(reqs);
+  let okCnt = 0;
+  for (const r of res){
+    if (r.error){
+      SYNC_ERRORS.push({ tb: r.tb, err: errStr(r.error) });
+      dlog('⛔ sync таблица', r.tb + ':', r.error, '· ' + r.ms + ' мс');
+      // не теряем локальные данные упавшей таблицы
+      if (r.tb === 'org_settings') out.org_settings = prev.org_settings || seedCatalogs().org_settings;
+      else out[r.tb] = prev[r.tb] || [];
+      continue;
+    }
+    okCnt++;
+    if (r.tb === 'org_settings') out.org_settings = (r.data && r.data[0]) || prev.org_settings || seedCatalogs().org_settings;
+    else out[r.tb] = r.data || [];
+    if (r.ms > 1500) dlog('🐢 sync таблица', r.tb, 'медленно: ' + r.ms + ' мс');
+  }
+  out._syncMs = Date.now() - t0;
+  out._syncOk = okCnt;
+  out._syncFail = SYNC_ERRORS.length;
+  if (SYNC_ERRORS.length && SYNC_ERRORS.length === names.length){
+    // упало вообще всё — считаем фатальной ошибкой (сеть/авторизация)
+    throw new Error('sync: все таблицы недоступны — ' + SYNC_ERRORS[0].err);
+  }
   return out;
 }
 
@@ -466,9 +586,18 @@ async function syncNow(silent){
   try {
     if (!state.data) state.data = loadLocal() || emptyData();
     render();
+    if (!navigator.onLine) dlog('⚠ sync: navigator.onLine = false (возможен офлайн)');
     state.data = await sbLoadAll();
     saveLocal();
-    dlog('sync: ок,', TABLES.map(tb => tb + '=' + (state.data[tb]||[]).length).join(' '));
+    const ms = state.data._syncMs, failN = state.data._syncFail || 0;
+    dlog('sync:', failN ? '⚠ частично' : 'ок', '·', t('sync_dur'), ms + ' мс ·',
+      TABLES.map(tb => tb + '=' + (state.data[tb]||[]).length).join(' '),
+      failN ? '· ошибки: ' + SYNC_ERRORS.map(x=>x.tb).join(',') : '');
+    if (failN) toast('⚠ ' + t('sync_partial') + ': ' + SYNC_ERRORS.map(x=>x.tb).join(', '), 'err');
+    if (isAdmin() && pendingCodeRequests().length && !state._reqToasted){
+      state._reqToasted = true;
+      toast('🔔 ' + t('code_requests') + ': ' + pendingCodeRequests().length, 'inf');
+    }
     state.lastSync = nowStamp();
     localStorage.setItem('techlog_lastsync', state.lastSync);
     if (!silent) toast('✓ ' + t('synced') + ': ' + state.lastSync);
@@ -489,8 +618,21 @@ async function dbUpsert(table, row){
   if (i >= 0) arr[i] = row; else arr.push(row);
   saveLocal();
   if (HAS_SB) {
-    const { error } = await state.sb.from(table).upsert(row);
-    if (error) { dlog('⛔ upsert', table + ':', error); toast(t('sync_err') + ': ' + error.message, 'err'); }
+    const ts = Date.now();
+    try {
+      const { error } = await state.sb.from(table).upsert(row);
+      if (error) {
+        noteWriteError('upsert', table, row.id, error);
+        dlog('⛔ upsert', table, 'id=' + String(row.id||'').slice(0,8) + ':', error, '· ' + (Date.now()-ts) + ' мс');
+        toast(t('write_err') + ' (' + table + '): ' + error.message, 'err');
+      } else if (Date.now() - ts > 1500) {
+        dlog('🐢 upsert', table, 'медленно: ' + (Date.now()-ts) + ' мс');
+      }
+    } catch(e){
+      noteWriteError('upsert', table, row.id, e);
+      dlog('⛔ upsert exception', table + ':', e);
+      toast(t('write_err') + ' (' + table + ')', 'err');
+    }
   }
 }
 async function dbDelete(table, id){
@@ -499,8 +641,19 @@ async function dbDelete(table, id){
   if (i >= 0) arr.splice(i, 1);
   saveLocal();
   if (HAS_SB) {
-    const { error } = await state.sb.from(table).delete().eq('id', id);
-    if (error) { console.error(table, error); toast(t('sync_err') + ': ' + error.message, 'err'); }
+    const ts = Date.now();
+    try {
+      const { error } = await state.sb.from(table).delete().eq('id', id);
+      if (error) {
+        noteWriteError('delete', table, id, error);
+        dlog('⛔ delete', table, 'id=' + String(id||'').slice(0,8) + ':', error, '· ' + (Date.now()-ts) + ' мс');
+        toast(t('write_err') + ' (' + table + '): ' + error.message, 'err');
+      }
+    } catch(e){
+      noteWriteError('delete', table, id, e);
+      dlog('⛔ delete exception', table + ':', e);
+      toast(t('write_err') + ' (' + table + ')', 'err');
+    }
   }
 }
 async function dbSaveOrg(org){
@@ -534,6 +687,7 @@ function emptyFormData(){
     equipment: {},                 // { [equipment_type_id]: {qty, days} }
     pad: { on:false, size:null, rooms:0, all_unit:false },   // size: q14|q12|q34|roll
     others: [ {desc:'',amount:0}, {desc:'',amount:0}, {desc:'',amount:0} ],
+    extra: [],
   };
 }
 
@@ -581,6 +735,7 @@ function calcSections(fd, p, data){
   s.pad = (fd.pad.size ? p(padMap[fd.pad.size]) : 0)
         + (fd.pad.all_unit ? p('pad_install_all') : (+fd.pad.rooms > 0 ? (+fd.pad.rooms) * p('pad_install_room') : 0));
   s.others = fd.others.reduce((a,o)=>a + (+o.amount || 0), 0);
+  s.extra = (fd.extra||[]).reduce((a,it)=> a + (it.kind==='purchase' ? (Math.max(1, parseInt(it.qty)||1) * (parseFloat(it.price)||0)) : 0), 0);
   return s;
 }
 function calcTotal(fd, p, data){
@@ -756,7 +911,13 @@ function visiblePlacements(){
   if (!isManager() || state.filterMine) ps = ps.filter(p => p.technician_id === state.user.id);
   return ps;
 }
-function jobsOn(dateISO){ return visibleJobs().filter(j => j.date === dateISO).sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||'')); }
+function jobSortCmp(a, b){
+  return (b.priority?1:0) - (a.priority?1:0)
+      || (a.sort_order||0) - (b.sort_order||0)
+      || String(a.created_at||'').localeCompare(String(b.created_at||''));
+}
+function canReorder(j){ return j && (isAdmin() || j.technician_id === state.user.id); }
+function jobsOn(dateISO){ return visibleJobs().filter(j => j.date === dateISO).sort(jobSortCmp); }
 function pickupsOn(dateISO){
   const today = todayISO();
   return visiblePlacements().filter(p => !p.picked_up && (p.due_date === dateISO || (dateISO === today && p.due_date < today)))
@@ -788,7 +949,7 @@ const ICONS = {
 
 function render(){
   const app = $('#app');
-  if (!state.user){ app.innerHTML = viewLogin(); return; }
+  if (!state.user){ app.innerHTML = viewLogin() + viewFooter(); return; }
   if (!state.data) state.data = loadLocal() || (HAS_SB ? emptyData() : seedDemoData());
   if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
   let body = '';
@@ -799,26 +960,36 @@ function render(){
   else if (state.screen === 'reports') body = viewReports();
   else if (state.screen === 'dirs') body = viewDirs();
   else if (state.screen === 'settings') body = viewSettings();
-  app.innerHTML = viewHeader() + body + viewTabbar();
+  app.innerHTML = viewHeader() + body + viewFooter() + viewTabbar();
   if (state.screen === 'job') bindJobForm();
   if (state.screen === 'map') initMapView();
 }
 
 function viewHeader(){
   const u = state.user;
+  const org = (state.data && state.data.org_settings) || {};
   return `
   <div class="topbar">
     <div class="logo"><span>TL</span></div>
     <div class="brand">
       <div class="name">Tech<b>Log</b></div>
-      <div class="sub">by AGR · ${t('app_sub')} ${APP_VERSION}</div>
+      <div class="sub">by ${esc(org.company_short || 'APC')} · ${t('app_sub')} · v${APP_VERSION}</div>
     </div>
-    <div class="spacer"></div>
-    <button class="sync-btn ${state.syncing?'spin':''}" onclick="App.sync()" title="${t('sync')}" aria-label="${t('sync')}">${ICONS.sync}</button>
+    <button class="icon-btn ${state.syncing?'spin':''}" onclick="App.sync()" title="${t('sync')}" aria-label="${t('sync')}">${ICONS.sync}</button>
     <div class="avatar-wrap">
       <button class="avatar role-${u.role}" onclick="App.go('settings')" aria-label="${t('settings')}">${esc(initials(u.display_name))}</button>
       <div class="login-pill">${esc(u.login)}</div>
     </div>
+  </div>`;
+}
+
+/* Подпись внизу каждой страницы */
+function viewFooter(){
+  const y = new Date().getFullYear();
+  return `<div class="app-footer ${state.user ? '' : 'nofix'}">
+    TechLog · Powered by Abraziv<br>
+    ${t('footer_rights')}<br>
+    ${y} · ${t('footer_city')}
   </div>`;
 }
 
@@ -840,7 +1011,7 @@ function viewTabbar(){
 function viewWeek(){
   const days = [];
   const today = todayISO();
-  for (let i=0;i<5;i++){
+  for (let i=0;i<7;i++){
     const iso = addDaysISO(state.weekStart, i);
     const d = parseISO(iso);
     const dayJobs = jobsOn(iso);
@@ -849,7 +1020,7 @@ function viewWeek(){
     if (hasPk) jobDots.unshift('#8AA0AB');
     const hasIssue = dayJobs.some(j => jobIssues(j).length);
     days.push(`
-      <button class="day-cell ${state.selDate===iso?'sel':''} ${iso===today?'today':''}" onclick="App.selDay('${iso}')">
+      <button class="day-cell ${state.selDate===iso?'sel':''} ${iso===today?'today':''} ${i>=5?'wknd':''}" onclick="App.selDay('${iso}')">
         ${hasIssue ? warnIcon(true) : ''}
         <div class="dow">${t('week_days')[i]}</div>
         <div class="dom">${d.getDate()}</div>
@@ -869,6 +1040,21 @@ function viewWeek(){
 /* =====================================================================
    ЭКРАН: ГЛАВНАЯ (день: работы + пикапы)
    ===================================================================== */
+function triHtml(on, jobId, canEdit){
+  if (!on && !canEdit) return '';
+  const cls = 'pri' + (on ? ' on' : '');
+  return canEdit
+    ? `<button class="${cls}" title="${t('priority')}" onclick="event.stopPropagation();App.togglePriority('${jobId}')"><span class="tri">!</span></button>`
+    : `<span class="${cls}"><span class="tri">!</span></span>`;
+}
+function railHtml(j){
+  const can = canReorder(j);
+  return `<div class="rail" onclick="event.stopPropagation()">
+    ${triHtml(!!j.priority, j.id, can)}
+    ${can ? `<button class="mv" title="${t('move_up')}" onclick="App.moveJob('${j.id}',-1)">▲</button>
+             <button class="mv" title="${t('move_down')}" onclick="App.moveJob('${j.id}',1)">▼</button>` : ''}
+  </div>`;
+}
 function eqDotsFor(list){
   const agg = {};
   list.forEach(p => { agg[p.equipment_type_id] = (agg[p.equipment_type_id]||0) + (+p.qty||0); });
@@ -902,12 +1088,18 @@ function viewHome(){
       <button class="${!state.filterMine?'on':''}" onclick="App.setMine(false)">${t('all')}</button>
     </div>` : '';
 
-  const pkHtml = Object.entries(groups).map(([jobId, list]) => {
+  const pkHtml = Object.entries(groups)
+    .sort((a,b) => jobSortCmp(
+      state.data.jobs.find(x=>x.id===a[0]) || {sort_order:999},
+      state.data.jobs.find(x=>x.id===b[0]) || {sort_order:999}))
+    .map(([jobId, list]) => {
     const p0 = list[0];
     const cx = cxById(p0.complex_id) || {abbr:'?', name:'?', address:''};
     const overdue = p0.due_date < today;
+    const pkJob = state.data.jobs.find(x=>x.id===jobId) || { id: jobId, priority:false, technician_id: p0.technician_id, sort_order: 999 };
     return `
-    <div class="item" style="border-left-color:#8AA0AB">
+    <div class="item" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}">
+      ${railHtml(pkJob)}
       <div class="abbr">${esc(cx.abbr||cx.name.slice(0,3).toUpperCase())}</div>
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
@@ -944,7 +1136,8 @@ function viewHome(){
     const cx = cxById(j.complex_id) || { abbr:'?', name:'?', address:'' };
     const total = (j.status==='approved' && j.approved_total != null) ? j.approved_total : j.total;
     return `
-    <button class="item" style="border-left-color:${wt.color};width:100%;text-align:left" onclick="App.openJob('${j.id}')">
+    <div class="item clicky" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
+      ${railHtml(j)}
       <div class="abbr" style="border-color:${wt.color}">${esc(cx.abbr||'—')}</div>
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number||'—')}</div>
@@ -955,17 +1148,23 @@ function viewHome(){
         <span class="badge-status st-${j.status}">${jobIssues(j).length ? warnIcon() : ''}${t('status_'+j.status)}</span>
         <div class="money" style="margin-top:6px">${money(total)}</div>
       </div>
-    </button>`;
+    </div>`;
   }).join('');
 
   const empty = (!jobs.length && !pkOpen.length && !pkDone.length)
     ? `<div class="list-empty"><div class="big">🦉</div>${t('no_items')}<br><span class="tiny">${t('tap_add')}</span></div>` : '';
 
-  return banner + viewWeek() + filter
+  const dayBar = `
+    <div class="day-bar">
+      <b>${fmtDMY(iso)}</b>
+      <button class="mini-nav" onclick="App.openDayMap()">🗺 ${t('map_of_day')}</button>
+    </div>`;
+  return banner + viewWeek() + dayBar + filter
     + (pkOpen.length ? `<div class="section-title">${t('pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
     + (jobs.length ? `<div class="section-title">${t('jobs')}</div>` + jobsHtml : '')
     + pkDoneHtml + empty
     + `<button class="btn btn-green" style="margin-top:12px" onclick="App.addTaskModal()">＋ ${t('add_task')}</button>
+       <button class="btn btn-ghost" style="margin-top:10px" onclick="App.faq()">❓ ${t('faq')}</button>
        <button class="fab" onclick="App.addTaskModal()" aria-label="${t('add_task')}">＋</button>`;
 }
 
@@ -1028,8 +1227,8 @@ async function createTask(){
   if (!cpId || !cxId || !ntWt){ toast(t('select'), 'err'); return; }
   const job = {
     id: uid(), date, counterparty_id: cpId, complex_id: cxId, unit_number: unit,
-    work_type_id: ntWt, technician_id: state.user.id, technician_name: shortName(state.user.display_name), helper_ids: [],
-    status: 'draft', note: '', form_data: emptyFormData(), total: 0,
+    work_type_id: ntWt, technician_id: state.user.id, technician_name: shortName(state.user.display_name), helper_ids: [], priority: false, sort_order: jobsOn(date).length,
+    priority: false, sort_order: 1, status: 'draft', note: '', form_data: emptyFormData(), total: 0,
     approved_total: null, approved_by: null, approved_at: null,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString()
   };
@@ -1183,6 +1382,7 @@ function viewJob(){
           <span id="jb-warn-unit">${String(j.unit_number||'').trim()?'':warnIcon()}</span></div>
         <div class="tiny">${esc(cp.name)} · ${esc(cx.address||'')}
           ${(cx.lat!=null||cx.address)?`<button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">🧭 ${t('navigate')}</button>`:''}</div>
+        ${(cx.access_code||cx.callbox_code)?`<div class="tiny">${codeLineHtml(cx, true)}</div>`:''}
         <div class="tiny" style="color:${wt.color};font-weight:800">${esc(wt.name)}</div>
       </div>
       <span class="badge-status st-${j.status}">${t('status_'+j.status)}</span>
@@ -1298,10 +1498,12 @@ function viewJob(){
         </div>`).join('')}
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">📝 ${t('note')}</div>
+  <div class="inv-sec"><div class="inv-head">📝 ${t('note')} · ${t('extra_section')} ${amtWrap('extra',sec.extra)}</div>
     <div class="inv-body">
       ${dictationHTML('jb-note', j.note || '')}
       <div class="tiny">${t('note_hint')}</div>
+      <div id="extra-list">${(jobDraft.form_data.extra||[]).length ? extraListHtml() : ''}</div>
+      <button class="btn btn-blue sm" onclick="App.extraPicker()">＋ ${t('template')}</button>
     </div></div>
 
   <label class="opt ${j.status!=='draft'?'on':''}" style="margin:4px 0 8px">
@@ -1362,6 +1564,21 @@ function bindJobForm(){
     else if (el.id === 'jb-note'){ jobDraft.note = el.value; }
     else if (el.matches('[data-oth-d]')){ fd().others[+el.dataset.othD].desc = el.value; }
     else if (el.matches('[data-oth-a]')){ fd().others[+el.dataset.othA].amount = parseFloat(el.value)||0; recalcJob(); }
+    else if (el.matches('[data-ex-size]')){ fd().extra[+el.dataset.exSize].size_value = el.value.trim(); }
+    else if (el.matches('[data-ex-qty]')){ const it=fd().extra[+el.dataset.exQty]; it.qty = Math.max(1, parseInt(el.value)||1); recalcJob(); }
+    else if (el.matches('[data-ex-price]')){ const it=fd().extra[+el.dataset.exPrice]; it.price = parseFloat(el.value)||0; recalcJob(); }
+    else if (el.matches('[data-ex-prod]')){
+      const it = fd().extra[+el.dataset.exProd];
+      const pt = ptById(el.value);
+      it.product_id = el.value || null;
+      it.product_name = pt ? pt.name : '';
+      if (pt && (!it.price || +it.price === 0)){
+        it.price = +pt.default_price || 0;
+        const pr = document.querySelector('[data-ex-price="'+el.dataset.exProd+'"]');
+        if (pr) pr.value = it.price || '';
+      }
+      recalcJob();
+    }
     autosaveDraft();
   });
 
@@ -1413,6 +1630,10 @@ function recalcJob(){
     const line = e ? (+e.qty||0)*Math.max(1,+e.days||1)*eqDayPrice(et,p) : 0;
     const el = document.querySelector(`[data-eqline="${et.id}"]`);
     if (el) el.textContent = line>0 ? money(line) : '—';
+  });
+  (jobDraft.form_data.extra||[]).forEach((it, i) => {
+    const el = document.querySelector('[data-exline="'+i+'"]');
+    if (el){ const v = extraLineTotal(it); el.textContent = v>0 ? money(v) : '—'; }
   });
   const total = calcTotal(jobDraft.form_data, p);
   const tEl = $('#jb-total'); if (tEl) tEl.textContent = money(total);
@@ -1519,7 +1740,7 @@ function viewPickupsReport(){
         <div class="abbr">${esc(cx.abbr)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:900">${esc(cx.name)}</div>
-          <div class="tiny">${esc(cx.address||'')} ${cx.access_code?`· <button class="key-copy" onclick="App.copyText('${esc(cx.access_code)}')">🔑 ${esc(cx.access_code)}</button>`:''}</div>
+          <div class="tiny">${esc(cx.address||'')} · ${codeLineHtml(cx, true)}</div>
         </div>
         <button class="btn btn-ghost sm" onclick="App.navToCx('${cxId}')">🧭</button>
       </div>
@@ -1587,13 +1808,17 @@ function viewDirs(){
     ['worktypes', t('d_worktypes'), isAdmin()],
     ['equipment', t('d_equipment'), isAdmin()],
     ['aux', t('d_aux'), isAdmin()],
+    ['extraworks', t('d_extraworks'), isAdmin()],
+    ['sizes', t('d_sizes'), isAdmin()],
+    ['products', t('d_products'), isAdmin()],
     ['price', t('d_price'), true],
   ].filter(x=>x[2]);
   if (!tabs.find(x=>x[0]===state.dirTab)) state.dirTab = tabs[0][0];
   const nav = `<div class="tabs">` + tabs.map(([id,l]) =>
     `<button class="tabbtn ${state.dirTab===id?'active':''}" onclick="App.dirTab('${id}')">${l}</button>`).join('') + `</div>`;
   const body = { staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
-                 equipment: dirEquipment, aux: dirAux, price: dirPrice }[state.dirTab]();
+                 equipment: dirEquipment, aux: dirAux, price: dirPrice,
+                 extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts }[state.dirTab]();
   return `<div class="section-title">${t('dirs')}</div>` + nav + body;
 }
 
@@ -1611,6 +1836,7 @@ function dirCounterparties(){
 
 function dirComplexes(){
   const canEdit = isManager();
+  const inbox = codeRequestsHtml();
   const byCp = {};
   state.data.complexes.forEach(cx => (byCp[cx.counterparty_id]=byCp[cx.counterparty_id]||[]).push(cx));
   const blocks = state.data.counterparties.map(cp => `
@@ -1620,11 +1846,16 @@ function dirComplexes(){
         <div class="rowline">
           <div class="abbr" style="min-width:44px;height:38px">${esc(cx.abbr||'—')}</div>
           <div class="grow"><b>${esc(cx.name)}</b>
-            <div class="tiny">${esc(cx.address||'')} ${cx.access_code?'· 🔑 '+esc(cx.access_code):''}</div></div>
-          ${canEdit?`<button class="btn btn-ghost sm" onclick="App.editCxModal('${cx.id}')">${t('edit')}</button>`:''}
+            <div class="tiny">${esc(cx.address||'')}</div>
+            <div class="tiny">${codeLineHtml(cx, true)}
+              ${(()=>{ const m=lastCodeMeta(cx.id); return m?` · <span style="color:var(--dim-2)">${t('last_code_upd')} ${fmtDMY(String(m.date).slice(0,10))}</span>`:''; })()}</div></div>
+          <button class="btn btn-ghost sm" title="${t('history')}" onclick="App.codeHistory('${cx.id}')">📖</button>
+          ${canEdit
+            ? `<button class="btn btn-ghost sm" onclick="App.editCxModal('${cx.id}')">${t('edit')}</button>`
+            : `<button class="btn btn-ghost sm" title="${t('propose_code')}" onclick="App.proposeCode('${cx.id}')">🔑</button>`}
         </div>`).join('') || `<div class="tiny">—</div>`}
     </div>`).join('');
-  return blocks + (canEdit ? `<button class="btn btn-green" onclick="App.editCxModal()">＋ ${t('add')}</button>` : '');
+  return inbox + blocks + (canEdit ? `<button class="btn btn-green" onclick="App.editCxModal()">＋ ${t('add')}</button>` : '');
 }
 
 function colorPicker(cur, inputId){
@@ -1771,7 +2002,18 @@ function editCxModal(id, cpId){
     <div class="form-row"><span class="lbl">${t('name')}</span><input id="cx-name" value="${esc(cx.name)}"></div>
     <div class="form-row"><span class="lbl">${t('abbr')}</span><input id="cx-abbr" maxlength="4" value="${esc(cx.abbr||'')}"></div>
     <div class="form-row"><span class="lbl">${t('address')}</span><input id="cx-addr" value="${esc(cx.address||'')}"></div>
-    <div class="form-row"><span class="lbl">${t('access_code')}</span><input id="cx-code" value="${esc(cx.access_code||'')}"></div>
+    <div class="form-row"><span class="lbl">${t('access_code')}</span><input id="cx-code" value="${esc(cx.access_code||'')}">
+      ${firstSeenLine(cx.id,'access',cx.access_code)}</div>
+    <div class="form-row"><span class="lbl">${t('callbox')}</span><input id="cx-callbox" value="${esc(cx.callbox_code||'')}">
+      ${firstSeenLine(cx.id,'callbox',cx.callbox_code)}</div>
+    <div class="form-row"><span class="lbl">${t('code_target')}</span>
+      <div class="tabs">
+        <button class="tabbtn ${!cx.callbox_gate?'active':''}" data-gate="0" onclick="App.pcGate(this)">📟 ${t('target_callbox')}</button>
+        <button class="tabbtn ${cx.callbox_gate?'active':''}" data-gate="1" onclick="App.pcGate(this)">🚧 ${t('target_gate')}</button>
+      </div>
+      <input type="hidden" id="pc-gate" value="${cx.callbox_gate?1:0}"></div>
+    ${(()=>{ const m=lastCodeMeta(cx.id); return m?`<div class="tiny" style="margin:-4px 0 8px">📖 ${t('last_code_upd')}: ${fmtDMY(String(m.date).slice(0,10))} · ${esc(profName(m.by))}</div>`:''; })()}
+    <button class="btn btn-ghost sm" style="margin-bottom:10px" onclick="App.codeHistory('${cx.id}')">📖 ${t('history')}</button>
     <div class="grid-2">
       <div class="form-row"><span class="lbl">${t('lat')}</span><input id="cx-lat" inputmode="decimal" value="${cx.lat ?? ''}" placeholder="33.78"></div>
       <div class="form-row"><span class="lbl">${t('lng')}</span><input id="cx-lng" inputmode="decimal" value="${cx.lng ?? ''}" placeholder="-84.38"></div>
@@ -1786,11 +2028,42 @@ function editCxModal(id, cpId){
 }
 async function saveCx(id){
   const latV = parseFloat($('#cx-lat').value), lngV = parseFloat($('#cx-lng').value);
+  const old = cxById(id) || {};
+  const access = $('#cx-code').value.trim();
+  const callbox = $('#cx-callbox').value.trim();
+  const gate = $('#pc-gate').value === '1';
   const row = { id, counterparty_id: $('#cx-cp').value, name: $('#cx-name').value.trim(),
-    abbr: $('#cx-abbr').value.trim().toUpperCase(), address: $('#cx-addr').value.trim(), access_code: $('#cx-code').value.trim(),
+    abbr: $('#cx-abbr').value.trim().toUpperCase(), address: $('#cx-addr').value.trim(),
+    access_code: old.access_code || '', callbox_code: old.callbox_code || '', callbox_gate: !!old.callbox_gate,
     lat: isNaN(latV) ? null : latV, lng: isNaN(lngV) ? null : lngV };
   if (!row.name) return;
-  await dbUpsert('complexes', row); closeModal(); toast('✓ ' + t('saved')); render();
+  const codesChanged = access !== (old.access_code||'') || callbox !== (old.callbox_code||'') || gate !== !!old.callbox_gate;
+  if (isAdmin()){
+    row.access_code = access; row.callbox_code = callbox; row.callbox_gate = gate;
+    await dbUpsert('complexes', row);
+    if (codesChanged){
+      const cx = cxById(id);
+      // история пишется через общий механизм (old уже перезаписан — используем old-значения)
+      const now = new Date().toISOString();
+      if (access !== (old.access_code||''))
+        await dbUpsert('complex_code_history', { id: uid(), complex_id: id, field:'access', old_value: old.access_code||'', new_value: access, gate: null, changed_by: state.user.id, changed_at: now, source:'direct' });
+      if (callbox !== (old.callbox_code||'') || gate !== !!old.callbox_gate)
+        await dbUpsert('complex_code_history', { id: uid(), complex_id: id, field:'callbox', old_value: old.callbox_code||'', new_value: callbox, gate, changed_by: state.user.id, changed_at: now, source:'direct' });
+    }
+  } else {
+    await dbUpsert('complexes', row); // менеджер: обычные поля сразу
+    if (codesChanged){
+      await dbUpsert('code_requests', { id: uid(), complex_id: id,
+        access_code: access !== (old.access_code||'') ? access : null,
+        callbox_code: callbox !== (old.callbox_code||'') ? callbox : null,
+        callbox_gate: gate !== !!old.callbox_gate ? gate : null,
+        requested_by: state.user.id, requested_at: new Date().toISOString(),
+        status: 'pending', decided_by: null, decided_at: null });
+      toast('📨 ' + t('request_sent'));
+      dlog('codes: заявка (из редактора) от', state.user.login);
+    }
+  }
+  closeModal(); toast('✓ ' + t('saved')); render();
 }
 
 function editWtModal(id){
@@ -1903,6 +2176,9 @@ function viewSettings(){
         <button class="${state.lang==='en'?'on':''}" onclick="App.setLang('en')">EN</button>
       </div>
     </div>
+    <div class="settings-row">
+      <div class="grow" style="flex:1"><b>🔤 ${t('font_soon').split(' — ')[0]}</b><div class="d">${t('font_soon')}</div></div>
+    </div>
   </div>
 
   <div class="card" style="border-color:var(--green)">
@@ -1910,10 +2186,15 @@ function viewSettings(){
       <div class="grow" style="flex:1">
         <b>🔄 ${t('sync')}</b>
         <div class="d">${t('synced')}: ${state.lastSync || t('never')} · ${HAS_SB?'Supabase':'DEMO / localStorage'}</div>
+        ${SYNC_ERRORS.length ? `<div class="d" style="color:var(--red)">⚠ ${SYNC_ERRORS.length} ${t('tables_failed')}: ${SYNC_ERRORS.map(x=>x.tb).join(', ')}</div>` : ''}
+        ${WRITE_ERRORS.length ? `<div class="d" style="color:var(--yellow)">✎ ${t('write_err')}: ${WRITE_ERRORS.length}</div>` : ''}
       </div>
       <button class="btn btn-green sm" onclick="App.sync()">${t('sync')}</button>
     </div>
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.diag()">🩺 ${t('diag')}</button>
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.showLog()">🧾 ${t('log_title')}</button>
+    ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">🗄 ${t('db_diag')}</button>` : ''}
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.faq()">❓ ${t('faq')}</button>
   </div>
 
   ${isAdmin() ? `
@@ -2142,6 +2423,12 @@ function makePdf(){
   F('bolditalic',10.5); txt((others[1]?.desc)||'', L+3, ry+6);
   line(L+2, ry+7.4, C2-1, ry+7.4);
   amount(+others[1]?.amount||0, ry+6.4);
+  (fd.extra||[]).slice(0,6).forEach(it => {
+    ry = startRow(8);
+    F('bolditalic',10); txt(extraItemTextEn(it).slice(0,78), L+3, ry+5.4);
+    line(L+2, ry+6.6, C2-1, ry+6.6);
+    amount(extraLineTotal(it), ry+5.6);
+  });
   ry = startRow(12);
   F('bolditalic',10.5); txt((others[2]?.desc)||'', L+3, ry+6.4);
   line(L+2, ry+8, 140, ry+8);
@@ -2249,6 +2536,22 @@ const App = {
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis,
   diag: showDiagnostics, copyDiag,
+  faq: faqModal,
+  translateEn: translateToEn,
+  swipeDay(dir){
+    state.selDate = shiftWorkday(state.selDate, dir);
+    state.weekStart = mondayOf(state.selDate);
+    render();
+  },
+  openDayMap(){ state.mapDay = true; state.mapDate = state.selDate; App.go('map'); },
+  mapMode(v){ state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
+  showLog: showLogModal, copyLog, clearLog,
+  togglePriority, moveJob,
+  codeHistory: codeHistoryModal, proposeCode: proposeCodeModal, pcGate, submitCode,
+  extraPicker: extraPickerModal, exAdd, exDel,
+  editEwModal, saveEw, editSzModal, saveSz, editPtModal, savePt,
+  decideReq: decideCodeReq,
+  dbDiag: showDbDiagnostics,
   loginCheck, loginTyped,
   installPwa,
   enterKey(e, mode){
@@ -2288,6 +2591,7 @@ window.App = App;
 (async function start(){
   try {
     initSW();
+    initSwipes();
     if (HAS_SB){
       try{
         const cached = loadLocal();
@@ -2319,6 +2623,7 @@ function dictationHTML(taId, value){
         <button type="button" class="${state.dictLang==='ru-RU'?'on':''}" onclick="App.dictLang('ru-RU')">RU</button>
         <button type="button" class="${state.dictLang==='en-US'?'on':''}" onclick="App.dictLang('en-US')">EN</button>
       </div>
+      <button type="button" class="btn btn-ghost sm" onclick="App.translateEn('${taId}')">🌐 ${t('translate_en')}</button>
       <span class="tiny" id="mic-hint-${taId}">${dictTa===taId ? t('listening') : ''}</span>
     </div>
   </div>`;
@@ -2440,7 +2745,10 @@ function viewMap(){
         <option value="">${t('all_counterparties')}</option>
         ${cps.map(c=>`<option value="${c.id}" ${state.mapCp===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
       </select></div>
-    <label class="opt ${state.mapDay?'on':''}"><input type="checkbox" ${state.mapDay?'checked':''} onchange="App.mapToggleDay(this.checked)"> ${t('map_day_mode')}</label>
+    <div class="tabs" style="margin-top:8px">
+      <button class="tabbtn ${!state.mapDay?'active':''}" onclick="App.mapMode(false)">🗺 ${t('map_mode_all')}</button>
+      <button class="tabbtn ${state.mapDay?'active':''}" onclick="App.mapMode(true)">📅 ${t('map_mode_day')}</button>
+    </div>
     ${state.mapDay ? `
       <div class="form-row" style="margin-top:8px"><span class="lbl">${t('map_day_hint')}</span>
         <input type="date" value="${state.mapDate || state.selDate}" onchange="App.mapSetDate(this.value)"></div>
@@ -2473,7 +2781,7 @@ function initMapView(){
     pts.forEach(p => (byCx[p.cx.id] = byCx[p.cx.id] || { cx: p.cx, items: [], color: p.color }).items.push(p));
     Object.values(byCx).forEach(g => {
       const cx = g.cx;
-      const html = `<b>${esc(cx.name)}</b><br>${esc(cx.address||'')}${cx.access_code?'<br>🔑 '+esc(cx.access_code):''}<hr style="margin:4px 0">` +
+      const html = `<b>${esc(cx.name)}</b><br>${esc(cx.address||'')}${cx.access_code?'<br>🔑 '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?'🚧 ':'📟 ')+esc(cx.callbox_code):''}<hr style="margin:4px 0">` +
         g.items.map(i=>`<span style="color:${i.color}">●</span> ${esc(i.label)}`).join('<br>') + `<br>${gm(cx)}`;
       mk(+cx.lat, +cx.lng, g.items.find(i=>i.kind==='job')?.color || g.items[0].color, html);
     });
@@ -2483,7 +2791,7 @@ function initMapView(){
       .forEach(cx => {
         const cp = cpById(cx.counterparty_id) || {name:''};
         mk(+cx.lat, +cx.lng, cpColor(cx.counterparty_id),
-          `<b>${esc(cx.name)}</b> (${esc(cx.abbr||'')})<br>${esc(cp.name)}<br>${esc(cx.address||'')}${cx.access_code?'<br>🔑 '+esc(cx.access_code):''}<br>${gm(cx)}`);
+          `<b>${esc(cx.name)}</b> (${esc(cx.abbr||'')})<br>${esc(cp.name)}<br>${esc(cx.address||'')}${cx.access_code?'<br>🔑 '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?'🚧 ':'📟 ')+esc(cx.callbox_code):''}<br>${gm(cx)}`);
       });
   }
   if (marks.length) mapObj.fitBounds(marks, { padding: [30,30], maxZoom: 14 });
@@ -2617,7 +2925,7 @@ function drawInvoiceHalf(doc, j, top){
   const org = state.data.org_settings;
   const p = priceResolver(j.counterparty_id);
   const sec = calcSections(fd, p);
-  const grand = jobGrand(j);
+  const grand = (j.status==='approved' && j.approved_total != null) ? +j.approved_total : calcTotal(fd, p);
 
   const L = 9, R = 207, W = R - L, C1 = L + 36, C2 = R - 19;
   const line = (a,b,c,d)=>doc.line(a,b,c,d);
@@ -2765,14 +3073,30 @@ function drawInvoiceHalf(doc, j, top){
   F('bold',6.8); txt('OTHER SERVICES:', L+1.5, ry+3.2);
   if (oth[0]){ F('bolditalic',6.6); txt(String(oth[0].desc||'').slice(0,72), L+27, ry+3.2); amt(+oth[0].amount||0, ry+3.2); }
   doc.setLineWidth(.15); line(L+26, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
-  ry = row(4.6);
   const rest = oth.slice(1);
-  if (rest.length){
-    F('bolditalic',6.6);
-    txt(rest.map(o=>o.desc||'').join(' · ').slice(0,86), L+2, ry+3.2);
-    amt(rest.reduce((s,o)=>s+(+o.amount||0),0), ry+3.2);
+  const exList = (fd.extra||[]);
+  if (rest.length || !exList.length){
+    ry = row(4.6);
+    if (rest.length){
+      F('bolditalic',6.6);
+      txt(rest.map(o=>o.desc||'').join(' · ').slice(0,86), L+2, ry+3.2);
+      amt(rest.reduce((s,o)=>s+(+o.amount||0),0), ry+3.2);
+    }
+    doc.setLineWidth(.15); line(L+1.5, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
   }
-  doc.setLineWidth(.15); line(L+1.5, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
+  if (exList.length){
+    const head = exList[0];
+    ry = row(4.4);
+    F('bolditalic',6.4); txt(extraItemTextEn(head).slice(0,88), L+2, ry+3.1);
+    amt(extraLineTotal(head), ry+3.1);
+    if (exList.length > 1){
+      ry = row(4.4);
+      const tail = exList.slice(1);
+      F('bolditalic',6.2);
+      txt(tail.map(extraItemTextEn).join(' · ').slice(0,92), L+2, ry+3.1);
+      amt(tail.reduce((s,it)=>s+extraLineTotal(it),0), ry+3.1);
+    }
+  }
 
   if (j.note){
     ry = row(4.6);
@@ -3028,6 +3352,18 @@ async function runDiagnostics(){
     }catch(e){ put(`${mark(false)} work_types: ${errStr(e)}`); }
   }
 
+  // Синхронизация и запись
+  put('');
+  put('— синхронизация —');
+  put(`последняя: ${state.lastSync || '—'}${state.data && state.data._syncMs ? ' · ' + state.data._syncMs + ' мс · таблиц ок: ' + (state.data._syncOk||'?') : ''}`);
+  if (SYNC_ERRORS.length){
+    SYNC_ERRORS.forEach(x => put(`⛔ таблица ${x.tb}: ${x.err}`));
+  } else put('✅ ошибок таблиц в последней синхронизации нет');
+  if (WRITE_ERRORS.length){
+    put(`⛔ ошибки записи (${WRITE_ERRORS.length} последних):`);
+    WRITE_ERRORS.slice(-8).forEach(w => put(`   ${w.at} · ${w.op} ${w.table} ${w.id}: ${w.err}`));
+  } else put('✅ ошибок записи в этой сессии нет');
+
   // PWA / установка
   put('');
   put('— PWA —');
@@ -3147,4 +3483,611 @@ async function installPwa(){
     if (outcome !== 'accepted') toast(t('install_declined'), 'inf');
   }catch(e){ dlog('⛔ PWA install:', e); }
   pwaPrompt = null;
+}
+
+/* =====================================================================
+   v1.04: FAQ · перевод заметки на EN · свайпы по дням · журнал · БД-диагностика
+   ===================================================================== */
+
+/* ---------- Мини-FAQ ---------- */
+function faqHtml(){
+  if (state.lang === 'en') return `
+    <h4>🧭 How it works</h4>
+    <p>One job = one unit in an apartment complex. Tap <b>＋</b>, pick date → counterparty → complex → unit → work type. Inside the job you check the services — prices fill in automatically and the total recalculates live. Mark it done; an admin can approve it (editing the final amount). If a non-admin changes the price after approval, the approval is reset. The <b>PDF</b> button builds an invoice that mirrors the paper form.</p>
+    <h4>📚 Directories</h4>
+    <p><b>Counterparties</b> — apartment networks. <b>Complexes</b> — their properties: address, gate code, map coordinates. <b>Work types</b> — name, color and the extra gear it requires. <b>Equipment</b> — rental units (BLW, DHM, SCR, OZN) with a $/day price. <b>Extra gear</b> — what to bring along. <b>PRICE</b> — the standard price list. <b>Staff</b> (admin) — roles and per-manager visibility.</p>
+    <h4>💲 Standard vs individual prices</h4>
+    <p>The <b>PRICE</b> tab is the default price list for everyone. To set special prices for a network: Directories → Counterparties → open one → <b>Prices</b> tab. Tick the checkbox next to a line to switch it to an <b>individual price</b> and type your value; untick — the standard price applies again. A new counterparty automatically receives a copy of the standard list.</p>
+    <h4>🗂 Reports</h4>
+    <p>Per <b>unit</b>: open the job and press PDF. Per <b>period</b> (a day, a week, a month): bottom tab <b>Reports</b> → pick the dates → download a single PDF with all invoices, two per Letter page. Managers also get the <b>Pickups</b> report for any date.</p>
+    <h4>⚠️ Priority & ordering</h4>
+    <p>Every trip card has a control rail: the red <b>“!” triangle</b> marks a “go first” object (priority items float to the top), and <b>▲▼</b> arrows reorder trips within the day. The order is shared between jobs and pickups.</p>
+    <h4>🔑 Access codes & requests</h4>
+    <p>A complex has two codes: 🔑 general and 📟 callbox (a toggle marks it as the 🚧 <b>gate</b> code). Anyone can edit: admins apply instantly, others submit a <b>request</b> the admin approves or rejects (inbox at the top of the Complexes tab). The 📖 button shows the full <b>history</b> — who entered which code and when; next to the current code you see since when it’s valid and who added it.</p>
+    <h4>🧰 Note templates & purchases</h4>
+    <p>In the Note block, <b>＋ Template</b> inserts items from the “Extra works” directory: a work flagged with a size shows an input in the right units (📏 “Sizes”: ft, sq ft, lb, pcs), while “🛒 Purchase” opens the “Products” list with quantity and a <b>price</b> that flows into the total and prints as its own PDF line. All three directories are admin-managed.</p>
+    <h4>📦 Automatic pickups</h4>
+    <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. Everything can be shown on the <b>day map</b> with a Google Maps route.</p>`;
+  return `
+    <h4>🧭 Как всё устроено</h4>
+    <p>Одна работа = один юнит в апарт-комплексе. Жмёте <b>＋</b>, выбираете дату → контрагента → комплекс → юнит → вид работы. Внутри работы отмечаете услуги галочками — цены подставляются сами, итог пересчитывается на лету. Отметили «выполнено» — админ может поставить апрув (с правкой итоговой суммы). Если после апрува не-админ меняет стоимость — апрув снимается. Кнопка <b>PDF</b> собирает инвойс, повторяющий бумажную форму.</p>
+    <h4>📚 Какие есть справочники</h4>
+    <p><b>Контрагенты</b> — сети апартаментов. <b>Комплексы</b> — их объекты: адрес, код доступа, координаты для карты. <b>Виды работ</b> — название, цвет и нужное доп. оборудование. <b>Оборудование</b> — то, что сдаётся в аренду (BLW, DHM, SCR, OZN) с ценой $/сутки. <b>Доп. оборудование</b> — что взять с собой на выезд. <b>PRICE</b> — стандартный прейскурант. <b>Сотрудники</b> (админ) — роли и видимость для менеджеров.</p>
+    <h4>💲 Стандартные и индивидуальные цены</h4>
+    <p>Вкладка <b>PRICE</b> — базовый прейскурант, действует для всех. Чтобы задать особые цены сети апартаментов: Справочники → Контрагенты → откройте нужного → вкладка <b>Цены</b>. Чекбокс напротив позиции включает <b>индивидуальную цену</b> — вводите свою; сняли галочку — снова действует стандартная. Новому контрагенту прайс копируется автоматически.</p>
+    <h4>🗂 Отчёты</h4>
+    <p>За <b>юнит</b>: откройте работу и нажмите PDF. За <b>период</b> (день, неделя, месяц): нижняя вкладка <b>Отчёты</b> → выбираете даты → скачиваете единый PDF со всеми инвойсами, по два на страницу Letter. Менеджеру доступен и отчёт по <b>пикапам</b> на любую дату.</p>
+    <h4>⚠️ Приоритет и очерёдность</h4>
+    <p>Слева на каждой карточке поездки — рельса управления: красный <b>треугольник «!»</b> помечает объект «ехать первым» (приоритетные всегда вверху списка), стрелки <b>▲▼</b> меняют очерёдность внутри дня. Порядок общий для работ и пикапов.</p>
+    <h4>🔑 Коды доступа и заявки</h4>
+    <p>У комплекса два кода: 🔑 общий и 📟 callbox (переключателем помечается, что это код от 🚧 <b>ворот</b>). Изменить может каждый: админ — сразу, остальные отправляют <b>заявку</b>, которую админ подтверждает или отклоняет (входящие — вверху вкладки «Комплексы»). Кнопка 📖 показывает <b>историю</b> изменений: кто, когда и какой код вводил; рядом с текущим кодом видно, с какой даты он действует и кто его добавил.</p>
+    <h4>🧰 Шаблоны заметки и покупки</h4>
+    <p>В блоке «Заметка» кнопка <b>＋ Шаблон</b> подставляет позиции из справочника «Доп. работы»: у работы с флагом размера появляется поле в нужных единицах (📏 «Размеры»: футы, sq ft, паунды, штуки), а «🛒 Покупка товара» открывает выбор из справочника «Товары», количество и <b>цену</b> — она попадает в итог и печатается в PDF отдельной строкой. Все три справочника редактирует администратор.</p>
+    <h4>📦 Пикапы формируются сами</h4>
+    <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. Всё это выводится на <b>карту дня</b> с маршрутом Google Maps.</p>`;
+}
+function faqModal(){
+  openModal(`
+    ${modalHead('❓ ' + t('faq'))}
+    <div class="faq-body">${faqHtml()}</div>
+    <button class="btn btn-ghost" onclick="App.closeModal()">${t('close')}</button>
+  `);
+}
+
+/* ---------- Перевод заметки на английский (MyMemory, без ключей) ---------- */
+function decodeEntities(s){
+  const d = document.createElement('textarea'); d.innerHTML = s; return d.value;
+}
+async function translateToEn(taId){
+  const ta = document.getElementById(taId); if (!ta) return;
+  const text = ta.value.trim();
+  if (!text) return;
+  toast('🌐 ' + t('translating'), 'inf');
+  dlog('translate: ru→en,', text.length, 'символов');
+  const chunks = [];
+  let buf = '';
+  text.split(/(?<=[.!?…])\s+/).forEach(s => {
+    if ((buf + ' ' + s).length > 450){ if (buf) chunks.push(buf); buf = s; }
+    else buf = buf ? buf + ' ' + s : s;
+  });
+  if (buf) chunks.push(buf);
+  try{
+    const out = [];
+    for (const ch of chunks){
+      const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(ch) + '&langpair=ru|en');
+      const js = await r.json();
+      const tr = js && js.responseData && js.responseData.translatedText;
+      if (!tr) throw new Error(js && js.responseDetails || 'empty');
+      out.push(decodeEntities(tr));
+    }
+    ta.value = out.join(' ');
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    dlog('translate: ок');
+  }catch(e){
+    dlog('⛔ translate:', e);
+    toast('⛔ ' + t('translate_err'), 'err');
+  }
+}
+
+/* ---------- Свайпы по дням недели (влево/вправо, будни) ---------- */
+function shiftWorkday(iso, dir){
+  return addDaysISO(iso, dir); // показаны все 7 дней — листаем без пропусков
+}
+let swX = null, swY = null;
+function initSwipes(){
+  const root = $('#app');
+  root.addEventListener('touchstart', (e) => {
+    if (state.screen !== 'home') { swX = null; return; }
+    if (!e.target.closest('.week, .day-bar')) { swX = null; return; }
+    swX = e.touches[0].clientX; swY = e.touches[0].clientY;
+  }, { passive: true });
+  root.addEventListener('touchend', (e) => {
+    if (swX == null) return;
+    const dx = e.changedTouches[0].clientX - swX;
+    const dy = e.changedTouches[0].clientY - swY;
+    swX = null;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      App.swipeDay(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
+}
+
+/* ---------- Журнал событий ---------- */
+function showLogModal(){
+  const txt = PLOG.slice(-220).join('\n') || '—';
+  window.__lastLog = txt;
+  openModal(`
+    ${modalHead('🧾 ' + t('log_title'))}
+    <pre class="diag-pre">${esc(txt)}</pre>
+    <button class="btn btn-blue" onclick="App.copyLog()">📋 ${t('diag_copy')}</button>
+    <button class="btn btn-red" style="margin-top:8px" onclick="App.clearLog()">🗑 ${t('clear')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
+  `);
+}
+function copyLog(){ navigator.clipboard?.writeText(window.__lastLog || '').then(()=>toast('✓ ' + t('copied'))); }
+function clearLog(){ PLOG.length = 0; try{ localStorage.removeItem('techlog_log'); }catch(e){} closeModal(); toast('🗑 ' + t('deleted')); }
+
+/* ---------- Диагностика БД по всем таблицам (только админ) ---------- */
+async function runDbDiagnostics(){
+  const L = [];
+  const now = new Date();
+  L.push(`TechLog v${APP_VERSION} · БД-диагностика · ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`);
+  L.push(`Проект: ${(CFG.SUPABASE_URL||'').replace('https://','')} · роль: ${state.user?.role} · uid: ${(state.user?.id||'').slice(0,8)}…`);
+  L.push('');
+  const tbs = [...TABLES, 'org_settings', 'app_secrets'];
+  for (const tb of tbs){
+    const t0 = Date.now();
+    try{
+      const { count, error } = await state.sb.from(tb).select('*', { count: 'exact', head: true });
+      const ms = Date.now() - t0;
+      if (error){
+        const s = errStr(error);
+        const miss = /42P01|does not exist|schema cache/i.test(s);
+        const denied = tb === 'app_secrets' && /permission|denied|42501/i.test(s);
+        L.push(`${denied ? '✅' : '⛔'} ${tb}: ${denied ? 'доступ закрыт (RLS работает как надо)' : s}${miss ? '  ← таблицы нет: выполните schema.sql' : ''} · ${ms} мс`);
+      } else {
+        L.push(`✅ ${tb}: строк видно ${count ?? '?'} · ${ms} мс`);
+      }
+    }catch(e){ L.push(`⛔ ${tb}: ${errStr(e)}`); }
+  }
+  L.push('');
+  for (const [fn, args, expect] of [
+    ['check_invite', { code: '' }, false],
+    ['login_available', { p_login: 'zz_diag_probe_999' }, true],
+    ['signup_precheck', { p_login: '', p_invite: '' }, 'BAD_LOGIN'],
+  ]){
+    const t0 = Date.now();
+    try{
+      const { data, error } = await state.sb.rpc(fn, args);
+      const ms = Date.now() - t0;
+      if (error) L.push(`⛔ функция ${fn}: ${errStr(error)} · ${ms} мс`);
+      else L.push(`${data === expect ? '✅' : '⚠️'} функция ${fn}: → ${data} · ${ms} мс`);
+    }catch(e){ L.push(`⛔ функция ${fn}: ${errStr(e)}`); }
+  }
+  L.push('');
+  L.push(`локальный кеш: ${TABLES.map(tb => tb + '=' + ((state.data||{})[tb]||[]).length).join(' ')}`);
+  L.push(`последняя синхронизация: ${state.lastSync || '—'}${state.data && state.data._syncMs ? ' · ' + state.data._syncMs + ' мс' : ''}`);
+  if (SYNC_ERRORS.length){
+    L.push('');
+    L.push('ошибки таблиц последней синхронизации:');
+    SYNC_ERRORS.forEach(x => L.push(`⛔ ${x.tb}: ${x.err}`));
+  }
+  if (WRITE_ERRORS.length){
+    L.push('');
+    L.push(`ошибки записи за сессию (${WRITE_ERRORS.length}):`);
+    WRITE_ERRORS.forEach(w => L.push(`⛔ ${w.at} · ${w.op} ${w.table} ${w.id}: ${w.err}`));
+  }
+  const report = L.join('\n');
+  console.group('%cTechLog · БД-диагностика', 'color:#1CB0F6;font-weight:bold');
+  console.log(report);
+  console.groupEnd();
+  dlog('db-diag: выполнена,', tbs.length, 'таблиц');
+  return report;
+}
+async function showDbDiagnostics(){
+  if (!isAdmin()){ toast('⛔ ' + t('admin_only'), 'err'); return; }
+  toast('🗄 ' + t('checking_tables'), 'inf');
+  let report = '';
+  try{ report = await runDbDiagnostics(); }
+  catch(e){ report = '⛔ ' + errStr(e); dlog('⛔ db-diag:', e); }
+  window.__lastDiag = report;
+  openModal(`
+    ${modalHead('🗄 ' + t('db_diag'))}
+    <pre class="diag-pre">${esc(report)}</pre>
+    <button class="btn btn-blue" onclick="App.copyDiag()">📋 ${t('diag_copy')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
+  `);
+}
+
+/* =====================================================================
+   v1.05: приоритет и очерёдность поездок
+   ===================================================================== */
+function dayTripJobIds(iso){
+  const ids = [];
+  jobsOn(iso).forEach(j => { if (!ids.includes(j.id)) ids.push(j.id); });
+  pickupsOn(iso).filter(p=>!p.picked_up).forEach(p => { if (!ids.includes(p.job_id)) ids.push(p.job_id); });
+  // единый порядок: приоритет → sort_order → создание
+  return ids.sort((a,b) => jobSortCmp(
+    state.data.jobs.find(x=>x.id===a) || {sort_order:999},
+    state.data.jobs.find(x=>x.id===b) || {sort_order:999}));
+}
+async function togglePriority(id){
+  const j = state.data.jobs.find(x=>x.id===id); if (!j || !canReorder(j)) return;
+  await dbUpsert('jobs', { ...j, priority: !j.priority, updated_at: new Date().toISOString() });
+  navigator.vibrate?.(20);
+  dlog('priority:', j.unit_number || id, '→', !j.priority);
+  render();
+}
+async function moveJob(id, dir){
+  const iso = state.selDate;
+  const order = dayTripJobIds(iso);
+  const i = order.indexOf(id);
+  const k = i + dir;
+  if (i < 0 || k < 0 || k >= order.length) return;
+  const a = state.data.jobs.find(x=>x.id===order[i]);
+  const b = state.data.jobs.find(x=>x.id===order[k]);
+  if (!a || !b) return;
+  if (!canReorder(a)) return;
+  // нормализуем порядок дня, затем меняем соседей местами
+  const seq = order.map((jid, idx) => ({ jid, so: idx }));
+  const t1 = seq[i].so; seq[i].so = seq[k].so; seq[k].so = t1;
+  for (const { jid, so } of seq){
+    const jj = state.data.jobs.find(x=>x.id===jid);
+    if (jj && (jj.sort_order !== so)){
+      if (canReorder(jj)) await dbUpsert('jobs', { ...jj, sort_order: so, updated_at: new Date().toISOString() });
+      else jj.sort_order = so; // чужие — только локально для отображения
+    }
+  }
+  navigator.vibrate?.(15);
+  render();
+}
+
+/* =====================================================================
+   v1.05: коды доступа — callbox/ворота, заявки админу, история
+   ===================================================================== */
+function codeLineHtml(cx, compact){
+  const parts = [];
+  if (cx.access_code) parts.push(`<button class="key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.access_code)}')">🔑 ${esc(cx.access_code)}</button>`);
+  if (cx.callbox_code) parts.push(`<button class="key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.callbox_code)}')">${cx.callbox_gate ? '🚧' : '📟'} ${esc(cx.callbox_code)}</button>`);
+  return parts.join(compact ? ' · ' : ' &nbsp; ');
+}
+function cxHistory(cxId){
+  return (state.data.complex_code_history || [])
+    .filter(h => h.complex_id === cxId)
+    .sort((a,b) => String(b.changed_at||'').localeCompare(String(a.changed_at||'')));
+}
+function lastCodeMeta(cxId){
+  const h = cxHistory(cxId)[0];
+  return h ? { date: h.changed_at, by: h.changed_by } : null;
+}
+function firstSeenOf(cxId, field, value){
+  if (!value) return null;
+  const list = cxHistory(cxId).filter(h => h.field === field && h.new_value === value);
+  return list.length ? list[list.length - 1] : null;
+}
+function firstSeenLine(cxId, field, value){
+  const f = firstSeenOf(cxId, field, value);
+  if (!f) return '';
+  return `<span class="tiny">${t('since')} ${fmtDMY(String(f.changed_at).slice(0,10))} · ${esc(profName(f.changed_by))}</span>`;
+}
+function pendingCodeRequests(){
+  return (state.data.code_requests || []).filter(r => r.status === 'pending');
+}
+
+/* модалка истории кодов */
+function codeHistoryModal(cxId){
+  const cx = cxById(cxId); if (!cx) return;
+  const rows = cxHistory(cxId);
+  const cur = `
+    <div class="rowline"><div class="grow">🔑 ${esc(cx.access_code||'—')} ${firstSeenLine(cxId,'access',cx.access_code)}</div></div>
+    <div class="rowline"><div class="grow">${cx.callbox_gate?'🚧':'📟'} ${esc(cx.callbox_code||'—')}
+      <span class="tiny">(${cx.callbox_gate ? t('target_gate') : t('target_callbox')})</span> ${firstSeenLine(cxId,'callbox',cx.callbox_code)}</div></div>`;
+  const hist = rows.length ? rows.map(h => `
+    <div class="rowline">
+      <div class="grow" style="font-size:.8rem">
+        ${h.field==='access'?'🔑':(h.gate?'🚧':'📟')}
+        <s style="color:var(--dim-2)">${esc(h.old_value||'—')}</s> → <b>${esc(h.new_value||'—')}</b>
+        ${h.source==='request' ? `<span class="chip">${t('req_by')}</span>` : ''}
+        <div class="tiny">${fmtDMY(String(h.changed_at).slice(0,10))} ${String(h.changed_at).slice(11,16)} · ${t('by_word')}: ${esc(profName(h.changed_by))}</div>
+      </div>
+    </div>`).join('') : `<div class="tiny">${t('no_history')}</div>`;
+  openModal(`
+    ${modalHead('📖 ' + t('code_history') + ' — ' + esc(cx.name))}
+    ${cur}
+    <hr class="sep">
+    ${hist}
+    <button class="btn btn-ghost" style="margin-top:10px" onclick="App.closeModal()">${t('close')}</button>
+  `);
+}
+
+/* заявка на код (доступна всем; не-админ → на решение админу) */
+function proposeCodeModal(cxId){
+  const cx = cxById(cxId); if (!cx) return;
+  openModal(`
+    ${modalHead('🔑 ' + t('propose_code') + ' — ' + esc(cx.name))}
+    <div class="form-row"><span class="lbl">${t('access_code')}</span>
+      <input id="pc-access" value="${esc(cx.access_code||'')}"></div>
+    <div class="form-row"><span class="lbl">${t('callbox')}</span>
+      <input id="pc-callbox" value="${esc(cx.callbox_code||'')}"></div>
+    <div class="form-row"><span class="lbl">${t('code_target')}</span>
+      <div class="tabs">
+        <button class="tabbtn ${!cx.callbox_gate?'active':''}" data-gate="0" onclick="App.pcGate(this)">📟 ${t('target_callbox')}</button>
+        <button class="tabbtn ${cx.callbox_gate?'active':''}" data-gate="1" onclick="App.pcGate(this)">🚧 ${t('target_gate')}</button>
+      </div>
+      <input type="hidden" id="pc-gate" value="${cx.callbox_gate?1:0}"></div>
+    <button class="btn btn-green" onclick="App.submitCode('${cx.id}')">${isAdmin() ? t('save') : '📨 ' + t('propose_code')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal();App.codeHistory('${cx.id}')">📖 ${t('history')}</button>
+  `);
+}
+function pcGate(btn){
+  btn.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  $('#pc-gate').value = btn.dataset.gate;
+}
+async function applyCodeChange(cx, access, callbox, gate, changedBy, source){
+  const now = new Date().toISOString();
+  if (access !== null && access !== (cx.access_code||'')){
+    await dbUpsert('complex_code_history', { id: uid(), complex_id: cx.id, field: 'access',
+      old_value: cx.access_code||'', new_value: access, gate: null, changed_by: changedBy, changed_at: now, source });
+    cx.access_code = access;
+  }
+  const gateChanged = gate !== null && !!gate !== !!cx.callbox_gate;
+  if ((callbox !== null && callbox !== (cx.callbox_code||'')) || (gateChanged && (callbox !== null || cx.callbox_code))){
+    await dbUpsert('complex_code_history', { id: uid(), complex_id: cx.id, field: 'callbox',
+      old_value: cx.callbox_code||'', new_value: callbox !== null ? callbox : (cx.callbox_code||''),
+      gate: gate !== null ? !!gate : !!cx.callbox_gate, changed_by: changedBy, changed_at: now, source });
+  }
+  if (callbox !== null) cx.callbox_code = callbox;
+  if (gate !== null) cx.callbox_gate = !!gate;
+  await dbUpsert('complexes', { ...cx });
+}
+async function submitCode(cxId){
+  const cx = cxById(cxId); if (!cx) return;
+  const access = $('#pc-access').value.trim();
+  const callbox = $('#pc-callbox').value.trim();
+  const gate = $('#pc-gate').value === '1';
+  const changed = access !== (cx.access_code||'') || callbox !== (cx.callbox_code||'') || gate !== !!cx.callbox_gate;
+  if (!changed){ toast(t('no_changes'), 'inf'); return; }
+  if (isAdmin()){
+    await applyCodeChange(cx, access, callbox, gate, state.user.id, 'direct');
+    dlog('codes: админ обновил коды', cx.abbr||cx.name);
+    closeModal(); toast('✓ ' + t('saved')); render();
+    return;
+  }
+  const req = {
+    id: uid(), complex_id: cx.id,
+    access_code: access !== (cx.access_code||'') ? access : null,
+    callbox_code: callbox !== (cx.callbox_code||'') ? callbox : null,
+    callbox_gate: gate !== !!cx.callbox_gate ? gate : null,
+    requested_by: state.user.id, requested_at: new Date().toISOString(),
+    status: 'pending', decided_by: null, decided_at: null
+  };
+  await dbUpsert('code_requests', req);
+  dlog('codes: заявка на коды', cx.abbr||cx.name, 'от', state.user.login);
+  closeModal(); toast('📨 ' + t('request_sent')); render();
+}
+async function decideCodeReq(reqId, approve){
+  if (!isAdmin()) return;
+  const r = (state.data.code_requests||[]).find(x=>x.id===reqId); if (!r || r.status!=='pending') return;
+  const cx = cxById(r.complex_id);
+  if (approve && cx){
+    await applyCodeChange(cx,
+      r.access_code !== null && r.access_code !== undefined ? r.access_code : null,
+      r.callbox_code !== null && r.callbox_code !== undefined ? r.callbox_code : null,
+      r.callbox_gate !== null && r.callbox_gate !== undefined ? r.callbox_gate : null,
+      r.requested_by, 'request');
+  }
+  await dbUpsert('code_requests', { ...r, status: approve ? 'approved' : 'rejected',
+    decided_by: state.user.id, decided_at: new Date().toISOString() });
+  dlog('codes:', approve ? 'апрув' : 'отклонение', 'заявки', reqId.slice(0,8));
+  toast(approve ? '✓ ' + t('req_approved') : '✕ ' + t('req_rejected'));
+  render();
+}
+function codeRequestsHtml(){
+  if (!isAdmin()) return '';
+  const list = pendingCodeRequests();
+  if (!list.length) return '';
+  return `<div class="card" style="border-color:var(--yellow)">
+    <div style="font-weight:900;margin-bottom:6px">🔔 ${t('code_requests')} (${list.length})</div>
+    ${list.map(r => {
+      const cx = cxById(r.complex_id) || {name:'?'};
+      const ch = [];
+      if (r.access_code !== null && r.access_code !== undefined) ch.push(`🔑 ${esc(cx.access_code||'—')} → <b>${esc(r.access_code)}</b>`);
+      if (r.callbox_code !== null && r.callbox_code !== undefined) ch.push(`📟 ${esc(cx.callbox_code||'—')} → <b>${esc(r.callbox_code)}</b>`);
+      if (r.callbox_gate !== null && r.callbox_gate !== undefined) ch.push(`${r.callbox_gate?'🚧 '+t('target_gate'):'📟 '+t('target_callbox')}`);
+      return `<div class="rowline">
+        <div class="grow" style="font-size:.82rem">
+          <b>${esc(cx.name)}</b> · <span class="tiny">${t('req_by')} ${esc(profName(r.requested_by))} · ${fmtDMY(String(r.requested_at).slice(0,10))}</span>
+          <div class="tiny">${ch.join(' · ') || t('no_changes')}</div>
+        </div>
+        <button class="btn btn-green sm" onclick="App.decideReq('${r.id}',true)">✓</button>
+        <button class="btn btn-red sm" onclick="App.decideReq('${r.id}',false)">✕</button>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+/* =====================================================================
+   v1.06: ШАБЛОНЫ ЗАМЕТКИ — доп. работы, размеры, покупки товара
+   ===================================================================== */
+function szById(id){ return (state.data.size_types||[]).find(s=>s.id===id); }
+function ewById(id){ return (state.data.extra_works||[]).find(s=>s.id===id); }
+function ptById(id){ return (state.data.product_types||[]).find(s=>s.id===id); }
+
+function enName(s){
+  s = String(s||'');
+  if (s.includes('/')){
+    const p = s.split('/');
+    const en = p[p.length-1].trim();
+    if (en) return en;
+  }
+  return s;
+}
+function extraItemTextEn(it){
+  if (it.kind === 'purchase'){
+    const q = Math.max(1, parseInt(it.qty)||1);
+    return enName(it.product_name || it.name) + (q > 1 ? ' x' + q : '');
+  }
+  const sz = it.size_value ? ' — ' + it.size_value + ' ' + (it.size_unit||'') : '';
+  return enName(it.name) + sz;
+}
+function extraLineTotal(it){
+  return it.kind === 'purchase' ? Math.max(1, parseInt(it.qty)||1) * (parseFloat(it.price)||0) : 0;
+}
+function extraItemText(it){
+  if (it.kind === 'purchase'){
+    const q = Math.max(1, parseInt(it.qty)||1);
+    return (it.product_name || it.name) + (q > 1 ? ' ×' + q : '');
+  }
+  const sz = it.size_value ? ' — ' + it.size_value + ' ' + (it.size_unit||'') : '';
+  return it.name + sz;
+}
+
+function extraListHtml(){
+  const list = jobDraft.form_data.extra || [];
+  if (!list.length) return '';
+  return list.map((it, i) => {
+    if (it.kind === 'purchase'){
+      const prods = [...(state.data.product_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
+      return `<div class="ex-item">
+        <div class="ex-head"><b>🛒 ${esc(it.name)}</b>
+          <button class="ex-del" onclick="App.exDel(${i})">✕</button></div>
+        <div class="qty-line">
+          <select data-ex-prod="${i}" style="flex:1;min-width:130px">
+            <option value="">${t('product')}…</option>
+            ${prods.map(p=>`<option value="${p.id}" ${it.product_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
+          </select>
+          <input data-ex-qty="${i}" inputmode="numeric" value="${it.qty||1}" style="width:52px;text-align:center" title="${t('qty')}">
+          <span class="tiny">×</span>
+          <input data-ex-price="${i}" class="price-input" inputmode="decimal" value="${it.price||''}" placeholder="$">
+          <span class="money" data-exline="${i}" style="min-width:52px;text-align:right">${extraLineTotal(it)>0?money(extraLineTotal(it)):'—'}</span>
+        </div>
+      </div>`;
+    }
+    return `<div class="ex-item">
+      <div class="ex-head"><b>🧰 ${esc(it.name)}</b>
+        <button class="ex-del" onclick="App.exDel(${i})">✕</button></div>
+      ${it.needs_size ? `<div class="qty-line">
+        <span class="tiny">${esc(it.size_name||t('size_type'))}:</span>
+        <input data-ex-size="${i}" inputmode="decimal" value="${esc(it.size_value||'')}" style="width:90px;text-align:right">
+        <span class="tiny"><b>${esc(it.size_unit||'')}</b></span>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+function refreshExtraList(){
+  const box = document.getElementById('extra-list');
+  if (box) box.innerHTML = extraListHtml();
+  recalcJob(); autosaveDraft();
+}
+function extraPickerModal(){
+  const list = [...(state.data.extra_works||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
+  openModal(`
+    ${modalHead('＋ ' + t('template'))}
+    ${list.length ? list.map(w => `
+      <button class="demo-user" onclick="App.exAdd('${w.id}')">
+        <span style="font-size:1.2rem">${w.kind==='purchase'?'🛒':'🧰'}</span>
+        <span class="grow" style="flex:1;text-align:left">
+          <div style="font-weight:900">${esc(w.name)}</div>
+          <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : (w.needs_size ? (szById(w.size_type_id)||{}).name || t('needs_size') : t('kind_work'))}</div>
+        </span>
+      </button>`).join('')
+    : `<div class="tiny">${t('no_templates')}</div>`}
+  `);
+}
+function exAdd(ewId){
+  const w = ewById(ewId); if (!w || !jobDraft) return;
+  const sz = w.size_type_id ? szById(w.size_type_id) : null;
+  const it = {
+    id: uid(), ew_id: w.id, name: w.name, kind: w.kind,
+    needs_size: !!w.needs_size,
+    size_name: sz ? sz.name : '', size_unit: sz ? sz.unit : '', size_value: '',
+    product_id: null, product_name: '', qty: 1, price: 0
+  };
+  jobDraft.form_data.extra = jobDraft.form_data.extra || [];
+  jobDraft.form_data.extra.push(it);
+  closeModal();
+  refreshExtraList();
+  dlog('extra: добавлен шаблон', w.name);
+}
+function exDel(i){
+  jobDraft.form_data.extra.splice(i, 1);
+  refreshExtraList();
+}
+
+/* ---------- Справочники: доп. работы / размеры / товары (админ) ---------- */
+function dirSizes(){
+  const list = [...(state.data.size_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
+  return `<div class="card">` + (list.map(s => `
+    <div class="rowline">
+      <div class="grow">📏 <b>${esc(s.name)}</b> <span class="tiny">· ${esc(s.unit)}</span></div>
+      <button class="btn btn-ghost sm" onclick="App.editSzModal('${s.id}')">${t('edit')}</button>
+    </div>`).join('') || `<div class="tiny">—</div>`) + `</div>
+    <button class="btn btn-green" onclick="App.editSzModal()">＋ ${t('add')}</button>`;
+}
+function editSzModal(id){
+  const s = id ? szById(id) : { id: uid(), name:'', unit:'', sort: (state.data.size_types||[]).length+1 };
+  openModal(`
+    ${modalHead('📏 ' + t('d_sizes'))}
+    <div class="form-row"><span class="lbl">${t('name')}</span><input id="sz-name" value="${esc(s.name)}" placeholder="Площадь / Area"></div>
+    <div class="form-row"><span class="lbl">${t('unit_lbl')}</span><input id="sz-unit" value="${esc(s.unit)}" placeholder="sq ft"></div>
+    <button class="btn btn-green" onclick="App.saveSz('${s.id}', ${s.sort||0})">${t('save')}</button>
+    ${id?`<button class="btn btn-red" style="margin-top:8px" onclick="App.delRow('size_types','${s.id}')">${t('delete')}</button>`:''}
+  `);
+}
+async function saveSz(id, sort){
+  const name = $('#sz-name').value.trim(); if (!name) return;
+  await dbUpsert('size_types', { id, name, unit: $('#sz-unit').value.trim(), sort });
+  closeModal(); toast('✓ ' + t('saved')); render();
+}
+
+function dirExtraWorks(){
+  const list = [...(state.data.extra_works||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
+  return `<div class="card">` + (list.map(w => {
+    const sz = szById(w.size_type_id);
+    return `<div class="rowline">
+      <div class="grow">${w.kind==='purchase'?'🛒':'🧰'} <b>${esc(w.name)}</b>
+        <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : t('kind_work')}${w.needs_size && sz ? ' · 📏 ' + esc(sz.name) + ' (' + esc(sz.unit) + ')' : ''}</div></div>
+      <button class="btn btn-ghost sm" onclick="App.editEwModal('${w.id}')">${t('edit')}</button>
+    </div>`;
+  }).join('') || `<div class="tiny">—</div>`) + `</div>
+    <button class="btn btn-green" onclick="App.editEwModal()">＋ ${t('add')}</button>`;
+}
+function editEwModal(id){
+  const w = id ? ewById(id) : { id: uid(), name:'', kind:'work', needs_size:false, size_type_id:null, sort:(state.data.extra_works||[]).length+1 };
+  const sizes = [...(state.data.size_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
+  openModal(`
+    ${modalHead('🧰 ' + t('d_extraworks'))}
+    <div class="form-row"><span class="lbl">${t('name')}</span><input id="ew-name" value="${esc(w.name)}" placeholder="Вырезка стен / Wall cutout"></div>
+    <div class="form-row"><span class="lbl">&nbsp;</span>
+      <div class="tabs">
+        <button class="tabbtn ${w.kind!=='purchase'?'active':''}" data-kind="work" onclick="App.pcGate ? (this.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')), this.classList.add('active'), document.getElementById('ew-kind').value='work') : null">🧰 ${t('kind_work')}</button>
+        <button class="tabbtn ${w.kind==='purchase'?'active':''}" data-kind="purchase" onclick="(this.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')), this.classList.add('active'), document.getElementById('ew-kind').value='purchase')">🛒 ${t('kind_purchase')}</button>
+      </div>
+      <input type="hidden" id="ew-kind" value="${w.kind}"></div>
+    <label class="opt ${w.needs_size?'on':''}" style="margin-bottom:8px"><input type="checkbox" id="ew-size" ${w.needs_size?'checked':''} onchange="this.closest('.opt').classList.toggle('on', this.checked)"> 📏 ${t('needs_size')}</label>
+    <div class="form-row"><span class="lbl">${t('size_type')}</span>
+      <select id="ew-szt">
+        <option value="">—</option>
+        ${sizes.map(s=>`<option value="${s.id}" ${w.size_type_id===s.id?'selected':''}>${esc(s.name)} (${esc(s.unit)})</option>`).join('')}
+      </select></div>
+    <button class="btn btn-green" onclick="App.saveEw('${w.id}', ${w.sort||0})">${t('save')}</button>
+    ${id?`<button class="btn btn-red" style="margin-top:8px" onclick="App.delRow('extra_works','${w.id}')">${t('delete')}</button>`:''}
+  `);
+}
+async function saveEw(id, sort){
+  const name = $('#ew-name').value.trim(); if (!name) return;
+  await dbUpsert('extra_works', {
+    id, name,
+    kind: $('#ew-kind').value === 'purchase' ? 'purchase' : 'work',
+    needs_size: $('#ew-size').checked,
+    size_type_id: $('#ew-szt').value || null,
+    sort
+  });
+  closeModal(); toast('✓ ' + t('saved')); render();
+}
+
+function dirProducts(){
+  const list = [...(state.data.product_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
+  return `<div class="card">` + (list.map(p => `
+    <div class="rowline">
+      <div class="grow">🛒 <b>${esc(p.name)}</b><div class="tiny">${t('default_price')}: ${money(+p.default_price||0)}</div></div>
+      <button class="btn btn-ghost sm" onclick="App.editPtModal('${p.id}')">${t('edit')}</button>
+    </div>`).join('') || `<div class="tiny">—</div>`) + `</div>
+    <button class="btn btn-green" onclick="App.editPtModal()">＋ ${t('add')}</button>`;
+}
+function editPtModal(id){
+  const p = id ? ptById(id) : { id: uid(), name:'', default_price:0, sort:(state.data.product_types||[]).length+1 };
+  openModal(`
+    ${modalHead('🛒 ' + t('d_products'))}
+    <div class="form-row"><span class="lbl">${t('name')}</span><input id="pt-name" value="${esc(p.name)}" placeholder="Решётка / Vent grille"></div>
+    <div class="form-row"><span class="lbl">${t('default_price')}</span><input id="pt-price" class="price-input" inputmode="decimal" value="${p.default_price||''}"></div>
+    <button class="btn btn-green" onclick="App.savePt('${p.id}', ${p.sort||0})">${t('save')}</button>
+    ${id?`<button class="btn btn-red" style="margin-top:8px" onclick="App.delRow('product_types','${p.id}')">${t('delete')}</button>`:''}
+  `);
+}
+async function savePt(id, sort){
+  const name = $('#pt-name').value.trim(); if (!name) return;
+  await dbUpsert('product_types', { id, name, default_price: parseFloat($('#pt-price').value)||0, sort });
+  closeModal(); toast('✓ ' + t('saved')); render();
 }

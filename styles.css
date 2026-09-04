@@ -53,11 +53,11 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   transform:rotate(-4deg);
 }
 .logo span{transform:rotate(4deg)}
-.brand{line-height:1.05}
+.brand{line-height:1.05;flex:1;min-width:0}
 .brand .name{font-weight:900;font-size:1.25rem}
 .brand .name b{color:var(--blue)}
-.brand .sub{font-size:.72rem;color:var(--dim)}
-.avatar-wrap{margin-left:auto;text-align:center}
+.brand .sub{font-size:.7rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avatar-wrap{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;width:52px}
 .avatar{
   width:44px;height:44px;border-radius:50%;
   border:3px solid var(--blue);
@@ -67,15 +67,17 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .avatar.role-admin{border-color:var(--yellow)}
 .avatar.role-manager{border-color:var(--purple)}
 .login-pill{
-  margin-top:-8px;background:var(--bg);border:2px solid var(--line);
-  border-radius:999px;padding:1px 8px;font-size:.68rem;color:var(--dim);
-  position:relative
+  margin-top:-7px;background:var(--bg);border:2px solid var(--line);
+  border-radius:999px;padding:1px 7px;font-size:.6rem;color:var(--dim);
+  position:relative;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
 }
-.sync-btn{
+.sync-btn, .icon-btn{
   width:40px;height:40px;border-radius:12px;border:2px solid var(--line);
-  display:grid;place-items:center;color:var(--blue);font-size:1.1rem;background:var(--panel)
+  display:grid;place-items:center;color:var(--blue);font-size:1.1rem;background:var(--panel);
+  flex:0 0 auto;cursor:pointer
 }
-.sync-btn.spin svg{animation:spin 1s linear infinite}
+.icon-btn svg{width:20px;height:20px}
+.sync-btn.spin svg, .icon-btn.spin svg{animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ---------- Неделя ---------- */
@@ -423,4 +425,125 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   white-space:pre-wrap; word-break:break-word; max-height:52vh; overflow:auto;
   font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   margin-bottom:12px;
+}
+
+/* ============ v1.03.08: футер, адаптивность ============ */
+.app-footer{
+  margin:30px auto 100px; text-align:center;
+  color:var(--dim-2); font-size:.72rem; font-weight:800; line-height:1.75;
+}
+.app-footer.nofix{margin-bottom:30px}
+
+/* сетки не ломаются на узких экранах */
+.stats{grid-template-columns:repeat(auto-fit, minmax(76px, 1fr))}
+.grid-2{grid-template-columns:repeat(auto-fit, minmax(150px, 1fr))}
+
+/* нижняя панель: не наезжает на системные жесты, подписи не переполняются */
+.tabbar{padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+.tab{min-width:0}
+.tab span{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+/* совсем узкие экраны (до 380px) */
+@media (max-width:380px){
+  .brand .name{font-size:1.08rem}
+  .brand .sub{font-size:.62rem}
+  .sync-btn,.icon-btn{width:36px;height:36px}
+  .avatar{width:40px;height:40px}
+  .avatar-wrap{width:46px}
+  .login-pill{max-width:46px;font-size:.55rem}
+  .tab span{font-size:.55rem;letter-spacing:0}
+  .day-cell{padding:6px 2px}
+  .day-cell .dom{font-size:.95rem}
+  .stat .n{font-size:1.1rem}
+  .btn{letter-spacing:.2px;font-size:.86rem}
+  .week .wk-arrow{width:28px}
+}
+
+/* крупные экраны: контент по центру, футер не прилипает к панели */
+@media (min-width:700px){
+  .app-footer{margin-bottom:110px}
+}
+
+/* ============ v1.04: инвойс без нахлёстов, FAQ, панель дня ============ */
+/* строки с количествами переносятся, не наезжая друг на друга */
+.qty-line{flex-wrap:wrap;row-gap:8px}
+.qty-line .name{min-width:110px}
+.qty-line .money{margin-left:auto}
+.stepper{flex:0 0 auto}
+.opt{line-height:1.15}
+.opt input{flex:0 0 auto}
+.inv-head{gap:8px}
+.inv-head .amt{flex:0 0 auto;padding-left:6px}
+.inv-body{overflow:hidden}
+
+/* панель выбранного дня под лентой недели */
+.day-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:-4px 0 10px;padding:0 2px;font-size:.85rem;color:var(--dim);
+}
+.day-bar b{color:var(--text)}
+
+/* FAQ */
+.faq-body{
+  max-height:56vh;overflow:auto;margin-bottom:12px;padding-right:4px;
+  font-size:.84rem;line-height:1.55;
+}
+.faq-body h4{margin:12px 0 4px;font-size:.92rem}
+.faq-body h4:first-child{margin-top:0}
+.faq-body p{margin:0 0 6px;color:var(--dim)}
+.faq-body b{color:var(--text)}
+.faq-body i{color:var(--yellow);font-style:normal}
+
+/* ============ v1.05: рельса приоритета и очерёдности ============ */
+.item{position:relative}
+.item.clicky{cursor:pointer;width:100%;text-align:left}
+.rail{
+  display:flex;flex-direction:column;gap:4px;align-items:center;
+  flex:0 0 auto;margin-right:2px;
+}
+.rail .mv{
+  width:26px;height:22px;border-radius:8px;border:2px solid var(--line);
+  background:var(--panel-2);color:var(--dim);font-size:.6rem;font-weight:900;
+  line-height:1;cursor:pointer;padding:0;
+}
+.rail .mv:active{transform:translateY(1px);color:var(--blue)}
+.pri{
+  width:26px;height:24px;border:none;background:none;padding:0;cursor:pointer;
+  display:grid;place-items:center;
+}
+.tri{
+  display:inline-grid;place-items:center;
+  width:22px;height:19px;
+  clip-path:polygon(50% 0, 100% 100%, 0 100%);
+  background:#4a5a63;color:#fff;font-weight:900;font-size:.6rem;
+  padding-top:5px;line-height:1;transition:background .15s;
+}
+.pri.on .tri, span.pri.on .tri{background:var(--red)}
+.pri.on{filter:drop-shadow(0 0 5px rgba(255,75,75,.55))}
+span.pri{display:grid;place-items:center;width:26px;height:24px}
+
+/* ============ v1.06: шаблоны заметки ============ */
+.ex-item{
+  border:2px dashed var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px;
+  background:var(--panel-2);
+}
+.ex-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:.85rem}
+.ex-del{
+  width:26px;height:26px;border-radius:8px;border:2px solid var(--line);
+  background:var(--panel);color:var(--red);font-weight:900;cursor:pointer;padding:0;line-height:1;
+}
+
+/* ============ v1.06.02: неделя из 7 дней ============ */
+.week{gap:4px}
+.day-cell{padding:8px 2px;min-width:0}
+.day-cell .dow{font-size:.58rem;letter-spacing:0}
+.day-cell.wknd .dow{color:var(--dim-2)}
+.day-cell.wknd:not(.sel):not(.today){opacity:.82}
+@media (max-width:400px){
+  .week{gap:3px}
+  .week .wk-arrow{width:24px;font-size:1rem}
+  .day-cell{padding:7px 1px;border-width:2px}
+  .day-cell .dom{font-size:.9rem}
+  .day-cell .dow{font-size:.52rem}
+  .color-dots .dot{width:5px;height:5px}
 }

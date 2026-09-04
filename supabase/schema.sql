@@ -133,6 +133,8 @@ create table if not exists public.complexes (
   abbr text default '',
   address text default '',
   access_code text default '',
+  callbox_code text default '',
+  callbox_gate boolean not null default false,
   lat double precision,
   lng double precision
 );
@@ -157,6 +159,32 @@ create table if not exists public.equipment_types (
   abbr text not null,
   color text not null default '#1CB0F6',
   price_key text not null,
+  sort int not null default 0
+);
+
+-- виды размеров для доп. работ (длина ft, площадь sq ft, вес lb, штуки)
+create table if not exists public.size_types (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  unit text not null default '',
+  sort int not null default 0
+);
+
+-- доп. виды работ для шаблонов заметки (kind: work | purchase)
+create table if not exists public.extra_works (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  kind text not null default 'work' check (kind in ('work','purchase')),
+  needs_size boolean not null default false,
+  size_type_id uuid references public.size_types(id) on delete set null,
+  sort int not null default 0
+);
+
+-- виды товара для «покупки товара»
+create table if not exists public.product_types (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  default_price numeric not null default 0,
   sort int not null default 0
 );
 
@@ -186,9 +214,42 @@ create table if not exists public.org_settings (
   addr1 text default 'PO BOX 920482',
   addr2 text default 'NORCROSS,',
   addr3 text default 'GA 30010',
-  company_name text default 'Atlanta Global Renovations, LLC',
-  company_short text default 'AGR, LLC'
+  company_name text default 'APC, LLC',
+  company_short text default 'APC'
 );
+
+-- ---------------------------------------------------------------------
+-- ЗАЯВКИ НА ИЗМЕНЕНИЕ КОДОВ ДОСТУПА (решение принимает админ)
+-- ---------------------------------------------------------------------
+create table if not exists public.code_requests (
+  id uuid primary key default gen_random_uuid(),
+  complex_id uuid not null references public.complexes(id) on delete cascade,
+  access_code text,          -- null = это поле не меняем
+  callbox_code text,
+  callbox_gate boolean,
+  requested_by uuid not null references public.profiles(id) on delete cascade,
+  requested_at timestamptz not null default now(),
+  status text not null default 'pending' check (status in ('pending','approved','rejected')),
+  decided_by uuid references public.profiles(id) on delete set null,
+  decided_at timestamptz
+);
+create index if not exists code_requests_status_idx on public.code_requests(status);
+
+-- ---------------------------------------------------------------------
+-- ИСТОРИЯ ИЗМЕНЕНИЙ КОДОВ (видна всем, пишет админ / апрув заявки)
+-- ---------------------------------------------------------------------
+create table if not exists public.complex_code_history (
+  id uuid primary key default gen_random_uuid(),
+  complex_id uuid not null references public.complexes(id) on delete cascade,
+  field text not null check (field in ('access','callbox')),
+  old_value text default '',
+  new_value text default '',
+  gate boolean,
+  changed_by uuid references public.profiles(id) on delete set null,
+  changed_at timestamptz not null default now(),
+  source text not null default 'direct' check (source in ('direct','request'))
+);
+create index if not exists cch_cx_idx on public.complex_code_history(complex_id, changed_at desc);
 
 -- ---------------------------------------------------------------------
 -- ВИДИМОСТЬ ДЛЯ МЕНЕДЖЕРОВ: запись = сотрудник СКРЫТ от менеджера
@@ -213,6 +274,8 @@ create table if not exists public.jobs (
   technician_id uuid not null references public.profiles(id) on delete cascade,
   technician_name text default '',
   helper_ids jsonb not null default '[]'::jsonb,
+  priority boolean not null default false,
+  sort_order int not null default 0,
   status text not null default 'draft' check (status in ('draft','done','approved')),
   note text not null default '',
   form_data jsonb not null default '{}'::jsonb,
@@ -279,6 +342,11 @@ alter table public.equipment_types     enable row level security;
 alter table public.price_list          enable row level security;
 alter table public.counterparty_prices enable row level security;
 alter table public.org_settings        enable row level security;
+alter table public.code_requests       enable row level security;
+alter table public.complex_code_history enable row level security;
+alter table public.size_types          enable row level security;
+alter table public.extra_works         enable row level security;
+alter table public.product_types       enable row level security;
 alter table public.hidden_staff        enable row level security;
 alter table public.jobs                enable row level security;
 alter table public.placements          enable row level security;
@@ -297,7 +365,7 @@ create policy profiles_upd on public.profiles for update to authenticated
 do $$
 declare tb text;
 begin
-  foreach tb in array array['counterparties','aux_equipment','work_types','equipment_types','price_list','counterparty_prices','org_settings']
+  foreach tb in array array['counterparties','aux_equipment','work_types','equipment_types','price_list','counterparty_prices','org_settings','size_types','extra_works','product_types']
   loop
     execute format('drop policy if exists %I_sel on public.%I', tb, tb);
     execute format('create policy %I_sel on public.%I for select to authenticated using (true)', tb, tb);
@@ -305,6 +373,27 @@ begin
     execute format('create policy %I_wr on public.%I for all to authenticated using (public.my_role() = ''admin'') with check (public.my_role() = ''admin'')', tb, tb);
   end loop;
 end $$;
+
+-- заявки на коды: создаёт любой (от своего имени), видит автор и админ, решает админ
+drop policy if exists cr_sel on public.code_requests;
+create policy cr_sel on public.code_requests for select to authenticated
+  using (requested_by = auth.uid() or public.my_role() = 'admin');
+drop policy if exists cr_ins on public.code_requests;
+create policy cr_ins on public.code_requests for insert to authenticated
+  with check (requested_by = auth.uid());
+drop policy if exists cr_upd on public.code_requests;
+create policy cr_upd on public.code_requests for update to authenticated
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
+drop policy if exists cr_del on public.code_requests;
+create policy cr_del on public.code_requests for delete to authenticated
+  using (public.my_role() = 'admin');
+
+-- история кодов: читают все, пишет админ
+drop policy if exists cch_sel on public.complex_code_history;
+create policy cch_sel on public.complex_code_history for select to authenticated using (true);
+drop policy if exists cch_wr on public.complex_code_history;
+create policy cch_wr on public.complex_code_history for all to authenticated
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
 
 -- скрытые сотрудники: менеджер читает свои строки, админ — всё; пишет только админ
 drop policy if exists hs_sel on public.hidden_staff;
@@ -383,6 +472,27 @@ insert into public.equipment_types (id, name, abbr, color, price_key, sort) valu
  ('c0000000-0000-4000-8000-000000000004','Ozone Machine','OZN','#111827','eq_ozn',4)
 on conflict (id) do nothing;
 
+-- виды размеров
+insert into public.size_types (id, name, unit, sort) values
+ ('c1000000-0000-4000-8000-000000000001','Длина / Length','ft',1),
+ ('c1000000-0000-4000-8000-000000000002','Площадь / Area','sq ft',2),
+ ('c1000000-0000-4000-8000-000000000003','Вес / Weight','lb',3),
+ ('c1000000-0000-4000-8000-000000000004','Количество / Quantity','pcs',4)
+on conflict (id) do nothing;
+
+-- доп. виды работ (шаблоны заметки)
+insert into public.extra_works (id, name, kind, needs_size, size_type_id, sort) values
+ ('c2000000-0000-4000-8000-000000000001','Вырезка стен / Wall cutout','work',true,'c1000000-0000-4000-8000-000000000002',1),
+ ('c2000000-0000-4000-8000-000000000002','Вырезка потолка / Ceiling cutout','work',true,'c1000000-0000-4000-8000-000000000002',2),
+ ('c2000000-0000-4000-8000-000000000003','Покупка товара / Purchase','purchase',false,null,3)
+on conflict (id) do nothing;
+
+-- виды товара
+insert into public.product_types (id, name, default_price, sort) values
+ ('c3000000-0000-4000-8000-000000000001','Решётка / Vent grille',25,1),
+ ('c3000000-0000-4000-8000-000000000002','Химия для ковра / Carpet chemicals',45,2)
+on conflict (id) do nothing;
+
 -- стандартный прейскурант (вкладка PRICE)
 insert into public.price_list (key, name, unit_label, price, sort) values
  ('steam_deep_scrub','Steam Clean — Deep Scrub','per room',35,0),
@@ -448,10 +558,18 @@ on conflict (counterparty_id, key) do nothing;
 -- =====================================================================
 -- МИГРАЦИЯ С v1.01 (если схема уже была создана раньше) — безопасно повторять
 -- =====================================================================
+-- Смена организации по умолчанию AGR → APC (только если стоят старые значения)
+update public.org_settings
+   set company_name = 'APC, LLC', company_short = 'APC'
+ where id = 'org' and company_short in ('AGR, LLC', 'AGR');
 alter table public.complexes add column if not exists lat double precision;
 alter table public.complexes add column if not exists lng double precision;
 alter table public.jobs      add column if not exists note text not null default '';
 alter table public.jobs      add column if not exists helper_ids jsonb not null default '[]'::jsonb;
+alter table public.jobs      add column if not exists priority boolean not null default false;
+alter table public.jobs      add column if not exists sort_order int not null default 0;
+alter table public.complexes add column if not exists callbox_code text default '';
+alter table public.complexes add column if not exists callbox_gate boolean not null default false;
 
 -- =====================================================================
 -- ПОСЛЕ СОЗДАНИЯ ПОЛЬЗОВАТЕЛЕЙ назначьте роли (пример):
