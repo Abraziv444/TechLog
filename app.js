@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.08';
+const APP_VERSION = '1.07.09';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -2473,7 +2473,7 @@ function dirPrice(){
   const mode = state.priceMode === 'ind' ? 'ind' : 'std';
   const cps = state.data.counterparties;
   const seg = `
-    <div class="lang-seg" style="margin-bottom:10px">
+    <div class="lang-seg seg-full" style="margin-bottom:10px">
       <button class="${mode==='std'?'on':''}" onclick="App.priceMode('std')">${t('price_std_tab')}</button>
       <button class="${mode==='ind'?'on':''}" onclick="App.priceMode('ind')">${t('price_ind_tab')}</button>
     </div>`;

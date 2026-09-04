@@ -765,3 +765,7 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .day-cell.today{border-color:var(--green)}
 .day-cell.today:not(.sel) .dom{color:var(--green)}
 .today-tag{color:var(--green);font-weight:900;letter-spacing:.2px}
+
+/* v1.07.09: сегмент «Стандартные | Индивидуальные» — на всю ширину, пополам */
+.lang-seg.seg-full{width:100%}
+.lang-seg.seg-full button{flex:1 1 50%;text-align:center}
