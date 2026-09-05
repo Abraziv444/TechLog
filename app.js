@@ -4,9 +4,18 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.26';
+const APP_VERSION = '1.07.33';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+/* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
+let _driveOAuth = null;
+try{
+  const _q = new URLSearchParams(location.search);
+  if (_q.get('state') === 'tl_drive' && _q.get('code')){
+    _driveOAuth = _q.get('code');
+    history.replaceState(null, '', location.pathname);
+  }
+}catch(e){}
 
 /* =====================================================================
    v1.07.21: ПЛАТФОРМА + НАВИГАТОР (Apple Maps / Google Maps)
@@ -297,6 +306,67 @@ const I18N = {
     proposal_chk: 'PROPOSAL — работы согласованы заранее',
     pdf_preview: 'Просмотр PDF', pdf_print: 'Печать',
     print_hint: 'Откроется системная печать; если нет — PDF откроется в новой вкладке (меню браузера → Печать).',
+    tab_proposals: 'Пропозалы', prop_only: 'Пропозалы доступны менеджеру и администратору.',
+    prop_new: '＋ Новый пропозал', prop_items: 'Позиции', prop_desc: 'Описание', prop_amount: 'Сумма',
+    prop_add_row: '＋ строка', prop_note: 'Примечание',
+    pst_draft: 'Черновик', pst_sent: 'Отправлен', pst_approved: 'Одобрен', pst_declined: 'Отклонён',
+    prop_linked: 'Связанные инвойсы', prop_link: 'Связать', prop_unlink: 'Отвязать',
+    prop_pick: 'Выбрать пропозал…', prop_pick_none: 'нет подходящих (комплекс/статус)',
+    prop_requested: 'Сотрудник указал: должен быть пропозал',
+    allow_prop_chk: 'Сотрудники могут отмечать «нужен пропозал»',
+    prop_pdf: 'PDF пропозала', prop_status: 'Статус', prop_need_cpcx: 'Укажите контрагента и комплекс',
+    jr_tab_doc: 'Документы', jr_tab_tech: 'Система',
+    rep_print2: 'Печать 2-на-лист',
+    ext_req_btn: 'Запросить продление сверх лимита',
+    ext_req_days_q: 'На сколько дней запросить? (макс. 30)',
+    ext_req_sent: 'Запрос отправлен на согласование',
+    ext_req_pending: '⏳ запрос на {N} дн. ждёт решения',
+    ext_req_title: 'Согласование продлений', ext_req_ok: 'Одобрить', ext_req_no: 'Отклонить',
+    b_hide_empty: 'Скрыть свободных',
+    media_title: 'Фото и видео', media_photo: '📷 Фото', media_video: '🎥 Видео',
+    media_sb_only: 'Фото и видео работают только с подключённым Supabase',
+    media_vlong: 'Видео длиннее 90 сек — снимите короче', media_limit: 'Лимит: 10 фото и 2 видео на работу',
+    media_open_err: 'Нет доступа или файл ещё грузится', media_del_q: 'Удалить файл из архива',
+    media_offline: '🔴 офлайн', media_wait: 'ждут отправки',
+    media_not_cfg: 'Google Drive не настроен — фото сохранятся и уйдут после настройки (Настройки → Фото и видео)',
+    gd_card: '📷 Фото и видео → Google Drive',
+    gd_intro: 'Логин и пароль Google сюда не вводятся — это небезопасно и не нужно. Приложение работает по ключам OAuth: введите три значения ниже, нажмите «Подключить Google» и подтвердите доступ на странице самого Google. Токен доступа сервер сохранит сам.',
+    gd_cid: 'Client ID', gd_secret: 'Client Secret', gd_folder: 'ID папки на Диске',
+    gd_save: 'Сохранить ключи', gd_connect: '🔗 Подключить Google', gd_test: '🧪 Тест соединения',
+    gd_redirect: 'Redirect URI — вставьте в Google Console',
+    gd_saved: 'Ключи сохранены', gd_need_cid: 'Сначала введите Client ID',
+    gd_connected: 'Google подключён', gd_not_conn: 'не подключено',
+    gd_db: 'База данных', gd_auth: 'Авторизация Google', gd_acc: 'Аккаунт',
+    gd_used: 'Занято на Диске', gd_write: 'Пробная запись в папку', gd_status: 'Статус',
+    gd_help: 'Как получить ключи (разово, ~15 минут)',
+    bk_card: '💾 Бэкап данных',
+    bk_intro: 'Один JSON-файл: все таблицы базы, учётные записи (пароли — bcrypt-хэшами) и, по галочке, секреты. При загрузке дубли пропускаются, ошибки видны построчно; лог можно сохранить в .txt (в базе он не хранится).',
+    bk_export: '💾 Выгрузить бэкап', bk_import: '📥 Загрузить из бэкапа',
+    bk_secrets: 'включая секреты (токены Google, код приглашения)',
+    bk_savelog: '⬇ Сохранить лог (.txt)',
+    bk_reading: 'Чтение файла', bk_notfile: 'это не файл бэкапа TechLog',
+    bk_from: 'Бэкап от', bk_by: 'выгрузил',
+    bk_added: 'добавлено', bk_dupes: 'дублей', bk_errs: 'ошибок',
+    bk_total: 'ИТОГО', bk_users_c: 'создано', bk_users_e: 'уже были',
+    bk_need_sql: 'Выполните update-to-1_07_32.sql — функции бэкапа не найдены',
+    bk_confirm: 'Загрузить данные из файла?\n\nСуществующие записи не изменяются, дубли пропускаются, добавляются только недостающие строки.',
+    bk_journal_skip: 'журналы (audit_log, tech_log) кнопкой не восстанавливаются — защита от подделки; сниппет для SQL-редактора в update-to-1_07_32.sql',
+    bk_demo_imp: 'Загрузка бэкапа — только с подключённым Supabase',
+    bk_done_file: 'Файл сформирован',
+    bk_secrets_warn: 'в файле токены — храните бережно!',
+    bk_new_proj: 'Как восстановиться в новый проект Supabase',
+    prop_qty: 'Кол-во', prop_code: 'Код', prop_complete: 'Выполнить до (Complete By)',
+    ext_req_done: 'Продление применено', ext_req_rej: 'Запрос отклонён',
+    act_price_change: 'изменение цены', act_approve_reset: 'сброс апрува',
+    act_pickup_restore: 'возврат в аренду', act_priority_set: 'приоритет',
+    act_org_toggle: 'настройка (вкл/выкл)', act_org_set: 'настройка (значение)',
+    act_car_no_set: 'номер машины', act_stock_set: 'склад',
+    act_backup_export: 'бэкап: выгрузка', act_backup_restore: 'бэкап: загрузка',
+    act_proposal_create: 'пропозал создан', act_proposal_update: 'пропозал изменён',
+    act_proposal_delete: 'пропозал удалён', act_proposal_link: 'связан с пропозалом',
+    act_proposal_unlink: 'связь с пропозалом снята',
+    act_ext_request: 'запрос продления', act_ext_request_approved: 'продление одобрено',
+    act_ext_request_rejected: 'продление отклонено',
     callbox: 'Код callbox', code_target: 'Этот код открывает', target_callbox: 'Домофон', target_gate: 'Ворота',
     history: 'История', code_history: 'История кодов',
     propose_code: 'Предложить код', request_sent: 'Заявка отправлена админу',
@@ -526,6 +596,67 @@ const I18N = {
     proposal_chk: 'PROPOSAL — approved earlier',
     pdf_preview: 'Preview PDF', pdf_print: 'Print',
     print_hint: 'System print will open; otherwise the PDF opens in a new tab (browser menu → Print).',
+    tab_proposals: 'Proposals', prop_only: 'Proposals are for managers and admins.',
+    prop_new: '＋ New proposal', prop_items: 'Line items', prop_desc: 'Description', prop_amount: 'Amount',
+    prop_add_row: '＋ row', prop_note: 'Notes',
+    pst_draft: 'Draft', pst_sent: 'Sent', pst_approved: 'Approved', pst_declined: 'Declined',
+    prop_linked: 'Linked invoices', prop_link: 'Link', prop_unlink: 'Unlink',
+    prop_pick: 'Pick a proposal…', prop_pick_none: 'no matching (complex/status)',
+    prop_requested: 'Tech marked: proposal expected',
+    allow_prop_chk: 'Techs may mark “proposal expected”',
+    prop_pdf: 'Proposal PDF', prop_status: 'Status', prop_need_cpcx: 'Select counterparty and complex',
+    jr_tab_doc: 'Documents', jr_tab_tech: 'System',
+    rep_print2: 'Print 2-per-sheet',
+    ext_req_btn: 'Request extension beyond limit',
+    ext_req_days_q: 'How many days to request? (max 30)',
+    ext_req_sent: 'Request sent for approval',
+    ext_req_pending: '⏳ request for {N} d. awaiting decision',
+    ext_req_title: 'Extension approvals', ext_req_ok: 'Approve', ext_req_no: 'Reject',
+    b_hide_empty: 'Hide free',
+    media_title: 'Photos & video', media_photo: '📷 Photo', media_video: '🎥 Video',
+    media_sb_only: 'Media requires Supabase connection',
+    media_vlong: 'Video longer than 90s — please retake', media_limit: 'Limit: 10 photos & 2 videos per job',
+    media_open_err: 'No access or file still uploading', media_del_q: 'Delete file from archive',
+    media_offline: '🔴 offline', media_wait: 'pending upload',
+    media_not_cfg: 'Google Drive is not configured — photos are queued and will upload after setup (Settings → Photos & video)',
+    gd_card: '📷 Photos & video → Google Drive',
+    gd_intro: 'Do NOT enter your Google login/password here — not needed and unsafe. The app uses OAuth keys: fill three values below, press “Connect Google” and confirm on Google’s own page. The server stores the token itself.',
+    gd_cid: 'Client ID', gd_secret: 'Client Secret', gd_folder: 'Drive folder ID',
+    gd_save: 'Save keys', gd_connect: '🔗 Connect Google', gd_test: '🧪 Test connection',
+    gd_redirect: 'Redirect URI — paste into Google Console',
+    gd_saved: 'Keys saved', gd_need_cid: 'Enter Client ID first',
+    gd_connected: 'Google connected', gd_not_conn: 'not connected',
+    gd_db: 'Database', gd_auth: 'Google auth', gd_acc: 'Account',
+    gd_used: 'Drive used', gd_write: 'Test write to folder', gd_status: 'Status',
+    gd_help: 'How to get the keys (one-time, ~15 min)',
+    bk_card: '💾 Data backup',
+    bk_intro: 'One JSON file: all DB tables, user accounts (passwords as bcrypt hashes) and, optionally, secrets. On import duplicates are skipped, errors are listed line by line; the log can be saved as .txt (never stored in DB).',
+    bk_export: '💾 Export backup', bk_import: '📥 Restore from file',
+    bk_secrets: 'include secrets (Google tokens, invite code)',
+    bk_savelog: '⬇ Save log (.txt)',
+    bk_reading: 'Reading file', bk_notfile: 'not a TechLog backup file',
+    bk_from: 'Backup from', bk_by: 'by',
+    bk_added: 'added', bk_dupes: 'dupes', bk_errs: 'errors',
+    bk_total: 'TOTAL', bk_users_c: 'created', bk_users_e: 'existed',
+    bk_need_sql: 'Run update-to-1_07_32.sql — backup functions not found',
+    bk_confirm: 'Restore data from file?\n\nExisting rows are untouched, duplicates skipped, only missing rows are added.',
+    bk_journal_skip: 'journals (audit_log, tech_log) are not restorable via button — tamper protection; SQL snippet is in update-to-1_07_32.sql',
+    bk_demo_imp: 'Restore requires Supabase connection',
+    bk_done_file: 'File created',
+    bk_secrets_warn: 'file contains tokens — store safely!',
+    bk_new_proj: 'How to restore into a fresh Supabase project',
+    prop_qty: 'Qty', prop_code: 'Item', prop_complete: 'Complete By',
+    ext_req_done: 'Extension applied', ext_req_rej: 'Request rejected',
+    act_price_change: 'price change', act_approve_reset: 'approve reset',
+    act_pickup_restore: 'returned to rental', act_priority_set: 'priority',
+    act_org_toggle: 'setting (on/off)', act_org_set: 'setting (value)',
+    act_car_no_set: 'vehicle #', act_stock_set: 'warehouse',
+    act_backup_export: 'backup: export', act_backup_restore: 'backup: restore',
+    act_proposal_create: 'proposal created', act_proposal_update: 'proposal updated',
+    act_proposal_delete: 'proposal deleted', act_proposal_link: 'linked to proposal',
+    act_proposal_unlink: 'proposal unlinked',
+    act_ext_request: 'extension request', act_ext_request_approved: 'extension approved',
+    act_ext_request_rejected: 'extension rejected',
     callbox: 'Callbox code', code_target: 'This code opens', target_callbox: 'Callbox', target_gate: 'Gate',
     history: 'History', code_history: 'Code history',
     propose_code: 'Propose code', request_sent: 'Request sent to admin',
@@ -780,7 +911,7 @@ function seedDemoData(){
       complex_id: complexes[0].id, counterparty_id: cp1.id, unit_number: '916' },
   ];
   const data = {
-    profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], hidden_staff: [], code_requests: [], complex_code_history: [],
+    profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], proposals: [], ext_requests: [], media: [], hidden_staff: [], code_requests: [], complex_code_history: [],
     jobs: [job1, job2], placements, ...cat
   };
   job1.total = calcTotal(job1.form_data, priceResolver(cp1.id, data), data);
@@ -870,7 +1001,7 @@ function pendingApplyLocal(data){
   }
 }
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements'];
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','ext_requests','media'];
 
 function emptyData(){
   const d = { org_settings: {
@@ -1423,6 +1554,7 @@ const ICONS = {
   sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>',
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H20V3H7.5A2.5 2.5 0 0 0 5 5.5z"/><path d="M5 19.5A2.5 2.5 0 0 0 7.5 22H20v-5"/><path d="M10 7h6"/></svg>',
   board: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5.4" height="16" rx="1.2"/><rect x="9.8" y="4" width="5.4" height="11" rx="1.2"/><rect x="16.6" y="4" width="5.4" height="7" rx="1.2"/></svg>',
+  prop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.8" width="16" height="18.4" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
 };
 
 /* =====================================================================
@@ -1844,12 +1976,13 @@ function audit(action, entity, entityId, details){
       entity_id: entityId != null ? String(entityId) : null,
       details: details || {}
     };
+    row.src = JR_TECH_SET.has(action) ? 'tech' : 'doc';   // v1.07.27
     if (!state.data.audit_log) state.data.audit_log = [];
     state.data.audit_log.unshift(row);
     if (state.data.audit_log.length > 2000) state.data.audit_log.length = 2000;
     saveLocal();
     if (HAS_SB && state.sb){
-      Promise.resolve(state.sb.from('audit_log').insert({
+      Promise.resolve(state.sb.from(row.src === 'tech' ? 'tech_log' : 'audit_log').insert({
         at: row.at, actor: row.actor, actor_name: row.actor_name,
         action, entity: row.entity, entity_id: row.entity_id, details: row.details
       })).then(({ error } = {}) => {
@@ -1865,13 +1998,21 @@ function audit(action, entity, entityId, details){
 }
 
 const JR_PAGE = 300;
-const JR_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
-  'password_change','password_reset','job_create','job_update','job_done','job_reopen',
-  'job_approve','job_delete','crew_add','crew_remove','pickup_done','pickup_early','extension_create'];
+/* v1.07.27: журнал разделён — документы (audit_log) и система (tech_log) */
+const JR_DOC_ACTIONS = ['job_create','job_update','job_done','job_reopen','job_approve','job_delete',
+  'approve_reset','price_change','priority_set','crew_add','crew_remove',
+  'pickup_done','pickup_early','pickup_restore','extension_create',
+  'ext_request','ext_request_approved','ext_request_rejected',
+  'proposal_create','proposal_update','proposal_delete','proposal_link','proposal_unlink'];
+const JR_TECH_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
+  'password_change','password_reset','car_no_set','org_toggle','org_set','stock_set',
+  'backup_export','backup_restore'];
+const JR_TECH_SET = new Set(JR_TECH_ACTIONS);
 
 async function loadJournal(reset){
   if (!isAdmin()) return;
   const jr = state.jr;
+  if (!jr.tab) jr.tab = 'doc';
   if (jr.loading) return;
   jr.loading = true;
   if (reset) jr.rows = null;
@@ -1879,6 +2020,7 @@ async function loadJournal(reset){
   try{
     if (!HAS_SB){
       let rows = (state.data.audit_log || []).slice();
+      rows = rows.filter(r => (r.src || 'doc') === (jr.tab === 'tech' ? 'tech' : 'doc'));
       if (jr.act)   rows = rows.filter(r => r.action === jr.act);
       if (jr.actor) rows = rows.filter(r => r.actor === jr.actor);
       const upto = (reset ? 0 : ((jr.rows && jr.rows.length) || 0)) + JR_PAGE;
@@ -1886,7 +2028,7 @@ async function loadJournal(reset){
       jr.more = rows.length > jr.rows.length;
     } else {
       const from = reset ? 0 : ((jr.rows && jr.rows.length) || 0);
-      let q = state.sb.from('audit_log').select('*')
+      let q = state.sb.from(jr.tab === 'tech' ? 'tech_log' : 'audit_log').select('*')
         .order('at', { ascending: false }).range(from, from + JR_PAGE - 1);
       if (jr.act)   q = q.eq('action', jr.act);
       if (jr.actor) q = q.eq('actor', jr.actor);
@@ -1906,7 +2048,9 @@ async function loadJournal(reset){
 }
 
 function jrChipClass(a){
-  if (a === 'job_approve') return 'purple';                              // апрув — фиолетовый везде
+  if (a === 'job_approve' || /^proposal/.test(a)) return 'purple';
+  if (a === 'ext_request_approved') return 'ok';
+  if (a === 'ext_request_rejected') return 'bad';                              // апрув — фиолетовый везде
   if (/delete|_block$/.test(a)) return 'bad';
   if (/pickup|extension|crew/.test(a)) return 'info';
   if (/register|create|unblock|_done$/.test(a)) return 'ok';
@@ -1928,11 +2072,15 @@ function jrDetails(r){
   if (d.name) bits.push(d.name);
   if (Array.isArray(d.added) && d.added.length) bits.push('+ ' + d.added.join(', '));
   if (Array.isArray(d.removed) && d.removed.length) bits.push('− ' + d.removed.join(', '));
+  if (d.no != null) bits.push('P-' + d.no);
+  if (d.old != null && d.new != null) bits.push(money(+d.old||0) + ' → ' + money(+d.new||0));
+  if (d.key) bits.push(d.key + (d.v != null ? '=' + d.v : (d.on != null ? (d.on ? '=on' : '=off') : '')));
   return bits.map(esc).join(' · ');
 }
 function viewJournal(){
   if (!isAdmin()) return `<div class="list-empty">${t('no_access')}</div>`;
   const jr = state.jr;
+  if (!jr.tab) jr.tab = 'doc';
   if (jr.rows === null && !jr.loading) setTimeout(() => loadJournal(true), 0);
   const profs = state.data.profiles || [];
   const roleOf = id => (profs.find(p => p.id === id) || {}).role || 'tech';
@@ -1952,10 +2100,14 @@ function viewJournal(){
   return `
   <div class="section-title">${t('jr_title')} <span class="hint">${HAS_SB ? (auditDbMissing ? '' : 'Supabase') : t('jr_local')}</span></div>
   ${auditDbMissing ? `<div class="note-red" style="margin-bottom:10px">${t('jr_need_db')}</div>` : ''}
+  <div class="lang-seg" style="margin-bottom:8px">
+    <button class="${(jr.tab||'doc')==='doc'?'on':''}" onclick="App.jrTab('doc')">${t('jr_tab_doc')}</button>
+    <button class="${jr.tab==='tech'?'on':''}" onclick="App.jrTab('tech')">${t('jr_tab_tech')}</button>
+  </div>
   <div class="filter-row">
     <select style="flex:1" onchange="App.jrAct(this.value)">
       <option value="">${t('jr_all_actions')}</option>
-      ${JR_ACTIONS.map(a => `<option value="${a}" ${jr.act === a ? 'selected' : ''}>${t('act_' + a)}</option>`).join('')}
+      ${(jr.tab === 'tech' ? JR_TECH_ACTIONS : JR_DOC_ACTIONS).map(a => `<option value="${a}" ${jr.act === a ? 'selected' : ''}>${t('act_' + a)}</option>`).join('')}
     </select>
     <select style="flex:1" onchange="App.jrActor(this.value)">
       <option value="">${t('jr_all_staff')}</option>
@@ -1983,6 +2135,7 @@ function render(){
   else if (state.screen === 'settings') body = viewSettings();
   else if (state.screen === 'journal') body = viewJournal();   // v1.07.18
   else if (state.screen === 'board') body = viewBoard();       // v1.07.25
+  else if (state.screen === 'proposals') body = viewProposals(); // v1.07.27
   app.innerHTML = viewHeader() + body + viewTabbar();
   if (state.screen === 'home' || state.screen === 'board'){
     try { document.querySelector('.day-cell.sel')?.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch(e){}
@@ -2026,6 +2179,7 @@ function viewTabbar(){
   const items = [
     ['home', ICONS.home, t('tab_home')],
     ...(isManager() ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.25
+    ...(isManager() ? [['proposals', ICONS.prop, t('tab_proposals')]] : []),  // v1.07.27
     ['map', ICONS.map, t('tab_map')],
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
@@ -2218,7 +2372,7 @@ function viewHome(){
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number||'—')}</div>
         ${addrLineHtml(cx)}
-        <div class="s"><span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}${jobSharedChipHtml(j)}</div>
+        <div class="s"><span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}${jobSharedChipHtml(j)}${proposalChipHtml(j)}</div>
         ${codesLineHtml(cx)}
       </div>
       <div class="right">
@@ -2282,7 +2436,7 @@ function searchJobCard(j){
   return `<div class="item clicky" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
     <div class="info">
       <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number || '—')} <span class="badge-status st-${j.status}">${t('status_' + j.status)}</span></div>
-      <div class="s">${fmtDMY(j.date)} · <span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span> · ${money(jobGrand(j))} · ${esc(j.technician_name || profName(j.technician_id))}${jobSharedChipHtml(j)}</div>
+      <div class="s">${fmtDMY(j.date)} · <span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span> · ${money(jobGrand(j))} · ${esc(j.technician_name || profName(j.technician_id))}${jobSharedChipHtml(j)}${proposalChipHtml(j)}</div>
     </div>
   </div>`;
 }
@@ -2533,6 +2687,7 @@ function pickupModal(jobId, dateISO, ev){
     ${(cx.access_code || cx.callbox_code) ? `<div class="tiny" style="margin-bottom:8px">${codeLineHtml(cx, true)}</div>` : ''}
     <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('what_where')}</div>
     <div class="card" style="padding:8px 10px;margin-bottom:10px">${rows.map(p => pkLineHtml(p, true)).join('')}</div>
+    ${mediaStripHtml(jobId)}
     <button class="btn btn-blue" onclick="App.extendModal('${jobId}','${dateISO}')">${ic('calendar')} ${t('extend_rent')}</button>
     <button class="btn btn-green" onclick="App.pickupGroup('${jobId}','${dateISO}')">${ic('chk_on')} ${t('pick_all_btn')}</button>
     <div class="btn-row3" style="grid-template-columns:1fr 1fr">
@@ -2582,6 +2737,8 @@ function renderExtendModal(){
       <span class="stepper"><button type="button" onclick="App.extDays(-1)">−</button><span class="val">${d.daysN}</span><button type="button" onclick="App.extDays(1)">＋</button></span>
       <span class="tiny">${t('days')} · ${t('ext_max_note').replace('{N}', maxExtendDays())}</span>
     </div>
+    ${pendingExtReqHtml(d.jobId)}
+    <button class="btn btn-ghost sm" style="margin-bottom:8px" onclick="App.extReqCreate()">⏳ ${t('ext_req_btn')}</button>
     <div class="note-green" style="display:block">${t('ext_summary')}: <b>${total} ${t('units_short')}</b> · +${d.daysN} ${t('days')} · ${t('ext_new_due')}: <b>${fmtDMY(newDue)}</b></div>
     <div class="tiny" style="margin:6px 0 10px">${t('ext_invoice_note')}</div>
     <button class="btn btn-blue" onclick="App.extApply()" ${total > 0 ? '' : 'disabled'}>${ic('chk_on')} ${t('extend_rent')}</button>
@@ -2658,7 +2815,7 @@ function jobHistory(jobId){
       <div class="hist-t">${ic('receipt')} ${t('hist_invoice')} · <span style="color:${wt.color}">${esc(wt.name)}</span></div>
       <div class="tiny">${esc(cx.name)} · Unit ${esc(j.unit_number || '—')}</div>
       <div class="tiny">${t('hist_created')}: ${fmtTs(j.created_at)} · ${t('hist_workdate')}: <b>${fmtDMY(j.date)}</b></div>
-      <div style="margin-top:4px"><span class="badge-status st-${j.status}">${t('status_' + j.status)}</span>${j.has_proposal ? ` <span class="chip pr">PROPOSAL</span>` : ''}${j.status === 'approved' && j.approved_at ? ` <span class="tiny">✓ ${esc(profName(j.approved_by))} · ${fmtTs(j.approved_at)}</span>` : ''}</div>
+      <div style="margin-top:4px"><span class="badge-status st-${j.status}">${t('status_' + j.status)}</span>${proposalChipHtml(j)}${j.status === 'approved' && j.approved_at ? ` <span class="tiny">✓ ${esc(profName(j.approved_by))} · ${fmtTs(j.approved_at)}</span>` : ''}</div>
       <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.closeModal();App.openJob('${j.id}')">${ic('receipt')} ${t('open_invoice')}</button>
     </div>
     ${pls.length ? plHtml : `<div class="tiny" style="margin-top:8px">${t('hist_none')}</div>`}
@@ -2964,9 +3121,8 @@ function viewJob(){
       <button class="btn btn-blue sm" onclick="App.extraPicker()">＋ ${t('template')}</button>
     </div></div>
 
-  <label class="opt ${j.has_proposal?'on':''}" style="margin:4px 0 0">
-    <input type="checkbox" ${j.has_proposal?'checked':''} onchange="App.setProposal(this.checked)"> ${t('proposal_chk')}
-  </label>
+  ${mediaStripHtml(j.id)}
+  ${proposalBoxHtml(j)}
   <label class="opt ${j.status!=='draft'?'on':''}" style="margin:4px 0 8px">
     <input type="checkbox" id="jb-done" ${j.status!=='draft'?'checked':''}> ${t('job_done_chk')}
   </label>
@@ -2989,7 +3145,7 @@ function viewJob(){
 
   ${editLocked(j) ? `<div class="banner b-red" style="margin-bottom:8px">🔒 ${t('lock_note').replace('{N}', editLockDays())}</div>` : ''}
   <button class="btn btn-green" onclick="App.saveJob()">${ic('save')} ${t('save')}</button>
-  <div class="btn-row3" style="margin-bottom:8px">
+  <div class="btn-rowpp">
     <button class="btn btn-ghost" onclick="App.pdfPreview()">${ic('search')} ${t('pdf_preview')}</button>
     <button class="btn btn-ghost" onclick="App.pdfPrint()">${ic('report')} ${t('pdf_print')}</button>
     <span></span>
@@ -3168,6 +3324,7 @@ async function saveJob(goHome){
       audit('price_change', 'job', j.id, { unit: j.unit_number, old: +orig.total, new: +j.total });
   }
   saveJob._busy = false;
+  mediaFlush();
   toast('✓ ' + t('saved'));
   if (goHome !== false){ state.screen = 'home'; state.selDate = j.date; state.weekStart = mondayOf(j.date); }
   render();
@@ -3871,10 +4028,14 @@ function viewSettings(){
       <input type="checkbox" ${org.manager_can_approve?'checked':''} onchange="App.setOrgFlag('manager_can_approve', this.checked)"> ${t('mgr_approve_chk')}</label>
     <label class="opt ${org.stock_visible_all!==false?'on':''}">
       <input type="checkbox" ${org.stock_visible_all!==false?'checked':''} onchange="App.setOrgFlag('stock_visible_all', this.checked)"> ${t('stock_vis_chk')}</label>
+    <label class="opt ${org.allow_tech_proposal_flag!==false?'on':''}">
+      <input type="checkbox" ${org.allow_tech_proposal_flag!==false?'checked':''} onchange="App.setOrgFlag('allow_tech_proposal_flag', this.checked)"> ${t('allow_prop_chk')}</label>
     <div class="qty-line"><span class="name">${t('lock_days_lbl')}</span>
       <input class="price-input" style="max-width:70px" inputmode="numeric" value="${org.edit_lock_days ?? 0}" onchange="App.setOrgNum('edit_lock_days', this.value, 0, 60)"></div>
     <div class="tiny">${t('lock_hint')}</div>
   </div>
+  ${mediaSettingsCardHtml()}
+  ${backupCardHtml()}
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
     <div class="tiny" style="margin-bottom:8px">${t('invite_hint')}</div>
@@ -4071,6 +4232,11 @@ const App = {
   openJob, saveJob, approveJob, deleteJob, makePdf, pdfPreviewBlob, pickupGroup,
   setReportDate(v){ state.reportDate = v; render(); }, copyReport,
   repTab(v){ state.repTab = v; render(); },
+  jrTab(v){ if (state.jr){ state.jr.tab = v; state.jr.act = ''; loadJournal(true); } },
+  boardHideEmpty(v){ localStorage.setItem('tl_board_hide_empty', v ? '1' : '0'); render(); },
+  mediaPick, mediaFlush, mediaOpen, mediaDelete, mediaQDel,
+  mediaSaveKeys, mediaConnect, mediaHealth,
+  bkExport, bkImportPick, bkSaveLog,
   repFrom(v){ state.repFrom = v; render(); }, repTo(v){ state.repTo = v; render(); },
   repRange(f,to){ state.repFrom = f; state.repTo = to; render(); },
   repCp(v){ state.repCp = v; render(); }, repStatus(v){ state.repStatus = v; render(); },
@@ -4110,6 +4276,22 @@ const App = {
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
   togglePriority, moveJob, boardMove, setCarNo, restorePk, pdfPreview, pdfPrint,
   comboFilter, comboPick, stockSet, wtChecklistModal, wtChecklistSave,
+  openProposal, propBack, saveProposal, delProposal, makeProposalPdf, linkProposal,
+  propField(k, v){ if (propDraft) propDraft[k] = v; },
+  propFilter(v){ state.propFilter = v; render(); },
+  propItem(i, f, v){ if (!propDraft || !propDraft.items[i]) return;
+    propDraft.items[i][f] = (f === 'a') ? (parseFloat(v) || 0)
+      : (f === 'q') ? (parseFloat(v) || 1) : v;
+    if (f === 'a') propRecalc(); },
+  propItemAdd(){ if (!propDraft) return; propDraft.items.push({ q: 1, code: '', d: '', a: 0 });
+    const el = $('#prop-rows'); if (el) el.innerHTML = propItemsHtml(); },
+  propItemDel(i){ if (!propDraft) return; propDraft.items.splice(i, 1);
+    if (!propDraft.items.length) propDraft.items.push({ q: 1, code: '', d: '', a: 0 });
+    const el = $('#prop-rows'); if (el) el.innerHTML = propItemsHtml(); propRecalc(); },
+  setPropStatus(s){ if (!propDraft) return; propDraft.status = s;
+    if (s === 'approved' || s === 'declined'){ propDraft.decided_by = state.user.id;
+      propDraft.decided_at = new Date().toISOString(); } render(); },
+  batchPrint, extReqCreate, extReqDecide,
   codeHistory: codeHistoryModal, proposeCode: proposeCodeModal, pcGate, submitCode,
   extraPicker: extraPickerModal, exAdd, exDel,
   exPreset(i, n){
@@ -4634,6 +4816,7 @@ function viewInvoicesReport(){
           <div class="tiny">${t('rep_sum')} <b class="money">${money(sum)}</b> · ${t('rep_half_hint')}</div></div>
       </div>
       <button class="btn btn-green" style="margin-top:10px" onclick="App.batchPdf()">${ic('download')} ${t('rep_download')} (${js.length})</button>
+      <button class="btn btn-blue" style="margin-top:8px" onclick="App.batchPrint()">${ic('report')} ${t('rep_print2')}</button>
     </div>
     ${listHtml}`
   : `<div class="list-empty"><div class="big">${ic('archive')}</div>${t('rep_none')}</div>`}`;
@@ -4871,14 +5054,15 @@ function drawInvoiceVert(doc, j, left, top){
   txt('SIGNATURE:', L+2, y+2.2); line(L+18, y+2.8, R-2, y+2.8); doc.setLineDashPattern([],0);
 }
 
-function batchPdf(){
-  if (!window.jspdf){ toast('jsPDF not loaded', 'err'); return; }
+function buildBatchDoc(){
+  if (!window.jspdf){ toast('jsPDF not loaded', 'err'); return null; }
   const all = repJobs();
   const js = all.filter(j => !jobIssues(j).length);
   const skipped = all.length - js.length;
-  if (!js.length){ toast(t('rep_none') + (skipped?` · ⚠ ${skipped} ${t('batch_skipped')}`:''), 'err'); return; }
+  if (!js.length){ toast(t('rep_none') + (skipped?` · ⚠ ${skipped} ${t('batch_skipped')}`:''), 'err'); return null; }
   const { jsPDF } = window.jspdf;
-  // альбомный Letter: два ВЕРТИКАЛЬНЫХ бланка рядом, между ними линия отреза
+  // альбомный Letter: два ВЕРТИКАЛЬНЫХ бланка рядом, между ними линия отреза;
+  // если инвойс один — вторая половина листа остаётся пустой
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' }); // 279.4 × 215.9
   js.forEach((j, i) => {
     const pos = i % 2;
@@ -4890,8 +5074,26 @@ function batchPdf(){
     }
     drawInvoiceVert(doc, j, pos * INV_W, 0);
   });
+  doc._cnt = js.length; doc._skipped = skipped;
+  return doc;
+}
+function batchPdf(){
+  const doc = buildBatchDoc(); if (!doc) return;
   savePdfCompat(doc, 'Invoices_' + state.repFrom + '_' + state.repTo + '.pdf');   // v1.07.21
-  toast('⬇ PDF: ' + js.length + (skipped?` · ⚠ ${skipped} ${t('batch_skipped')}`:''));
+  toast('⬇ PDF: ' + doc._cnt + (doc._skipped?` · ⚠ ${doc._skipped} ${t('batch_skipped')}`:''));
+}
+function batchPrint(){                                   // v1.07.27: сразу на печать
+  const doc = buildBatchDoc(); if (!doc) return;
+  const u = URL.createObjectURL(doc.output('blob'));
+  const fr = document.createElement('iframe');
+  fr.style.cssText = 'position:fixed;right:0;bottom:0;width:2px;height:2px;opacity:0';
+  fr.src = u; document.body.appendChild(fr);
+  fr.onload = () => {
+    try { fr.contentWindow.focus(); fr.contentWindow.print(); }
+    catch (e) { window.open(u, '_blank', 'noopener'); }
+    setTimeout(() => { fr.remove(); URL.revokeObjectURL(u); }, 60000);
+  };
+  toast('ℹ ' + t('print_hint'), 'inf');
 }
 
 /* =====================================================================
@@ -5719,9 +5921,13 @@ function viewBoard(){
   const hid = state.user.role === 'manager' ? hiddenSetFor(state.user.id) : new Set();
   const dayJobs = state.data.jobs.filter(j => j.date === iso && !hid.has(j.technician_id));
   const dayPk   = state.data.placements.filter(p => pkPending(p) && p.due_date <= iso && !hid.has(p.technician_id));
+  const hideEmpty = localStorage.getItem('tl_board_hide_empty') === '1';   // v1.07.30
   const staff = [...state.data.profiles]
-    .filter(p => !p.blocked && !hid.has(p.id)
-      && (p.role === 'tech' || dayJobs.some(j => j.technician_id === p.id) || dayPk.some(x => x.technician_id === p.id)))
+    .filter(p => {
+      if (p.blocked || hid.has(p.id)) return false;
+      const busy = dayJobs.some(j => j.technician_id === p.id) || dayPk.some(x => x.technician_id === p.id);
+      return busy || (p.role === 'tech' && !hideEmpty);
+    })
     .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name));
   const canOrd = boardCanReorder();
   const cols = staff.map(p => {
@@ -5740,7 +5946,9 @@ function viewBoard(){
       ${cards || `<div class="tiny bempty">${t('b_empty')}</div>`}
     </div>`;
   }).join('');
-  return viewWeek() + `<div class="board">${cols}</div>`;
+  const tools = `<div class="board-tools"><label class="opt ${hideEmpty?'on':''}">
+    <input type="checkbox" ${hideEmpty?'checked':''} onchange="App.boardHideEmpty(this.checked)"> ${t('b_hide_empty')}</label></div>`;
+  return viewWeek() + extReqStripHtml() + propStripHtml() + tools + `<div class="board">${cols}</div>`;
 }
 function boardJobCard(j, idx, canOrd){
   const wt = wtById(j.work_type_id), cx = cxById(j.complex_id);
@@ -5753,7 +5961,7 @@ function boardJobCard(j, idx, canOrd){
     ${rail}
     <span class="bnum">${idx + 1}</span>
     ${triHtml(!!j.priority, j.id, canPrio(j))}
-    <div class="bmain"><b>${esc(j.unit_number || '—')}</b>${j.has_proposal?`<span class="chip pr" style="margin-left:4px">P</span>`:''}<span class="tiny"> · ${esc((cx && (cx.abbr || cx.name)) || '—')}</span>
+    <div class="bmain"><b>${esc(j.unit_number || '—')}</b>${proposalChipHtml(j, true)}<span class="tiny"> · ${esc((cx && (cx.abbr || cx.name)) || '—')}</span>
       <div class="tiny bwt"><span class="dotc" style="background:${col}"></span>${esc((wt && wt.name) || '')}</div></div>
     <span class="bst st-${j.status}" title="${t('status_' + j.status)}"></span>
   </div>`;
@@ -5788,6 +5996,1046 @@ async function boardMove(id, dir){
   }
   navigator.vibrate?.(15);
   render();
+}
+
+/* =====================================================================
+   v1.07.27: ПРОПОЗАЛЫ — коммерческие предложения (менеджер/админ)
+   ===================================================================== */
+let propDraft = null;
+function allowTechProposal(){ return (state.data.org_settings || {}).allow_tech_proposal_flag !== false; }
+function propById(id){ return (state.data.proposals || []).find(x => x.id === id); }
+function proposalChipHtml(j, short){
+  const p = j && j.proposal_id ? propById(j.proposal_id) : null;
+  if (p) return ` <span class="chip pr" title="PROPOSAL">${short ? 'P' : 'P-' + (p.no ?? '·')}</span>`;
+  if (j && j.has_proposal) return ` <span class="chip prq" title="${t('prop_requested')}">P?</span>`;
+  return '';
+}
+function proposalBoxHtml(j){
+  const p = j.proposal_id ? propById(j.proposal_id) : null;
+  if (isManager()){
+    let inner;
+    if (p){
+      inner = `<span class="chip pr">P-${p.no ?? '·'} · ${money(+p.total || 0)}</span>
+        <button class="btn btn-ghost sm" onclick="App.openProposal('${p.id}')">↗</button>
+        <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">✕ ${t('prop_unlink')}</button>`;
+    } else {
+      const opts = (state.data.proposals || [])
+        .filter(x => x.complex_id === j.complex_id && ['sent','approved'].includes(x.status))
+        .sort((a,b) => String(b.date).localeCompare(String(a.date))).slice(0, 20);
+      inner = `${j.has_proposal ? `<span class="chip prq" title="${t('prop_requested')}">P?</span>` : ''}
+        ${opts.length ? `<select id="jb-prop-sel" style="flex:1;min-width:130px">
+          <option value="">${t('prop_pick')}</option>
+          ${opts.map(x => `<option value="${x.id}">P-${x.no ?? '·'} · ${esc(x.unit_number || '')} · ${money(+x.total || 0)}</option>`).join('')}
+        </select>
+        <button class="btn btn-blue sm" onclick="App.linkProposal('${j.id}', ($('#jb-prop-sel')||{}).value)">${t('prop_link')}</button>`
+        : `<span class="tiny">${t('prop_pick_none')}</span>`}`;
+    }
+    return `<div class="card" style="margin:4px 0 0;padding:8px 10px">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${ic('prop')} <b>PROPOSAL</b> ${inner}</div></div>`;
+  }
+  if (p) return `<div class="tiny" style="margin:4px 0 0"><span class="chip pr">P-${p.no ?? '·'}</span> PROPOSAL</div>`;
+  if (allowTechProposal())
+    return `<label class="opt ${j.has_proposal?'on':''}" style="margin:4px 0 0">
+      <input type="checkbox" ${j.has_proposal?'checked':''} onchange="App.setProposal(this.checked)"> ${t('proposal_chk')}</label>`;
+  return j.has_proposal ? `<div class="tiny" style="margin:4px 0 0"><span class="chip prq">P?</span> ${t('proposal_chk')}</div>` : '';
+}
+async function linkProposal(jobId, propId){
+  if (!isManager()) return;
+  if (propId === '' || propId === undefined){ toast('⚠ ' + t('prop_pick'), 'err'); return; }
+  const apply = () => {
+    const jj = state.data.jobs.find(x => x.id === jobId);
+    if (jj){ jj.proposal_id = propId; if (propId) jj.has_proposal = true; }
+    if (jobDraft && jobDraft.id === jobId){ jobDraft.proposal_id = propId; if (propId) jobDraft.has_proposal = true; }
+  };
+  if (!HAS_SB){ apply(); render(); return; }
+  const { error } = await state.sb.rpc('link_job_proposal', { p_job: jobId, p_prop: propId });
+  if (error){ toast('⛔ ' + rpcFail(error, 'link_job_proposal'), 'err'); return; }
+  apply(); toast('✓ ' + t('saved')); render();
+}
+function viewProposals(){
+  if (!isManager()) return `<div class="card" style="margin:14px 12px">${t('prop_only')}</div>`;
+  return propDraft ? viewProposalForm() : viewProposalList();
+}
+function viewProposalList(){
+  const f = state.propFilter || 'all';
+  const chips = ['all','draft','sent','approved','declined'].map(s =>
+    `<button class="tabbtn ${f===s?'active':''}" onclick="App.propFilter('${s}')">${s==='all'?t('all'):t('pst_'+s)}</button>`).join('');
+  const list = [...(state.data.proposals || [])]
+    .filter(p => f === 'all' || p.status === f)
+    .sort((a,b) => String(b.date).localeCompare(String(a.date)) || (b.no||0) - (a.no||0));
+  const rows = list.map(p => {
+    const cx = cxById(p.complex_id) || {abbr:'—', name:'—'};
+    const linked = state.data.jobs.filter(j => j.proposal_id === p.id).length;
+    return `<button class="rowline map-row" onclick="App.openProposal('${p.id}')">
+      <span class="chip pst pst-${p.status}">${t('pst_' + p.status)}</span>
+      <div class="grow"><b>P-${p.no ?? '·'}</b> · ${esc(cx.abbr || cx.name)}${p.unit_number ? ` · Unit <b>${esc(p.unit_number)}</b>` : ''}
+        <div class="tiny">${fmtDMY(p.date)}${linked ? ` · 🔗 ${linked}` : ''}</div></div>
+      <span class="money">${money(+p.total || 0)}</span>
+    </button>`;
+  }).join('');
+  return `<div class="prop-wrap"><div class="section-title">${t('tab_proposals')}</div>
+  <div class="tabs" style="margin:0 12px 8px">${chips}</div>
+  <div class="card" style="margin:0 12px">${rows || `<div class="list-empty">${t('no_items')}</div>`}</div>
+  <button class="btn btn-green" style="margin:10px 12px" onclick="App.openProposal()">${t('prop_new')}</button></div>`;
+}
+function openProposal(id){
+  if (!isManager()) return;
+  state.screen = 'proposals';
+  if (id){
+    const p = propById(id);
+    propDraft = p ? JSON.parse(JSON.stringify(p)) : null;
+    if (propDraft && !Array.isArray(propDraft.items)) propDraft.items = [];
+  } else {
+    propDraft = { id: uid(), no: null, date: state.selDate, counterparty_id: '', complex_id: '',
+      unit_number: '', po_number: '', complete_by: null,
+      note: '', status: 'draft', items: [{ q: 1, code: '', d: '', a: 0 }], total: 0,
+      created_by: state.user.id, created_at: new Date().toISOString() };
+  }
+  render();
+}
+function propBack(){ propDraft = null; render(); }
+function propRecalc(){
+  if (!propDraft) return 0;
+  const s = (propDraft.items || []).reduce((n, it) => n + (+it.a || 0), 0);
+  propDraft.total = s;
+  const el = $('#pr-total'); if (el) el.textContent = money(s);
+  return s;
+}
+function propItemsHtml(){
+  return (propDraft.items || []).map((it, i) => `
+    <div class="prop-row">
+      <input class="pq" inputmode="decimal" value="${it.q ?? 1}" title="${t('prop_qty')}"
+        oninput="App.propItem(${i},'q',this.value)">
+      <input class="pc" value="${esc(it.code || '')}" placeholder="${t('prop_code')}"
+        oninput="App.propItem(${i},'code',this.value)">
+      <textarea class="pd" rows="2" placeholder="${t('prop_desc')}"
+        oninput="App.propItem(${i},'d',this.value)">${esc(it.d || '')}</textarea>
+      <input class="pa" inputmode="decimal" value="${it.a || ''}" placeholder="0"
+        oninput="App.propItem(${i},'a',this.value)">
+      <button class="btn btn-ghost sm" onclick="App.propItemDel(${i})">✕</button>
+    </div>`).join('');
+}
+function viewProposalForm(){
+  const p = propDraft;
+  const cp = cpById(p.counterparty_id) || {};
+  const cx = cxById(p.complex_id) || {};
+  const linked = state.data.jobs.filter(j => j.proposal_id === p.id);
+  const stSeg = ['draft','sent','approved','declined'].map(s =>
+    `<button class="${p.status===s?'on':''}" onclick="App.setPropStatus('${s}')">${t('pst_'+s)}</button>`).join('');
+  return `<div class="prop-wrap">
+  <div class="section-title"><button class="icon-btn" onclick="App.propBack()">←</button> ${t('tab_proposals')} · <b>P-${p.no ?? '…'}</b></div>
+  <div class="card" style="margin:0 12px">
+    <div class="form-row"><span class="lbl">${t('date')}</span>
+      <input type="date" value="${p.date}" onchange="App.propField('date', this.value)"></div>
+    <div class="form-row"><span class="lbl">${t('counterparty')}</span>
+      <div class="combo" id="cb-cp">
+        <input class="combo-in" value="${esc(cp.name || '')}" placeholder="${t('select')}" autocomplete="off"
+          oninput="App.comboFilter('cp', this.value)" onfocus="App.comboFilter('cp', this.value)">
+        <input type="hidden" id="nt-cp" value="${p.counterparty_id || ''}">
+        <div class="combo-list" id="cb-cp-list"></div>
+      </div></div>
+    <div class="form-row"><span class="lbl">${t('complex')}</span>
+      <div class="combo" id="cb-cx">
+        <input class="combo-in" value="${esc(cx.name || '')}" placeholder="${t('select')}" autocomplete="off"
+          oninput="App.comboFilter('cx', this.value)" onfocus="App.comboFilter('cx', this.value)">
+        <input type="hidden" id="nt-cx" value="${p.complex_id || ''}">
+        <div class="combo-list" id="cb-cx-list"></div>
+      </div></div>
+    <div class="form-row"><span class="lbl">${t('unit')}</span>
+      <input value="${esc(p.unit_number || '')}" oninput="App.propField('unit_number', this.value)"></div>
+    <div class="form-row"><span class="lbl">${t('prop_status')}</span>
+      <div class="lang-seg">${stSeg}</div></div>
+    <div class="form-row"><span class="lbl">PO Number</span>
+      <input value="${esc(p.po_number || '')}" oninput="App.propField('po_number', this.value)"></div>
+    <div class="form-row"><span class="lbl">${t('prop_complete')}</span>
+      <input type="date" value="${p.complete_by || ''}" onchange="App.propField('complete_by', this.value || null)"></div>
+  </div>
+  <div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">${t('prop_items')}</div>
+    <div class="prop-head"><span>${t('prop_qty')}</span><span>${t('prop_code')}</span><span>${t('prop_desc')}</span><span style="text-align:right">$</span><span></span></div>
+    <div id="prop-rows">${propItemsHtml()}</div>
+    <button class="btn btn-ghost sm" onclick="App.propItemAdd()">${t('prop_add_row')}</button>
+    <div class="total-bar" style="margin-top:8px"><span>${t('total')}</span>
+      <span class="sum ok" id="pr-total">${money(+p.total || 0)}</span></div>
+  </div>
+  <div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">${t('prop_note')}</div>
+    <textarea rows="3" style="width:100%" oninput="App.propField('note', this.value)">${esc(p.note || '')}</textarea>
+  </div>
+  ${propById(p.id) ? `<div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">🔗 ${t('prop_linked')} (${linked.length})</div>
+    ${linked.map(j => { const jcx = cxById(j.complex_id) || {};
+      return `<div class="rowline"><div class="grow">${esc(jcx.abbr || '')} · Unit <b>${esc(j.unit_number || '—')}</b>
+        <span class="tiny">· ${fmtDMY(j.date)} · ${money(jobGrand(j))}</span></div>
+        <button class="btn btn-ghost sm" onclick="App.openJob('${j.id}')">↗</button>
+        <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">✕</button></div>`; }).join('')
+      || `<div class="tiny">—</div>`}
+  </div>` : ''}
+  <div style="margin:10px 12px">
+    <button class="btn btn-green" onclick="App.saveProposal()">${ic('save')} ${t('save')}</button>
+    <div class="btn-rowpp" style="margin-top:8px">
+      <button class="btn btn-blue" onclick="App.makeProposalPdf('${p.id}')">${ic('download')} ${t('prop_pdf')}</button>
+      ${isAdmin() && propById(p.id) ? `<button class="btn btn-red" onclick="App.delProposal('${p.id}')">${ic('trash')} ${t('delete')}</button>` : '<span></span>'}
+    </div>
+  </div></div>`;
+}
+async function saveProposal(){
+  const p = propDraft; if (!p || !isManager()) return;
+  p.counterparty_id = ($('#nt-cp') || {}).value || p.counterparty_id;
+  p.complex_id = ($('#nt-cx') || {}).value || p.complex_id;
+  if (!p.counterparty_id || !p.complex_id){ toast('⚠ ' + t('prop_need_cpcx'), 'err'); return; }
+  p.items = (p.items || [])
+    .filter(it => String(it.d || '').trim() || String(it.code || '').trim() || +it.a)
+    .map(it => ({ q: +it.q || 1, code: String(it.code || ''), d: String(it.d || ''), a: +it.a || 0 }));
+  if (!p.items.length) p.items = [{ q: 1, code: '', d: '', a: 0 }];
+  propRecalc();
+  const isNew = !propById(p.id);
+  p.updated_at = new Date().toISOString();
+  await dbUpsert('proposals', JSON.parse(JSON.stringify(p)));
+  if (p.no == null){
+    if (HAS_SB){
+      try{ const { data } = await state.sb.from('proposals').select('no').eq('id', p.id).single();
+        if (data) p.no = data.no; }catch(e){}
+    } else p.no = (state.data.proposals || []).length;
+    const loc = propById(p.id); if (loc) loc.no = p.no;
+  }
+  audit(isNew ? 'proposal_create' : 'proposal_update', 'proposal', p.id,
+    { no: p.no, unit: p.unit_number, total: p.total, status: p.status });
+  toast('✓ ' + t('saved')); render();
+}
+async function delProposal(id){
+  if (!isAdmin()) return;
+  if (!confirm(t('confirm_del'))) return;
+  const p = propById(id);
+  await dbDelete('proposals', id);
+  audit('proposal_delete', 'proposal', id, { no: p && p.no, unit: p && p.unit_number });
+  propDraft = null; toast('🗑 ' + t('deleted')); render();
+}
+function makeProposalPdf(id){
+  /* v1.07.33: печатная форма по образцу QuickBooks-пропозала клиента:
+     шапка PROPOSAL + Number/Date/Complete By/Page, блоки To/Ship To,
+     сетка Customer ID / PO Number / Contact / Shipping Method (Airborne),
+     таблица Quantity|Item|Description|Amount с Note внутри описания,
+     итоги Subtotal/Sales Tax/Freight/TOTAL и юридическая приписка. */
+  const p = (propDraft && propDraft.id === id) ? propDraft : propById(id);
+  if (!p || !window.jspdf){ toast('⛔ PDF', 'err'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'letter' });      // 215.9 × 279.4
+  const org = state.data.org_settings || {};
+  const cp = cpById(p.counterparty_id) || { name: '' };
+  const cx = cxById(p.complex_id) || { name: '', address: '', abbr: '' };
+  const L = 12, R = 203.9, W = R - L;
+  const money2 = n => (+n || 0).toLocaleString('en-US',
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  /* ---------- шапка ---------- */
+  let y = 16;
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(String(org.company_name || ''), L, y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  let hy = y + 5;
+  [org.addr1, org.addr2, org.addr3].forEach(s => {
+    if (s){ doc.text(String(s), L, hy); hy += 4; } });
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.setTextColor(160);
+  doc.text('PROPOSAL', R, y + 3, { align: 'right' });
+  doc.setTextColor(0); doc.setFontSize(9);
+  let ry = y + 11;
+  const pair = (k, v) => {
+    doc.setFont('helvetica','normal'); doc.text(k, R - 28, ry, { align: 'right' });
+    doc.setFont('helvetica','bold'); doc.text(String(v ?? ''), R, ry, { align: 'right' });
+    ry += 4.6;
+  };
+  pair('Proposal Number:', p.no ?? '—');
+  pair('Proposal Date:', fmtUS(p.date));
+  if (p.complete_by) pair('Complete By:', fmtUS(p.complete_by));
+  pair('Page:', '1');
+  y = Math.max(hy, ry) + 3;
+
+  /* ---------- To / Ship To ---------- */
+  const addr = String(cx.address || '');
+  const comma = addr.indexOf(',');
+  const street = comma > 0 ? addr.slice(0, comma).trim() : addr;
+  const cityln = comma > 0 ? addr.slice(comma + 1).trim() : '';
+  const boxW = 92, boxH = 24;
+  const infoBox = (x, title, lines) => {
+    doc.setFillColor(222); doc.rect(x, y, boxW, 5.6, 'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.text(title, x + 2, y + 4);
+    doc.rect(x, y + 5.6, boxW, boxH);
+    doc.setFont('helvetica','normal');
+    let by = y + 10;
+    lines.filter(Boolean).forEach(s => {
+      doc.text(String(s).slice(0, 46), x + 2, by); by += 4.4; });
+  };
+  infoBox(L, 'To:', [cp.name, cx.name !== cp.name ? cx.name : '', street, cityln]);
+  infoBox(R - boxW, 'Ship To:',
+    [cx.name, street, p.unit_number ? String(p.unit_number) : '', cityln]);
+  y += 5.6 + boxH + 4;
+
+  /* ---------- Customer ID / PO Number / Contact / Shipping ---------- */
+  const half = W / 2;
+  const gridCell = (x, w, title, val) => {
+    doc.setFillColor(222); doc.rect(x, y, w, 5.4, 'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+    doc.text(title, x + w / 2, y + 3.8, { align: 'center' });
+    doc.rect(x, y + 5.4, w, 6);
+    doc.setFont('helvetica','normal');
+    if (val) doc.text(String(val).slice(0, 50), x + w / 2, y + 9.5, { align: 'center' });
+  };
+  gridCell(L, half, 'Customer ID', cx.name || cp.name);
+  gridCell(L + half, half, 'PO Number', p.po_number || '');
+  y += 11.4;
+  gridCell(L, half, 'Customer Contact', '');
+  gridCell(L + half, half, 'Shipping Method', 'Airborne');
+  y += 11.4 + 3;
+
+  /* ---------- таблица позиций ---------- */
+  const cQ = L, wQ = 20, cI = cQ + wQ, wI = 24, cD = cI + wI, cA = R - 26, wD = cA - cD;
+  const headRow = () => {
+    doc.setFillColor(222); doc.rect(L, y, W, 5.8, 'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.text('Quantity', cQ + wQ - 2, y + 4.1, { align: 'right' });
+    doc.text('Item', cI + 2, y + 4.1);
+    doc.text('Description', cD + 2, y + 4.1);
+    doc.text('Amount', R - 2, y + 4.1, { align: 'right' });
+    y += 5.8;
+    doc.setFont('helvetica','normal');
+  };
+  headRow();
+  let btop = y;
+  const flushBox = () => {
+    doc.rect(L, btop, W, y - btop);
+    doc.line(cI, btop, cI, y);
+    doc.line(cD, btop, cD, y);
+    doc.line(cA, btop, cA, y);
+  };
+  const LH = 4.3;
+  const ensure = h => {
+    if (y + h > 232){
+      flushBox(); doc.addPage();
+      y = 14;
+      doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text('Proposal # ' + (p.no ?? ''), R, y, { align: 'right' });
+      y += 4; headRow(); btop = y;
+    }
+  };
+  const rows = [];
+  if (p.unit_number) rows.push({ q: 1, code: '1', d: 'Unit # ' + p.unit_number, a: 0 });
+  (p.items || []).forEach(it => rows.push({
+    q: (it.q ?? 1), code: it.code || '', d: it.d || '', a: +it.a || 0 }));
+  doc.setFontSize(9);
+  rows.forEach(it => {
+    const lines = doc.splitTextToSize(String(it.d), wD - 4);
+    const h = Math.max(LH, lines.length * LH) + 1.8;
+    ensure(h);
+    doc.text((+it.q || 1).toFixed(2), cQ + wQ - 2, y + 3.6, { align: 'right' });
+    doc.text(String(it.code).slice(0, 10), cI + 2, y + 3.6);
+    doc.text(lines, cD + 2, y + 3.6);
+    if (it.a) doc.text(money2(it.a), R - 2, y + 3.6, { align: 'right' });
+    y += h;
+  });
+  if (p.note){
+    const nl = doc.splitTextToSize('Note:\n' + p.note, wD - 4);
+    const h = nl.length * LH + 2.4;
+    ensure(h);
+    doc.text(nl, cD + 2, y + 3.6);
+    y += h;
+  }
+  y += 1;
+  flushBox();
+
+  /* ---------- итоги ---------- */
+  const tx = cD, tw = R - tx;
+  const totRow = (k, v, dark) => {
+    if (dark){ doc.setFillColor(205); doc.rect(tx, y, tw, 6, 'FD'); doc.setFont('helvetica','bold'); }
+    else { doc.rect(tx, y, tw, 6); doc.setFont('helvetica','normal'); }
+    doc.text(k, tx + 2, y + 4.2);
+    if (v !== '') doc.text(v, R - 2, y + 4.2, { align: 'right' });
+    y += 6;
+  };
+  doc.setFontSize(9);
+  totRow('Subtotal', money2(p.total), false);
+  totRow('Sales Tax', '', false);
+  totRow('Freight', '', false);
+  totRow('TOTAL PROPOSAL AMOUNT', '$' + money2(p.total), true);
+
+  /* ---------- юридическая приписка ---------- */
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.4);
+  const legal = 'NOTE: All invoices are due and payable upon receipt. Any balances that remain '
+    + 'outstanding for a period greater than thirty (30) days will be subject to a service charge at '
+    + "the rate of 1.5% per month. You agree to pay all legal expenses, including reasonable attorney's "
+    + 'fees, incurred in connection with the collection of past due amounts.';
+  doc.text(doc.splitTextToSize(legal, W), L, Math.max(y + 8, 250));
+
+  savePdfCompat(doc, 'Proposal_' + (p.no ?? 'x') + '_' + (cx.abbr || '') + '.pdf');
+}
+function propStripHtml(){
+  const list = (state.data.proposals || []).filter(p => p.date === state.selDate);
+  if (!list.length) return '';
+  return `<div class="pstrip">${list.map(p => {
+    const cx = cxById(p.complex_id) || {abbr:'—'};
+    return `<div class="pcard clicky" onclick="App.openProposal('${p.id}')">
+      <span class="chip pst pst-${p.status}">${t('pst_' + p.status)}</span>
+      <div><b>P-${p.no ?? '·'}</b> · ${esc(cx.abbr)}${p.unit_number ? ' · ' + esc(p.unit_number) : ''}</div>
+      <div class="tiny money">${money(+p.total || 0)}</div>
+    </div>`; }).join('')}</div>`;
+}
+
+/* =====================================================================
+   v1.07.27: СОГЛАСОВАНИЕ ПРОДЛЕНИЙ сверх лимита
+   ===================================================================== */
+function pendingExtReqHtml(jobId){
+  const mine = (state.data.ext_requests || []).filter(r => r.job_id === jobId && r.status === 'pending');
+  if (!mine.length) return '';
+  return mine.map(r => `<div class="tiny" style="margin:2px 0 6px">${t('ext_req_pending').replace('{N}', r.days)}</div>`).join('');
+}
+async function extReqCreate(){
+  const d = extDraft; if (!d) return;
+  let days = parseInt(prompt(t('ext_req_days_q'), String(maxExtendDays() + 1)) || '0', 10);
+  if (!(days >= 1)) return;
+  days = Math.min(30, days);
+  const rows = d.rows.map(p => ({ id: p.id,
+      qty: d.mode === 'all' ? (+p.qty || 1) : Math.min(+p.qty || 1, d.sel[p.id] || 0) }))
+    .filter(r => r.qty > 0);
+  if (!rows.length){ toast('⚠ 0', 'err'); return; }
+  const agg = {}; d.rows.forEach(p => { const r = rows.find(x => x.id === p.id); if (!r) return;
+    const e = etById(p.equipment_type_id); const k = e ? e.abbr : '?'; agg[k] = (agg[k] || 0) + r.qty; });
+  const p0 = d.rows[0]; const cx = cxById(p0.complex_id) || {};
+  const req = { id: uid(), job_id: d.jobId, requested_by: state.user.id,
+    requested_at: new Date().toISOString(), days,
+    qty_total: rows.reduce((s, r) => s + r.qty, 0),
+    payload: rows, unit: p0.unit_number || '', cx: cx.abbr || cx.name || '',
+    eq: Object.entries(agg).map(([k, q]) => `${k}×${q}`).join(' '), status: 'pending' };
+  await dbUpsert('ext_requests', req);
+  audit('ext_request', 'job', d.jobId, { unit: req.unit, days, qty: req.qty_total, eq: req.eq });
+  extDraft = null; closeModal();
+  toast('⏳ ' + t('ext_req_sent')); render();
+}
+function extReqStripHtml(){
+  const list = (state.data.ext_requests || []).filter(r => r.status === 'pending');
+  if (!list.length) return '';
+  return `<div class="section-title" style="margin-top:2px">${t('ext_req_title')} <span class="chip warn">${list.length}</span></div>
+  <div class="pstrip">${list.map(r => `
+    <div class="pcard reqcard">
+      <div><b>Unit ${esc(r.unit || '—')}</b> · ${esc(r.cx || '')}</div>
+      <div class="tiny">${esc(r.eq || '')} · +${r.days} ${t('days')} · ${esc(profName(r.requested_by))}</div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn btn-green sm" onclick="App.extReqDecide('${r.id}', true)">✓ ${t('ext_req_ok')}</button>
+        <button class="btn btn-red sm" onclick="App.extReqDecide('${r.id}', false)">✗</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+async function extReqDecide(id, ok){
+  if (!isManager()) return;
+  if (!confirm((ok ? t('ext_req_ok') : t('ext_req_no')) + '?')) return;
+  if (!HAS_SB){ toast('Supabase only', 'err'); return; }
+  const { error } = await state.sb.rpc('decide_ext_request', { p_id: id, p_ok: !!ok });
+  if (error){ toast('⛔ ' + rpcFail(error, 'decide_ext_request'), 'err'); return; }
+  const r = (state.data.ext_requests || []).find(x => x.id === id);
+  if (r){ r.status = ok ? 'approved' : 'rejected'; }
+  toast(ok ? '✓ ' + t('ext_req_done') : '✗ ' + t('ext_req_rej'));
+  try{ if (App.sync) await App.sync(); }catch(e){}
+  render();
+}
+
+/* =====================================================================
+   v1.07.31: ФОТО И ВИДЕО → GOOGLE DRIVE (интеграция media-модуля)
+   Снимок → сжатие в браузере → очередь в IndexedDB (офлайн) →
+   media-begin (права по RLS, имя от сервера, resumable-URL) →
+   PUT байтов НАПРЯМУЮ в Google → миниатюра в Supabase Storage →
+   media-commit (журнал пишет сервер). Токены Google клиента не касаются.
+   ===================================================================== */
+const M_MAXW = 1920, M_THUMBW = 320, M_JPEGQ = 0.8, M_THQ = 0.7;
+const M_VMAX = 90, M_CHUNK = 8 * 1024 * 1024;
+const mediaFN = () => (CFG.SUPABASE_URL || '') + '/functions/v1';
+let mediaQ = [];                       // зеркало IndexedDB-очереди для мгновенного рендера
+const mediaThumbCache = new Map();     // thumb_path -> objectURL
+let _mediaHydPlanned = false, _mediaBusy = false;
+
+async function mediaJwt(){
+  try{ const { data } = await state.sb.auth.getSession(); return data.session && data.session.access_token; }
+  catch(e){ return null; }
+}
+/* ---------- IndexedDB-очередь ---------- */
+let _mdbP = null;
+function mdb(){
+  if (typeof indexedDB === 'undefined') return Promise.reject(new Error('no idb'));
+  if (_mdbP) return _mdbP;
+  _mdbP = new Promise((res, rej) => {
+    const r = indexedDB.open('tl-media', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('outbox', { keyPath: 'qid' });
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+  return _mdbP;
+}
+const mtx = (mode, fn) => mdb().then(d => new Promise((res, rej) => {
+  const t = d.transaction('outbox', mode); const out = fn(t.objectStore('outbox'));
+  t.oncomplete = () => res(out && out.result !== undefined ? out.result : out);
+  t.onerror = () => rej(t.error);
+}));
+const mQPut = it => mtx('readwrite', s => s.put(it)).catch(() => {});
+const mQDelIdb = qid => mtx('readwrite', s => s.delete(qid)).catch(() => {});
+
+async function initMedia(){
+  try{ mediaQ = (await mtx('readonly', s => s.getAll())) || []; }catch(e){ mediaQ = []; }
+  mediaBadge();
+  addEventListener('online', () => { mediaFlush(); });
+  addEventListener('visibilitychange', () => { if (!document.hidden) mediaFlush(); });
+  setInterval(() => { if (mediaQ.length) mediaFlush(); }, 30000);
+  if (_driveOAuth){                     // вернулись со страницы Google
+    const tmr = setInterval(() => {
+      if (state.user && isAdmin() && HAS_SB){
+        clearInterval(tmr);
+        const code = _driveOAuth; _driveOAuth = null;
+        mediaOauthExchange(code);
+      }
+    }, 700);
+    setTimeout(() => clearInterval(tmr), 90000);
+  }
+}
+/* ---------- сжатие ---------- */
+async function mShrink(file, maxW, q){
+  let src, iw, ih;
+  const bmp = await createImageBitmap(file).catch(() => null);
+  if (bmp){ src = bmp; iw = bmp.width; ih = bmp.height; }
+  else {
+    src = await new Promise((res, rej) => {
+      const u = URL.createObjectURL(file), im = new Image();
+      im.onload = () => { URL.revokeObjectURL(u); res(im); };
+      im.onerror = rej; im.src = u;
+    });
+    iw = src.naturalWidth; ih = src.naturalHeight;
+  }
+  const k = Math.min(1, maxW / Math.max(iw, ih));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(iw * k)); c.height = Math.max(1, Math.round(ih * k));
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  if (bmp && bmp.close) bmp.close();
+  return new Promise(res => c.toBlob(res, 'image/jpeg', q));
+}
+const mVideoDur = f => new Promise(res => {
+  const u = URL.createObjectURL(f), v = document.createElement('video');
+  v.preload = 'metadata'; v.src = u;
+  v.onloadedmetadata = () => { URL.revokeObjectURL(u); res(v.duration || 0); };
+  v.onerror = () => { URL.revokeObjectURL(u); res(0); };
+});
+const mVideoThumb = f => new Promise(res => {
+  const u = URL.createObjectURL(f), v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = u;
+  v.onloadeddata = () => { try{
+    const k = Math.min(1, M_THUMBW / Math.max(v.videoWidth || 1, v.videoHeight || 1));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round((v.videoWidth || 320) * k));
+    c.height = Math.max(1, Math.round((v.videoHeight || 240) * k));
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    c.toBlob(b => { URL.revokeObjectURL(u); res(b); }, 'image/jpeg', M_THQ);
+  }catch(e){ URL.revokeObjectURL(u); res(null); } };
+  v.onerror = () => { URL.revokeObjectURL(u); res(null); };
+});
+/* ---------- съёмка ---------- */
+function mediaPick(jobId, kind){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  const rows = (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind);
+  const loc = mediaQ.filter(x => x.job_id === jobId && x.kind === kind);
+  if (rows.length + loc.length >= (kind === 'video' ? 2 : 10)){ toast('⚠ ' + t('media_limit'), 'err'); return; }
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = kind === 'video' ? 'video/*' : 'image/*';
+  inp.capture = 'environment';
+  inp.onchange = async () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    try{
+      let blob, thumb, mime;
+      if (kind === 'photo'){
+        blob = await mShrink(f, M_MAXW, M_JPEGQ);
+        thumb = await mShrink(f, M_THUMBW, M_THQ);
+        mime = 'image/jpeg';
+      } else {
+        const dur = await mVideoDur(f);
+        if (dur > M_VMAX + 2){ toast('⚠ ' + t('media_vlong'), 'err'); return; }
+        blob = f; thumb = await mVideoThumb(f); mime = f.type || 'video/mp4';
+      }
+      const it = { qid: uid(), job_id: jobId, kind, mime, blob, thumb,
+        state: 'new', attempts: 0, at: Date.now() };
+      mediaQ.push(it); await mQPut(it);
+      navigator.vibrate?.(15);
+      render(); mediaFlush();
+    }catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+  };
+  inp.click();
+}
+async function mediaQDel(qid){
+  mediaQ = mediaQ.filter(x => x.qid !== qid);
+  await mQDelIdb(qid);
+  render(); mediaBadge();
+}
+/* ---------- отправка (докачка чанками) ---------- */
+async function mPutResumable(it){
+  const total = it.blob.size;
+  let offset = 0;
+  if (it.started){
+    const p = await fetch(it.upload_url, { method: 'PUT',
+      headers: { 'Content-Range': `bytes */${total}` } });
+    if (p.status === 308){
+      const r = p.headers.get('Range');
+      offset = r ? Number(r.split('-')[1]) + 1 : 0;
+    } else if (p.ok) return (await p.json()).id;
+  }
+  while (offset < total){
+    const end = Math.min(offset + M_CHUNK, total);
+    const r = await fetch(it.upload_url, { method: 'PUT',
+      headers: { 'Content-Range': `bytes ${offset}-${end - 1}/${total}` },
+      body: it.blob.slice(offset, end) });
+    it.started = true; await mQPut(it);
+    if (r.status === 308){ offset = end; continue; }
+    if (r.ok) return (await r.json()).id;
+    throw new Error('upload ' + r.status);
+  }
+  throw new Error('upload incomplete');
+}
+async function mediaFlush(){
+  if (_mediaBusy || !HAS_SB || !navigator.onLine || !state.user){ mediaBadge(); return; }
+  _mediaBusy = true;
+  try{
+    for (const it of [...mediaQ].sort((a, b) => a.at - b.at)){
+      try{
+        const token = await mediaJwt(); if (!token) break;
+        if (!it.upload_url){
+          const r = await fetch(mediaFN() + '/media-begin', { method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify({ job_id: it.job_id, kind: it.kind, mime: it.mime, size: it.blob.size }) });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok){
+            if (r.status === 409 || r.status === 403 || r.status === 413){
+              await mediaQDel(it.qid); toast('⛔ ' + (j.error || r.status), 'err'); continue;
+            }
+            if (String(j.error || '').includes('DRIVE_NOT_CONFIGURED')){
+              if (isAdmin()) toast('⚠ ' + t('media_not_cfg'), 'inf');
+              break;
+            }
+            throw new Error(j.error || r.status);
+          }
+          Object.assign(it, { media_id: j.media_id, upload_url: j.upload_url, thumb_path: j.thumb_path });
+          await mQPut(it);
+        }
+        const driveId = await mPutResumable(it);
+        if (it.thumb && it.thumb_path){
+          await state.sb.storage.from('media-thumbs')
+            .upload(it.thumb_path, it.thumb, { contentType: 'image/jpeg', upsert: true })
+            .catch(() => {});
+        }
+        const token2 = await mediaJwt();
+        const c = await fetch(mediaFN() + '/media-commit', { method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token2 },
+          body: JSON.stringify({ media_id: it.media_id, drive_file_id: driveId }) });
+        if (!c.ok) throw new Error('commit ' + c.status);
+        mediaQ = mediaQ.filter(x => x.qid !== it.qid);
+        await mQDelIdb(it.qid);
+        if (!state.data.media) state.data.media = [];
+        state.data.media.push({ id: it.media_id, job_id: it.job_id, owner_id: state.user.id,
+          kind: it.kind, seq: 0, file_name: '', thumb_path: it.thumb_path, status: 'ready' });
+        render();
+      }catch(e){
+        it.attempts = (it.attempts || 0) + 1; await mQPut(it);
+        dlog('media stuck', it.qid, e);
+        break;                              // сеть шалит — дождёмся online/интервала
+      }
+    }
+  } finally { _mediaBusy = false; mediaBadge(); }
+}
+/* ---------- полоса миниатюр ---------- */
+function mediaStripHtml(jobId){
+  const rows = (state.data.media || []).filter(m => m.job_id === jobId)
+    .sort((a, b) => (a.kind > b.kind ? 1 : a.kind < b.kind ? -1 : (a.seq || 0) - (b.seq || 0)));
+  const loc = mediaQ.filter(x => x.job_id === jobId);
+  const nP = rows.filter(m => m.kind === 'photo').length + loc.filter(x => x.kind === 'photo').length;
+  const nV = rows.filter(m => m.kind === 'video').length + loc.filter(x => x.kind === 'video').length;
+  const cells = rows.map(m => `
+    <div class="mth clicky" onclick="App.mediaOpen('${m.id}','${m.kind}')">
+      <img data-thumb="${m.thumb_path || ''}" alt="">
+      ${m.kind === 'video' ? '<span class="mvid">▶</span>' : ''}
+      ${m.status !== 'ready' ? '<span class="mst">⏳</span>' : ''}
+      ${isAdmin() ? `<span class="mx" title="${t('media_del_q')}" onclick="event.stopPropagation();App.mediaDelete('${m.id}')">✕</span>` : ''}
+    </div>`).join('')
+  + loc.map(x => `
+    <div class="mth loc">
+      <img src="${x.thumb ? URL.createObjectURL(x.thumb) : ''}" alt="">
+      ${x.kind === 'video' ? '<span class="mvid">▶</span>' : ''}
+      <span class="mst">⏳</span>
+      <span class="mx" onclick="App.mediaQDel('${x.qid}')">✕</span>
+    </div>`).join('');
+  if (!_mediaHydPlanned){ _mediaHydPlanned = true; setTimeout(mediaHydrate, 0); }
+  return `<div class="card media-card">
+    <div style="font-weight:900;margin-bottom:6px">📷 ${t('media_title')}
+      <span class="tiny"> · ${nP}/10 · ${nV}/2</span></div>
+    <div class="mstrip">${cells}
+      <button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','photo')">${t('media_photo')}</button>
+      <button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video')">${t('media_video')}</button>
+    </div>
+  </div>`;
+}
+async function mediaHydrate(){
+  _mediaHydPlanned = false;
+  if (!HAS_SB) return;
+  const imgs = [...document.querySelectorAll('img[data-thumb]:not([src])')];
+  for (const img of imgs){
+    const p = img.getAttribute('data-thumb'); if (!p) continue;
+    if (mediaThumbCache.has(p)){ img.src = mediaThumbCache.get(p); continue; }
+    try{
+      const { data } = await state.sb.storage.from('media-thumbs').download(p);
+      if (data){ const u = URL.createObjectURL(data); mediaThumbCache.set(p, u); img.src = u; }
+    }catch(e){}
+  }
+}
+async function mediaOpen(id, kind){
+  if (!HAS_SB) return;
+  toast('⏳ …', 'inf');
+  const token = await mediaJwt();
+  const r = await fetch(mediaFN() + '/media-view?id=' + encodeURIComponent(id),
+    { headers: { Authorization: 'Bearer ' + token } });
+  if (!r.ok){ toast('⛔ ' + t('media_open_err'), 'err'); return; }
+  const u = URL.createObjectURL(await r.blob());
+  const w = document.createElement('div');
+  w.className = 'mfull';
+  w.onclick = () => { URL.revokeObjectURL(u); w.remove(); };
+  w.innerHTML = kind === 'video'
+    ? `<video src="${u}" controls playsinline autoplay></video>`
+    : `<img src="${u}" alt="">`;
+  document.body.appendChild(w);
+}
+async function mediaDelete(id){
+  if (!isAdmin()) return;
+  if (!confirm(t('media_del_q') + '?')) return;
+  const token = await mediaJwt();
+  const r = await fetch(mediaFN() + '/media-delete', { method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ media_id: id }) });
+  if (!r.ok){ toast('⛔', 'err'); return; }
+  state.data.media = (state.data.media || []).filter(m => m.id !== id);
+  toast('🗑 ' + t('deleted')); render();
+}
+function mediaBadge(){
+  let el = document.getElementById('tl-net');
+  if (!el){
+    el = document.createElement('div'); el.id = 'tl-net';
+    document.body.appendChild(el);
+  }
+  const n = mediaQ.length;
+  const off = !navigator.onLine;
+  el.textContent = (off ? t('media_offline') : '') + (n ? ` ⬆${n} ${t('media_wait')}` : '');
+  el.style.display = (off || n) ? 'inline-flex' : 'none';
+}
+/* ---------- админка: ключи, подключение, тест ---------- */
+function mediaSettingsCardHtml(){
+  if (!isAdmin()) return '';
+  const redirect = location.origin + location.pathname;
+  return `<div class="card" id="gd-card">
+    <div style="font-weight:900;margin-bottom:6px">${t('gd_card')}</div>
+    <div class="tiny" style="margin-bottom:8px">${t('gd_intro')}</div>
+    <div class="form-row"><span class="lbl">${t('gd_cid')}</span>
+      <input id="gd-cid" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
+    <div class="form-row"><span class="lbl">${t('gd_secret')}</span>
+      <input id="gd-sec" type="password" autocomplete="new-password" placeholder="GOCSPX-…"></div>
+    <div class="form-row"><span class="lbl">${t('gd_folder')}</span>
+      <input id="gd-folder" autocomplete="off" placeholder="ID из адреса папки на Диске"></div>
+    <div class="form-row"><span class="lbl">${t('gd_redirect')}</span>
+      <input readonly value="${esc(redirect)}" onclick="this.select()"></div>
+    <div class="btn-rowpp" style="margin:8px 0 0">
+      <button class="btn btn-ghost" onclick="App.mediaSaveKeys()">${t('gd_save')}</button>
+      <button class="btn btn-blue" onclick="App.mediaConnect()">${t('gd_connect')}</button>
+    </div>
+    <button class="btn btn-green" style="margin-top:8px" onclick="App.mediaHealth()">${t('gd_test')}</button>
+    <div id="gd-health" class="tiny" style="margin-top:8px"></div>
+    <details style="margin-top:8px"><summary class="tiny">${t('gd_help')}</summary>
+      <div class="tiny" style="margin-top:6px;line-height:1.5">
+        1. console.cloud.google.com → создайте проект → APIs &amp; Services → Library → включите <b>Google Drive API</b>.<br>
+        2. OAuth consent screen → External → заполните название и почту → <b>Publish app</b> (иначе токен умрёт через 7 дней; скоуп drive.file верификации не требует).<br>
+        3. Credentials → Create OAuth client ID → <b>Web application</b> → в Authorized redirect URIs вставьте адрес из поля выше.<br>
+        4. Скопируйте Client ID и Client Secret в поля, укажите ID папки архива на Диске (создайте папку, ID — в адресной строке после /folders/).<br>
+        5. «${t('gd_save')}» → «${t('gd_connect')}» → войдите под <b>архивным</b> Google-аккаунтом фирмы и разрешите доступ → «${t('gd_test')}».
+      </div>
+    </details>
+  </div>`;
+}
+async function mediaSaveKeys(){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  const cid = ($('#gd-cid') || {}).value || '', sec = ($('#gd-sec') || {}).value || '',
+        fld = ($('#gd-folder') || {}).value || '';
+  const { error } = await state.sb.rpc('admin_set_drive_config',
+    { p_client_id: cid, p_client_secret: sec, p_refresh_token: '', p_folder_id: fld });
+  if (error){ toast('⛔ ' + rpcFail(error, 'admin_set_drive_config'), 'err'); return; }
+  toast('✓ ' + t('gd_saved'));
+}
+async function mediaConnect(){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  const cid = (($('#gd-cid') || {}).value || '').trim();
+  if (!cid){ toast('⚠ ' + t('gd_need_cid'), 'err'); return; }
+  await mediaSaveKeys();
+  const redirect = location.origin + location.pathname;
+  const u = 'https://accounts.google.com/o/oauth2/v2/auth'
+    + '?client_id=' + encodeURIComponent(cid)
+    + '&redirect_uri=' + encodeURIComponent(redirect)
+    + '&response_type=code'
+    + '&scope=' + encodeURIComponent('https://www.googleapis.com/auth/drive.file')
+    + '&access_type=offline&prompt=consent&state=tl_drive';
+  location.href = u;
+}
+async function mediaOauthExchange(code){
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-oauth', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ code, redirect_uri: location.origin + location.pathname }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j.error || r.status);
+    toast('✓ ' + t('gd_connected') + (j.email ? ' · ' + j.email : ''));
+    App.go('settings');
+  }catch(e){ toast('⛔ Google OAuth: ' + (e.message || e), 'err'); }
+}
+async function mediaHealth(){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  const box = $('#gd-health'); if (box) box.textContent = '⏳ …';
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-health',
+      { headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json().catch(() => ({}));
+    const row = (k, ok, extra) =>
+      `<div>${ok ? '🟢' : '🔴'} ${k}${extra ? ' — ' + extra : ''}</div>`;
+    let h = '';
+    h += row(t('gd_db'), j.db && j.db.ok, j.db && (j.db.ok ? j.db.ms + ' ms' : esc(String(j.db.error || ''))));
+    h += row(t('gd_auth'), j.auth && j.auth.ok,
+      j.auth && j.auth.ok ? j.auth.ms + ' ms' : t('gd_not_conn'));
+    if (j.drive && j.drive.ok){
+      h += row(t('gd_acc'), true, esc(j.drive.account || ''));
+      h += row(t('gd_used'), true, j.drive.used_gb + ' / ' + j.drive.limit_gb + ' GB');
+    } else if (j.drive){
+      h += row('Drive', false, esc(String(j.drive.error || '')).slice(0, 120));
+    }
+    if (j.write) h += row(t('gd_write'), j.write.ok, j.write.error ? esc(String(j.write.error)).slice(0, 120) : '');
+    if (box) box.innerHTML = h || '⛔';
+    if (j.cfg){
+      const c = $('#gd-cid'), f = $('#gd-folder');
+      if (c && !c.value && j.cfg.client_id) c.value = j.cfg.client_id;
+      if (f && !f.value && j.cfg.folder_id) f.value = j.cfg.folder_id;
+    }
+  }catch(e){ if (box) box.innerHTML = '🔴 ' + esc(String(e.message || e)); }
+}
+initMedia();
+
+/* =====================================================================
+   v1.07.32: БЭКАП ДАННЫХ — интегрирован в приложение (Настройки, админ).
+   Выгрузка: все таблицы постранично + учётки (RPC) + секреты (по галочке)
+   в один JSON. Загрузка: учётки → таблицы в порядке зависимостей FK,
+   пачками через admin_restore_rows; дубли отсекает Postgres
+   (ON CONFLICT DO NOTHING), ошибки — построчно в экранный лог с
+   выгрузкой в .txt. Журналы выгружаются, но кнопкой не восстанавливаются.
+   ===================================================================== */
+const BK_TABLES = ['profiles','counterparties','complexes','aux_equipment','work_types',
+  'equipment_types','size_types','extra_works','product_types','price_list',
+  'counterparty_prices','equipment_stock','org_settings','hidden_staff',
+  'code_requests','complex_code_history','proposals','jobs','placements',
+  'ext_requests','media'];
+const BK_EXPORT_ONLY = ['audit_log','tech_log'];
+const BK_PAGE = 1000, BK_CHUNK = 300;
+let bkLogLines = null;
+
+function bkStamp(){ const d = new Date(), p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; }
+function bkLog(mark, msg){
+  bkLogLines = bkLogLines || [];
+  const s = `${new Date().toLocaleTimeString()} ${mark} ${msg}`;
+  bkLogLines.push(s);
+  const pre = $('#bk-log');
+  if (pre){ pre.style.display = 'block'; pre.textContent += s + '\n'; pre.scrollTop = pre.scrollHeight; }
+  const btn = $('#bk-save'); if (btn) btn.style.display = 'inline-flex';
+}
+function bkDownload(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
+function bkSaveLog(){
+  if (!bkLogLines) return;
+  bkDownload(new Blob([bkLogLines.join('\n')], { type: 'text/plain;charset=utf-8' }),
+    `techlog-${bkStamp()}-log.txt`);
+}
+const bkNoRpc = e => /PGRST202|Could not find the function|schema cache/i
+  .test(String((e && e.message) || e));
+function bkBusy(v){ ['#bk-exp', '#bk-imp'].forEach(s => { const b = $(s); if (b) b.disabled = !!v; }); }
+
+async function bkFetchAll(tb){
+  if (!HAS_SB){                                   // демо: из локального состояния
+    if (tb === 'org_settings') return [state.data.org_settings];
+    if (tb === 'audit_log' || tb === 'tech_log')
+      return (state.data.audit_log || []).filter(r => (r.src || 'doc') === (tb === 'tech_log' ? 'tech' : 'doc'));
+    return (state.data[tb] || []).slice();
+  }
+  const out = []; let from = 0;
+  for (;;){
+    let q = state.sb.from(tb).select('*');
+    q = (tb === 'audit_log' || tb === 'tech_log')
+      ? q.order('at', { ascending: true }) : q.order('id', { ascending: true });
+    const { data, error } = await q.range(from, from + BK_PAGE - 1);
+    if (error){
+      if (/does not exist|42P01/i.test(error.message)) return null;   // таблицы ещё нет
+      throw new Error(error.message);
+    }
+    out.push(...data);
+    if (data.length < BK_PAGE) break;
+    from += BK_PAGE;
+  }
+  return out;
+}
+async function bkExport(){
+  const withSec = !!(($('#bk-sec') || {}).checked);
+  bkLogLines = [`# TechLog — выгрузка бэкапа — ${new Date().toLocaleString()}`];
+  const pre = $('#bk-log'); if (pre){ pre.style.display = 'block'; pre.textContent = ''; }
+  bkBusy(true);
+  try{
+    const counts = {}; const parts = []; let first = true;
+    const meta = { app: 'TechLog', kind: 'backup', app_version: APP_VERSION,
+      exported_at: new Date().toISOString(), by: (state.user && state.user.login) || '?' };
+    parts.push('{"meta":' + JSON.stringify(meta) + ',"tables":{');
+    for (const tb of [...BK_TABLES, ...BK_EXPORT_ONLY]){
+      try{
+        const rows = await bkFetchAll(tb);
+        if (rows === null){ bkLog('·', tb + ': таблицы нет — пропущена'); continue; }
+        parts.push((first ? '' : ',') + JSON.stringify(tb) + ':' + JSON.stringify(rows));
+        first = false; counts[tb] = rows.length;
+        bkLog('✔', `${tb}: ${rows.length}`);
+      }catch(e){ bkLog('⛔', `${tb}: ${e.message || e}`); }
+    }
+    parts.push('}');
+    if (HAS_SB){
+      try{
+        const { data, error } = await state.sb.rpc('admin_export_auth_users');
+        if (error) throw error;
+        parts.push(',"auth_users":' + JSON.stringify(data || []));
+        counts.auth_users = (data || []).length;
+        bkLog('✔', `auth_users: ${counts.auth_users} (bcrypt)`);
+      }catch(e){ bkLog('⛔', 'auth_users: ' + (bkNoRpc(e) ? t('bk_need_sql') : (e.message || e))); }
+      if (withSec){
+        try{
+          const { data, error } = await state.sb.rpc('admin_export_secrets');
+          if (error) throw error;
+          parts.push(',"secrets":' + JSON.stringify(data || []));
+          bkLog('✔', `secrets: ${(data || []).length} — ${t('bk_secrets_warn')}`);
+        }catch(e){ bkLog('⛔', 'secrets: ' + (e.message || e)); }
+      }
+    }
+    parts.push('}');
+    const name = `techlog-backup-${bkStamp()}.json`;
+    bkDownload(new Blob(parts, { type: 'application/json' }), name);
+    bkLog('✔', t('bk_done_file') + ': ' + name);
+    audit('backup_export', 'system', 'backup', { counts, with_secrets: withSec });
+  } finally { bkBusy(false); }
+}
+function bkImportPick(){
+  if (!HAS_SB){ toast(t('bk_demo_imp'), 'err'); return; }
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    if (!confirm(t('bk_confirm'))) return;
+    bkImportFile(f);
+  };
+  inp.click();
+}
+async function bkImportFile(file){
+  bkLogLines = [`# TechLog — загрузка из бэкапа — ${new Date().toLocaleString()}`];
+  const pre = $('#bk-log'); if (pre){ pre.style.display = 'block'; pre.textContent = ''; }
+  const withSec = !!(($('#bk-sec') || {}).checked);
+  bkBusy(true);
+  try{
+    let b;
+    try{
+      bkLog('·', t('bk_reading') + ' ' + file.name + ' …');
+      b = JSON.parse(await file.text());
+      if (!b || !b.tables) throw new Error(t('bk_notfile'));
+    }catch(e){ bkLog('⛔', String(e.message || e)); return; }
+    bkLog('·', `${t('bk_from')} ${(b.meta && b.meta.exported_at) || '?'} (${t('bk_by')}: ${(b.meta && b.meta.by) || '?'})`);
+
+    let tIns = 0, tSkip = 0, tErr = 0;
+    /* 1. учётные записи — раньше профилей (FK profiles.id → auth.users.id) */
+    if (Array.isArray(b.auth_users) && b.auth_users.length){
+      let c = 0, ex = 0;
+      for (const u of b.auth_users){
+        try{
+          const { data, error } = await state.sb.rpc('admin_restore_auth_user', { p: u });
+          if (error) throw error;
+          if (data === 'created') c++; else ex++;
+        }catch(e){
+          tErr++;
+          bkLog('⛔', `auth_users ${u.email || u.id}: ${bkNoRpc(e) ? t('bk_need_sql') : (e.message || e)}`);
+          if (bkNoRpc(e)) return;
+        }
+      }
+      bkLog('✔', `auth_users: ${t('bk_users_c')} ${c}, ${t('bk_users_e')} ${ex}`);
+    }
+    /* 2. таблицы в порядке зависимостей, пачками; дубли отсекает БД */
+    for (const tb of BK_TABLES){
+      const rows = b.tables[tb];
+      if (!Array.isArray(rows) || !rows.length) continue;
+      let ins = 0, skip = 0; const errs = [];
+      for (let i = 0; i < rows.length; i += BK_CHUNK){
+        try{
+          const { data, error } = await state.sb.rpc('admin_restore_rows',
+            { p_table: tb, p_rows: rows.slice(i, i + BK_CHUNK) });
+          if (error) throw error;
+          ins += data.inserted; skip += data.skipped;
+          for (const e of (data.errors || [])) errs.push(e);
+        }catch(e){
+          if (bkNoRpc(e)){ bkLog('⛔', t('bk_need_sql')); return; }
+          errs.push({ row: `#${i}–${i + BK_CHUNK}`, error: String(e.message || e) });
+        }
+      }
+      tIns += ins; tSkip += skip; tErr += errs.length;
+      bkLog(errs.length ? '⛔' : '✔',
+        `${tb}: ${t('bk_added')} ${ins}, ${t('bk_dupes')} ${skip}, ${t('bk_errs')} ${errs.length}`);
+      for (const e of errs) bkLog('⛔', `   ${tb} [${e.row}]: ${e.error}`);
+    }
+    /* 3. секреты — только по явной галочке */
+    if (withSec && Array.isArray(b.secrets) && b.secrets.length){
+      try{
+        const { data, error } = await state.sb.rpc('admin_restore_secrets', { p: b.secrets });
+        if (error) throw error;
+        bkLog('✔', 'secrets: ' + data);
+      }catch(e){ tErr++; bkLog('⛔', 'secrets: ' + (e.message || e)); }
+    }
+    if (b.tables.audit_log || b.tables.tech_log) bkLog('·', t('bk_journal_skip'));
+    bkLog('✔', `${t('bk_total')}: ${t('bk_added')} ${tIns}, ${t('bk_dupes')} ${tSkip}, ${t('bk_errs')} ${tErr}`);
+    audit('backup_restore', 'system', 'backup',
+      { inserted: tIns, skipped: tSkip, errors: tErr, file: file.name });
+    try{ if (App.sync) await App.sync(); }catch(e){}
+    render();
+  } finally { bkBusy(false); }
+}
+function backupCardHtml(){
+  if (!isAdmin()) return '';
+  return `<div class="card" id="bk-card">
+    <div style="font-weight:900;margin-bottom:6px">${t('bk_card')}</div>
+    <div class="tiny" style="margin-bottom:8px">${t('bk_intro')}</div>
+    <div class="btn-rowpp" style="margin:0">
+      <button id="bk-exp" class="btn btn-blue" onclick="App.bkExport()">${t('bk_export')}</button>
+      <button id="bk-imp" class="btn btn-ghost" onclick="App.bkImportPick()">${t('bk_import')}</button>
+    </div>
+    <label class="opt" style="margin:8px 0 0">
+      <input type="checkbox" id="bk-sec"> ${t('bk_secrets')}</label>
+    <pre id="bk-log" style="display:none;max-height:260px;overflow:auto;background:#17232A;border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;white-space:pre-wrap;margin-top:8px"></pre>
+    <button id="bk-save" class="btn btn-ghost sm" style="display:none;margin-top:6px" onclick="App.bkSaveLog()">${t('bk_savelog')}</button>
+    <details style="margin-top:8px"><summary class="tiny">${t('bk_new_proj')}</summary>
+      <div class="tiny" style="margin-top:6px;line-height:1.5">
+        1. В новом проекте выполните schema.sql и все update-to-*.sql (включая 1_07_32).<br>
+        2. Зарегистрируйтесь под <b>временным</b> логином (не совпадающим ни с одним старым) и назначьте себе admin через SQL-редактор.<br>
+        3. Загрузите бэкап с галочкой секретов: учётки встанут первыми — сотрудники войдут <b>старыми паролями</b>.<br>
+        4. Войдите под прежним логином, временного удалите или заблокируйте.<br>
+        Журналы кнопкой не восстанавливаются (сниппет — в update-to-1_07_32.sql). Миниатюры фото в новый проект не переносятся; полноразмеры в Google Drive остаются доступны.
+      </div>
+    </details>
+  </div>`;
 }
 
 /* =====================================================================

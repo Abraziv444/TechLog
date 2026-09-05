@@ -586,3 +586,25 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   /* тосты — левее панели, чтобы не накрывали бланк */
   html.tl-desktop.tl-pdfprev #toasts{ right:632px; }
 }
+
+/* ===== v1.07.27: пилюля не растягивается; Просмотр/Печать в сетке формы ===== */
+@media (min-width: 980px){
+  html.tl-desktop .vm-seg{ right:auto; transform:translateX(-50%); }
+  /* Просмотр/Печать — той же правой колонкой, что и Скачать/Удалить:
+     работает и в блочном потоке (width+margin-left:auto), и если форма
+     свёрстана гридом (row/column заданы блоку целиком). */
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp{
+    width:380px; margin:0 0 8px auto;
+    grid-template-columns:1fr 1fr;
+    grid-row:104; grid-column:5 / span 2;
+  }
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > span{ display:none; }
+  html.tl-desktop .pstrip{ padding-left:0; padding-right:0; }
+  html.tl-desktop .bcol{ flex-basis:260px; max-width:260px; }
+}
+
+/* ===== v1.07.30: ПК — тосты в правом верхнем углу, Пропозалы читабельной ширины ===== */
+@media (min-width: 980px){
+  html.tl-desktop #toasts{top:64px;bottom:auto;left:auto;right:16px;align-items:flex-end}
+  html.tl-desktop .prop-wrap{display:block;max-width:780px;margin:0 auto}
+}

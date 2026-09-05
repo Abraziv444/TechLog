@@ -57,8 +57,8 @@
     /* align-items:flex-start обязателен: контейнер имеет height:0, и дефолтный
        stretch схлопывал пилюлю по вертикали — иконки «вываливались» за рамку */
     '.vm-bar{position:fixed;top:0;right:0;height:0;z-index:46;pointer-events:none;}' +
-    '.vm-seg{pointer-events:auto;position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);right:10px;' +
-      'transform:scale(.9);transform-origin:top right;display:inline-flex;gap:4px;' +
+    '.vm-seg{pointer-events:auto;position:fixed;top:calc(env(safe-area-inset-top,0px) + 42px);right:70px;' +
+      'transform:scale(.85);transform-origin:top right;display:inline-flex;gap:4px;' +
       'background:var(--panel,#17232A);border:2px solid var(--line,#31434C);' +
       'border-radius:999px;padding:3px;}' +
     '.vm-btn{font:inherit;font-weight:800;font-size:.72rem;letter-spacing:.4px;' +
@@ -153,4 +153,27 @@
        в мобильном режиме. */
     try { document.documentElement.classList.remove(CLS); } catch (e2) {}
   }
+
+  /* v1.07.29: пилюля всегда стоит ПОД бейджем роли, на любой ширине.
+     Фиксированные отступы от края окна ломались на планшетах, где контент
+     уже окна — теперь позицию считаем от реального положения .role-tag. */
+  function placeSeg() {
+    var seg = document.querySelector('.vm-seg');
+    if (!seg) return;
+    if (document.documentElement.classList.contains('tl-desktop') && window.innerWidth >= 980) {
+      seg.style.right = ''; seg.style.top = ''; return;   // ПК-режимом рулит desktop.css
+    }
+    var rt = document.querySelector('.topbar .role-tag');
+    if (rt) {
+      var r = rt.getBoundingClientRect();
+      seg.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + 'px';
+      seg.style.top = Math.round(r.bottom + 6) + 'px';
+    } else {                                              // экран логина
+      seg.style.right = '12px';
+      seg.style.top = 'calc(env(safe-area-inset-top,0px) + 10px)';
+    }
+  }
+  window.addEventListener('resize', placeSeg);
+  setInterval(placeSeg, 400);                             // шапка перерисовывается при render()
+  placeSeg();
 })();
