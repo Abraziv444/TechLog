@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.33';
+const APP_VERSION = '1.07.35';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -211,7 +211,7 @@ const I18N = {
     shared_set_title: 'Общий доступ к документам',
     shared_set_chk: 'Разрешить общий доступ к документам для коворкеров',
     shared_set_hint: 'Если выключить — каждый работает только со своими документами: галочка «Общий доступ» в работах скрывается и перестаёт действовать. Сами отметки в документах сохраняются и снова заработают после включения.',
-    db_needs_update: 'Обновите БД: выполните supabase/update-to-1_07_12.sql в SQL-редакторе Supabase',
+    db_needs_update: 'Обновите БД: выполните свежие supabase/update-to-*.sql в SQL-редакторе (последний — update-to-1_07_33.sql)',
     open_invoice: 'Открыть инвойс', job_history: 'История работы',
     what_where: 'Что и откуда вывозим',
     extend_rent: 'Продлить аренду', extend_title: 'Продление аренды',
@@ -356,6 +356,12 @@ const I18N = {
     bk_secrets_warn: 'в файле токены — храните бережно!',
     bk_new_proj: 'Как восстановиться в новый проект Supabase',
     prop_qty: 'Кол-во', prop_code: 'Код', prop_complete: 'Выполнить до (Complete By)',
+    diag_card: '🧪 Диагностика', diag_run: '▶ Запустить все тесты',
+    diag_net: 'Интернет', diag_db: 'База данных', diag_auth: 'Сессия входа',
+    diag_store: 'Хранилище миниатюр', diag_fn: 'Серверные функции',
+    diag_skip: 'пропущено (демо-режим)', diag_fn_admin: 'доступно, детали — админу',
+    diag_no_sess: 'нет сессии', diag_sql31: 'выполните update-to-1_07_31.sql',
+    diag_deploy: 'функции не задеплоены',
     ext_req_done: 'Продление применено', ext_req_rej: 'Запрос отклонён',
     act_price_change: 'изменение цены', act_approve_reset: 'сброс апрува',
     act_pickup_restore: 'возврат в аренду', act_priority_set: 'приоритет',
@@ -501,7 +507,7 @@ const I18N = {
     shared_set_title: 'Shared document access',
     shared_set_chk: 'Allow shared document access for co-workers',
     shared_set_hint: 'When off, everyone works only with their own documents: the “Shared access” checkbox in jobs is hidden and stops working. The marks saved in documents are kept and work again after re-enabling.',
-    db_needs_update: 'Update the DB: run supabase/update-to-1_07_12.sql in the Supabase SQL editor',
+    db_needs_update: 'Update the DB: run the latest supabase/update-to-*.sql in the SQL editor (newest — update-to-1_07_33.sql)',
     open_invoice: 'Open invoice', job_history: 'Job history',
     what_where: 'What to collect & where from',
     extend_rent: 'Extend rental', extend_title: 'Rental extension',
@@ -646,6 +652,12 @@ const I18N = {
     bk_secrets_warn: 'file contains tokens — store safely!',
     bk_new_proj: 'How to restore into a fresh Supabase project',
     prop_qty: 'Qty', prop_code: 'Item', prop_complete: 'Complete By',
+    diag_card: '🧪 Diagnostics', diag_run: '▶ Run all tests',
+    diag_net: 'Internet', diag_db: 'Database', diag_auth: 'Auth session',
+    diag_store: 'Thumbs storage', diag_fn: 'Edge functions',
+    diag_skip: 'skipped (demo)', diag_fn_admin: 'reachable, details for admin',
+    diag_no_sess: 'no session', diag_sql31: 'run update-to-1_07_31.sql',
+    diag_deploy: 'functions not deployed',
     ext_req_done: 'Extension applied', ext_req_rej: 'Request rejected',
     act_price_change: 'price change', act_approve_reset: 'approve reset',
     act_pickup_restore: 'returned to rental', act_priority_set: 'priority',
@@ -1124,7 +1136,7 @@ async function dbUpsert(table, row){
         }
         if (!error && stripped){
           pendingDone('upsert', table, row.id);    // v1.07.21: сервер принял (без новых колонок)
-          dlog('⚠ upsert', table, 'сохранено без новых колонок — выполните supabase/update-to-1_07_12.sql');
+          dlog('⚠ upsert', table, 'сохранено без новых колонок — выполните свежие supabase/update-to-*.sql (последний: update-to-1_07_33.sql)');
           toast('⚠ ' + t('db_needs_update'), 'err');
           return;
         }
@@ -2157,7 +2169,10 @@ function viewHeader(){
       <div class="name">Tech<b>Log</b><span class="name-tag">${t('app_tag')}</span></div>
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
-    <div class="role-tag rt-${u.role}" title="${t('role_' + u.role)}">${t('role_' + u.role)}</div>
+    <div class="rt-col">
+      <div class="role-tag rt-${u.role}" title="${t('role_' + u.role)}">${t('role_' + u.role)}</div>
+      <span id="vm-slot"></span>
+    </div>
     <div class="avatar-wrap">
       <button class="avatar role-${u.role}" onclick="App.go('settings')" aria-label="${t('settings')}">${esc(initials(u.display_name))}</button>
       <div class="login-pill role-${u.role}">${esc(u.login)}</div>
@@ -2599,8 +2614,23 @@ function comboPick(kind, id){
   box.querySelector('.combo-in').value = it.label;
   box.querySelector('.combo-list').style.display = 'none';
   if (kind === 'cp'){
-    const cx = $('#nt-cx'); if (cx) cx.value = '';
-    const cbx = $('#cb-cx'); if (cbx) cbx.querySelector('.combo-in').value = '';
+    /* v1.07.35: комплекс сбрасываем ТОЛЬКО если он чужой для выбранного
+       контрагента — свой остаётся на месте */
+    const cxId = ($('#nt-cx') || {}).value;
+    const cx = cxId && state.data.complexes.find(c => c.id === cxId);
+    if (cx && cx.counterparty_id !== id){
+      $('#nt-cx').value = '';
+      const cbx = $('#cb-cx'); if (cbx) cbx.querySelector('.combo-in').value = '';
+    }
+  } else if (kind === 'cx'){
+    /* выбор комплекса автоматически подставляет его контрагента */
+    const cx = state.data.complexes.find(c => c.id === id);
+    if (cx && cx.counterparty_id){
+      const cp = state.data.counterparties.find(c => c.id === cx.counterparty_id);
+      const hid = $('#nt-cp'); if (hid) hid.value = cx.counterparty_id;
+      const cbp = $('#cb-cp');
+      if (cbp && cp) cbp.querySelector('.combo-in').value = cp.name;
+    }
   }
 }
 document.addEventListener('click', e => {
@@ -4036,6 +4066,7 @@ function viewSettings(){
   </div>
   ${mediaSettingsCardHtml()}
   ${backupCardHtml()}
+  ${diagCardHtml()}
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
     <div class="tiny" style="margin-bottom:8px">${t('invite_hint')}</div>
@@ -4236,7 +4267,7 @@ const App = {
   boardHideEmpty(v){ localStorage.setItem('tl_board_hide_empty', v ? '1' : '0'); render(); },
   mediaPick, mediaFlush, mediaOpen, mediaDelete, mediaQDel,
   mediaSaveKeys, mediaConnect, mediaHealth,
-  bkExport, bkImportPick, bkSaveLog,
+  bkExport, bkImportPick, bkSaveLog, runDiag,
   repFrom(v){ state.repFrom = v; render(); }, repTo(v){ state.repTo = v; render(); },
   repRange(f,to){ state.repFrom = f; state.repTo = to; render(); },
   repCp(v){ state.repCp = v; render(); }, repStatus(v){ state.repStatus = v; render(); },
@@ -4291,7 +4322,7 @@ const App = {
   setPropStatus(s){ if (!propDraft) return; propDraft.status = s;
     if (s === 'approved' || s === 'declined'){ propDraft.decided_by = state.user.id;
       propDraft.decided_at = new Date().toISOString(); } render(); },
-  batchPrint, extReqCreate, extReqDecide,
+  batchPreview, batchPrint, extReqCreate, extReqDecide,
   codeHistory: codeHistoryModal, proposeCode: proposeCodeModal, pcGate, submitCode,
   extraPicker: extraPickerModal, exAdd, exDel,
   exPreset(i, n){
@@ -4815,7 +4846,8 @@ function viewInvoicesReport(){
         <div class="grow" style="flex:1"><b>${t('rep_found')}: ${js.length}</b>
           <div class="tiny">${t('rep_sum')} <b class="money">${money(sum)}</b> · ${t('rep_half_hint')}</div></div>
       </div>
-      <button class="btn btn-green" style="margin-top:10px" onclick="App.batchPdf()">${ic('download')} ${t('rep_download')} (${js.length})</button>
+      <button class="btn btn-ghost" style="margin-top:10px" onclick="App.batchPreview()">${ic('search')} ${t('pdf_preview')}</button>
+      <button class="btn btn-green" style="margin-top:8px" onclick="App.batchPdf()">${ic('download')} ${t('rep_download')} (${js.length})</button>
       <button class="btn btn-blue" style="margin-top:8px" onclick="App.batchPrint()">${ic('report')} ${t('rep_print2')}</button>
     </div>
     ${listHtml}`
@@ -5081,6 +5113,12 @@ function batchPdf(){
   const doc = buildBatchDoc(); if (!doc) return;
   savePdfCompat(doc, 'Invoices_' + state.repFrom + '_' + state.repTo + '.pdf');   // v1.07.21
   toast('⬇ PDF: ' + doc._cnt + (doc._skipped?` · ⚠ ${doc._skipped} ${t('batch_skipped')}`:''));
+}
+function batchPreview(){                                 // v1.07.35: предпросмотр единого PDF
+  const doc = buildBatchDoc(); if (!doc) return;
+  const u = URL.createObjectURL(doc.output('blob'));
+  window.open(u, '_blank', 'noopener');
+  setTimeout(() => URL.revokeObjectURL(u), 60000);
 }
 function batchPrint(){                                   // v1.07.27: сразу на печать
   const doc = buildBatchDoc(); if (!doc) return;
@@ -5811,7 +5849,7 @@ async function runDbDiagnostics(){
       if (error){
         const s = errStr(error);
         const miss = /42P01|does not exist|schema cache/i.test(s);
-        const denied = tb === 'app_secrets' && /permission|denied|42501/i.test(s);
+        const denied = tb === 'app_secrets';   // v1.07.35: секреты закрыты RLS — отказ это норма
         L.push(`${denied ? '✅' : '⛔'} ${tb}: ${denied ? 'доступ закрыт (RLS работает как надо)' : s}${miss ? '  ← таблицы нет: выполните schema.sql' : ''} · ${ms} мс`);
       } else {
         L.push(`✅ ${tb}: строк видно ${count ?? '?'} · ${ms} мс`);
@@ -6822,6 +6860,93 @@ async function mediaHealth(){
     }
   }catch(e){ if (box) box.innerHTML = '🔴 ' + esc(String(e.message || e)); }
 }
+/* =====================================================================
+   v1.07.34: ДИАГНОСТИКА — интернет, БД, сессия, хранилище, функции и
+   подключение к Google Drive (детали Drive — админу через media-health).
+   ===================================================================== */
+function diagCardHtml(){
+  return `<div class="card" id="dg-card">
+    <div style="font-weight:900;margin-bottom:6px">${t('diag_card')}</div>
+    <button class="btn btn-blue" onclick="App.runDiag()">${t('diag_run')}</button>
+    <div id="dg-out" class="tiny" style="margin-top:8px"></div>
+  </div>`;
+}
+async function runDiag(){
+  const out = $('#dg-out'); if (!out) return;
+  out.innerHTML = '⏳ …';
+  const rows = [];
+  const paint = () => { out.innerHTML = rows.join(''); };
+  const row = (name, ok, extra) => {
+    rows.push(`<div>${ok === null ? '⚪' : ok ? '🟢' : '🔴'} ${name}${extra ? ' — ' + esc(String(extra)) : ''}</div>`);
+    paint();
+  };
+  rows.length = 0; paint();
+  /* 1. интернет */
+  try{
+    const t0 = Date.now();
+    await fetch('version.json?d=' + Date.now(), { cache: 'no-store' });
+    row(t('diag_net'), true, (Date.now() - t0) + ' ms');
+  }catch(e){ row(t('diag_net'), false, e.message || e); }
+  if (!HAS_SB){
+    [t('diag_db'), t('diag_auth'), t('diag_store'), t('diag_fn')]
+      .forEach(n => row(n, null, t('diag_skip')));
+    return;
+  }
+  /* 2. база */
+  try{
+    const t0 = Date.now();
+    const { error } = await state.sb.from('org_settings').select('id').limit(1);
+    if (error) throw error;
+    row(t('diag_db'), true, (Date.now() - t0) + ' ms');
+  }catch(e){ row(t('diag_db'), false, e.message || e); }
+  /* 3. сессия */
+  try{
+    const { data } = await state.sb.auth.getSession();
+    row(t('diag_auth'), !!(data && data.session),
+      data && data.session ? ((state.user && state.user.login) || 'ok') : t('diag_no_sess'));
+  }catch(e){ row(t('diag_auth'), false, e.message || e); }
+  /* 4. bucket миниатюр */
+  try{
+    const { error } = await state.sb.storage.from('media-thumbs').list('', { limit: 1 });
+    if (error) throw error;
+    row(t('diag_store'), true, '');
+  }catch(e){ row(t('diag_store'), false, (e.message || e) + ' · ' + t('diag_sql31')); }
+  /* 5. функции + Google Drive */
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-health',
+      { headers: { Authorization: 'Bearer ' + token } });
+    if (r.status === 404) throw new Error(t('diag_deploy'));
+    if (r.status === 403){ row(t('diag_fn'), true, t('diag_fn_admin')); return; }
+    row(t('diag_fn'), true, '');
+    if (isAdmin()){
+      const j = await r.json().catch(() => ({}));
+      row(t('gd_auth'), !!(j.auth && j.auth.ok),
+        j.auth && j.auth.ok ? j.auth.ms + ' ms' : t('gd_not_conn'));
+      if (j.drive && j.drive.ok){
+        row(t('gd_acc'), true, j.drive.account || '');
+        row(t('gd_used'), true, j.drive.used_gb + ' / ' + j.drive.limit_gb + ' GB');
+      } else if (j.drive){
+        row('Google Drive', false, String(j.drive.error || '').slice(0, 90));
+      }
+      if (j.write) row(t('gd_write'), !!j.write.ok,
+        j.write.error ? String(j.write.error).slice(0, 90) : '');
+    }
+  }catch(e){ row(t('diag_fn'), false, e.message || e); }
+}
+/* фейд вместо обрубания: класс вешается только реально обрезанным текстам */
+function updateFadeClips(){
+  document.querySelectorAll('.brand .name,.brand .sub,.login-pill,.tabbar .tab span')
+    .forEach(e => e.classList.toggle('fade-clip', e.scrollWidth > e.clientWidth + 1));
+}
+(function initFadeClips(){
+  let tm = 0;
+  const kick = () => { clearTimeout(tm); tm = setTimeout(updateFadeClips, 60); };
+  addEventListener('resize', kick);
+  const root = document.getElementById('app') || document.body;
+  new MutationObserver(kick).observe(root, { childList: true, subtree: true });
+  kick();
+})();
 initMedia();
 
 /* =====================================================================

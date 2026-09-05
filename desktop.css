@@ -608,3 +608,8 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop #toasts{top:64px;bottom:auto;left:auto;right:16px;align-items:flex-end}
   html.tl-desktop .prop-wrap{display:block;max-width:780px;margin:0 auto}
 }
+
+/* ===== v1.07.34: ПК — колонка роли не мешает прежней раскладке шапки ===== */
+@media (min-width: 980px){
+  html.tl-desktop .rt-col{ display:contents; }
+}

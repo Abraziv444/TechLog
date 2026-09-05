@@ -1041,3 +1041,37 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 @media (max-width:430px){
   .prop-head,.prop-row{grid-template-columns:38px 50px 1fr 64px 26px;gap:4px}
 }
+
+/* =====================================================================
+   v1.07.34: шапка — sticky и компактная; роль + переключатель одной
+   колонкой с единым правым краем; обрезаемые тексты — с фейдом
+   ===================================================================== */
+.rt-col{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:auto}
+.topbar .role-tag{align-self:auto;margin-top:0}
+.rt-col .vm-seg{margin:0}
+
+html:not(.tl-desktop) .topbar{
+  position:sticky;top:0;z-index:70;background:var(--bg);
+  padding:calc(env(safe-area-inset-top,0px) + 6px) 0 8px;
+  box-shadow:0 6px 12px -8px rgba(0,0,0,.8);
+}
+.topbar{margin-bottom:4px}
+.section-title{margin:10px 0 8px}
+
+.fade-clip{
+  text-overflow:clip !important;
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 14px),transparent);
+  mask-image:linear-gradient(90deg,#000 calc(100% - 14px),transparent);
+}
+/* слот переключателя: резервирует место в колонке, размер задаёт JS */
+#vm-slot{display:inline-block;min-height:26px}
+
+/* =====================================================================
+   v1.07.35: аватарка ВСЕГДА синяя (роль остаётся цветной); бейдж роли
+   везде выглядит как в шапке (без серой рамки поверх заливки)
+   ===================================================================== */
+.avatar.role-admin,.avatar.role-manager,.avatar.role-tech{
+  border-color:var(--blue);color:var(--blue);background:var(--panel);
+}
+.login-pill{border-color:var(--blue);color:var(--blue)}
+.role-tag{border-color:transparent}

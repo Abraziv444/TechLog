@@ -158,22 +158,45 @@
      Фиксированные отступы от края окна ломались на планшетах, где контент
      уже окна — теперь позицию считаем от реального положения .role-tag. */
   function placeSeg() {
+    /* v1.07.34b: усыновлять пилюлю в #app НЕЛЬЗЯ — render() перерисовывает
+       его целиком и уничтожает её. Пилюля всегда живёт в body (.vm-bar),
+       а слот в шапке лишь резервирует место: пилюля накрывает его
+       fixed-координатами и потому переживает любые перерисовки, скроллясь
+       вместе со sticky-шапкой. */
     var seg = document.querySelector('.vm-seg');
     if (!seg) return;
-    if (document.documentElement.classList.contains('tl-desktop') && window.innerWidth >= 980) {
-      seg.style.right = ''; seg.style.top = ''; return;   // ПК-режимом рулит desktop.css
+    var bar = document.querySelector('.vm-bar');
+    if (bar && bar.style.zIndex !== '120') bar.style.zIndex = '120'; // bar(z46) запирал seg под sticky-шапкой(z70)
+    if (bar && seg.parentNode !== bar) bar.appendChild(seg);
+    var desktop = document.documentElement.classList.contains('tl-desktop')
+      && window.innerWidth >= 980;
+    if (desktop) {
+      seg.style.position = ''; seg.style.right = '';
+      seg.style.top = ''; seg.style.transform = '';
+      return;
     }
-    var rt = document.querySelector('.topbar .role-tag');
-    if (rt) {
-      var r = rt.getBoundingClientRect();
-      seg.style.right = Math.max(8, Math.round(window.innerWidth - r.right)) + 'px';
-      seg.style.top = Math.round(r.bottom + 6) + 'px';
-    } else {                                              // экран логина
+    seg.style.position = 'fixed';
+    seg.style.zIndex = '120';                          // выше sticky-шапки (z 70)
+    var slot = document.getElementById('vm-slot');
+    if (slot) {
+      seg.style.transform = 'none';
+      var sr = seg.getBoundingClientRect();
+      if (sr.width) {
+        var w = Math.round(sr.width) + 'px', h = Math.round(sr.height) + 'px';
+        if (slot.style.width !== w) slot.style.width = w;
+        if (slot.style.height !== h) slot.style.height = h;
+      }
+      var r = slot.getBoundingClientRect();
+      seg.style.top = Math.round(r.top) + 'px';
+      seg.style.right = Math.max(4, Math.round(window.innerWidth - r.right)) + 'px';
+    } else {                                            // экран логина
+      seg.style.transform = 'scale(.85)';
       seg.style.right = '12px';
       seg.style.top = 'calc(env(safe-area-inset-top,0px) + 10px)';
     }
   }
   window.addEventListener('resize', placeSeg);
+  window.addEventListener('scroll', placeSeg, { passive: true });
   setInterval(placeSeg, 400);                             // шапка перерисовывается при render()
   placeSeg();
 })();
