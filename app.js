@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.35';
+const APP_VERSION = '1.07.36';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -2170,8 +2170,8 @@ function viewHeader(){
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
     <div class="rt-col">
-      <div class="role-tag rt-${u.role}" title="${t('role_' + u.role)}">${t('role_' + u.role)}</div>
       <span id="vm-slot"></span>
+      <div class="role-tag rt-${u.role}" title="${t('role_' + u.role)}">${t('role_' + u.role)}</div>
     </div>
     <div class="avatar-wrap">
       <button class="avatar role-${u.role}" onclick="App.go('settings')" aria-label="${t('settings')}">${esc(initials(u.display_name))}</button>
@@ -7153,7 +7153,7 @@ function backupCardHtml(){
     <button id="bk-save" class="btn btn-ghost sm" style="display:none;margin-top:6px" onclick="App.bkSaveLog()">${t('bk_savelog')}</button>
     <details style="margin-top:8px"><summary class="tiny">${t('bk_new_proj')}</summary>
       <div class="tiny" style="margin-top:6px;line-height:1.5">
-        1. В новом проекте выполните schema.sql и все update-to-*.sql (включая 1_07_32).<br>
+        1. В новом проекте выполните ОДИН файл supabase/full-install-1_07_35.sql — это вся схема и все обновления разом.<br>
         2. Зарегистрируйтесь под <b>временным</b> логином (не совпадающим ни с одним старым) и назначьте себе admin через SQL-редактор.<br>
         3. Загрузите бэкап с галочкой секретов: учётки встанут первыми — сотрудники войдут <b>старыми паролями</b>.<br>
         4. Войдите под прежним логином, временного удалите или заблокируйте.<br>
