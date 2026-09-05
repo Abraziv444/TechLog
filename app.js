@@ -7,6 +7,46 @@
 const APP_VERSION = '1.07.21';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
+
+/* =====================================================================
+   v1.07.21: ПЛАТФОРМА + НАВИГАТОР (Apple Maps / Google Maps)
+   iPhone/iPod видны по UA; iPad на iPadOS 13+ маскируется под Mac —
+   отличаем его по количеству тач-точек. Выбор навигатора хранится в
+   localStorage['techlog_navapp']: 'auto' | 'apple' | 'google'
+   (auto = Карты Apple на iOS, Google Maps на остальных платформах).
+   ===================================================================== */
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+function navProvider(){
+  const v = (state && state.navApp) || 'auto';
+  if (v === 'apple' || v === 'google') return v;
+  return IS_IOS ? 'apple' : 'google';
+}
+function navName(){ return navProvider() === 'apple' ? 'Apple Maps' : 'Google Maps'; }
+/* Маршрут к одной точке. dest: 'lat,lng' или адрес.
+   Классический формат maps.apple.com/?daddr= работает на всех версиях iOS. */
+function navDirUrl(dest){
+  return navProvider() === 'apple'
+    ? 'https://maps.apple.com/?daddr=' + encodeURIComponent(dest) + '&dirflg=d'
+    : 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dest);
+}
+/* Мультиточечный маршрут. points: массив 'lat,lng' в порядке объезда.
+   Для Apple Maps — официальный формат iOS 18.4+ (/directions + waypoint);
+   на более старых iOS Карты откроют только конечную точку — это предел URL-схемы. */
+function navRouteUrl(points){
+  if (navProvider() !== 'apple') return 'https://www.google.com/maps/dir/' + points.join('/');
+  const last = points[points.length - 1];
+  const wps = points.slice(0, -1).map(p => 'waypoint=' + encodeURIComponent(p)).join('&');
+  return 'https://maps.apple.com/directions?destination=' + encodeURIComponent(last)
+       + (wps ? '&' + wps : '') + '&mode=driving';
+}
+/* Показать точку/адрес на карте (без маршрута). */
+function navSearchUrl(q){
+  return navProvider() === 'apple'
+    ? 'https://maps.apple.com/?q=' + encodeURIComponent(q)
+    : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+}
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
 const DIAG = [];
 function errStr(e){
@@ -121,7 +161,13 @@ const I18N = {
     map_title: 'Карта апарт-комплексов', all_counterparties: 'Все контрагенты',
     map_day_mode: 'Показать день на карте', map_day_hint: 'Работы и пикапы за выбранную дату',
     map_no_coords: 'без координат — откройте комплекс и нажмите «Найти по адресу»',
-    route_gmaps: 'Маршрут дня в Google Maps', open_gmaps: 'Открыть в Google Maps',
+    route_day_in: 'Маршрут дня в', open_in: 'Открыть в',
+    nav_app: 'Навигатор', nav_auto: 'Авто',
+    nav_app_hint: 'Куда открывать маршруты. Авто: Карты Apple на iPhone/iPad, Google Maps на остальных.',
+    dict_kbd_hint: 'Диктовка на iPhone — кнопкой 🎤 на клавиатуре',
+    install_ios_hint: 'iPhone/iPad: в Safari «Поделиться» → «На экран “Домой”». После установки войдите заново — у приложения на «Домой» своё хранилище.',
+    pdf_share_fail: 'Не удалось открыть PDF',
+    pending_writes: 'Записи в очереди на отправку', pending_sent: 'Отложенные записи доставлены',
     geocode: 'Найти по адресу', geocode_ok: 'Координаты найдены', geocode_fail: 'Адрес не найден — введите координаты вручную',
     lat: 'Широта (lat)', lng: 'Долгота (lng)',
     note: 'Заметка', note_hint: 'Текст попадёт в PDF-инвойс (строка NOTES)',
@@ -137,7 +183,6 @@ const I18N = {
     rep_half_hint: '2 инвойса на страницу Letter (по половине)',
     d_staff: 'Сотрудники', role: 'Роль', visibility: 'Видимость для менеджера',
     vis_hint: 'Отмеченные сотрудники видны этому менеджеру', vis_btn: 'Доступные сотрудники',
-    unit_kb_abc: 'АБВ', unit_kb_123: '123', unit_kb_hint: 'Клавиатура: цифры / буквы',
     confirm_email: 'Подтвердите email по ссылке из письма, затем войдите',
     auth_loading: 'Проверяю авторизацию…',
     no_coords_yet: 'Нет координат',
@@ -317,7 +362,13 @@ const I18N = {
     map_title: 'Apartment complexes map', all_counterparties: 'All counterparties',
     map_day_mode: 'Show day on map', map_day_hint: 'Jobs and pickups for the selected date',
     map_no_coords: 'no coordinates — open the complex and tap "Find by address"',
-    route_gmaps: 'Day route in Google Maps', open_gmaps: 'Open in Google Maps',
+    route_day_in: 'Day route in', open_in: 'Open in',
+    nav_app: 'Navigation app', nav_auto: 'Auto',
+    nav_app_hint: 'Where routes open. Auto: Apple Maps on iPhone/iPad, Google Maps elsewhere.',
+    dict_kbd_hint: 'On iPhone, dictate with the 🎤 key on the keyboard',
+    install_ios_hint: 'iPhone/iPad: in Safari tap Share → “Add to Home Screen”. Sign in again after installing — the Home Screen app has its own storage.',
+    pdf_share_fail: 'Could not open the PDF',
+    pending_writes: 'Writes queued for delivery', pending_sent: 'Queued writes delivered',
     geocode: 'Find by address', geocode_ok: 'Coordinates found', geocode_fail: 'Address not found — enter coordinates manually',
     lat: 'Latitude', lng: 'Longitude',
     note: 'Note', note_hint: 'This text goes to the PDF invoice (NOTES line)',
@@ -333,7 +384,6 @@ const I18N = {
     rep_half_hint: '2 invoices per Letter page (half each)',
     d_staff: 'Staff', role: 'Role', visibility: 'Visibility for manager',
     vis_hint: 'Checked employees are visible to this manager', vis_btn: 'Available staff',
-    unit_kb_abc: 'ABC', unit_kb_123: '123', unit_kb_hint: 'Keyboard: digits / letters',
     confirm_email: 'Confirm your email via the link, then sign in',
     auth_loading: 'Checking authorization…',
     no_coords_yet: 'No coordinates',
@@ -461,6 +511,7 @@ const state = {
   statFrom: null, statTo: null, statMine: true,
   mapCp: '', mapDay: false, mapDate: null,
   dictLang: localStorage.getItem('techlog_dictlang') || 'ru-RU',
+  navApp: localStorage.getItem('techlog_navapp') || 'auto',   // v1.07.21: auto | apple | google
   jobId: null,
   cpOpenId: null, cpTab: 'info',
   priceMode: 'std', priceCp: '',   // v1.07.06: справочник «Цены»
@@ -681,12 +732,81 @@ function saveLocal(){
   try { return saveLocalUnsafe(); }
   catch(e){ dlog('⛔ saveLocal (квота localStorage?):', e); }
 }
-function saveLocalUnsafe(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state.data)); }catch(e){} }
+/* v1.07.21: без внутреннего try — иначе QuotaExceededError глотался молча,
+   кеш переставал обновляться, и офлайн тихо «протухал». Теперь квоту видно в журнале. */
+function saveLocalUnsafe(){ localStorage.setItem(LS_KEY, JSON.stringify(state.data)); }
 function loadLocal(){
   try { return loadLocalUnsafe(); }
   catch(e){ dlog('⛔ loadLocal (битый кеш):', e); return null; }
 }
-function loadLocalUnsafe(){ try{ const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; } }
+function loadLocalUnsafe(){ const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : null; }
+
+/* =====================================================================
+   v1.07.21: ОЧЕРЕДЬ НЕДОСТАВЛЕННЫХ ЗАПИСЕЙ
+   iOS замораживает JS свёрнутых PWA агрессивнее Android: upsert, начатый
+   перед сворачиванием, мог не долететь до Supabase, а следующий полный
+   синк затирал локальную запись серверным снимком. Теперь каждая запись
+   попадает в очередь (localStorage) до подтверждения сервера; очередь
+   досылается при синке, возврате в приложение и появлении сети, а при
+   полном синке недоставленные записи накатываются поверх снимка.
+   ===================================================================== */
+const LS_PENDING = 'techlog_pending';
+function pendingLoad(){ try{ return JSON.parse(localStorage.getItem(LS_PENDING)) || []; }catch(e){ return []; } }
+function pendingSave(q){ try{ localStorage.setItem(LS_PENDING, JSON.stringify(q)); }catch(e){ dlog('⛔ pendingSave:', e); } }
+function pendingKey(op, table, id){ return op + ':' + table + ':' + id; }
+function pendingAdd(op, table, payload){          // payload: строка (upsert) или id (delete)
+  const id = op === 'upsert' ? payload.id : payload;
+  const q = pendingLoad();
+  const key = pendingKey(op, table, id);
+  const item = { key, op, table, payload, ts: Date.now() };
+  const i = q.findIndex(x => x.key === key);
+  if (i >= 0) q[i] = item; else q.push(item);
+  /* upsert и delete одной строки взаимоисключающи — оставляем последнее действие */
+  const other = pendingKey(op === 'upsert' ? 'delete' : 'upsert', table, id);
+  pendingSave(q.filter(x => x.key !== other));
+}
+function pendingDone(op, table, id){
+  const key = pendingKey(op, table, id);
+  const q = pendingLoad();
+  const q2 = q.filter(x => x.key !== key);
+  if (q2.length !== q.length) pendingSave(q2);
+}
+let pendingBusy = false;
+async function pendingFlush(){
+  if (pendingBusy || !HAS_SB || !state.sb) return;
+  const q = pendingLoad();
+  if (!q.length) return;
+  pendingBusy = true;
+  dlog('sync: досылаю недоставленные записи:', q.length);
+  let sent = 0;
+  try{
+    for (const it of q){
+      try{
+        const r = it.op === 'upsert'
+          ? await state.sb.from(it.table).upsert(it.payload)
+          : await state.sb.from(it.table).delete().eq('id', it.payload);
+        if (!r.error){ pendingDone(it.op, it.table, it.op === 'upsert' ? it.payload.id : it.payload); sent++; }
+        else dlog('⛔ pending', it.op, it.table + ':', r.error);
+      }catch(e){ dlog('⛔ pending exception', it.table + ':', e); }
+    }
+  } finally { pendingBusy = false; }
+  if (sent){ dlog('sync: доставлено из очереди:', sent); toast('✓ ' + t('pending_sent') + ': ' + sent); }
+}
+/* Накатываем ещё не доставленные записи поверх серверного снимка,
+   чтобы полный синк не «терял» их до досылки. */
+function pendingApplyLocal(data){
+  for (const it of pendingLoad()){
+    const arr = data[it.table];
+    if (!Array.isArray(arr)) continue;
+    if (it.op === 'upsert'){
+      const i = arr.findIndex(r => r.id === it.payload.id);
+      if (i >= 0) arr[i] = it.payload; else arr.push(it.payload);
+    } else {
+      const i = arr.findIndex(r => r.id === it.payload);
+      if (i >= 0) arr.splice(i, 1);
+    }
+  }
+}
 
 const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','hidden_staff','code_requests','complex_code_history','jobs','placements'];
 
@@ -752,7 +872,9 @@ async function syncNow(silent){
     if (!state.data) state.data = loadLocal() || emptyData();
     render();
     if (!navigator.onLine) dlog('⚠ sync: navigator.onLine = false (возможен офлайн)');
+    await pendingFlush();                 // v1.07.21: сперва досылаем очередь — снимок включит эти записи
     state.data = await sbLoadAll();
+    pendingApplyLocal(state.data);        // v1.07.21: что не доставилось — не теряем, накатываем поверх снимка
     saveLocal();
     const ms = state.data._syncMs, failN = state.data._syncFail || 0;
     dlog('sync:', failN ? '⚠ частично' : 'ок', '·', t('sync_dur'), ms + ' мс ·',
@@ -793,6 +915,7 @@ async function dbUpsert(table, row){
   if (i >= 0) arr[i] = row; else arr.push(row);
   saveLocal();
   if (HAS_SB) {
+    pendingAdd('upsert', table, row);              // v1.07.21: в очередь до подтверждения сервера
     const ts = Date.now();
     try {
       let { error } = await state.sb.from(table).upsert(row);
@@ -807,6 +930,7 @@ async function dbUpsert(table, row){
           error = r2.error || null;
         }
         if (!error && stripped){
+          pendingDone('upsert', table, row.id);    // v1.07.21: сервер принял (без новых колонок)
           dlog('⚠ upsert', table, 'сохранено без новых колонок — выполните supabase/update-to-1_07_12.sql');
           toast('⚠ ' + t('db_needs_update'), 'err');
           return;
@@ -819,6 +943,7 @@ async function dbUpsert(table, row){
       } else if (Date.now() - ts > 1500) {
         dlog('🐢 upsert', table, 'медленно: ' + (Date.now()-ts) + ' мс');
       }
+      if (!error) pendingDone('upsert', table, row.id);   // v1.07.21: доставлено — из очереди долой
     } catch(e){
       noteWriteError('upsert', table, row.id, e);
       dlog('⛔ upsert exception', table + ':', e);
@@ -832,6 +957,7 @@ async function dbDelete(table, id){
   if (i >= 0) arr.splice(i, 1);
   saveLocal();
   if (HAS_SB) {
+    pendingAdd('delete', table, id);               // v1.07.21: в очередь до подтверждения сервера
     const ts = Date.now();
     try {
       const { error } = await state.sb.from(table).delete().eq('id', id);
@@ -839,7 +965,7 @@ async function dbDelete(table, id){
         noteWriteError('delete', table, id, error);
         dlog('⛔ delete', table, 'id=' + String(id||'').slice(0,8) + ':', error, '· ' + (Date.now()-ts) + ' мс');
         toast(t('write_err') + ' (' + table + '): ' + error.message, 'err');
-      }
+      } else pendingDone('delete', table, id);     // v1.07.21: доставлено
     } catch(e){
       noteWriteError('delete', table, id, e);
       dlog('⛔ delete exception', table + ':', e);
@@ -2165,7 +2291,7 @@ function addTaskModal(){
     <div class="form-row"><span class="lbl">${t('complex')}</span>
       <select id="nt-cx"><option value="">${t('select')}</option></select></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
-      <span class="unit-wrap"><input id="nt-unit" inputmode="numeric" autocomplete="off" placeholder="916"><button type="button" class="unit-kb" title="${t('unit_kb_hint')}" aria-label="${t('unit_kb_hint')}" onclick="App.unitKb('nt-unit', this)">${t('unit_kb_abc')}</button></span></div>
+      <input id="nt-unit" inputmode="numeric" placeholder="916"></div>
     <div class="form-row"><span class="lbl">${t('work_type')}</span>
       <div class="opt-grid" id="nt-wt">
         ${wts.map(w=>`<button class="opt" data-id="${w.id}" style="border-color:${w.color};color:${w.color}"
@@ -2558,7 +2684,7 @@ function viewJob(){
       <div class="abbr" style="border-color:${wt.color}">${esc(cx.abbr||'—')}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:900">${j.complex_id?'':warnIcon()}${esc(cx.name)} · Unit
-          <span class="unit-wrap sm"><input id="jb-unit" inputmode="numeric" autocomplete="off" value="${esc(j.unit_number||'')}" style="width:76px;display:inline-block;padding:4px 8px"><button type="button" class="unit-kb" title="${t('unit_kb_hint')}" aria-label="${t('unit_kb_hint')}" onclick="event.stopPropagation();App.unitKb('jb-unit', this)">${t('unit_kb_abc')}</button></span>
+          <input id="jb-unit" value="${esc(j.unit_number||'')}" style="width:76px;display:inline-block;padding:4px 8px">
           <span id="jb-warn-unit">${String(j.unit_number||'').trim()?'':warnIcon()}</span></div>
         <div class="tiny">${esc(cp.name)} · ${esc(cx.address||'')}
           ${(cx.lat!=null||cx.address)?`<button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button>`:''}</div>
@@ -3282,7 +3408,7 @@ function editCxModal(id, cpId){
     </div>
     <div class="grid-2" style="margin-bottom:10px">
       <button class="btn btn-blue sm" onclick="App.geocodeCx()">${ic('pin')} ${t('geocode')}</button>
-      <button class="btn btn-ghost sm" onclick="App.gmapsCx()">${ic('map')} ${t('open_gmaps')}</button>
+      <button class="btn btn-ghost sm" onclick="App.gmapsCx()">${ic('map')} ${t('open_in')} ${navName()}</button>
     </div>
     <button class="btn btn-green" onclick="App.saveCx('${cx.id}')">${t('save')}</button>
     ${id?`<button class="btn btn-red" style="margin-top:8px" onclick="App.delRow('complexes','${cx.id}')">${t('delete')}</button>`:''}
@@ -3434,6 +3560,15 @@ function viewSettings(){
         <button class="${state.lang==='en'?'on':''}" onclick="App.setLang('en')">EN</button>
       </div>
     </div>
+    <div class="settings-row"><!-- v1.07.21: выбор навигатора для маршрутов -->
+      <div class="grow" style="flex:1"><b>${ic('compass')} ${t('nav_app')}</b>
+        <div class="d">${t('nav_app_hint')}</div></div>
+      <div class="lang-seg">
+        <button class="${(state.navApp||'auto')==='auto'?'on':''}" onclick="App.setNavApp('auto')">${t('nav_auto')}</button>
+        <button class="${state.navApp==='apple'?'on':''}" onclick="App.setNavApp('apple')">Apple</button>
+        <button class="${state.navApp==='google'?'on':''}" onclick="App.setNavApp('google')">Google</button>
+      </div>
+    </div>
     <div class="settings-row">
       <div class="grow" style="flex:1"><b>${ic('font')} ${t('font_soon').split(' — ')[0]}</b><div class="d">${t('font_soon')}</div></div>
     </div>
@@ -3446,6 +3581,7 @@ function viewSettings(){
         <div class="d">${t('synced')}: ${state.lastSync || t('never')} · ${HAS_SB?'Supabase':'DEMO / localStorage'}</div>
         ${SYNC_ERRORS.length ? `<div class="d" style="color:var(--red)">⚠ ${SYNC_ERRORS.length} ${t('tables_failed')}: ${SYNC_ERRORS.map(x=>x.tb).join(', ')}</div>` : ''}
         ${WRITE_ERRORS.length ? `<div class="d" style="color:var(--yellow)">${ic('pencil')} ${t('write_err')}: ${WRITE_ERRORS.length}</div>` : ''}
+        ${pendingLoad().length ? `<div class="d" style="color:var(--yellow)">⏳ ${t('pending_writes')}: ${pendingLoad().length}</div>` : ''}
       </div>
       <button class="btn btn-green sm" onclick="App.sync()">${t('sync')}</button>
     </div>
@@ -3484,6 +3620,7 @@ function viewSettings(){
   <div class="card">
     <div class="settings-row"><div class="grow" style="flex:1"><b>${ic('phone')} PWA</b>
       <div class="d">${isStandalone() ? '✓ ' + t('already_installed') : t('install_hint')}</div>
+      ${IS_IOS && !isStandalone() ? `<div class="d">🍎 ${t('install_ios_hint')}</div>` : ''}
       <div class="d">${t('install_where_win')}</div></div></div>
     ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">${ic('download')} ${t('install_app')}</button>` : ''}
     <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b>
@@ -3520,13 +3657,48 @@ function buildInvoicePdfDoc(quiet){
   drawInvoiceVert(doc, j, left, top);
   return doc;
 }
+/* =====================================================================
+   v1.07.21: сохранение PDF с обходом для iOS.
+   doc.save() (blob + <a download>) в Safari-вкладке терпимо, но в
+   установленной на «Домой» PWA на iOS часто «ничего не происходит» либо
+   открывается просмотрщик без выхода назад. Надёжный путь на iOS —
+   системный share sheet с файлом («Сохранить в Файлы», AirDrop, почта…);
+   фолбэк для очень старых iOS — blob во встроенном просмотрщике.
+   Вызывается синхронно из onclick — это сохраняет «жест пользователя»,
+   без которого Safari блокирует и share, и window.open.
+   ===================================================================== */
+function savePdfCompat(doc, fname){
+  if (!IS_IOS){ doc.save(fname); return; }
+  let blob = null;
+  try{ blob = doc.output('blob'); }catch(e){ dlog('⛔ pdf blob:', e); }
+  if (!blob){
+    try{ doc.save(fname); }catch(e){ dlog('⛔ pdf save:', e); toast('⛔ ' + t('pdf_share_fail'), 'err'); }
+    return;
+  }
+  try{
+    const file = new File([blob], fname, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      navigator.share({ files: [file], title: fname }).catch(err => {
+        if (err && err.name === 'AbortError') return;   // пользователь сам закрыл шит — не ошибка
+        dlog('⛔ pdf share:', err);
+        toast('⛔ ' + t('pdf_share_fail'), 'err');
+      });
+      return;
+    }
+  }catch(e){ dlog('⛔ pdf File/canShare:', e); }
+  /* iOS < 15 (без share с файлами): открываем во встроенном просмотрщике */
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank');
+  if (!w) location.href = url;
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
 function makePdf(){
   const doc = buildInvoicePdfDoc(false);
   if (!doc) return;
   const j = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
   const cx = cxById(j.complex_id) || {name:'', address:''};
   const fname = 'Invoice_' + (cx.abbr||'UNIT') + '_' + (j.unit_number||'x') + '_' + j.date + '.pdf';
-  doc.save(fname);
+  savePdfCompat(doc, fname);   // v1.07.21
 }
 /* публичная ручка для ПК-режима: Blob с актуальным бланком или null */
 function pdfPreviewBlob(){
@@ -3539,20 +3711,6 @@ function pdfPreviewBlob(){
 /* =====================================================================
    ОБНОВЛЕНИЯ / SERVICE WORKER
    ===================================================================== */
-/* v1.07.21: номер юнита — цифровая клавиатура по умолчанию, кнопка «АБВ/123»
-   переключает на буквенную. Мобильные клавиатуры перечитывают inputmode
-   только при получении фокуса, поэтому blur → смена атрибута → focus. */
-function unitKb(id, btn){
-  const inp = $('#' + id); if (!inp) return;
-  const toText = (inp.getAttribute('inputmode') || 'numeric') === 'numeric';
-  inp.blur();
-  inp.setAttribute('inputmode', toText ? 'text' : 'numeric');
-  if (btn) btn.textContent = toText ? t('unit_kb_123') : t('unit_kb_abc');
-  setTimeout(() => {
-    try{ inp.focus(); const L = inp.value.length; inp.setSelectionRange?.(L, L); }catch(e){}
-  }, 40);
-}
-
 function editingBusy(){
   return state.screen === 'job' || !!document.getElementById('overlay') || !!dictTa;
 }
@@ -3659,7 +3817,7 @@ const App = {
   translateEn: translateToEn,
   openDayMap(){ state.mapDay = true; state.mapDate = state.selDate; App.go('map'); },
   mapMode(v){ state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
-  showLog: showLogModal, copyLog, clearLog, unitKb,
+  showLog: showLogModal, copyLog, clearLog,
   jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
   jrAct(v){ state.jr.act = v; loadJournal(true); },
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
@@ -3692,6 +3850,7 @@ const App = {
   setStdPrice, delRow,
   pickColor(id, c){ $('#'+id+'-v').value = c; document.querySelectorAll('#'+id+' .cdot').forEach(d=>d.classList.toggle('sel', d.dataset.c===c)); },
   setLang(l){ state.lang = l; localStorage.setItem('techlog_lang', l); render(); },
+  setNavApp(v){ state.navApp = v; localStorage.setItem('techlog_navapp', v); render(); },  // v1.07.21
   saveMyName(v){
     v = v.trim(); if (!v) return;
     state.user.display_name = v;
@@ -3751,6 +3910,12 @@ function initBackGuard(){
     initBackGuard();
     initDragSort();
     initTabsDrag();
+    /* v1.07.21: iOS замораживает фон — досылаем недоставленные записи,
+       когда приложение снова видно или появилась сеть */
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') pendingFlush();
+    });
+    window.addEventListener('online', () => pendingFlush());
     if (HAS_SB){
       try{
         const cached = loadLocal();
@@ -3774,18 +3939,24 @@ function initBackGuard(){
    ===================================================================== */
 let dictRec = null, dictTa = null, dictBase = '', dictWant = false;
 const DICT_ANDROID = /android/i.test(navigator.userAgent);
-function dictSupported(){ return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+/* v1.07.21: на iOS webkitSpeechRecognition формально существует (Safari 14.5+),
+   но continuous-режим там печально известен багами (микрофон не останавливается,
+   результаты не приходят). Свою кнопку на iOS скрываем — системная диктовка
+   кнопкой 🎤 на клавиатуре iPhone работает в любое поле и распознаёт RU/EN. */
+function dictSupported(){ return !IS_IOS && !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
 function dictationHTML(taId, value){
-  return `<div class="dict-wrap">
-    <textarea id="${taId}" class="note-ta" rows="3" placeholder="${t('note')}…">${esc(value||'')}</textarea>
-    <div class="dict-row">
+  const micRow = dictSupported() ? `
       <button type="button" class="mic ${dictTa===taId?'rec':''}" id="mic-${taId}" onclick="App.dictToggle('${taId}')" title="${t('dictate')}">${ic('mic')}</button>
       <div class="lang-seg sm">
         <button type="button" class="${state.dictLang==='ru-RU'?'on':''}" onclick="App.dictLang('ru-RU')">RU</button>
         <button type="button" class="${state.dictLang==='en-US'?'on':''}" onclick="App.dictLang('en-US')">EN</button>
-      </div>
+      </div>` : '';
+  const iosHint = (!dictSupported() && IS_IOS) ? `<span class="tiny">${t('dict_kbd_hint')}</span>` : '';
+  return `<div class="dict-wrap">
+    <textarea id="${taId}" class="note-ta" rows="3" placeholder="${t('note')}…">${esc(value||'')}</textarea>
+    <div class="dict-row">${micRow}
       <button type="button" class="btn btn-ghost sm" onclick="App.translateEn('${taId}')">${ic('globe')} ${t('translate_en')}</button>
-      <span class="tiny" id="mic-hint-${taId}">${dictTa===taId ? t('listening') : ''}</span>
+      ${iosHint}<span class="tiny" id="mic-hint-${taId}">${dictTa===taId ? t('listening') : ''}</span>
     </div>
   </div>`;
 }
@@ -3976,7 +4147,7 @@ function viewMap(){
     ${state.mapDay ? `
       <div class="form-row" style="margin-top:8px"><span class="lbl">${t('map_day_hint')}</span>
         <input type="date" value="${state.mapDate || state.selDate}" onchange="App.mapSetDate(this.value)"></div>
-      ${day.pts.length ? `<button class="btn btn-blue sm" onclick="App.mapRoute()">${ic('compass')} ${t('route_gmaps')}</button>` : ''}` : ''}
+      ${day.pts.length ? `<button class="btn btn-blue sm" onclick="App.mapRoute()">${ic('compass')} ${t('route_day_in')} ${navName()}</button>` : ''}` : ''}
   </div>
   <div id="map" class="map-box"></div>
   ${legend}
@@ -4001,7 +4172,8 @@ function initMapView(){
     m.bindPopup(html);
     marks.push([lat, lng]);
   };
-  const gm = (cx) => `<a href="https://www.google.com/maps/dir/?api=1&destination=${cx.lat},${cx.lng}" target="_blank" rel="noopener">${t('open_gmaps')} →</a>`;
+  /* v1.07.21: обычный <a href> надёжнее window.open передаёт управление в нативное приложение карт на iOS */
+  const gm = (cx) => `<a href="${navDirUrl(cx.lat + ',' + cx.lng)}" target="_blank" rel="noopener">${t('open_in')} ${navName()} →</a>`;
 
   if (state.mapDay){
     const { pts } = mapDayItems();
@@ -4033,7 +4205,7 @@ function mapRoute(){
   const uniq = [];
   pts.forEach(p => { const k = p.lat.toFixed(5)+','+p.lng.toFixed(5); if (!uniq.includes(k)) uniq.push(k); });
   if (!uniq.length) return;
-  window.open('https://www.google.com/maps/dir/' + uniq.join('/'), '_blank', 'noopener');
+  window.open(navRouteUrl(uniq), '_blank', 'noopener'); // v1.07.21: мультистоп в Apple Maps (iOS 18.4+) или Google Maps
 }
 
 /* Геокодинг адреса комплекса (Nominatim / OpenStreetMap) */
@@ -4054,7 +4226,7 @@ function gmapsCx(){
   const la = $('#cx-lat').value, ln = $('#cx-lng').value, addr = $('#cx-addr').value.trim();
   const q = (la && ln) ? (la + ',' + ln) : addr;
   if (!q) return;
-  window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q), '_blank', 'noopener');
+  window.open(navSearchUrl(q), '_blank', 'noopener');  // v1.07.21: Apple Maps на iOS / Google на остальных
 }
 
 /* =====================================================================
@@ -4399,7 +4571,7 @@ function batchPdf(){
     }
     drawInvoiceVert(doc, j, pos * INV_W, 0);
   });
-  doc.save('Invoices_' + state.repFrom + '_' + state.repTo + '.pdf');
+  savePdfCompat(doc, 'Invoices_' + state.repFrom + '_' + state.repTo + '.pdf');   // v1.07.21
   toast('⬇ PDF: ' + js.length + (skipped?` · ⚠ ${skipped} ${t('batch_skipped')}`:''));
 }
 
@@ -4654,7 +4826,7 @@ function autosaveDraft(){
 function navToCx(cxId){
   const cx = cxById(cxId); if (!cx) return;
   const q = (cx.lat!=null && cx.lng!=null) ? `${cx.lat},${cx.lng}` : (cx.address||cx.name);
-  window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(q), '_blank', 'noopener');
+  window.open(navDirUrl(q), '_blank', 'noopener');   // v1.07.21: Apple Maps на iOS / Google на остальных
 }
 function copyText(s){
   navigator.clipboard?.writeText(s).then(()=>{ navigator.vibrate?.(20); toast('✓ ' + t('copied_code')); });
@@ -4679,6 +4851,12 @@ async function runDiagnostics(){
   put(`online: ${navigator.onLine ? 'да' : 'нет'} · язык UI: ${state.lang} · экран: ${state.screen}`);
   put(`режим: ${HAS_SB ? 'Supabase' : 'ДЕМО (localStorage)'} · пользователь: ${state.user ? state.user.login + ' (' + state.user.role + ')' : '—'}`);
   put(`последняя синхронизация: ${state.lastSync || '—'}`);
+  /* v1.07.21: iOS-диагностика */
+  put(`платформа: ${IS_IOS ? 'iOS/iPadOS' : 'не-iOS'} · установлено на экран: ${isStandalone() ? 'да' : 'нет'} · навигатор: ${navName()}`);
+  try{
+    const raw = localStorage.getItem(LS_KEY) || '';
+    put(`кеш localStorage: ${(raw.length/1024).toFixed(0)} КБ (лимит Safari ~5 МБ) · очередь записей: ${pendingLoad().length}`);
+  }catch(e){}
   put('');
 
   // версия на сервере
@@ -4914,7 +5092,7 @@ function faqHtml(){
     <h4>${ic('toolbox')} Note templates & purchases</h4>
     <p>In the Note block, <b>＋ Template</b> inserts items from the “Extra works” directory: a work flagged with a size shows an input in the right units (${ic('ruler')} “Sizes”: ft, sq ft, lb, pcs), while “${ic('cart')} Purchase” opens the “Products” list with quantity and a <b>price</b> that flows into the total and prints as its own PDF line. All three directories are admin-managed.</p>
     <h4>${ic('box')} Automatic pickups</h4>
-    <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. <b>Tap a pickup card</b> to open the details: what to collect and how much, where from (address, codes, route), plus buttons “Open invoice”, “Job history”, “Pick up all” and <b>“Extend rental”</b> — all units or selected ones, with a day stepper (1 by default); the extension appears on the new day as a separate pickup with an “extension” chip. <b>Job history</b> (the button is also inside the invoice) shows the whole chain: the invoice with its dates, pickups and extensions with statuses; any pending line can be <b>collected early</b> via “Pick up now” — that’s how both a pickup and an extension are cancelled ahead of time. Everything can be shown on the <b>day map</b> with a Google Maps route.</p>
+    <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. <b>Tap a pickup card</b> to open the details: what to collect and how much, where from (address, codes, route), plus buttons “Open invoice”, “Job history”, “Pick up all” and <b>“Extend rental”</b> — all units or selected ones, with a day stepper (1 by default); the extension appears on the new day as a separate pickup with an “extension” chip. <b>Job history</b> (the button is also inside the invoice) shows the whole chain: the invoice with its dates, pickups and extensions with statuses; any pending line can be <b>collected early</b> via “Pick up now” — that’s how both a pickup and an extension are cancelled ahead of time. Everything can be shown on the <b>day map</b> with a route in your navigation app (Apple Maps or Google Maps — see Settings).</p>
     <h4>${ic('eye')} Roles & access</h4>
     <p><b>Tech</b> sees only their own jobs and pickups. <b>Manager</b> sees everyone (minus those hidden via ${ic('eye')} <b>Visibility</b>), has the Mine/All filter and the pickups report. <b>Admin</b> can do everything: approve, edit directories, manage <b>Staff</b> — roles, ${ic('ban')} <b>blocking</b> (a blocked employee can’t sign in; the red crossed circle toggles it), ${ic('key')} <b>password reset</b> for an employee who forgot theirs, plus code requests. The admin also <b>creates employees</b> right there: the “＋ Add employee” button — name, login, password and role; they can sign in immediately. The list shows each person’s status (Active/Blocked) and the date they joined the app.</p>
     <h4>${ic('receipt')} Statuses & approval</h4>
@@ -4928,7 +5106,7 @@ function faqHtml(){
     <h4>${ic('refresh')} Sync, offline & updates</h4>
     <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android, works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode.</p>
     <h4>${ic('map')} Map</h4>
-    <p>The Map tab shows every complex as a dot colored by counterparty, with a filter and a popup (address, codes, Google Maps link). <b>Day mode</b> plots the selected date’s jobs (work-type colors) and pickups (gray, red when overdue) and builds a multi-stop <b>Google Maps route</b>. Coordinates are set in the complex card — “Find by address” or manually.</p>
+    <p>The Map tab shows every complex as a dot colored by counterparty, with a filter and a popup (address, codes, a route link). <b>Day mode</b> plots the selected date’s jobs (work-type colors) and pickups (gray, red when overdue) and builds a multi-stop <b>route</b> in your navigation app — Apple Maps on iPhone/iPad (multistop needs iOS 18.4+) or Google Maps; pick one in Settings → “Navigation app”. Coordinates are set in the complex card — “Find by address” or manually.</p>
     <h4>${ic('chart')} Statistics</h4>
     <p>The Stats tab: period chips (today/7/30 days or custom), Mine/All, big totals (jobs, revenue, approved, pickups) and a per-day bar chart.</p>
     <h4>${ic('mic')} Notes, dictation & translation</h4>
@@ -4951,7 +5129,7 @@ function faqHtml(){
     <h4>${ic('toolbox')} Шаблоны заметки и покупки</h4>
     <p>В блоке «Заметка» кнопка <b>＋ Шаблон</b> подставляет позиции из справочника «Доп. работы»: у работы с флагом размера появляется поле в нужных единицах (${ic('ruler')} «Размеры»: футы, sq ft, паунды, штуки), а «${ic('cart')} Покупка товара» открывает выбор из справочника «Товары», количество и <b>цену</b> — она попадает в итог и печатается в PDF отдельной строкой. Все три справочника редактирует администратор.</p>
     <h4>${ic('box')} Пикапы формируются сами</h4>
-    <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. <b>Тап по карточке пикапа</b> открывает подробности: что и сколько вывозить, откуда (адрес, коды, маршрут), кнопки «Открыть инвойс», «История работы», «Забрать всё» и <b>«Продлить аренду»</b> — целиком или выборочно, степпером выбираете количество дней (по умолчанию 1), и задача-продление появляется в новый день как отдельный пикап с чипом «продление». В <b>истории работы</b> (кнопка есть и в инвойсе) видна вся цепочка: инвойс с датами, пикапы и продления со статусами; любую ожидающую строку можно <b>забрать досрочно</b> кнопкой «Забрать сейчас» — так аннулируются и пикап, и продление. Всё это выводится на <b>карту дня</b> с маршрутом Google Maps.</p>
+    <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. <b>Тап по карточке пикапа</b> открывает подробности: что и сколько вывозить, откуда (адрес, коды, маршрут), кнопки «Открыть инвойс», «История работы», «Забрать всё» и <b>«Продлить аренду»</b> — целиком или выборочно, степпером выбираете количество дней (по умолчанию 1), и задача-продление появляется в новый день как отдельный пикап с чипом «продление». В <b>истории работы</b> (кнопка есть и в инвойсе) видна вся цепочка: инвойс с датами, пикапы и продления со статусами; любую ожидающую строку можно <b>забрать досрочно</b> кнопкой «Забрать сейчас» — так аннулируются и пикап, и продление. Всё это выводится на <b>карту дня</b> с маршрутом в навигаторе (Apple Maps или Google Maps — см. Настройки).</p>
     <h4>${ic('eye')} Роли и доступ</h4>
     <p><b>Сотрудник (tech)</b> видит только свои работы и пикапы. <b>Менеджер</b> — всех (кроме скрытых через ${ic('eye')} <b>Видимость</b>), у него есть фильтр «Мои/Все» и отчёт по пикапам. <b>Админ</b> может всё: апрув, справочники, управление <b>Сотрудниками</b> — роли, ${ic('ban')} <b>блокировка</b> (заблокированный не сможет войти; красный перечёркнутый кружок включает и снимает блокировку), ${ic('key')} <b>смена пароля</b> сотруднику, если тот его забыл, а также заявки на коды. Там же админ <b>создаёт сотрудников</b>: кнопка «＋ Добавить сотрудника» — имя, логин, пароль и роль, вход возможен сразу. В списке виден статус каждого (Активен/Заблокирован) и дата регистрации в приложении.</p>
     <h4>${ic('receipt')} Статусы и апрув</h4>
@@ -4965,7 +5143,7 @@ function faqHtml(){
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
     <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android, работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим.</p>
     <h4>${ic('map')} Карта</h4>
-    <p>Вкладка «Карта» показывает все комплексы точками в цвет контрагента, с фильтром и попапом (адрес, коды, ссылка на Google Maps). <b>Режим дня</b> выводит работы выбранной даты (цвет вида работы) и пикапы (серые, красные при просрочке) и строит мультиточечный <b>маршрут Google Maps</b>. Координаты задаются в карточке комплекса — «Найти по адресу» или вручную.</p>
+    <p>Вкладка «Карта» показывает все комплексы точками в цвет контрагента, с фильтром и попапом (адрес, коды, ссылка на маршрут). <b>Режим дня</b> выводит работы выбранной даты (цвет вида работы) и пикапы (серые, красные при просрочке) и строит мультиточечный <b>маршрут</b> в навигаторе — Карты Apple на iPhone/iPad (мультистоп с iOS 18.4) или Google Maps; выбор в Настройках → «Навигатор». Координаты задаются в карточке комплекса — «Найти по адресу» или вручную.</p>
     <h4>${ic('chart')} Статистика</h4>
     <p>Вкладка «Статистика»: чипы периода (сегодня/7/30 дней или свой), «Мои/Все», крупные итоги (работы, выручка, апрувы, пикапы) и график по дням.</p>
     <h4>${ic('mic')} Заметки, диктовка и перевод</h4>
