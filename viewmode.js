@@ -56,9 +56,9 @@
   var CSS =
     /* align-items:flex-start обязателен: контейнер имеет height:0, и дефолтный
        stretch схлопывал пилюлю по вертикали — иконки «вываливались» за рамку */
-    '.vm-bar{position:relative;z-index:46;height:0;display:flex;justify-content:center;' +
-      'align-items:flex-start;pointer-events:none;}' +
-    '.vm-seg{pointer-events:auto;position:relative;top:16px;display:inline-flex;gap:4px;' +
+    '.vm-bar{position:fixed;top:0;right:0;height:0;z-index:46;pointer-events:none;}' +
+    '.vm-seg{pointer-events:auto;position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);right:10px;' +
+      'transform:scale(.9);transform-origin:top right;display:inline-flex;gap:4px;' +
       'background:var(--panel,#17232A);border:2px solid var(--line,#31434C);' +
       'border-radius:999px;padding:3px;}' +
     '.vm-btn{font:inherit;font-weight:800;font-size:.72rem;letter-spacing:.4px;' +
@@ -72,9 +72,7 @@
     '.vm-btn:focus-visible{outline:3px solid rgba(28,176,246,.45);outline-offset:1px;}' +
     '@media (min-width:980px){html.tl-desktop .vm-btn span{display:inline;}' +
       'html.tl-desktop .vm-btn{padding:5px 14px;}}' +                  /* ПК-режим: с подписями */
-    /* узким телефонам в строке шапки места нет (название слева, иконки справа) —
-       до 560px пилюля встаёт отдельной строкой вплотную к шапке */
-    '@media (max-width:559px){.vm-bar{height:auto;padding:6px 0 0;}.vm-seg{top:0;}}';
+    '';  /* v1.07.26: пилюля всегда справа под бейджем роли — ряда над шапкой больше нет */
 
   function injectStyles() {
     if (document.getElementById('vm-style')) return;

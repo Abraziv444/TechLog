@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.23';
+const APP_VERSION = '1.07.26';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 
@@ -276,6 +276,27 @@ const I18N = {
     db_diag: 'Диагностика БД (все таблицы)', admin_only: 'Доступно только администратору',
     checking_tables: 'Проверяю таблицы…',
     priority: 'Приоритет', move_up: 'Выше', move_down: 'Ниже',
+    tab_board: 'Доска', b_jobs: 'работ', b_pk: 'пикапов', b_empty: 'День свободен',
+    b_ext: 'продление', b_over: 'просрочен', b_only: 'Доска доступна менеджеру и администратору.',
+    car_no: 'Номер машины', mgr_reorder_chk: 'Менеджер может менять очерёдность задач (Доска и ▲▼)',
+    tomorrow: 'Завтра',
+    overdue_hint: 'Просроченные пикапы не входят в число «сегодня» — они показаны отдельным числом.',
+    ext_rules_hint: 'Количество можно только уменьшить — продлеваем не больше, чем стоит у клиента; остаток забирается в срок. Продление — максимум {N} дн. за раз.',
+    ext_max_note: 'макс {N}', restore_pk: 'Вернуть в аренду', restored: 'Возвращено в аренду',
+    mgr_approve_chk: 'Менеджер может ставить апрув инвойсов',
+    eq_settings_title: 'Оборудование и документы',
+    def_days_lbl: 'Аренда по умолчанию, дн.', max_ext_lbl: 'Максимум продления, дн.',
+    lock_days_lbl: 'Блокировать правку старше, дн. (0 — выкл)',
+    lock_hint: 'Документы старше срока техник менять не может — только менеджер или админ.',
+    lock_note: 'Документ старше {N} дн. — правка только менеджером или админом',
+    d_stock: 'Склад', stock_total: 'всего', stock_broken: 'сломано', stock_repair: 'в ремонте',
+    stock_field: 'у клиентов', stock_avail: 'на складе',
+    stock_vis_chk: 'Сотрудники видят остатки склада',
+    stock_hint: 'Всего − сломано − в ремонте − у клиентов = на складе. «У клиентов» считается автоматически по невывезенным пикапам.',
+    cl_title: 'Чек-лист перед выездом', cl_edit_hint: 'Каждый пункт — с новой строки.',
+    proposal_chk: 'PROPOSAL — работы согласованы заранее',
+    pdf_preview: 'Просмотр PDF', pdf_print: 'Печать',
+    print_hint: 'Откроется системная печать; если нет — PDF откроется в новой вкладке (меню браузера → Печать).',
     callbox: 'Код callbox', code_target: 'Этот код открывает', target_callbox: 'Домофон', target_gate: 'Ворота',
     history: 'История', code_history: 'История кодов',
     propose_code: 'Предложить код', request_sent: 'Заявка отправлена админу',
@@ -484,6 +505,27 @@ const I18N = {
     db_diag: 'DB diagnostics (all tables)', admin_only: 'Admins only',
     checking_tables: 'Checking tables…',
     priority: 'Priority', move_up: 'Up', move_down: 'Down',
+    tab_board: 'Board', b_jobs: 'jobs', b_pk: 'pickups', b_empty: 'Free day',
+    b_ext: 'extension', b_over: 'overdue', b_only: 'The Board is for managers and admins.',
+    car_no: 'Vehicle #', mgr_reorder_chk: 'Manager can reorder tasks (Board & ▲▼)',
+    tomorrow: 'Tomorrow',
+    overdue_hint: 'Overdue pickups are not counted in “today” — they are shown as a separate number.',
+    ext_rules_hint: 'Quantity can only be reduced — you extend no more than what is on site; the rest is picked up on time. Extension — max {N} days at once.',
+    ext_max_note: 'max {N}', restore_pk: 'Return to rental', restored: 'Returned to rental',
+    mgr_approve_chk: 'Manager can approve invoices',
+    eq_settings_title: 'Equipment & documents',
+    def_days_lbl: 'Default rental, days', max_ext_lbl: 'Max extension, days',
+    lock_days_lbl: 'Lock editing older than, days (0 — off)',
+    lock_hint: 'Techs cannot edit documents older than this — only manager or admin.',
+    lock_note: 'Document older than {N} days — manager/admin only',
+    d_stock: 'Warehouse', stock_total: 'total', stock_broken: 'broken', stock_repair: 'in repair',
+    stock_field: 'on site', stock_avail: 'available',
+    stock_vis_chk: 'Staff can see warehouse stock',
+    stock_hint: 'Total − broken − in repair − on site = available. “On site” is computed from pending pickups.',
+    cl_title: 'Pre-trip checklist', cl_edit_hint: 'One item per line.',
+    proposal_chk: 'PROPOSAL — approved earlier',
+    pdf_preview: 'Preview PDF', pdf_print: 'Print',
+    print_hint: 'System print will open; otherwise the PDF opens in a new tab (browser menu → Print).',
     callbox: 'Callbox code', code_target: 'This code opens', target_callbox: 'Callbox', target_gate: 'Gate',
     history: 'History', code_history: 'Code history',
     propose_code: 'Propose code', request_sent: 'Request sent to admin',
@@ -558,7 +600,7 @@ function parseISO(s){ const [y,m,dd] = String(s).split('-').map(Number); return 
 function addDaysISO(iso, n){ const d = parseISO(iso); d.setDate(d.getDate()+n); return isoOf(d); }
 function mondayOf(iso){ const d = parseISO(iso); const wd = (d.getDay()+6)%7; d.setDate(d.getDate()-wd); return isoOf(d); }
 function fmtDM(iso){ const d = parseISO(iso); return d.getDate() + ' ' + t('months')[d.getMonth()]; }
-function fmtDMY(iso){ const d = parseISO(iso); return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear(); }
+function fmtDMY(iso){ const d = parseISO(iso); return String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0') + '/' + d.getFullYear(); } // v1.07.26: US MM/DD/YYYY
 function fmtUS(iso){ const d = parseISO(iso); return String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0') + '.' + String(d.getFullYear()).slice(2); }
 function nowStamp(){ const d = new Date(); return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
 function shortName(full){
@@ -583,7 +625,13 @@ function jobIssues(j){
 function warnIcon(sm){ return `<span class="warn${sm?' sm':''}" title="${t('req_missing')}">!</span>`; }
 function initials(name){ return String(name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
 function textColorFor(hex){ const h = (hex||'#888').replace('#',''); const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16); return (r*299+g*587+b*114)/1000 > 150 ? '#10251a' : '#ffffff'; }
-function toast(msg, kind){ const el = document.createElement('div'); el.className = 'toast' + (kind==='err'?' err':kind==='inf'?' inf':''); el.textContent = msg; $('#toasts').appendChild(el); setTimeout(()=>el.remove(), 3800); }
+function toast(msg, kind){
+  const now = Date.now();                                  // v1.07.26: не спамим одинаковыми
+  if (toast._m === msg && now - (toast._t || 0) < 1800) return;
+  toast._m = msg; toast._t = now;
+  const el = document.createElement('div'); el.className = 'toast' + (kind==='err'?' err':kind==='inf'?' inf':'');
+  el.textContent = msg; $('#toasts').appendChild(el); setTimeout(()=>el.remove(), 3800);
+}
 const PALETTE = ['#58CC02','#1CB0F6','#FF4B4B','#FF9600','#FFC800','#CE82FF','#2EC4B6','#111827','#8B9AA3'];
 
 /* =====================================================================
@@ -732,7 +780,7 @@ function seedDemoData(){
       complex_id: complexes[0].id, counterparty_id: cp1.id, unit_number: '916' },
   ];
   const data = {
-    profiles, counterparties, complexes, counterparty_prices, hidden_staff: [], code_requests: [], complex_code_history: [],
+    profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], hidden_staff: [], code_requests: [], complex_code_history: [],
     jobs: [job1, job2], placements, ...cat
   };
   job1.total = calcTotal(job1.form_data, priceResolver(cp1.id, data), data);
@@ -822,7 +870,7 @@ function pendingApplyLocal(data){
   }
 }
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','hidden_staff','code_requests','complex_code_history','jobs','placements'];
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements'];
 
 function emptyData(){
   const d = { org_settings: {
@@ -1317,7 +1365,32 @@ function jobSortCmp(a, b){
       || (a.sort_order||0) - (b.sort_order||0)
       || String(a.created_at||'').localeCompare(String(b.created_at||''));
 }
-function canReorder(j){ return j && (isAdmin() || j.technician_id === state.user.id); }
+function canPrio(j){ return j && (isAdmin() || state.user.role === 'manager' || j.technician_id === state.user.id); }
+function mgrReorderOn(){ const o = state.data && state.data.org_settings; return !!(o && o.manager_can_reorder); }
+function defRentDays(){ const v = +((state.data && state.data.org_settings || {}).default_rent_days); return v >= 1 ? v : 3; }
+function maxExtendDays(){ const v = +((state.data && state.data.org_settings || {}).max_extend_days); return v >= 1 ? v : 3; }
+function editLockDays(){ const v = +((state.data && state.data.org_settings || {}).edit_lock_days); return v >= 1 ? v : 0; }
+function editLocked(j){ const n = editLockDays(); if (!n || isManager()) return false; return j.date < addDaysISO(todayISO(), -n); }
+function canApprove(){ return isAdmin() || (state.user.role === 'manager' && !!((state.data.org_settings||{}).manager_can_approve)); }
+function stockVisibleAll(){ return (state.data.org_settings || {}).stock_visible_all !== false; }
+function canReorder(j){ return j && (isAdmin() || j.technician_id === state.user.id || (state.user.role === 'manager' && mgrReorderOn())); }
+/* v1.07.25: приоритет/очерёдность. Свои работы и админ — прямой upsert (RLS
+   пропускает). Менеджер чужие — ТОЛЬКО через RPC board_job_flags: политика
+   jobs_upd менеджеру запись не даёт, а расширять её целиком опасно — функция
+   меняет ровно два поля (priority, sort_order) и ничего больше. */
+async function saveJobPatch(j, patch){
+  if (isAdmin() || j.technician_id === state.user.id || isJobSharedWithMe(j)){
+    await dbUpsert('jobs', { ...j, ...patch, updated_at: new Date().toISOString() });
+    return;
+  }
+  if (!HAS_SB){ Object.assign(j, patch); return; }
+  const { error } = await state.sb.rpc('board_job_flags', {
+    p_job: j.id,
+    p_priority: ('priority' in patch) ? patch.priority : null,
+    p_sort: ('sort_order' in patch) ? patch.sort_order : null });
+  if (error) throw error;
+  Object.assign(j, patch);
+}
 function jobsOn(dateISO){ return visibleJobs().filter(j => j.date === dateISO).sort(jobSortCmp); }
 function pickupsOn(dateISO){
   const today = todayISO();
@@ -1348,6 +1421,8 @@ const ICONS = {
   map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
   pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 14h8M8 17.5h5"/></svg>',
   sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H20V3H7.5A2.5 2.5 0 0 0 5 5.5z"/><path d="M5 19.5A2.5 2.5 0 0 0 7.5 22H20v-5"/><path d="M10 7h6"/></svg>',
+  board: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5.4" height="16" rx="1.2"/><rect x="9.8" y="4" width="5.4" height="11" rx="1.2"/><rect x="16.6" y="4" width="5.4" height="7" rx="1.2"/></svg>',
 };
 
 /* =====================================================================
@@ -1907,8 +1982,9 @@ function render(){
   else if (state.screen === 'dirs') body = viewDirs();
   else if (state.screen === 'settings') body = viewSettings();
   else if (state.screen === 'journal') body = viewJournal();   // v1.07.18
+  else if (state.screen === 'board') body = viewBoard();       // v1.07.25
   app.innerHTML = viewHeader() + body + viewTabbar();
-  if (state.screen === 'home'){
+  if (state.screen === 'home' || state.screen === 'board'){
     try { document.querySelector('.day-cell.sel')?.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch(e){}
   }
   if (state.screen === 'dirs'){
@@ -1928,8 +2004,7 @@ function viewHeader(){
       <div class="name">Tech<b>Log</b><span class="name-tag">${t('app_tag')}</span></div>
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
-    <button class="icon-btn ${state.syncing?'spin':''}" onclick="App.sync()" title="${t('sync')}" aria-label="${t('sync')}">${ICONS.sync}</button>
-    <div class="role-tag role-${u.role}" title="${t('role_' + u.role)}">${({ tech: 'worker', manager: 'manager', admin: 'admin' })[u.role] || u.role}</div>
+    <div class="role-tag rt-${u.role}" title="${t('role_' + u.role)}">${t('role_' + u.role)}</div>
     <div class="avatar-wrap">
       <button class="avatar role-${u.role}" onclick="App.go('settings')" aria-label="${t('settings')}">${esc(initials(u.display_name))}</button>
       <div class="login-pill role-${u.role}">${esc(u.login)}</div>
@@ -1950,6 +2025,7 @@ function viewFooter(){
 function viewTabbar(){
   const items = [
     ['home', ICONS.home, t('tab_home')],
+    ...(isManager() ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.25
     ['map', ICONS.map, t('tab_map')],
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
@@ -2064,7 +2140,7 @@ function viewHome(){
 
   const banner = (due+over) > 0 ? `
     <div class="banner ${over?'b-red':''}" role="status">${ic('bell')}
-      <div>${t('banner_pickups')}: <b>${due}</b>${over?` · ${t('banner_overdue')}: <b>${over}</b>`:''}</div>
+      <div>${t('banner_pickups')}: <b>${due}</b>${over?` · ${t('banner_overdue')}: <b>${over}</b> <span class="info-i" title="${t('overdue_hint')}" onclick="event.stopPropagation();App.toastInfo('overdue_hint')">ⓘ</span>`:''}</div>
     </div>` : '';
   /* v1.07.23: iPhone/iPad без установленной PWA — подсказываем установку */
   const a2hs = a2hsShow() ? `
@@ -2097,7 +2173,7 @@ function viewHome(){
     return `
     <div class="item clicky" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}" onclick="App.pickupModal('${jobId}','${iso}',event)">
       ${rowNumHtml(num.pkNum[jobId])}
-      ${triHtml(!!pkJob.priority, jobId, canReorder(pkJob))}
+      ${triHtml(!!pkJob.priority, jobId, canPrio(pkJob))}
       ${railHtml(pkJob)}
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
@@ -2137,7 +2213,7 @@ function viewHome(){
     return `
     <div class="item clicky" data-drag-id="${j.id}" data-can="${canReorder(j)?1:0}" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
       ${rowNumHtml(num.jobNum[j.id])}
-      ${triHtml(!!j.priority, j.id, canReorder(j))}
+      ${triHtml(!!j.priority, j.id, canPrio(j))}
       ${railHtml(j)}
       <div class="info">
         <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number||'—')}</div>
@@ -2299,21 +2375,26 @@ function modalHead(title, iconName){ return `<h3><button class="back-x" onclick=
 
 /* ---------- Добавить задание ---------- */
 function addTaskModal(){
-  const cps = state.data.counterparties;
-  const wts = [...state.data.work_types].sort((a,b)=>(a.sort||0)-(b.sort||0));
+  const wts = [...state.data.work_types].filter(w => !/proposal/i.test(w.name)).sort((a,b)=>(a.sort||0)-(b.sort||0));
   openModal(`
     ${modalHead(t('add_task'))}
     <div class="form-row"><span class="lbl">${t('date')}</span>
       <input type="date" id="nt-date" value="${state.selDate}"></div>
     <div class="form-row"><span class="lbl">${t('counterparty')}</span>
-      <select id="nt-cp" onchange="App.ntCpChange()">
-        <option value="">${t('select')}</option>
-        ${cps.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
-      </select></div>
+      <div class="combo" id="cb-cp">
+        <input class="combo-in" placeholder="${t('select')}" autocomplete="off"
+          oninput="App.comboFilter('cp', this.value)" onfocus="App.comboFilter('cp', this.value)">
+        <input type="hidden" id="nt-cp"><div class="combo-list" id="cb-cp-list"></div>
+      </div></div>
     <div class="form-row"><span class="lbl">${t('complex')}</span>
-      <select id="nt-cx"><option value="">${t('select')}</option></select></div>
+      <div class="combo" id="cb-cx">
+        <input class="combo-in" placeholder="${t('select')}" autocomplete="off"
+          oninput="App.comboFilter('cx', this.value)" onfocus="App.comboFilter('cx', this.value)">
+        <input type="hidden" id="nt-cx"><div class="combo-list" id="cb-cx-list"></div>
+      </div></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
       <input id="nt-unit" inputmode="numeric" placeholder="916"></div>
+    <label class="opt" style="margin:2px 0 8px"><input type="checkbox" id="nt-prop"> ${t('proposal_chk')}</label>
     <div class="form-row"><span class="lbl">${t('work_type')}</span>
       <div class="opt-grid" id="nt-wt">
         ${wts.map(w=>`<button class="opt" data-id="${w.id}" style="border-color:${w.color};color:${w.color}"
@@ -2341,6 +2422,37 @@ function ntPickWt(btn){
   const w = wtById(ntWt);
   btn.style.background = w.color; btn.style.color = textColorFor(w.color);
 }
+/* v1.07.26: комбо с поиском по буквам для контрагента и комплекса */
+function comboItems(kind){
+  if (kind === 'cp') return state.data.counterparties.map(c => ({ id: c.id, label: c.name }));
+  const cpId = $('#nt-cp') ? $('#nt-cp').value : '';
+  return state.data.complexes.filter(c => !cpId || c.counterparty_id === cpId)
+    .map(c => ({ id: c.id, label: c.name + (c.abbr ? ` (${c.abbr})` : '') }));
+}
+function comboFilter(kind, q){
+  const list = $('#cb-' + kind + '-list'); if (!list) return;
+  const v = String(q || '').toLowerCase();
+  const items = comboItems(kind).filter(it => it.label.toLowerCase().includes(v)).slice(0, 30);
+  list.innerHTML = items.map(it =>
+    `<div class="combo-opt" onclick="App.comboPick('${kind}','${it.id}')">${esc(it.label)}</div>`).join('')
+    || `<div class="combo-opt dim">—</div>`;
+  list.style.display = 'block';
+}
+function comboPick(kind, id){
+  const it = comboItems(kind).find(x => x.id === id); if (!it) return;
+  $('#nt-' + kind).value = id;
+  const box = $('#cb-' + kind);
+  box.querySelector('.combo-in').value = it.label;
+  box.querySelector('.combo-list').style.display = 'none';
+  if (kind === 'cp'){
+    const cx = $('#nt-cx'); if (cx) cx.value = '';
+    const cbx = $('#cb-cx'); if (cbx) cbx.querySelector('.combo-in').value = '';
+  }
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.combo'))
+    document.querySelectorAll('.combo-list').forEach(l => l.style.display = 'none');
+});
 async function createTask(){
   const date = $('#nt-date').value || state.selDate;
   const cpId = $('#nt-cp').value, cxId = $('#nt-cx').value;
@@ -2352,6 +2464,7 @@ async function createTask(){
   if (missing.length){ toast('⚠ ' + t('not_selected') + ': ' + missing.join(', '), 'err'); return; }
   const job = {
     id: uid(), date, counterparty_id: cpId, complex_id: cxId, unit_number: unit,
+    has_proposal: !!($('#nt-prop') && $('#nt-prop').checked),
     work_type_id: ntWt, technician_id: state.user.id, technician_name: shortName(state.user.display_name), helper_ids: [], shared_with_helpers: false, priority: false, sort_order: jobsOn(date).length,
     status: 'draft', note: '', form_data: emptyFormData(), total: 0,
     approved_total: null, approved_by: null, approved_at: null,
@@ -2461,12 +2574,13 @@ function renderExtendModal(){
       <button class="${d.mode==='all'?'on':''}" onclick="App.extMode('all')">${t('ext_all')}</button>
       <button class="${d.mode==='sel'?'on':''}" onclick="App.extMode('sel')">${t('ext_partial')}</button>
     </div>
+    <div class="tiny" style="margin-bottom:6px">${t('ext_rules_hint').replace('{N}', maxExtendDays())}</div>
     ${d.mode==='sel' ? `<div class="tiny" style="margin-bottom:6px">${t('ext_qty_hint')}</div>` : ''}
     <div class="card" style="padding:8px 10px">${lines}</div>
     <div class="qty-line" style="margin:10px 0">
       <span class="name">${t('ext_days_lbl')}</span>
       <span class="stepper"><button type="button" onclick="App.extDays(-1)">−</button><span class="val">${d.daysN}</span><button type="button" onclick="App.extDays(1)">＋</button></span>
-      <span class="tiny">${t('days')}</span>
+      <span class="tiny">${t('days')} · ${t('ext_max_note').replace('{N}', maxExtendDays())}</span>
     </div>
     <div class="note-green" style="display:block">${t('ext_summary')}: <b>${total} ${t('units_short')}</b> · +${d.daysN} ${t('days')} · ${t('ext_new_due')}: <b>${fmtDMY(newDue)}</b></div>
     <div class="tiny" style="margin:6px 0 10px">${t('ext_invoice_note')}</div>
@@ -2475,7 +2589,7 @@ function renderExtendModal(){
   `);
 }
 function extMode(v){ if (extDraft){ extDraft.mode = v; renderExtendModal(); } }
-function extDays(dv){ if (extDraft){ extDraft.daysN = Math.max(1, extDraft.daysN + dv); renderExtendModal(); } }
+function extDays(dv){ if (extDraft){ extDraft.daysN = Math.min(maxExtendDays(), Math.max(1, extDraft.daysN + dv)); renderExtendModal(); } }
 function extQty(pid, dv){
   if (!extDraft) return;
   const p = extDraft.rows.find(x => x.id === pid); if (!p) return;
@@ -2534,6 +2648,7 @@ function jobHistory(jobId){
       <div class="tiny">${t('hist_placed')}: ${fmtDMY(p.placed_date)} · ${t('hist_due_lbl')}: <b>${fmtDMY(p.due_date)}</b></div>
       <div style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${stateHtml}
         ${(pkPending(p) && canTouchPk(p)) ? `<button class="btn btn-green sm" onclick="App.pickupOne('${p.id}','${j.id}')">${t('pick_now')}</button>` : ''}
+        ${(p.picked_up && canTouchPk(p)) ? `<button class="btn btn-ghost sm" onclick="App.restorePk('${p.id}','${j.id}')">↩ ${t('restore_pk')}</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -2543,7 +2658,7 @@ function jobHistory(jobId){
       <div class="hist-t">${ic('receipt')} ${t('hist_invoice')} · <span style="color:${wt.color}">${esc(wt.name)}</span></div>
       <div class="tiny">${esc(cx.name)} · Unit ${esc(j.unit_number || '—')}</div>
       <div class="tiny">${t('hist_created')}: ${fmtTs(j.created_at)} · ${t('hist_workdate')}: <b>${fmtDMY(j.date)}</b></div>
-      <div style="margin-top:4px"><span class="badge-status st-${j.status}">${t('status_' + j.status)}</span>${j.status === 'approved' && j.approved_at ? ` <span class="tiny">✓ ${esc(profName(j.approved_by))} · ${fmtTs(j.approved_at)}</span>` : ''}</div>
+      <div style="margin-top:4px"><span class="badge-status st-${j.status}">${t('status_' + j.status)}</span>${j.has_proposal ? ` <span class="chip pr">PROPOSAL</span>` : ''}${j.status === 'approved' && j.approved_at ? ` <span class="tiny">✓ ${esc(profName(j.approved_by))} · ${fmtTs(j.approved_at)}</span>` : ''}</div>
       <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.closeModal();App.openJob('${j.id}')">${ic('receipt')} ${t('open_invoice')}</button>
     </div>
     ${pls.length ? plHtml : `<div class="tiny" style="margin-top:8px">${t('hist_none')}</div>`}
@@ -2559,6 +2674,18 @@ async function pickupOne(pid, jobId){
     unit: p.unit_number, eq: (etById(p.equipment_type_id) || {}).abbr || '?', qty: +p.qty || 1 });
   navigator.vibrate?.(30);
   toast('✓ ' + t('picked'));
+  render();
+  jobHistory(jobId || p.job_id);
+}
+/* v1.07.26: восстановление вывезенного пикапа/продления — снова «в аренде» */
+async function restorePk(pid, jobId){
+  const p = state.data.placements.find(x => x.id === pid); if (!p || !p.picked_up) return;
+  if (!confirm(t('restore_pk') + '?')) return;
+  await dbUpsert('placements', { ...p, picked_up: false, picked_up_at: null, picked_up_by: null });
+  audit('pickup_restore', 'placement', pid, { unit: p.unit_number,
+    eq: (etById(p.equipment_type_id) || {}).abbr || '?', qty: +p.qty || 1 });
+  navigator.vibrate?.(20);
+  toast('↩ ' + t('restored'));
   render();
   jobHistory(jobId || p.job_id);
 }
@@ -2683,7 +2810,7 @@ function viewJob(){
   const amt = (v) => v > 0 ? `<span class="amt">${money(v)}</span>` : '<span class="amt" style="color:var(--dim-2)">—</span>';
 
   const eqRows = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0)).map(et => {
-    const e = fd.equipment[et.id] || { qty:0, days:3 };
+    const e = fd.equipment[et.id] || { qty:0, days: defRentDays() };
     const line = (+e.qty||0) * Math.max(1,+e.days||1) * eqDayPrice(et,p);
     return `<div class="qty-line eq-line">
       <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}" title="${esc(et.name)}">${esc(et.abbr)}</span>
@@ -2730,7 +2857,7 @@ function viewJob(){
       <div class="crew-add">
         <select id="crew-sel" onchange="App.crewAdd(this.value)">
           <option value="">${t('add_helper')}</option>
-          ${state.data.profiles.filter(p=>p.id!==j.technician_id && !(j.helper_ids||[]).includes(p.id))
+          ${state.data.profiles.filter(p=>!p.blocked && p.id!==j.technician_id && !(j.helper_ids||[]).includes(p.id))
             .map(p=>`<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_'+p.role)})</option>`).join('')}
         </select>
         <button class="btn btn-ghost sm" onclick="App.crewAll()">${t('all_staff')}</button>
@@ -2739,6 +2866,7 @@ function viewJob(){
     </div>
     ${aux}
   </div>
+  ${checklistCardHtml(j)}
 
   <div class="inv-sec"><div class="inv-head">${ic('steam')} Steam Clean ${helpBtn('steam')} ${amtWrap('steam',sec.steam)}</div>
     <div class="inv-body"><div class="opt-grid">
@@ -2836,11 +2964,14 @@ function viewJob(){
       <button class="btn btn-blue sm" onclick="App.extraPicker()">＋ ${t('template')}</button>
     </div></div>
 
+  <label class="opt ${j.has_proposal?'on':''}" style="margin:4px 0 0">
+    <input type="checkbox" ${j.has_proposal?'checked':''} onchange="App.setProposal(this.checked)"> ${t('proposal_chk')}
+  </label>
   <label class="opt ${j.status!=='draft'?'on':''}" style="margin:4px 0 8px">
     <input type="checkbox" id="jb-done" ${j.status!=='draft'?'checked':''}> ${t('job_done_chk')}
   </label>
 
-  ${isAdmin() ? `
+  ${canApprove() ? `
   <div class="card" style="border-color:var(--purple)">
     <div style="font-weight:900;margin-bottom:6px">${ic('star')} ${t('approve')}</div>
     <div class="qty-line">
@@ -2854,9 +2985,15 @@ function viewJob(){
 
   <button class="btn btn-ghost" style="margin-bottom:8px" onclick="App.jobHistory('${j.id}')">${ic('clock')} ${t('job_history')}</button>
 
-  <div class="total-bar"><span>${t('total')}</span><span class="sum" id="jb-total">${money(total)}</span></div>
+  <div class="total-bar"><span>${t('total')}</span><span class="sum ${j.status==='approved'?'ok':'pend'}" id="jb-total">${money(total)}</span></div>
 
+  ${editLocked(j) ? `<div class="banner b-red" style="margin-bottom:8px">🔒 ${t('lock_note').replace('{N}', editLockDays())}</div>` : ''}
   <button class="btn btn-green" onclick="App.saveJob()">${ic('save')} ${t('save')}</button>
+  <div class="btn-row3" style="margin-bottom:8px">
+    <button class="btn btn-ghost" onclick="App.pdfPreview()">${ic('search')} ${t('pdf_preview')}</button>
+    <button class="btn btn-ghost" onclick="App.pdfPrint()">${ic('report')} ${t('pdf_print')}</button>
+    <span></span>
+  </div>
   <div class="btn-row3">
     <button class="btn btn-ghost" onclick="App.go('home')">← ${t('back')}</button>
     <button class="btn btn-blue" onclick="App.makePdf()">${ic('download')} ${t('pdf')}</button>
@@ -2952,7 +3089,7 @@ function bindJobForm(){
     }
     else if (id.startsWith('eq-q-') || id.startsWith('eq-d-')){
       const etId = id.slice(5);
-      const cur = fd().equipment[etId] || { qty:0, days:3 };
+      const cur = fd().equipment[etId] || { qty:0, days: defRentDays() };
       if (id.startsWith('eq-q-')) cur.qty = v; else cur.days = Math.max(1, v);
       fd().equipment[etId] = cur;
       if (id.startsWith('eq-d-')) valEl.textContent = cur.days;
@@ -2984,8 +3121,11 @@ function recalcJob(){
 }
 
 async function saveJob(goHome){
-  dictStop();
+  if (saveJob._busy) return;                               // v1.07.26: даблклик «Сохранить»
   const j = jobDraft;
+  if (editLocked(j)){ toast('🔒 ' + t('lock_note').replace('{N}', editLockDays()), 'err'); return; }
+  saveJob._busy = true;
+  dictStop();
   const orig = state.data.jobs.find(x=>x.id===j.id);
   const prevStatus  = orig ? orig.status : 'draft';                       // v1.07.18: для журнала
   const prevHelpers = orig ? (orig.helper_ids || []).slice() : [];
@@ -2998,6 +3138,7 @@ async function saveJob(goHome){
       if (!isAdmin() && j.total !== orig.total){
         j.status = 'done'; j.approved_total = null; j.approved_by = null; j.approved_at = null;
         toast(t('approve_reset_note'), 'inf');
+        audit('approve_reset', 'job', j.id, { unit: j.unit_number, old_total: +orig.total, new_total: +j.total });
       } else { j.status = 'approved'; }
       if (!doneChk.checked) j.status = 'draft';
     } else {
@@ -3023,7 +3164,10 @@ async function saveJob(goHome){
     const removed = prevHelpers.filter(x => !nowH.includes(x)).map(profName);
     if (added.length)   audit('crew_add', 'job', j.id, { unit: j.unit_number, added });
     if (removed.length) audit('crew_remove', 'job', j.id, { unit: j.unit_number, removed });
+    if (orig && +j.total !== +orig.total)
+      audit('price_change', 'job', j.id, { unit: j.unit_number, old: +orig.total, new: +j.total });
   }
+  saveJob._busy = false;
   toast('✓ ' + t('saved'));
   if (goHome !== false){ state.screen = 'home'; state.selDate = j.date; state.weekStart = mondayOf(j.date); }
   render();
@@ -3039,7 +3183,7 @@ async function syncPlacementsForJob(j){
   const touchedByExt = (p) => p.superseded || all.some(x => x.ext_of === p.id);
   const want = Object.entries(j.form_data.equipment).filter(([,e]) => (+e.qty||0) > 0);
   for (const [etId, e] of want){
-    const days = Math.max(1, +e.days || 3);
+    const days = Math.max(1, +e.days || defRentDays());
     const found = originals.find(p => p.equipment_type_id === etId);
     if (found && touchedByExt(found)) continue;   // этим типом уже управляет история продлений
     const row = {
@@ -3062,16 +3206,30 @@ async function syncPlacementsForJob(j){
 
 async function approveJob(){
   const j = jobDraft;
+  if (!canApprove()) return;
   const val = parseFloat($('#jb-approved').value);
-  j.approved_total = isNaN(val) ? calcTotal(j.form_data, priceResolver(j.counterparty_id)) : val;
-  j.status = 'approved';
-  j.approved_by = state.user.id;
-  j.approved_at = new Date().toISOString();
-  const chkEl = $('#jb-done'); if (chkEl) chkEl.checked = true;
-  await saveJob(false);
+  const calc = calcTotal(j.form_data, priceResolver(j.counterparty_id));
+  const at = (isNaN(val) || val <= 0) ? calc : val;        // v1.07.26: 0/пусто = цену не менять
+  if (isAdmin() || j.technician_id === state.user.id){
+    j.approved_total = at; j.status = 'approved';
+    j.approved_by = state.user.id; j.approved_at = new Date().toISOString();
+    const chkEl = $('#jb-done'); if (chkEl) chkEl.checked = true;
+    await saveJob(false);
+  } else {
+    // менеджер на чужой работе: RLS запись не даёт — только через RPC approve_job
+    try{
+      const { error } = await state.sb.rpc('approve_job', { p_job: j.id, p_total: at });
+      if (error) throw error;
+      Object.assign(j, { approved_total: at, status: 'approved',
+        approved_by: state.user.id, approved_at: new Date().toISOString() });
+      const row = state.data.jobs.find(x => x.id === j.id); if (row) Object.assign(row, j);
+      toast('✓ ' + t('saved')); render();
+    }catch(e){ toast('⛔ ' + rpcFail(e, 'approve_job'), 'err'); }
+  }
 }
 
 async function deleteJob(){
+  if (editLocked(jobDraft)){ toast('🔒 ' + t('lock_note').replace('{N}', editLockDays()), 'err'); return; }
   if (!confirm(t('confirm_del'))) return;
   localStorage.removeItem('techlog_draft');
   const id = jobDraft.id;
@@ -3133,7 +3291,7 @@ function viewPickupsReport(){
 
   const quick = [0,1,2,7].map(n => {
     const iso = addDaysISO(todayISO(), n);
-    const lbl = n===0 ? t('today') : '+' + n;
+    const lbl = n===0 ? t('today') : n===1 ? t('tomorrow') : fmtUS(iso).replace(/\./g,'/');
     return `<button class="tabbtn ${dateISO===iso?'active':''}" onclick="App.setReportDate('${iso}')">${lbl}</button>`;
   }).join('');
 
@@ -3172,6 +3330,7 @@ function copyReport(){
 function viewDirs(){
   const tabs = [
     ['price', t('d_price'), true],
+    ['stock', t('d_stock'), isAdmin() || stockVisibleAll()],
     ['staff', t('d_staff'), isAdmin()],
     ['counterparties', t('d_counterparties'), isAdmin()],
     ['complexes', t('d_complexes'), true],
@@ -3189,7 +3348,7 @@ function viewDirs(){
     `<button class="tabbtn ${state.dirTab===id?'active':''}" onclick="App.dirTab('${id}')">${l}</button>`).join('') + `</div>
     <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="▶">›</button>
   </div>`;
-  const body = { staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
+  const body = { stock: dirStock, staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
                  equipment: dirEquipment, aux: dirAux, price: dirPrice,
                  extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts }[state.dirTab]();
   return `<div class="section-title">${t('dirs')}</div>` + nav + body;
@@ -3245,9 +3404,40 @@ function dirWorkTypes(){
       <span class="icon-circle" style="background:${w.color};color:${textColorFor(w.color)}">●</span>
       <div class="grow"><b style="color:${w.color}">${esc(w.name)}</b>
         ${w.needs_aux?`<div class="tiny">${ic('toolbox')} ${(w.aux_ids||[]).map(id=>esc((state.data.aux_equipment.find(a=>a.id===id)||{}).name||'')).join(' · ')}</div>`:''}</div>
+      <button class="btn btn-ghost sm" title="${t('cl_title')}" onclick="App.wtChecklistModal('${w.id}')">📋${(w.checklist&&w.checklist.length)?' '+w.checklist.length:''}</button>
       <button class="btn btn-ghost sm" onclick="App.editWtModal('${w.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
     <button class="btn btn-green" onclick="App.editWtModal()">＋ ${t('add')}</button>`;
+}
+/* v1.07.26: чек-лист вида работ — редактор (админ) */
+function wtChecklistModal(wtId){
+  const w = wtById(wtId); if (!w) return;
+  openModal(`
+    ${modalHead(t('cl_title') + ' — ' + esc(w.name), 'toolbox')}
+    <div class="tiny" style="margin-bottom:6px">${t('cl_edit_hint')}</div>
+    <textarea id="wt-cl" rows="10" style="width:100%" ${isAdmin()?'':'readonly'}>${esc((w.checklist||[]).join('\n'))}</textarea>
+    ${isAdmin() ? `<button class="btn btn-green" style="margin-top:8px" onclick="App.wtChecklistSave('${w.id}')">${t('save')}</button>` : ''}
+  `);
+}
+async function wtChecklistSave(wtId){
+  const w = wtById(wtId); if (!w || !isAdmin()) return;
+  const lines = String($('#wt-cl').value || '').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 40);
+  await dbUpsert('work_types', { ...w, checklist: lines });
+  toast('✓ ' + t('saved')); closeModal(); render();
+}
+/* карточка чек-листа в форме работы; отметки живут в form_data.cl */
+function checklistCardHtml(j){
+  const wt = wtById(j.work_type_id);
+  const cl = (wt && wt.checklist) || [];
+  if (!cl.length) return '';
+  const done = j.form_data.cl || {};
+  const n = cl.filter((_, i) => done[i]).length;
+  return `<div class="card" id="cl-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('cl_title')}
+      <span class="chip ${n===cl.length?'ok':'warn'}">${n}/${cl.length}</span></div>
+    ${cl.map((s, i) => `<label class="opt ${done[i]?'on':''}" style="margin:3px 0">
+      <input type="checkbox" ${done[i]?'checked':''} onchange="App.clToggle(${i}, this.checked)"> ${esc(s)}</label>`).join('')}
+  </div>`;
 }
 
 function dirEquipment(){
@@ -3260,6 +3450,44 @@ function dirEquipment(){
       <button class="btn btn-ghost sm" onclick="App.editEtModal('${e.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
     <button class="btn btn-green" onclick="App.editEtModal()">＋ ${t('add')}</button>`;
+}
+
+/* v1.07.26: СКЛАД — остатки оборудования (правит админ, видят по галочке) */
+function dirStock(){
+  const canEdit = isAdmin();
+  const list = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0));
+  const stock = (etId) => (state.data.equipment_stock || []).find(s => s.equipment_type_id === etId)
+    || { total: 0, broken: 0, in_repair: 0 };
+  const inField = (etId) => state.data.placements
+    .filter(p => p.equipment_type_id === etId && pkPending(p))
+    .reduce((s, p) => s + (+p.qty || 0), 0);
+  const cell = (et, key, val) => canEdit
+    ? `<input class="car-inp" inputmode="numeric" value="${val}" onchange="App.stockSet('${et.id}','${key}',this.value)">`
+    : `<b>${val}</b>`;
+  return `<div class="card">` + list.map(et => {
+    const s = stock(et.id), fld = inField(et.id);
+    const avail = (+s.total||0) - (+s.broken||0) - (+s.in_repair||0) - fld;
+    return `<div class="rowline" style="flex-wrap:wrap">
+      <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>
+      <div class="grow"><b>${esc(et.name)}</b>
+        <div class="tiny">${t('stock_field')}: <b>${fld}</b> · ${t('stock_avail')}: <b style="color:${avail<0?'var(--red)':'var(--green)'}">${avail}</b></div></div>
+      <div class="stock-ctl">
+        <span class="tiny">${t('stock_total')}</span>${cell(et,'total',+s.total||0)}
+        <span class="tiny">${t('stock_broken')}</span>${cell(et,'broken',+s.broken||0)}
+        <span class="tiny">${t('stock_repair')}</span>${cell(et,'in_repair',+s.in_repair||0)}
+      </div>
+    </div>`;
+  }).join('') + `</div><div class="tiny" style="margin:6px 2px">${t('stock_hint')}</div>`;
+}
+async function stockSet(etId, key, v){
+  if (!isAdmin()) return;
+  const n = Math.max(0, parseInt(v, 10) || 0);
+  const cur = (state.data.equipment_stock || []).find(s => s.equipment_type_id === etId);
+  const row = { id: cur ? cur.id : uid(), equipment_type_id: etId,
+    total: 0, broken: 0, in_repair: 0, ...(cur || {}), [key]: n };
+  await dbUpsert('equipment_stock', row);
+  audit('stock_set', 'stock', etId, { key, v: n, eq: (etById(etId) || {}).abbr || '?' });
+  toast('✓ ' + t('saved')); render();
 }
 
 function dirAux(){
@@ -3628,7 +3856,24 @@ function viewSettings(){
     <label class="opt ${org.allow_shared_jobs!==false?'on':''}">
       <input type="checkbox" id="org-shared" ${org.allow_shared_jobs!==false?'checked':''} onchange="App.setSharedJobs(this.checked)"> ${t('shared_set_chk')}
     </label>
+    <label class="opt ${org.manager_can_reorder?'on':''}">
+      <input type="checkbox" ${org.manager_can_reorder?'checked':''} onchange="App.setMgrReorder(this.checked)"> ${t('mgr_reorder_chk')}
+    </label>
     <div class="tiny" style="margin-top:6px">${t('shared_set_hint')}</div>
+  </div>
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('box')} ${t('eq_settings_title')}</div>
+    <div class="qty-line"><span class="name">${t('def_days_lbl')}</span>
+      <input class="price-input" style="max-width:70px" inputmode="numeric" value="${org.default_rent_days ?? 3}" onchange="App.setOrgNum('default_rent_days', this.value, 1, 30)"></div>
+    <div class="qty-line"><span class="name">${t('max_ext_lbl')}</span>
+      <input class="price-input" style="max-width:70px" inputmode="numeric" value="${org.max_extend_days ?? 3}" onchange="App.setOrgNum('max_extend_days', this.value, 1, 30)"></div>
+    <label class="opt ${org.manager_can_approve?'on':''}">
+      <input type="checkbox" ${org.manager_can_approve?'checked':''} onchange="App.setOrgFlag('manager_can_approve', this.checked)"> ${t('mgr_approve_chk')}</label>
+    <label class="opt ${org.stock_visible_all!==false?'on':''}">
+      <input type="checkbox" ${org.stock_visible_all!==false?'checked':''} onchange="App.setOrgFlag('stock_visible_all', this.checked)"> ${t('stock_vis_chk')}</label>
+    <div class="qty-line"><span class="name">${t('lock_days_lbl')}</span>
+      <input class="price-input" style="max-width:70px" inputmode="numeric" value="${org.edit_lock_days ?? 0}" onchange="App.setOrgNum('edit_lock_days', this.value, 0, 60)"></div>
+    <div class="tiny">${t('lock_hint')}</div>
   </div>
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
@@ -3728,6 +3973,26 @@ function pdfPreviewBlob(){
     const doc = buildInvoicePdfDoc(true);
     return doc ? doc.output('blob') : null;
   }catch(e){ dlog('⛔ pdfPreviewBlob:', e); return null; }
+}
+/* v1.07.26: предпросмотр PDF в новой вкладке и печать с телефона */
+function pdfPreview(){
+  const b = pdfPreviewBlob(); if (!b){ toast('⛔ PDF', 'err'); return; }
+  const u = URL.createObjectURL(b);
+  window.open(u, '_blank', 'noopener');
+  setTimeout(() => URL.revokeObjectURL(u), 60000);
+}
+function pdfPrint(){
+  const b = pdfPreviewBlob(); if (!b){ toast('⛔ PDF', 'err'); return; }
+  const u = URL.createObjectURL(b);
+  const fr = document.createElement('iframe');
+  fr.style.cssText = 'position:fixed;right:0;bottom:0;width:2px;height:2px;opacity:0';
+  fr.src = u; document.body.appendChild(fr);
+  fr.onload = () => {
+    try { fr.contentWindow.focus(); fr.contentWindow.print(); }
+    catch (e) { window.open(u, '_blank', 'noopener'); }
+    setTimeout(() => { fr.remove(); URL.revokeObjectURL(u); }, 60000);
+  };
+  toast('ℹ ' + t('print_hint'), 'inf');
 }
 
 /* =====================================================================
@@ -3843,7 +4108,8 @@ const App = {
   jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
   jrAct(v){ state.jr.act = v; loadJournal(true); },
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
-  togglePriority, moveJob,
+  togglePriority, moveJob, boardMove, setCarNo, restorePk, pdfPreview, pdfPrint,
+  comboFilter, comboPick, stockSet, wtChecklistModal, wtChecklistSave,
   codeHistory: codeHistoryModal, proposeCode: proposeCodeModal, pcGate, submitCode,
   extraPicker: extraPickerModal, exAdd, exDel,
   exPreset(i, n){
@@ -3892,6 +4158,37 @@ const App = {
     // v1.07.10: админ включает/выключает общий доступ к документам для всей команды
     const org = { ...state.data.org_settings, allow_shared_jobs: !!v };
     dbSaveOrg(org); toast('✓ ' + t('saved')); render();
+  },
+  setMgrReorder(v){
+    // v1.07.25: админ разрешает менеджеру менять очерёдность (Доска и ▲▼ на главной)
+    const org = { ...state.data.org_settings, manager_can_reorder: !!v };
+    dbSaveOrg(org); audit('org_toggle', 'org', 'manager_can_reorder', { on: !!v });
+    toast('✓ ' + t('saved')); render();
+  },
+  setOrgFlag(key, v){
+    const org = { ...state.data.org_settings, [key]: !!v };
+    dbSaveOrg(org); audit('org_toggle', 'org', key, { on: !!v });
+    toast('✓ ' + t('saved')); render();
+  },
+  setOrgNum(key, v, min, max){
+    const n = Math.max(min, Math.min(max, parseInt(v, 10) || 0));
+    const org = { ...state.data.org_settings, [key]: n };
+    dbSaveOrg(org); audit('org_set', 'org', key, { v: n });
+    toast('✓ ' + t('saved')); render();
+  },
+  setProposal(v){ if (jobDraft){ jobDraft.has_proposal = !!v; autosaveDraft(); } },
+  toastInfo(k){ toast('ℹ ' + t(k), 'inf'); },
+  clToggle(i, v){
+    if (!jobDraft) return;
+    (jobDraft.form_data.cl = jobDraft.form_data.cl || {})[i] = !!v;
+    autosaveDraft();
+    const card = $('#cl-card');
+    if (card){
+      const wt = wtById(jobDraft.work_type_id); const cl = (wt && wt.checklist) || [];
+      const done = jobDraft.form_data.cl; const n = cl.filter((_, k) => done[k]).length;
+      const chip = card.querySelector('.chip');
+      if (chip){ chip.textContent = n + '/' + cl.length; chip.className = 'chip ' + (n === cl.length ? 'ok' : 'warn'); }
+    }
   },
   demoLogin, logout,
   signIn(){ sbSignIn($('#li-login').value, $('#li-pass').value); },
@@ -4609,11 +4906,13 @@ function dirStaff(){
     <div class="rowline staff-row ${u.blocked?'is-blocked':''}">
       <span class="avatar role-${u.role}">${esc(initials(u.display_name))}</span>
       <div class="grow">
-        <b>${esc(u.display_name)}</b>
+        <b>${esc(u.display_name)}</b>${u.car_no != null ? ` <span class="car-no" title="${t('car_no')}">${u.car_no}</span>` : ''}
         <span class="chip ${u.blocked?'bad':'ok'} chip-st">${u.blocked?t('st_blocked'):t('st_active')}</span>
         <div class="tiny">@${esc(u.login)} · ${t('registered')} ${reg}</div>
       </div>
       <div class="staff-ctl">
+        <input class="car-inp" type="number" min="0" max="999" inputmode="numeric" title="${t('car_no')}"
+          placeholder="№" value="${u.car_no ?? ''}" onchange="App.setCarNo('${u.id}', this.value)">
         ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
         <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${me?'disabled':''}>
           ${['tech','manager','admin'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
@@ -4629,6 +4928,14 @@ async function setRole(uid_, role){
   await dbUpsert('profiles', { ...u, role });
   audit('role_change', 'profile', uid_, { name: u.display_name, role });   // v1.07.18
   toast('✓ ' + t('saved')); render();
+}
+async function setCarNo(uid_, v){
+  if (!isAdmin()) return;
+  const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
+  const n = String(v).trim() === '' ? null : Math.max(0, Math.min(999, parseInt(v, 10) || 0));
+  await dbUpsert('profiles', { ...u, car_no: n });
+  audit('car_no_set', 'profile', uid_, { name: u.display_name, car_no: n });   // v1.07.25
+  toast('✓ ' + t('saved'));
 }
 /* ---------- v1.07.06: блокировка сотрудника (красный перечёркнутый кружок) ---------- */
 function rpcFail(error, fn){
@@ -4813,7 +5120,7 @@ function crewRefresh(){
   const sel = $('#crew-sel');
   if (sel && jobDraft){
     sel.innerHTML = `<option value="">${t('add_helper')}</option>` +
-      state.data.profiles.filter(p=>p.id!==jobDraft.technician_id && !(jobDraft.helper_ids||[]).includes(p.id))
+      state.data.profiles.filter(p=>!p.blocked && p.id!==jobDraft.technician_id && !(jobDraft.helper_ids||[]).includes(p.id))
         .map(p=>`<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_'+p.role)})</option>`).join('');
   }
   const w = document.querySelector('.crew-box .tiny .warn');
@@ -4827,7 +5134,7 @@ function crewAdd(id){
 }
 function crewAll(){
   if (!jobDraft) return;
-  jobDraft.helper_ids = state.data.profiles.map(p=>p.id).filter(id => id !== jobDraft.technician_id);
+  jobDraft.helper_ids = state.data.profiles.filter(p=>!p.blocked).map(p=>p.id).filter(id => id !== jobDraft.technician_id);
   crewRefresh();
 }
 function crewRemove(id){
@@ -4847,7 +5154,7 @@ function autosaveDraft(){
 
 function navToCx(cxId){
   const cx = cxById(cxId); if (!cx) return;
-  const q = (cx.lat!=null && cx.lng!=null) ? `${cx.lat},${cx.lng}` : (cx.address||cx.name);
+  const q = (cx.address && cx.address.trim()) ? cx.address : ((cx.lat!=null && cx.lng!=null) ? `${cx.lat},${cx.lng}` : cx.name); // v1.07.26: адрес, а не безымянная точка
   window.open(navDirUrl(q), '_blank', 'noopener');   // v1.07.21: Apple Maps на iOS / Google на остальных
 }
 function copyText(s){
@@ -5371,8 +5678,9 @@ function dayTripJobIds(iso){
     state.data.jobs.find(x=>x.id===b) || {sort_order:999}));
 }
 async function togglePriority(id){
-  const j = state.data.jobs.find(x=>x.id===id); if (!j || !canReorder(j)) return;
-  await dbUpsert('jobs', { ...j, priority: !j.priority, updated_at: new Date().toISOString() });
+  const j = state.data.jobs.find(x=>x.id===id); if (!j || !canPrio(j)) return;
+  try { await saveJobPatch(j, { priority: !j.priority }); }
+  catch(e){ toast('⛔ ' + rpcFail(e, 'board_job_flags'), 'err'); return; }
   navigator.vibrate?.(20);
   dlog('priority:', j.unit_number || id, '→', !j.priority);
   render();
@@ -5393,8 +5701,89 @@ async function moveJob(id, dir){
   for (const { jid, so } of seq){
     const jj = state.data.jobs.find(x=>x.id===jid);
     if (jj && (jj.sort_order !== so)){
-      if (canReorder(jj)) await dbUpsert('jobs', { ...jj, sort_order: so, updated_at: new Date().toISOString() });
+      if (canReorder(jj)){ try{ await saveJobPatch(jj, { sort_order: so }); }catch(e){ toast('⛔ ' + rpcFail(e, 'board_job_flags'), 'err'); break; } }
       else jj.sort_order = so; // чужие — только локально для отображения
+    }
+  }
+  navigator.vibrate?.(15);
+  render();
+}
+
+/* =====================================================================
+   v1.07.25: ДОСКА — день по сотрудникам (менеджер/админ)
+   ===================================================================== */
+function boardCanReorder(){ return isAdmin() || (state.user.role === 'manager' && mgrReorderOn()); }
+function viewBoard(){
+  if (!isManager()) return `<div class="card" style="margin:14px 12px">${t('b_only')}</div>`;
+  const iso = state.selDate;
+  const hid = state.user.role === 'manager' ? hiddenSetFor(state.user.id) : new Set();
+  const dayJobs = state.data.jobs.filter(j => j.date === iso && !hid.has(j.technician_id));
+  const dayPk   = state.data.placements.filter(p => pkPending(p) && p.due_date <= iso && !hid.has(p.technician_id));
+  const staff = [...state.data.profiles]
+    .filter(p => !p.blocked && !hid.has(p.id)
+      && (p.role === 'tech' || dayJobs.some(j => j.technician_id === p.id) || dayPk.some(x => x.technician_id === p.id)))
+    .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name));
+  const canOrd = boardCanReorder();
+  const cols = staff.map(p => {
+    const js  = dayJobs.filter(j => j.technician_id === p.id).sort(jobSortCmp);
+    const pls = dayPk.filter(x => x.technician_id === p.id);
+    const byJob = {};
+    pls.forEach(x => { (byJob[x.job_id] = byJob[x.job_id] || []).push(x); });
+    const cards = js.map((j, i) => boardJobCard(j, i, canOrd)).join('')
+                + Object.entries(byJob).map(([jid, arr]) => boardPkCard(jid, arr, iso)).join('');
+    return `<div class="bcol">
+      <div class="bcol-h">
+        <span class="avatar role-${p.role}">${esc(initials(p.display_name))}</span>
+        <div class="grow"><b>${esc(shortName(p.display_name))}</b>${p.car_no != null ? ` <span class="car-no" title="${t('car_no')}">${p.car_no}</span>` : ''}
+          <div class="tiny">${js.length} ${t('b_jobs')} · ${pls.length} ${t('b_pk')}</div></div>
+      </div>
+      ${cards || `<div class="tiny bempty">${t('b_empty')}</div>`}
+    </div>`;
+  }).join('');
+  return viewWeek() + `<div class="board">${cols}</div>`;
+}
+function boardJobCard(j, idx, canOrd){
+  const wt = wtById(j.work_type_id), cx = cxById(j.complex_id);
+  const col = (wt && wt.color) || '#8AA0AB';
+  const rail = canOrd ? `<div class="rail brail" onclick="event.stopPropagation()">
+      <button class="mv" title="${t('move_up')}" onclick="App.boardMove('${j.id}',-1)">▲</button>
+      <button class="mv" title="${t('move_down')}" onclick="App.boardMove('${j.id}',1)">▼</button>
+    </div>` : '';
+  return `<div class="bjob clicky" style="border-left-color:${col}" onclick="App.openJob('${j.id}')">
+    ${rail}
+    <span class="bnum">${idx + 1}</span>
+    ${triHtml(!!j.priority, j.id, canPrio(j))}
+    <div class="bmain"><b>${esc(j.unit_number || '—')}</b>${j.has_proposal?`<span class="chip pr" style="margin-left:4px">P</span>`:''}<span class="tiny"> · ${esc((cx && (cx.abbr || cx.name)) || '—')}</span>
+      <div class="tiny bwt"><span class="dotc" style="background:${col}"></span>${esc((wt && wt.name) || '')}</div></div>
+    <span class="bst st-${j.status}" title="${t('status_' + j.status)}"></span>
+  </div>`;
+}
+function boardPkCard(jobId, arr, iso){
+  const today = todayISO();
+  const over = arr.some(p => p.due_date < today);
+  const ext  = arr.some(p => p.ext_of);
+  const due  = arr.map(p => p.due_date).sort()[0];
+  const agg = {};
+  arr.forEach(p => { const e = etById(p.equipment_type_id); const k = e ? e.abbr : '?'; agg[k] = (agg[k] || 0) + (+p.qty || 1); });
+  const eq = Object.entries(agg).map(([k, q]) => `${k}×${q}`).join(' ');
+  return `<div class="bpk clicky ${over ? 'over' : ''}" onclick="App.pickupModal('${jobId}','${iso}',event)">
+    <b>PU</b> ${esc(eq)}${ext ? ` <span class="bext" title="${t('b_ext')}">⟳</span>` : ''}
+    <span class="tiny">${over ? `${t('b_over')} · ` : ''}${fmtDMY(due)}</span>
+  </div>`;
+}
+async function boardMove(id, dir){
+  if (!boardCanReorder()) return;
+  const j = state.data.jobs.find(x => x.id === id); if (!j) return;
+  const list = state.data.jobs
+    .filter(x => x.date === state.selDate && x.technician_id === j.technician_id)
+    .sort(jobSortCmp);
+  const i = list.findIndex(x => x.id === id), k = i + dir;
+  if (i < 0 || k < 0 || k >= list.length) return;
+  [list[i], list[k]] = [list[k], list[i]];
+  for (let n = 0; n < list.length; n++){
+    if ((list[n].sort_order || 0) !== n){
+      try { await saveJobPatch(list[n], { sort_order: n }); }
+      catch(e){ toast('⛔ ' + rpcFail(e, 'board_job_flags'), 'err'); return; }
     }
   }
   navigator.vibrate?.(15);
@@ -5478,9 +5867,9 @@ function dndMove(e){
       : e.clientX < midX;
     const p = over.parentNode;
     if (before && over.previousElementSibling !== dnd.el){
-      p.insertBefore(dnd.el, over); dndCalib(); dndPlace(e.clientY);
+      p.insertBefore(dnd.el, over); dndCalib(); dndPlace(e.clientX, e.clientY);
     } else if (!before && over.nextElementSibling !== dnd.el){
-      p.insertBefore(dnd.el, over.nextElementSibling); dndCalib(); dndPlace(e.clientY);
+      p.insertBefore(dnd.el, over.nextElementSibling); dndCalib(); dndPlace(e.clientX, e.clientY);
     }
   }
 }
@@ -5503,7 +5892,7 @@ async function applyDayOrder(ids){
   for (let i = 0; i < ids.length; i++){
     const j = state.data.jobs.find(x => x.id === ids[i]);
     if (!j || (j.sort_order || 0) === i) continue;
-    if (canReorder(j)) await dbUpsert('jobs', { ...j, sort_order: i, updated_at: new Date().toISOString() });
+    if (canReorder(j)){ try{ await saveJobPatch(j, { sort_order: i }); }catch(e){ toast('⛔ ' + rpcFail(e, 'board_job_flags'), 'err'); break; } }
     else j.sort_order = i; // чужие — только локально для отображения
   }
   navigator.vibrate?.(15);

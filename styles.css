@@ -850,3 +850,70 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .jr-av{width:34px;height:34px;font-size:.72rem;flex:0 0 auto;border-width:2px}
 .jr-row .grow b{margin-right:6px}
 .jr-row .chip{vertical-align:1px}
+
+/* =====================================================================
+   v1.07.25: круглый календарь, бейдж роли в шапке, Доска, № машины
+   ===================================================================== */
+.topbar .role-tag{border-color:transparent}
+.day-cell{width:46px;height:46px;min-width:46px;border-radius:50%;padding:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.day-cell .dow{font-size:.56rem}
+.day-cell .dom{font-size:.98rem}
+.day-cell .mon{display:none}
+.day-cell .dot-row{position:absolute;left:0;right:0;bottom:4px;margin:0;height:5px;justify-content:center}
+.day-cell .dot{width:5px;height:5px}
+.day-cell .warn{position:absolute;top:-5px;right:-3px}
+
+.car-no{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;
+  padding:0 5px;margin-left:4px;border-radius:999px;background:var(--blue);color:#04314A;
+  font-size:.68rem;font-weight:900;vertical-align:middle}
+.car-inp{width:52px;text-align:center;padding:6px 4px}
+
+.board{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;
+  padding:2px 12px 90px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.bcol{flex:0 0 232px;max-width:232px;background:var(--panel);border:2px solid var(--line);
+  border-radius:14px;padding:8px;scroll-snap-align:start}
+.bcol-h{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.bcol-h .avatar{width:34px;height:34px;font-size:.8rem}
+.bjob{position:relative;background:#17232A;border:1px solid var(--line);
+  border-left:4px solid #8AA0AB;border-radius:10px;padding:6px 30px 6px 24px;margin:6px 0}
+.bjob .bnum{position:absolute;left:7px;top:7px;font-size:.68rem;font-weight:900;color:var(--dim)}
+.bjob .pri.corner{right:28px}
+.bjob .bwt{display:flex;align-items:center;gap:5px;margin-top:2px}
+.bjob .dotc{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.bjob .bst{position:absolute;right:9px;bottom:9px;width:9px;height:9px;border-radius:50%;background:#8AA0AB}
+.bjob .bst.st-done{background:var(--blue)}
+.bjob .bst.st-approved{background:var(--green)}
+.bjob .brail{position:absolute;right:2px;top:2px;bottom:auto;display:flex;flex-direction:column;gap:2px}
+.bjob .brail .mv{width:22px;height:19px;font-size:.6rem;line-height:1;padding:0}
+.bpk{background:#17232A;border:1px dashed var(--line);border-radius:10px;
+  padding:6px 8px;margin:6px 0;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+.bpk.over{border:1px solid var(--red)}
+.bpk.over > b{color:var(--red)}
+.bext{color:var(--purple);font-weight:900}
+.bempty{opacity:.6;text-align:center;padding:14px 0}
+
+/* =====================================================================
+   v1.07.26: заголовок карточки к верху, компактная шапка, комбо-поиск,
+   склад, PROPOSAL-чип, серо/зелёный Итого
+   ===================================================================== */
+.item{align-items:flex-start}
+.item .right{display:flex;flex-direction:column;align-items:flex-end}
+.item .rail{margin-top:2px}
+.topbar .brand{min-width:0}
+.brand .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(1rem,4.5vw,1.3rem)}
+.brand .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:400px){ .name-tag{display:none} }
+.info-i{cursor:pointer;opacity:.85;font-weight:900;margin-left:2px}
+.total-bar .sum.pend{color:var(--dim)}
+.total-bar .sum.ok{color:var(--green)}
+.combo{position:relative;flex:1;min-width:0}
+.combo-in{width:100%}
+.combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:60;display:none;
+  max-height:240px;overflow:auto;background:var(--panel);border:2px solid var(--line);border-radius:12px}
+.combo-opt{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--line)}
+.combo-opt:last-child{border-bottom:0}
+.combo-opt:active,.combo-opt:hover{background:rgba(28,176,246,.12)}
+.combo-opt.dim{opacity:.5;cursor:default}
+.stock-ctl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.chip.pr{border-color:var(--purple);color:var(--purple)}
