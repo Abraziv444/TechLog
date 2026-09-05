@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.21';
+const APP_VERSION = '1.07.23';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 
@@ -167,6 +167,13 @@ const I18N = {
     dict_kbd_hint: 'Диктовка на iPhone — кнопкой 🎤 на клавиатуре',
     install_ios_hint: 'iPhone/iPad: в Safari «Поделиться» → «На экран “Домой”». После установки войдите заново — у приложения на «Домой» своё хранилище.',
     pdf_share_fail: 'Не удалось открыть PDF',
+    a2hs_title: 'Установите TechLog на экран «Домой»',
+    a2hs_text: 'Без App Store: полный экран, офлайн и вход, который не слетает',
+    a2hs_how: 'Как установить', a2hs_hide_hint: 'Скрыть подсказку',
+    a2hs_step1: 'Нажмите «Поделиться»', a2hs_step1n: 'кнопка в панели Safari; в Chrome и Edge — меню у адресной строки (нужна iOS 16.4+)',
+    a2hs_step2: 'Выберите «На экран “Домой”»', a2hs_step2n: 'список действий прокручивается — пункт может быть ниже',
+    a2hs_step3: 'Нажмите «Добавить» и откройте иконку', a2hs_step3n: 'войдите заново: у приложения на «Домой» своё хранилище, логин и пароль те же',
+    a2hs_note: 'App Store не участвует: установка идёт прямо из браузера, обновления приходят сами.',
     pending_writes: 'Записи в очереди на отправку', pending_sent: 'Отложенные записи доставлены',
     geocode: 'Найти по адресу', geocode_ok: 'Координаты найдены', geocode_fail: 'Адрес не найден — введите координаты вручную',
     lat: 'Широта (lat)', lng: 'Долгота (lng)',
@@ -223,7 +230,7 @@ const I18N = {
     back_today: 'Сегодня', navigate: 'Маршрут', copied_code: 'Код скопирован',
     app_tag: 'учёт работ', copy_addr: 'Копировать адрес', copied_addr: 'Адрес скопирован',
     today_tag: 'сегодня',
-    drag_hint: 'Удерживайте карточку и тяните вверх/вниз',
+    drag_hint: 'Тяните карточку мышью или удерживайте пальцем и тяните вверх/вниз',
     st_active: 'Активен', st_blocked: 'Заблокирован', block: 'Заблокировать', unblock: 'Разблокировать',
     block_confirm: 'Заблокировать сотрудника? Он не сможет войти в приложение:',
     blocked_done: 'Сотрудник заблокирован', unblocked_done: 'Сотрудник разблокирован',
@@ -368,6 +375,13 @@ const I18N = {
     dict_kbd_hint: 'On iPhone, dictate with the 🎤 key on the keyboard',
     install_ios_hint: 'iPhone/iPad: in Safari tap Share → “Add to Home Screen”. Sign in again after installing — the Home Screen app has its own storage.',
     pdf_share_fail: 'Could not open the PDF',
+    a2hs_title: 'Install TechLog on your Home Screen',
+    a2hs_text: 'No App Store: full screen, offline, and a sign-in that sticks',
+    a2hs_how: 'How to install', a2hs_hide_hint: 'Hide this tip',
+    a2hs_step1: 'Tap “Share”', a2hs_step1n: 'the button in the Safari toolbar; in Chrome and Edge — the menu by the address bar (needs iOS 16.4+)',
+    a2hs_step2: 'Choose “Add to Home Screen”', a2hs_step2n: 'the action list scrolls — the item may be further down',
+    a2hs_step3: 'Tap “Add” and open the icon', a2hs_step3n: 'sign in again: the Home-Screen app has its own storage, same login and password',
+    a2hs_note: 'The App Store is not involved: installation happens right from the browser, updates arrive on their own.',
     pending_writes: 'Writes queued for delivery', pending_sent: 'Queued writes delivered',
     geocode: 'Find by address', geocode_ok: 'Coordinates found', geocode_fail: 'Address not found — enter coordinates manually',
     lat: 'Latitude', lng: 'Longitude',
@@ -424,7 +438,7 @@ const I18N = {
     back_today: 'Today', navigate: 'Navigate', copied_code: 'Code copied',
     app_tag: 'work log', copy_addr: 'Copy address', copied_addr: 'Address copied',
     today_tag: 'today',
-    drag_hint: 'Press & hold a card, then drag up/down',
+    drag_hint: 'Drag a card with the mouse, or press & hold and drag up/down',
     st_active: 'Active', st_blocked: 'Blocked', block: 'Block', unblock: 'Unblock',
     block_confirm: 'Block this employee? They will not be able to sign in:',
     blocked_done: 'Employee blocked', unblocked_done: 'Employee unblocked',
@@ -1341,6 +1355,7 @@ const ICONS = {
    контур stroke=currentColor — цвет наследуется от соседнего текста)
    ===================================================================== */
 const IC = {
+  ioshare: '<rect x="5" y="9.5" width="14" height="11" rx="2"/><path d="M12 15V3.6"/><path d="M8.5 6.6 12 3.1l3.5 3.5"/>',  /* v1.07.23: значок «Поделиться» iOS */
   ban: '<circle cx="12" cy="12" r="8.2"/><path d="M6.4 6.6 17.6 17.4"/>',
   steam: '<path d="M7 4.2C5.3 6.3 5.3 8.4 7 10.5c1.7 2.1 1.7 4.2 0 6.3"/><path d="M12 4.2c-1.7 2.1-1.7 4.2 0 6.3 1.7 2.1 1.7 4.2 0 6.3"/><path d="M17 4.2c-1.7 2.1-1.7 4.2 0 6.3 1.7 2.1 1.7 4.2 0 6.3"/><path d="M5.5 20.5h13"/>',
   sponge: '<rect x="3" y="10.5" width="18" height="9" rx="3"/><circle cx="8" cy="15" r="1"/><circle cx="12.5" cy="17" r="1"/><circle cx="15.8" cy="13.8" r="1"/><path d="M6.5 3.8v3.4M4.8 5.5h3.4"/><path d="M17.5 3v3.4M15.8 4.7h3.4"/>',
@@ -2051,6 +2066,13 @@ function viewHome(){
     <div class="banner ${over?'b-red':''}" role="status">${ic('bell')}
       <div>${t('banner_pickups')}: <b>${due}</b>${over?` · ${t('banner_overdue')}: <b>${over}</b>`:''}</div>
     </div>` : '';
+  /* v1.07.23: iPhone/iPad без установленной PWA — подсказываем установку */
+  const a2hs = a2hsShow() ? `
+    <div class="banner a2hs" role="status">${ic('phone')}
+      <div class="grow"><b>${t('a2hs_title')}</b><div class="tiny">${t('a2hs_text')}</div></div>
+      <button class="btn btn-blue sm" onclick="App.a2hsModal()">${t('a2hs_how')}</button>
+      <button class="btn btn-ghost sm" title="${t('a2hs_hide_hint')}" onclick="App.a2hsHide()">✕</button>
+    </div>` : '';
 
   const q = (state.searchQ || '').trim();
   const filter = `
@@ -2138,7 +2160,7 @@ function viewHome(){
       <b>${fmtDMY(iso)}</b>
       <button class="mini-nav" onclick="App.openDayMap()">${ic('map')} ${t('map_of_day')}</button>
     </div>`;
-  return banner + viewWeek() + dayBar
+  return a2hs + banner + viewWeek() + dayBar
     + `<div id="day-top" style="${q?'display:none':''}">` + homeStatsHtml() + `</div>`
     + filter
     + `<div id="search-area" style="${q?'':'display:none'}">${q ? searchAreaHtml() : ''}</div>`
@@ -3620,7 +3642,7 @@ function viewSettings(){
   <div class="card">
     <div class="settings-row"><div class="grow" style="flex:1"><b>${ic('phone')} PWA</b>
       <div class="d">${isStandalone() ? '✓ ' + t('already_installed') : t('install_hint')}</div>
-      ${IS_IOS && !isStandalone() ? `<div class="d">🍎 ${t('install_ios_hint')}</div>` : ''}
+      ${IS_IOS && !isStandalone() ? `<div class="d">🍎 ${t('install_ios_hint')}</div><button class="btn btn-blue sm" style="margin-top:6px" onclick="App.a2hsModal()">${ic('phone')} ${t('a2hs_how')}</button>` : ''}
       <div class="d">${t('install_where_win')}</div></div></div>
     ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">${ic('download')} ${t('install_app')}</button>` : ''}
     <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b>
@@ -3833,7 +3855,7 @@ const App = {
   decideReq: decideCodeReq,
   dbDiag: showDbDiagnostics,
   loginCheck, loginTyped,
-  installPwa,
+  installPwa, a2hsModal, a2hsHide,
   enterKey(e, mode){
     if (e.key !== 'Enter') return;
     e.preventDefault();
@@ -5071,6 +5093,34 @@ async function installPwa(){
 }
 
 /* =====================================================================
+   v1.07.23: подсказка установки на iPhone/iPad.
+   На iOS нет события beforeinstallprompt и системного диалога установки —
+   WebKit их не реализует, это ограничение платформы, а не приложения.
+   Установка PWA на iOS идёт вручную из браузера («Поделиться → На экран
+   “Домой”»), App Store не участвует. Максимум, что может приложение, —
+   вовремя и понятно это подсказать: баннер на главной + модалка с шагами.
+   ===================================================================== */
+function a2hsShow(){
+  try{ return IS_IOS && !isStandalone() && !localStorage.getItem('techlog_a2hs_hide'); }
+  catch(e){ return false; }
+}
+function a2hsHide(){
+  try{ localStorage.setItem('techlog_a2hs_hide', '1'); }catch(e){}
+  render();
+}
+function a2hsModal(){
+  openModal(`
+    ${modalHead(t('a2hs_title'), 'phone')}
+    <div class="a2hs-steps">
+      <div class="a2hs-step"><span class="n">1</span><div><b>${t('a2hs_step1')}</b> ${ic('ioshare')}<div class="tiny">${t('a2hs_step1n')}</div></div></div>
+      <div class="a2hs-step"><span class="n">2</span><div><b>${t('a2hs_step2')}</b><div class="tiny">${t('a2hs_step2n')}</div></div></div>
+      <div class="a2hs-step"><span class="n">3</span><div><b>${t('a2hs_step3')}</b><div class="tiny">${t('a2hs_step3n')}</div></div></div>
+    </div>
+    <div class="tiny" style="margin-top:10px">${t('a2hs_note')}</div>
+    <button class="btn btn-ghost" style="margin-top:12px" onclick="App.closeModal()">${t('close')}</button>`);
+}
+
+/* =====================================================================
    v1.04: FAQ · перевод заметки на EN · свайпы по дням · журнал · БД-диагностика
    ===================================================================== */
 
@@ -5086,7 +5136,7 @@ function faqHtml(){
     <h4>${ic('archive')} Reports</h4>
     <p>Per <b>unit</b>: open the job and press PDF — a <b>vertical blank</b> (like the paper half-sheet) centered on a Letter page. Per <b>period</b>: bottom tab <b>Reports</b> → pick the dates → one PDF, landscape Letter with <b>two vertical blanks side by side</b> and a cut line between them. Managers also get the <b>Pickups</b> report for any date.</p>
     <h4>${ic('warn')} Priority & ordering</h4>
-    <p>The queue number sits in the <b>top-left</b> corner of a card, the red <b>“!” triangle</b> — in the <b>top-right</b> (priority items float to the top; tapping the triangle toggles it). Reorder with the <b>▲▼</b> arrows on the left, or by gesture: <b>press & hold</b> a card for ~half a second and drag it up/down. The order is shared between jobs and pickups. The full address is shown on the card — the button next to it copies it, and the ${ic('key')}/${ic('callbox')} codes are copied with a tap.</p>
+    <p>The queue number sits in the <b>top-left</b> corner of a card, the red <b>“!” triangle</b> — in the <b>top-right</b> (priority items float to the top; tapping the triangle toggles it). Reorder with the <b>▲▼</b> arrows on the left, or by gesture: <b>press & hold</b> a card for ~half a second and drag it up/down (with a mouse just grab and drag — no hold needed). The order is shared between jobs and pickups. The full address is shown on the card — the button next to it copies it, and the ${ic('key')}/${ic('callbox')} codes are copied with a tap.</p>
     <h4>${ic('key')} Access codes & requests</h4>
     <p>A complex has two codes: ${ic('key')} general and ${ic('callbox')} callbox (a toggle marks it as the ${ic('gate')} <b>gate</b> code). Anyone can edit: admins apply instantly, others submit a <b>request</b> the admin approves or rejects (inbox at the top of the Complexes tab). The ${ic('book')} button shows the full <b>history</b> — who entered which code and when; next to the current code you see since when it’s valid and who added it.</p>
     <h4>${ic('toolbox')} Note templates & purchases</h4>
@@ -5104,13 +5154,15 @@ function faqHtml(){
     <div class="faq-example">${faqDayCardsExample()}</div>
     <p>Reading the sample: <b>7 jobs</b> are planned — Steam Clean 4, Air Duct 2, Vetvag 1. <b>8 equipment units</b> to collect — 5 blowers (BLW), 2 dehumidifiers (DHM) and 1 air scrubber (SCR) — and one pickup is already overdue. The numbers come from the same lists shown below on the screen: flip the strip to another day and the cards recalculate; for managers they respect the Mine/All filter.</p>
     <h4>${ic('refresh')} Sync, offline & updates</h4>
-    <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android, works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode.</p>
+    <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android and iPhone (see the iPhone section below), works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode.</p>
+    <h4>${ic('phone')} iPhone & iPad (iOS)</h4>
+    <p><b>Install:</b> in Safari tap <b>Share → “Add to Home Screen”</b> — unlike Android there is no automatic prompt, so the app shows its own banner with step-by-step instructions on the Home screen (and a button in Settings). Sign in again after installing: the Home-Screen app has <b>its own storage</b>, separate from the Safari tab. Installing is worth it: Safari wipes a site’s local data (session, offline cache, an unsaved draft) after <b>7 days</b> of using the browser without visiting the site, while the installed app keeps them for as long as you use it; don’t work in Private Browsing — nothing there survives closing the tab. <b>Routes</b> open in <b>Apple Maps</b>: the multi-stop “Day route” needs iOS 18.4+, older systems open only the final stop — a limitation of Apple’s URL scheme; if you prefer Google Maps, switch in Settings → “Navigation app”. <b>PDF invoices</b> (single and batch) go through the system <b>Share sheet</b> — “Save to Files”, AirDrop or mail; inside an installed web-app this is the only reliable way. <b>Dictation:</b> the in-app mic button is hidden on iOS — use the <b>🎤 key on the keyboard</b>, it types RU and EN into any field; the “Translate to EN” button works as usual. <b>Minimizing is safe:</b> iOS freezes background apps aggressively, so every save goes into a queue and is re-sent automatically when you return to the app, the network comes back or a sync runs — the queue counter shows in Settings and Diagnostics. There is no vibration feedback — iOS doesn’t allow it for web apps.</p>
     <h4>${ic('map')} Map</h4>
     <p>The Map tab shows every complex as a dot colored by counterparty, with a filter and a popup (address, codes, a route link). <b>Day mode</b> plots the selected date’s jobs (work-type colors) and pickups (gray, red when overdue) and builds a multi-stop <b>route</b> in your navigation app — Apple Maps on iPhone/iPad (multistop needs iOS 18.4+) or Google Maps; pick one in Settings → “Navigation app”. Coordinates are set in the complex card — “Find by address” or manually.</p>
     <h4>${ic('chart')} Statistics</h4>
     <p>The Stats tab: period chips (today/7/30 days or custom), Mine/All, big totals (jobs, revenue, approved, pickups) and a per-day bar chart.</p>
     <h4>${ic('mic')} Notes, dictation & translation</h4>
-    <p>Every job and pickup has a note. The ${ic('mic')} microphone dictates in RU or EN (Chrome/Android), text is editable by hand, and the note prints on the PDF as the <b>NOTES</b> line. One tap translates a Russian note to English.</p>
+    <p>Every job and pickup has a note. The ${ic('mic')} microphone dictates in RU or EN (Chrome/Android; on iPhone — the 🎤 key on the keyboard, see the iPhone section), text is editable by hand, and the note prints on the PDF as the <b>NOTES</b> line. One tap translates a Russian note to English.</p>
     <h4>${ic('wrench')} Account, settings & service</h4>
     <p>Sign in with a login (Latin, 3–32 chars) and password; sign-up needs the <b>invite code</b> (set by the admin in Settings, default — APC). You change your own password under Settings → “Change password”; if you’re blocked or forgot it, the admin helps in Staff. Settings: UI language RU/EN (PDF is always EN), your display name, app install, event <b>log</b>, <b>diagnostics</b> (and DB diagnostics for admin). Android back button: closes a modal, saves and exits an open form, double-press exits the app.</p>`;
   return `
@@ -5123,7 +5175,7 @@ function faqHtml(){
     <h4>${ic('archive')} Отчёты</h4>
     <p>За <b>юнит</b>: откройте работу и нажмите PDF — это <b>вертикальный бланк</b> (как бумажная половинка), по центру листа Letter. За <b>период</b>: нижняя вкладка <b>Отчёты</b> → выбираете даты → единый PDF: альбомный Letter, <b>два вертикальных бланка рядом</b> и линия отреза между ними. Менеджеру доступен и отчёт по <b>пикапам</b> на любую дату.</p>
     <h4>${ic('warn')} Приоритет и очерёдность</h4>
-    <p>Номер очереди — в <b>левом верхнем</b> углу карточки, красный <b>треугольник «!»</b> приоритета — в <b>правом верхнем</b> (приоритетные всегда вверху списка, тап по треугольнику включает/выключает приоритет). Изменить порядок можно стрелками <b>▲▼</b> слева или жестом: <b>удерживайте карточку</b> ~полсекунды и тяните вверх/вниз. Порядок общий для работ и пикапов. Адрес на карточке показан целиком — кнопка рядом копирует его в буфер, коды ${ic('key')}/${ic('callbox')} копируются тапом.</p>
+    <p>Номер очереди — в <b>левом верхнем</b> углу карточки, красный <b>треугольник «!»</b> приоритета — в <b>правом верхнем</b> (приоритетные всегда вверху списка, тап по треугольнику включает/выключает приоритет). Изменить порядок можно стрелками <b>▲▼</b> слева или жестом: <b>удерживайте карточку</b> ~полсекунды и тяните вверх/вниз (мышью — просто хватайте и тяните, удержание не нужно). Порядок общий для работ и пикапов. Адрес на карточке показан целиком — кнопка рядом копирует его в буфер, коды ${ic('key')}/${ic('callbox')} копируются тапом.</p>
     <h4>${ic('key')} Коды доступа и заявки</h4>
     <p>У комплекса два кода: ${ic('key')} общий и ${ic('callbox')} callbox (переключателем помечается, что это код от ${ic('gate')} <b>ворот</b>). Изменить может каждый: админ — сразу, остальные отправляют <b>заявку</b>, которую админ подтверждает или отклоняет (входящие — вверху вкладки «Комплексы»). Кнопка ${ic('book')} показывает <b>историю</b> изменений: кто, когда и какой код вводил; рядом с текущим кодом видно, с какой даты он действует и кто его добавил.</p>
     <h4>${ic('toolbox')} Шаблоны заметки и покупки</h4>
@@ -5141,13 +5193,15 @@ function faqHtml(){
     <div class="faq-example">${faqDayCardsExample()}</div>
     <p>Читаем пример: на день запланировано <b>7 работ</b> — Steam Clean 4, Air Duct 2, Vetvag 1. Забрать нужно <b>8 единиц оборудования</b> — 5 блоуэров (BLW), 2 осушителя (DHM) и 1 скруббер (SCR), при этом один пикап уже просрочен. Цифры считаются по тем же спискам, что показаны ниже на экране: листаете ленту на другой день — карточки пересчитываются, а у менеджера они подчиняются фильтру «Мои/Все».</p>
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
-    <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android, работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим.</p>
+    <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим.</p>
+    <h4>${ic('phone')} iPhone и iPad (iOS)</h4>
+    <p><b>Установка:</b> в Safari «Поделиться» → <b>«На экран “Домой”»</b> — автоматической подсказки, как на Android, здесь нет, поэтому приложение само показывает баннер с пошаговой инструкцией на главном экране (и кнопку в Настройках). После установки войдите заново: у приложения на «Домой» <b>своё хранилище</b>, отдельное от вкладки Safari. Ставить стоит: вкладка Safari стирает локальные данные сайта (сессию, офлайн-кеш, несохранённый черновик) после <b>7 дней</b> пользования браузером без захода в TechLog, а установленное приложение хранит их, пока вы им пользуетесь; в приватном режиме не работайте — там ничего не переживает закрытия вкладки. <b>Маршруты</b> открываются в <b>Картах Apple</b>: мультиточечный «Маршрут дня» — с iOS 18.4, более старые системы откроют только конечную точку — это ограничение URL-схемы Apple; привычнее Google Maps — переключите в Настройках → «Навигатор». <b>PDF-инвойсы</b> (одиночные и пакетные) уходят через системное окно <b>«Поделиться»</b> — «Сохранить в Файлы», AirDrop, почта; в установленном веб-приложении это единственный надёжный путь. <b>Диктовка:</b> своя кнопка микрофона на iOS скрыта — используйте <b>🎤 на клавиатуре</b> iPhone, она печатает RU и EN в любое поле; кнопка «Перевести на EN» работает как обычно. <b>Сворачивать не страшно:</b> iOS жёстко замораживает фоновые приложения, поэтому каждое сохранение попадает в очередь и досылается само при возврате в приложение, появлении сети или синхронизации — счётчик очереди виден в Настройках и Диагностике. Вибрации нет — iOS не даёт её веб-приложениям.</p>
     <h4>${ic('map')} Карта</h4>
     <p>Вкладка «Карта» показывает все комплексы точками в цвет контрагента, с фильтром и попапом (адрес, коды, ссылка на маршрут). <b>Режим дня</b> выводит работы выбранной даты (цвет вида работы) и пикапы (серые, красные при просрочке) и строит мультиточечный <b>маршрут</b> в навигаторе — Карты Apple на iPhone/iPad (мультистоп с iOS 18.4) или Google Maps; выбор в Настройках → «Навигатор». Координаты задаются в карточке комплекса — «Найти по адресу» или вручную.</p>
     <h4>${ic('chart')} Статистика</h4>
     <p>Вкладка «Статистика»: чипы периода (сегодня/7/30 дней или свой), «Мои/Все», крупные итоги (работы, выручка, апрувы, пикапы) и график по дням.</p>
     <h4>${ic('mic')} Заметки, диктовка и перевод</h4>
-    <p>У каждой работы и пикапа есть заметка. Микрофон ${ic('mic')} диктует на RU или EN (Chrome/Android), текст правится руками и печатается в PDF строкой <b>NOTES</b>. Одним нажатием русскую заметку можно перевести на английский.</p>
+    <p>У каждой работы и пикапа есть заметка. Микрофон ${ic('mic')} диктует на RU или EN (Chrome/Android; на iPhone — кнопкой 🎤 на клавиатуре, см. раздел про iPhone), текст правится руками и печатается в PDF строкой <b>NOTES</b>. Одним нажатием русскую заметку можно перевести на английский.</p>
     <h4>${ic('wrench')} Аккаунт, настройки и сервис</h4>
     <p>Вход — логин латиницей (3–32 символа) и пароль; для регистрации нужен <b>код приглашения</b> (задаёт админ в «Настройках», стандартный — APC). Свой пароль меняется в «Настройках» → «Смена пароля»; если вас заблокировали или пароль забыт — поможет админ во вкладке «Сотрудники». В «Настройках»: язык интерфейса RU/EN (PDF всегда на английском), ваше имя, установка приложения, <b>журнал</b> событий, <b>диагностика</b> (и БД-диагностика для админа). Кнопка «назад» на Android: закрывает модалку, сохраняет и закрывает открытую форму, двойное нажатие — выход из приложения.</p>`;
 }
@@ -5385,15 +5439,21 @@ function dndDown(e){
   const el = e.target.closest('.item[data-drag-id]');
   if (!el || el.dataset.can !== '1') return;
   if (e.target.closest('button,select,input,a,textarea,.key-copy')) return;
+  /* v1.07.22: у мыши нет конфликта «скролл или перенос» — таймер удержания
+     не нужен: обычный клик открывает карточку, а движение с зажатой кнопкой
+     сразу начинает перенос (см. dndMove). Пальцу — прежний long-press 340 мс. */
+  const mouse = e.pointerType === 'mouse';
   dnd = { el, id: el.dataset.dragId, pid: e.pointerId, x: e.clientX, y: e.clientY,
-          active: false, timer: setTimeout(dndActivate, 340) };
+          mouse, active: false, timer: mouse ? 0 : setTimeout(dndActivate, 340) };
 }
 function dndMove(e){
   if (!dnd) return;
   if (!dnd.active){
-    // палец «поехал» до срабатывания long-press — это скролл, а не перетаскивание
-    if (Math.abs(e.clientY - dnd.y) > 8 || Math.abs(e.clientX - dnd.x) > 8){ clearTimeout(dnd.timer); dnd = null; }
-    return;
+    const th = dnd.mouse ? 6 : 8;
+    if (Math.abs(e.clientY - dnd.y) > th || Math.abs(e.clientX - dnd.x) > th){
+      if (!dnd.mouse){ clearTimeout(dnd.timer); dnd = null; return; } // палец «поехал» до long-press — это скролл
+      dndActivate();  // v1.07.22: мышь потянула карточку — начинаем перенос и ведём её этим же событием
+    } else return;
   }
   if (e.cancelable) e.preventDefault();
   // автопрокрутка страницы у верхнего/нижнего края
@@ -5455,6 +5515,7 @@ function initDragSort(){
   document.addEventListener('pointermove', dndMove, { passive: false });
   document.addEventListener('pointerup', () => dndFinish(true));
   document.addEventListener('pointercancel', () => dndFinish(false));
+  window.addEventListener('blur', () => dndFinish(false));   // v1.07.22: мышь отпущена вне окна / alt-tab — не зависаем в захвате
   /* v1.07.20: на тач-устройствах прокрутку останавливает только touchmove.
      preventDefault на pointermove скролл НЕ отменяет — браузер начинал
      прокрутку и стрелял pointercancel, убивая перетаскивание на первом же

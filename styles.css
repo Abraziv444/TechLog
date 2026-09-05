@@ -242,6 +242,15 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   display:flex;gap:10px;align-items:center;color:var(--green);font-weight:800
 }
 .banner.b-red{border-color:var(--red);background:rgba(255,75,75,.08);color:var(--red)}
+/* v1.07.23: баннер установки на iOS и шаги в модалке */
+.banner.a2hs{border-color:var(--blue);background:rgba(28,176,246,.08);color:var(--text)}
+.banner.a2hs .grow{flex:1;min-width:0}
+.banner.a2hs .tiny{font-weight:600;color:var(--muted,#9FB6C1)}
+.a2hs-steps{display:flex;flex-direction:column;gap:12px;margin-top:6px;text-align:left}
+.a2hs-step{display:flex;gap:10px;align-items:flex-start}
+.a2hs-step .n{flex:0 0 24px;height:24px;border-radius:50%;background:var(--blue);color:#04314A;
+  font-weight:900;display:flex;align-items:center;justify-content:center}
+.a2hs-step .ic{width:18px;height:18px;vertical-align:-3px;color:var(--blue)}
 
 /* ---------- Нижняя навигация ---------- */
 .tabbar{
@@ -757,6 +766,9 @@ h3 .ic{width:21px;height:21px}
   padding:26px 12px 10px;
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
 }
+/* v1.07.22: подсказка для мыши на ПК — карточку можно схватить и тянуть */
+.item[data-can="1"]{cursor:grab}
+.item.dragging, body.dnd-on{cursor:grabbing}
 .item .row-num.corner{
   position:absolute;top:6px;left:8px;height:20px;min-width:20px;z-index:2;
 }
