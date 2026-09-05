@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.16';
+const APP_VERSION = '1.07.18';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -28,7 +28,7 @@ function dlog(){
   if (DIAG.length > 300) DIAG.shift();
   try {
     PLOG.push(line);
-    if (PLOG.length > 250) PLOG.splice(0, PLOG.length - 250);
+    if (PLOG.length > 2000) PLOG.splice(0, PLOG.length - 2000);   // v1.07.18: максимум 2000 строк
     clearTimeout(dlog._t);
     dlog._t = setTimeout(() => { try{ localStorage.setItem('techlog_log', JSON.stringify(PLOG)); }catch(e){} }, 400);
   } catch(e){}
@@ -64,6 +64,16 @@ const I18N = {
     work_type: 'Вид работы', create: 'Создать', cancel: 'Отмена', save: 'Сохранить',
     delete: 'Удалить', edit: 'Изменить', close: 'Закрыть', back: 'Назад', add: 'Добавить',
     tab_home: 'Главная', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Настройки', tab_faq: 'FAQ', tab_stats: 'Статистика',
+    tab_journal: 'Журнал', jr_title: 'Журнал действий', jr_refresh: 'Обновить', jr_more: 'Показать ещё',
+    jr_empty: 'Записей пока нет', jr_all_actions: 'Все действия', jr_all_staff: 'Все сотрудники',
+    jr_local: 'локально (демо)', jr_open: 'Открыть',
+    jr_need_db: 'Таблица журнала не найдена — выполните supabase/update-to-1_07_18.sql',
+    act_user_register: 'регистрация', act_user_create: 'создан сотрудник', act_user_block: 'блокировка',
+    act_user_unblock: 'разблокировка', act_role_change: 'смена роли', act_password_change: 'смена своего пароля',
+    act_password_reset: 'сброс пароля сотрудника', act_job_create: 'создан инвойс', act_job_update: 'изменён инвойс',
+    act_job_done: 'работа выполнена', act_job_reopen: 'возврат в черновик', act_job_approve: 'апрув',
+    act_job_delete: 'удалён инвойс', act_crew_add: 'бригада: добавлен', act_crew_remove: 'бригада: убран',
+    act_pickup_done: 'пикап выполнен', act_pickup_early: 'досрочный вывоз', act_extension_create: 'продление аренды',
     mine: 'Мои', all: 'Все',
     status_draft: 'Черновик', status_done: 'Выполнено', status_approved: 'Апрув',
     job_done_chk: 'Работа выполнена',
@@ -249,6 +259,16 @@ const I18N = {
     work_type: 'Work type', create: 'Create', cancel: 'Cancel', save: 'Save',
     delete: 'Delete', edit: 'Edit', close: 'Close', back: 'Back', add: 'Add',
     tab_home: 'Home', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'Settings', tab_faq: 'FAQ', tab_stats: 'Stats',
+    tab_journal: 'Journal', jr_title: 'Activity journal', jr_refresh: 'Refresh', jr_more: 'Show more',
+    jr_empty: 'No records yet', jr_all_actions: 'All actions', jr_all_staff: 'All staff',
+    jr_local: 'local (demo)', jr_open: 'Open',
+    jr_need_db: 'Journal table missing — run supabase/update-to-1_07_18.sql',
+    act_user_register: 'sign-up', act_user_create: 'staff created', act_user_block: 'blocked',
+    act_user_unblock: 'unblocked', act_role_change: 'role changed', act_password_change: 'own password changed',
+    act_password_reset: 'staff password reset', act_job_create: 'invoice created', act_job_update: 'invoice updated',
+    act_job_done: 'job done', act_job_reopen: 'back to draft', act_job_approve: 'approved',
+    act_job_delete: 'invoice deleted', act_crew_add: 'crew: added', act_crew_remove: 'crew: removed',
+    act_pickup_done: 'pickup done', act_pickup_early: 'early pickup', act_extension_create: 'rental extension',
     mine: 'Mine', all: 'All',
     status_draft: 'Draft', status_done: 'Done', status_approved: 'Approved',
     job_done_chk: 'Work completed',
@@ -453,6 +473,7 @@ const state = {
   pendingUpdate: null,        // версия, ждущая закрытия формы
   searchQ: '',                // v1.07.13: строка поиска на главной
   searchKind: 'jobs',         // v1.07.13: поиск по инвойсам ('jobs') или пикапам ('pk')
+  jr: { rows: null, act: '', actor: '', loading: false, more: false }, // v1.07.18: журнал действий (админ)
   data: null,                 // все таблицы
 };
 
@@ -676,6 +697,7 @@ function emptyData(){
     allow_shared_jobs: true
   } };
   TABLES.forEach(tb => d[tb] = []);
+  d.audit_log = [];               // v1.07.18: локальный журнал действий
   return d;
 }
 
@@ -1587,6 +1609,146 @@ function sectionHelpModal(key){
   openModal(`${modalHead(s.title, 'help')}<div class="card" style="padding:4px 12px">${rows}</div>`);
 }
 
+
+/* =====================================================================
+   v1.07.18: ЖУРНАЛ ДЕЙСТВИЙ СОТРУДНИКОВ (админ)
+   Локально пишем всегда (до 2000 записей, живёт в state.data.audit_log);
+   при Supabase дополнительно шлём в таблицу audit_log (insert-only,
+   читает только админ; регистрацию пишет серверный триггер).
+   ===================================================================== */
+let auditDbMissing = false;
+function audit(action, entity, entityId, details){
+  try{
+    const row = {
+      id: uid(), at: new Date().toISOString(),
+      actor: state.user?.id || null, actor_name: state.user?.display_name || '',
+      action, entity: entity || null,
+      entity_id: entityId != null ? String(entityId) : null,
+      details: details || {}
+    };
+    if (!state.data.audit_log) state.data.audit_log = [];
+    state.data.audit_log.unshift(row);
+    if (state.data.audit_log.length > 2000) state.data.audit_log.length = 2000;
+    saveLocal();
+    if (HAS_SB && state.sb){
+      Promise.resolve(state.sb.from('audit_log').insert({
+        at: row.at, actor: row.actor, actor_name: row.actor_name,
+        action, entity: row.entity, entity_id: row.entity_id, details: row.details
+      })).then(({ error } = {}) => {
+        if (error){
+          dlog('⛔ audit insert:', error);
+          if (!auditDbMissing && /audit_log|42P01|schema cache/i.test(errStr(error))){
+            auditDbMissing = true; toast('⚠ ' + t('jr_need_db'), 'err');
+          }
+        }
+      }).catch(e => dlog('⛔ audit insert exception:', e));
+    }
+  }catch(e){ dlog('⛔ audit():', e); }
+}
+
+const JR_PAGE = 300;
+const JR_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
+  'password_change','password_reset','job_create','job_update','job_done','job_reopen',
+  'job_approve','job_delete','crew_add','crew_remove','pickup_done','pickup_early','extension_create'];
+
+async function loadJournal(reset){
+  if (!isAdmin()) return;
+  const jr = state.jr;
+  if (jr.loading) return;
+  jr.loading = true;
+  if (reset) jr.rows = null;
+  render();
+  try{
+    if (!HAS_SB){
+      let rows = (state.data.audit_log || []).slice();
+      if (jr.act)   rows = rows.filter(r => r.action === jr.act);
+      if (jr.actor) rows = rows.filter(r => r.actor === jr.actor);
+      const upto = (reset ? 0 : ((jr.rows && jr.rows.length) || 0)) + JR_PAGE;
+      jr.rows = rows.slice(0, upto);
+      jr.more = rows.length > jr.rows.length;
+    } else {
+      const from = reset ? 0 : ((jr.rows && jr.rows.length) || 0);
+      let q = state.sb.from('audit_log').select('*')
+        .order('at', { ascending: false }).range(from, from + JR_PAGE - 1);
+      if (jr.act)   q = q.eq('action', jr.act);
+      if (jr.actor) q = q.eq('actor', jr.actor);
+      const { data, error } = await q;
+      if (error){
+        dlog('⛔ journal load:', error);
+        if (/audit_log|42P01|schema cache/i.test(errStr(error))) auditDbMissing = true;
+        jr.rows = jr.rows || []; jr.more = false;
+      } else {
+        jr.rows = reset ? (data || []) : [ ...(jr.rows || []), ...(data || []) ];
+        jr.more = (data || []).length === JR_PAGE;
+      }
+    }
+  }catch(e){ dlog('⛔ loadJournal:', e); state.jr.rows = state.jr.rows || []; }
+  state.jr.loading = false;
+  render();
+}
+
+function jrChipClass(a){
+  if (a === 'job_approve') return 'purple';                              // апрув — фиолетовый везде
+  if (/delete|_block$/.test(a)) return 'bad';
+  if (/pickup|extension|crew/.test(a)) return 'info';
+  if (/register|create|unblock|_done$/.test(a)) return 'ok';
+  return 'warn';
+}
+function jrDetails(r){
+  const d = r.details || {}, bits = [];
+  if (d.unit) bits.push('Unit ' + d.unit);
+  if (d.complex) bits.push(d.complex);
+  if (d.work) bits.push(d.work);
+  if (d.date) bits.push(fmtDMY(d.date));
+  if (d.total != null) bits.push(money(+d.total || 0));
+  if (d.days) bits.push('+' + d.days + ' ' + t('days'));
+  if (d.qty) bits.push('× ' + d.qty);
+  if (d.eq) bits.push(d.eq);
+  if (Array.isArray(d.items)) bits.push(d.items.map(i => `${i.qty}×${i.eq}`).join(' '));
+  if (d.login) bits.push('@' + d.login);
+  if (d.role) bits.push(t('role_' + d.role));
+  if (d.name) bits.push(d.name);
+  if (Array.isArray(d.added) && d.added.length) bits.push('+ ' + d.added.join(', '));
+  if (Array.isArray(d.removed) && d.removed.length) bits.push('− ' + d.removed.join(', '));
+  return bits.map(esc).join(' · ');
+}
+function viewJournal(){
+  if (!isAdmin()) return `<div class="list-empty">${t('no_access')}</div>`;
+  const jr = state.jr;
+  if (jr.rows === null && !jr.loading) setTimeout(() => loadJournal(true), 0);
+  const profs = state.data.profiles || [];
+  const roleOf = id => (profs.find(p => p.id === id) || {}).role || 'tech';
+  const rowsHtml = (jr.rows || []).map(r => {
+    const when = String(r.at || '').slice(5, 16).replace('T', ' ');
+    const job = r.entity === 'job' ? state.data.jobs.find(x => x.id === r.entity_id) : null;
+    const lbl = t('act_' + r.action);
+    return `<div class="rowline jr-row">
+      <span class="tiny nowrap jr-when">${esc(when)}</span>
+      <span class="avatar role-${roleOf(r.actor)} jr-av">${esc(initials(r.actor_name || '?'))}</span>
+      <div class="grow"><b>${esc(r.actor_name || '—')}</b>
+        <span class="chip ${jrChipClass(r.action)}">${esc(lbl === 'act_' + r.action ? r.action : lbl)}</span>
+        <div class="tiny">${jrDetails(r)}</div></div>
+      ${job ? `<button class="btn btn-ghost sm" onclick="App.openJob('${job.id}')">${t('jr_open')}</button>` : ''}
+    </div>`;
+  }).join('');
+  return `
+  <div class="section-title">${t('jr_title')} <span class="hint">${HAS_SB ? (auditDbMissing ? '' : 'Supabase') : t('jr_local')}</span></div>
+  ${auditDbMissing ? `<div class="note-red" style="margin-bottom:10px">${t('jr_need_db')}</div>` : ''}
+  <div class="filter-row">
+    <select style="flex:1" onchange="App.jrAct(this.value)">
+      <option value="">${t('jr_all_actions')}</option>
+      ${JR_ACTIONS.map(a => `<option value="${a}" ${jr.act === a ? 'selected' : ''}>${t('act_' + a)}</option>`).join('')}
+    </select>
+    <select style="flex:1" onchange="App.jrActor(this.value)">
+      <option value="">${t('jr_all_staff')}</option>
+      ${profs.map(p => `<option value="${p.id}" ${jr.actor === p.id ? 'selected' : ''}>${esc(p.display_name)}</option>`).join('')}
+    </select>
+    <button class="btn btn-ghost sm" onclick="App.jrRefresh()">🔄</button>
+  </div>
+  <div class="card">${rowsHtml || `<div class="list-empty">${jr.loading ? '…' : t('jr_empty')}</div>`}</div>
+  ${jr.more ? `<button class="btn btn-ghost" onclick="App.jrMore()">${t('jr_more')}</button>` : ''}`;
+}
+
 function render(){
   const app = $('#app');
   if (!state.user){ app.innerHTML = viewLogin(); return; }
@@ -1601,6 +1763,7 @@ function render(){
   else if (state.screen === 'stats') body = viewStats();
   else if (state.screen === 'dirs') body = viewDirs();
   else if (state.screen === 'settings') body = viewSettings();
+  else if (state.screen === 'journal') body = viewJournal();   // v1.07.18
   app.innerHTML = viewHeader() + body + viewTabbar();
   if (state.screen === 'home'){
     try { document.querySelector('.day-cell.sel')?.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch(e){}
@@ -1648,6 +1811,7 @@ function viewTabbar(){
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
     ['dirs', ICONS.dirs, t('tab_dirs')],
+    ...(isAdmin() ? [['journal', ICONS.book, t('tab_journal')]] : []),   // v1.07.18
     ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
   ];
@@ -2044,6 +2208,8 @@ async function createTask(){
     created_at: new Date().toISOString(), updated_at: new Date().toISOString()
   };
   await dbUpsert('jobs', job);
+  audit('job_create', 'job', job.id, { unit: job.unit_number, date: job.date,
+    complex: (cxById(cxId) || {}).abbr || '', work: (wtById(ntWt) || {}).name || '' });
   ntWt = null; closeModal();
   state.selDate = date; state.weekStart = mondayOf(date);
   toast('✓ ' + t('created'));
@@ -2061,6 +2227,9 @@ async function pickupGroup(jobId){
     await dbUpsert('placements', upd);
   }
   navigator.vibrate?.([30,40,30]);
+  if (list.length) audit('pickup_done', 'job', jobId, {                   // v1.07.18
+    unit: list[0].unit_number,
+    items: list.map(p => ({ eq: (etById(p.equipment_type_id) || {}).abbr || '?', qty: +p.qty || 1 })) });
   closeModal();
   toast('✓ ' + t('picked')); render();
 }
@@ -2184,6 +2353,8 @@ async function extApply(){
     }
     made += q;
   }
+  if (made > 0 && d.rows[0]) audit('extension_create', 'job', d.rows[0].job_id, {     // v1.07.18
+    unit: d.rows[0].unit_number, days: N, qty: made });
   extDraft = null; closeModal();
   navigator.vibrate?.(30);
   toast('✓ ' + t('ext_done'));
@@ -2234,6 +2405,8 @@ async function pickupOne(pid, jobId){
   const p = state.data.placements.find(x => x.id === pid); if (!p) return;
   if (!confirm(t('pickup_confirm'))) return;
   await dbUpsert('placements', { ...p, picked_up: true, picked_up_at: new Date().toISOString(), picked_up_by: state.user.id });
+  audit(p.due_date > todayISO() ? 'pickup_early' : 'pickup_done', 'placement', pid, {   // v1.07.18
+    unit: p.unit_number, eq: (etById(p.equipment_type_id) || {}).abbr || '?', qty: +p.qty || 1 });
   navigator.vibrate?.(30);
   toast('✓ ' + t('picked'));
   render();
@@ -2664,6 +2837,8 @@ async function saveJob(goHome){
   dictStop();
   const j = jobDraft;
   const orig = state.data.jobs.find(x=>x.id===j.id);
+  const prevStatus  = orig ? orig.status : 'draft';                       // v1.07.18: для журнала
+  const prevHelpers = orig ? (orig.helper_ids || []).slice() : [];
   const p = priceResolver(j.counterparty_id);
   j.total = calcTotal(j.form_data, p);
   const doneChk = $('#jb-done');
@@ -2685,6 +2860,20 @@ async function saveJob(goHome){
   navigator.vibrate?.(30);
   await dbUpsert('jobs', JSON.parse(JSON.stringify(j)));
   await syncPlacementsForJob(j);
+  { // v1.07.18: журнал — статус и бригада
+    const cx = cxById(j.complex_id) || {};
+    const base = { unit: j.unit_number, date: j.date, complex: cx.abbr || '', total: (j.status==='approved' && j.approved_total!=null) ? j.approved_total : j.total };
+    let act = 'job_update';
+    if (j.status === 'approved' && prevStatus !== 'approved') act = 'job_approve';
+    else if (j.status === 'done' && prevStatus !== 'done') act = 'job_done';
+    else if (j.status === 'draft' && prevStatus !== 'draft') act = 'job_reopen';
+    audit(act, 'job', j.id, base);
+    const nowH = j.helper_ids || [];
+    const added   = nowH.filter(x => !prevHelpers.includes(x)).map(profName);
+    const removed = prevHelpers.filter(x => !nowH.includes(x)).map(profName);
+    if (added.length)   audit('crew_add', 'job', j.id, { unit: j.unit_number, added });
+    if (removed.length) audit('crew_remove', 'job', j.id, { unit: j.unit_number, removed });
+  }
   toast('✓ ' + t('saved'));
   if (goHome !== false){ state.screen = 'home'; state.selDate = j.date; state.weekStart = mondayOf(j.date); }
   render();
@@ -2736,8 +2925,11 @@ async function deleteJob(){
   if (!confirm(t('confirm_del'))) return;
   localStorage.removeItem('techlog_draft');
   const id = jobDraft.id;
+  const _dj = state.data.jobs.find(x=>x.id===id) || jobDraft;             // v1.07.18: для журнала
   for (const p of state.data.placements.filter(p=>p.job_id===id)) await dbDelete('placements', p.id);
   await dbDelete('jobs', id);
+  audit('job_delete', 'job', id, { unit: _dj.unit_number, date: _dj.date,
+    complex: (cxById(_dj.complex_id) || {}).abbr || '' });
   state.screen = 'home'; toast('🗑 ' + t('deleted')); render();
 }
 
@@ -3433,6 +3625,9 @@ const App = {
   openDayMap(){ state.mapDay = true; state.mapDate = state.selDate; App.go('map'); },
   mapMode(v){ state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
   showLog: showLogModal, copyLog, clearLog,
+  jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
+  jrAct(v){ state.jr.act = v; loadJournal(true); },
+  jrActor(v){ state.jr.actor = v; loadJournal(true); },
   togglePriority, moveJob,
   codeHistory: codeHistoryModal, proposeCode: proposeCodeModal, pcGate, submitCode,
   extraPicker: extraPickerModal, exAdd, exDel,
@@ -4202,6 +4397,7 @@ function dirStaff(){
 async function setRole(uid_, role){
   const u = state.data.profiles.find(p=>p.id===uid_); if (!u) return;
   await dbUpsert('profiles', { ...u, role });
+  audit('role_change', 'profile', uid_, { name: u.display_name, role });   // v1.07.18
   toast('✓ ' + t('saved')); render();
 }
 /* ---------- v1.07.06: блокировка сотрудника (красный перечёркнутый кружок) ---------- */
@@ -4221,6 +4417,7 @@ async function staffBlock(uid_){
     if (error){ dlog('⛔ admin_set_blocked:', error); toast('⚠ ' + rpcFail(error, 'admin_set_blocked'), 'err'); }
   }
   await dbUpsert('profiles', { ...u, blocked: want });   // флаг в profiles — приложение проверяет его при входе
+  audit(want ? 'user_block' : 'user_unblock', 'profile', uid_, { name: u.display_name });   // v1.07.18
   navigator.vibrate?.(20);
   toast(want ? '🚫 ' + t('blocked_done') : '✓ ' + t('unblocked_done'));
   render();
@@ -4243,6 +4440,7 @@ async function staffSetPass(uid_){
   if (v.length < 6){ toast('⛔ ' + t('pass_short'), 'err'); return; }
   const { error } = await state.sb.rpc('admin_set_password', { target: uid_, new_password: v });
   if (error){ dlog('⛔ admin_set_password:', error); toast('⛔ ' + rpcFail(error, 'admin_set_password'), 'err'); return; }
+  audit('password_reset', 'profile', uid_, { name: (state.data.profiles.find(p=>p.id===uid_)||{}).display_name || '' });   // v1.07.18
   closeModal(); toast('✓ ' + t('pass_changed'));
 }
 /* ---------- v1.07.07: админ создаёт сотрудника (логин, пароль, имя, роль) ---------- */
@@ -4291,9 +4489,12 @@ async function staffCreate(){
     const i = state.data.profiles.findIndex(p=>p.id===row.id);
     if (i >= 0) state.data.profiles[i] = row; else state.data.profiles.push(row);
     saveLocal();
+    audit('user_create', 'profile', row.id, { login, role, name: row.display_name });   // v1.07.18
     closeModal(); toast('✓ ' + t('staff_created'));
   } else {
-    await dbUpsert('profiles', { id: uid(), login, display_name: name || login, role, blocked: false, created_at: new Date().toISOString() });
+    const nrow = { id: uid(), login, display_name: name || login, role, blocked: false, created_at: new Date().toISOString() };
+    await dbUpsert('profiles', nrow);
+    audit('user_create', 'profile', nrow.id, { login, role, name: nrow.display_name });   // v1.07.18
     closeModal(); toast('✓ ' + t('staff_created_demo'));
   }
   render();
@@ -4329,6 +4530,7 @@ async function ownPassSave(){
   if (v1 !== v2){ toast('⛔ ' + t('pass_mismatch'), 'err'); return; }
   const { error } = await state.sb.auth.updateUser({ password: v1 });
   if (error){ dlog('⛔ auth.updateUser:', error); toast('⛔ ' + errStr(error), 'err'); return; }
+  audit('password_change', 'profile', state.user.id, {});   // v1.07.18
   closeModal(); toast('✓ ' + t('own_pass_changed'));
 }
 function staffVis(managerId){
@@ -4803,7 +5005,7 @@ function initSwipes(){
 
 /* ---------- Журнал событий ---------- */
 function showLogModal(){
-  const txt = PLOG.slice(-220).join('\n') || '—';
+  const txt = PLOG.slice(-2000).join('\n') || '—';
   window.__lastLog = txt;
   openModal(`
     ${modalHead(t('log_title'), 'receipt')}

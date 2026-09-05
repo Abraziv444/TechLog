@@ -826,3 +826,11 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 /* v1.07.09: сегмент «Стандартные | Индивидуальные» — на всю ширину, пополам */
 .lang-seg.seg-full{width:100%}
 .lang-seg.seg-full button{flex:1 1 50%;text-align:center}
+
+/* ============ v1.07.18: журнал действий (админ) — ядро ============ */
+.chip.purple{border-color:var(--purple);color:var(--purple)}
+.jr-row{align-items:flex-start;gap:10px}
+.jr-when{min-width:78px;padding-top:3px;color:var(--dim-2)}
+.jr-av{width:34px;height:34px;font-size:.72rem;flex:0 0 auto;border-width:2px}
+.jr-row .grow b{margin-right:6px}
+.jr-row .chip{vertical-align:1px}

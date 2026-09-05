@@ -344,3 +344,195 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     html.tl-desktop #app:has(#dir-tabs) .rowline:hover{ background:rgba(255,255,255,.03); }
   }
 }
+
+/* =====================================================================
+   ============ v1.07.17 · переключатель в шапке, фикс карточек,
+   ============ подвал формы в три зоны, полировка. Всё под html.tl-desktop.
+   ===================================================================== */
+
+/* ---------- Переключатель: фиксируем в линии шапки ----------
+   Смещение left подобрано под паддинги body из этого же файла:
+   ПК-режим: padding-left:128 / right:16 → центр контента = 50% + 56px;
+   с колонкой сотрудников: 236 / 16 → 50% + 110px.
+   Меняете паддинги — поправьте эти два calc. */
+@media (min-width: 980px){
+  html.tl-desktop .vm-seg{
+    position:fixed; top:14px; left:calc(50% + 56px);
+    transform:translateX(-50%);
+  }
+}
+@media (min-width: 1180px){
+  html.tl-desktop.tl-staff .vm-seg{ left:calc(50% + 110px); }
+}
+
+/* ---------- ФИКС: текст в карточках сжимался в столбик ----------
+   Причина: пилюли полных названий оборудования (v1.07.16) распирали
+   правую часть .item, а .info с min-width:0 схлопывался до одной буквы.
+   Правая часть теперь ограничена по ширине и живёт колонкой, у текста
+   есть гарантированный минимум. */
+@media (min-width: 1180px){
+  html.tl-desktop .item{ align-items:flex-start; }
+  html.tl-desktop .item .info{ min-width:190px; }
+  html.tl-desktop .item .right{
+    flex:0 1 auto; min-width:190px; max-width:280px;
+    display:flex; flex-direction:column; align-items:flex-end; gap:8px;
+  }
+  html.tl-desktop .eq-dots{ row-gap:6px; }
+}
+@media (min-width: 1580px){
+  /* пилюли с полным названием — компактнее, чтобы влезали в правую колонку */
+  html.tl-desktop .eq-dot[title]::after{ max-width:120px; }
+}
+
+/* ---------- Подвал формы инвойса: три зоны (окно от 1420px) ----------
+   Слева — «История работы» и «Назад»; по центру — карточка апрува;
+   справа — Итого, Сохранить, PDF и Удалить. Собрано CSS-гридом прямо на
+   #app: элементы подвала расставлены по фиксированным номерам строк
+   (100+), всё остальное растянуто на всю ширину и лежит как раньше.
+   Ниже 1420px действует прежняя компоновка v1.07.16 (правый столбец). */
+@media (min-width: 1420px){
+  html.tl-desktop #app:has(.inv-sec){
+    display:grid;
+    grid-template-columns:220px 1fr minmax(0,max-content) 1fr 190px 190px;
+    column-gap:12px; row-gap:0;
+  }
+  html.tl-desktop #app:has(.inv-sec) > *{ grid-column:1 / -1; min-width:0; }
+
+  /* галочка «Работа выполнена» — своей строкой над подвалом */
+  html.tl-desktop #app:has(.inv-sec) > .opt{
+    grid-row:100; grid-column:1 / -1; width:max-content; margin:14px 0 10px;
+  }
+  /* ЛЕВАЯ зона */
+  html.tl-desktop #app:has(.inv-sec) > .btn.btn-ghost{           /* История работы */
+    grid-row:101; grid-column:1; width:100%; margin:0 0 8px;
+  }
+  html.tl-desktop #app:has(.inv-sec) .btn-row3{ display:contents; }
+  html.tl-desktop #app:has(.inv-sec) .btn-row3 > *:nth-child(1){ /* Назад */
+    grid-row:102; grid-column:1; width:100%; margin:0;
+  }
+  /* ЦЕНТР — карточка апрува (или зелёная пометка «апрувнуто» у не-админа) */
+  html.tl-desktop #app:has(.inv-sec) > .card[style*="--yellow"]{
+    grid-row:101 / span 3; grid-column:3; align-self:start;
+    width:auto; max-width:520px; min-width:380px; margin:0;
+  }
+  html.tl-desktop #app:has(.inv-sec) > .note-green{
+    grid-row:101; grid-column:3; align-self:start; margin:0;
+  }
+  /* ПРАВАЯ зона */
+  html.tl-desktop #app:has(.inv-sec) > .total-bar{
+    grid-row:101; grid-column:5 / span 2; width:auto; margin:0 0 8px;
+  }
+  html.tl-desktop #app:has(.inv-sec) > .btn.btn-green{           /* Сохранить */
+    grid-row:102; grid-column:5 / span 2; width:auto; margin:0 0 8px;
+  }
+  html.tl-desktop #app:has(.inv-sec) .btn-row3 > *:nth-child(2){ /* Скачать PDF */
+    grid-row:103; grid-column:5; margin:0;
+  }
+  html.tl-desktop #app:has(.inv-sec) .btn-row3 > *:nth-child(3){ /* Удалить */
+    grid-row:103; grid-column:6; margin:0;
+  }
+}
+
+/* ---------- Полировка ---------- */
+@media (min-width: 980px){
+  html.tl-desktop .overlay{ backdrop-filter:blur(3px); }
+  html.tl-desktop #toasts{ top:70px; }        /* не под липкой шапкой */
+  html.tl-desktop .card{ padding:14px 16px; }
+  html.tl-desktop .item{ padding:11px 14px; }
+}
+
+/* =====================================================================
+   ============ v1.07.18 · панель формы, фиолетовый апрув, чипы периодов,
+   ============ плотность. Всё под html.tl-desktop.
+   ===================================================================== */
+@media (min-width: 980px){
+
+  /* ---------- Верхняя панель формы (создаёт desktop.js) ----------
+     Липнет сразу под шапкой; дубли действий подвала — иконками. */
+  html.tl-desktop #dsk-jobbar{
+    position:sticky; top:72px; z-index:44;
+    display:flex; align-items:center; gap:8px;
+    width:max-content; margin:0 auto 12px;
+    background:var(--panel,#17232A);
+    border:2px solid var(--line,#31434C); border-radius:999px;
+    padding:6px 10px;
+  }
+  html.tl-desktop .djb-btn{
+    width:38px; height:38px; border-radius:50%;
+    display:grid; place-items:center; cursor:pointer;
+    background:var(--panel-2,#1C2B33);
+    border:2px solid var(--line,#31434C); color:var(--dim,#8AA0AB);
+  }
+  html.tl-desktop .djb-btn svg{ width:20px; height:20px; }
+  html.tl-desktop .djb-pdf{ color:var(--blue,#1CB0F6); }
+  /* «работа выполнена»: включена — зелёная */
+  html.tl-desktop .djb-done.on{
+    background:var(--green,#58CC02); border-color:var(--green,#58CC02);
+    color:var(--green-ink,#0E2A00);
+  }
+  /* индикатор апрува — ФИОЛЕТОВЫЙ, только состояние (не кнопка) */
+  html.tl-desktop .djb-appr{ cursor:default; color:var(--dim-2,#5D737E); }
+  html.tl-desktop .djb-appr.on{
+    background:var(--purple,#CE82FF); border-color:var(--purple,#CE82FF); color:#2A0A45;
+  }
+  html.tl-desktop .djb-total{
+    font-weight:900; color:var(--green,#58CC02);
+    background:var(--panel-2,#1C2B33);
+    border:2px solid var(--line,#31434C); border-radius:999px;
+    padding:6px 14px; min-width:74px; text-align:center;
+  }
+  @media (hover:hover){
+    html.tl-desktop .djb-btn:not(.djb-appr):hover{ border-color:var(--blue,#1CB0F6); color:var(--blue,#1CB0F6); }
+    html.tl-desktop .djb-done.on:hover{ border-color:var(--green,#58CC02); color:var(--green-ink,#0E2A00); }
+  }
+
+  /* ---------- Апрув — фиолетовый: рамка карточки и пометка ---------- */
+  html.tl-desktop #app:has(.inv-sec) > .card[style*="--yellow"]{
+    border-color:var(--purple,#CE82FF) !important;      /* перебиваем inline-стиль мобильной разметки */
+  }
+  html.tl-desktop #app:has(.inv-sec) > .note-green{
+    border-color:var(--purple,#CE82FF);
+    color:var(--purple,#CE82FF);
+    background:rgba(206,130,255,.08);
+  }
+
+  /* ---------- Кнопка плотности (низ левого края) ---------- */
+  html.tl-desktop #dsk-density{
+    position:fixed; left:16px; bottom:16px; z-index:39;
+    width:40px; height:40px; border-radius:12px; cursor:pointer;
+    display:grid; place-items:center;
+    background:var(--panel,#17232A);
+    border:2px solid var(--line,#31434C); color:var(--dim,#8AA0AB);
+  }
+  html.tl-desktop #dsk-density svg{ width:20px; height:20px; }
+  html.tl-desktop #dsk-density.on{ color:var(--blue,#1CB0F6); border-color:var(--blue,#1CB0F6); }
+
+  /* ---------- Компактная плотность ---------- */
+  html.tl-desktop.tl-compact .card{ padding:10px 12px; }
+  html.tl-desktop.tl-compact .item{ padding:8px 10px; gap:8px; }
+  html.tl-desktop.tl-compact .rowline{ padding:7px 6px; }
+  html.tl-desktop.tl-compact .inv-head{ padding:9px 10px; }
+  html.tl-desktop.tl-compact .inv-body{ padding:8px 10px; }
+  html.tl-desktop.tl-compact .btn{ padding:11px 14px; }
+  html.tl-desktop.tl-compact #day-list,
+  html.tl-desktop.tl-compact #search-area{ gap:8px; }
+  html.tl-desktop.tl-compact .item .info .s{ font-size:.72rem; }
+}
+
+/* ---------- Чипы периодов при выбранном сотруднике ---------- */
+@media (min-width: 1180px){
+  html.tl-desktop #dsk-periods{
+    display:flex; align-items:center; gap:6px; margin:0 0 10px;
+  }
+  html.tl-desktop .dsk-chip{
+    font:inherit; font-weight:800; font-size:.74rem; cursor:pointer;
+    color:var(--dim,#8AA0AB); background:var(--panel,#17232A);
+    border:2px solid var(--line,#31434C); border-radius:999px; padding:6px 12px;
+  }
+  html.tl-desktop .dsk-chip.on{
+    background:var(--blue,#1CB0F6); border-color:var(--blue,#1CB0F6); color:#04314A;
+  }
+  html.tl-desktop #dsk-periods .dsk-hid{ margin-left:6px; }
+  /* в двухколоночной сетке результатов чипы занимают всю ширину */
+  html.tl-desktop #search-area{ }
+}

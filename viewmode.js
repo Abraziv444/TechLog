@@ -44,18 +44,31 @@
 
   /* Собственные стили переключателя. Изолированный префикс vm-.
      Цвета берём из переменных мобильной темы (десктоп зависит от мобильной,
-     не наоборот) с запасными значениями на случай их переименования. */
+     не наоборот) с запасными значениями на случай их переименования.
+
+     v1.07.17: пилюля сидит В ЛИНИИ ШАПКИ — по центру, между логотипом и
+     аватаркой. Приём: сам .vm-bar имеет высоту 0 (не занимает свой ряд),
+     а пилюля опускается на высоту строки шапки через top. В мобильной
+     версии подписи скрыты — только значки 📱/🖥️; активная кнопка синяя.
+     На очень узких телефонах (<480px) пилюля возвращается в свой ряд,
+     чтобы не наехать на название программы. Точную позицию в ПК-режиме
+     задаёт desktop.css (учитывает боковые панели). */
   var CSS =
-    '.vm-bar{display:flex;justify-content:center;padding:8px 12px 0;}' +
-    '.vm-seg{display:inline-flex;gap:4px;background:var(--panel,#17232A);' +
-      'border:2px solid var(--line,#31434C);border-radius:999px;padding:3px;}' +
+    '.vm-bar{position:relative;z-index:46;height:0;display:flex;justify-content:center;pointer-events:none;}' +
+    '.vm-seg{pointer-events:auto;position:relative;top:16px;display:inline-flex;gap:4px;' +
+      'background:var(--panel,#17232A);border:2px solid var(--line,#31434C);' +
+      'border-radius:999px;padding:3px;}' +
     '.vm-btn{font:inherit;font-weight:800;font-size:.72rem;letter-spacing:.4px;' +
       'text-transform:uppercase;color:var(--dim,#8AA0AB);background:none;border:none;' +
-      'border-radius:999px;padding:5px 14px;cursor:pointer;display:inline-flex;' +
+      'border-radius:999px;padding:5px 11px;cursor:pointer;display:inline-flex;' +
       'align-items:center;gap:6px;line-height:1;-webkit-tap-highlight-color:transparent;}' +
-    '.vm-btn.on{background:var(--green,#58CC02);color:var(--green-ink,#0E2A00);}' +
-    '.vm-btn:not(.on):hover{color:var(--text,#F1F7FB);}' +
-    '.vm-btn:focus-visible{outline:3px solid rgba(28,176,246,.45);outline-offset:1px;}';
+    '.vm-btn span{display:none;}' +                                    /* мобильная: только значки */
+    '.vm-btn.on{background:var(--blue,#1CB0F6);color:#04314A;}' +      /* активная — синяя */
+    '.vm-btn:not(.on):hover{color:var(--blue,#1CB0F6);}' +
+    '.vm-btn:focus-visible{outline:3px solid rgba(28,176,246,.45);outline-offset:1px;}' +
+    '@media (min-width:980px){html.tl-desktop .vm-btn span{display:inline;}' +
+      'html.tl-desktop .vm-btn{padding:5px 14px;}}' +                  /* ПК-режим: с подписями */
+    '@media (max-width:479px){.vm-bar{height:auto;padding:6px 0 0;}.vm-seg{top:0;}}';
 
   function injectStyles() {
     if (document.getElementById('vm-style')) return;
