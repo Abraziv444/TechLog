@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.18';
+const APP_VERSION = '1.07.19';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -3496,14 +3496,19 @@ function viewSettings(){
 /* =====================================================================
    PDF-ИНВОЙС (только английский, по образцу бумажной формы)
    ===================================================================== */
-function makePdf(){
-  if (!window.jspdf){ toast('jsPDF not loaded', 'err'); return; }
-  { const jj = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
-    const iss = jobIssues(jj);
-    if (iss.length){ toast('⚠ ' + t('pdf_blocked') + ': ' + iss.map(k=>t('issue_'+k)).join(', '), 'err'); return; } }
-  const { jsPDF } = window.jspdf;
+/* v1.07.19: сборка PDF-документа вынесена из makePdf — один и тот же бланк
+   нужен и для скачивания (телефон/ПК), и для живого предпросмотра в ПК-режиме.
+   quiet=true (предпросмотр): без тостов и без блокировки по незаполненным
+   полям — предпросмотр обязан показывать текущее состояние формы как есть. */
+function buildInvoicePdfDoc(quiet){
+  if (!window.jspdf){ if (!quiet) toast('jsPDF not loaded', 'err'); return null; }
   const j = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
-  const cx = cxById(j.complex_id) || {name:'', address:''};
+  if (!j) return null;
+  if (!quiet){
+    const iss = jobIssues(j);
+    if (iss.length){ toast('⚠ ' + t('pdf_blocked') + ': ' + iss.map(k=>t('issue_'+k)).join(', '), 'err'); return null; }
+  }
+  const { jsPDF } = window.jspdf;
   // v1.07.06: одиночный инвойс — тот же ВЕРТИКАЛЬНЫЙ бланк, по центру портретного Letter
   const doc = new jsPDF({ unit: 'mm', format: 'letter' });          // 215.9 × 279.4
   const left = (215.9 - INV_W) / 2, top = (279.4 - INV_H) / 2;
@@ -3511,8 +3516,22 @@ function makePdf(){
   doc.rect(left, top, INV_W, INV_H);                                 // контур половинки-бланка (линия отреза)
   doc.setDrawColor(0); doc.setLineDashPattern([],0);
   drawInvoiceVert(doc, j, left, top);
+  return doc;
+}
+function makePdf(){
+  const doc = buildInvoicePdfDoc(false);
+  if (!doc) return;
+  const j = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
+  const cx = cxById(j.complex_id) || {name:'', address:''};
   const fname = 'Invoice_' + (cx.abbr||'UNIT') + '_' + (j.unit_number||'x') + '_' + j.date + '.pdf';
   doc.save(fname);
+}
+/* публичная ручка для ПК-режима: Blob с актуальным бланком или null */
+function pdfPreviewBlob(){
+  try{
+    const doc = buildInvoicePdfDoc(true);
+    return doc ? doc.output('blob') : null;
+  }catch(e){ dlog('⛔ pdfPreviewBlob:', e); return null; }
 }
 
 /* =====================================================================
@@ -3588,7 +3607,7 @@ const App = {
   setMine(v){ state.filterMine = v; render(); },
   sync(){ syncNow(false); checkForUpdate('кнопка синхронизации', true); },
   addTaskModal, ntCpChange, ntPickWt, createTask, closeModal,
-  openJob, saveJob, approveJob, deleteJob, makePdf, pickupGroup,
+  openJob, saveJob, approveJob, deleteJob, makePdf, pdfPreviewBlob, pickupGroup,
   setReportDate(v){ state.reportDate = v; render(); }, copyReport,
   repTab(v){ state.repTab = v; render(); },
   repFrom(v){ state.repFrom = v; render(); }, repTo(v){ state.repTo = v; render(); },

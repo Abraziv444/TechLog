@@ -441,3 +441,172 @@
   if (document.body) start();
   else document.addEventListener('DOMContentLoaded', function () { try { start(); } catch (e) {} });
 })();
+
+/* =====================================================================
+   v1.07.19 · ПК-режим, модуль 3: живой предпросмотр PDF-инвойса.
+   Сплит «форма | бланк» на очень широких экранах (окно от 1800px):
+   панель справа, кнопка-глаз в верхней панели формы. Документ отдаёт
+   ядро через App.pdfPreviewBlob() — один и тот же бланк, что и при
+   скачивании. Два iframe по очереди: новый грузится невидимым и
+   подменяет старый по load — без мигания.
+   ===================================================================== */
+(function () {
+  'use strict';
+
+  function q(s, r) { return (r || document).querySelector(s); }
+  function isDesk() { try { return document.documentElement.classList.contains('tl-desktop'); } catch (e) { return false; } }
+  function wide(px) { try { return !window.matchMedia || window.matchMedia('(min-width:' + px + 'px)').matches; } catch (e) { return true; } }
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function ru() { return lsGet('techlog_lang') !== 'en'; }
+
+  var pane = null, frames = null, act = 0, eye = null, busyEl = null;
+  var genT = null, genBusy = false, genQueued = false, lastUrl = null, retries = 0;
+
+  function prefOn()  { return lsGet('techlog_pdf_preview') !== 'off'; }   // по умолчанию включён
+  function jobOpen() { return !!q('#app .inv-sec'); }
+  function avail()   {
+    /* с открытой колонкой сотрудников форме нужно больше места:
+       порог 1920px, иначе трёхзонный подвал (мин. 1040px) не влезает */
+    var min = document.documentElement.classList.contains('tl-staff') ? 1920 : 1800;
+    return isDesk() && wide(min) && jobOpen() &&
+      window.App && typeof window.App.pdfPreviewBlob === 'function';
+  }
+
+  /* ---- кнопка-глаз в панели формы (панель строит модуль 2) ---- */
+  var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  function ensureEye() {
+    var bar = q('#dsk-jobbar');
+    if (!bar || !avail()) { if (eye) { try { eye.remove(); } catch (e) {} eye = null; } return; }
+    if (eye && bar.contains(eye)) { paintEye(); return; }
+    eye = document.createElement('button');
+    eye.type = 'button';
+    eye.className = 'djb-btn djb-eye';
+    eye.title = ru() ? 'Живой предпросмотр PDF' : 'Live PDF preview';
+    eye.innerHTML = EYE_SVG;
+    eye.addEventListener('click', function (e) {
+      e.stopPropagation();
+      lsSet('techlog_pdf_preview', prefOn() ? 'off' : 'on');
+      apply();
+    });
+    bar.appendChild(eye);
+    paintEye();
+  }
+  function paintEye() {
+    if (!eye) return;
+    var v = prefOn();
+    if (eye.classList.contains('on') !== v) eye.classList.toggle('on', v);
+  }
+
+  /* ---- панель с двумя iframe ---- */
+  function ensurePane() {
+    if (pane && document.contains(pane)) return;
+    pane = document.createElement('div');
+    pane.id = 'dsk-pdfpane';
+    pane.innerHTML =
+      '<iframe class="dpp-f" title="PDF"></iframe>' +
+      '<iframe class="dpp-f hid" title="PDF"></iframe>' +
+      '<span class="dpp-busy hid">…</span>';
+    document.body.appendChild(pane);
+    frames = pane.querySelectorAll('.dpp-f');
+    busyEl = pane.querySelector('.dpp-busy');
+    act = 0;
+  }
+  function removePane() {
+    try { if (pane) pane.remove(); } catch (e) {}
+    if (lastUrl) { try { URL.revokeObjectURL(lastUrl); } catch (e) {} }
+    pane = null; frames = null; busyEl = null; lastUrl = null;
+    genBusy = false; genQueued = false;
+  }
+  function setBusy(v, warn) {
+    if (!busyEl) return;
+    var txt = warn ? '⚠' : '…';
+    if (busyEl.textContent !== txt) busyEl.textContent = txt;
+    if (busyEl.classList.contains('hid') === !!v) busyEl.classList.toggle('hid', !v);
+  }
+
+  /* ---- вкл/выкл сплита: класс на <html> двигает контент (desktop.css) ---- */
+  function apply() {
+    var show = avail() && prefOn();
+    var html = document.documentElement;
+    if (html.classList.contains('tl-pdfprev') !== show) html.classList.toggle('tl-pdfprev', show);
+    paintEye();
+    if (show) { ensurePane(); schedGen(80); }
+    else removePane();
+  }
+
+  /* ---- генерация: пауза 600мс после последнего ввода ---- */
+  function schedGen(ms) {
+    clearTimeout(genT);
+    genT = setTimeout(gen, ms == null ? 600 : ms);
+  }
+  function gen() {
+    if (!pane || !document.contains(pane)) return;
+    if (genBusy) { genQueued = true; return; }
+    genBusy = true;
+    setBusy(true);
+    var blob = null;
+    try { blob = window.App.pdfPreviewBlob(); } catch (e) { blob = null; }
+    if (!blob) {
+      genBusy = false;
+      /* jsPDF мог ещё не догрузиться с CDN — подождём и попробуем снова */
+      if (!window.jspdf && retries < 5) { retries++; setBusy(true); schedGen(1200); return; }
+      setBusy(true, true);
+      return;
+    }
+    retries = 0;
+    var url;
+    try { url = URL.createObjectURL(blob); } catch (e) { genBusy = false; setBusy(true, true); return; }
+    var next = frames[1 - act], cur = frames[act], prev = lastUrl;
+    var done = false;
+    var finish = function () {
+      if (done) return; done = true;
+      if (next.classList.contains('hid')) next.classList.remove('hid');
+      if (!cur.classList.contains('hid')) cur.classList.add('hid');
+      act = 1 - act;
+      lastUrl = url;
+      if (prev) { try { URL.revokeObjectURL(prev); } catch (e) {} }
+      setBusy(false);
+      genBusy = false;
+      if (genQueued) { genQueued = false; schedGen(80); }
+    };
+    next.addEventListener('load', finish, { once: true });
+    setTimeout(finish, 2500);                       // страховка, если load не пришёл
+    next.src = url + '#view=FitH';
+  }
+
+  /* ---- жизненный цикл ---- */
+  var deb = null;
+  function refresh() { try { ensureEye(); apply(); } catch (e) {} }
+  function sched() {
+    if (deb) return;
+    deb = setTimeout(function () { deb = null; refresh(); }, 150);
+  }
+  function start() {
+    try {
+      var app = document.getElementById('app');
+      if (app && window.MutationObserver) {
+        new MutationObserver(function () {
+          sched();
+          /* форма перерисовалась или ввод изменил данные — перегенерим бланк */
+          if (document.documentElement.classList.contains('tl-pdfprev') && jobOpen()) schedGen();
+        }).observe(app, { childList: true, subtree: true });
+      }
+      if (window.MutationObserver) new MutationObserver(sched)
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      document.addEventListener('input', function () {
+        sched();
+        if (document.documentElement.classList.contains('tl-pdfprev') && jobOpen()) schedGen();
+      }, true);
+      document.addEventListener('change', function () {
+        sched();
+        if (document.documentElement.classList.contains('tl-pdfprev') && jobOpen()) schedGen(250);
+      }, true);
+      window.addEventListener('resize', sched);
+      refresh();
+      window.TLPdfPreview = { refresh: refresh, gen: gen };   // для отладки
+    } catch (e) {}
+  }
+  if (document.body) start();
+  else document.addEventListener('DOMContentLoaded', function () { try { start(); } catch (e) {} });
+})();
