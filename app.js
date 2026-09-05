@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.36';
+const APP_VERSION = '1.07.37';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -6936,7 +6936,7 @@ async function runDiag(){
 }
 /* фейд вместо обрубания: класс вешается только реально обрезанным текстам */
 function updateFadeClips(){
-  document.querySelectorAll('.brand .name,.brand .sub,.login-pill,.tabbar .tab span')
+  document.querySelectorAll('.brand .name,.brand .sub,.tabbar .tab span')  // login-pill исключён: у аватара — прежнее троеточие
     .forEach(e => e.classList.toggle('fade-clip', e.scrollWidth > e.clientWidth + 1));
 }
 (function initFadeClips(){
