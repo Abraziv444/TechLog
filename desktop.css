@@ -311,7 +311,7 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop #app:has(.inv-sec) .total-bar{ width:380px; margin-left:auto; }
   html.tl-desktop #app:has(.inv-sec) .total-bar + .btn{ width:380px; margin-left:auto; }
   html.tl-desktop #app:has(.inv-sec) .btn-row3{ width:380px; margin-left:auto; }
-  html.tl-desktop #app:has(.inv-sec) .card[style*="--yellow"]{ width:520px; margin-left:auto; }
+  html.tl-desktop #app:has(.inv-sec) .card[style*="--purple"]{ width:520px; margin-left:auto; }
 }
 
 /* ---------- Справочники: вкладки слева, содержимое справа (окно от 1180px) ---------- */
@@ -384,6 +384,17 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop .eq-dot[title]::after{ max-width:120px; }
 }
 
+/* ---------- v1.07.20: угловые бейджи не наезжают на контент ----------
+   Порядковый номер (угол сверху-слева, absolute) и треугольник приоритета
+   (сверху-справа) перекрывали степперы ▲▼ и первую строку правой колонки,
+   когда flex-start поднял их к кромке. Сдвигаем только там, где бейдж
+   действительно есть. */
+@media (min-width: 1180px){
+  html.tl-desktop .item:has(> .row-num.corner) .rail{ margin-top:24px; }
+  html.tl-desktop .item:has(> .pri.corner) .right{ margin-top:18px; }
+  html.tl-desktop .item.dragging{ z-index:6; }
+}
+
 /* ---------- Подвал формы инвойса: три зоны (окно от 1420px) ----------
    Слева — «История работы» и «Назад»; по центру — карточка апрува;
    справа — Итого, Сохранить, PDF и Удалить. Собрано CSS-гридом прямо на
@@ -411,11 +422,11 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     grid-row:102; grid-column:1; width:100%; margin:0;
   }
   /* ЦЕНТР — карточка апрува (или зелёная пометка «апрувнуто» у не-админа) */
-  html.tl-desktop #app:has(.inv-sec) > .card[style*="--yellow"]{
+  html.tl-desktop #app:has(.inv-sec) > .card[style*="--purple"]{
     grid-row:101 / span 3; grid-column:3; align-self:start;
     width:auto; max-width:520px; min-width:380px; margin:0;
   }
-  html.tl-desktop #app:has(.inv-sec) > .note-green{
+  html.tl-desktop #app:has(.inv-sec) > .note-purple{
     grid-row:101; grid-column:3; align-self:start; margin:0;
   }
   /* ПРАВАЯ зона */
@@ -486,15 +497,8 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     html.tl-desktop .djb-done.on:hover{ border-color:var(--green,#58CC02); color:var(--green-ink,#0E2A00); }
   }
 
-  /* ---------- Апрув — фиолетовый: рамка карточки и пометка ---------- */
-  html.tl-desktop #app:has(.inv-sec) > .card[style*="--yellow"]{
-    border-color:var(--purple,#CE82FF) !important;      /* перебиваем inline-стиль мобильной разметки */
-  }
-  html.tl-desktop #app:has(.inv-sec) > .note-green{
-    border-color:var(--purple,#CE82FF);
-    color:var(--purple,#CE82FF);
-    background:rgba(206,130,255,.08);
-  }
+  /* v1.07.20: фиолетовый апрув переехал в мобильное ядро (styles.css +
+     разметка) — принудительная перекраска здесь больше не нужна. */
 
   /* ---------- Кнопка плотности (низ левого края) ---------- */
   html.tl-desktop #dsk-density{

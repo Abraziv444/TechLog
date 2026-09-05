@@ -170,7 +170,7 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .badge-status{font-size:.68rem;font-weight:900;border-radius:8px;padding:2px 8px;text-transform:uppercase}
 .st-draft{background:#33454C;color:#cfe0e8}
 .st-done{background:var(--blue);color:#04314A}
-.st-approved{background:var(--green);color:var(--green-ink)}
+.st-approved{background:var(--purple);color:#2A0A45}   /* v1.07.20: апрув фиолетовый везде */
 
 /* ---------- Статчипы (как в LingoFlip) ---------- */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
@@ -279,6 +279,10 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .note-green{
   border:2px solid var(--green);border-radius:12px;background:rgba(88,204,2,.08);
   color:var(--green);padding:8px 10px;font-size:.8rem;font-weight:700
+}
+.note-purple{
+  border:2px solid var(--purple);border-radius:12px;background:rgba(206,130,255,.08);
+  color:var(--purple);padding:8px 10px;font-size:.8rem;font-weight:700
 }
 .note-red{
   border:2px solid var(--red);border-radius:12px;background:rgba(255,75,75,.08);
@@ -834,3 +838,18 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .jr-av{width:34px;height:34px;font-size:.72rem;flex:0 0 auto;border-width:2px}
 .jr-row .grow b{margin-right:6px}
 .jr-row .chip{vertical-align:1px}
+
+/* ============ v1.07.21: переключатель клавиатуры у номера юнита ============ */
+.unit-wrap{position:relative;display:block}
+.unit-wrap>input{width:100%;padding-right:54px}
+.unit-kb{
+  position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  font:inherit;font-weight:900;font-size:.62rem;letter-spacing:.5px;line-height:1;
+  padding:5px 8px;border-radius:8px;border:2px solid var(--line);
+  background:var(--panel-2);color:var(--dim);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.unit-kb:active{color:var(--blue);border-color:var(--blue)}
+.unit-wrap.sm{display:inline-flex;align-items:center;gap:6px}
+.unit-wrap.sm>input{width:76px;padding-right:8px}
+.unit-wrap.sm .unit-kb{position:static;transform:none;padding:5px 7px}

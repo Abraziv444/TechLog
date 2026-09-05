@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.19';
+const APP_VERSION = '1.07.21';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -136,7 +136,8 @@ const I18N = {
     rep_download: 'Скачать единый PDF', rep_none: 'Работ за период нет',
     rep_half_hint: '2 инвойса на страницу Letter (по половине)',
     d_staff: 'Сотрудники', role: 'Роль', visibility: 'Видимость для менеджера',
-    vis_hint: 'Отмеченные сотрудники видны этому менеджеру', vis_btn: 'Видимость',
+    vis_hint: 'Отмеченные сотрудники видны этому менеджеру', vis_btn: 'Доступные сотрудники',
+    unit_kb_abc: 'АБВ', unit_kb_123: '123', unit_kb_hint: 'Клавиатура: цифры / буквы',
     confirm_email: 'Подтвердите email по ссылке из письма, затем войдите',
     auth_loading: 'Проверяю авторизацию…',
     no_coords_yet: 'Нет координат',
@@ -331,7 +332,8 @@ const I18N = {
     rep_download: 'Download single PDF', rep_none: 'No jobs in this period',
     rep_half_hint: '2 invoices per Letter page (half each)',
     d_staff: 'Staff', role: 'Role', visibility: 'Visibility for manager',
-    vis_hint: 'Checked employees are visible to this manager', vis_btn: 'Visibility',
+    vis_hint: 'Checked employees are visible to this manager', vis_btn: 'Available staff',
+    unit_kb_abc: 'ABC', unit_kb_123: '123', unit_kb_hint: 'Keyboard: digits / letters',
     confirm_email: 'Confirm your email via the link, then sign in',
     auth_loading: 'Checking authorization…',
     no_coords_yet: 'No coordinates',
@@ -2163,7 +2165,7 @@ function addTaskModal(){
     <div class="form-row"><span class="lbl">${t('complex')}</span>
       <select id="nt-cx"><option value="">${t('select')}</option></select></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
-      <input id="nt-unit" inputmode="numeric" placeholder="916"></div>
+      <span class="unit-wrap"><input id="nt-unit" inputmode="numeric" autocomplete="off" placeholder="916"><button type="button" class="unit-kb" title="${t('unit_kb_hint')}" aria-label="${t('unit_kb_hint')}" onclick="App.unitKb('nt-unit', this)">${t('unit_kb_abc')}</button></span></div>
     <div class="form-row"><span class="lbl">${t('work_type')}</span>
       <div class="opt-grid" id="nt-wt">
         ${wts.map(w=>`<button class="opt" data-id="${w.id}" style="border-color:${w.color};color:${w.color}"
@@ -2556,7 +2558,7 @@ function viewJob(){
       <div class="abbr" style="border-color:${wt.color}">${esc(cx.abbr||'—')}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:900">${j.complex_id?'':warnIcon()}${esc(cx.name)} · Unit
-          <input id="jb-unit" value="${esc(j.unit_number||'')}" style="width:76px;display:inline-block;padding:4px 8px">
+          <span class="unit-wrap sm"><input id="jb-unit" inputmode="numeric" autocomplete="off" value="${esc(j.unit_number||'')}" style="width:76px;display:inline-block;padding:4px 8px"><button type="button" class="unit-kb" title="${t('unit_kb_hint')}" aria-label="${t('unit_kb_hint')}" onclick="event.stopPropagation();App.unitKb('jb-unit', this)">${t('unit_kb_abc')}</button></span>
           <span id="jb-warn-unit">${String(j.unit_number||'').trim()?'':warnIcon()}</span></div>
         <div class="tiny">${esc(cp.name)} · ${esc(cx.address||'')}
           ${(cx.lat!=null||cx.address)?`<button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button>`:''}</div>
@@ -2691,7 +2693,7 @@ function viewJob(){
   </label>
 
   ${isAdmin() ? `
-  <div class="card" style="border-color:var(--yellow)">
+  <div class="card" style="border-color:var(--purple)">
     <div style="font-weight:900;margin-bottom:6px">${ic('star')} ${t('approve')}</div>
     <div class="qty-line">
       <span class="name">${t('approved_total')}</span>
@@ -2700,7 +2702,7 @@ function viewJob(){
     </div>
     ${isApproved ? `<div class="tiny">✓ ${t('approved_by')}: ${esc(profName(j.approved_by))} · ${j.approved_at ? j.approved_at.slice(0,16).replace('T',' ') : ''}</div>` : ''}
     <div class="tiny">${t('approve_reset_note')}</div>
-  </div>` : (isApproved ? `<div class="note-green">✓ ${t('status_approved')}: ${esc(profName(j.approved_by))} — ${money(j.approved_total ?? total)}</div>` : '')}
+  </div>` : (isApproved ? `<div class="note-purple">✓ ${t('status_approved')}: ${esc(profName(j.approved_by))} — ${money(j.approved_total ?? total)}</div>` : '')}
 
   <button class="btn btn-ghost" style="margin-bottom:8px" onclick="App.jobHistory('${j.id}')">${ic('clock')} ${t('job_history')}</button>
 
@@ -3537,6 +3539,20 @@ function pdfPreviewBlob(){
 /* =====================================================================
    ОБНОВЛЕНИЯ / SERVICE WORKER
    ===================================================================== */
+/* v1.07.21: номер юнита — цифровая клавиатура по умолчанию, кнопка «АБВ/123»
+   переключает на буквенную. Мобильные клавиатуры перечитывают inputmode
+   только при получении фокуса, поэтому blur → смена атрибута → focus. */
+function unitKb(id, btn){
+  const inp = $('#' + id); if (!inp) return;
+  const toText = (inp.getAttribute('inputmode') || 'numeric') === 'numeric';
+  inp.blur();
+  inp.setAttribute('inputmode', toText ? 'text' : 'numeric');
+  if (btn) btn.textContent = toText ? t('unit_kb_123') : t('unit_kb_abc');
+  setTimeout(() => {
+    try{ inp.focus(); const L = inp.value.length; inp.setSelectionRange?.(L, L); }catch(e){}
+  }, 40);
+}
+
 function editingBusy(){
   return state.screen === 'job' || !!document.getElementById('overlay') || !!dictTa;
 }
@@ -3643,7 +3659,7 @@ const App = {
   translateEn: translateToEn,
   openDayMap(){ state.mapDay = true; state.mapDate = state.selDate; App.go('map'); },
   mapMode(v){ state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
-  showLog: showLogModal, copyLog, clearLog,
+  showLog: showLogModal, copyLog, clearLog, unitKb,
   jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
   jrAct(v){ state.jr.act = v; loadJournal(true); },
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
@@ -3971,6 +3987,7 @@ function initMapView(){
   if (mapObj){ try{ mapObj.remove(); }catch(e){} mapObj = null; }
   const el = document.getElementById('map'); if (!el) return;
   mapObj = L.map('map', { zoomControl: true, attributionControl: true });
+  mapObj.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>'); // v1.07.20: без флага в стандартном префиксе
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, attribution: '© OpenStreetMap'
   }).addTo(mapObj);
@@ -4403,10 +4420,10 @@ function dirStaff(){
         <div class="tiny">@${esc(u.login)} · ${t('registered')} ${reg}</div>
       </div>
       <div class="staff-ctl">
+        ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
         <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${me?'disabled':''}>
           ${['tech','manager','admin'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
         </select>
-        ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
         ${me ? '' : `<button class="icon-btn key-btn" title="${t('set_pass')}" aria-label="${t('set_pass')}" onclick="App.staffPassModal('${u.id}')">${ic('key')}</button>
         <button class="icon-btn ban-btn ${u.blocked?'off':''}" title="${u.blocked?t('unblock'):t('block')}" aria-label="${u.blocked?t('unblock'):t('block')}" onclick="App.staffBlock('${u.id}')">${ic('ban')}</button>`}
       </div>
@@ -4557,7 +4574,7 @@ function staffVis(managerId){
   const hid = hiddenSetFor(managerId);
   const others = state.data.profiles.filter(p => p.id !== managerId);
   openModal(`
-    ${modalHead(t('visibility') + ' — ' + m.display_name, 'eye')}
+    ${modalHead(t('vis_btn') + ' — ' + m.display_name, 'eye')}
     <div class="tiny" style="margin-bottom:8px">${t('vis_hint')}</div>
     ${others.map(p=>`
       <label class="opt ${hid.has(p.id)?'':'on'}" style="width:100%;justify-content:flex-start;margin-bottom:6px">
@@ -5163,11 +5180,14 @@ function dndCalib(){
   if (!dnd) return;
   const tr = dnd.el.style.transform;
   dnd.el.style.transform = 'none';
-  dnd.staticTop = dnd.el.getBoundingClientRect().top;
+  const r = dnd.el.getBoundingClientRect();
+  dnd.staticTop = r.top;
+  dnd.staticLeft = r.left;                                  // v1.07.20: двухколоночная сетка ПК
   dnd.el.style.transform = tr;
 }
-function dndPlace(clientY){
-  dnd.el.style.transform = `translateY(${(clientY - dnd.grabDY) - dnd.staticTop}px)`;
+function dndPlace(clientX, clientY){
+  dnd.el.style.transform =
+    `translate(${(clientX - dnd.grabDX) - dnd.staticLeft}px, ${(clientY - dnd.grabDY) - dnd.staticTop}px)`;
 }
 function dndActivate(){
   if (!dnd || dnd.active) return;
@@ -5177,7 +5197,8 @@ function dndActivate(){
   document.body.classList.add('dnd-on');
   dndCalib();
   dnd.grabDY = dnd.y - dnd.staticTop;
-  dndPlace(dnd.y);
+  dnd.grabDX = dnd.x - dnd.staticLeft;
+  dndPlace(dnd.x, dnd.y);
   navigator.vibrate?.(30);
 }
 function dndDown(e){
@@ -5200,15 +5221,23 @@ function dndMove(e){
   // автопрокрутка страницы у верхнего/нижнего края
   if (e.clientY < 90){ window.scrollBy(0, -14); dndCalib(); }
   else if (e.clientY > window.innerHeight - 110){ window.scrollBy(0, 14); dndCalib(); }
-  dndPlace(e.clientY);
+  dndPlace(e.clientX, e.clientY);
+  /* v1.07.20: цель ищем и по X (двухколоночная сетка ПК), и только в СВОЁМ
+     списке — карточка работы не должна «впрыгивать» в список пикапов */
   const over = dndItems().find(o => {
-    if (o === dnd.el) return false;
+    if (o === dnd.el || o.parentNode !== dnd.el.parentNode) return false;
     const r = o.getBoundingClientRect();
-    return e.clientY >= r.top && e.clientY <= r.bottom;
+    return e.clientY >= r.top && e.clientY <= r.bottom
+        && e.clientX >= r.left && e.clientX <= r.right;
   });
   if (over){
     const r = over.getBoundingClientRect();
-    const before = e.clientY < r.top + r.height / 2;
+    const midX = r.left + r.width / 2, midY = r.top + r.height / 2;
+    /* в колонке решаем по вертикали; в ряду сетки (палец у вертикальной
+       середины соседа) — по горизонтали, порядок чтения слева-направо */
+    const before = (Math.abs(e.clientY - midY) >= r.height * 0.22)
+      ? e.clientY < midY
+      : e.clientX < midX;
     const p = over.parentNode;
     if (before && over.previousElementSibling !== dnd.el){
       p.insertBefore(dnd.el, over); dndCalib(); dndPlace(e.clientY);
@@ -5248,6 +5277,15 @@ function initDragSort(){
   document.addEventListener('pointermove', dndMove, { passive: false });
   document.addEventListener('pointerup', () => dndFinish(true));
   document.addEventListener('pointercancel', () => dndFinish(false));
+  /* v1.07.20: на тач-устройствах прокрутку останавливает только touchmove.
+     preventDefault на pointermove скролл НЕ отменяет — браузер начинал
+     прокрутку и стрелял pointercancel, убивая перетаскивание на первом же
+     движении пальца. Гасим прокрутку, только пока карточка реально «в руке». */
+  document.addEventListener('touchmove', e => {
+    if (dnd && dnd.active && e.cancelable) e.preventDefault();
+  }, { passive: false });
+  /* долгое нажатие не должно вызывать контекстное меню/выделение */
+  document.addEventListener('contextmenu', e => { if (dnd) e.preventDefault(); });
   // пока карточка «в руке» — не даём странице скроллиться под пальцем
   document.addEventListener('touchmove', e => { if (dnd && dnd.active && e.cancelable) e.preventDefault(); }, { passive: false });
   document.addEventListener('contextmenu', e => { if (dnd) e.preventDefault(); });

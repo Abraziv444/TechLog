@@ -49,12 +49,15 @@
      v1.07.17: пилюля сидит В ЛИНИИ ШАПКИ — по центру, между логотипом и
      аватаркой. Приём: сам .vm-bar имеет высоту 0 (не занимает свой ряд),
      а пилюля опускается на высоту строки шапки через top. В мобильной
-     версии подписи скрыты — только значки 📱/🖥️; активная кнопка синяя.
+     версии подписи скрыты — только SVG-значки; активная кнопка синяя.
      На очень узких телефонах (<480px) пилюля возвращается в свой ряд,
      чтобы не наехать на название программы. Точную позицию в ПК-режиме
      задаёт desktop.css (учитывает боковые панели). */
   var CSS =
-    '.vm-bar{position:relative;z-index:46;height:0;display:flex;justify-content:center;pointer-events:none;}' +
+    /* align-items:flex-start обязателен: контейнер имеет height:0, и дефолтный
+       stretch схлопывал пилюлю по вертикали — иконки «вываливались» за рамку */
+    '.vm-bar{position:relative;z-index:46;height:0;display:flex;justify-content:center;' +
+      'align-items:flex-start;pointer-events:none;}' +
     '.vm-seg{pointer-events:auto;position:relative;top:16px;display:inline-flex;gap:4px;' +
       'background:var(--panel,#17232A);border:2px solid var(--line,#31434C);' +
       'border-radius:999px;padding:3px;}' +
@@ -63,12 +66,15 @@
       'border-radius:999px;padding:5px 11px;cursor:pointer;display:inline-flex;' +
       'align-items:center;gap:6px;line-height:1;-webkit-tap-highlight-color:transparent;}' +
     '.vm-btn span{display:none;}' +                                    /* мобильная: только значки */
+    '.vm-btn svg{width:15px;height:15px;flex:0 0 auto;display:block;}' +
     '.vm-btn.on{background:var(--blue,#1CB0F6);color:#04314A;}' +      /* активная — синяя */
     '.vm-btn:not(.on):hover{color:var(--blue,#1CB0F6);}' +
     '.vm-btn:focus-visible{outline:3px solid rgba(28,176,246,.45);outline-offset:1px;}' +
     '@media (min-width:980px){html.tl-desktop .vm-btn span{display:inline;}' +
       'html.tl-desktop .vm-btn{padding:5px 14px;}}' +                  /* ПК-режим: с подписями */
-    '@media (max-width:479px){.vm-bar{height:auto;padding:6px 0 0;}.vm-seg{top:0;}}';
+    /* узким телефонам в строке шапки места нет (название слева, иконки справа) —
+       до 560px пилюля встаёт отдельной строкой вплотную к шапке */
+    '@media (max-width:559px){.vm-bar{height:auto;padding:6px 0 0;}.vm-seg{top:0;}}';
 
   function injectStyles() {
     if (document.getElementById('vm-style')) return;
@@ -87,8 +93,12 @@
     btnDesktop.className = 'vm-btn' + (mode === 'desktop' ? ' on' : '');
     btnMobile.setAttribute('aria-pressed', mode === 'mobile' ? 'true' : 'false');
     btnDesktop.setAttribute('aria-pressed', mode === 'desktop' ? 'true' : 'false');
-    btnMobile.innerHTML = '📱 <span>' + L.mobile + '</span>';
-    btnDesktop.innerHTML = '🖥️ <span>' + L.desktop + '</span>';
+    /* v1.07.20: SVG вместо эмодзи — одинаковы на всех платформах и
+       гарантированно внутри границ пилюли */
+    var IC_PHONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>';
+    var IC_DESK  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M9 20.5h6M12 16.5v4"/></svg>';
+    btnMobile.innerHTML = IC_PHONE + '<span>' + L.mobile + '</span>';
+    btnDesktop.innerHTML = IC_DESK + '<span>' + L.desktop + '</span>';
     var bar = document.getElementById('vm-bar');
     if (bar) bar.setAttribute('aria-label', L.group);
   }
