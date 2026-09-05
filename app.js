@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.12';
+const APP_VERSION = '1.07.16';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* ---------- Журнал диагностики: всё в консоль + кольцевой буфер ---------- */
@@ -155,6 +155,12 @@ const I18N = {
     hist_due_lbl: 'срок вывоза', hist_picked_at: 'забрано', hist_superseded: 'закрыт продлением',
     hist_pending: 'ожидает вывоза', hist_none: 'Пикапов по этой работе нет',
     pick_now: 'Забрать сейчас', pick_all_btn: 'Забрать всё',
+    search_ph: 'Поиск: юнит, комплекс, адрес…',
+    search_jobs: 'Инвойсы', search_pk: 'Пикапы',
+    search_empty: 'Ничего не найдено',
+    search_more: 'Показаны первые',
+    upd_checking: 'Проверяю версию…', upd_latest: 'У вас актуальная версия',
+    upd_found: 'Найдена новая версия', upd_fail: 'Не удалось проверить версию — проверьте интернет',
     login: 'Логин', login_hint: 'Латиница/цифры, 3–32 символа. Вход по логину и паролю.',
     invite_code: 'Код приглашения', invite_bad: 'Неверный код приглашения',
     login_taken_or_err: 'Логин занят или ошибка регистрации',
@@ -334,6 +340,12 @@ const I18N = {
     hist_due_lbl: 'pickup due', hist_picked_at: 'picked up', hist_superseded: 'closed by extension',
     hist_pending: 'awaiting pickup', hist_none: 'No pickups for this job',
     pick_now: 'Pick up now', pick_all_btn: 'Pick up all',
+    search_ph: 'Search: unit, complex, address…',
+    search_jobs: 'Invoices', search_pk: 'Pickups',
+    search_empty: 'Nothing found',
+    search_more: 'Showing first',
+    upd_checking: 'Checking version…', upd_latest: 'You are on the latest version',
+    upd_found: 'New version found', upd_fail: 'Version check failed — check your connection',
     login: 'Login', login_hint: 'Latin/digits, 3–32 chars. Sign in with login & password.',
     invite_code: 'Invite code', invite_bad: 'Invalid invite code',
     login_taken_or_err: 'Login is taken or sign-up failed',
@@ -439,6 +451,8 @@ const state = {
   syncing: false,
   lastSync: localStorage.getItem('techlog_lastsync') || '',
   pendingUpdate: null,        // версия, ждущая закрытия формы
+  searchQ: '',                // v1.07.13: строка поиска на главной
+  searchKind: 'jobs',         // v1.07.13: поиск по инвойсам ('jobs') или пикапам ('pk')
   data: null,                 // все таблицы
 };
 
@@ -1233,7 +1247,8 @@ const IC = {
   refresh: '<path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/>',
   chart: '<path d="M4 19.6h16"/><path d="M7 19.6v-6.2"/><path d="M12 19.6V9"/><path d="M17 19.6V4.8"/>',
   warn: '<path d="M12 3.8L21.5 20.2H2.5z"/><path d="M12 10v4.6"/><path d="M12 17.6v.2"/>',
-  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3.2 2"/>'
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3.2 2"/>',
+  search: '<circle cx="10.6" cy="10.6" r="6.1"/><path d="M15.3 15.3 20.2 20.2"/>'
 };
 function ic(n, style){
   const p = IC[n]; if (!p) return '';
@@ -1602,12 +1617,13 @@ function viewHeader(){
   const org = (state.data && state.data.org_settings) || {};
   return `
   <div class="topbar">
-    <div class="logo"><span>TL</span></div>
-    <div class="brand">
+    <div class="logo clicky" role="button" tabindex="0" title="${t('tab_home')}" onclick="App.logoHome()"><span>TL</span></div>
+    <div class="brand clicky" role="button" tabindex="0" title="${t('upd_checking')}" onclick="App.checkVerClick()">
       <div class="name">Tech<b>Log</b><span class="name-tag">${t('app_tag')}</span></div>
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
     <button class="icon-btn ${state.syncing?'spin':''}" onclick="App.sync()" title="${t('sync')}" aria-label="${t('sync')}">${ICONS.sync}</button>
+    <div class="role-tag role-${u.role}" title="${t('role_' + u.role)}">${({ tech: 'worker', manager: 'manager', admin: 'admin' })[u.role] || u.role}</div>
     <div class="avatar-wrap">
       <button class="avatar role-${u.role}" onclick="App.go('settings')" aria-label="${t('settings')}">${esc(initials(u.display_name))}</button>
       <div class="login-pill role-${u.role}">${esc(u.login)}</div>
@@ -1744,11 +1760,20 @@ function viewHome(){
       <div>${t('banner_pickups')}: <b>${due}</b>${over?` · ${t('banner_overdue')}: <b>${over}</b>`:''}</div>
     </div>` : '';
 
-  const filter = isManager() ? `
-    <div class="lang-seg" style="margin-bottom:10px">
-      <button class="${state.filterMine?'on':''}" onclick="App.setMine(true)">${t('mine')}</button>
-      <button class="${!state.filterMine?'on':''}" onclick="App.setMine(false)">${t('all')}</button>
-    </div>` : '';
+  const q = (state.searchQ || '').trim();
+  const filter = `
+    <div class="filter-row">
+      ${isManager() ? `
+      <div class="lang-seg">
+        <button class="${state.filterMine?'on':''}" onclick="App.setMine(true)">${t('mine')}</button>
+        <button class="${!state.filterMine?'on':''}" onclick="App.setMine(false)">${t('all')}</button>
+      </div>` : ''}
+      <div class="search-box">
+        ${ic('search')}
+        <input id="home-search" type="search" autocomplete="off" enterkeyhint="search" placeholder="${t('search_ph')}" value="${esc(state.searchQ || '')}" oninput="App.searchInput(this.value)">
+        <button class="x" id="search-clear" style="${q?'':'display:none'}" onclick="App.searchClear()" aria-label="✕">✕</button>
+      </div>
+    </div>`;
 
   const pkHtml = pkGroups.map(([jobId, list]) => {
     const p0 = list[0];
@@ -1821,12 +1846,127 @@ function viewHome(){
       <b>${fmtDMY(iso)}</b>
       <button class="mini-nav" onclick="App.openDayMap()">${ic('map')} ${t('map_of_day')}</button>
     </div>`;
-  return banner + viewWeek() + dayBar + homeStatsHtml() + filter
+  return banner + viewWeek() + dayBar
+    + `<div id="day-top" style="${q?'display:none':''}">` + homeStatsHtml() + `</div>`
+    + filter
+    + `<div id="search-area" style="${q?'':'display:none'}">${q ? searchAreaHtml() : ''}</div>`
+    + `<div id="day-list" style="${q?'display:none':''}">`
     + (pkGroups.length ? `<div class="section-title">${t('pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
     + (jobs.length ? `<div class="section-title">${t('jobs')}</div>` + jobsHtml : '')
     + pkDoneHtml + empty
     + `<button class="btn btn-green" style="margin-top:12px" onclick="App.addTaskModal()">＋ ${t('add_task')}</button>
-       <button class="fab" onclick="App.addTaskModal()" aria-label="${t('add_task')}">＋</button>`;
+       <button class="fab" onclick="App.addTaskModal()" aria-label="${t('add_task')}">＋</button>`
+    + `</div>`;
+}
+
+/* =====================================================================
+   v1.07.13: ПОИСК НА ГЛАВНОЙ — инвойсы и пикапы по любой дате
+   ===================================================================== */
+function searchJobs(q){
+  return visibleJobs().filter(j => {
+    const cx = cxById(j.complex_id) || {};
+    const cp = cpById(j.counterparty_id) || {};
+    const wt = wtById(j.work_type_id) || {};
+    const hay = [j.unit_number, cx.name, cx.abbr, cx.address, cp.name, wt.name,
+      j.technician_name, profName(j.technician_id), j.note, j.date, fmtDMY(j.date)]
+      .filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(q);
+  }).sort((a,b) => String(b.date).localeCompare(String(a.date))
+      || String(b.created_at||'').localeCompare(String(a.created_at||'')));
+}
+function searchPks(q){
+  return visiblePlacements().filter(p => !p.superseded).filter(p => {
+    const cx = cxById(p.complex_id) || {};
+    const cp = cpById(p.counterparty_id) || {};
+    const et = state.data.equipment_types.find(e => e.id === p.equipment_type_id) || {};
+    const hay = [p.unit_number, cx.name, cx.abbr, cx.address, cp.name, et.name, et.abbr,
+      profName(p.technician_id), p.due_date, fmtDMY(p.due_date)]
+      .filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(q);
+  }).sort((a,b) => (pkPending(a)?0:1) - (pkPending(b)?0:1)
+      || String(a.due_date).localeCompare(String(b.due_date)));
+}
+function searchJobCard(j){
+  const cx = cxById(j.complex_id) || { name: '?' };
+  const wt = wtById(j.work_type_id) || { name: '', color: '#8B9AA3' };
+  return `<div class="item clicky" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
+    <div class="info">
+      <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number || '—')} <span class="badge-status st-${j.status}">${t('status_' + j.status)}</span></div>
+      <div class="s">${fmtDMY(j.date)} · <span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span> · ${money(jobGrand(j))} · ${esc(j.technician_name || profName(j.technician_id))}${jobSharedChipHtml(j)}</div>
+    </div>
+  </div>`;
+}
+function searchPkCard(p){
+  const cx = cxById(p.complex_id) || { name: '?' };
+  const et = state.data.equipment_types.find(e => e.id === p.equipment_type_id) || { abbr: '?', color: '#8B9AA3', name: '?' };
+  const st = p.picked_up
+    ? `<span class="chip ok">✓ ${t('picked')}</span>`
+    : `<span class="chip warn">${t('hist_pending')}</span>${p.due_date < todayISO() ? ` <span class="chip bad">${t('overdue')}</span>` : ''}`;
+  return `<div class="item clicky" style="border-left-color:${et.color}" onclick="App.searchOpenPk('${p.id}')">
+    <div class="info">
+      <div class="t" style="display:flex;align-items:center;gap:8px"><span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>${esc(et.name)} × ${+p.qty || 1}${p.ext_of ? ` <span class="chip info">${t('ext_chip')}</span>` : ''}</div>
+      <div class="s">${esc(cx.name)} · Unit ${esc(p.unit_number || '—')} · ${t('due')}: ${fmtDMY(p.due_date)} ${st}</div>
+    </div>
+  </div>`;
+}
+function searchAreaHtml(){
+  const q = (state.searchQ || '').trim().toLowerCase();
+  if (!q) return '';
+  const jobs = searchJobs(q);
+  const pks = searchPks(q);
+  const kind = state.searchKind === 'pk' ? 'pk' : 'jobs';
+  const LIM = 50;
+  const list = kind === 'jobs' ? jobs : pks;
+  const shown = list.slice(0, LIM);
+  const cards = kind === 'jobs' ? shown.map(searchJobCard).join('') : shown.map(searchPkCard).join('');
+  return `
+    <div class="lang-seg" style="margin-bottom:10px">
+      <button class="${kind==='jobs'?'on':''}" onclick="App.searchKindSet('jobs')">${ic('receipt')} ${t('search_jobs')} (${jobs.length})</button>
+      <button class="${kind==='pk'?'on':''}" onclick="App.searchKindSet('pk')">${ic('box')} ${t('search_pk')} (${pks.length})</button>
+    </div>
+    ${shown.length ? cards : `<div class="list-empty"><div class="big">${ic('search')}</div>${t('search_empty')}</div>`}
+    ${list.length > LIM ? `<div class="tiny" style="margin-top:8px">${t('search_more')} ${LIM} / ${list.length}</div>` : ''}`;
+}
+function searchInput(v){
+  state.searchQ = v;
+  const q = (v || '').trim();
+  const sa = $('#search-area'), top = $('#day-top'), lst = $('#day-list'), xb = $('#search-clear');
+  if (xb) xb.style.display = q ? '' : 'none';
+  if (!sa || !top || !lst) return;
+  if (q){
+    sa.style.display = ''; top.style.display = 'none'; lst.style.display = 'none';
+    sa.innerHTML = searchAreaHtml();
+  } else {
+    sa.style.display = 'none'; sa.innerHTML = '';
+    top.style.display = ''; lst.style.display = '';
+  }
+}
+function searchKindSet(v){
+  state.searchKind = v;
+  const sa = $('#search-area'); if (sa) sa.innerHTML = searchAreaHtml();
+}
+function searchClear(){
+  state.searchQ = '';
+  const inp = $('#home-search');
+  if (inp) inp.value = '';
+  searchInput('');
+  if (inp) inp.focus();
+}
+function searchOpenPk(pid){
+  const p = state.data.placements.find(x => x.id === pid); if (!p) return;
+  if (pkPending(p)){
+    const today = todayISO();
+    pickupModal(p.job_id, p.due_date < today ? today : p.due_date);
+  } else jobHistory(p.job_id);
+}
+/* v1.07.13: клики по шапке */
+function logoHome(){ state.searchQ = ''; App.go('home'); }
+async function checkVerClick(){
+  toast('🔄 ' + t('upd_checking'), 'inf');
+  const okNet = await checkForUpdate('клик по названию', true);
+  if (state.updAvail) toast('⬆ ' + t('upd_found') + ': v' + state.updAvail);
+  else if (okNet) toast('✓ ' + t('upd_latest') + ' · v' + APP_VERSION);
+  else toast('⚠ ' + t('upd_fail'), 'err');
 }
 
 /* =====================================================================
@@ -3220,7 +3360,8 @@ async function checkForUpdate(reason, force){
       state.updAvail = null;
       dlog('update: версия актуальна · причина: ' + reason);
     }
-  }catch(e){ dlog('update: проверка не удалась (' + reason + '):', e); }
+    return true;
+  }catch(e){ dlog('update: проверка не удалась (' + reason + '):', e); return false; }
 }
 function initSW(){
   if (!('serviceWorker' in navigator)) return;
@@ -3280,6 +3421,7 @@ const App = {
   noteModal, saveNote, auxToggle, sectionHelp: sectionHelpModal,
   crewAdd, crewAll, crewRemove, navToCx, copyText, copyCxAddr,
   pickupModal, extendModal, extMode, extDays, extQty, extApply, jobHistory, pickupOne,
+  searchInput, searchKindSet, searchClear, searchOpenPk, logoHome, checkVerClick,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis, staffBlock, staffPassModal, staffSetPass,
   staffAddModal, staffCreate, inviteSave, ownPassModal, ownPassSave,
@@ -4540,7 +4682,7 @@ function faqHtml(){
     <h4>${ic('receipt')} Statuses & approval</h4>
     <p>A job goes <b>Draft → Done → Approved</b>. Only an admin approves and may adjust the final amount. If a non-admin changes the price after approval, the approval is reset automatically. A yellow <b>“!”</b> means required fields are missing (complex, unit, at least one performer) — the PDF is blocked until they’re filled, and batch reports skip such jobs.</p>
     <h4>${ic('calendar')} Week feed & day cards</h4>
-    <p>The 7-day strip shows colored dots per work type, a gray dot for pickups and a small “!” on dates with unfinished required fields; today’s cell is outlined in green and labeled “today”; the <b>⌂ Today</b> button returns to it from any week. Under the strip: the <b>day cards</b> (jobs by work type and pickups by equipment — see the next section) and the <b>day map</b> button. On a card the queue number is top-left, the priority triangle top-right, the address is shown in full with a copy button, and access/callbox codes copy with a tap.</p>
+    <p>The 7-day strip shows colored dots per work type, a gray dot for pickups and a small “!” on dates with unfinished required fields; today’s cell is outlined in green and labeled “today”; the <b>⌂ Today</b> button returns to it from any week. Under the strip: the <b>day cards</b> (jobs by work type and pickups by equipment — see the next section) and the <b>day map</b> button. On a card the queue number is top-left, the priority triangle top-right, the address is shown in full with a copy button, and access/callbox codes copy with a tap. To the right of the Mine/All filter there is a <b>search box</b>: type a unit, complex, address or name to get results across all dates with an “Invoices | Pickups” toggle; tapping a result opens the invoice, the pickup modal or the history. Clicking the <b>TL logo</b> returns Home, and clicking the app name with the version checks for updates.</p>
     <h4>${ic('chart')} Day cards under the strip</h4>
     <p>Two cards summarize the <b>day selected in the strip</b> (today by default). Left — <b>jobs</b>: the big number is the day’s total, below it a breakdown by work type, each labeled in its own color. Right — <b>pickups</b>: the big number is how many equipment units must be collected that day; each icon is an equipment type (its abbreviation inside the circle: BLW — blower, DHM — dehumidifier, SCR — air scrubber, OZN — ozone machine), the number under the icon — how many units. A red “overdue” chip appears when something should have been collected earlier and still wasn’t. A sample day:</p>
     <div class="faq-example">${faqDayCardsExample()}</div>
@@ -4577,7 +4719,7 @@ function faqHtml(){
     <h4>${ic('receipt')} Статусы и апрув</h4>
     <p>Работа проходит путь <b>Черновик → Выполнено → Апрув</b>. Апрув ставит только админ и может поправить итоговую сумму. Если после апрува не-админ меняет стоимость — апрув снимается автоматически. Жёлтый <b>«!»</b> — не заполнены обязательные поля (комплекс, юнит, хотя бы один исполнитель): PDF не сформируется, а в пакетном отчёте такая работа будет пропущена.</p>
     <h4>${ic('calendar')} Лента недели и карточки дня</h4>
-    <p>Лента из 7 дней показывает цветные точки по видам работ, серую точку пикапов и маленький «!» на датах с незаполненными полями; сегодняшний день подсвечен зелёной рамкой и подписан «сегодня», кнопка <b>⌂ Сегодня</b> возвращает к нему из любой недели. Под лентой — <b>карточки дня</b> (работы по видам и пикапы по оборудованию — подробно в следующем разделе) и кнопка <b>карты дня</b>. На карточке: номер очереди слева-сверху, треугольник приоритета справа-сверху, адрес целиком с кнопкой копирования, коды доступа/callbox копируются тапом.</p>
+    <p>Лента из 7 дней показывает цветные точки по видам работ, серую точку пикапов и маленький «!» на датах с незаполненными полями; сегодняшний день подсвечен зелёной рамкой и подписан «сегодня», кнопка <b>⌂ Сегодня</b> возвращает к нему из любой недели. Под лентой — <b>карточки дня</b> (работы по видам и пикапы по оборудованию — подробно в следующем разделе) и кнопка <b>карты дня</b>. На карточке: номер очереди слева-сверху, треугольник приоритета справа-сверху, адрес целиком с кнопкой копирования, коды доступа/callbox копируются тапом. Справа от фильтра «Мои/Все» — <b>поиск</b>: введите юнит, комплекс, адрес или имя, и по всем датам появятся результаты с переключателем «Инвойсы | Пикапы»; тап по результату открывает инвойс, модалку пикапа или историю. Клик по <b>логотипу TL</b> возвращает на главную, а по названию с версией — проверяет обновления.</p>
     <h4>${ic('chart')} Карточки дня под лентой</h4>
     <p>Две карточки — сводка по <b>выбранному в ленте дню</b> (при открытии приложения это сегодня). Слева — <b>работы</b>: большая цифра — сколько всего работ на день, под ней разбивка по видам, каждый вид подписан своим цветом. Справа — <b>пикапы</b>: большая цифра — сколько единиц оборудования нужно забрать в этот день; каждая иконка — тип оборудования (внутри кружка его сокращение: BLW — блоуэр, DHM — осушитель, SCR — скруббер, OZN — озонатор), под иконкой — количество единиц. Красная плашка «просрочено» появляется, если что-то должны были забрать раньше, но ещё не забрали. Вот пример одного дня:</p>
     <div class="faq-example">${faqDayCardsExample()}</div>

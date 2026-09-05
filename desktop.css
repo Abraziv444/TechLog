@@ -1,0 +1,346 @@
+/* =====================================================================
+   TechLog · desktop.css — ПК-режим (v1.07.15)
+
+   ЗОЛОТОЕ ПРАВИЛО ЭТОГО ФАЙЛА (однонаправленная зависимость):
+   ┌───────────────────────────────────────────────────────────────────┐
+   │ 1. КАЖДЫЙ селектор начинается с `html.tl-desktop`. Без этого      │
+   │    класса (его ставит viewmode.js) ни одно правило не действует,  │
+   │    поэтому мобильная версия физически не может пострадать.        │
+   │ 2. Здесь ТОЛЬКО переопределения стилей поверх мобильной разметки. │
+   │    Никакого своего HTML, никакого своего JS, никаких правок       │
+   │    app.js / styles.css ради десктопа.                             │
+   │ 3. Мобильная версия — источник истины: новые блоки, появившиеся   │
+   │    в мобильной, автоматически наследуются десктопом (они просто   │
+   │    отрисуются мобильным стилем в широкой колонке, пока при        │
+   │    желании не получат здесь свою «широкую» полировку).            │
+   │ 4. Если файл не загрузился или содержит ошибку — приложение       │
+   │    остаётся полностью рабочей мобильной версией.                  │
+   └───────────────────────────────────────────────────────────────────┘
+
+   Все «широкие» правила дополнительно завёрнуты в @media (min-width),
+   поэтому узкое окно браузера в ПК-режиме безопасно откатывается к
+   мобильной вёрстке — ничего не наезжает и не ломается.
+   ===================================================================== */
+
+/* ============ Базовая широкая рамка (окно от 980px) ============ */
+@media (min-width: 980px){
+
+  /* Слева резервируем место под вертикальную панель навигации */
+  html.tl-desktop body{
+    padding-left:128px;
+    padding-right:16px;
+    padding-bottom:32px;             /* нижней панели больше нет */
+  }
+  html.tl-desktop #app{
+    max-width:920px;
+    padding:16px 20px 24px;
+  }
+
+  /* ---------- Шапка: прилипает к верху при прокрутке ---------- */
+  html.tl-desktop .topbar{
+    position:sticky; top:0; z-index:45;
+    background:var(--bg,#0F171B);
+    margin:-16px -20px 12px;
+    padding:12px 20px;
+    border-bottom:2px solid var(--line-soft,#26363E);
+  }
+
+  /* ---------- Нижняя панель → левая вертикальная панель ---------- */
+  html.tl-desktop .tabbar{
+    left:16px; right:auto; top:50%; bottom:auto;
+    transform:translateY(-50%);
+    width:96px; max-width:none;
+    max-height:calc(100dvh - 32px); overflow:auto;
+    flex-direction:column; justify-content:flex-start; gap:6px;
+    padding:12px 8px;
+    border:2px solid var(--line,#31434C);
+    border-radius:20px;
+    background:var(--panel,#17232A);
+  }
+  html.tl-desktop .tab{
+    max-width:none; width:100%; flex:0 0 auto;
+    padding:10px 4px; gap:4px; border-radius:14px;
+  }
+  html.tl-desktop .tab svg{ width:26px; height:26px; }
+  html.tl-desktop .tab span{ font-size:.6rem; }
+
+  /* ---------- Плавающая кнопка «＋» — в правый нижний угол ---------- */
+  html.tl-desktop .fab{ right:28px; left:auto; bottom:28px; }
+
+  /* ---------- Футер: без запаса под нижнюю панель ---------- */
+  html.tl-desktop .app-footer{ margin-bottom:32px; }
+
+  /* ---------- Карта: на десктопе выше ---------- */
+  html.tl-desktop .map-box{ height:66vh; min-height:420px; }
+
+  /* ---------- Модалки: шире и просторнее ---------- */
+  html.tl-desktop .overlay{ padding:28px; }
+  html.tl-desktop .modal{ max-width:680px; padding:18px 20px; }
+
+  /* ---------- Формы: сетки плотнее используют ширину ---------- */
+  html.tl-desktop .grid-2{ grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+  html.tl-desktop .grid-3{ grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); }
+
+  /* ---------- Тосты: в правый верхний угол, не по центру ---------- */
+  html.tl-desktop #toasts{ left:auto; right:20px; align-items:flex-end; }
+
+  /* ---------- Диагностика: длиннее лог ---------- */
+  html.tl-desktop .diag-pre{ max-height:62vh; }
+
+  /* ---------- Ховеры для мыши (на тачах не мешают) ---------- */
+  @media (hover:hover){
+    html.tl-desktop .item.clicky:hover{
+      border-color:var(--blue,#1CB0F6);
+      transition:border-color .12s;
+    }
+    html.tl-desktop .day-cell:hover{ border-color:var(--dim,#8AA0AB); }
+    html.tl-desktop .btn:hover{ filter:brightness(1.06); }
+    html.tl-desktop .tab:hover{ color:var(--text,#F1F7FB); background:rgba(255,255,255,.05); }
+    html.tl-desktop .tab.active:hover{ color:var(--blue,#1CB0F6); background:rgba(28,176,246,.1); }
+    html.tl-desktop .opt:hover{ border-color:var(--dim,#8AA0AB); }
+    html.tl-desktop .icon-btn:hover, html.tl-desktop .sync-btn:hover{ border-color:var(--blue,#1CB0F6); }
+  }
+
+  /* ---------- Тонкий тёмный скроллбар ---------- */
+  html.tl-desktop ::-webkit-scrollbar{ width:10px; height:10px; }
+  html.tl-desktop ::-webkit-scrollbar-thumb{
+    background:var(--line,#31434C); border-radius:6px;
+    border:2px solid var(--bg,#0F171B);
+  }
+  html.tl-desktop ::-webkit-scrollbar-track{ background:transparent; }
+}
+
+/* ============ Широкий экран (окно от 1180px): две колонки ============ */
+@media (min-width: 1180px){
+
+  html.tl-desktop #app{ max-width:1080px; }
+
+  /* Лента дня и результаты поиска — сеткой в две колонки.
+     Заголовки секций, баннеры-пустышки и кнопки растягиваются на обе. */
+  html.tl-desktop #day-list,
+  html.tl-desktop #search-area{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:10px;
+    align-items:start;
+  }
+  html.tl-desktop #day-list > .section-title,
+  html.tl-desktop #day-list > .list-empty,
+  html.tl-desktop #day-list > .btn,
+  html.tl-desktop #search-area > .lang-seg,
+  html.tl-desktop #search-area > .list-empty,
+  html.tl-desktop #search-area > .tiny{
+    grid-column:1 / -1;
+  }
+  html.tl-desktop #day-list > .section-title{ margin:8px 0 0; }
+  html.tl-desktop #day-list .item,
+  html.tl-desktop #search-area .item{ margin-bottom:0; }
+}
+
+/* =====================================================================
+   ============ v1.07.16 · ПК-режим: сотрудники, бланк, полные названия,
+   ============ справочники. Все правила — строго под html.tl-desktop.
+   ===================================================================== */
+
+/* ---------- Колонка сотрудников (создаёт desktop.js) ---------- */
+html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно — скрыта */
+
+@media (min-width: 1180px){
+  /* когда колонка реально показана, desktop.js вешает html.tl-staff —
+     сдвигаем контент правее (навигация 16+96, колонка 124+88, зазор) */
+  html.tl-desktop.tl-staff body{ padding-left:236px; }
+
+  html.tl-desktop #dsk-staff{
+    position:fixed; left:124px; top:50%; transform:translateY(-50%); z-index:39;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    width:88px; max-height:calc(100dvh - 32px); overflow:auto;
+    padding:12px 6px;
+    background:var(--panel,#17232A);
+    border:2px solid var(--line,#31434C); border-radius:20px;
+    scrollbar-width:thin;
+  }
+  html.tl-desktop #dsk-staff .dsk-staff-title{
+    font-size:.56rem; font-weight:900; letter-spacing:.6px; text-transform:uppercase;
+    color:var(--dim-2,#5D737E);
+  }
+  html.tl-desktop #dsk-staff .dsk-all{
+    font:inherit; font-weight:900; font-size:.66rem; letter-spacing:.4px; text-transform:uppercase;
+    color:var(--dim,#8AA0AB); background:var(--panel-2,#1C2B33);
+    border:2px solid var(--line,#31434C); border-radius:999px;
+    padding:6px 0; width:100%; cursor:pointer;
+  }
+  html.tl-desktop #dsk-staff .dsk-all.on{
+    background:var(--green,#58CC02); border-color:var(--green,#58CC02); color:var(--green-ink,#0E2A00);
+  }
+  html.tl-desktop #dsk-staff .dsk-av{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    background:none; border:none; padding:2px 0; width:100%; cursor:pointer;
+  }
+  html.tl-desktop #dsk-staff .dsk-ini{
+    width:46px; height:46px; border-radius:50%;
+    display:grid; place-items:center;
+    background:var(--panel-2,#1C2B33); border:3px solid var(--line,#31434C);
+    font-weight:900; font-size:.92rem;
+  }
+  /* палитра ролей — та же, что в мобильной шапке */
+  html.tl-desktop #dsk-staff .dsk-av.role-tech .dsk-ini{ border-color:var(--blue,#1CB0F6); color:var(--blue,#1CB0F6); }
+  html.tl-desktop #dsk-staff .dsk-av.role-manager .dsk-ini{ border-color:var(--red,#FF4B4B); color:var(--red,#FF4B4B); }
+  html.tl-desktop #dsk-staff .dsk-av.role-admin .dsk-ini{ border-color:var(--purple,#CE82FF); color:var(--purple,#CE82FF); }
+  html.tl-desktop #dsk-staff .dsk-nm{
+    max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-size:.6rem; font-weight:800; color:var(--dim,#8AA0AB);
+  }
+  html.tl-desktop #dsk-staff .dsk-av.on .dsk-ini{
+    border-color:var(--green,#58CC02); color:var(--green,#58CC02);
+    box-shadow:0 0 0 3px rgba(88,204,2,.25);
+  }
+  html.tl-desktop #dsk-staff .dsk-av.on .dsk-nm{ color:var(--green,#58CC02); }
+  @media (hover:hover){
+    html.tl-desktop #dsk-staff .dsk-av:hover .dsk-ini{ border-color:var(--text,#F1F7FB); color:var(--text,#F1F7FB); }
+    html.tl-desktop #dsk-staff .dsk-all:hover{ color:var(--text,#F1F7FB); }
+  }
+}
+
+/* ---------- Меньше сокращений: тексты не обрезаем (окно от 1180px) ---------- */
+@media (min-width: 1180px){
+  html.tl-desktop .item .info .t,
+  html.tl-desktop .item .info .s{ white-space:normal; overflow:visible; text-overflow:clip; }
+  html.tl-desktop .wt-line .wt-nm{ white-space:normal; overflow:visible; text-overflow:clip; }
+  html.tl-desktop .eq-name .nm,
+  html.tl-desktop .eq-name .pr{ white-space:normal; overflow:visible; text-overflow:clip; }
+  html.tl-desktop .avatar-wrap{ width:auto; min-width:52px; }
+  html.tl-desktop .login-pill{ max-width:140px; }
+  html.tl-desktop .brand .sub{ overflow:visible; text-overflow:clip; }
+}
+
+/* ---------- Full HD (окно от 1580px): полные названия оборудования ----------
+   Мобильная разметка кладёт полное имя в title — раскрываем его через
+   attr(title), ничего не меняя в app.js. */
+@media (min-width: 1580px){
+  /* карточка дня «Пикапы»: BLW 5 → [BLW] Blower · 5 */
+  html.tl-desktop .eq-badge{
+    flex-direction:row; align-items:center; gap:8px;
+    background:var(--panel-2,#1C2B33); border:2px solid var(--line,#31434C);
+    border-radius:999px; padding:3px 12px 3px 4px;
+  }
+  html.tl-desktop .eq-badge[title]::after{
+    content:attr(title); order:2;
+    font-size:.74rem; font-weight:800; color:var(--text,#F1F7FB);
+  }
+  html.tl-desktop .eq-badge b{ order:3; font-size:.85rem; color:var(--dim,#8AA0AB); }
+
+  /* цветные точки количества на карточках пикапов: 2 → пилюля «2 Dehumidifier» */
+  html.tl-desktop .eq-dot{
+    width:auto; min-width:26px; border-radius:999px; padding:2px 10px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  html.tl-desktop .eq-dot[title]::after{
+    content:attr(title);
+    font-size:.7rem; font-weight:800;
+    max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    display:inline-block;
+  }
+  html.tl-desktop .eq-dots{ gap:6px; }
+}
+
+/* ---------- Форма инвойса как бумажный бланк (окно от 1180px) ----------
+   PDF — это таблица SERVICES | DESCRIPTION | AMOUNT со строкой-секцией на
+   каждый вид услуг и итогом справа внизу. Собираем ту же геометрию из
+   мобильной разметки: .inv-head → колонка «услуга», .inv-body → «описание»,
+   сумма секции — в правой колонке. Экран формы находим по наличию .inv-sec. */
+@media (min-width: 1180px){
+
+  /* --- реквизиты сверху: слева дата/статус, справа бригада (как шапка бланка) --- */
+  html.tl-desktop #app:has(.inv-sec) .back-top + .card{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start;
+  }
+  html.tl-desktop #app:has(.inv-sec) .back-top + .card > div:first-child{ grid-column:1 / -1; }
+  html.tl-desktop #app:has(.inv-sec) .back-top + .card > .grid-2{ grid-column:1; margin-top:0; align-content:start; }
+  html.tl-desktop #app:has(.inv-sec) .back-top + .card > .crew-box{
+    grid-column:2; grid-row:2; margin:0; padding:10px 12px;
+    border:2px dashed var(--line,#31434C); border-radius:12px;
+  }
+  html.tl-desktop #app:has(.inv-sec) .back-top + .card > .note-green{ grid-column:1 / -1; }
+
+  /* --- секции → непрерывная таблица бланка --- */
+  html.tl-desktop #app:has(.inv-sec) .inv-sec{
+    display:grid; grid-template-columns:200px minmax(0,1fr) 120px;
+    position:relative; overflow:visible;
+    margin-bottom:0; border-radius:0; border-top-width:0;
+  }
+  /* первая строка таблицы: верхняя граница, скругление, подписи колонок */
+  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec{
+    margin-top:36px; border-top-width:2px; border-radius:16px 16px 0 0;
+  }
+  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec::before,
+  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec::after,
+  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec .inv-body::before{
+    position:absolute; top:-24px;
+    font-size:.62rem; font-weight:900; letter-spacing:1.2px;
+    color:var(--dim-2,#5D737E); text-align:center;
+  }
+  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec::before{ content:"SERVICES"; left:0; width:200px; }
+  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec::after{ content:"AMOUNT"; right:0; width:120px; }
+  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec .inv-body::before{ content:"DESCRIPTION"; left:0; right:0; }
+  /* последняя строка (перед галочкой «Работа выполнена») — низ таблицы */
+  html.tl-desktop #app:has(.inv-sec) .inv-sec:has(+ .opt){
+    border-radius:0 0 16px 16px; margin-bottom:14px;
+  }
+
+  /* колонка «SERVICES» */
+  html.tl-desktop #app:has(.inv-sec) .inv-head{
+    grid-column:1; position:static;
+    flex-wrap:wrap; align-content:flex-start; row-gap:4px;
+    background:transparent; padding:12px;
+    border-right:2px solid var(--line-soft,#26363E);
+  }
+  /* колонка «DESCRIPTION» */
+  html.tl-desktop #app:has(.inv-sec) .inv-body{
+    grid-column:2; position:relative; padding:12px 14px;
+    border-right:2px solid var(--line-soft,#26363E);
+  }
+  /* колонка «AMOUNT»: сумма секции по центру правой полосы */
+  html.tl-desktop #app:has(.inv-sec) .inv-head .amt{
+    position:absolute; top:50%; right:0; transform:translateY(-50%);
+    width:120px; margin-left:0; text-align:center; font-size:1.02rem;
+  }
+
+  /* --- подвал бланка: итог и действия правым столбцом, как GRAND TOTAL --- */
+  html.tl-desktop #app:has(.inv-sec) > .opt{ width:max-content; }
+  html.tl-desktop #app:has(.inv-sec) > .btn.btn-ghost{ width:max-content; }
+  html.tl-desktop #app:has(.inv-sec) .total-bar{ width:380px; margin-left:auto; }
+  html.tl-desktop #app:has(.inv-sec) .total-bar + .btn{ width:380px; margin-left:auto; }
+  html.tl-desktop #app:has(.inv-sec) .btn-row3{ width:380px; margin-left:auto; }
+  html.tl-desktop #app:has(.inv-sec) .card[style*="--yellow"]{ width:520px; margin-left:auto; }
+}
+
+/* ---------- Справочники: вкладки слева, содержимое справа (окно от 1180px) ---------- */
+@media (min-width: 1180px){
+  html.tl-desktop #app:has(#dir-tabs){
+    display:grid; grid-template-columns:200px minmax(0,1fr);
+    column-gap:18px; align-items:start;
+  }
+  html.tl-desktop #app:has(#dir-tabs) > *{ grid-column:2; min-width:0; }
+  html.tl-desktop #app:has(#dir-tabs) > .topbar,
+  html.tl-desktop #app:has(#dir-tabs) > .section-title{ grid-column:1 / -1; }
+  html.tl-desktop #app:has(#dir-tabs) > .tabs-nav{
+    grid-column:1; grid-row:3 / span 90;
+    display:block; margin:0;
+    position:sticky; top:84px; align-self:start;
+  }
+  html.tl-desktop #app:has(#dir-tabs) .tabs-arr{ display:none; }
+  html.tl-desktop #app:has(#dir-tabs) #dir-tabs{
+    flex-direction:column; align-items:stretch; gap:6px;
+    overflow:visible; margin:0; padding:0; cursor:default;
+  }
+  html.tl-desktop #app:has(#dir-tabs) #dir-tabs .tabbtn{
+    width:100%; text-align:left; font-size:.8rem; padding:10px 12px; border-radius:12px;
+  }
+  /* строки справочников: просторнее, полный текст, подсветка под мышью */
+  html.tl-desktop #app:has(#dir-tabs) .rowline{ padding:10px 8px; border-radius:10px; }
+  html.tl-desktop #app:has(#dir-tabs) .rowline .tiny{ white-space:normal; }
+  html.tl-desktop #app:has(#dir-tabs) .price-input{ max-width:130px; }
+  @media (hover:hover){
+    html.tl-desktop #app:has(#dir-tabs) .rowline:hover{ background:rgba(255,255,255,.03); }
+  }
+}
