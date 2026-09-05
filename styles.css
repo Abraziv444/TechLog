@@ -1087,3 +1087,19 @@ html:not(.tl-desktop) .topbar::after{
   background:linear-gradient(to bottom, var(--bg), rgba(15,23,27,0));
   pointer-events:none;
 }
+
+/* =====================================================================
+   v1.07.38: переключатель — РОДНОЙ элемент шапки (никакого JS-позицио-
+   нирования): flex-колонка сама гарантирует общий правый край с ролью.
+   Логин под аватаркой — синий у всех ролей (перебиваем role-варианты).
+   ===================================================================== */
+.vm-inline{display:inline-flex;gap:4px;padding:3px;border-radius:999px;
+  background:var(--panel-2);border:2px solid var(--line);min-height:0}
+.vm-inline button{display:grid;place-items:center;width:34px;height:22px;
+  border-radius:999px;background:transparent;color:var(--dim);border:0;padding:0}
+.vm-inline button.on{background:var(--blue);color:#04314A}
+.vm-inline svg{width:15px;height:15px}
+.login-pill.role-tech,.login-pill.role-manager,.login-pill.role-admin{
+  border-color:var(--blue);color:var(--blue)}
+/* id-правило #vm-slot (display:inline-block) било класс — уравниваем силу */
+#vm-slot.vm-inline{display:inline-flex;flex-direction:row;min-height:0;width:auto;height:auto}

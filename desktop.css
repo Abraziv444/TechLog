@@ -613,3 +613,8 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
 @media (min-width: 980px){
   html.tl-desktop .rt-col{ display:contents; }
 }
+
+/* ===== v1.07.38: на ПК работает прежняя центральная пилюля ===== */
+@media (min-width: 980px){
+  html.tl-desktop .vm-inline{ display:none; }
+}

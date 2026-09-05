@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.37';
+const APP_VERSION = '1.07.38';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -1516,6 +1516,10 @@ function editLockDays(){ const v = +((state.data && state.data.org_settings || {
 function editLocked(j){ const n = editLockDays(); if (!n || isManager()) return false; return j.date < addDaysISO(todayISO(), -n); }
 function canApprove(){ return isAdmin() || (state.user.role === 'manager' && !!((state.data.org_settings||{}).manager_can_approve)); }
 function stockVisibleAll(){ return (state.data.org_settings || {}).stock_visible_all !== false; }
+function vmCur(){
+  try{ const v = localStorage.getItem('techlog_view_mode'); if (v) return v; }catch(e){}
+  return window.innerWidth >= 980 ? 'desktop' : 'mobile';
+}
 function canReorder(j){ return j && (isAdmin() || j.technician_id === state.user.id || (state.user.role === 'manager' && mgrReorderOn())); }
 /* v1.07.25: приоритет/очерёдность. Свои работы и админ — прямой upsert (RLS
    пропускает). Менеджер чужие — ТОЛЬКО через RPC board_job_flags: политика
@@ -1567,6 +1571,8 @@ const ICONS = {
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H20V3H7.5A2.5 2.5 0 0 0 5 5.5z"/><path d="M5 19.5A2.5 2.5 0 0 0 7.5 22H20v-5"/><path d="M10 7h6"/></svg>',
   board: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5.4" height="16" rx="1.2"/><rect x="9.8" y="4" width="5.4" height="11" rx="1.2"/><rect x="16.6" y="4" width="5.4" height="7" rx="1.2"/></svg>',
   prop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.8" width="16" height="18.4" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>',
+  monitor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M9 20.5h6M12 16.5v4"/></svg>',
 };
 
 /* =====================================================================
@@ -2170,7 +2176,10 @@ function viewHeader(){
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
     <div class="rt-col">
-      <span id="vm-slot"></span>
+      <span class="vm-inline" id="vm-slot" role="group">
+        <button class="${vmCur()==='mobile'?'on':''}" onclick="App.setVm('mobile')" aria-label="Телефон" title="Телефон">${ICONS.phone}</button>
+        <button class="${vmCur()==='desktop'?'on':''}" onclick="App.setVm('desktop')" aria-label="ПК" title="ПК">${ICONS.monitor}</button>
+      </span>
       <div class="role-tag rt-${u.role}" title="${t('role_' + u.role)}">${t('role_' + u.role)}</div>
     </div>
     <div class="avatar-wrap">
@@ -4268,6 +4277,13 @@ const App = {
   mediaPick, mediaFlush, mediaOpen, mediaDelete, mediaQDel,
   mediaSaveKeys, mediaConnect, mediaHealth,
   bkExport, bkImportPick, bkSaveLog, runDiag,
+  setVm(v){
+    try{
+      if (window.TLView && window.TLView.setMode){ window.TLView.setMode(v); render(); return; }
+    }catch(e){}
+    try{ localStorage.setItem('techlog_view_mode', v); }catch(e){}
+    location.reload();
+  },
   repFrom(v){ state.repFrom = v; render(); }, repTo(v){ state.repTo = v; render(); },
   repRange(f,to){ state.repFrom = f; state.repTo = to; render(); },
   repCp(v){ state.repCp = v; render(); }, repStatus(v){ state.repStatus = v; render(); },

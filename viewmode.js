@@ -158,43 +158,35 @@
      Фиксированные отступы от края окна ломались на планшетах, где контент
      уже окна — теперь позицию считаем от реального положения .role-tag. */
   function placeSeg() {
-    /* v1.07.34b: усыновлять пилюлю в #app НЕЛЬЗЯ — render() перерисовывает
-       его целиком и уничтожает её. Пилюля всегда живёт в body (.vm-bar),
-       а слот в шапке лишь резервирует место: пилюля накрывает его
-       fixed-координатами и потому переживает любые перерисовки, скроллясь
-       вместе со sticky-шапкой. */
+    /* v1.07.38: в мобильной раскладке переключатель рисует САМА шапка
+       приложения (нативный поток вёрстки — выравнивание гарантировано,
+       никаких координат). Наша пилюля там прячется; ПК-режим и экран
+       логина продолжают использовать её как раньше. */
     var seg = document.querySelector('.vm-seg');
     if (!seg) return;
     var bar = document.querySelector('.vm-bar');
-    if (bar && bar.style.zIndex !== '120') bar.style.zIndex = '120'; // bar(z46) запирал seg под sticky-шапкой(z70)
+    if (bar && bar.style.zIndex !== '120') bar.style.zIndex = '120';
     if (bar && seg.parentNode !== bar) bar.appendChild(seg);
     var desktop = document.documentElement.classList.contains('tl-desktop')
       && window.innerWidth >= 980;
     if (desktop) {
+      seg.style.display = '';
       seg.style.position = ''; seg.style.right = '';
       seg.style.top = ''; seg.style.transform = '';
       return;
     }
-    seg.style.position = 'fixed';
-    seg.style.zIndex = '120';                          // выше sticky-шапки (z 70)
-    var slot = document.getElementById('vm-slot');
-    if (slot) {
-      seg.style.transform = 'none';
-      var sr = seg.getBoundingClientRect();
-      if (sr.width) {
-        var w = Math.round(sr.width) + 'px', h = Math.round(sr.height) + 'px';
-        if (slot.style.width !== w) slot.style.width = w;
-        if (slot.style.height !== h) slot.style.height = h;
-      }
-      var r = slot.getBoundingClientRect();
-      seg.style.top = Math.round(r.top) + 'px';
-      seg.style.right = Math.max(4, Math.round(window.innerWidth - r.right)) + 'px';
-    } else {                                            // экран логина
-      seg.style.transform = 'scale(.85)';
-      seg.style.right = '12px';
-      seg.style.top = 'calc(env(safe-area-inset-top,0px) + 10px)';
+    if (document.getElementById('vm-slot')) {   // залогинены — пилюля в шапке
+      seg.style.display = 'none';
+      return;
     }
+    seg.style.display = '';                     // экран логина
+    seg.style.position = 'fixed';
+    seg.style.zIndex = '120';
+    seg.style.transform = 'scale(.85)';
+    seg.style.right = '12px';
+    seg.style.top = 'calc(env(safe-area-inset-top,0px) + 10px)';
   }
+  window.TLView = { setMode: setMode };   // v1.07.38: шапка дергает режим напрямую
   window.addEventListener('resize', placeSeg);
   window.addEventListener('scroll', placeSeg, { passive: true });
   setInterval(placeSeg, 400);                             // шапка перерисовывается при render()
