@@ -594,10 +594,15 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
    рейла заканчивалась выше низа карточки. Колонка под кнопки резервируется
    паддингом, поэтому absolute ни на что не наезжает. Доска (.bjob .brail)
    не затронута: селектор — только прямой потомок .item.
-   Двойной .item.item — чтобы перебить padding из desktop.css
-   (html.tl-desktop … 11px 14px / компактный 8px 10px) без !important. */
+   v1.07.42: НИКАКОГО :has для критичной геометрии — в браузере Абра он
+   не поддерживается (паддинг не применялся, absolute-рейл и номер ложились
+   на текст; этим же объясняются старые «иногда пересекается» при живых
+   компенсациях v1.07.20). Класс has-rail ставит сам рендер по тому же
+   условию canReorder, что и railHtml — работает везде.
+   Тройной .item.item.has-rail — чтобы перебить padding из desktop.css
+   (html.tl-desktop … 11px 14px и .tl-compact … 8px 10px) без !important. */
 .item > .rail{position:absolute;left:8px;bottom:10px;margin-right:0}
-.item.item:has(> .rail){
+.item.item.has-rail{
   padding-left:44px;                     /* 8 + 26 (кнопка) + 10 (зазор) */
   min-height:88px;                       /* 26 (номер) + 4 + 48 (▲▼) + 10 */
 }
