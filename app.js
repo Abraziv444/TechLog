@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.49';
+const APP_VERSION = '1.07.50';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -232,6 +232,7 @@ const I18N = {
     search_empty: 'Ничего не найдено',
     search_more: 'Показаны первые',
     upd_checking: 'Проверяю версию…', upd_latest: 'У вас актуальная версия',
+    upd_applying: 'Обновляю приложение…', upd_hard: 'Очищаю кэш и перезагружаю…',
     upd_found: 'Найдена новая версия', upd_fail: 'Не удалось проверить версию — проверьте интернет',
     login: 'Логин', login_hint: 'Латиница/цифры, 3–32 символа. Вход по логину и паролю.',
     invite_code: 'Код приглашения', invite_bad: 'Неверный код приглашения',
@@ -450,6 +451,7 @@ const I18N = {
     logout: 'Log out', version: 'App version', updated_to: 'App updated to version',
     update_after_form: 'Update ready — will apply after you close the form',
     upd_check: 'Check for updates', upd_latest: 'You are up to date',
+    upd_applying: 'Updating the app…', upd_hard: 'Clearing cache and reloading…',
     upd_found: 'Update available', upd_last: 'checked',
     login_title: 'Sign in to TechLog', demo_note: 'Demo mode: Supabase is not configured (config.js). Data is stored locally.',
     email: 'Email', password: 'Password', sign_in: 'Sign in', sign_up: 'Sign up',
@@ -2541,7 +2543,7 @@ function logoHome(){ state.searchQ = ''; App.go('home'); }
 async function checkVerClick(){
   toast('🔄 ' + t('upd_checking'), 'inf');
   const okNet = await checkForUpdate('клик по названию', true);
-  if (state.updAvail) toast('⬆ ' + t('upd_found') + ': v' + state.updAvail);
+  if (state.updAvail){ toast('⬆ ' + t('upd_found') + ': v' + state.updAvail, 'inf'); await applyUpdateNow(); return; }
   else if (okNet) toast('✓ ' + t('upd_latest') + ' · v' + APP_VERSION);
   else toast('⚠ ' + t('upd_fail'), 'err');
 }
@@ -4246,8 +4248,11 @@ async function checkForUpdate(reason, force){
       state.updAvail = v.version;
       dlog('update: найдена версия', v.version, '· причина: ' + reason);
       const reg = navigator.serviceWorker ? await navigator.serviceWorker.getRegistration() : null;
-      if (reg) reg.update();                                    // дальше сработает SW_ACTIVATED → перезагрузка или отложка
-      else if (!editingBusy()){ sessionStorage.setItem('techlog_updated','1'); location.reload(); }
+      if (reg) reg.update().catch(()=>{});                      // дальше сработает SW_ACTIVATED → перезагрузка или отложка
+      else if (!editingBusy() && !sessionStorage.getItem('techlog_upd_try')){
+        sessionStorage.setItem('techlog_upd_try','1');           // v1.07.50: одна авто-перезагрузка за сессию — без циклов в окно деплоя
+        sessionStorage.setItem('techlog_updated','1'); location.reload();
+      }
       else { state.pendingUpdate = v.version; toast('⬆ ' + t('update_after_form'), 'inf'); }
     } else {
       state.updAvail = null;
@@ -4256,9 +4261,66 @@ async function checkForUpdate(reason, force){
     return true;
   }catch(e){ dlog('update: проверка не удалась (' + reason + '):', e); return false; }
 }
+/* v1.07.50: активное применение обновления по клику пользователя.
+   1) reg.update() (sw.js — с сети, см. updateViaCache) и ожидание установки
+      нового воркера: install→skipWaiting→activate→SW_ACTIVATED→reload.
+   2) Если за 8 секунд активация не случилась (застрявший кэш, битая
+      регистрация) — жёсткий путь: удаляем кэши techlog-*, снимаем
+      регистрацию и перезагружаемся с сети. */
+async function applyUpdateNow(){
+  if (editingBusy()){ state.pendingUpdate = state.updAvail; toast('⬆ ' + t('update_after_form'), 'inf'); return; }
+  toast('🔄 ' + t('upd_applying'), 'inf');
+  try{
+    const reg = navigator.serviceWorker ? await navigator.serviceWorker.getRegistration() : null;
+    if (reg){
+      try{ await reg.update(); }catch(e){ dlog('update: reg.update():', e); }
+      const t0 = Date.now();
+      while (Date.now() - t0 < 8000){
+        const w = reg.waiting || reg.installing;
+        if (w && w.state === 'installed') w.postMessage({ type: 'SKIP_WAITING' });
+        await new Promise(r => setTimeout(r, 250));
+        /* SW_ACTIVATED/controllerchange перезагрузят страницу сами —
+           если мы всё ещё здесь, активация пока не произошла */
+      }
+    }
+  }catch(e){ dlog('update: applyUpdateNow:', e); }
+  /* фолбэк: гарантированный выход из залипания. Повторный жёсткий сброс
+     сдерживаем 60с, но ТОЛЬКО если версия приложения с прошлого сброса не
+     изменилась (клик-спам при недоехавшем деплое); после успешного
+     обновления версия другая — сдержка не мешает следующему апдейту. */
+  let hard = null;
+  try{ hard = JSON.parse(sessionStorage.getItem('techlog_upd_hard') || 'null'); }catch(e){}
+  if (hard && hard.from === APP_VERSION && Date.now() - hard.t < 60000){
+    toast('⏳ ' + t('upd_found') + ': v' + (state.updAvail || ''), 'inf');   // деплой ещё раскатывается
+    return;
+  }
+  sessionStorage.setItem('techlog_upd_hard', JSON.stringify({ t: Date.now(), from: APP_VERSION }));
+  toast('🧹 ' + t('upd_hard'), 'inf');
+  try{
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k.startsWith('techlog-')).map(k => caches.delete(k)));
+  }catch(e){}
+  try{
+    const reg = navigator.serviceWorker ? await navigator.serviceWorker.getRegistration() : null;
+    if (reg) await reg.unregister();
+  }catch(e){}
+  sessionStorage.setItem('techlog_updated', '1');
+  location.reload();
+}
+
 function initSW(){
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  /* v1.07.50: без этого браузер при reg.update() мог взять sw.js из
+     HTTP-кэша (GitHub Pages: max-age=600) — «версию находит, но не
+     обновляет» первые 10 минут после деплоя. */
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(()=>{});
+  let ctrlReloaded = false;                     // дублирующий канал к SW_ACTIVATED
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (ctrlReloaded || editingBusy()) return;
+    ctrlReloaded = true;
+    sessionStorage.setItem('techlog_updated', '1');
+    location.reload();
+  });
   navigator.serviceWorker.addEventListener('message', (e) => {
     if (e.data?.type !== 'SW_ACTIVATED') return;
     if (e.data.version === APP_VERSION) return;
@@ -4327,7 +4389,8 @@ const App = {
   statMine(v){ state.statMine = v; render(); },
   async updCheck(){
     await checkForUpdate('вручную', true);
-    toast(state.updAvail ? '⬆ ' + t('upd_found') + ': ' + state.updAvail : '✓ ' + t('upd_latest'), state.updAvail ? 'inf' : undefined);
+    if (state.updAvail){ toast('⬆ ' + t('upd_found') + ': ' + state.updAvail, 'inf'); await applyUpdateNow(); return; }
+    toast('✓ ' + t('upd_latest'));
     render();
   },
   batchPdf,
