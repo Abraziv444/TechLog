@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.39';
+const APP_VERSION = '1.07.40';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -1517,8 +1517,12 @@ function editLocked(j){ const n = editLockDays(); if (!n || isManager()) return 
 function canApprove(){ return isAdmin() || (state.user.role === 'manager' && !!((state.data.org_settings||{}).manager_can_approve)); }
 function stockVisibleAll(){ return (state.data.org_settings || {}).stock_visible_all !== false; }
 function vmCur(){
-  try{ const v = localStorage.getItem('techlog_view_mode'); if (v) return v; }catch(e){}
-  return window.innerWidth >= 980 ? 'desktop' : 'mobile';
+  /* v1.07.40: единственный источник правды — localStorage (как в viewmode.js).
+     Раньше при пустом LS режим «угадывался» по ширине окна: подсветка кнопок
+     в шапке расходилась с реальным классом tl-desktop, и клик по «уже
+     активной» кнопке выглядел как «не переключается». */
+  try{ return localStorage.getItem('techlog_view_mode') === 'desktop' ? 'desktop' : 'mobile'; }catch(e){}
+  return 'mobile';
 }
 function canReorder(j){ return j && (isAdmin() || j.technician_id === state.user.id || (state.user.role === 'manager' && mgrReorderOn())); }
 /* v1.07.25: приоритет/очерёдность. Свои работы и админ — прямой upsert (RLS
@@ -4279,7 +4283,14 @@ const App = {
   bkExport, bkImportPick, bkSaveLog, runDiag,
   setVm(v){
     try{
-      if (window.TLView && window.TLView.setMode){ window.TLView.setMode(v); render(); return; }
+      if (window.TLView && window.TLView.setMode){
+        window.TLView.setMode(v);
+        /* v1.07.40: контроль результата. Если класс на <html> не совпал
+           с выбором (сломался viewmode.js и т.п.) — жёсткий путь: LS + reload. */
+        const want = v === 'desktop';
+        if (document.documentElement.classList.contains('tl-desktop') !== want) throw 0;
+        render(); return;
+      }
     }catch(e){}
     try{ localStorage.setItem('techlog_view_mode', v); }catch(e){}
     location.reload();
@@ -4425,6 +4436,10 @@ const App = {
   authMode(up){ $('#auth-signin').style.display = up?'none':''; $('#auth-signup').style.display = up?'':'none'; },
 };
 window.App = App;
+
+/* v1.07.40: любое изменение режима (в т.ч. пилюлей на экране логина или из
+   консоли) освежает разметку — подсветка кнопок в шапке не «залипает». */
+window.addEventListener('tl:viewmode', () => { try { render(); } catch(e){} });
 
 
 /* =====================================================================

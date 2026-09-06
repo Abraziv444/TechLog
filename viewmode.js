@@ -1,5 +1,5 @@
 /* =====================================================================
-   TechLog · viewmode.js — переключатель «Телефон | Компьютер» (v1.07.15)
+   TechLog · viewmode.js — переключатель «Телефон | Компьютер» (v1.07.40)
 
    АРХИТЕКТУРНОЕ ПРАВИЛО (однонаправленная зависимость):
    ─ Мобильная версия = базовая. Это app.js + styles.css, и этот файл
@@ -70,9 +70,9 @@
     '.vm-btn.on{background:var(--blue,#1CB0F6);color:#04314A;}' +      /* активная — синяя */
     '.vm-btn:not(.on):hover{color:var(--blue,#1CB0F6);}' +
     '.vm-btn:focus-visible{outline:3px solid rgba(28,176,246,.45);outline-offset:1px;}' +
-    '@media (min-width:980px){html.tl-desktop .vm-btn span{display:inline;}' +
-      'html.tl-desktop .vm-btn{padding:5px 14px;}}' +                  /* ПК-режим: с подписями */
-    '';  /* v1.07.26: пилюля всегда справа под бейджем роли — ряда над шапкой больше нет */
+    '';  /* v1.07.40: подписи не показываем нигде — мини-пилюля (только значки)
+             одинакова на телефоне и ПК; после входа её рисует сама шапка (#vm-slot),
+             а эта плавающая остаётся только на экране логина. */
 
   function injectStyles() {
     if (document.getElementById('vm-style')) return;
@@ -105,6 +105,9 @@
     safeSet(KEY, mode);
     applyClass(mode);
     paintButtons(mode);
+    /* v1.07.40: сообщаем приложению (если оно есть) — оно перерисует шапку.
+       Зависимость по-прежнему односторонняя: мы ничего из App.* не зовём. */
+    try { window.dispatchEvent(new CustomEvent('tl:viewmode', { detail: { mode: mode } })); } catch (e) {}
   }
 
   function buildBar() {
@@ -158,25 +161,19 @@
      Фиксированные отступы от края окна ломались на планшетах, где контент
      уже окна — теперь позицию считаем от реального положения .role-tag. */
   function placeSeg() {
-    /* v1.07.38: в мобильной раскладке переключатель рисует САМА шапка
-       приложения (нативный поток вёрстки — выравнивание гарантировано,
-       никаких координат). Наша пилюля там прячется; ПК-режим и экран
-       логина продолжают использовать её как раньше. */
+    /* v1.07.40: правило одно для всех режимов и ширин. Залогинены
+       (#vm-slot в шапке) → плавающая пилюля скрыта: переключатель рисует
+       сама шапка, одинаково на телефоне и ПК. Экран логина → плавающая
+       видна в правом верхнем углу. Раньше на ПК жила отдельная центральная
+       пилюля с подписями: две реализации расходились подсветкой, а на
+       границе 980px переключатель вовсе пропадал. */
     var seg = document.querySelector('.vm-seg');
     if (!seg) return;
     var bar = document.querySelector('.vm-bar');
     if (bar && bar.style.zIndex !== '120') bar.style.zIndex = '120';
     if (bar && seg.parentNode !== bar) bar.appendChild(seg);
-    var desktop = document.documentElement.classList.contains('tl-desktop')
-      && window.innerWidth >= 980;
-    if (desktop) {
-      seg.style.display = '';
-      seg.style.position = ''; seg.style.right = '';
-      seg.style.top = ''; seg.style.transform = '';
-      return;
-    }
     if (document.getElementById('vm-slot')) {   // залогинены — пилюля в шапке
-      seg.style.display = 'none';
+      if (seg.style.display !== 'none') seg.style.display = 'none';
       return;
     }
     seg.style.display = '';                     // экран логина
