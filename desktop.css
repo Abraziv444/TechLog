@@ -114,8 +114,26 @@
     width:calc(100vw - var(--tl-padl,128px) - 28px);
     margin-inline:calc((100% - (100vw - var(--tl-padl,128px) - 28px))/2);
   }
-  html.tl-desktop .bcol{ flex:0 0 var(--bcolw,260px); max-width:var(--bcolw,260px); }
+  html.tl-desktop .bcol{ flex:0 0 var(--bcolw,260px); max-width:var(--bcolw,260px);
+    container-type:inline-size; }               /* v1.07.52: колонка — контейнер для ужимок */
   html.tl-desktop .bcol.bday-sel{ border-color:var(--blue,#1CB0F6); }
+  /* v1.07.52: минимум N сотрудников без скролла — на узких колонках карточки
+     компактнеют: меньше паддинги/шрифты/аватар, у счётчиков остаются числа. */
+  @container (max-width: 200px){
+    .bcol-h .avatar{ width:26px; height:26px; font-size:.62rem; }
+    .bcol-h .grow b{ font-size:.78rem; }
+    .bunit{ display:none; }
+    .bjob{ padding:5px 22px 5px 18px; }
+    .bjob .bmain b{ font-size:.8rem; }
+    .bjob .bwt{ font-size:.58rem; }
+    .bnum{ font-size:.6rem; }
+    .car-no{ display:none; }
+  }
+  @container (max-width: 150px){
+    .bcol-h .grow .tiny{ font-size:.56rem; letter-spacing:0; }
+    .bjob{ padding:4px 16px 4px 14px; }
+    .brail{ display:none; }                      /* стрелкам негде жить — двигать через широкий режим */
+  }
 }
 
 /* ============ Широкий экран (окно от 1180px): две колонки ============ */

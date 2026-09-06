@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.51';
+const APP_VERSION = '1.07.52';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -288,8 +288,8 @@ const I18N = {
     priority: 'Приоритет', move_up: 'Выше', move_down: 'Ниже',
     tab_board: 'Доска', b_jobs: 'работ', b_pk: 'пикапов', b_empty: 'День свободен',
     b_ext: 'продление', b_over: 'просрочен', b_only: 'Доска доступна менеджеру и администратору.',
-    b_cols: 'Доска', b_cols_lbl: 'Сотрудников на экране (ПК-режим)', b_cols_auto: 'Авто',
-    b_cols_note: 'Личная настройка: хранится в вашем профиле и действует только у вас.',
+    b_cols: 'Доска', b_cols_lbl: 'Минимум сотрудников на экране без скролла (ПК)', b_cols_auto: 'Авто',
+    b_cols_note: 'Личная настройка (хранится в профиле). Если столько не влезает — карточки сужаются; когда людей меньше, ширина остаётся обычной.',
     car_no: 'Номер машины', mgr_reorder_chk: 'Менеджер может менять очерёдность задач (Доска и ▲▼)',
     tomorrow: 'Завтра',
     overdue_hint: 'Просроченные пикапы не входят в число «сегодня» — они показаны отдельным числом.',
@@ -587,8 +587,8 @@ const I18N = {
     priority: 'Priority', move_up: 'Up', move_down: 'Down',
     tab_board: 'Board', b_jobs: 'jobs', b_pk: 'pickups', b_empty: 'Free day',
     b_ext: 'extension', b_over: 'overdue', b_only: 'The Board is for managers and admins.',
-    b_cols: 'Board', b_cols_lbl: 'Staff columns per screen (desktop)', b_cols_auto: 'Auto',
-    b_cols_note: 'Personal setting: stored in your profile and applies only to you.',
+    b_cols: 'Board', b_cols_lbl: 'Minimum staff visible without scrolling (desktop)', b_cols_auto: 'Auto',
+    b_cols_note: 'Personal setting (stored in your profile). If they do not fit, cards shrink; with fewer people the width stays normal.',
     car_no: 'Vehicle #', mgr_reorder_chk: 'Manager can reorder tasks (Board & ▲▼)',
     tomorrow: 'Tomorrow',
     overdue_hint: 'Overdue pickups are not counted in “today” — they are shown as a separate number.',
@@ -3994,7 +3994,7 @@ function viewSettings(){
     <div class="form-row"><label>${t('b_cols_lbl')}</label>
       <select onchange="App.setBoardCols(this.value)">
         <option value="0" ${!(+state.user.board_cols)?'selected':''}>${t('b_cols_auto')}</option>
-        ${[3,4,5,6,7,8,10].map(n=>`<option value="${n}" ${+state.user.board_cols===n?'selected':''}>${n}</option>`).join('')}
+        ${[3,4,5,6,7,8,10,12].map(n=>`<option value="${n}" ${+state.user.board_cols===n?'selected':''}>${n}</option>`).join('')}
       </select></div>
     <div class="tiny">${t('b_cols_note')}</div>
   </div>` : '';
@@ -6185,24 +6185,30 @@ function viewBoard(){
       <div class="bcol-h">
         <span class="avatar role-${p.role}">${esc(initials(p.display_name))}</span>
         <div class="grow"><b>${esc(shortName(p.display_name))}</b>${p.car_no != null ? ` <span class="car-no" title="${t('car_no')}">${p.car_no}</span>` : ''}
-          <div class="tiny">${js.length} ${t('b_jobs')} · ${pls.length} ${t('b_pk')}</div></div>
+          <div class="tiny">${js.length}<span class="bunit"> ${t('b_jobs')}</span> · ${pls.length}<span class="bunit"> ${t('b_pk')}</span></div></div>
       </div>
       ${cards || `<div class="tiny bempty">${t('b_empty')}</div>`}
     </div>`;
   }).join('');
   const tools = `<div class="board-tools"><label class="opt ${hideEmpty?'on':''}">
     <input type="checkbox" ${hideEmpty?'checked':''} onchange="App.boardHideEmpty(this.checked)"> ${t('b_hide_empty')}</label></div>`;
-  return viewWeek() + extReqStripHtml() + propStripHtml() + tools + `<div class="board"${boardColsStyle()}>${cols}</div>`;
+  return viewWeek() + extReqStripHtml() + propStripHtml() + tools + `<div class="board"${boardColsStyle(staff.length)}>${cols}</div>`;
 }
 
 /* v1.07.49: личная ширина колонок доски. N сотрудников на экран (профиль,
    board_cols) → CSS-переменная; desktop.css превращает её в ширину .bcol.
    Мобильная раскладка переменную игнорирует (там фикс 232px). */
-function boardColsStyle(){
+function boardColsStyle(colCount){
+  /* v1.07.52: N — это МИНИМУМ сотрудников, видимых без горизонтального
+     скролла. Сжимаем под min(N, реальное число колонок): когда людей
+     меньше N — все и так видны, ширина остаётся обычной (260px); когда
+     N дефолтом не влезает — карточки сужаются ровно до нужного, лишние
+     сотрудники остаются в скролле. */
   const n = +((state.user || {}).board_cols) || 0;
   if (n < 2 || n > 12) return '';
-  const gaps = (n - 1) * 10;   // только зазоры: 100% в calc — уже контент-зона (без паддингов)
-  return ` style="--bcolw:calc((100% - ${gaps}px)/${n})"`;
+  const eff = Math.max(2, Math.min(n, +colCount || n));
+  const gaps = (eff - 1) * 10;   // только зазоры: 100% в calc — уже контент-зона
+  return ` style="--bcolw:min(260px, calc((100% - ${gaps}px)/${eff}))"`;
 }
 
 /* v1.07.49: НЕДЕЛЬНАЯ ДОСКА ВОРКЕРА (ПК): колонка = день недели, только
@@ -6223,7 +6229,7 @@ function viewBoardWeek(){
     days.push(`<div class="bcol ${sel ? 'bday-sel' : ''}">
       <div class="bcol-h clicky" role="button" tabindex="0" onclick="App.selDay('${iso}')">
         <div class="grow"><b>${t('week_days')[i]} ${d.getDate()}</b> <span class="tiny">${t('months')[d.getMonth()]}</span>
-          <div class="tiny">${js.length} ${t('b_jobs')} · ${pls.length} ${t('b_pk')}</div></div>
+          <div class="tiny">${js.length}<span class="bunit"> ${t('b_jobs')}</span> · ${pls.length}<span class="bunit"> ${t('b_pk')}</span></div></div>
       </div>
       ${cards || `<div class="tiny bempty">${t('b_empty')}</div>`}
     </div>`);
