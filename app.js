@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.40';
+const APP_VERSION = '1.07.41';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -2256,10 +2256,12 @@ function viewWeek(){
 /* =====================================================================
    ЭКРАН: ГЛАВНАЯ (день: работы + пикапы)
    ===================================================================== */
-function triHtml(on, jobId, canEdit){
-  // v1.07.05: треугольник приоритета живёт в правом верхнем углу карточки
+function triHtml(on, jobId, canEdit, inline){
+  /* v1.07.41: на главной треугольник стоит В КОНЦЕ названия комплекса
+     (inline=true) — раньше absolute-угол постоянно пересекался с бейджами
+     оборудования в правой колонке. Доска (.bjob) осталась на угловом. */
   if (!on && !canEdit) return '';
-  const cls = 'pri corner' + (on ? ' on' : '');
+  const cls = 'pri ' + (inline ? 'inline' : 'corner') + (on ? ' on' : '');
   return canEdit
     ? `<button class="${cls}" title="${t('priority')}" onclick="event.stopPropagation();App.togglePriority('${jobId}')"><span class="tri">!</span></button>`
     : `<span class="${cls}"><span class="tri">!</span></span>`;
@@ -2355,10 +2357,9 @@ function viewHome(){
     return `
     <div class="item clicky" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}" onclick="App.pickupModal('${jobId}','${iso}',event)">
       ${rowNumHtml(num.pkNum[jobId])}
-      ${triHtml(!!pkJob.priority, jobId, canPrio(pkJob))}
       ${railHtml(pkJob)}
       <div class="info">
-        <div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
+        <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(p0.unit_number||'')}${triHtml(!!pkJob.priority, jobId, canPrio(pkJob), true)}</span></div>
         ${addrLineHtml(cx)}
         <div class="s">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)} ${overdue?`<span class="chip bad">${t('overdue')}</span>`:''}${list.some(p=>p.ext_of)?` <span class="chip info">${t('ext_chip')}</span>`:''} ${(!state.filterMine || isPlacementSharedWithMe(p0))?'· '+esc(profName(p0.technician_id)):''}</div>
         ${codesLineHtml(cx)}
@@ -2395,10 +2396,9 @@ function viewHome(){
     return `
     <div class="item clicky" data-drag-id="${j.id}" data-can="${canReorder(j)?1:0}" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
       ${rowNumHtml(num.jobNum[j.id])}
-      ${triHtml(!!j.priority, j.id, canPrio(j))}
       ${railHtml(j)}
       <div class="info">
-        <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number||'—')}</div>
+        <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(j.unit_number||'—')}${triHtml(!!j.priority, j.id, canPrio(j), true)}</span></div>
         ${addrLineHtml(cx)}
         <div class="s"><span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}${jobSharedChipHtml(j)}${proposalChipHtml(j)}</div>
         ${codesLineHtml(cx)}

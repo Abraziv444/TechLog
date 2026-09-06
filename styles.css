@@ -588,6 +588,19 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   display:flex;flex-direction:column;gap:4px;align-items:center;
   flex:0 0 auto;margin-right:2px;
 }
+/* v1.07.41: на главной степпер ▲▼ привязан к НИЖНЕЙ границе карточки и
+   всегда ниже порядкового номера (номер — угол сверху). align-self:stretch
+   не годился: при переносе правой колонки на узких экранах flex-строка
+   рейла заканчивалась выше низа карточки. Колонка под кнопки резервируется
+   паддингом, поэтому absolute ни на что не наезжает. Доска (.bjob .brail)
+   не затронута: селектор — только прямой потомок .item.
+   Двойной .item.item — чтобы перебить padding из desktop.css
+   (html.tl-desktop … 11px 14px / компактный 8px 10px) без !important. */
+.item > .rail{position:absolute;left:8px;bottom:10px;margin-right:0}
+.item.item:has(> .rail){
+  padding-left:44px;                     /* 8 + 26 (кнопка) + 10 (зазор) */
+  min-height:88px;                       /* 26 (номер) + 4 + 48 (▲▼) + 10 */
+}
 .rail .mv{
   width:26px;height:22px;border-radius:8px;border:2px solid var(--line);
   background:var(--panel-2);color:var(--dim);font-size:.6rem;font-weight:900;
@@ -606,6 +619,16 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   padding-top:5px;line-height:1;transition:background .15s;
 }
 .pri.on .tri, span.pri.on .tri{background:var(--red)}
+/* v1.07.41: треугольник в конце названия комплекса (главная).
+   .tail держит «Unit N» и треугольник одной неразрывной группой: между
+   текстом и inline-блоком есть точка переноса даже без пробела, и на
+   зауженном .info (ПК ≥1180px) значок падал на отдельную строку. */
+.t .tail{white-space:nowrap}
+.pri.inline{
+  display:inline-grid;place-items:center;width:20px;height:17px;
+  padding:0;margin-left:6px;vertical-align:-2px;
+}
+.pri.inline .tri{width:20px;height:17px;font-size:.55rem;padding-top:4px}
 .pri.on{filter:drop-shadow(0 0 5px rgba(255,75,75,.55))}
 span.pri{display:grid;place-items:center;width:26px;height:24px}
 
@@ -899,7 +922,7 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
    ===================================================================== */
 .item{align-items:flex-start}
 .item .right{display:flex;flex-direction:column;align-items:flex-end}
-.item .rail{margin-top:2px}
+/* v1.07.41: .rail прижат к низу (см. основной блок) — margin-top удалён */
 .topbar .brand{min-width:0}
 .brand .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(1rem,4.5vw,1.3rem)}
 .brand .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
