@@ -101,13 +101,7 @@
     html.tl-desktop .icon-btn:hover, html.tl-desktop .sync-btn:hover{ border-color:var(--blue,#1CB0F6); }
   }
 
-  /* ---------- Тонкий тёмный скроллбар ---------- */
-  html.tl-desktop ::-webkit-scrollbar{ width:10px; height:10px; }
-  html.tl-desktop ::-webkit-scrollbar-thumb{
-    background:var(--line,#31434C); border-radius:6px;
-    border:2px solid var(--bg,#0F171B);
-  }
-  html.tl-desktop ::-webkit-scrollbar-track{ background:transparent; }
+  /* v1.07.48: тонкий скроллбар переехал в базовые стили (все режимы). */
 }
 
 /* ============ Широкий экран (окно от 1180px): две колонки ============ */

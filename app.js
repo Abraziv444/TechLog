@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.47';
+const APP_VERSION = '1.07.48';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -4442,32 +4442,49 @@ window.App = App;
 window.addEventListener('tl:viewmode', () => { try { render(); } catch(e){} });
 
 /* =====================================================================
-   v1.07.47: ДОСКА — прокрутка колёсиком мыши и «схватить-и-тянуть».
+   v1.07.48: ДОСКА — инертная прокрутка колёсиком и «схватить-и-тянуть».
+   Велосити + rAF-затухание (трение 0.92): доска докатывается и остаётся
+   там, где остановилась — scroll-snap удалён, к краям карточек не тянет.
    Слушатели делегированы на window (переживают render), активны только
-   когда курсор над .board и доска реально шире окна. Тач — нативный.
+   над .board и когда доска реально шире окна. Тач — нативный.
    ===================================================================== */
 (function(){
   function boardOf(t){
     const b = t && t.closest && t.closest('.board');
     return (b && b.scrollWidth > b.clientWidth + 2) ? b : null;
   }
-  let snapT = null;
-  const unsnap = (b) => {           // scroll-snap на время прокрутки выключаем, иначе дёргает назад
-    b.classList.add('no-snap');
-    clearTimeout(snapT); snapT = setTimeout(() => b.classList.remove('no-snap'), 160);
-  };
+
+  let vel = 0, raf = 0, glB = null;
+  function glide(b){
+    glB = b;
+    cancelAnimationFrame(raf);
+    const step = () => {
+      const el = glB;
+      if (!el || !document.contains(el) || Math.abs(vel) < 0.4){ vel = 0; return; }
+      const max = el.scrollWidth - el.clientWidth;
+      let nl = el.scrollLeft + vel;
+      if (nl <= 0){ nl = 0; vel = 0; }
+      else if (nl >= max){ nl = max; vel = 0; }
+      el.scrollLeft = nl;
+      vel *= 0.92;
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  function stopGlide(){ vel = 0; cancelAnimationFrame(raf); }
+
   window.addEventListener('wheel', (e) => {
     if (e.ctrlKey) return;                                   // масштаб браузера не перехватываем
     const b = boardOf(e.target); if (!b) return;
     let d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
     if (e.deltaMode === 1) d *= 32;                          // «строки» → пиксели
     if (!d) return;
-    const atStart = b.scrollLeft <= 14;   /* первая snap-точка = padding-left:12 */
-    const atEnd = b.scrollLeft >= b.scrollWidth - b.clientWidth - 2;
-    if ((d < 0 && atStart) || (d > 0 && atEnd)) return;      // на краях отдаём прокрутку странице
+    const atStart = b.scrollLeft <= 1;
+    const atEnd = b.scrollLeft >= b.scrollWidth - b.clientWidth - 1;
+    if (((d < 0 && atStart) || (d > 0 && atEnd)) && Math.abs(vel) < 0.5) return;  // край в покое → странице
     e.preventDefault();
-    unsnap(b);
-    b.scrollLeft += d;
+    vel = Math.max(-90, Math.min(90, vel + d * 0.3));        // инерция: копим скорость
+    glide(b);
   }, { passive: false });
 
   let pan = null;
@@ -4475,7 +4492,9 @@ window.addEventListener('tl:viewmode', () => { try { render(); } catch(e){} });
     if (e.pointerType !== 'mouse' || e.button !== 0) return; // тач/перо — нативная прокрутка
     const b = boardOf(e.target); if (!b) return;
     if (e.target.closest('button,input,select,textarea,a')) return;
-    pan = { b, x: e.clientX, sl: b.scrollLeft, moved: false, id: e.pointerId };
+    stopGlide();                                             // хват — останавливает докат
+    pan = { b, x: e.clientX, sl: b.scrollLeft, moved: false, id: e.pointerId,
+            px: e.clientX, pt: performance.now(), vx: 0 };
   });
   window.addEventListener('pointermove', (e) => {
     if (!pan || e.pointerId !== pan.id) return;
@@ -4486,18 +4505,21 @@ window.addEventListener('tl:viewmode', () => { try { render(); } catch(e){} });
       pan.b.classList.add('panning');
       try { pan.b.setPointerCapture(e.pointerId); } catch(_){}
     }
-    pan.b.classList.add('no-snap');
+    const now = performance.now(), dt = Math.max(1, now - pan.pt);
+    pan.vx = 0.8 * pan.vx + 0.2 * ((e.clientX - pan.px) / dt);   // сглаженная скорость, px/мс
+    pan.px = e.clientX; pan.pt = now;
     pan.b.scrollLeft = pan.sl - dx;
   });
   const panEnd = (e) => {
     if (!pan || e.pointerId !== pan.id) return;
-    const b = pan.b, moved = pan.moved; pan = null;
+    const b = pan.b, moved = pan.moved, vx = pan.vx; pan = null;
     b.classList.remove('panning');
-    setTimeout(() => b.classList.remove('no-snap'), 160);
     if (moved){                                              // после протяжки гасим фантомный клик
       const kill = (ce) => { ce.stopPropagation(); ce.preventDefault(); };
       window.addEventListener('click', kill, true);
       setTimeout(() => window.removeEventListener('click', kill, true), 0);
+      vel = Math.max(-90, Math.min(90, -vx * 16));           // инерция после отпускания (px/кадр)
+      if (Math.abs(vel) >= 2) glide(b); else vel = 0;
     }
   };
   window.addEventListener('pointerup', panEnd);

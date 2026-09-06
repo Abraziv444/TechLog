@@ -343,6 +343,16 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .cdot{width:30px;height:30px;border-radius:50%;border:3px solid transparent}
 .cdot.sel{border-color:#fff;box-shadow:0 0 0 3px var(--blue)}
 .price-input{width:96px;text-align:right;padding:7px 9px}
+/* v1.07.48: тонкий тёмный скроллбар — базовый, для всех режимов и всех
+   скролл-зон (раньше жил только в desktop.css: мобильная раскладка в
+   браузере показывала системный белый с полосой и стрелками). */
+*{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line,#31434C);border-radius:6px;border:2px solid var(--bg,#0F171B)}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+::-webkit-scrollbar-corner{background:transparent}
+
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tabbtn{
@@ -899,12 +909,11 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .car-inp{width:52px;text-align:center;padding:6px 4px}
 
 .board{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;
-  padding:2px 12px 90px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
-  cursor:grab}
-.board.no-snap{scroll-snap-type:none}          /* v1.07.47: на время колеса/протяжки */
+  padding:2px 12px 90px;-webkit-overflow-scrolling:touch;
+  cursor:grab}  /* v1.07.48: scroll-snap удалён — доска не подтягивается к краю карточки */
 .board.panning{cursor:grabbing;user-select:none;-webkit-user-select:none}
 .bcol{flex:0 0 232px;max-width:232px;background:var(--panel);border:2px solid var(--line);
-  border-radius:14px;padding:8px;scroll-snap-align:start}
+  border-radius:14px;padding:8px}
 .bcol-h{display:flex;gap:8px;align-items:center;margin-bottom:6px}
 .bcol-h .avatar{width:34px;height:34px;font-size:.8rem}
 .bjob{position:relative;background:#17232A;border:1px solid var(--line);
