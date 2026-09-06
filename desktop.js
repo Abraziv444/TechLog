@@ -255,12 +255,17 @@
     var T = ru()
       ? { hist: 'История работы', done: 'Работа выполнена', appr: 'Апрув', total: 'Итого', pdf: 'Скачать PDF-инвойс' }
       : { hist: 'Job history', done: 'Job done', appr: 'Approve', total: 'Total', pdf: 'Download PDF invoice' };
+    /* v1.07.45: видимые подписи рядом с иконками (короткие; полные — в title) */
+    var L = ru()
+      ? { hist: 'История', done: 'Работа выполнена', appr: 'Апрув', pdf: 'Скачать' }
+      : { hist: 'History', done: 'Job done', appr: 'Approve', pdf: 'Download' };
+    var lbl = function (k) { return '<span class="djb-lbl">' + L[k] + '</span>'; };
     bar.innerHTML =
-      '<button type="button" class="djb-btn" data-a="hist" title="' + T.hist + '">' + SVG.clock + '</button>' +
-      '<button type="button" class="djb-btn djb-done" data-a="done" title="' + T.done + '">' + SVG.check + '</button>' +
-      '<span class="djb-btn djb-appr" data-a="appr" title="' + T.appr + '">' + SVG.check + '</span>' +
+      '<button type="button" class="djb-btn" data-a="hist" title="' + T.hist + '">' + SVG.clock + lbl('hist') + '</button>' +
+      '<button type="button" class="djb-btn djb-done" data-a="done" title="' + T.done + '">' + SVG.check + lbl('done') + '</button>' +
+      '<span class="djb-btn djb-appr" data-a="appr" title="' + T.appr + '">' + SVG.check + lbl('appr') + '</span>' +
       '<span class="djb-total" id="djb-total" title="' + T.total + '">$0</span>' +
-      '<button type="button" class="djb-btn djb-pdf" data-a="pdf" title="' + T.pdf + '">' + SVG.down + '</button>';
+      '<button type="button" class="djb-btn djb-pdf" data-a="pdf" title="' + T.pdf + '">' + SVG.down + lbl('pdf') + '</button>';
     back.after(bar);
     bar.addEventListener('click', function (e) {
       var b = e.target && e.target.closest ? e.target.closest('[data-a]') : null;
@@ -483,7 +488,7 @@
     eye.type = 'button';
     eye.className = 'djb-btn djb-eye';
     eye.title = ru() ? 'Живой предпросмотр PDF' : 'Live PDF preview';
-    eye.innerHTML = EYE_SVG;
+    eye.innerHTML = EYE_SVG + '<span class="djb-lbl">' + (ru() ? 'Предпросмотр' : 'Preview') + '</span>';
     eye.addEventListener('click', function (e) {
       e.stopPropagation();
       lsSet('techlog_pdf_preview', prefOn() ? 'off' : 'on');

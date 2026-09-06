@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.43';
+const APP_VERSION = '1.07.45';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -2731,7 +2731,7 @@ function pickupModal(jobId, dateISO, ev){
     <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('what_where')}</div>
     <div class="card" style="padding:8px 10px;margin-bottom:10px">${rows.map(p => pkLineHtml(p, true)).join('')}</div>
     ${mediaStripHtml(jobId)}
-    <button class="btn btn-blue" onclick="App.extendModal('${jobId}','${dateISO}')">${ic('calendar')} ${t('extend_rent')}</button>
+    <button class="btn btn-blue" style="margin-bottom:8px" onclick="App.extendModal('${jobId}','${dateISO}')">${ic('calendar')} ${t('extend_rent')}</button>
     <button class="btn btn-green" onclick="App.pickupGroup('${jobId}','${dateISO}')">${ic('chk_on')} ${t('pick_all_btn')}</button>
     <div class="btn-row3" style="grid-template-columns:1fr 1fr">
       <button class="btn btn-ghost" onclick="App.closeModal();App.openJob('${jobId}')">${ic('receipt')} ${t('open_invoice')}</button>

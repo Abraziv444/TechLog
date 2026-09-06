@@ -453,13 +453,19 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     border:2px solid var(--line,#31434C); border-radius:999px;
     padding:6px 10px;
   }
+  /* v1.07.45: кнопки дока — пилюли «иконка + подпись» вместо кружков */
   html.tl-desktop .djb-btn{
-    width:38px; height:38px; border-radius:50%;
-    display:grid; place-items:center; cursor:pointer;
+    height:38px; border-radius:999px; padding:0 14px 0 10px;
+    display:inline-flex; align-items:center; gap:7px; cursor:pointer;
     background:var(--panel-2,#1C2B33);
     border:2px solid var(--line,#31434C); color:var(--dim,#8AA0AB);
+    font:inherit;
   }
-  html.tl-desktop .djb-btn svg{ width:20px; height:20px; }
+  html.tl-desktop .djb-btn svg{ width:20px; height:20px; flex:0 0 auto; }
+  html.tl-desktop .djb-lbl{
+    font-weight:800; font-size:.72rem; letter-spacing:.35px;
+    text-transform:uppercase; white-space:nowrap; line-height:1;
+  }
   html.tl-desktop .djb-pdf{ color:var(--blue,#1CB0F6); }
   /* «работа выполнена»: включена — зелёная */
   html.tl-desktop .djb-done.on{
