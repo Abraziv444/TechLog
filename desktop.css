@@ -389,7 +389,10 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
 @media (min-width: 1420px){
   html.tl-desktop #app:has(.inv-sec){
     display:grid;
-    grid-template-columns:220px 1fr minmax(0,max-content) 1fr 190px 190px;
+    grid-template-columns:220px 1fr minmax(380px,max-content) 1fr 205px 205px;
+    /* v1.07.46: центр не уже min-width карточки апрува (иначе при узком #app
+       карточка вылезала из трека под Итого); правые 205px + компактный шрифт
+       кнопок ниже — «Скачать PDF-инвойс» и «Просмотр PDF» в одну строку. */
     column-gap:12px; row-gap:0;
   }
   html.tl-desktop #app:has(.inv-sec) > *{ grid-column:1 / -1; min-width:0; }
@@ -422,10 +425,10 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     grid-row:102; grid-column:5 / span 2; width:auto; margin:0 0 8px;
   }
   html.tl-desktop #app:has(.inv-sec) .btn-row3 > *:nth-child(2){ /* Скачать PDF */
-    grid-row:103; grid-column:5; margin:0;
+    grid-row:103; grid-column:5; margin:0 0 8px;                 /* v1.07.46: зазор до ряда Просмотр/Печать */
   }
   html.tl-desktop #app:has(.inv-sec) .btn-row3 > *:nth-child(3){ /* Удалить */
-    grid-row:103; grid-column:6; margin:0;
+    grid-row:103; grid-column:6; margin:0 0 8px;
   }
 }
 
@@ -576,12 +579,17 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   /* Просмотр/Печать — той же правой колонкой, что и Скачать/Удалить:
      работает и в блочном потоке (width+margin-left:auto), и если форма
      свёрстана гридом (row/column заданы блоку целиком). */
-  html.tl-desktop #app:has(.inv-sec) .btn-rowpp{
-    width:380px; margin:0 0 8px auto;
-    grid-template-columns:1fr 1fr;
-    grid-row:104; grid-column:5 / span 2;
-  }
+  /* v1.07.46: Просмотр/Печать кладём в ТЕ ЖЕ колонки грида, что Скачать и
+     Удалить — ширины совпадают по построению, хак width:380px удалён. */
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp{ display:contents; }
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(1){ grid-row:104; grid-column:5; margin:0; }
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(2){ grid-row:104; grid-column:6; margin:0; }
   html.tl-desktop #app:has(.inv-sec) .btn-rowpp > span{ display:none; }
+  /* кнопки правой зоны — компакт как у btn-row3, текст в одну строку при 205px */
+  html.tl-desktop #app:has(.inv-sec) .btn-row3 > .btn,
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > .btn{
+    font-size:.8rem; padding:12px 6px; letter-spacing:.2px; white-space:nowrap;
+  }
   html.tl-desktop .pstrip{ padding-left:0; padding-right:0; }
   html.tl-desktop .bcol{ flex-basis:260px; max-width:260px; }
 }

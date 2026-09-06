@@ -950,8 +950,9 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 /* =====================================================================
    v1.07.27: пропозалы, согласование продлений, кнопки Просмотр/Печать
    ===================================================================== */
-.btn-rowpp{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px}
+.btn-rowpp{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin:8px 0}  /* v1.07.46: зазор и над рядом */
 .btn-rowpp > span{display:none}
+.media-card{margin-top:10px}  /* v1.07.46: «Фото и видео» отделён от секции выше */
 .chip.pr{border-color:var(--purple);color:var(--purple)}
 .chip.prq{border:1px dashed var(--purple);color:var(--purple);opacity:.85}
 .chip.pst{font-size:.6rem;text-transform:uppercase}
