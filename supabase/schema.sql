@@ -121,6 +121,7 @@ $$;
 -- (для существующей базы достаточно выполнить только этот блок)
 -- ---------------------------------------------------------------------
 alter table public.profiles add column if not exists blocked boolean not null default false;
+alter table public.profiles add column if not exists board_cols int;  -- v1.07.49: личных колонок доски (ПК), NULL = авто
 
 -- Админ блокирует/разблокирует сотрудника:
 -- profiles.blocked (для интерфейса) + banned_until в auth.users (GoTrue не пустит

@@ -26,6 +26,8 @@
 @media (min-width: 980px){
 
   /* Слева резервируем место под вертикальную панель навигации */
+  html.tl-desktop{ --tl-padl:128px; }         /* v1.07.49: для full-bleed доски */
+  html.tl-desktop.tl-staff{ --tl-padl:236px; }
   html.tl-desktop body{
     padding-left:128px;
     padding-right:16px;
@@ -102,6 +104,18 @@
   }
 
   /* v1.07.48: тонкий скроллбар переехал в базовые стили (все режимы). */
+
+  /* ---------- v1.07.49: ДОСКА во всю ширину окна ----------
+     #app зажат в 1080px — доска выпрыгивает из него на ширину зоны контента
+     (окно минус левая панель и правый паддинг). Отрицательные margin-inline
+     центрируют блок ровно по этой зоне. Ширина колонки: 260px по умолчанию
+     или из личной настройки профиля (--bcolw ставит app.js). */
+  html.tl-desktop .board{
+    width:calc(100vw - var(--tl-padl,128px) - 28px);
+    margin-inline:calc((100% - (100vw - var(--tl-padl,128px) - 28px))/2);
+  }
+  html.tl-desktop .bcol{ flex:0 0 var(--bcolw,260px); max-width:var(--bcolw,260px); }
+  html.tl-desktop .bcol.bday-sel{ border-color:var(--blue,#1CB0F6); }
 }
 
 /* ============ Широкий экран (окно от 1180px): две колонки ============ */
@@ -585,7 +599,7 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     font-size:.8rem; padding:12px 6px; letter-spacing:.2px; white-space:nowrap;
   }
   html.tl-desktop .pstrip{ padding-left:0; padding-right:0; }
-  html.tl-desktop .bcol{ flex-basis:260px; max-width:260px; }
+  /* v1.07.49: ширина .bcol задаётся выше через var(--bcolw,260px) — старый фикс 260px удалён */
 }
 
 /* ===== v1.07.30: ПК — тосты в правом верхнем углу, Пропозалы читабельной ширины ===== */

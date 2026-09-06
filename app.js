@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.48';
+const APP_VERSION = '1.07.49';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -287,6 +287,8 @@ const I18N = {
     priority: 'Приоритет', move_up: 'Выше', move_down: 'Ниже',
     tab_board: 'Доска', b_jobs: 'работ', b_pk: 'пикапов', b_empty: 'День свободен',
     b_ext: 'продление', b_over: 'просрочен', b_only: 'Доска доступна менеджеру и администратору.',
+    b_cols: 'Доска', b_cols_lbl: 'Сотрудников на экране (ПК-режим)', b_cols_auto: 'Авто',
+    b_cols_note: 'Личная настройка: хранится в вашем профиле и действует только у вас.',
     car_no: 'Номер машины', mgr_reorder_chk: 'Менеджер может менять очерёдность задач (Доска и ▲▼)',
     tomorrow: 'Завтра',
     overdue_hint: 'Просроченные пикапы не входят в число «сегодня» — они показаны отдельным числом.',
@@ -583,6 +585,8 @@ const I18N = {
     priority: 'Priority', move_up: 'Up', move_down: 'Down',
     tab_board: 'Board', b_jobs: 'jobs', b_pk: 'pickups', b_empty: 'Free day',
     b_ext: 'extension', b_over: 'overdue', b_only: 'The Board is for managers and admins.',
+    b_cols: 'Board', b_cols_lbl: 'Staff columns per screen (desktop)', b_cols_auto: 'Auto',
+    b_cols_note: 'Personal setting: stored in your profile and applies only to you.',
     car_no: 'Vehicle #', mgr_reorder_chk: 'Manager can reorder tasks (Board & ▲▼)',
     tomorrow: 'Tomorrow',
     overdue_hint: 'Overdue pickups are not counted in “today” — they are shown as a separate number.',
@@ -2142,6 +2146,7 @@ function viewJournal(){
 }
 
 function render(){
+  if (state && state.user && state.screen === 'board' && !isManager() && vmCur() !== 'desktop') state.screen = 'home';
   const app = $('#app');
   if (!state.user){ app.innerHTML = viewLogin(); return; }
   if (!state.data) state.data = loadLocal() || (HAS_SB ? emptyData() : seedDemoData());
@@ -2206,7 +2211,7 @@ function viewFooter(){
 function viewTabbar(){
   const items = [
     ['home', ICONS.home, t('tab_home')],
-    ...(isManager() ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.25
+    ...((isManager() || vmCur() === 'desktop') ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.49: воркеру — недельная доска в ПК-режиме
     ...(isManager() ? [['proposals', ICONS.prop, t('tab_proposals')]] : []),  // v1.07.27
     ['map', ICONS.map, t('tab_map')],
     ['reports', ICONS.pdf, t('tab_reports')],
@@ -3981,10 +3986,21 @@ async function delRow(table, id){
    ЭКРАН: НАСТРОЙКИ
    ===================================================================== */
 function viewSettings(){
+  const bcolsCard = isManager() ? `
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('board')} ${t('b_cols')}</div>
+    <div class="form-row"><label>${t('b_cols_lbl')}</label>
+      <select onchange="App.setBoardCols(this.value)">
+        <option value="0" ${!(+state.user.board_cols)?'selected':''}>${t('b_cols_auto')}</option>
+        ${[3,4,5,6,7,8,10].map(n=>`<option value="${n}" ${+state.user.board_cols===n?'selected':''}>${n}</option>`).join('')}
+      </select></div>
+    <div class="tiny">${t('b_cols_note')}</div>
+  </div>` : '';
   const u = state.user;
   const org = state.data.org_settings;
   return `
   <div class="section-title">${t('settings')}</div>
+  ${bcolsCard}
 
   <div class="card">
     <div class="settings-row">
@@ -4278,6 +4294,14 @@ const App = {
   repTab(v){ state.repTab = v; render(); },
   jrTab(v){ if (state.jr){ state.jr.tab = v; state.jr.act = ''; loadJournal(true); } },
   boardHideEmpty(v){ localStorage.setItem('tl_board_hide_empty', v ? '1' : '0'); render(); },
+  async setBoardCols(v){                                 /* v1.07.49: личная ширина доски */
+    const n = +v || null;
+    const p = (state.data.profiles || []).find(x => x.id === state.user.id);
+    state.user.board_cols = n;
+    if (p) p.board_cols = n;
+    try { await dbUpsert('profiles', { ...(p || state.user), board_cols: n }); } catch(e){}
+    render();
+  },
   mediaPick, mediaFlush, mediaOpen, mediaDelete, mediaQDel,
   mediaSaveKeys, mediaConnect, mediaHealth,
   bkExport, bkImportPick, bkSaveLog, runDiag,
@@ -6070,7 +6094,7 @@ async function moveJob(id, dir){
    ===================================================================== */
 function boardCanReorder(){ return isAdmin() || (state.user.role === 'manager' && mgrReorderOn()); }
 function viewBoard(){
-  if (!isManager()) return `<div class="card" style="margin:14px 12px">${t('b_only')}</div>`;
+  if (!isManager()) return viewBoardWeek();   // v1.07.49: воркер — недельная доска (ПК)
   const iso = state.selDate;
   const hid = state.user.role === 'manager' ? hiddenSetFor(state.user.id) : new Set();
   const dayJobs = state.data.jobs.filter(j => j.date === iso && !hid.has(j.technician_id));
@@ -6102,7 +6126,44 @@ function viewBoard(){
   }).join('');
   const tools = `<div class="board-tools"><label class="opt ${hideEmpty?'on':''}">
     <input type="checkbox" ${hideEmpty?'checked':''} onchange="App.boardHideEmpty(this.checked)"> ${t('b_hide_empty')}</label></div>`;
-  return viewWeek() + extReqStripHtml() + propStripHtml() + tools + `<div class="board">${cols}</div>`;
+  return viewWeek() + extReqStripHtml() + propStripHtml() + tools + `<div class="board"${boardColsStyle()}>${cols}</div>`;
+}
+
+/* v1.07.49: личная ширина колонок доски. N сотрудников на экран (профиль,
+   board_cols) → CSS-переменная; desktop.css превращает её в ширину .bcol.
+   Мобильная раскладка переменную игнорирует (там фикс 232px). */
+function boardColsStyle(){
+  const n = +((state.user || {}).board_cols) || 0;
+  if (n < 2 || n > 12) return '';
+  const gaps = (n - 1) * 10;   // только зазоры: 100% в calc — уже контент-зона (без паддингов)
+  return ` style="--bcolw:calc((100% - ${gaps}px)/${n})"`;
+}
+
+/* v1.07.49: НЕДЕЛЬНАЯ ДОСКА ВОРКЕРА (ПК): колонка = день недели, только
+   свои работы и пикапы. Клик по шапке дня синхронизирует выбранный день. */
+function viewBoardWeek(){
+  const me = state.user.id;
+  const days = [];
+  for (let i = 0; i < 7; i++){
+    const iso = addDaysISO(state.weekStart, i);
+    const d = parseISO(iso);
+    const js = jobsOn(iso).filter(j => j.technician_id === me || isJobSharedWithMe(j)).sort(jobSortCmp);
+    const pls = pickupsOn(iso).filter(p => p.technician_id === me || isPlacementSharedWithMe(p));
+    const byJob = {};
+    pls.forEach(x => { (byJob[x.job_id] = byJob[x.job_id] || []).push(x); });
+    const cards = js.map((j, i2) => boardJobCard(j, i2, canReorder(j))).join('')
+                + Object.entries(byJob).map(([jid, arr]) => boardPkCard(jid, arr, iso)).join('');
+    const sel = iso === state.selDate;
+    days.push(`<div class="bcol ${sel ? 'bday-sel' : ''}">
+      <div class="bcol-h clicky" role="button" tabindex="0" onclick="App.selDay('${iso}')">
+        <div class="grow"><b>${t('week_days')[i]} ${d.getDate()}</b> <span class="tiny">${t('months')[d.getMonth()]}</span>
+          <div class="tiny">${js.length} ${t('b_jobs')} · ${pls.length} ${t('b_pk')}</div></div>
+      </div>
+      ${cards || `<div class="tiny bempty">${t('b_empty')}</div>`}
+    </div>`);
+  }
+  /* вся неделя на экране: 7 равных колонок (60px = шесть зазоров по 10) */
+  return viewWeek() + `<div class="board" style="--bcolw:calc((100% - 60px)/7)">${days.join('')}</div>`;
 }
 function boardJobCard(j, idx, canOrd){
   const wt = wtById(j.work_type_id), cx = cxById(j.complex_id);
