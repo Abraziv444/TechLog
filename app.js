@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.50';
+const APP_VERSION = '1.07.51';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -6069,7 +6069,10 @@ async function runDbDiagnostics(){
     try{
       const { data, error } = await state.sb.rpc(fn, args);
       const ms = Date.now() - t0;
-      if (error) L.push(`⛔ функция ${fn}: ${errStr(error)} · ${ms} мс`);
+      if (error){
+        const ro = String(error.code||'') === '25006' || /read-only transaction/i.test(errStr(error));
+        L.push(`⛔ функция ${fn}: ${errStr(error)}${ro ? '  ← функция помечена STABLE при INSERT внутри (анти-брутфорс): выполните supabase/update-to-1_07_51.sql — до этого регистрация по инвайту не работает' : ''} · ${ms} мс`);
+      }
       else L.push(`${data === expect ? '✅' : '⚠️'} функция ${fn}: → ${data} · ${ms} мс`);
     }catch(e){ L.push(`⛔ функция ${fn}: ${errStr(e)}`); }
   }
