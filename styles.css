@@ -899,7 +899,10 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .car-inp{width:52px;text-align:center;padding:6px 4px}
 
 .board{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;
-  padding:2px 12px 90px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+  padding:2px 12px 90px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+  cursor:grab}
+.board.no-snap{scroll-snap-type:none}          /* v1.07.47: на время колеса/протяжки */
+.board.panning{cursor:grabbing;user-select:none;-webkit-user-select:none}
 .bcol{flex:0 0 232px;max-width:232px;background:var(--panel);border:2px solid var(--line);
   border-radius:14px;padding:8px;scroll-snap-align:start}
 .bcol-h{display:flex;gap:8px;align-items:center;margin-bottom:6px}
