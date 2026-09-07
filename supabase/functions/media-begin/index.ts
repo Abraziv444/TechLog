@@ -67,10 +67,16 @@ Deno.serve(async (req) => {
     const t = await driveToken();
     const cfg = await driveConfig();
     const parent = await monthFolder(t, cfg.gd_folder_id, String(job.date).slice(0, 7));
+    /* v1.07.69: сессию открывает сервер, а байты льёт браузер. Google отдаёт
+       CORS-заголовки на адрес сессии только если при открытии был передан
+       Origin браузера — иначе браузерный PUT отбивается («Failed to fetch»),
+       хотя сам сервер с Google работает нормально. */
+    const origin = req.headers.get("Origin") ?? "";
     const init = await fetch(
       "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable", {
       method: "POST",
       headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json",
+        ...(origin ? { Origin: origin } : {}),
         "X-Upload-Content-Type": String(mime ?? "application/octet-stream"),
         "X-Upload-Content-Length": String(size) },
       body: JSON.stringify({ name: file_name, parents: [parent],
@@ -78,6 +84,7 @@ Deno.serve(async (req) => {
     const upload_url = init.headers.get("Location");
     if (!upload_url) return jres({ error: "DRIVE_INIT: " + await init.text() }, 502);
 
-    return jres({ media_id: id, upload_url, file_name, thumb_path, seq });
+    return jres({ media_id: id, upload_url, file_name, thumb_path, seq,
+      cors: !!origin });                       // диагностика: ушёл ли Origin
   } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
 });

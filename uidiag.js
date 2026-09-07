@@ -75,7 +75,11 @@
       c_overflow: 'Вылет за правый край', c_clip: 'Обрезанный текст',
       c_hit: 'Размер зон нажатия', c_bars: 'Перекрытие нижней панелью',
       c_contrast: 'Контраст текста', c_handlers: 'Обработчики в разметке',
-      c_dom: 'Гигиена разметки', c_scroll: 'Плавность прокрутки', c_layers: 'Слои и модалки'
+      c_dom: 'Гигиена разметки', c_scroll: 'Плавность прокрутки', c_layers: 'Слои и модалки',
+      c_tab: 'Порядок табуляции и фокус', c_text: 'Крупный шрифт (×1.3 и ×1.6)',
+      c_narrow: 'Узкий экран (320px)', c_i18n: 'Переводы', c_store: 'Хранилище',
+      c_paint: 'Вес отрисовки', c_safe: 'Безопасные зоны экрана',
+      env: 'Устройство', all_title: 'Отчёт по всем экранам', walking: 'Обхожу экраны…'
     },
     en: {
       title: 'Interface diagnostics', run: 'Check this screen', again: 'Run again', close: 'Close',
@@ -86,7 +90,11 @@
       c_overflow: 'Overflow past right edge', c_clip: 'Clipped text',
       c_hit: 'Tap target size', c_bars: 'Hidden behind bottom bar',
       c_contrast: 'Text contrast', c_handlers: 'Inline handlers',
-      c_dom: 'Markup hygiene', c_scroll: 'Scrolling smoothness', c_layers: 'Layers and modals'
+      c_dom: 'Markup hygiene', c_scroll: 'Scrolling smoothness', c_layers: 'Layers and modals',
+      c_tab: 'Tab order and focus', c_text: 'Large text (×1.3 and ×1.6)',
+      c_narrow: 'Narrow screen (320px)', c_i18n: 'Translations', c_store: 'Storage',
+      c_paint: 'Paint weight', c_safe: 'Screen safe areas',
+      env: 'Device', all_title: 'Report for every screen', walking: 'Walking the screens…'
     }
   };
   function T(k) { return (TXT[lang()] || TXT.ru)[k] || k; }
@@ -212,6 +220,15 @@
         if (el.disabled || getComputedStyle(el).pointerEvents === 'none') return;
         var r = clipped(el);
         if (r.w < 4 || r.h < 4) return;                 // элемент укатан в свой скроллер — не его вина
+        /* ссылка, перенесённая на две строки: общая рамка охватывает и
+           пустоту между строками, её центр попадает мимо текста. Меряем
+           по первой строчной рамке, а не по объединённой. */
+        var rects = el.getClientRects ? el.getClientRects() : null;
+        if (rects && rects.length > 1) {
+          var f = rects[0];
+          r = { t: f.top, b: f.bottom, l: f.left, r: f.right, w: f.width, h: f.height };
+          if (r.w < 4 || r.h < 4) return;
+        }
         var pts = [
           [r.l + r.w / 2, r.t + r.h / 2],
           [r.l + r.w * 0.25, r.t + r.h / 2],
@@ -310,14 +327,52 @@
   }
 
   /* --- 5. размер зон нажатия ------------------------------------------- */
+  /* Рамка элемента и то, что ловит палец, — разные вещи: зону нажатия часто
+     расширяют прозрачным псевдоэлементом, вид при этом не меняется. Меряем
+     не рамку, а докуда реально дотягивается нажатие. */
+  function effectiveHit(el, r) {
+    function reach(dx, dy) {
+      var far = 0;
+      for (var d = 4; d <= 14; d += 5) {
+        var x = r.l + r.w / 2 + dx * (r.w / 2 + d);
+        var y = r.t + r.h / 2 + dy * (r.h / 2 + d);
+        if (x < 1 || y < 1 || x > innerWidth - 1 || y > innerHeight - 1) break;
+        var top = document.elementFromPoint(x, y);
+        if (!top || !(top === el || el.contains(top))) break;
+        far = d;
+      }
+      return far;
+    }
+    return { w: r.w + reach(-1, 0) + reach(1, 0), h: r.h + reach(0, -1) + reach(0, 1) };
+  }
+  /* Флажок внутри подписи — не самостоятельная цель: нажатие по всей
+     подписи переключает его, и целятся именно в неё. Меряем подпись. */
+  function hitBox(el) {
+    if (/^(checkbox|radio)$/.test(el.type || '')) {
+      var lab = el.closest && el.closest('label');
+      if (lab) {
+        var lr = box(lab);
+        if (lr.w >= 1 && lr.h >= 1) return lr;
+      }
+    }
+    return box(el);
+  }
   function checkHit() {
-    var items = [], MIN = 40;
+    /* мышью попадают точнее пальца — на ПК норма другая */
+    var coarse = false;
+    try { coarse = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0; } catch (e) {}
+    var items = [], MIN = coarse ? 40 : 24;
     hits().forEach(function (el) {
       if (items.length > 12) return;
       if (el.closest('.stepper') || el.tagName === 'A' && el.closest('.legal-links,.tiny')) return;
-      var r = box(el);
-      if (Math.min(r.w, r.h) < MIN)
-        items.push({ level: 'warn', msg: Math.round(r.w) + '×' + Math.round(r.h) + 'px (< ' + MIN + '): ' + pathOf(el), el: el });
+      var r = hitBox(el);
+      if (Math.min(r.w, r.h) >= MIN) return;
+      var e = effectiveHit(el, r);
+      if (Math.min(e.w, e.h) >= MIN) return;          // зону уже расширили — вопросов нет
+      var grown = (e.w > r.w + 1 || e.h > r.h + 1)
+        ? ' (с учётом расширенной зоны ' + Math.round(e.w) + '×' + Math.round(e.h) + ')' : '';
+      items.push({ level: 'warn',
+                   msg: Math.round(r.w) + '×' + Math.round(r.h) + 'px (< ' + MIN + ')' + grown + ': ' + pathOf(el), el: el });
     });
     return mk('hit', T('c_hit'), items);
   }
@@ -390,8 +445,11 @@
       var ratio = (hi + 0.05) / (lo + 0.05);
       var px = parseFloat(s.fontSize) || 16, bold = (+s.fontWeight || 400) >= 700;
       var need = (px >= 24 || (bold && px >= 18.7)) ? 3 : 4.5;
+      /* контраст — всегда предупреждение, а не ошибка: тёмная тема и
+         фирменные цвета местами занижают его намеренно (зелёный логотип
+         на зелёном), решать тут человеку, а не проверке */
       if (ratio < need)
-        items.push({ level: ratio < need - 1.5 ? 'err' : 'warn', msg: ratio.toFixed(2) + ' при норме ' + need + ': ' + pathOf(el), el: el });
+        items.push({ level: 'warn', msg: ratio.toFixed(2) + ' при норме ' + need + ': ' + pathOf(el), el: el });
     });
     return mk('contrast', T('c_contrast'), items);
   }
@@ -477,7 +535,11 @@
         }
         if (LONG.length) {
           var worst = Math.max.apply(null, LONG.map(function (x) { return x.ms; }));
-          items.push({ level: worst > 120 ? 'err' : 'warn', msg: 'во время прокрутки главный поток блокировался ' + LONG.length + ' раз, дольше всего на ' + worst + ' мс', el: null });
+          /* одна случайная задержка бывает от сборки мусора и на выводы не
+             тянет; дефект — это либо очень долгая пауза, либо несколько подряд */
+          var bad = worst > 200 || LONG.length > 2;
+          items.push({ level: bad ? 'err' : 'warn',
+                       msg: 'во время прокрутки главный поток блокировался ' + LONG.length + ' раз, дольше всего на ' + worst + ' мс', el: null });
         }
         items.push({ level: 'ok', msg: 'высота страницы ' + h + 'px, узлов ' + nodes, el: null });
         done(mk('scroll', T('c_scroll'), items));
@@ -499,10 +561,300 @@
     return mk('layers', T('c_layers'), items);
   }
 
+  /* ------------------------------------------------------------------
+     Окружение: без него отчёт с чужого телефона нечитаем — непонятно,
+     на каком экране и в каком масштабе всё ломалось.
+     ------------------------------------------------------------------ */
+  function insets() {
+    try {
+      var p = document.createElement('div');
+      p.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;' +
+        'padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) ' +
+        'env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)';
+      document.body.appendChild(p);
+      var c = getComputedStyle(p);
+      var v = { t: parseFloat(c.paddingTop) || 0, r: parseFloat(c.paddingRight) || 0,
+                b: parseFloat(c.paddingBottom) || 0, l: parseFloat(c.paddingLeft) || 0 };
+      p.remove();
+      return v;
+    } catch (e) { return { t: 0, r: 0, b: 0, l: 0 }; }
+  }
+
+  function envInfo() {
+    var vv = window.visualViewport, ins = insets();
+    var mode = document.documentElement.classList.contains('tl-desktop') ? 'ПК' : 'телефон';
+    var stand = false;
+    try { stand = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) {}
+    var ua = navigator.userAgent || '';
+    var dev = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad'
+            : /Android/.test(ua) ? 'Android' : /Macintosh/.test(ua) ? 'Mac'
+            : /Windows/.test(ua) ? 'Windows' : 'прочее';
+    return {
+      view: innerWidth + '×' + innerHeight,
+      screen: (screen.width || 0) + '×' + (screen.height || 0),
+      dpr: window.devicePixelRatio || 1,
+      ratio: (innerWidth / Math.max(1, innerHeight)).toFixed(2),
+      orient: innerWidth >= innerHeight ? 'альбомная' : 'книжная',
+      zoom: vv ? +(vv.scale || 1).toFixed(2) : 1,
+      safe: ins.t + '/' + ins.r + '/' + ins.b + '/' + ins.l,
+      mode: mode, device: dev, pwa: stand,
+      lang: lang(), font: parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    };
+  }
+
+  function envLine(e) {
+    return e.device + ' · ' + e.view + ' (' + e.ratio + ') · ' + e.orient + ' · dpr ' + e.dpr +
+      ' · экран ' + e.screen + ' · режим ' + e.mode + (e.pwa ? ' · PWA' : '') +
+      ' · шрифт ' + e.font + 'px' + (e.zoom !== 1 ? ' · масштаб ' + e.zoom : '') +
+      ' · безопасные поля ' + e.safe;
+  }
+
   function mk(id, title, items) {
     var lvl = items.some(function (i) { return i.level === 'err'; }) ? 'err'
             : items.some(function (i) { return i.level === 'warn'; }) ? 'warn' : 'ok';
     return { id: id, title: title, level: lvl, items: items };
+  }
+
+  /* --- 12. порядок табуляции и ловушки фокуса --------------------------- */
+  var FOCUSABLE = 'a[href],button,input,select,textarea,summary,[tabindex]';
+  function checkTab() {
+    var items = [];
+    var all = qsa('#app ' + FOCUSABLE.split(',').join(',#app ') + ',.overlay ' + FOCUSABLE.split(',').join(',.overlay '))
+      .filter(function (el) { return visible(el) && !el.disabled && el.tabIndex >= 0; });
+
+    all.forEach(function (el) {
+      if (items.length > 10) return;
+      if (el.tabIndex > 0) items.push({ level: 'warn', msg: 'tabindex=' + el.tabIndex + ' ломает естественный порядок: ' + pathOf(el), el: el });
+      if (el.closest('[aria-hidden="true"],[hidden]')) items.push({ level: 'err', msg: 'фокусируемый элемент внутри скрытого блока: ' + pathOf(el), el: el });
+    });
+
+    /* прыжки фокуса: следующий по разметке элемент оказывается заметно
+       выше предыдущего — палец идёт вниз, а фокус скачет вверх */
+    var jumps = 0, first = null;
+    for (var i = 0; i + 1 < all.length; i++) {
+      var a = box(all[i]), b = box(all[i + 1]);
+      if (b.t < a.t - 40) { jumps++; if (!first) first = all[i + 1]; }
+    }
+    if (jumps > 2)
+      items.push({ level: 'warn', msg: 'порядок табуляции скачет вверх ' + jumps + ' раз, первый — ' + pathOf(first), el: first });
+
+    /* открыта модалка — фокус не должен уходить на страницу под ней */
+    var ov = qsa('.overlay').filter(visible)[0];
+    if (ov) {
+      var outside = all.filter(function (el) { return !ov.contains(el); });
+      if (outside.length)
+        items.push({ level: 'err', msg: 'модалка открыта, но табуляцией доступно ' + outside.length + ' элементов под ней (нет ловушки фокуса)', el: outside[0] });
+    }
+    return mk('tab', T('c_tab'), items);
+  }
+
+  /* --- 13. крупный шрифт ------------------------------------------------ */
+  function overflowNow() {
+    /* что вылезает за свою рамку прямо сейчас */
+    var out = [];
+    var W = document.documentElement.clientWidth;
+    var pageOver = document.documentElement.scrollWidth - W;
+    if (pageOver > 1) {
+      out.push({ what: 'страница', over: pageOver, el: null });
+      /* сразу называем виновника: без имени такая строка в отчёте
+         бесполезна — непонятно, что чинить */
+      var worst = [];
+      /* смотрим всю страницу, а не только #app: раздуть её может и то,
+         что живёт рядом — тосты, всплывающие подсказки, баннеры */
+      qsa('body *').forEach(function (el) {
+        if (isSelf(el) || !visible(el) || el.closest('.board,.tabs,.week')) return;
+        var b = el.getBoundingClientRect();
+        if (b.right > W + 1 && b.width < W * 3) worst.push({ over: b.right - W, el: el });
+      });
+      worst.sort(function (a, b) { return b.over - a.over; });
+      worst.slice(0, 3).forEach(function (x) {
+        out.push({ what: 'за край: ' + pathOf(x.el), over: x.over, el: x.el });
+      });
+    }
+    qsa('#app *').forEach(function (el) {
+      if (out.length > 10 || !visible(el)) return;
+      if (/INPUT|TEXTAREA|SELECT/.test(el.tagName)) return;
+      var s2 = getComputedStyle(el);
+      if (/auto|scroll/.test(s2.overflowX) || el.closest('.board,.tabs,.week')) return;
+      /* многоточие и мягкое затухание — способ аккуратно обрезать длинный
+         текст, а не поломка вёрстки */
+      if (s2.textOverflow === 'ellipsis' || el.classList.contains('fade-clip')) return;
+      if (el.scrollWidth > el.clientWidth + 4 && el.clientWidth > 0)
+        out.push({ what: pathOf(el), over: el.scrollWidth - el.clientWidth, el: el });
+      else if (s2.overflowY === 'hidden' && el.scrollHeight > el.clientHeight + 6 && el.children.length < 4)
+        out.push({ what: pathOf(el) + ' (по высоте)', over: el.scrollHeight - el.clientHeight, el: el });
+    });
+    return out;
+  }
+  function checkText() {
+    var items = [], root = document.documentElement;
+    var base = parseFloat(getComputedStyle(root).fontSize) || 16;
+    var before = {};
+    overflowNow().forEach(function (o) { before[o.what] = 1; });
+    [1.3, 1.6].forEach(function (k) {
+      root.style.fontSize = (base * k) + 'px';
+      void root.offsetHeight;                             // принудительный пересчёт
+      overflowNow().forEach(function (o) {
+        if (before[o.what] || items.length > 10) return;
+        /* поехала вся страница (появилась горизонтальная прокрутка) —
+           это дефект; отдельный ярлык или значок, вылезший на пару
+           пикселей, — повод присмотреться, но не поломка */
+        items.push({ level: o.what === 'страница' ? 'err' : 'warn',
+                     msg: '×' + k + ': +' + Math.round(o.over) + 'px не помещается — ' + o.what, el: o.el });
+        before[o.what] = 1;                               // не дублируем на ×1.6
+      });
+    });
+    root.style.fontSize = '';
+    void root.offsetHeight;
+    return mk('text', T('c_text'), items);
+  }
+
+  /* --- 14. узкий экран -------------------------------------------------- */
+  function checkNarrow() {
+    var items = [], app = document.getElementById('app');
+    if (!app || innerWidth <= 340) return mk('narrow', T('c_narrow'), items);
+    var before = {};
+    overflowNow().forEach(function (o) { before[o.what] = 1; });
+    var prev = app.style.cssText;
+    app.style.width = '320px'; app.style.maxWidth = '320px'; app.style.margin = '0 auto';
+    void app.offsetHeight;
+    overflowNow().forEach(function (o) {
+      if (before[o.what] || items.length > 8) return;
+      items.push({ level: 'warn', msg: '+' + Math.round(o.over) + 'px не помещается — ' + o.what, el: o.el });
+    });
+    app.style.cssText = prev;
+    void app.offsetHeight;
+    if (items.length)
+      items.push({ level: 'ok', msg: 'оценка без пересчёта медиазапросов: на настоящем узком экране правила ≤380px могут это исправить', el: null });
+    return mk('narrow', T('c_narrow'), items);
+  }
+
+  /* --- 15. переводы ----------------------------------------------------- */
+  function checkI18n() {
+    var items = [], D = window.TL_I18N;
+    if (!D || !D.ru || !D.en) return mk('i18n', T('c_i18n'), items);
+    var ru = Object.keys(D.ru), en = Object.keys(D.en);
+    var miss = ru.filter(function (k) { return en.indexOf(k) < 0; });
+    var extra = en.filter(function (k) { return ru.indexOf(k) < 0; });
+    if (miss.length) items.push({ level: 'warn', msg: 'нет английского перевода у ' + miss.length + ' ключей: ' + miss.slice(0, 8).join(', ') + (miss.length > 8 ? ' …' : ''), el: null });
+    if (extra.length) items.push({ level: 'warn', msg: 'есть только по-английски: ' + extra.slice(0, 8).join(', '), el: null });
+
+    /* ключ вытек в разметку вместо перевода */
+    var seen = {};
+    qsa('#app *,.overlay *').forEach(function (el) {
+      if (items.length > 10 || el.children.length) return;
+      var txt = (el.textContent || '').trim();
+      if (!txt || txt.length > 40 || !/^[a-z][a-z0-9_]{2,}$/.test(txt)) return;
+      if ((txt in D.ru) && !seen[txt]) { seen[txt] = 1; items.push({ level: 'err', msg: 'на экране виден ключ «' + txt + '» вместо перевода: ' + pathOf(el), el: el }); }
+    });
+    return mk('i18n', T('c_i18n'), items);
+  }
+
+  /* --- 16. хранилище ---------------------------------------------------- */
+  function checkStore() {
+    var items = [];
+    try {
+      var tot = 0, top = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i), v = localStorage.getItem(k) || '';
+        var sz = (k.length + v.length) * 2;               // UTF-16
+        tot += sz; top.push({ k: k, sz: sz });
+      }
+      top.sort(function (a, b) { return b.sz - a.sz; });
+      var mb = tot / 1048576;
+      items.push({ level: mb > 4 ? 'err' : mb > 2 ? 'warn' : 'ok',
+                   msg: 'localStorage: ' + mb.toFixed(2) + ' МБ в ' + localStorage.length + ' ключах (предел браузера ≈5 МБ). Крупнейшие: ' +
+                        top.slice(0, 3).map(function (x) { return x.k + ' ' + Math.round(x.sz / 1024) + ' КБ'; }).join(', '), el: null });
+      var pend = JSON.parse(localStorage.getItem('techlog_pending') || '[]');
+      if (pend.length) items.push({ level: pend.length > 20 ? 'err' : 'warn', msg: 'неотправленных записей в очереди: ' + pend.length, el: null });
+    } catch (e) {
+      items.push({ level: 'warn', msg: 'localStorage недоступен: ' + (e && e.message), el: null });
+    }
+    return Promise.resolve().then(function () {
+      if (!navigator.storage || !navigator.storage.estimate) return null;
+      return navigator.storage.estimate().catch(function () { return null; });
+    }).then(function (est) {
+      if (est && est.quota) {
+        var pct = est.usage / est.quota * 100;
+        items.push({ level: pct > 80 ? 'err' : pct > 50 ? 'warn' : 'ok',
+                     msg: 'занято на устройстве: ' + (est.usage / 1048576).toFixed(1) + ' МБ из ' + (est.quota / 1048576).toFixed(0) + ' МБ (' + pct.toFixed(1) + '%)', el: null });
+      }
+      return new Promise(function (done) {
+        if (typeof indexedDB === 'undefined') return done(null);
+        var req;
+        try { req = indexedDB.open('tl-media', 1); } catch (e) { return done(null); }
+        req.onerror = function () { done(null); };
+        req.onsuccess = function () {
+          try {
+            var db = req.result;
+            if (db.objectStoreNames.contains('outbox')) {
+              var c = db.transaction('outbox', 'readonly').objectStore('outbox').count();
+              c.onsuccess = function () {
+                items.push({ level: c.result > 30 ? 'warn' : 'ok', msg: 'очередь фото/видео (IndexedDB): ' + c.result + ' файлов', el: null });
+                db.close(); done(null);
+              };
+              c.onerror = function () { db.close(); done(null); };
+            } else { db.close(); done(null); }
+          } catch (e) { done(null); }
+        };
+      });
+    }).then(function () { return mk('store', T('c_store'), items); });
+  }
+
+  /* --- 17. вес отрисовки ------------------------------------------------ */
+  function checkPaint() {
+    var items = [];
+    var r = window.__tlRender || [];
+    if (r.length) {
+      var last = r[r.length - 1];
+      var byScr = {};
+      r.forEach(function (x) { byScr[x.screen] = Math.max(byScr[x.screen] || 0, x.ms); });
+      var worst = Object.keys(byScr).sort(function (a, b) { return byScr[b] - byScr[a]; })[0];
+      items.push({ level: last.ms > 120 ? 'err' : last.ms > 60 ? 'warn' : 'ok',
+                   msg: 'последняя отрисовка «' + last.screen + '»: ' + last.ms + ' мс; дольше всех «' + worst + '»: ' + byScr[worst].toFixed(1) + ' мс', el: null });
+    }
+    var heavy = 0, fixed = 0, noSize = 0, deep = 0, deepEl = null;
+    qsa('#app *').forEach(function (el) {
+      var s2 = getComputedStyle(el);
+      if ((s2.boxShadow && s2.boxShadow !== 'none') || (s2.filter && s2.filter !== 'none') ||
+          (s2.backdropFilter && s2.backdropFilter !== 'none')) heavy++;
+      if (s2.position === 'fixed') fixed++;
+      if (el.tagName === 'IMG' && !(el.getAttribute('width') && el.getAttribute('height')) && !s2.aspectRatio.startsWith('auto ')) noSize++;
+      var d = 0, p = el;
+      while (p && p !== document.body) { d++; p = p.parentElement; }
+      if (d > deep) { deep = d; deepEl = el; }
+    });
+    items.push({ level: heavy > 250 ? 'warn' : 'ok', msg: 'элементов с тенью/фильтром: ' + heavy + ', фиксированных: ' + fixed, el: null });
+    items.push({ level: deep > 22 ? 'warn' : 'ok', msg: 'глубина разметки: ' + deep + (deep > 22 ? ' — ' + pathOf(deepEl) : ''), el: deep > 22 ? deepEl : null });
+    if (noSize) items.push({ level: 'warn', msg: 'картинок без заданных размеров: ' + noSize + ' — при загрузке страница будет прыгать', el: null });
+    return mk('paint', T('c_paint'), items);
+  }
+
+  /* --- 18. безопасные зоны (вырез, домашняя полоса) --------------------- */
+  function checkSafe() {
+    var items = [], ins = insets();
+    if (!ins.t && !ins.b && !ins.l && !ins.r)
+      return mk('safe', T('c_safe'), [{ level: 'ok', msg: 'у экрана нет вырезов и скруглений', el: null }]);
+
+    var top = document.querySelector('.topbar'), bar = document.querySelector('.tabbar');
+    if (ins.t && top) {
+      var pt = parseFloat(getComputedStyle(top).paddingTop) || 0;
+      if (pt < ins.t) items.push({ level: 'err', msg: 'шапка заходит под вырез: отступ сверху ' + pt + 'px при безопасном поле ' + ins.t + 'px', el: top });
+    }
+    if (ins.b && bar) {
+      var pb = parseFloat(getComputedStyle(bar).paddingBottom) || 0;
+      if (pb < ins.b) items.push({ level: 'err', msg: 'нижняя панель заходит под домашнюю полосу: отступ снизу ' + pb + 'px при ' + ins.b + 'px', el: bar });
+    }
+    hits().forEach(function (el) {
+      if (items.length > 8) return;
+      var r = box(el);
+      if (r.t < ins.t - 1 && !el.closest('.topbar'))
+        items.push({ level: 'warn', msg: 'элемент в зоне выреза: ' + pathOf(el), el: el });
+      if (ins.l && r.l < ins.l - 1)
+        items.push({ level: 'warn', msg: 'элемент в скруглении слева: ' + pathOf(el), el: el });
+    });
+    if (!items.length) items.push({ level: 'ok', msg: 'безопасные поля учтены (' + ins.t + '/' + ins.r + '/' + ins.b + '/' + ins.l + ')', el: null });
+    return mk('safe', T('c_safe'), items);
   }
 
   /* ------------------------------------------------------------------
@@ -514,7 +866,8 @@
     if (fab) fab.style.visibility = 'hidden';
     var checks = [];
     var sync = [checkCover, checkFlow, checkOverflow, checkClip, checkHit, checkBars,
-                checkContrast, checkHandlers, checkDom, checkLayers];
+                checkSafe, checkTab, checkText, checkNarrow, checkI18n,
+                checkContrast, checkHandlers, checkDom, checkPaint, checkLayers];
     sync.forEach(function (f) {
       try { checks.push(f()); }
       catch (e) { checks.push(mk('?', f.name, [{ level: 'warn', msg: 'проверка упала: ' + (e && e.message), el: null }])); }
@@ -523,6 +876,11 @@
       return mk('scroll', T('c_scroll'), [{ level: 'warn', msg: String(e), el: null }]);
     }).then(function (sc) {
       checks.push(sc);
+      return checkStore().catch(function (e) {
+        return mk('store', T('c_store'), [{ level: 'warn', msg: String(e), el: null }]);
+      });
+    }).then(function (st) {
+      checks.push(st);
       if (fab) fab.style.visibility = '';
       var errors = 0, warns = 0;
       checks.forEach(function (c) {
@@ -532,14 +890,78 @@
         screen: (document.getElementById('app') || {}).className || '?',
         version: (window.APP_VERSION || document.querySelector('.brand .sub') && document.querySelector('.brand .sub').textContent || '').trim(),
         w: innerWidth, h: innerHeight, ts: new Date().toISOString(),
+        env: envInfo(),
         errors: errors, warns: warns, checks: checks
       };
       return LAST;
     });
   }
 
+  /* ------------------------------------------------------------------
+     Обход всех экранов одной кнопкой. Ради этого всё и затевалось: на
+     чужом айфоне человек жмёт один раз и присылает готовый .txt.
+     ------------------------------------------------------------------ */
+  var SCREENS = ['home', 'board', 'proposals', 'map', 'reports', 'stats', 'dirs', 'journal', 'settings'];
+  var ALL = null;
+
+  function available() {
+    /* какие вкладки реально есть у этой роли — берём из нижней панели */
+    var have = {};
+    qsa('.tabbar .tab').forEach(function (b) {
+      var on = b.getAttribute('onclick') || '';
+      var m = /App\.go\('([a-z]+)'\)/.exec(on);
+      if (m) have[m[1]] = 1;
+    });
+    var list = SCREENS.filter(function (x) { return have[x]; });
+    return list.length ? list : ['settings'];
+  }
+
+  function runAll(onStep) {
+    var list = available();
+    var back = (window.App && window.App.state && window.App.state.screen) ||
+               ((document.getElementById('app') || {}).className || '').replace('scr-', '') || 'home';
+    var out = [], i = 0;
+    function step() {
+      if (i >= list.length) {
+        try { window.App.go(back); } catch (e) {}
+        ALL = { ts: new Date().toISOString(), env: envInfo(), screens: out,
+                errors: out.reduce(function (a, x) { return a + x.errors; }, 0),
+                warns: out.reduce(function (a, x) { return a + x.warns; }, 0) };
+        return Promise.resolve(ALL);
+      }
+      var scr = list[i++];
+      if (onStep) onStep(scr, i, list.length);
+      try { window.App.go(scr); } catch (e) {}
+      return new Promise(function (res) { setTimeout(res, 320); })
+        .then(run)
+        .then(function (r) { out.push(r); return step(); });
+    }
+    return step();
+  }
+
+  function allText(a) {
+    var L = ['TechLog · ' + T('all_title'), a.ts, T('env') + ': ' + envLine(a.env),
+             'Итого: ' + nErr(a.errors) + ', ' + nWarn(a.warns), ''];
+    a.screens.forEach(function (r) {
+      var hard = 0;
+      r.checks.forEach(function (c) { c.items.forEach(function (i) { if (i.level === 'err') hard++; }); });
+      L.push('──────────────────────────────────────────');
+      L.push(String(r.screen).replace('scr-', '').toUpperCase() + ' — ' + nErr(hard) + ', ' + nWarn(r.warns));
+      r.checks.forEach(function (c) {
+        if (c.level === 'ok') return;
+        L.push('  ' + (c.level === 'err' ? '[!] ' : '[~] ') + c.title);
+        c.items.filter(function (i) { return i.level !== 'ok'; })
+          .forEach(function (i) { L.push('        · ' + i.msg); });
+      });
+      L.push('');
+    });
+    return L.join('\n');
+  }
+
   function asText(r) {
-    var L = ['TechLog · ' + T('title'), T('screen') + ': ' + r.screen + ' · ' + r.w + '×' + r.h + ' · ' + r.ts,
+    var L = ['TechLog ' + (r.version || '') + ' · ' + T('title'),
+             T('screen') + ': ' + String(r.screen).replace('scr-', '') + ' · ' + r.ts,
+             T('env') + ': ' + (r.env ? envLine(r.env) : '—'),
              nErr(r.errors) + ', ' + nWarn(r.warns), ''];
     r.checks.forEach(function (c) {
       L.push((c.level === 'err' ? '[!] ' : c.level === 'warn' ? '[~] ' : '[+] ') + c.title + (c.items.length ? ' (' + c.items.length + ')' : ''));
@@ -571,7 +993,7 @@
       '@media(min-width:720px){#uidiag-modal{align-items:center}#uidiag-modal .ud-win{border-radius:16px}}',
       '#uidiag-modal .ud-hd{padding:12px 14px;border-bottom:2px solid var(--line,#31434C);display:flex;gap:8px;align-items:center}',
       '#uidiag-modal .ud-hd b{flex:1;font-size:.98rem}',
-      '#uidiag-modal .ud-sum{font-size:.74rem;color:var(--dim,#8AA0AB);padding:8px 14px 0}',
+      '#uidiag-modal .ud-sum{font-size:.72rem;color:var(--dim,#8AA0AB);padding:8px 14px 0;white-space:pre-line;line-height:1.4}',
       '#uidiag-modal .ud-body{overflow:auto;padding:8px 14px 14px;-webkit-overflow-scrolling:touch}',
       '#uidiag-modal .ud-chk{border:2px solid var(--line-soft,#26363E);border-radius:12px;margin:8px 0;overflow:hidden}',
       '#uidiag-modal .ud-chk>summary{list-style:none;cursor:pointer;padding:9px 12px;font-weight:800;font-size:.84rem;',
@@ -620,8 +1042,8 @@
     var m = document.getElementById('uidiag-modal');
     if (!m) return;
     var body = m.querySelector('.ud-body'), sum = m.querySelector('.ud-sum');
-    sum.textContent = T('screen') + ': ' + r.screen.replace('scr-', '') + ' · ' + r.w + '×' + r.h +
-      ' · ' + nErr(r.errors) + ' · ' + nWarn(r.warns);
+    sum.textContent = T('screen') + ': ' + String(r.screen).replace('scr-', '') + ' · ' +
+      nErr(r.errors) + ' · ' + nWarn(r.warns) + '\n' + (r.env ? envLine(r.env) : '');
     body.innerHTML = r.checks.map(function (c, ci) {
       var cls = c.level === 'err' ? 'ud-err' : c.level === 'warn' ? 'ud-warn' : 'ud-ok';
       var rows = c.items.length
@@ -643,12 +1065,47 @@
 
   function close() { var m = document.getElementById('uidiag-modal'); if (m) m.remove(); }
 
-  function open() {
+  function paintAll(a) {
+    var m = document.getElementById('uidiag-modal');
+    if (!m) return;
+    m.querySelector('.ud-hd b').textContent = '🩺 ' + T('all_title');
+    m.querySelector('.ud-sum').textContent = 'Итого: ' + nErr(a.errors) + ' · ' + nWarn(a.warns) + '\n' + envLine(a.env);
+    m.querySelector('.ud-body').innerHTML = a.screens.map(function (r) {
+      var hard = 0;
+      r.checks.forEach(function (c) { c.items.forEach(function (i) { if (i.level === 'err') hard++; }); });
+      var cls = hard ? 'ud-err' : r.warns ? 'ud-warn' : 'ud-ok';
+      var rows = r.checks.filter(function (c) { return c.level !== 'ok'; }).map(function (c) {
+        return c.items.filter(function (i) { return i.level !== 'ok'; }).map(function (i) {
+          return '<div class="ud-it"><span class="m">' + (i.level === 'err' ? '⛔ ' : '⚠️ ') +
+            esc(c.title) + ': ' + esc(i.msg) + '</span></div>';
+        }).join('');
+      }).join('') || '<div class="ud-it"><span class="m">✓ ' + T('none') + '</span></div>';
+      return '<details class="ud-chk ' + cls + '"' + (hard ? ' open' : '') + '><summary>' +
+        '<span class="ud-dot"></span><span>' + esc(String(r.screen).replace('scr-', '')) + '</span>' +
+        '<span class="ud-n">' + (hard ? hard + '⛔ ' : '') + (r.warns ? r.warns + '⚠️' : '') + '</span></summary>' +
+        rows + '</details>';
+    }).join('');
+  }
+
+  function openAll() {
     styles(); close();
+    var m = buildWin(T('all_title'));
+    var body = m.querySelector('.ud-body');
+    body.innerHTML = '<div class="ud-it"><span class="m">' + T('walking') + '</span></div>';
+    setTimeout(function () {
+      m.style.display = 'none';
+      runAll(function (scr, i, total) {
+        body.innerHTML = '<div class="ud-it"><span class="m">' + T('walking') + ' ' + i + '/' + total + ' — ' + scr + '</span></div>';
+      }).then(function (a) { m.style.display = ''; paintAll(a); })
+        .catch(function (e) { m.style.display = ''; body.innerHTML = '<div class="ud-it"><span class="m">⛔ ' + esc(String(e)) + '</span></div>'; });
+    }, 60);
+  }
+
+  function buildWin(title) {
     var m = document.createElement('div');
     m.id = 'uidiag-modal';
     m.innerHTML =
-      '<div class="ud-win"><div class="ud-hd"><b>🩺 ' + T('title') + '</b>' +
+      '<div class="ud-win"><div class="ud-hd"><b>🩺 ' + title + '</b>' +
       '<button class="ud-x" style="border:none;background:transparent;color:var(--dim,#8AA0AB);font-size:1.3rem;cursor:pointer">×</button></div>' +
       '<div class="ud-sum">' + T('working') + '</div><div class="ud-body"></div>' +
       '<div class="ud-ft"><button class="pri" data-a="again">' + T('again') + '</button>' +
@@ -656,26 +1113,43 @@
       '<button data-a="save">' + T('save') + '</button>' +
       '<button data-a="close">' + T('close') + '</button></div></div>';
     document.body.appendChild(m);
+    return m;
+  }
+
+  function open() {
+    styles(); close();
+    var m = buildWin(T('title'));
     m.addEventListener('click', function (e) {
       if (e.target === m) return close();
       var b = e.target.closest('[data-a],.ud-x'); if (!b) return;
       var a = b.dataset ? b.dataset.a : null;
       if (b.classList.contains('ud-x') || a === 'close') return close();
-      if (a === 'again') { paintWait(); run().then(paint); return; }
-      if (a === 'copy' && LAST) {
-        var txt = asText(LAST);
+      if (a === 'again') {
+        if (ALL && m.querySelector('.ud-hd b').textContent.indexOf(T('all_title')) >= 0) { close(); openAll(); return; }
+        paintWait(); run().then(paint); return;
+      }
+      if (a === 'copy' && (LAST || ALL)) {
+        var txt = current();
         try { navigator.clipboard.writeText(txt); } catch (e2) {}
         b.textContent = T('copied'); setTimeout(function () { b.textContent = T('copy'); }, 1500);
       }
-      if (a === 'save' && LAST) {
-        var blob = new Blob([asText(LAST)], { type: 'text/plain;charset=utf-8' });
+      if (a === 'save' && (LAST || ALL)) {
+        var isAll = !!(ALL && m.querySelector('.ud-hd b').textContent.indexOf(T('all_title')) >= 0);
+        var stamp = (isAll ? ALL.ts : LAST.ts).slice(0, 19).replace(/[:T]/g, '-');
+        var e2 = (isAll ? ALL.env : (LAST.env || {}));
+        var blob = new Blob([current()], { type: 'text/plain;charset=utf-8' });
         var a2 = document.createElement('a');
         a2.href = URL.createObjectURL(blob);
-        a2.download = 'techlog-ui-' + LAST.screen.replace('scr-', '') + '-' + LAST.ts.slice(0, 19).replace(/[:T]/g, '-') + '.txt';
+        a2.download = 'techlog-ui-' + (e2.device || 'dev') + '-' + (e2.view || '') + '-' +
+          (isAll ? 'all' : String(LAST.screen).replace('scr-', '')) + '-' + stamp + '.txt';
         a2.click(); setTimeout(function () { URL.revokeObjectURL(a2.href); }, 4000);
       }
     });
     function paintWait() { m.querySelector('.ud-body').innerHTML = '<div class="ud-it"><span class="m">' + T('working') + '</span></div>'; }
+    function current() {
+      var isAll = !!(ALL && m.querySelector('.ud-hd b').textContent.indexOf(T('all_title')) >= 0);
+      return isAll ? allText(ALL) : asText(LAST);
+    }
     paintWait();
     /* даём модалке отрисоваться, потом гасим её на время замеров */
     setTimeout(function () {
@@ -724,7 +1198,11 @@
         if (e.ctrlKey && e.altKey && (e.key === 'd' || e.key === 'D' || e.code === 'KeyD')) { e.preventDefault(); open(); }
       });
       window.UIDiag = {
-        run: run, open: open, close: close,
+        run: run, open: open, close: close, openAll: openAll, runAll: runAll,
+        /* сериализуемый отчёт по всем экранам — для автотестов */
+        jsonAll: function () { return runAll().then(function (a) { return JSON.parse(JSON.stringify(a, function (k, v) { return k === 'el' ? undefined : v; })); }); },
+        textAll: function () { return ALL ? allText(ALL) : ''; },
+        env: envInfo,
         /* сериализуемый отчёт для автотестов: те же данные без DOM-узлов */
         json: function () { return run().then(function (r) { return JSON.parse(JSON.stringify(r, function (k, v) { return k === 'el' ? undefined : v; })); }); },
         text: function () { return LAST ? asText(LAST) : ''; },

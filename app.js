@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.67';
+const APP_VERSION = '1.07.69';
 const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -280,6 +280,7 @@ const I18N = {
     ui_hint: 'Ищет перекрытия и налезание блоков, вылет за край экрана, обрезанный текст, мелкие кнопки, слабый контраст, битые обработчики и подтормаживание прокрутки. Отчёт можно скопировать или скачать файлом.',
     ui_keys: 'Горячие клавиши: Ctrl+Alt+D',
     ui_nomod: 'Модуль диагностики не загрузился — обновите страницу',
+    ui_all: 'Обойти все экраны и собрать отчёт',
     srv_not_ready: 'Сервер не настроен: выполните supabase/schema.sql (нет функции check_invite)',
     invite_check_err: 'Ошибка проверки кода', srv_rejected: 'Сервер отклонил регистрацию — детали в Диагностике',
     login_taken: 'Такой логин уже существует', login_free: 'логин свободен', login_checking: 'проверяю логин…',
@@ -350,6 +351,9 @@ const I18N = {
     mq_l_fn: 'Edge-функции', mq_l_fn_no: 'не задеплоены',
     mq_l_drive: 'Google Drive не настроен — обратитесь к администратору',
     mq_l_drop: 'файл отклонён сервером и убран из очереди',
+    mq_l_relay: 'Google не пускает браузер напрямую — перехожу на отправку через сервер',
+    mq_st_begin: 'запрос на загрузку', mq_st_up: 'отправка файла', mq_st_commit: 'подтверждение',
+    mq_l_relay_on: 'отправка идёт через сервер-посредник',
     eq_hours: 'Моточасы DHM', eq_h_start: 'старт', eq_h_check: 'при проверке',
     prop_requested: 'Сотрудник указал: должен быть пропозал',
     allow_prop_chk: 'Сотрудники могут отмечать «нужен пропозал»',
@@ -626,6 +630,7 @@ const I18N = {
     ui_hint: 'Finds overlapping and colliding blocks, overflow past the screen edge, clipped text, small tap targets, weak contrast, broken handlers and scrolling jank. The report can be copied or downloaded.',
     ui_keys: 'Shortcut: Ctrl+Alt+D',
     ui_nomod: 'Diagnostics module did not load — reload the page',
+    ui_all: 'Walk every screen and build one report',
     srv_not_ready: 'Server not configured: run supabase/schema.sql (check_invite function is missing)',
     invite_check_err: 'Invite check error', srv_rejected: 'Server rejected sign-up — see Diagnostics',
     login_taken: 'This login already exists', login_free: 'login is free', login_checking: 'checking login…',
@@ -696,6 +701,9 @@ const I18N = {
     mq_l_fn: 'Edge functions', mq_l_fn_no: 'not deployed',
     mq_l_drive: 'Google Drive is not configured — contact the administrator',
     mq_l_drop: 'file rejected by the server and removed from the queue',
+    mq_l_relay: 'Google refuses the direct browser upload — switching to the server relay',
+    mq_st_begin: 'upload request', mq_st_up: 'sending the file', mq_st_commit: 'confirmation',
+    mq_l_relay_on: 'uploads go through the server relay',
     eq_hours: 'DHM hours', eq_h_start: 'start', eq_h_check: 'at check',
     prop_requested: 'Tech marked: proposal expected',
     allow_prop_chk: 'Techs may mark “proposal expected”',
@@ -800,6 +808,9 @@ const I18N = {
   }
 };
 function t(k){ const d = I18N[state.lang] || I18N.ru; return (k in d) ? d[k] : (I18N.ru[k] ?? k); }
+/* v1.07.67: словарь виден диагностике интерфейса — она сверяет полноту
+   ru/en и ловит ключи, вытекшие в разметку вместо перевода */
+window.TL_I18N = I18N;
 
 /* ---------------- Глобальное состояние ---------------- */
 const state = {
@@ -2292,13 +2303,14 @@ function viewJournal(){
       <option value="">${t('jr_all_staff')}</option>
       ${profs.map(p => `<option value="${p.id}" ${jr.actor === p.id ? 'selected' : ''}>${esc(p.display_name)}</option>`).join('')}
     </select>
-    <button class="btn btn-ghost sm" onclick="App.jrRefresh()">${ic('refresh')}</button>
+    <button class="btn btn-ghost sm" title="${t('jr_refresh')}" aria-label="${t('jr_refresh')}" onclick="App.jrRefresh()">${ic('refresh')}</button>
   </div>
   <div class="card">${rowsHtml || `<div class="list-empty">${jr.loading ? '…' : t('jr_empty')}</div>`}</div>
   ${jr.more ? `<button class="btn btn-ghost" onclick="App.jrMore()">${t('jr_more')}</button>` : ''}`;
 }
 
 function render(){
+  const _rt0 = performance.now();                       // v1.07.67: замер для диагностики
   if (state && state.user && state.screen === 'board' && !isManager() && vmCur() !== 'desktop') state.screen = 'home';
   const app = $('#app');
   if (!state.user){ app.innerHTML = viewLogin(); return; }
@@ -2330,6 +2342,10 @@ function render(){
   }
   if (state.screen === 'job') bindJobForm();
   if (state.screen === 'map') initMapView();
+  /* v1.07.67: последние отрисовки — их показывает «Плавность прокрутки» */
+  const _rt = { screen: state.screen, ms: +(performance.now() - _rt0).toFixed(1), at: Date.now() };
+  (window.__tlRender = window.__tlRender || []).push(_rt);
+  if (window.__tlRender.length > 20) window.__tlRender.shift();
 }
 
 function viewHeader(){
@@ -4929,6 +4945,10 @@ const App = {
     if (window.UIDiag) window.UIDiag.open();
     else toast('⛔ ' + t('ui_nomod'));
   },
+  uiDiagAll(){
+    if (window.UIDiag) window.UIDiag.openAll();
+    else toast('⛔ ' + t('ui_nomod'));
+  },
   uiDiagToggle(v){
     if (window.UIDiag) window.UIDiag.setEnabled(v);
     else { try{ localStorage.setItem('techlog_uidiag', v ? '1' : '0'); }catch(e){} }
@@ -7480,6 +7500,12 @@ async function extReqDecide(id, ok){
    ===================================================================== */
 const M_MAXW = 1920, M_THUMBW = 320, M_JPEGQ = 0.8, M_THQ = 0.7;
 const M_VMAX = 90, M_CHUNK = 8 * 1024 * 1024;
+/* v1.07.69: через посредника кусок меньше — он проходит через edge-функцию,
+   у которой ограничение на размер запроса. Кратно 256 КБ, как требует Google. */
+const M_CHUNK_RELAY = 4 * 1024 * 1024;
+let _mediaRelay = false;          // включается сам, когда прямой PUT не проходит
+const mIsNetErr = e => (e instanceof TypeError)
+  || /failed to fetch|networkerror|network error|load failed/i.test(String(e && e.message || e));
 const mediaFN = () => (CFG.SUPABASE_URL || '') + '/functions/v1';
 let mediaQ = [];                       // зеркало IndexedDB-очереди для мгновенного рендера
 const mediaThumbCache = new Map();     // thumb_path -> objectURL
@@ -7606,30 +7632,55 @@ async function mediaQDel(qid){
   render(); mediaBadge();
 }
 /* ---------- отправка (докачка чанками) ---------- */
+/* v1.07.69: один кусок — напрямую в Google либо через media-put.
+   Ответ приводим к одному виду: { status, range, id }. */
+async function mPutChunk(url, range, body){
+  if (!_mediaRelay){
+    const r = await fetch(url, { method: 'PUT', headers: { 'Content-Range': range }, body });
+    const id = r.ok ? ((await r.json().catch(() => ({}))).id || '') : '';
+    return { status: r.status, range: r.headers.get('Range') || '', id };
+  }
+  const token = await mediaJwt();
+  const r = await fetch(mediaFN() + '/media-put', { method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'x-tl-url': url, 'x-tl-range': range },
+    body: body || undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok && !j.status) throw new Error(j.error || ('relay ' + r.status));
+  return { status: Number(j.status) || 0, range: j.range || '', id: j.id || '' };
+}
 async function mPutResumable(it, onProg){
   const total = it.blob.size;
   let offset = 0;
   const prog = () => { try{ onProg && onProg(Math.min(100, Math.round(offset * 100 / total))); }catch(e){} };
   if (it.started){
-    const p = await fetch(it.upload_url, { method: 'PUT',
-      headers: { 'Content-Range': `bytes */${total}` } });
+    const p = await mPutChunk(it.upload_url, `bytes */${total}`);
     if (p.status === 308){
-      const r = p.headers.get('Range');
-      offset = r ? Number(r.split('-')[1]) + 1 : 0;
+      /* Range через CORS может быть не виден — тогда льём с начала. */
+      offset = p.range ? Number(p.range.split('-')[1]) + 1 : 0;
       prog();
-    } else if (p.ok) return (await p.json()).id;
+    } else if (p.id) return p.id;
   }
   while (offset < total){
-    const end = Math.min(offset + M_CHUNK, total);
-    const r = await fetch(it.upload_url, { method: 'PUT',
-      headers: { 'Content-Range': `bytes ${offset}-${end - 1}/${total}` },
-      body: it.blob.slice(offset, end) });
+    const end = Math.min(offset + (_mediaRelay ? M_CHUNK_RELAY : M_CHUNK), total);
+    const r = await mPutChunk(it.upload_url, `bytes ${offset}-${end - 1}/${total}`,
+      it.blob.slice(offset, end));
     it.started = true; await mQPut(it);
     if (r.status === 308){ offset = end; prog(); continue; }
-    if (r.ok) return (await r.json()).id;
+    if (r.id) return r.id;
     throw new Error('upload ' + r.status);
   }
   throw new Error('upload incomplete');
+}
+/* Открыть сессию докачки. Ошибку отдаём с кодом — решение принимает вызывающий. */
+async function mBeginUpload(it, token){
+  const r = await fetch(mediaFN() + '/media-begin', { method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ job_id: it.job_id, kind: it.kind, mime: it.mime, size: it.blob.size }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok){ const e = new Error(j.error || r.status); e.status = r.status; throw e; }
+  Object.assign(it, { media_id: j.media_id, upload_url: j.upload_url, thumb_path: j.thumb_path });
+  await mQPut(it);
+  return j;
 }
 /* v1.07.63: verbose=true — ход отправки построчно уходит в журнал модалки
    «Неотправленные фото и видео»; возвращается сводка для итоговой строки. */
@@ -7647,31 +7698,43 @@ async function mediaFlush(verbose){
       idx++;
       const tag = `${esc(mqLabel(it))} ${idx}/${list.length}`;
       const lid = lg(`⬆ ${tag} …`, 'dim');
+      let stage = 'mq_st_begin';                 // v1.07.69: этап видно в ошибке
       try{
         const token = await mediaJwt(); if (!token){ lg('⛔ ' + t('mq_l_nosb'), 'err', lid); res.stopped = true; break; }
         if (!it.upload_url){
-          const r = await fetch(mediaFN() + '/media-begin', { method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-            body: JSON.stringify({ job_id: it.job_id, kind: it.kind, mime: it.mime, size: it.blob.size }) });
-          const j = await r.json().catch(() => ({}));
-          if (!r.ok){
-            if (r.status === 409 || r.status === 403 || r.status === 413){
-              await mediaQDel(it.qid); toast('⛔ ' + (j.error || r.status), 'err');
-              lg(`⛔ ${tag} — ${t('mq_l_drop')} (${esc(String(j.error || r.status))})`, 'err', lid);
+          try{ await mBeginUpload(it, token); }
+          catch (e){
+            const st = e.status;
+            if (st === 409 || st === 403 || st === 413){
+              await mediaQDel(it.qid); toast('⛔ ' + (e.message || st), 'err');
+              lg(`⛔ ${tag} — ${t('mq_l_drop')} (${esc(String(e.message || st))})`, 'err', lid);
               res.fail++; continue;
             }
-            if (String(j.error || '').includes('DRIVE_NOT_CONFIGURED')){
+            if (String(e.message || '').includes('DRIVE_NOT_CONFIGURED')){
               if (isAdmin()) toast('⚠ ' + t('media_not_cfg'), 'inf');
               lg('⛔ ' + t('mq_l_drive'), 'err', lid);
               res.stopped = true; break;
             }
-            throw new Error(j.error || r.status);
+            throw e;
           }
-          Object.assign(it, { media_id: j.media_id, upload_url: j.upload_url, thumb_path: j.thumb_path });
-          await mQPut(it);
         }
-        const driveId = await mPutResumable(it,
-          pct => lg(`⬆ ${tag} · ${pct}%`, 'dim', lid));
+        stage = 'mq_st_up';
+        const onPct = pct => lg(`⬆ ${tag} · ${pct}%`, 'dim', lid);
+        let driveId;
+        try{ driveId = await mPutResumable(it, onPct); }
+        catch (e){
+          /* v1.07.69: браузер не смог достучаться до сессии Google (её открыли
+             без Origin, либо путь наружу закрыт). Переходим на сервер-посредник
+             и открываем сессию заново — старая ссылка могла быть выдана до
+             обновления сервера. */
+          if (!mIsNetErr(e) || _mediaRelay) throw e;
+          _mediaRelay = true;
+          lg(`⚠ ${tag} — ${t('mq_l_relay')}`, 'warn');
+          it.upload_url = ''; it.started = false; await mQPut(it);
+          await mBeginUpload(it, token);
+          driveId = await mPutResumable(it, onPct);
+        }
+        stage = 'mq_st_commit';
         if (it.thumb && it.thumb_path){
           await state.sb.storage.from('media-thumbs')
             .upload(it.thumb_path, it.thumb, { contentType: 'image/jpeg', upsert: true })
@@ -7693,7 +7756,7 @@ async function mediaFlush(verbose){
       }catch(e){
         it.attempts = (it.attempts || 0) + 1; await mQPut(it);
         dlog('media stuck', it.qid, e);
-        lg(`⛔ ${tag} — ${esc(String(e && e.message || e))}`, 'err', lid);
+        lg(`⛔ ${tag} — ${t(stage)}: ${esc(String(e && e.message || e))}`, 'err', lid);
         res.fail++; res.stopped = true;
         break;                              // сеть шалит — дождёмся online/интервала
       }
@@ -7943,6 +8006,7 @@ async function mqPing(){
         else mqLog('✓ ' + t('mq_l_fn'), 'ok');
       }catch(e){ mqLog('⛔ ' + t('mq_l_fn') + ' — ' + t('mq_l_fn_no'), 'err'); }
     }
+    if (_mediaRelay) mqLog('⚠ ' + t('mq_l_relay_on'), 'warn');
     if (el) el.innerHTML = ic('wifi', net ? '' : 'color:var(--red)') + ' '
       + esc((net ? t('mq_net_on') : t('mq_net_off')) + sb);
   } finally { mqSetBusy(''); }
@@ -8225,6 +8289,7 @@ function uiDiagCardHtml(){
       <input type="checkbox" ${on ? 'checked' : ''} onchange="App.uiDiagToggle(this.checked)"> ${t('ui_chk')}
     </label>
     <button class="btn btn-blue sm" style="margin-top:8px" onclick="App.uiDiagRun()">${ic('search')} ${t('ui_run')}</button>
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.uiDiagAll()">${ic('layers')} ${t('ui_all')}</button>
     <div class="tiny" style="margin-top:6px">${t('ui_keys')}</div>
   </div>`;
 }

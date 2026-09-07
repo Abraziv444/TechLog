@@ -28,8 +28,8 @@ WARNING со списком недостающего. Повторный зап�
 
 ## 2. Edge-функции
 
-Шесть функций обслуживают фото и видео: `media-begin`, `media-commit`, `media-view`,
-`media-delete`, `media-oauth`, `media-health`. Переменные `SUPABASE_URL`,
+Семь функций обслуживают фото и видео: `media-begin`, `media-put`, `media-commit`,
+`media-view`, `media-delete`, `media-oauth`, `media-health`. Переменные `SUPABASE_URL`,
 `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` Supabase подставляет сам — руками в
 Secrets добавлять ничего не нужно. Настройку **Verify JWT** оставьте включённой:
 приложение ходит с JWT сессии.
@@ -50,7 +50,7 @@ Secrets добавлять ничего не нужно. Настройку **Ve
 ```bash
 npx supabase@latest login                       # откроется браузер
 npx supabase@latest link --project-ref <project-ref>
-npx supabase@latest functions deploy media-begin media-commit media-delete \
+npx supabase@latest functions deploy media-begin media-put media-commit media-delete \
   media-health media-oauth media-view --project-ref <project-ref>
 ```
 
@@ -72,7 +72,8 @@ Edge Functions → **Deploy a new function → Via Editor**, для каждой
 | Версия | Что менялось |
 |---|---|
 | v1.07.64 | `media-health` (режимы `?cfg=1` / `?reveal=1`, чистка ID папки, создание своей папки, запись свободного места), `media-begin` (лимиты фото/видео из `org_settings`), `media-commit` (обновление свободного места не чаще раза в 6 часов) |
-| v1.07.65–66 | функции не менялись — достаточно залить архив приложения |
+| v1.07.65–68 | функции не менялись — достаточно залить архив приложения |
+| v1.07.69 | `media-begin` (передаёт Origin браузера при открытии сессии докачки) **и новая функция `media-put`** — сервер-посредник для заливки, когда браузер не может писать в сессию Google напрямую |
 
 ---
 
@@ -118,6 +119,7 @@ console.cloud.google.com → проект:
 | `DRIVE_NOT_CONFIGURED` | нет refresh-токена | раздел 3, п. 5 |
 | `GOOGLE_AUTH: {"error":"invalid_grant"…}` | токен отозван или истёк (7 дней в режиме Testing) | опубликовать приложение и подключить заново |
 | «Пробная запись в папку 🔴 … File not found» | ID папки с мусором из ссылки либо папка не создана приложением | «Тест соединения» — он почистит ID и при необходимости создаст свою папку |
+| Фото не уходят: в журнале отправки `отправка файла: Failed to fetch`, при этом «Тест соединения» весь зелёный | сессию докачки открыли без заголовка `Origin`, и Google не отдаёт браузеру CORS-заголовки на её адрес; сервер при этом с Google работает нормально | обновить `media-begin` и задеплоить `media-put` (v1.07.69). Клиент сам переоткроет сессию и при необходимости пойдёт через посредника |
 | Устаревшая подсказка про SQL-файл | база ниже текущей версии | выполнить файл из раздела 1 |
 
 Диагностика в приложении (Настройки → «Диагностика») проверяет интернет, базу, сессию,
