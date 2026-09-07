@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.52';
+const APP_VERSION = '1.07.54';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -168,6 +168,16 @@ const I18N = {
     select: '— выбрать —', install_hint: 'Меню браузера → «Установить приложение» / «Добавить на главный экран»',
     tab_map: 'Карта', tab_reports: 'Отчёты',
     map_title: 'Карта апарт-комплексов', all_counterparties: 'Все контрагенты',
+    map_search_ph: 'Поиск адреса или места…', map_search_go: 'Найти',
+    map_found_pt: 'Точка найдена', map_add_cx: 'Добавить как комплекс',
+    map_no_results: 'Ничего не найдено — уточните адрес',
+    cx_add_title: 'Новый апарт-комплекс с карты',
+    cx_owner: 'Контрагент (владелец)', cx_no_bind: '— без привязки —',
+    cx_new_cp: '＋ Новый контрагент…', cx_temp_cp: '⏳ Временный владелец',
+    cx_new_cp_name: 'Название нового контрагента',
+    cx_added: 'Комплекс добавлен', cx_no_owner: 'Владелец не назначен — привяжите контрагента',
+    dir_no_owner_grp: 'Без владельца',
+    faq_btn: 'FAQ раздела',
     map_day_mode: 'Показать день на карте', map_day_hint: 'Работы и пикапы за выбранную дату',
     map_no_coords: 'без координат — откройте комплекс и нажмите «Найти по адресу»',
     route_day_in: 'Маршрут дня в', open_in: 'Открыть в',
@@ -468,6 +478,16 @@ const I18N = {
     select: '— select —', install_hint: 'Browser menu → "Install app" / "Add to Home screen"',
     tab_map: 'Map', tab_reports: 'Reports',
     map_title: 'Apartment complexes map', all_counterparties: 'All counterparties',
+    map_search_ph: 'Search address or place…', map_search_go: 'Search',
+    map_found_pt: 'Point found', map_add_cx: 'Add as complex',
+    map_no_results: 'Nothing found — refine the address',
+    cx_add_title: 'New apartment complex from the map',
+    cx_owner: 'Counterparty (owner)', cx_no_bind: '— no binding —',
+    cx_new_cp: '＋ New counterparty…', cx_temp_cp: '⏳ Temporary owner',
+    cx_new_cp_name: 'New counterparty name',
+    cx_added: 'Complex added', cx_no_owner: 'No owner assigned — bind a counterparty',
+    dir_no_owner_grp: 'No owner',
+    faq_btn: 'Section FAQ',
     map_day_mode: 'Show day on map', map_day_hint: 'Jobs and pickups for the selected date',
     map_no_coords: 'no coordinates — open the complex and tap "Find by address"',
     route_day_in: 'Day route in', open_in: 'Open in',
@@ -1654,9 +1674,9 @@ function ic(n, style){
   const p = IC[n]; if (!p) return '';
   return `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${style?` style="${style}"`:''}>${p}</svg>`;
 }
-function helpBtn(key){
-  return `<button type="button" class="help-btn" onclick="event.stopPropagation();App.sectionHelp('${key}')" title="${t('help_title')}">?</button>`;
-}
+/* v1.07.54: helpBtn объявлен один раз ниже (FAQ-система); ключи секций
+   инвойса из SECTION_HELP маршрутизируются в прежнюю секционную справку
+   внутри sectionFaqOpen. */
 
 /* =====================================================================
    СПРАВКА ПО СЕКЦИЯМ ИНВОЙСА («?» в заголовке секции)
@@ -2126,7 +2146,7 @@ function viewJournal(){
     </div>`;
   }).join('');
   return `
-  <div class="section-title">${t('jr_title')} <span class="hint">${HAS_SB ? (auditDbMissing ? '' : 'Supabase') : t('jr_local')}</span></div>
+  <div class="section-title">${t('jr_title')}${helpBtn('journal')} <span class="hint">${HAS_SB ? (auditDbMissing ? '' : 'Supabase') : t('jr_local')}</span></div>
   ${auditDbMissing ? `<div class="note-red" style="margin-bottom:10px">${t('jr_need_db')}</div>` : ''}
   <div class="lang-seg" style="margin-bottom:8px">
     <button class="${(jr.tab||'doc')==='doc'?'on':''}" onclick="App.jrTab('doc')">${t('jr_tab_doc')}</button>
@@ -2387,7 +2407,7 @@ function viewHome(){
     const g = {}; pkDone.forEach(p => (g[p.job_id] = g[p.job_id]||[]).push(p));
     return Object.values(g).map((list, di) => {
       const p0 = list[0]; const cx = cxById(p0.complex_id) || {abbr:'?',name:'?'};
-      return `<div class="item" style="border-left-color:#3a4a52;opacity:.6">
+      return `<div class="item clicky" style="border-left-color:#3a4a52;opacity:.6" onclick="App.openJob('${p0.job_id}')">
         ${rowNumHtml(num.count + di + 1)}
         <div class="info"><div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
         <div class="s">✓ ${t('picked')}</div></div>
@@ -2413,6 +2433,8 @@ function viewHome(){
       <div class="right">
         <span class="badge-status st-${j.status}">${jobIssues(j).length ? warnIcon() : ''}${t('status_'+j.status)}</span>
         <div class="money" style="margin-top:6px">${money(total)}</div>
+        <button class="btn btn-ghost sm" style="margin-top:6px" title="${t('navigate')}"
+          onclick="event.stopPropagation();App.navToCx('${j.complex_id}')">${ic('compass')}</button>
       </div>
     </div>`;
   }).join('');
@@ -2424,6 +2446,7 @@ function viewHome(){
     <div class="day-bar">
       <b>${fmtDMY(iso)}</b>
       <button class="mini-nav" onclick="App.openDayMap()">${ic('map')} ${t('map_of_day')}</button>
+      ${helpBtn('home')}
     </div>`;
   return a2hs + banner + viewWeek() + dayBar
     + `<div id="day-top" style="${q?'display:none':''}">` + homeStatsHtml() + `</div>`
@@ -2546,6 +2569,334 @@ async function checkVerClick(){
   if (state.updAvail){ toast('⬆ ' + t('upd_found') + ': v' + state.updAvail, 'inf'); await applyUpdateNow(); return; }
   else if (okNet) toast('✓ ' + t('upd_latest') + ' · v' + APP_VERSION);
   else toast('⚠ ' + t('upd_fail'), 'err');
+}
+
+/* =====================================================================
+   v1.07.54: FAQ ПО РАЗДЕЛАМ — «?» в заголовке каждого экрана открывает
+   подробную справку конкретно этого раздела: механики, жесты, иконки и
+   все сокращения (сокращения собираются из живых данных).
+   ===================================================================== */
+function helpBtn(key){
+  return `<button class="icon-btn faq-i" title="${t('faq_btn')}" onclick="App.sectionFaq('${key}')">?</button>`;
+}
+function faqEqLegend(){
+  return (state.data.equipment_types||[]).slice().sort((a,b)=>(a.sort||0)-(b.sort||0)).map(et =>
+    `<span class="demo"><span class="eq-dot" style="background:${et.color}">${esc(et.abbr||autoAbbr(et.name))}</span> ${esc(et.name)}</span>`).join(' ');
+}
+function faqCxLegend(){
+  const list = (state.data.complexes||[]).filter(c=>c.abbr).slice(0,8);
+  return list.length ? list.map(c=>`<span class="demo"><b>${esc(c.abbr)}</b> = ${esc(c.name)}</span>`).join(' · ') : '—';
+}
+function faqStatusLegend(){
+  return `<span class="demo"><span class="badge-status st-draft">${t('status_draft')}</span></span>
+    <span class="demo"><span class="badge-status st-done">${t('status_done')}</span></span>
+    <span class="demo"><span class="badge-status st-approved">${t('status_approved')}</span></span>`;
+}
+function faqTriDemo(){ return `<span class="pri inline on" style="pointer-events:none"><span class="tri">!</span></span>`; }
+function faqAuditLegend(){
+  const dict = (typeof T === 'object' && T[state.lang]) ? T[state.lang] : {};
+  const acts = Object.keys(dict).filter(k => k.startsWith('act_')).slice(0, 24)
+    .map(k => esc(dict[k])).filter(Boolean);
+  return acts.length ? acts.join(' · ') : '—';
+}
+function faqMvDemo(){ return `<span class="demo"><button class="mv" style="pointer-events:none">▲</button><button class="mv" style="pointer-events:none">▼</button></span>`; }
+
+function sectionFaqHtml(key){
+  const ru = (state.lang || 'ru') !== 'en';
+  const H = (r, e) => ru ? r : e;
+  const S = {};
+
+  S.home = H(`
+    <h4>${ic('home')} Главная — день и его задачи</h4>
+    <ul>
+      <li><b>Лента недели</b> сверху: точки под датой — есть работы/пикапы; клик — выбрать день, стрелки ‹ › — листать недели, «Сегодня» — вернуться.</li>
+      <li><b>Счётчики дня</b>: «N РАБОТ» и «N ПИКАПОВ» с разбивкой по типам; «Карта этого дня» строит маршрут по точкам дня.</li>
+      <li><b>Мои / Все</b> — фильтр задач; <b>Поиск</b> ищет по юниту, комплексу и адресу.</li>
+    </ul>
+    <h4>${ic('wrench')} Карточка работы</h4>
+    <ul>
+      <li>Слева сверху — <b>порядковый номер</b> в дне, снизу ${faqMvDemo()} — поменять порядок (или перетащить карточку целиком).</li>
+      <li>${faqTriDemo()} в конце названия — <b>приоритет</b>; менеджер/автор переключает кликом.</li>
+      <li>Статус справа: ${faqStatusLegend()}; под ним сумма и ${ic('compass')} — открыть маршрут в навигаторе.</li>
+      <li>${ic('clipboard')} возле адреса — копировать адрес; строка кодов: ${ic('key')} код доступа, callbox.</li>
+      <li>Клик по карточке — открыть документ (инвойс).</li>
+    </ul>
+    <h4>${ic('box')} Карточка пикапа (аренда оборудования)</h4>
+    <ul>
+      <li>Цветные бейджи справа — <b>сколько единиц какого типа</b> забрать: ${faqEqLegend()}.</li>
+      <li>Красный бейдж-цифра — просроченные позиции; чип «продление» — аренда продлевалась.</li>
+      <li>${ic('compass')} — маршрут; ${ic('note')} — документ; <b>Забрать</b> — отметить вывоз всего юнита; блеклая карточка «✓ забрано» открывает связанный документ.</li>
+    </ul>
+    <h4>🔤 Сокращения</h4>
+    <div class="tiny">Комплексы: ${faqCxLegend()}</div>
+    <div class="tiny" style="margin-top:4px">Оборудование: ${faqEqLegend()}</div>`,
+  `
+    <h4>${ic('home')} Home — the day and its tasks</h4>
+    <ul><li><b>Week strip</b>: dots = jobs/pickups; click a day, ‹ › to flip weeks, "Today" to return.</li>
+    <li><b>Day counters</b> and "Map of this day" (route across the day's points).</li>
+    <li><b>Mine / All</b> filter; search by unit, complex, address.</li></ul>
+    <h4>${ic('wrench')} Job card</h4>
+    <ul><li>Top-left — <b>order number</b>; ${faqMvDemo()} at the bottom reorders (or drag the card).</li>
+    <li>${faqTriDemo()} after the name — <b>priority</b> (click to toggle if allowed).</li>
+    <li>Status: ${faqStatusLegend()}; amount and ${ic('compass')} (navigate) below.</li>
+    <li>${ic('clipboard')} copies the address; ${ic('key')} — access/callbox codes. Click opens the invoice.</li></ul>
+    <h4>${ic('box')} Pickup card</h4>
+    <ul><li>Colored badges — units to collect per type: ${faqEqLegend()}.</li>
+    <li>Red badge — overdue items; "extension" chip — rent was extended.</li>
+    <li>${ic('compass')} navigate; ${ic('note')} document; <b>Pick up</b> marks the whole unit; a dimmed "✓ picked" card opens the linked document.</li></ul>
+    <h4>🔤 Abbreviations</h4>
+    <div class="tiny">Complexes: ${faqCxLegend()}</div>
+    <div class="tiny" style="margin-top:4px">Equipment: ${faqEqLegend()}</div>`);
+
+  S.board = H(`
+    <h4>${ic('board')} Доска — день по сотрудникам</h4>
+    <ul>
+      <li>Колонка = сотрудник: аватар, «N работ · N пикапов», карточки его задач выбранного дня; «День свободен» — пусто.</li>
+      <li><b>«Скрыть свободных»</b> — убирает пустые колонки.</li>
+      <li>${faqMvDemo()} на карточке — перенос задачи между сотрудниками/позициями; клик — открыть документ.</li>
+      <li>${faqTriDemo()} — приоритет; жёлтый «!» на дне недели — есть просроченные пикапы.</li>
+    </ul>
+    <h4>🖱 Жесты (ПК)</h4>
+    <ul>
+      <li><b>Колесо мыши</b> крутит доску по горизонтали с инерцией; на краях прокрутка отдаётся странице.</li>
+      <li><b>Схватить-и-тянуть</b> мышью в любом месте — протяжка с инерцией; обычный клик по карточке работает как раньше.</li>
+      <li>Тач — нативные жесты.</li>
+    </ul>
+    <h4>⚙ Ширина</h4>
+    <ul><li>Настройки → «Доска»: <b>минимум сотрудников на экране</b> — если столько не влезает, карточки автоматически сужаются (подписи счётчиков сворачиваются до чисел).</li>
+    <li>У воркера в ПК-режиме доска недельная: колонка = день, только свои задачи; клик по шапке дня выбирает его в календаре.</li></ul>`,
+  `
+    <h4>${ic('board')} Board — the day by staff</h4>
+    <ul><li>Column = employee with their day's cards; "Day is free" = empty; <b>"Hide free"</b> removes empty columns.</li>
+    <li>${faqMvDemo()} moves a task between employees/positions; click opens the document; ${faqTriDemo()} — priority.</li></ul>
+    <h4>🖱 Gestures (desktop)</h4>
+    <ul><li>Mouse wheel scrolls horizontally with inertia (edges pass to the page); grab-and-drag pans; touch is native.</li></ul>
+    <h4>⚙ Width</h4>
+    <ul><li>Settings → "Board": <b>minimum staff visible</b> — cards shrink automatically when needed.</li>
+    <li>Worker on desktop gets a weekly board (column = weekday, own tasks only).</li></ul>`);
+
+  S.map = H(`
+    <h4>${ic('map')} Карта апарт-комплексов</h4>
+    <ul>
+      <li>Точки — комплексы, цвет = контрагент; фильтр по контрагенту сверху; клик по строке списка — фокус на точке.</li>
+      <li>${ic('key')} в строке — скопировать код доступа; «⚠ без координат» — у комплекса нет точки (задайте в справочнике или найдите поиском).</li>
+      <li>Режим <b>«День»</b>: пронумерованные точки задач выбранной даты и кнопка ${ic('compass')} — маршрут дня в вашем навигаторе (Apple/Google — см. Настройки).</li>
+    </ul>
+    <h4>${ic('search')} Поиск места и добавление комплекса</h4>
+    <ul>
+      <li>Введите адрес → <b>Найти</b>: результаты OpenStreetMap; клик — маркер на карте.</li>
+      <li>«✓ Точка найдена» → <b>Добавить как комплекс</b>: название и адрес заполнены, выберите владельца: существующий контрагент, «＋ Новый…», «⏳ Временный владелец» или «— без привязки —».</li>
+      <li>Комплексы без владельца (и с временным) помечаются ${faqTriDemo()} здесь и в Справочнике — назначьте контрагента позже.</li>
+    </ul>`,
+  `
+    <h4>${ic('map')} Complexes map</h4>
+    <ul><li>Dots = complexes, color = counterparty; filter on top; list row click focuses the point; ${ic('key')} copies the access code.</li>
+    <li><b>"Day"</b> mode: numbered task points and ${ic('compass')} — the day's route in your navigator.</li></ul>
+    <h4>${ic('search')} Place search & adding a complex</h4>
+    <ul><li>Type an address → <b>Search</b> (OpenStreetMap) → click a result → marker.</li>
+    <li>"✓ Point found" → <b>Add as complex</b>: pick an owner — existing, "＋ New…", "⏳ Temporary owner" or "— no binding —".</li>
+    <li>Ownerless complexes are flagged ${faqTriDemo()} here and in Directory.</li></ul>`);
+
+  S.proposals = H(`
+    <h4>${ic('note')} Пропозалы</h4>
+    <ul>
+      <li>Список предложений с номером P-N, статусом и суммой; клик — открыть.</li>
+      <li>Внутри: позиции с ценами (степперы количества), фото-вложения, экспорт в PDF, отправка статуса.</li>
+      <li>Чип «нужен пропозал» на работе ставит воркер (если разрешено в Настройках) — менеджер видит полосу-напоминание над Доской.</li>
+    </ul>`,
+  `
+    <h4>${ic('note')} Proposals</h4>
+    <ul><li>P-N list with status and totals; open to edit items (qty steppers), photos, export PDF.</li>
+    <li>The "needs proposal" flag set by a worker shows managers a reminder strip above the Board.</li></ul>`);
+
+  S.reports = H(`
+    <h4>${ic('note')} Отчёты</h4>
+    <ul>
+      <li>Вкладки: <b>Инвойсы</b> и <b>Пикапы</b>. Фильтры: период, контрагент, сотрудник, статус.</li>
+      <li>Строка = документ: клик открывает (в т.ч. заблокированные по сроку — на просмотр). Статусы: ${faqStatusLegend()}.</li>
+      <li>Итоги по выборке внизу; выгрузка PDF-пакета — по кнопке.</li>
+      <li>${faqTriDemo()} в строке — документ с проблемами заполнения.</li>
+    </ul>`,
+  `
+    <h4>${ic('note')} Reports</h4>
+    <ul><li>Tabs: <b>Invoices</b> / <b>Pickups</b>; filters by period, counterparty, employee, status. Statuses: ${faqStatusLegend()}.</li>
+    <li>Click a row to open (locked-by-age docs open read-only). Totals below; PDF batch export available.</li></ul>`);
+
+  S.stats = H(`
+    <h4>${ICONS.stats} Статистика</h4>
+    <ul>
+      <li><b>Период</b> — кнопки быстрых диапазонов и произвольные даты; всё ниже пересчитывается по выборке.</li>
+      <li><b>Разрезы</b>: по сотрудникам, по видам работ, по контрагентам — суммы, количество документов и доля в % от итога выборки.</li>
+      <li><b>Какая сумма берётся</b>: если у документа есть апрув — утверждённая (${faqStatusLegend()} — фиолетовый апрув побеждает), иначе расчётная из позиций.</li>
+      <li>Пикапы в статистике — по факту вывоза; просроченные не увеличивают суммы, но видны в отчётах.</li>
+      <li>Клик по строке разреза — детализация состава; полосы-диаграммы масштабируются от максимума выборки.</li>
+      <li>Цвета видов работ — те же, что полоски на карточках главной и Доски.</li>
+    </ul>`,
+  `
+    <h4>${ICONS.stats} Statistics</h4>
+    <ul><li>Period plus breakdowns by staff, work types, counterparties; approved totals win over drafts. Click a row for details.</li></ul>`);
+
+  S.dirs = H(`
+    <h4>${ic('book')} Справочник</h4>
+    <ul>
+      <li>Вкладки: Остатки склада, Сотрудники (админ), Контрагенты, Комплексы, Виды работ, Оборудование, Доп. снаряжение, PRICE, Доп. работы, Размеры, Продукты.</li>
+      <li><b>Комплексы</b> сгруппированы по владельцам; группа «Без владельца» и «⏳ Временный владелец» помечены ${faqTriDemo()} — таким нужно назначить контрагента.</li>
+      <li>${ic('book')} у комплекса — история кодов доступа; ${ic('pencil')} — редактирование (менеджер+).</li>
+      <li>Оборудование: ${faqEqLegend()} — эти же коды и цвета на бейджах пикапов.</li>
+      <li>Запросы кода от воркеров появляются входящими сверху — подтвердите или обновите код.</li>
+    </ul>`,
+  `
+    <h4>${ic('book')} Directory</h4>
+    <ul><li>Tabs for stock, staff, counterparties, complexes, work types, equipment, extra gear, PRICE, extra works, sizes, products.</li>
+    <li><b>Complexes</b> grouped by owner; "No owner" and "⏳ Temporary owner" are flagged ${faqTriDemo()} — assign a counterparty.</li>
+    <li>Equipment codes/colors: ${faqEqLegend()} — same badges as on pickup cards.</li></ul>`);
+
+  S.journal = H(`
+    <h4>${ic('book')} Журнал</h4>
+    <ul>
+      <li>Аудит действий по всей организации: <b>кто</b>, <b>когда</b>, <b>что</b> и с каким объектом (работа, пикап, комплекс, сотрудник, настройка…).</li>
+      <li>Источник — таблица аудита в Supabase; в демо-режиме пишется локально (до 2000 записей). Записи не редактируются.</li>
+      <li>Фильтр по типу события сверху; строка раскрывает детали изменения (старое → новое значение, суммы, даты).</li>
+      <li><b>Регистрируемые события</b>: ${faqAuditLegend()}.</li>
+      <li>Если журнал пуст с пометкой про таблицу — выполните SQL-миграцию из подсказки диагностики.</li>
+    </ul>`,
+  `
+    <h4>${ic('book')} Journal</h4>
+    <ul><li>Audit trail: who changed what and when; filter by event type.</li></ul>`);
+
+  S.settings = H(`
+    <h4>${ic('gear')} Настройки</h4>
+    <ul>
+      <li><b>Доска</b> — минимум сотрудников на экране (степпер «Авто ↔ 3…12», личная, в профиле).</li>
+      <li><b>Профиль</b>: имя в документах, смена пароля, язык RU/EN, навигатор (Авто/Apple/Google).</li>
+      <li><b>Оборудование и документы</b> (админ): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старше N дней (0 — выкл; заблокированные документы открываются на просмотр).</li>
+      <li><b>Фото и видео → Google Drive</b>: подключение папки для медиа.</li>
+      <li><b>Приглашение</b> (админ): код регистрации сотрудников.</li>
+      <li><b>Проверить обновления</b> — применяет новую версию сразу; клик по названию TechLog в шапке делает то же.</li>
+      <li><b>Диагностика</b>: самоотчёт и проверка таблиц/функций БД — при ошибке подсказывает нужный SQL-файл.</li>
+    </ul>`,
+  `
+    <h4>${ic('gear')} Settings</h4>
+    <ul><li><b>Board</b> — minimum staff visible (stepper, personal). Profile: display name, password, language, navigator.</li>
+    <li><b>Equipment & documents</b> (admin): default rent / max extension steppers, permissions, edit-lock N days (locked docs open read-only).</li>
+    <li>Media → Google Drive; invite code; "Check updates" applies the new version immediately; DB diagnostics names the exact SQL file on errors.</li></ul>`);
+
+  return `<div class="faqm">${S[key] || ''}</div>`;
+}
+function sectionFaqOpen(key){
+  if (typeof SECTION_HELP !== 'undefined' && SECTION_HELP[key]) return sectionHelpModal(key);
+  openModal(`
+    <div class="m-head">? FAQ · ${t('tab_' + key) || t(key + '_title') || ''}
+      <button class="m-x" onclick="App.closeModal()">✕</button></div>
+    ${sectionFaqHtml(key)}`);
+}
+
+/* =====================================================================
+   v1.07.54: ПОИСК МЕСТА НА КАРТЕ (Nominatim/OSM) и добавление комплекса
+   ===================================================================== */
+let geoResults = [];
+let geoMarker = null;
+const TEMP_CP_NAME = '⏳ Временный владелец';
+
+async function mapSearchRun(){
+  const q = ($('#map-q')?.value || '').trim();
+  state.mapQ = q;
+  const box = $('#map-sr'); if (!box) return;
+  if (q.length < 3){ box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="tiny" style="padding:6px 2px">…</div>`;
+  try{
+    const u = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&accept-language='
+      + (state.lang || 'ru') + '&q=' + encodeURIComponent(q);
+    const r = await fetch(u, { headers: { 'Accept': 'application/json' } });
+    geoResults = (await r.json()) || [];
+  }catch(e){ geoResults = []; }
+  if (!geoResults.length){ box.innerHTML = `<div class="tiny" style="padding:6px 2px">⚠ ${t('map_no_results')}</div>`; return; }
+  box.innerHTML = geoResults.map((g, i) => `
+    <button class="rowline map-row" onclick="App.mapPick(${i})">
+      <span class="dot" style="background:var(--blue)"></span>
+      <div class="grow"><b>${esc((g.display_name||'').split(',')[0])}</b>
+        <div class="tiny">${esc(g.display_name||'')}</div></div>
+    </button>`).join('');
+}
+function mapPickRun(i){
+  const g = geoResults[i]; if (!g) return;
+  const lat = +g.lat, lng = +g.lon;
+  if (mapObj && window.L){                      /* карта может ещё грузиться — панель работает и без неё */
+    if (geoMarker) { try{ mapObj.removeLayer(geoMarker); }catch(e){} }
+    geoMarker = L.marker([lat, lng]).addTo(mapObj);
+    mapObj.setView([lat, lng], 17);
+  }
+  const box = $('#map-sr');
+  if (box) box.innerHTML = `
+    <div class="rowline" style="border-color:var(--green)">
+      <span class="dot" style="background:var(--green)"></span>
+      <div class="grow"><b>✓ ${t('map_found_pt')}</b>
+        <div class="tiny">${esc(g.display_name||'')}</div></div>
+      <button class="btn btn-green sm" onclick="App.addCxFromMap(${i})">${t('map_add_cx')}</button>
+    </div>`;
+}
+function autoAbbr(name){
+  const words = String(name||'').replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).filter(Boolean);
+  let a = words.map(w => w[0]).join('').toUpperCase().slice(0,3);
+  if (a.length < 3) a = (words[0]||'CX').toUpperCase().slice(0,3);
+  return a || 'CX';
+}
+function addCxModal(i){
+  const g = geoResults[i]; if (!g) return;
+  const nm = (g.display_name||'').split(',')[0].trim();
+  const cps = state.data.counterparties;
+  openModal(`
+    <div class="m-head">${ic('map')} ${t('cx_add_title')}
+      <button class="m-x" onclick="App.closeModal()">✕</button></div>
+    <div class="form-row"><span class="lbl">${t('name')}</span>
+      <input id="ncx-name" value="${esc(nm)}"></div>
+    <div class="form-row"><span class="lbl">${t('address')}</span>
+      <input id="ncx-addr" value="${esc(g.display_name||'')}"></div>
+    <div class="form-row"><span class="lbl">${t('cx_owner')}</span>
+      <select id="ncx-cp" onchange="document.getElementById('ncx-newcp-row').style.display = this.value==='__new' ? '' : 'none'">
+        <option value="">${t('cx_no_bind')}</option>
+        ${cps.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
+        <option value="__temp">${t('cx_temp_cp')}</option>
+        <option value="__new">${t('cx_new_cp')}</option>
+      </select></div>
+    <div class="form-row" id="ncx-newcp-row" style="display:none"><span class="lbl">${t('cx_new_cp_name')}</span>
+      <input id="ncx-newcp"></div>
+    <div class="tiny" style="margin:2px 0 8px">${t('cx_no_owner')} ${warnTriHtml()}</div>
+    <button class="btn btn-green" onclick="App.saveCxFromMap(${i})">${ic('chk_on')} ${t('save')}</button>
+  `);
+}
+async function saveCxFromMapRun(i){
+  const g = geoResults[i]; if (!g) return;
+  const name = ($('#ncx-name')?.value || '').trim(); if (!name){ toast('⚠', 'err'); return; }
+  const addr = ($('#ncx-addr')?.value || '').trim();
+  let cpId = $('#ncx-cp')?.value || '';
+  if (cpId === '__new'){
+    const nn = ($('#ncx-newcp')?.value || '').trim(); if (!nn){ toast('⚠', 'err'); return; }
+    const cp = { id: uid(), name: nn, abbr: autoAbbr(nn), notes: '' };
+    state.data.counterparties.push(cp); await dbUpsert('counterparties', cp); cpId = cp.id;
+  } else if (cpId === '__temp'){
+    let cp = state.data.counterparties.find(c => c.name === TEMP_CP_NAME);
+    if (!cp){ cp = { id: uid(), name: TEMP_CP_NAME, abbr: 'TMP', notes: '' };
+      state.data.counterparties.push(cp); await dbUpsert('counterparties', cp); }
+    cpId = cp.id;
+  }
+  const cx = { id: uid(), counterparty_id: cpId || null, name, abbr: autoAbbr(name),
+    address: addr, access_code: '', callbox_code: '', callbox_gate: false,
+    lat: +g.lat, lng: +g.lon };
+  state.data.complexes.push(cx);
+  await dbUpsert('complexes', cx);
+  audit('cx_add_map', 'complex', cx.id, { name, cp: cpId || null });
+  closeModal(); toast('✓ ' + t('cx_added'));
+  geoResults = []; render();
+}
+/* треугольник-предупреждение «нет владельца» (реюз стиля приоритета) */
+function warnTriHtml(){
+  return `<span class="pri inline on" style="pointer-events:none" title="${t('cx_no_owner')}"><span class="tri">!</span></span>`;
+}
+function cxNoOwner(cx){
+  if (!cx.counterparty_id) return true;
+  const cp = cpById(cx.counterparty_id);
+  return !cp || cp.name === TEMP_CP_NAME;
 }
 
 /* =====================================================================
@@ -2733,7 +3084,7 @@ function pickupModal(jobId, dateISO, ev){
   openModal(`
     ${modalHead(t('pickup').toUpperCase() + ' · Unit ' + (p0.unit_number || '—'), 'box')}
     <div class="tiny" style="margin:-4px 0 8px">${esc(cx.name)}${cp.name ? ' · ' + esc(cp.name) : ''}<br>${esc(cx.address||'')}
-      ${(cx.lat != null || cx.address) ? `<button class="mini-nav" onclick="App.navToCx('${p0.complex_id}')">${ic('compass')} ${t('navigate')}</button>` : ''}</div>
+      <button class="mini-nav" onclick="App.navToCx('${p0.complex_id}')">${ic('compass')} ${t('navigate')}</button></div>
     ${(cx.access_code || cx.callbox_code) ? `<div class="tiny" style="margin-bottom:8px">${codeLineHtml(cx, true)}</div>` : ''}
     <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('what_where')}</div>
     <div class="card" style="padding:8px 10px;margin-bottom:10px">${rows.map(p => pkLineHtml(p, true)).join('')}</div>
@@ -3043,7 +3394,7 @@ function viewJob(){
           <input id="jb-unit" value="${esc(j.unit_number||'')}" style="width:76px;display:inline-block;padding:4px 8px">
           <span id="jb-warn-unit">${String(j.unit_number||'').trim()?'':warnIcon()}</span></div>
         <div class="tiny">${esc(cp.name)} · ${esc(cx.address||'')}
-          ${(cx.lat!=null||cx.address)?`<button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button>`:''}</div>
+          <button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button></div>
         ${(cx.access_code||cx.callbox_code)?`<div class="tiny">${codeLineHtml(cx, true)}</div>`:''}
         <div class="tiny" style="color:${wt.color};font-weight:800">${esc(wt.name)}</div>
       </div>
@@ -3558,7 +3909,7 @@ function viewDirs(){
   const body = { stock: dirStock, staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
                  equipment: dirEquipment, aux: dirAux, price: dirPrice,
                  extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts }[state.dirTab]();
-  return `<div class="section-title">${t('dirs')}</div>` + nav + body;
+  return `<div class="section-title">${t('dirs')}${helpBtn('dirs')}</div>` + nav + body;
 }
 
 function dirCounterparties(){
@@ -3578,9 +3929,22 @@ function dirComplexes(){
   const inbox = codeRequestsHtml();
   const byCp = {};
   state.data.complexes.forEach(cx => (byCp[cx.counterparty_id]=byCp[cx.counterparty_id]||[]).push(cx));
-  const blocks = state.data.counterparties.map(cp => `
+  /* v1.07.54: комплексы без владельца — отдельной группой с треугольниками */
+  const orphans = state.data.complexes.filter(cx => !cx.counterparty_id);
+  const orphanBlock = orphans.length ? `
+    <div class="card" style="border-color:var(--red)">
+      <div style="font-weight:900;margin-bottom:4px">${warnTriHtml()} ${t('dir_no_owner_grp')}</div>
+      ${orphans.map(cx => `
+        <div class="rowline">
+          <div class="abbr" style="min-width:44px;height:38px">${esc(cx.abbr||'—')}</div>
+          <div class="grow"><b>${esc(cx.name)}</b> ${warnTriHtml()}
+            <div class="tiny">${esc(cx.address||'')}</div>
+            <div class="tiny">${t('cx_no_owner')}</div></div>
+        </div>`).join('')}
+    </div>` : '';
+  const blocks = orphanBlock + state.data.counterparties.map(cp => `
     <div class="card">
-      <div style="font-weight:900;margin-bottom:4px">${esc(cp.name)}</div>
+      <div style="font-weight:900;margin-bottom:4px">${esc(cp.name)}${cp.name === TEMP_CP_NAME ? ' ' + warnTriHtml() : ''}</div>
       ${(byCp[cp.id]||[]).map(cx => `
         <div class="rowline">
           <div class="abbr" style="min-width:44px;height:38px">${esc(cx.abbr||'—')}</div>
@@ -3991,17 +4355,18 @@ function viewSettings(){
   const bcolsCard = isManager() ? `
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('board')} ${t('b_cols')}</div>
-    <div class="form-row"><label>${t('b_cols_lbl')}</label>
-      <select onchange="App.setBoardCols(this.value)">
-        <option value="0" ${!(+state.user.board_cols)?'selected':''}>${t('b_cols_auto')}</option>
-        ${[3,4,5,6,7,8,10,12].map(n=>`<option value="${n}" ${+state.user.board_cols===n?'selected':''}>${n}</option>`).join('')}
-      </select></div>
+    <div class="qty-line"><span class="name">${t('b_cols_lbl')}</span>
+      <span class="stepper set-step">
+        <button type="button" onclick="App.boardColsStep(-1)">−</button>
+        <span class="val" id="bcols-val">${+state.user.board_cols ? +state.user.board_cols : t('b_cols_auto')}</span>
+        <button type="button" onclick="App.boardColsStep(1)">＋</button>
+      </span></div>
     <div class="tiny">${t('b_cols_note')}</div>
   </div>` : '';
   const u = state.user;
   const org = state.data.org_settings;
   return `
-  <div class="section-title">${t('settings')}</div>
+  <div class="section-title">${t('settings')}${helpBtn('settings')}</div>
   ${bcolsCard}
 
   <div class="card">
@@ -4082,9 +4447,9 @@ function viewSettings(){
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('box')} ${t('eq_settings_title')}</div>
     <div class="qty-line"><span class="name">${t('def_days_lbl')}</span>
-      <input class="price-input" style="max-width:70px" inputmode="numeric" value="${org.default_rent_days ?? 3}" onchange="App.setOrgNum('default_rent_days', this.value, 1, 30)"></div>
+      ${orgStepperHtml('default_rent_days', org.default_rent_days ?? 3, 1, 30)}</div>
     <div class="qty-line"><span class="name">${t('max_ext_lbl')}</span>
-      <input class="price-input" style="max-width:70px" inputmode="numeric" value="${org.max_extend_days ?? 3}" onchange="App.setOrgNum('max_extend_days', this.value, 1, 30)"></div>
+      ${orgStepperHtml('max_extend_days', org.max_extend_days ?? 3, 1, 30)}</div>
     <label class="opt ${org.manager_can_approve?'on':''}">
       <input type="checkbox" ${org.manager_can_approve?'checked':''} onchange="App.setOrgFlag('manager_can_approve', this.checked)"> ${t('mgr_approve_chk')}</label>
     <label class="opt ${org.stock_visible_all!==false?'on':''}">
@@ -4092,7 +4457,7 @@ function viewSettings(){
     <label class="opt ${org.allow_tech_proposal_flag!==false?'on':''}">
       <input type="checkbox" ${org.allow_tech_proposal_flag!==false?'checked':''} onchange="App.setOrgFlag('allow_tech_proposal_flag', this.checked)"> ${t('allow_prop_chk')}</label>
     <div class="qty-line"><span class="name">${t('lock_days_lbl')}</span>
-      <input class="price-input" style="max-width:70px" inputmode="numeric" value="${org.edit_lock_days ?? 0}" onchange="App.setOrgNum('edit_lock_days', this.value, 0, 60)"></div>
+      ${orgStepperHtml('edit_lock_days', org.edit_lock_days ?? 0, 0, 60)}</div>
     <div class="tiny">${t('lock_hint')}</div>
   </div>
   ${mediaSettingsCardHtml()}
@@ -4403,6 +4768,7 @@ const App = {
   dictToggle, dictLang(l){ state.dictLang = l; localStorage.setItem('techlog_dictlang', l); document.querySelectorAll('.dict-row .lang-seg button').forEach(b=>b.classList.toggle('on', b.textContent === (l==='ru-RU'?'RU':'EN'))); },
   noteModal, saveNote, auxToggle, sectionHelp: sectionHelpModal,
   crewAdd, crewAll, crewRemove, navToCx, copyText, copyCxAddr,
+  mapSearch: mapSearchRun, mapPick: mapPickRun, addCxFromMap: addCxModal, saveCxFromMap: saveCxFromMapRun, closeModal, sectionFaq: sectionFaqOpen,
   pickupModal, extendModal, extMode, extDays, extQty, extApply, jobHistory, pickupOne,
   searchInput, searchKindSet, searchClear, searchOpenPk, logoHome, checkVerClick,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
@@ -4496,6 +4862,20 @@ const App = {
     const org = { ...state.data.org_settings, [key]: !!v };
     dbSaveOrg(org); audit('org_toggle', 'org', key, { on: !!v });
     toast('✓ ' + t('saved')); render();
+  },
+  orgStep(key, d, min, max){                       /* v1.07.53: шаг степпера настроек */
+    /* фолбэк = тот же дефолт, что показывает поле и применяют
+       defRentDays()/maxExtendDays()/editLockDays() — иначе первый клик
+       по «＋» на нетронутой настройке прыгал бы от min, а не от видимого */
+    const DEF = { default_rent_days: 3, max_extend_days: 3, edit_lock_days: 0 };
+    const cur = +((state.data.org_settings || {})[key] ?? (DEF[key] ?? 0));
+    App.setOrgNum(key, cur + d, min, max);
+  },
+  boardColsStep(d){                                /* «Авто» ↔ 3…12 */
+    const cur = +((state.user || {}).board_cols) || 0;
+    const next = d > 0 ? (cur === 0 ? 3 : Math.min(12, cur + 1))
+                       : (cur <= 3 ? 0 : cur - 1);
+    if (next !== cur) App.setBoardCols(next);
   },
   setOrgNum(key, v, min, max){
     const n = Math.max(min, Math.min(max, parseInt(v, 10) || 0));
@@ -4861,20 +5241,25 @@ function viewMap(){
         const has = cx.lat != null && cx.lng != null;
         return `<button class="rowline map-row" ${has?`onclick="App.mapFocus(${cx.lat},${cx.lng})"`:''}>
           <span class="dot" style="background:${cpColor(cx.counterparty_id)}"></span>
-          <div class="grow"><b>${esc(cx.name)}</b> <span class="tiny">${esc((cpById(cx.counterparty_id)||{}).abbr||'')}</span>
+          <div class="grow"><b>${esc(cx.name)}</b>${cxNoOwner(cx) ? ' ' + warnTriHtml() : ''} <span class="tiny">${esc((cpById(cx.counterparty_id)||{}).abbr||'')}</span>
             <div class="tiny">${has ? esc(cx.address||'') : '⚠ ' + t('map_no_coords')}</div></div>
           ${cx.access_code?`<span class="tiny key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.access_code)}')">${ic('key')} ${esc(cx.access_code)}</span>`:''}
         </button>`;
       }).join('');
 
   return `
-  <div class="section-title">${t('map_title')}</div>
+  <div class="section-title">${t('map_title')}${helpBtn('map')}</div>
   <div class="card map-controls">
     <div class="form-row"><span class="lbl">${t('counterparty')}</span>
       <select onchange="App.mapSetCp(this.value)">
         <option value="">${t('all_counterparties')}</option>
         ${cps.map(c=>`<option value="${c.id}" ${state.mapCp===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
       </select></div>
+    <div class="form-row" style="margin-top:8px">
+      <input id="map-q" placeholder="${t('map_search_ph')}" autocomplete="off" value="${esc(state.mapQ||'')}"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();App.mapSearch();}">
+      <button class="btn btn-blue sm" onclick="App.mapSearch()">${ic('search')} ${t('map_search_go')}</button></div>
+    <div id="map-sr"></div>
     <div class="tabs" style="margin-top:8px">
       <button class="tabbtn ${!state.mapDay?'active':''}" onclick="App.mapMode(false)">${ic('map')} ${t('map_mode_all')}</button>
       <button class="tabbtn ${state.mapDay?'active':''}" onclick="App.mapMode(true)">${ic('calendar')} ${t('map_mode_day')}</button>
@@ -4988,8 +5373,8 @@ function viewReports(){
   if (!tabs.find(x=>x[0]===state.repTab)) state.repTab = 'invoices';
   const nav = `<div class="tabs">` + tabs.map(([id,l]) =>
     `<button class="tabbtn ${state.repTab===id?'active':''}" onclick="App.repTab('${id}')">${l}</button>`).join('') + `</div>`;
-  if (state.repTab === 'pickups') return `<div class="section-title">${t('tab_reports')}</div>` + nav + viewPickupsReport();
-  return `<div class="section-title">${t('tab_reports')}</div>` + nav + viewInvoicesReport();
+  if (state.repTab === 'pickups') return `<div class="section-title">${t('tab_reports')}${helpBtn('reports')}</div>` + nav + viewPickupsReport();
+  return `<div class="section-title">${t('tab_reports')}${helpBtn('reports')}</div>` + nav + viewInvoicesReport();
 }
 function viewInvoicesReport(){
   const js = repJobs();
@@ -6191,13 +6576,24 @@ function viewBoard(){
     </div>`;
   }).join('');
   const tools = `<div class="board-tools"><label class="opt ${hideEmpty?'on':''}">
-    <input type="checkbox" ${hideEmpty?'checked':''} onchange="App.boardHideEmpty(this.checked)"> ${t('b_hide_empty')}</label></div>`;
+    <input type="checkbox" ${hideEmpty?'checked':''} onchange="App.boardHideEmpty(this.checked)"> ${t('b_hide_empty')}</label>${helpBtn('board')}</div>`;
   return viewWeek() + extReqStripHtml() + propStripHtml() + tools + `<div class="board"${boardColsStyle(staff.length)}>${cols}</div>`;
 }
 
 /* v1.07.49: личная ширина колонок доски. N сотрудников на экран (профиль,
    board_cols) → CSS-переменная; desktop.css превращает её в ширину .bcol.
    Мобильная раскладка переменную игнорирует (там фикс 232px). */
+/* v1.07.53: степпер числовой настройки организации — «−» поле «＋»;
+   прямой ввод в поле сохранён (тот же setOrgNum). */
+function orgStepperHtml(key, val, min, max){
+  return `<span class="stepper set-step">
+    <button type="button" onclick="App.orgStep('${key}',-1,${min},${max})">−</button>
+    <input class="price-input" inputmode="numeric" value="${val}"
+      onchange="App.setOrgNum('${key}', this.value, ${min}, ${max})">
+    <button type="button" onclick="App.orgStep('${key}',1,${min},${max})">＋</button>
+  </span>`;
+}
+
 function boardColsStyle(colCount){
   /* v1.07.52: N — это МИНИМУМ сотрудников, видимых без горизонтального
      скролла. Сжимаем под min(N, реальное число колонок): когда людей
@@ -6235,7 +6631,7 @@ function viewBoardWeek(){
     </div>`);
   }
   /* вся неделя на экране: 7 равных колонок (60px = шесть зазоров по 10) */
-  return viewWeek() + `<div class="board" style="--bcolw:calc((100% - 60px)/7)">${days.join('')}</div>`;
+  return viewWeek() + `<div style="text-align:right;margin:2px 0 6px">${helpBtn('board')}</div><div class="board" style="--bcolw:calc((100% - 60px)/7)">${days.join('')}</div>`;
 }
 function boardJobCard(j, idx, canOrd){
   const wt = wtById(j.work_type_id), cx = cxById(j.complex_id);
@@ -6360,7 +6756,7 @@ function viewProposalList(){
       <span class="money">${money(+p.total || 0)}</span>
     </button>`;
   }).join('');
-  return `<div class="prop-wrap"><div class="section-title">${t('tab_proposals')}</div>
+  return `<div class="prop-wrap"><div class="section-title">${t('tab_proposals')}${helpBtn('proposals')}</div>
   <div class="tabs" style="margin:0 12px 8px">${chips}</div>
   <div class="card" style="margin:0 12px">${rows || `<div class="list-empty">${t('no_items')}</div>`}</div>
   <button class="btn btn-green" style="margin:10px 12px" onclick="App.openProposal()">${t('prop_new')}</button></div>`;
@@ -8145,7 +8541,7 @@ function viewStats(){
       <div class="bar-l">${iso.slice(8,10)}</div>
     </div>`).join('');
   return `
-  <div class="section-title">${ICONS.stats} ${t('stats_title')}</div>
+  <div class="section-title">${ICONS.stats} ${t('stats_title')}${helpBtn('stats')}</div>
   <div class="card">
     <div class="tabs">${chips}</div>
     <div class="grid-2">

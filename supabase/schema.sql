@@ -122,6 +122,7 @@ $$;
 -- ---------------------------------------------------------------------
 alter table public.profiles add column if not exists blocked boolean not null default false;
 alter table public.profiles add column if not exists board_cols int;  -- v1.07.49: личных колонок доски (ПК), NULL = авто
+alter table public.complexes alter column counterparty_id drop not null;  -- v1.07.54: комплексы с карты могут быть без владельца
 
 -- Админ блокирует/разблокирует сотрудника:
 -- profiles.blocked (для интерфейса) + banned_until в auth.users (GoTrue не пустит
@@ -282,7 +283,7 @@ create table if not exists public.counterparties (
 
 create table if not exists public.complexes (
   id uuid primary key default gen_random_uuid(),
-  counterparty_id uuid not null references public.counterparties(id) on delete cascade,
+  counterparty_id uuid references public.counterparties(id) on delete cascade,  -- v1.07.54: NULL = комплекс без владельца (подсвечивается ⚠ в справочнике)
   name text not null,
   abbr text default '',
   address text default '',

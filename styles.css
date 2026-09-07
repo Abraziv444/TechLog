@@ -320,6 +320,13 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .stepper{display:flex;align-items:center;gap:0;border:2px solid var(--line);border-radius:12px;overflow:hidden}
 .stepper button{width:34px;height:34px;font-weight:900;color:var(--blue);background:var(--panel-2)}
 .stepper .val{min-width:34px;text-align:center;font-weight:900}
+/* v1.07.53: степперы в настройках — редактируемое поле между − и ＋ */
+.stepper.set-step > input.price-input{
+  border:0;border-radius:0;background:transparent;
+  width:52px;min-width:0;max-width:52px;height:34px;
+  text-align:center;font-weight:900;padding:0;
+}
+.stepper.set-step .val{min-width:52px;padding:0 6px}
 .money{font-weight:900;color:var(--green)}
 .total-bar{
   /* без position:sticky — раньше панель плавала поверх полей формы и перекрывала их */
@@ -946,6 +953,19 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .brand .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:400px){ .name-tag{display:none} }
 .info-i{cursor:pointer;opacity:.85;font-weight:900;margin-left:2px}
+/* v1.07.54: кнопка «?» FAQ раздела и вёрстка справки */
+.faq-i{width:22px;height:22px;min-width:22px;border-radius:50%;border:2px solid var(--line);
+  color:var(--blue);font-weight:900;font-size:.78rem;margin-left:8px;vertical-align:2px;
+  display:inline-grid;place-items:center;background:var(--panel-2);cursor:pointer}
+.faq-i:active{transform:scale(.92)}
+.faqm{max-height:68vh;overflow:auto;padding-right:4px}
+.faqm h4{margin:12px 0 4px;display:flex;align-items:center;gap:6px}
+.faqm h4:first-child{margin-top:2px}
+.faqm ul{margin:4px 0 8px;padding-left:18px}
+.faqm li{margin:5px 0;line-height:1.35}
+.faqm .demo{display:inline-flex;gap:5px;align-items:center;margin:1px 8px 1px 0;vertical-align:middle}
+.faqm .badge-status{position:static}
+.faqm .mv{pointer-events:none}
 .total-bar .sum.pend{color:var(--dim)}
 .total-bar .sum.ok{color:var(--green)}
 .combo{position:relative;flex:1;min-width:0}
