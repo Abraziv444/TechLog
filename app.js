@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.57';
+const APP_VERSION = '1.07.58';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -326,6 +326,9 @@ const I18N = {
     prop_linked: 'Связанные документы', prop_link: 'Связать', prop_unlink: 'Отвязать',
     prop_pick: 'Выбрать пропозал…', prop_pick_none: 'нет подходящих (комплекс/статус)',
     prop_pick_job: 'Выбрать работу…', prop_pick_job_none: 'нет свободных работ этого комплекса',
+    nt_prop_avail_cx: 'Для данного апарт-комплекса доступен пропозал',
+    nt_prop_avail_unit: 'Для данного юнита в апарт-комплексе доступен пропозал',
+    nt_prop_pick_any: 'Выбрать из всех свободных…', nt_prop_none: 'Свободных пропозалов нет',
     prop_requested: 'Сотрудник указал: должен быть пропозал',
     allow_prop_chk: 'Сотрудники могут отмечать «нужен пропозал»',
     prop_pdf: 'PDF пропозала', prop_status: 'Статус', prop_need_cpcx: 'Укажите контрагента и комплекс',
@@ -636,6 +639,9 @@ const I18N = {
     prop_linked: 'Linked documents', prop_link: 'Link', prop_unlink: 'Unlink',
     prop_pick: 'Pick a proposal…', prop_pick_none: 'no matching (complex/status)',
     prop_pick_job: 'Pick a job…', prop_pick_job_none: 'no unlinked jobs in this complex',
+    nt_prop_avail_cx: 'A proposal is available for this complex',
+    nt_prop_avail_unit: 'A proposal is available for this unit in the complex',
+    nt_prop_pick_any: 'Pick from all free proposals…', nt_prop_none: 'No free proposals',
     prop_requested: 'Tech marked: proposal expected',
     allow_prop_chk: 'Techs may mark “proposal expected”',
     prop_pdf: 'Proposal PDF', prop_status: 'Status', prop_need_cpcx: 'Select counterparty and complex',
@@ -2935,8 +2941,10 @@ function addTaskModal(){
         <input type="hidden" id="nt-cx"><div class="combo-list" id="cb-cx-list"></div>
       </div></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
-      <input id="nt-unit" inputmode="numeric" placeholder="916"></div>
-    <label class="opt" style="margin:2px 0 8px"><input type="checkbox" id="nt-prop"> ${t('proposal_chk')}</label>
+      <input id="nt-unit" inputmode="numeric" placeholder="916" oninput="App.ntPropRefresh()"></div>
+    <div id="nt-prop-msg"></div>
+    <label class="opt" style="margin:2px 0 8px"><input type="checkbox" id="nt-prop" onchange="App.ntPropRefresh()"> ${t('proposal_chk')}</label>
+    <div id="nt-prop-zone"></div>
     <div class="form-row"><span class="lbl">${t('work_type')}</span>
       <div class="opt-grid" id="nt-wt">
         ${wts.map(w=>`<button class="opt" data-id="${w.id}" style="border-color:${w.color};color:${w.color}"
@@ -2944,6 +2952,7 @@ function addTaskModal(){
       </div></div>
     <button class="btn btn-green" onclick="App.createTask()">${t('create')}</button>
   `);
+  ntPropSel = null; ntPropRefresh();   // v1.07.58: подсказка о доступном пропозале
 }
 function ntCpChange(){
   const cpId = $('#nt-cp').value;
@@ -3005,6 +3014,7 @@ function comboPick(kind, id){
       if (cbp && cp) cbp.querySelector('.combo-in').value = cp.name;
     }
   }
+  if ($('#nt-prop-zone')) ntPropRefresh();   // v1.07.58: форма «Добавить задание»
 }
 document.addEventListener('click', e => {
   if (!e.target.closest('.combo'))
@@ -3030,6 +3040,8 @@ async function createTask(){
   await dbUpsert('jobs', job);
   audit('job_create', 'job', job.id, { unit: job.unit_number, date: job.date,
     complex: (cxById(cxId) || {}).abbr || '', work: (wtById(ntWt) || {}).name || '' });
+  if (ntPropSel && isManager()) await linkProposal(job.id, ntPropSel);   // v1.07.58: тот же RPC → запись proposal_link в журнале
+  ntPropSel = null;
   ntWt = null; closeModal();
   state.selDate = date; state.weekStart = mondayOf(date);
   toast('✓ ' + t('created'));
@@ -4725,7 +4737,7 @@ const App = {
   shiftWeek(n){ state.weekStart = addDaysISO(state.weekStart, n*7); const cand = addDaysISO(state.selDate, n*7); state.selDate = cand; render(); },
   setMine(v){ state.filterMine = v; render(); },
   sync(){ syncNow(false); checkForUpdate('кнопка синхронизации', true); },
-  addTaskModal, ntCpChange, ntPickWt, createTask, closeModal,
+  addTaskModal, ntCpChange, ntPickWt, createTask, closeModal, ntPropRefresh, ntPropPick,
   openJob, saveJob, approveJob, deleteJob, makePdf, pdfPreviewBlob, pickupGroup,
   setReportDate(v){ state.reportDate = v; render(); }, copyReport,
   repTab(v){ state.repTab = v; render(); },
@@ -6741,7 +6753,14 @@ async function linkProposal(jobId, propId){
     if (jobDraft && jobDraft.id === jobId){ jobDraft.proposal_id = propId; if (propId) jobDraft.has_proposal = true; }
     saveLocal();   // v1.07.57: связь/отвязка сразу в кэш — офлайн и перезагрузка её не теряют
   };
-  if (!HAS_SB){ apply(); render(); return; }
+  if (!HAS_SB){
+    apply();
+    // v1.07.58: в демо журналируем локально — при Supabase запись делает сам RPC
+    const jj = state.data.jobs.find(x => x.id === jobId), pp = propId ? propById(propId) : null;
+    audit(propId ? 'proposal_link' : 'proposal_unlink', 'job', jobId,
+      { unit: (jj && jj.unit_number) || '', no: pp ? pp.no : null });
+    render(); return;
+  }
   const { error } = await state.sb.rpc('link_job_proposal', { p_job: jobId, p_prop: propId });
   if (error){ toast('⛔ ' + rpcFail(error, 'link_job_proposal'), 'err'); return; }
   apply(); toast('✓ ' + t('saved')); render();
@@ -6764,6 +6783,63 @@ async function linkJobFromProp(propId){
   const v = (($('#pr-job-sel') || {}).value) || '';
   if (!v){ toast('⚠ ' + t('prop_pick_job'), 'err'); return; }
   await linkProposal(v, propId);
+}
+
+/* v1.07.58: пропозал в форме «Добавить задание».
+   «Свободный» = статус sent/approved и не привязан ни к одной работе.
+   Подсказка и выбор — только менеджеру/админу: RLS не даёт технику видеть
+   несвязанные пропозалы, а RPC привязки для него закрыт. У техника галочка
+   PROPOSAL работает как раньше (флаг «работы согласованы заранее»). */
+let ntPropSel = null;
+function ntFreeProps(){
+  const used = new Set((state.data.jobs || []).filter(j => j.proposal_id).map(j => j.proposal_id));
+  return (state.data.proposals || []).filter(p => !used.has(p.id) && ['sent','approved'].includes(p.status));
+}
+function ntPropMatches(free){
+  const cp = ($('#nt-cp') || {}).value || '', cx = ($('#nt-cx') || {}).value || '';
+  const unit = String(($('#nt-unit') || {}).value || '').trim().toLowerCase();
+  if (!cp || !cx) return [];
+  return free
+    .filter(p => p.complex_id === cx && p.counterparty_id === cp)
+    .map(p => ({ p, u: !!unit && String(p.unit_number || '').trim().toLowerCase() === unit }))
+    .sort((a, b) => (b.u - a.u) || String(b.p.date).localeCompare(String(a.p.date)));
+}
+function ntPropCardHtml(p, unitHit){
+  const on = ntPropSel === p.id;
+  return `<label class="opt ${on ? 'on' : ''}" style="display:flex;margin:4px 0">
+    <input type="checkbox" ${on ? 'checked' : ''} onchange="App.ntPropPick('${p.id}', this.checked)">
+    <span style="flex:1;min-width:0"><b>P-${p.no ?? '·'}</b> · Unit <b>${esc(p.unit_number || '—')}</b>${unitHit ? ' ✓' : ''} · ${money(+p.total || 0)}
+      <span class="tiny" style="display:block">${fmtDMY(p.date)} · ${t('prop_items')}: ${(p.items || []).length} · ${t('pst_' + p.status)}</span></span></label>`;
+}
+function ntPropRefresh(){
+  const msg = $('#nt-prop-msg'), zone = $('#nt-prop-zone');
+  if (!msg || !zone) return;
+  if (!isManager()){ msg.innerHTML = ''; zone.innerHTML = ''; return; }
+  const free = ntFreeProps();
+  const m = ntPropMatches(free);
+  const unitHit = m.some(x => x.u);
+  msg.innerHTML = m.length
+    ? `<div class="nt-prop-hit">✅ ${t(unitHit ? 'nt_prop_avail_unit' : 'nt_prop_avail_cx')}</div>` : '';
+  if (!($('#nt-prop') && $('#nt-prop').checked)){ ntPropSel = null; zone.innerHTML = ''; return; }
+  // выбранный вручную пропозал вне совпадений — его карточка сверху, чтобы выбор был виден
+  const selTop = ntPropSel && !m.some(x => x.p.id === ntPropSel) ? propById(ntPropSel) : null;
+  const all = free.filter(p => p.id !== ntPropSel)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  zone.innerHTML = `
+    ${selTop ? ntPropCardHtml(selTop, false) : ''}
+    ${m.slice(0, 6).map(x => ntPropCardHtml(x.p, x.u)).join('')}
+    ${all.length ? `<select style="width:100%;margin:2px 0 8px" onchange="App.ntPropPick(this.value, true)">
+        <option value="">${t('nt_prop_pick_any')}</option>
+        ${all.map(p => { const cx = cxById(p.complex_id) || {};
+          return `<option value="${p.id}">P-${p.no ?? '·'} · ${esc(cx.abbr || cx.name || '—')} · Unit ${esc(p.unit_number || '—')} · ${money(+p.total || 0)} · ${fmtDMY(p.date)}</option>`; }).join('')}
+      </select>`
+      : (m.length || selTop ? '' : `<div class="tiny" style="margin:0 0 8px">${t('nt_prop_none')}</div>`)}`;
+}
+function ntPropPick(id, on){
+  ntPropSel = (on && id) ? id : null;
+  const chk = $('#nt-prop');
+  if (ntPropSel && chk && !chk.checked) chk.checked = true;
+  ntPropRefresh();
 }
 function viewProposals(){
   if (!isManager()) return `<div class="card" style="margin:14px 12px">${t('prop_only')}</div>`;

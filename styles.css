@@ -1167,3 +1167,7 @@ html:not(.tl-desktop) .topbar::after{
   border-color:var(--blue);color:var(--blue)}
 /* id-правило #vm-slot (display:inline-block) било класс — уравниваем силу */
 #vm-slot.vm-inline{display:inline-flex;flex-direction:row;min-height:0;width:auto;height:auto}
+
+/* ===== v1.07.58: подсказка о доступном пропозале в «Добавить задание» ===== */
+.nt-prop-hit{display:flex;gap:6px;align-items:center;color:var(--green);
+  font-weight:800;font-size:.82rem;margin:-2px 0 8px}
