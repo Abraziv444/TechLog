@@ -615,3 +615,70 @@
   if (document.body) start();
   else document.addEventListener('DOMContentLoaded', function () { try { start(); } catch (e) {} });
 })();
+
+
+/* =====================================================================
+   v1.07.59 · АВТО-УПЛОТНЕНИЕ ДОСКИ. Считает, влезают ли колонки
+   сотрудников; при тесноте вешает на <html> класс tl-fit и переменную
+   --dsk-fit (ширина колонки под «все видны без скролла», но не уже 128px).
+   Вся вёрстка — в desktop.css. Читает только DOM доски; мобильную версию
+   не трогает (без tl-desktop правила не срабатывают).
+   Пороги зеркалят константы desktop.css: слева 128/236px (меню/меню+
+   колонка сотрудников), в tl-fit — 16/124px, справа 28px, паддинг доски
+   24px, зазор 10px, базовая колонка 260px.
+   ===================================================================== */
+(function () {
+  'use strict';
+  var GAP = 10, PADX = 24, RIGHT = 28, BASE = 260, MINW = 128;
+  var html = document.documentElement;
+  function q(s) { return document.querySelector(s); }
+  function isDesk() { return html.classList.contains('tl-desktop'); }
+  function off() {
+    html.classList.remove('tl-fit');
+    html.style.removeProperty('--dsk-fit');
+  }
+  function fit() {
+    try {
+      if (!isDesk() || window.innerWidth < 980) return off();
+      var board = q('.board');
+      /* только доска сотрудников: в шапке колонки есть аватар
+         (у недельной доски воркера в шапке дата — её не трогаем) */
+      if (!board || !board.querySelector('.bcol-h .avatar')) return off();
+      var n = board.querySelectorAll('.bcol').length;
+      if (n < 2) return off();
+      var staffCol = html.classList.contains('tl-staff');
+      var availSide = window.innerWidth - (staffCol ? 236 : 128) - RIGHT;
+      var needSide = n * BASE + (n - 1) * GAP + PADX;
+      var on = html.classList.contains('tl-fit');
+      if (on) {
+        if (needSide <= availSide) return off();      // снова просторно — меню возвращается
+      } else {
+        /* включаемся, когда началась теснота: по расчёту или по факту скролла */
+        if (needSide <= availSide && board.scrollWidth <= board.clientWidth + 2) return off();
+      }
+      var availBottom = window.innerWidth - (staffCol ? 124 : 16) - RIGHT;
+      var w = Math.floor((availBottom - PADX - (n - 1) * GAP) / n);
+      w = Math.max(MINW, Math.min(BASE, w));
+      html.classList.add('tl-fit');
+      html.style.setProperty('--dsk-fit', w + 'px');
+    } catch (e) { off(); }
+  }
+  var deb = null;
+  function sched() {
+    if (deb) return;
+    deb = setTimeout(function () { deb = null; fit(); }, 120);
+  }
+  function start() {
+    try {
+      var app = document.getElementById('app');
+      if (app && window.MutationObserver) new MutationObserver(sched).observe(app, { childList: true, subtree: true });
+      if (window.MutationObserver) new MutationObserver(sched)
+        .observe(html, { attributes: true, attributeFilter: ['class'] });
+      window.addEventListener('resize', sched);
+      fit();
+      window.TLBoardFit = { fit: fit, off: off };   // для отладки
+    } catch (e) {}
+  }
+  if (document.body) start();
+  else document.addEventListener('DOMContentLoaded', function () { try { start(); } catch (e) {} });
+})();

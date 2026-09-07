@@ -114,8 +114,9 @@
     width:calc(100vw - var(--tl-padl,128px) - 28px);
     margin-inline:calc((100% - (100vw - var(--tl-padl,128px) - 28px))/2);
   }
-  html.tl-desktop .bcol{ flex:0 0 var(--bcolw,260px); max-width:var(--bcolw,260px);
-    container-type:inline-size; }               /* v1.07.52: колонка — контейнер для ужимок */
+  html.tl-desktop .bcol{ flex:0 0 var(--dsk-fit, var(--bcolw,260px)); max-width:var(--dsk-fit, var(--bcolw,260px));
+    container-type:inline-size; }               /* v1.07.52: колонка — контейнер для ужимок;
+                                                   v1.07.59: --dsk-fit (авто-подгон) в приоритете над личной --bcolw */
   html.tl-desktop .bcol.bday-sel{ border-color:var(--blue,#1CB0F6); }
   /* v1.07.52: минимум N сотрудников без скролла — на узких колонках карточки
      компактнеют: меньше паддинги/шрифты/аватар, у счётчиков остаются числа. */
@@ -631,3 +632,56 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
 
 /* ===== v1.07.40: мини-пилюля в шапке видна и на ПК (правило скрытия из
    v1.07.38 удалено вместе с центральной пилюлей) ===== */
+
+
+/* =====================================================================
+   ============ v1.07.59 · АВТО-УПЛОТНЕНИЕ ДОСКИ (html.tl-fit) ============
+   Класс ставит desktop.js, когда колонки сотрудников перестают влезать
+   по ширине (начинается скролл/обрезка). Меню уезжает вниз горизонтальной
+   полосой, освобождая слева ~112px; ширину колонок задаёт --dsk-fit.
+   Всё строго под html.tl-desktop — мобильная версия этих правил не видит.
+   ===================================================================== */
+@media (min-width: 980px){
+
+  /* ---------- Меню вниз: контент и доска забирают левую полосу ---------- */
+  html.tl-desktop.tl-fit{ --tl-padl:16px; }
+  html.tl-desktop.tl-fit.tl-staff{ --tl-padl:124px; }
+  html.tl-desktop.tl-fit body{ padding-left:16px; padding-bottom:92px; }
+  html.tl-desktop.tl-fit.tl-staff body{ padding-left:124px; }
+  html.tl-desktop.tl-fit #dsk-staff{ left:16px; }
+
+  html.tl-desktop.tl-fit .tabbar{
+    top:auto; bottom:10px; left:50%; right:auto; transform:translateX(-50%);
+    flex-direction:row; justify-content:flex-start;
+    width:max-content; max-width:calc(100vw - 190px);
+    max-height:none; overflow-x:auto; overflow-y:hidden;
+    padding:5px 8px; gap:2px; border-radius:16px;
+  }
+  html.tl-desktop.tl-fit .tab{ width:auto; flex:0 0 auto; padding:7px 10px; gap:2px; border-radius:12px; }
+  html.tl-desktop.tl-fit .tab svg{ width:22px; height:22px; }
+  html.tl-desktop.tl-fit .tab span{ font-size:.54rem; }
+
+  /* углы свободны: полоса меню ограничена по ширине */
+  html.tl-desktop.tl-fit .fab{ right:16px; bottom:14px; }
+  html.tl-desktop.tl-fit .app-footer{ margin-bottom:100px; }
+  html.tl-desktop.tl-fit .board{ padding-bottom:14px; }  /* запас снизу даёт padding body */
+
+  /* ---------- Узкая колонка: шапка сотрудника вертикально ----------
+     Триггер — фактическая ширина колонки (container query), поэтому
+     работает и при авто-подгоне, и при узкой личной настройке. */
+  @container (max-width: 190px){
+    .bcol-h{ flex-direction:column; align-items:center; gap:2px; margin-bottom:4px; text-align:center; }
+    .bcol-h .avatar{ width:30px; height:30px; font-size:.7rem; }
+    .bcol-h .grow{ width:100%; min-width:0; }
+    .bcol-h .grow b{ display:inline-block; max-width:100%; font-size:.74rem; line-height:1.15;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; vertical-align:bottom; }
+    .bcol-h .grow .tiny{ font-size:.6rem; }
+    .bempty{ text-align:center; }
+  }
+  @container (max-width: 140px){
+    .bcol-h .grow b{ font-size:.68rem; }
+    .bcol-h .grow .tiny{ font-size:.54rem; }
+    .bjob{ padding:4px 14px 4px 12px; }
+    .bjob .bnum{ left:4px; font-size:.56rem; }
+  }
+}
