@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TechLog — Политика конфиденциальности / Privacy Policy</title>
+<style>
+:root{--bg:#0F171B;--panel:#17232A;--line:#31434C;--text:#F1F7FB;--dim:#8AA0AB;--green:#58CC02;--blue:#1CB0F6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:780px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:1.5rem;font-weight:900;margin:0 0 4px}
+h2{font-size:1.05rem;font-weight:900;margin:26px 0 8px;color:var(--green)}
+.sub{color:var(--dim);font-size:.9rem;margin-bottom:22px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:14px}
+ul{padding-left:20px;margin:8px 0}
+li{margin:5px 0}
+a{color:var(--blue)}
+hr{border:none;border-top:2px solid var(--line);margin:34px 0}
+.tiny{color:var(--dim);font-size:.85rem}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>TechLog — Политика конфиденциальности</h1>
+<div class="sub">APC, LLC · последнее обновление: 7 сентября 2026</div>
+
+<div class="card">
+<p>TechLog — внутреннее рабочее приложение компании APC, LLC для учёта работ по уборке и восстановлению квартир, аренды оборудования и вывоза техники. Приложением пользуются только сотрудники компании по выданным учётным записям. Публичной регистрации нет.</p>
+</div>
+
+<h2>Какие данные обрабатываются</h2>
+<div class="card">
+<ul>
+<li>Учётные данные сотрудника: логин, отображаемое имя, роль, служебный телефон.</li>
+<li>Рабочие записи: задания, сметы, адреса объектов, размещённое оборудование, даты и время работ.</li>
+<li>Фотографии и видео объектов, сделанные сотрудниками в ходе выполнения работ.</li>
+<li>Служебный журнал действий в приложении (кто и что изменил).</li>
+</ul>
+<p class="tiny">Приложение не собирает данные о местоположении устройства, не использует рекламные трекеры и системы аналитики.</p>
+</div>
+
+<h2>Доступ к Google Диску</h2>
+<div class="card">
+<p>Приложение подключается к Google Диску корпоративного архивного аккаунта компании и использует единственное разрешение <b>drive.file</b>. Это разрешение даёт доступ только к файлам и папкам, созданным самим приложением. Остальные файлы Диска приложению недоступны — оно их не видит, не читает и не изменяет.</p>
+<ul>
+<li>Приложение создаёт файлы фото и видео работ в указанной администратором папке архива.</li>
+<li>Файлы принадлежат аккаунту компании; сотрудники просматривают их через приложение по своим правам доступа.</li>
+<li>Данные Google Диска не передаются третьим лицам, не продаются и не используются для обучения моделей, рекламы или анализа.</li>
+<li>Использование данных Google API соответствует <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, включая требования Limited Use.</li>
+</ul>
+</div>
+
+<h2>Где хранятся данные</h2>
+<div class="card">
+<ul>
+<li>Рабочие записи и учётные данные — в базе Supabase (PostgreSQL) проекта компании, с построчным разграничением доступа по ролям.</li>
+<li>Полноразмерные фото и видео — на Google Диске компании; миниатюры — в защищённом хранилище Supabase.</li>
+<li>Токены доступа Google хранятся только на сервере и в браузер сотрудника не передаются.</li>
+</ul>
+</div>
+
+<h2>Сроки хранения и удаление</h2>
+<div class="card">
+<p>Рабочие данные хранятся, пока это необходимо для деятельности компании. Администратор может удалить любые записи и медиафайлы через приложение; удаление медиафайла удаляет и файл на Google Диске. Отозвать доступ приложения к Google Диску можно в любой момент на странице <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</p>
+</div>
+
+<h2>Контакт</h2>
+<div class="card">
+<p>Вопросы по обработке данных: <a href="mailto:lex777kex2014@gmail.com">lex777kex2014@gmail.com</a></p>
+</div>
+
+<hr>
+
+<h1>TechLog — Privacy Policy</h1>
+<div class="sub">APC, LLC · last updated September 7, 2026</div>
+
+<div class="card">
+<p>TechLog is an internal business application of APC, LLC used to track apartment cleaning and restoration jobs, equipment rentals and pickups. Access is limited to company staff with accounts issued by the company; there is no public sign-up.</p>
+</div>
+
+<h2>Data we process</h2>
+<div class="card">
+<ul>
+<li>Staff account data: login, display name, role, work phone number.</li>
+<li>Work records: jobs, proposals, site addresses, placed equipment, dates and times.</li>
+<li>Photos and videos of work sites taken by staff during jobs.</li>
+<li>An internal audit log of actions performed in the app.</li>
+</ul>
+<p class="tiny">The app does not collect device location, and uses no advertising trackers or analytics services.</p>
+</div>
+
+<h2>Google Drive access</h2>
+<div class="card">
+<p>The app connects to the Google Drive of the company's archive account using the single <b>drive.file</b> scope. This scope grants access only to files and folders the app itself creates. All other files in that Drive remain invisible and inaccessible to the app.</p>
+<ul>
+<li>The app creates job photo and video files inside the archive folder chosen by the administrator.</li>
+<li>Files belong to the company account; staff view them through the app according to their permissions.</li>
+<li>Google Drive data is never sold or shared with third parties, and is never used for advertising, profiling or training AI models.</li>
+<li>Use of Google API data complies with the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, including its Limited Use requirements.</li>
+</ul>
+</div>
+
+<h2>Storage</h2>
+<div class="card">
+<ul>
+<li>Work records and account data: the company's Supabase (PostgreSQL) project, protected by row-level security and role checks.</li>
+<li>Full-size photos and videos: the company's Google Drive; thumbnails: private Supabase storage.</li>
+<li>Google access tokens are stored server-side only and are never exposed to the browser.</li>
+</ul>
+</div>
+
+<h2>Retention and deletion</h2>
+<div class="card">
+<p>Work data is retained as long as needed for company operations. An administrator can delete any record or media file from the app; deleting a media file also deletes it from Google Drive. Access can be revoked at any time at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">myaccount.google.com/permissions</a>.</p>
+</div>
+
+<h2>Contact</h2>
+<div class="card">
+<p>Questions about data handling: <a href="mailto:lex777kex2014@gmail.com">lex777kex2014@gmail.com</a></p>
+</div>
+
+</div></body></html>
