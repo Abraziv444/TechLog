@@ -1,5 +1,8 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres } from "../_shared/google.ts";
 
+/* v1.07.64: max — это дефолт; действующий лимит на документ админ задаёт
+   в настройках (org_settings.media_max_photo / media_max_video). Проверка
+   именно здесь: клиент лимит только показывает, обойти его нельзя. */
 const LIMITS = { photo: { max: 10, bytes: 8_000_000 },
                  video: { max: 2,  bytes: 120_000_000 } };
 
@@ -31,6 +34,11 @@ Deno.serve(async (req) => {
     if (!job) return jres({ error: "NO_ACCESS" }, 403);
 
     const s = svc();
+    const { data: org } = await s.from("org_settings")
+      .select("media_max_photo,media_max_video").eq("id", "org").maybeSingle();
+    const maxCount = kind === "video"
+      ? Number(org?.media_max_video ?? LIMITS.video.max)
+      : Number(org?.media_max_photo ?? LIMITS.photo.max);
     await s.from("media").delete().eq("job_id", job_id).eq("status", "uploading")
       .lt("created_at", new Date(Date.now() - 86_400_000).toISOString());
     const { data: rows } = await s.from("media")
@@ -39,7 +47,7 @@ Deno.serve(async (req) => {
     const { count } = await s.from("media")
       .select("id", { count: "exact", head: true })
       .eq("job_id", job_id).eq("kind", kind);
-    if ((count ?? 0) >= lim.max) return jres({ error: "LIMIT", max: lim.max }, 409);
+    if ((count ?? 0) >= maxCount) return jres({ error: "LIMIT", max: maxCount }, 409);
     const seq = (rows?.[0]?.seq ?? 0) + 1;
 
     const ext = kind === "video"

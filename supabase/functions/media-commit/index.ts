@@ -30,6 +30,29 @@ Deno.serve(async (req) => {
       entity: "job", entity_id: m.job_id,
       details: { media_id: m.id, file: m.file_name, size: g.size ?? m.size_bytes, seq: m.seq } });
 
+    /* v1.07.64: свободное место на Диске — не чаще раза в 6 часов, чтобы
+       предупреждение для админа и менеджера оставалось свежим без ручных
+       тестов подключения. Ошибка здесь не должна ронять загрузку файла. */
+    try {
+      const { data: o } = await s.from("org_settings")
+        .select("gd_checked_at").eq("id", "org").maybeSingle();
+      const last = o?.gd_checked_at ? Date.parse(o.gd_checked_at) : 0;
+      if (!last || Date.now() - last > 6 * 3600 * 1000) {
+        const about = await (await fetch(
+          "https://www.googleapis.com/drive/v3/about?fields=storageQuota,user(emailAddress)",
+          { headers: { Authorization: `Bearer ${t}` } })).json();
+        const q = about.storageQuota ?? {};
+        const usage = Number(q.usage ?? 0), limit = Number(q.limit ?? 0);
+        await s.from("org_settings").update({
+          gd_used_gb: Number((usage / 1e9).toFixed(2)),
+          gd_limit_gb: limit ? Number((limit / 1e9).toFixed(2)) : null,
+          gd_free_pct: limit ? Number((100 - (usage * 100) / limit).toFixed(1)) : null,
+          gd_account: about.user?.emailAddress ?? null,
+          gd_checked_at: new Date().toISOString(),
+        }).eq("id", "org");
+      }
+    } catch (_e) { /* не критично */ }
+
     return jres({ ok: true });
   } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
 });

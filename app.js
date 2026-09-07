@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.62';
-const DB_SQL_FILE = 'full-install-1_07_62.sql';   // v1.07.62: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.07.64';
+const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -335,6 +335,15 @@ const I18N = {
     mq_docs: 'докум.', mq_photo: 'фото', mq_video: 'видео',
     mq_empty: 'Всё отправлено', mq_later: 'Позже', mq_doc: 'Документ',
     mq_net_on: 'сеть: онлайн', mq_net_off: 'сеть: офлайн', mq_sb_fail: 'сервер недоступен',
+    mq_log: 'Журнал отправки', mq_l_wait: 'ожидание действий…',
+    mq_l_start: 'старт отправки', mq_l_files: 'файл(ов) в очереди',
+    mq_l_sent: 'отправлено', mq_l_left: 'осталось в очереди',
+    mq_l_busy: 'отправка уже идёт — подождите', mq_l_none: 'ничего не отправлено',
+    mq_l_off: 'нет сети — отправка отложена', mq_l_nosb: 'нет подключения к серверу',
+    mq_l_stop: 'остановлено — файлы остались в очереди',
+    mq_l_fn: 'Edge-функции', mq_l_fn_no: 'не задеплоены',
+    mq_l_drive: 'Google Drive не настроен — обратитесь к администратору',
+    mq_l_drop: 'файл отклонён сервером и убран из очереди',
     eq_hours: 'Моточасы DHM', eq_h_start: 'старт', eq_h_check: 'при проверке',
     prop_requested: 'Сотрудник указал: должен быть пропозал',
     allow_prop_chk: 'Сотрудники могут отмечать «нужен пропозал»',
@@ -349,7 +358,11 @@ const I18N = {
     b_hide_empty: 'Скрыть свободных',
     media_title: 'Фото и видео', media_photo: '📷 Фото', media_video: '🎥 Видео',
     media_sb_only: 'Фото и видео работают только с подключённым Supabase',
-    media_vlong: 'Видео длиннее 90 сек — снимите короче', media_limit: 'Лимит: 10 фото и 2 видео на работу',
+    media_vlong: 'Видео длиннее 90 сек — снимите короче',
+    media_limit: 'Лимит: {P} фото и {V} видео на документ',
+    media_lim_card: 'Лимиты фото и видео на документ',
+    media_lim_photo: 'Фото на документ', media_lim_video: 'Видео на документ',
+    media_lim_hint: 'Действует для всех документов. По умолчанию 10 фото и 2 видео. Лимит проверяет и сервер — обойти его из браузера нельзя. Уже загруженные файлы сверх нового лимита остаются на месте, добавить сверх — нельзя. Видео = 0 убирает кнопку съёмки видео.',
     media_open_err: 'Нет доступа или файл ещё грузится', media_del_q: 'Удалить файл из архива',
     media_offline: '🔴 офлайн', media_wait: 'ждут отправки',
     media_not_cfg: 'Google Drive не настроен — фото сохранятся и уйдут после настройки (Настройки → Фото и видео)',
@@ -359,6 +372,14 @@ const I18N = {
     gd_save: 'Сохранить ключи', gd_connect: '🔗 Подключить Google', gd_test: '🧪 Тест соединения',
     gd_redirect: 'Redirect URI — вставьте в Google Console',
     gd_saved: 'Ключи сохранены', gd_need_cid: 'Сначала введите Client ID',
+    gd_token: 'Токен доступа (refresh)', gd_none: 'не задано',
+    gd_edit: 'Изменить ключи', gd_edit_off: 'Отменить правку',
+    gd_show: 'Показать', gd_hide: 'Скрыть', gd_copy: 'Копировать',
+    gd_reveal_err: 'Не удалось получить значение с сервера',
+    gd_folder_ph: 'вставьте ссылку целиком — возьмём ID',
+    gd_folder_hint: 'Откройте папку архива на Диске и вставьте сюда адрес целиком: drive.google.com/drive/folders/<b class="gd-mark">1AbC…XyZ</b>?usp=sharing — приложение само возьмёт выделенную часть.',
+    gd_space: 'Свободно на Диске',
+    gd_space_warn: 'На Google Диске осталось {P}% свободного места (занято {U} из {L} ГБ). Освободите место или подключите другой архивный аккаунт — иначе фото и видео перестанут загружаться.',
     gd_connected: 'Google подключён', gd_not_conn: 'не подключено',
     gd_db: 'База данных', gd_auth: 'Авторизация Google', gd_acc: 'Аккаунт',
     gd_used: 'Занято на Диске', gd_write: 'Пробная запись в папку', gd_status: 'Статус',
@@ -654,6 +675,15 @@ const I18N = {
     mq_docs: 'docs', mq_photo: 'photo', mq_video: 'video',
     mq_empty: 'Everything uploaded', mq_later: 'Later', mq_doc: 'Document',
     mq_net_on: 'network: online', mq_net_off: 'network: offline', mq_sb_fail: 'server unreachable',
+    mq_log: 'Upload log', mq_l_wait: 'waiting for actions…',
+    mq_l_start: 'upload started', mq_l_files: 'file(s) queued',
+    mq_l_sent: 'uploaded', mq_l_left: 'still queued',
+    mq_l_busy: 'upload already running — please wait', mq_l_none: 'nothing uploaded',
+    mq_l_off: 'offline — upload postponed', mq_l_nosb: 'no server connection',
+    mq_l_stop: 'stopped — files stay in the queue',
+    mq_l_fn: 'Edge functions', mq_l_fn_no: 'not deployed',
+    mq_l_drive: 'Google Drive is not configured — contact the administrator',
+    mq_l_drop: 'file rejected by the server and removed from the queue',
     eq_hours: 'DHM hours', eq_h_start: 'start', eq_h_check: 'at check',
     prop_requested: 'Tech marked: proposal expected',
     allow_prop_chk: 'Techs may mark “proposal expected”',
@@ -668,7 +698,11 @@ const I18N = {
     b_hide_empty: 'Hide free',
     media_title: 'Photos & video', media_photo: '📷 Photo', media_video: '🎥 Video',
     media_sb_only: 'Media requires Supabase connection',
-    media_vlong: 'Video longer than 90s — please retake', media_limit: 'Limit: 10 photos & 2 videos per job',
+    media_vlong: 'Video longer than 90s — please retake',
+    media_limit: 'Limit: {P} photos & {V} videos per document',
+    media_lim_card: 'Photo & video limits per document',
+    media_lim_photo: 'Photos per document', media_lim_video: 'Videos per document',
+    media_lim_hint: 'Applies to every document. Defaults: 10 photos and 2 videos. The server enforces the same limit, so it cannot be bypassed from the browser. Files already uploaded above a new limit stay in place; adding more is blocked. Videos = 0 hides the video button.',
     media_open_err: 'No access or file still uploading', media_del_q: 'Delete file from archive',
     media_offline: '🔴 offline', media_wait: 'pending upload',
     media_not_cfg: 'Google Drive is not configured — photos are queued and will upload after setup (Settings → Photos & video)',
@@ -678,6 +712,14 @@ const I18N = {
     gd_save: 'Save keys', gd_connect: '🔗 Connect Google', gd_test: '🧪 Test connection',
     gd_redirect: 'Redirect URI — paste into Google Console',
     gd_saved: 'Keys saved', gd_need_cid: 'Enter Client ID first',
+    gd_token: 'Access token (refresh)', gd_none: 'not set',
+    gd_edit: 'Edit keys', gd_edit_off: 'Cancel editing',
+    gd_show: 'Show', gd_hide: 'Hide', gd_copy: 'Copy',
+    gd_reveal_err: 'Could not fetch the value from the server',
+    gd_folder_ph: 'paste the whole link — we take the ID',
+    gd_folder_hint: 'Open the archive folder in Drive and paste the whole address here: drive.google.com/drive/folders/<b class="gd-mark">1AbC…XyZ</b>?usp=sharing — the app extracts the highlighted part itself.',
+    gd_space: 'Drive free space',
+    gd_space_warn: 'Google Drive has {P}% free space left ({U} of {L} GB used). Free up space or connect another archive account — otherwise photo and video uploads will stop.',
     gd_connected: 'Google connected', gd_not_conn: 'not connected',
     gd_db: 'Database', gd_auth: 'Google auth', gd_acc: 'Account',
     gd_used: 'Drive used', gd_write: 'Test write to folder', gd_status: 'Status',
@@ -1559,6 +1601,12 @@ function canPrio(j){ return j && (isAdmin() || state.user.role === 'manager' || 
 function mgrReorderOn(){ const o = state.data && state.data.org_settings; return !!(o && o.manager_can_reorder); }
 function defRentDays(){ const v = +((state.data && state.data.org_settings || {}).default_rent_days); return v >= 1 ? v : 3; }
 function maxExtendDays(){ const v = +((state.data && state.data.org_settings || {}).max_extend_days); return v >= 1 ? v : 3; }
+/* v1.07.64: лимиты фото/видео на документ — из настроек организации */
+function mediaLimits(){
+  const o = (state.data && state.data.org_settings) || {};
+  const p = parseInt(o.media_max_photo, 10), v = parseInt(o.media_max_video, 10);
+  return { photo: p >= 1 ? p : 10, video: v >= 0 ? v : 2 };
+}
 function editLockDays(){ const v = +((state.data && state.data.org_settings || {}).edit_lock_days); return v >= 1 ? v : 0; }
 function editLocked(j){ const n = editLockDays(); if (!n || isManager()) return false; return j.date < addDaysISO(todayISO(), -n); }
 function canApprove(){ return isAdmin() || (state.user.role === 'manager' && !!((state.data.org_settings||{}).manager_can_approve)); }
@@ -2469,7 +2517,7 @@ function viewHome(){
       <button class="mini-nav" onclick="App.openDayMap()">${ic('map')} ${t('map_of_day')}</button>
       ${helpBtn('home')}
     </div>`;
-  return a2hs + banner + viewWeek() + dayBar
+  return a2hs + gdSpaceBannerHtml() + banner + viewWeek() + dayBar
     + `<div id="day-top" style="${q?'display:none':''}">` + homeStatsHtml() + `</div>`
     + filter
     + `<div id="search-area" style="${q?'':'display:none'}">${q ? searchAreaHtml() : ''}</div>`
@@ -2791,7 +2839,9 @@ function sectionFaqHtml(key){
       <li><b>Доска</b> — минимум сотрудников на экране (степпер «Авто ↔ 3…12», личная, в профиле).</li>
       <li><b>Профиль</b>: имя в документах, смена пароля, язык RU/EN, навигатор (Авто/Apple/Google).</li>
       <li><b>Оборудование и документы</b> (админ): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старше N дней (0 — выкл; заблокированные документы открываются на просмотр).</li>
-      <li><b>Фото и видео → Google Drive</b>: подключение папки для медиа.</li>
+      <li><b>Лимиты фото и видео на документ</b> (админ): степперы «Фото на документ» (1–50) и «Видео на документ» (0–10), по умолчанию <b>10 и 2</b>. Лимит един для всех документов и проверяется сервером при загрузке — из браузера его не обойти. Уже загруженные сверх нового лимита файлы остаются, добавить больше нельзя; «видео 0» убирает кнопку съёмки видео из карточки работы.</li>
+      <li><b>Фото и видео → Google Drive</b>: ключи OAuth архивного аккаунта. В поле «ID папки» можно вставить <b>ссылку целиком</b> — приложение само возьмёт ID. Сохранённые ключи карточка показывает в режиме просмотра: Client ID и папка — открыто, секрет и токен — звёздочками, 👁 показывает значение (запрашивается с сервера отдельно), ⧉ копирует, ✏ включает правку. «Тест соединения» проверяет доступ, аккаунт, <b>свободное место</b> и запись в папку.</li>
+      <li><b>Место на Диске</b>: если свободно меньше 15 %, админ и менеджер видят красный баннер на главной. Показатель снимается при тесте подключения и сам обновляется при загрузке файлов (не чаще раза в 6 часов).</li>
       <li><b>Приглашение</b> (админ): код регистрации сотрудников.</li>
       <li><b>Проверить обновления</b> — применяет новую версию сразу; клик по названию TechLog в шапке делает то же.</li>
       <li><b>Диагностика</b>: самоотчёт и проверка таблиц/функций БД — при ошибке подсказывает нужный SQL-файл.</li>
@@ -2800,7 +2850,9 @@ function sectionFaqHtml(key){
     <h4>${ic('gear')} Settings</h4>
     <ul><li><b>Board</b> — minimum staff visible (stepper, personal). Profile: display name, password, language, navigator.</li>
     <li><b>Equipment & documents</b> (admin): default rent / max extension steppers, permissions, edit-lock N days (locked docs open read-only).</li>
-    <li>Media → Google Drive; invite code; "Check updates" applies the new version immediately; DB diagnostics names the exact SQL file on errors.</li></ul>`);
+    <li><b>Photo & video limits</b> (admin): steppers for photos (1–50) and videos (0–10) per document, defaults <b>10 and 2</b>, enforced server-side; videos = 0 hides the video button.</li>
+    <li>Media → Google Drive: paste the whole folder link — the ID is extracted automatically; saved keys show read-only with masked secrets (👁 reveal, ⧉ copy, ✏ edit). The connection test also reports free Drive space; below 15 % admins and managers get a banner on Home.</li>
+    <li>Invite code; "Check updates" applies the new version immediately; DB diagnostics names the exact SQL file on errors.</li></ul>`);
 
   return `<div class="faqm">${S[key] || ''}</div>`;
 }
@@ -4518,6 +4570,7 @@ function viewSettings(){
       ${orgStepperHtml('edit_lock_days', org.edit_lock_days ?? 0, 0, 60)}</div>
     <div class="tiny">${t('lock_hint')}</div>
   </div>
+  ${mediaLimitsCardHtml()}
   ${mediaSettingsCardHtml()}
   ${backupCardHtml()}
   ${diagCardHtml()}
@@ -4783,6 +4836,7 @@ const App = {
   sync(){ syncNow(false); checkForUpdate('кнопка синхронизации', true); },
   addTaskModal, ntCpChange, ntPickWt, createTask, closeModal, ntPropRefresh, ntPropPick,
   mediaQueueModal, mqPing, mqRetry, plHours,
+  gdToggleEdit, gdReveal, gdCopy,
   eqHours(etId, v){
     if (!jobDraft) return;
     const e = jobDraft.form_data.equipment[etId] || (jobDraft.form_data.equipment[etId] = { qty: 0, days: defRentDays() });
@@ -4941,7 +4995,8 @@ const App = {
     /* фолбэк = тот же дефолт, что показывает поле и применяют
        defRentDays()/maxExtendDays()/editLockDays() — иначе первый клик
        по «＋» на нетронутой настройке прыгал бы от min, а не от видимого */
-    const DEF = { default_rent_days: 3, max_extend_days: 3, edit_lock_days: 0 };
+    const DEF = { default_rent_days: 3, max_extend_days: 3, edit_lock_days: 0,
+                  media_max_photo: 10, media_max_video: 2 };
     const cur = +((state.data.org_settings || {})[key] ?? (DEF[key] ?? 0));
     App.setOrgNum(key, cur + d, min, max);
   },
@@ -6370,6 +6425,8 @@ function faqHtml(){
     <p>The Map tab shows every complex as a dot colored by counterparty, with a filter and a popup (address, codes, a route link). <b>Day mode</b> plots the selected date’s jobs (work-type colors) and pickups (gray, red when overdue) and builds a multi-stop <b>route</b> in your navigation app — Apple Maps on iPhone/iPad (multistop needs iOS 18.4+) or Google Maps; pick one in Settings → “Navigation app”. Coordinates are set in the complex card — “Find by address” or manually.</p>
     <h4>${ic('chart')} Statistics</h4>
     <p>The Stats tab: period chips (today/7/30 days or custom), Mine/All, big totals (jobs, revenue, approved, pickups) and a per-day bar chart.</p>
+    <h4>📷 Job photos & video</h4>
+    <p>Each job card has a <b>Photos & video</b> block: shoot from the app, photos are downscaled to 1920 px, videos are capped at 90 seconds, and the counter shows how many of the allowed files are attached. The <b>admin sets the limits</b> in Settings → “Photo & video limits per document” (defaults <b>10 photos and 2 videos</b>; photos 1–50, videos 0–10); the server enforces them, and videos = 0 hides the video button. Files go to the company <b>Google Drive</b> archive in monthly folders, thumbnails stay in the database. Offline, everything queues on the phone and uploads automatically — see Settings → “Unsent photos & videos” for the per-document summary, the line-by-line upload log, “Retry upload” and “Connection check”. When Drive drops below <b>15 % free space</b>, admins and managers get a red banner on Home; the same figure is measured by the Drive connection test and refreshed automatically as files upload.</p>
     <h4>${ic('mic')} Notes, dictation & translation</h4>
     <p>Every job and pickup has a note. The ${ic('mic')} microphone dictates in RU or EN (Chrome/Android; on iPhone — the 🎤 key on the keyboard, see the iPhone section), text is editable by hand, and the note prints on the PDF as the <b>NOTES</b> line. One tap translates a Russian note to English.</p>
     <h4>${ic('wrench')} Account, settings & service</h4>
@@ -6401,6 +6458,8 @@ function faqHtml(){
     <p>Две карточки — сводка по <b>выбранному в ленте дню</b> (при открытии приложения это сегодня). Слева — <b>работы</b>: большая цифра — сколько всего работ на день, под ней разбивка по видам, каждый вид подписан своим цветом. Справа — <b>пикапы</b>: большая цифра — сколько единиц оборудования нужно забрать в этот день; каждая иконка — тип оборудования (внутри кружка его сокращение: BLW — блоуэр, DHM — осушитель, SCR — скруббер, OZN — озонатор), под иконкой — количество единиц. Красная плашка «просрочено» появляется, если что-то должны были забрать раньше, но ещё не забрали. Вот пример одного дня:</p>
     <div class="faq-example">${faqDayCardsExample()}</div>
     <p>Читаем пример: на день запланировано <b>7 работ</b> — Steam Clean 4, Air Duct 2, Vetvag 1. Забрать нужно <b>8 единиц оборудования</b> — 5 блоуэров (BLW), 2 осушителя (DHM) и 1 скруббер (SCR), при этом один пикап уже просрочен. Цифры считаются по тем же спискам, что показаны ниже на экране: листаете ленту на другой день — карточки пересчитываются, а у менеджера они подчиняются фильтру «Мои/Все».</p>
+    <h4>📷 Фото и видео работ</h4>
+    <p>В карточке работы есть блок <b>«Фото и видео»</b>: съёмка идёт прямо из приложения, фото сжимается до 1920 px, видео принимается длиной до 90 секунд. Рядом с заголовком счётчик — сколько уже прикреплено из лимита. <b>Лимиты задаёт администратор</b>: «Настройки» → «Лимиты фото и видео на документ», два степпера (по умолчанию <b>10 фото и 2 видео</b>; фото 1–50, видео 0–10). Лимит общий для всех документов, его проверяет сервер — из браузера обойти нельзя; при значении «видео 0» кнопка съёмки видео пропадает, а уже загруженные файлы сверх нового лимита остаются на месте. Файлы уходят в архив на <b>Google Диске</b> фирмы (миниатюры — в базе), раскладываются по папкам вида <i>2026-09</i>. Без сети всё копится в очереди на телефоне и уходит само при появлении связи: «Настройки» → «Неотправленные фото и видео» — там сводка по документам, журнал отправки построчно и кнопки «Повторить отправку» / «Проверка соединения». Когда на Диске остаётся <b>менее 15 % свободного места</b>, админ и менеджер видят красный баннер на главной; тот же показатель считается при «Тесте соединения» в настройках Диска и обновляется сам при загрузке файлов.</p>
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
     <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим.</p>
     <h4>${ic('phone')} iPhone и iPad (iOS)</h4>
@@ -7385,7 +7444,9 @@ function mediaPick(jobId, kind){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   const rows = (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind);
   const loc = mediaQ.filter(x => x.job_id === jobId && x.kind === kind);
-  if (rows.length + loc.length >= (kind === 'video' ? 2 : 10)){ toast('⚠ ' + t('media_limit'), 'err'); return; }
+  const lim = mediaLimits();
+  if (rows.length + loc.length >= (kind === 'video' ? lim.video : lim.photo)){
+    toast('⚠ ' + t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video), 'err'); return; }
   const inp = document.createElement('input');
   inp.type = 'file';
   inp.accept = kind === 'video' ? 'video/*' : 'image/*';
@@ -7418,15 +7479,17 @@ async function mediaQDel(qid){
   render(); mediaBadge();
 }
 /* ---------- отправка (докачка чанками) ---------- */
-async function mPutResumable(it){
+async function mPutResumable(it, onProg){
   const total = it.blob.size;
   let offset = 0;
+  const prog = () => { try{ onProg && onProg(Math.min(100, Math.round(offset * 100 / total))); }catch(e){} };
   if (it.started){
     const p = await fetch(it.upload_url, { method: 'PUT',
       headers: { 'Content-Range': `bytes */${total}` } });
     if (p.status === 308){
       const r = p.headers.get('Range');
       offset = r ? Number(r.split('-')[1]) + 1 : 0;
+      prog();
     } else if (p.ok) return (await p.json()).id;
   }
   while (offset < total){
@@ -7435,19 +7498,30 @@ async function mPutResumable(it){
       headers: { 'Content-Range': `bytes ${offset}-${end - 1}/${total}` },
       body: it.blob.slice(offset, end) });
     it.started = true; await mQPut(it);
-    if (r.status === 308){ offset = end; continue; }
+    if (r.status === 308){ offset = end; prog(); continue; }
     if (r.ok) return (await r.json()).id;
     throw new Error('upload ' + r.status);
   }
   throw new Error('upload incomplete');
 }
-async function mediaFlush(){
-  if (_mediaBusy || !HAS_SB || !navigator.onLine || !state.user){ mediaBadge(); return; }
+/* v1.07.63: verbose=true — ход отправки построчно уходит в журнал модалки
+   «Неотправленные фото и видео»; возвращается сводка для итоговой строки. */
+async function mediaFlush(verbose){
+  const lg = (txt, cls, id) => verbose ? mqLog(txt, cls, id) : null;
+  const res = { photo: 0, video: 0, fail: 0, stopped: false };
+  if (_mediaBusy){ lg('⏳ ' + t('mq_l_busy'), 'warn'); mediaBadge(); return res; }
+  if (!HAS_SB || !state.user){ lg('⛔ ' + t('mq_l_nosb'), 'err'); mediaBadge(); return res; }
+  if (!navigator.onLine){ lg('🔴 ' + t('mq_l_off'), 'err'); mediaBadge(); return res; }
   _mediaBusy = true;
   try{
-    for (const it of [...mediaQ].sort((a, b) => a.at - b.at)){
+    const list = [...mediaQ].sort((a, b) => a.at - b.at);
+    let idx = 0;
+    for (const it of list){
+      idx++;
+      const tag = `${esc(mqLabel(it))} ${idx}/${list.length}`;
+      const lid = lg(`⬆ ${tag} …`, 'dim');
       try{
-        const token = await mediaJwt(); if (!token) break;
+        const token = await mediaJwt(); if (!token){ lg('⛔ ' + t('mq_l_nosb'), 'err', lid); res.stopped = true; break; }
         if (!it.upload_url){
           const r = await fetch(mediaFN() + '/media-begin', { method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -7455,18 +7529,22 @@ async function mediaFlush(){
           const j = await r.json().catch(() => ({}));
           if (!r.ok){
             if (r.status === 409 || r.status === 403 || r.status === 413){
-              await mediaQDel(it.qid); toast('⛔ ' + (j.error || r.status), 'err'); continue;
+              await mediaQDel(it.qid); toast('⛔ ' + (j.error || r.status), 'err');
+              lg(`⛔ ${tag} — ${t('mq_l_drop')} (${esc(String(j.error || r.status))})`, 'err', lid);
+              res.fail++; continue;
             }
             if (String(j.error || '').includes('DRIVE_NOT_CONFIGURED')){
               if (isAdmin()) toast('⚠ ' + t('media_not_cfg'), 'inf');
-              break;
+              lg('⛔ ' + t('mq_l_drive'), 'err', lid);
+              res.stopped = true; break;
             }
             throw new Error(j.error || r.status);
           }
           Object.assign(it, { media_id: j.media_id, upload_url: j.upload_url, thumb_path: j.thumb_path });
           await mQPut(it);
         }
-        const driveId = await mPutResumable(it);
+        const driveId = await mPutResumable(it,
+          pct => lg(`⬆ ${tag} · ${pct}%`, 'dim', lid));
         if (it.thumb && it.thumb_path){
           await state.sb.storage.from('media-thumbs')
             .upload(it.thumb_path, it.thumb, { contentType: 'image/jpeg', upsert: true })
@@ -7482,14 +7560,19 @@ async function mediaFlush(){
         if (!state.data.media) state.data.media = [];
         state.data.media.push({ id: it.media_id, job_id: it.job_id, owner_id: state.user.id,
           kind: it.kind, seq: 0, file_name: '', thumb_path: it.thumb_path, status: 'ready' });
+        if (it.kind === 'video') res.video++; else res.photo++;
+        lg(`✓ ${tag}`, 'ok', lid);
         render();
       }catch(e){
         it.attempts = (it.attempts || 0) + 1; await mQPut(it);
         dlog('media stuck', it.qid, e);
+        lg(`⛔ ${tag} — ${esc(String(e && e.message || e))}`, 'err', lid);
+        res.fail++; res.stopped = true;
         break;                              // сеть шалит — дождёмся online/интервала
       }
     }
   } finally { _mediaBusy = false; mediaBadge(); }
+  return res;
 }
 /* ---------- полоса миниатюр ---------- */
 function mediaStripHtml(jobId){
@@ -7513,12 +7596,13 @@ function mediaStripHtml(jobId){
       <span class="mx" onclick="App.mediaQDel('${x.qid}')">✕</span>
     </div>`).join('');
   if (!_mediaHydPlanned){ _mediaHydPlanned = true; setTimeout(mediaHydrate, 0); }
+  const lim = mediaLimits();
   return `<div class="card media-card">
     <div style="font-weight:900;margin-bottom:6px">📷 ${t('media_title')}
-      <span class="tiny"> · ${nP}/10 · ${nV}/2</span></div>
+      <span class="tiny"> · ${nP}/${lim.photo}${lim.video ? ` · ${nV}/${lim.video}` : ''}</span></div>
     <div class="mstrip">${cells}
       <button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','photo')">${t('media_photo')}</button>
-      <button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video')">${t('media_video')}</button>
+      ${lim.video ? `<button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video')">${t('media_video')}</button>` : ''}
     </div>
   </div>`;
 }
@@ -7589,6 +7673,43 @@ function mediaBadge(){
    фото / видео), карточки по документам с миниатюрами, «Повторить
    отправку», «Проверка соединения». Та же модалка — из Настроек.
    ===================================================================== */
+/* ---------- v1.07.63: журнал отправки в модалке ---------- */
+const MQ_LOG_MAX = 150;
+let mqLogLines = [];          // {id, text, cls, time}
+let _mqBusy = '';             // '' | 'ping' | 'send' — блокирует вторую кнопку
+function mqStamp(){ const d = new Date(), p = x => String(x).padStart(2, '0');
+  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }
+function mqLog(text, cls, id){
+  const line = { id: id || uid(), text, cls: cls || '', time: mqStamp() };
+  const i = id ? mqLogLines.findIndex(x => x.id === id) : -1;
+  if (i >= 0) mqLogLines[i] = line;
+  else {
+    mqLogLines.push(line);
+    if (mqLogLines.length > MQ_LOG_MAX) mqLogLines = mqLogLines.slice(-MQ_LOG_MAX);
+  }
+  mqLogPaint();
+  return line.id;
+}
+function mqLogPaint(){
+  const box = $('#mq-log'); if (!box) return;
+  box.innerHTML = mqLogLines.length
+    ? mqLogLines.map(l => `<div class="mq-l ${l.cls}"><span class="mq-tm">${l.time}</span> ${l.text}</div>`).join('')
+    : `<div class="mq-l dim">${t('mq_l_wait')}</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+function mqLabel(it){
+  const j = (state.data.jobs || []).find(x => x.id === it.job_id);
+  const cx = j ? (cxById(j.complex_id) || {}) : {};
+  const who = j ? `${cx.abbr || cx.name || '—'}·${j.unit_number || '—'}`
+                : String(it.job_id || '').slice(0, 6);
+  return `${who} ${it.kind === 'video' ? t('mq_video') : t('mq_photo')}`;
+}
+function mqSetBusy(mode){
+  _mqBusy = mode || '';
+  const p = $('#mq-btn-ping'), s = $('#mq-btn-send');
+  if (p){ p.disabled = !!_mqBusy; p.classList.toggle('is-run', _mqBusy === 'ping'); }
+  if (s){ s.disabled = !!_mqBusy || !mediaQ.length; s.classList.toggle('is-run', _mqBusy === 'send'); }
+}
 let _mqPopDone = false;
 function mediaStartPop(){
   if (_mqPopDone) return;
@@ -7654,28 +7775,60 @@ function mediaQueueModal(){
     </div>
     ${mediaQ.length ? cards : `<div class="card" style="padding:10px">✅ ${t('mq_empty')}</div>`}
     <div class="btn-rowpp" style="margin-top:10px">
-      <button class="btn btn-ghost" onclick="App.mqPing()">${t('mq_ping')}</button>
-      <button class="btn btn-green" ${mediaQ.length ? '' : 'disabled'} onclick="App.mqRetry()">⬆ ${t('mq_retry')}</button>
-    </div>`);
+      <button class="btn btn-ghost" id="mq-btn-ping" onclick="App.mqPing()">${t('mq_ping')}</button>
+      <button class="btn btn-green" id="mq-btn-send" ${mediaQ.length ? '' : 'disabled'} onclick="App.mqRetry()">⬆ ${t('mq_retry')}</button>
+    </div>
+    <div class="tiny" style="margin:10px 0 4px;color:var(--dim)">${t('mq_log')}</div>
+    <div class="mq-log" id="mq-log"></div>`);
+  mqLogPaint();
+  mqSetBusy(_mqBusy);
 }
 async function mqPing(){
-  const el = $('#mq-conn'); if (!el) return;
-  el.textContent = '…';
-  const net = navigator.onLine;
-  let sb = '';
-  if (HAS_SB && state.sb){
-    const t0 = Date.now();
-    try{
-      const { error } = await state.sb.from('profiles').select('id', { head: true, count: 'exact' }).limit(1);
-      sb = error ? ' · ⛔ Supabase: ' + t('mq_sb_fail') : ` · Supabase ✓ ${Date.now() - t0} ms`;
-    }catch(e){ sb = ' · ⛔ Supabase: ' + t('mq_sb_fail'); }
-  }
-  el.textContent = (net ? '🌐 ' + t('mq_net_on') : '🔴 ' + t('mq_net_off')) + sb;
+  if (_mqBusy) return;                   // v1.07.63: идёт отправка — кнопка заблокирована
+  mqSetBusy('ping');
+  const el = $('#mq-conn');
+  const lid = mqLog('🧪 ' + t('mq_ping') + ' …', 'dim');
+  try{
+    const net = navigator.onLine;
+    mqLog((net ? '🌐 ' : '🔴 ') + (net ? t('mq_net_on') : t('mq_net_off')), net ? 'ok' : 'err', lid);
+    let sb = '';
+    if (HAS_SB && state.sb){
+      const t0 = Date.now();
+      try{
+        const { error } = await state.sb.from('profiles').select('id', { head: true, count: 'exact' }).limit(1);
+        if (error) throw error;
+        sb = ` · Supabase ✓ ${Date.now() - t0} ms`;
+        mqLog(`✓ Supabase — ${Date.now() - t0} ms`, 'ok');
+      }catch(e){
+        sb = ' · ⛔ Supabase: ' + t('mq_sb_fail');
+        mqLog('⛔ Supabase — ' + t('mq_sb_fail'), 'err');
+      }
+      try{                               // задеплоены ли edge-функции
+        const token = await mediaJwt();
+        const r = await fetch(mediaFN() + '/media-health',
+          { headers: { Authorization: 'Bearer ' + (token || '') } });
+        if (r.status === 404) mqLog('⛔ ' + t('mq_l_fn') + ' — ' + t('mq_l_fn_no'), 'err');
+        else mqLog('✓ ' + t('mq_l_fn'), 'ok');
+      }catch(e){ mqLog('⛔ ' + t('mq_l_fn') + ' — ' + t('mq_l_fn_no'), 'err'); }
+    }
+    if (el) el.textContent = (net ? '🌐 ' + t('mq_net_on') : '🔴 ' + t('mq_net_off')) + sb;
+  } finally { mqSetBusy(''); }
 }
 async function mqRetry(){
-  toast('⬆ ' + t('mq_retry') + '…');
-  await mediaFlush();
-  mediaQueueModal();                     // пересобрать с актуальной очередью
+  if (_mqBusy) return;                   // v1.07.63: идёт проверка связи — не мешаем
+  mqSetBusy('send');
+  const n0 = mediaQ.length;
+  mqLog(`⬆ ${t('mq_l_start')} · ${n0} ${t('mq_l_files')}`, 'dim');
+  let r = { photo: 0, video: 0, fail: 0, stopped: false };
+  try{ r = (await mediaFlush(true)) || r; }
+  catch(e){ mqLog('⛔ ' + esc(String(e && e.message || e)), 'err'); }
+  const sent = r.photo + r.video;
+  if (sent) mqLog(`✅ ${t('mq_l_sent')}: ${r.photo} ${t('mq_photo')} · ${r.video} ${t('mq_video')}`, 'ok');
+  else if (!r.fail) mqLog('… ' + t('mq_l_none'), 'warn');
+  if (mediaQ.length) mqLog(`⚠ ${t('mq_l_left')}: ${mediaQ.length}` + (r.stopped ? ' · ' + t('mq_l_stop') : ''), 'warn');
+  else if (sent) mqLog('✅ ' + t('mq_empty'), 'ok');
+  mqSetBusy('');
+  mediaQueueModal();                     // пересобрать с актуальной очередью (журнал сохраняется)
   toast(mediaQ.length ? '⚠ ⬆' + mediaQ.length + ' ' + t('media_wait') : '✓ ' + t('mq_empty'));
 }
 /* ---------- моточасы осушителя ---------- */
@@ -7686,25 +7839,150 @@ async function plHours(pid, field, val){
   if (v !== null && !(v >= 0)){ toast('⚠ 0+', 'err'); return; }
   await dbUpsert('placements', { ...p, [field]: v });
 }
+/* =====================================================================
+   v1.07.64: ЛИМИТЫ МЕДИА, МЕСТО НА ДИСКЕ, КАРТОЧКА КЛЮЧЕЙ.
+   Ключи хранятся на сервере: в карточку подтягивается то, что не секрет
+   (Client ID, ID папки, аккаунт), секреты показываются звёздочками —
+   реальное значение приходит отдельным запросом и только по клику «глаза».
+   ===================================================================== */
+function mediaLimitsCardHtml(){
+  if (!isAdmin()) return '';
+  const o = state.data.org_settings || {};
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">📷 ${t('media_lim_card')}</div>
+    <div class="qty-line"><span class="name">${t('media_lim_photo')}</span>
+      ${orgStepperHtml('media_max_photo', o.media_max_photo ?? 10, 1, 50)}</div>
+    <div class="qty-line"><span class="name">${t('media_lim_video')}</span>
+      ${orgStepperHtml('media_max_video', o.media_max_video ?? 2, 0, 10)}</div>
+    <div class="tiny">${t('media_lim_hint')}</div>
+  </div>`;
+}
+/* Свободное место на Диске: снимается при «Тесте соединения» и при заливке
+   файлов (сервером, не чаще раза в 6 часов) — в org_settings, поэтому видно
+   и менеджеру. Порог — 15 %. */
+const GD_LOW_PCT = 15;
+function gdFreePct(){
+  const o = (state.data && state.data.org_settings) || {};
+  const p = Number(o.gd_free_pct);
+  return (o.gd_checked_at && isFinite(p)) ? p : null;
+}
+function gdSpaceBannerHtml(){
+  if (!isManager()) return '';                       // только админ и менеджер
+  const p = gdFreePct();
+  if (p === null || p >= GD_LOW_PCT) return '';
+  const o = state.data.org_settings || {};
+  return `<div class="banner b-red" role="status">${ic('warn')}
+    <div class="grow">${t('gd_space_warn')
+      .replace('{P}', Math.max(0, Math.round(p)))
+      .replace('{U}', (+o.gd_used_gb || 0).toFixed(1))
+      .replace('{L}', (+o.gd_limit_gb || 0).toFixed(0))}</div></div>`;
+}
 /* ---------- админка: ключи, подключение, тест ---------- */
+let gdCfg = { loaded: false, client_id: '', folder_id: '', account: '',
+              has_secret: false, has_refresh: false, secret: '', refresh: '' };
+let gdEdit = false;
+const gdShow = { sec: false, ref: false };
+function gdHasKeys(){ return !!(gdCfg.client_id || gdCfg.has_secret || gdCfg.folder_id); }
+function gdEditMode(){ return gdEdit || !gdHasKeys(); }
+function gdMask(real, fallback){
+  const s = String(real || '');
+  if (!s) return fallback || '';
+  if (s.length <= 8) return '••••••••';
+  return s.slice(0, 4) + '••••••••••••' + s.slice(-4);
+}
+/* «https://drive.google.com/drive/folders/1AbC…XyZ?usp=sharing» → «1AbC…XyZ» */
+function gdFolderId(v){
+  const s = String(v || '').trim();
+  const m = s.match(/\/folders\/([^/?#]+)/) || s.match(/[?&]id=([^&#]+)/);
+  if (m) return m[1];
+  return s.replace(/^https?:\/\/[^/]+\//i, '').replace(/[?#].*$/, '').replace(/\/+$/, '');
+}
+async function gdLoadCfg(force){
+  if (!HAS_SB || !isAdmin()) return;
+  if (gdCfg.loaded && !force) return;
+  gdCfg.loaded = true;
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-health?cfg=1',
+      { headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json().catch(() => ({}));
+    if (j && j.cfg){ Object.assign(gdCfg, j.cfg); if (state.screen === 'settings') render(); }
+  }catch(e){ dlog('gd cfg', e); }     // функции не задеплоены — форма останется на вводе
+}
+async function gdFetchSecrets(){
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-health?reveal=1',
+      { headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.secrets) throw new Error(j.error || r.status);
+    gdCfg.secret = j.secrets.client_secret || '';
+    gdCfg.refresh = j.secrets.refresh_token || '';
+    return true;
+  }catch(e){ toast('⛔ ' + t('gd_reveal_err') + ': ' + (e.message || e), 'err'); return false; }
+}
+async function gdReveal(which){
+  if (gdShow[which]){ gdShow[which] = false; render(); return; }
+  const need = which === 'sec' ? !gdCfg.secret : !gdCfg.refresh;
+  if (need && !(await gdFetchSecrets())) return;
+  gdShow[which] = true; render();
+}
+async function gdCopy(which){
+  let v = '';
+  if (which === 'cid') v = gdCfg.client_id;
+  else if (which === 'folder') v = gdCfg.folder_id;
+  else if (which === 'redirect') v = location.origin + location.pathname;
+  else {
+    if ((which === 'sec' && !gdCfg.secret) || (which === 'ref' && !gdCfg.refresh)){
+      if (!(await gdFetchSecrets())) return;
+    }
+    v = which === 'sec' ? gdCfg.secret : gdCfg.refresh;
+  }
+  if (!v){ toast('⚠ ' + t('gd_none'), 'err'); return; }
+  try{ await navigator.clipboard.writeText(v); toast('✓ ' + t('copied')); }
+  catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+}
+function gdToggleEdit(){ gdEdit = !gdEdit; gdShow.sec = gdShow.ref = false; render(); }
 function mediaSettingsCardHtml(){
   if (!isAdmin()) return '';
+  if (HAS_SB && !gdCfg.loaded) setTimeout(gdLoadCfg, 0);
   const redirect = location.origin + location.pathname;
-  return `<div class="card" id="gd-card">
-    <div style="font-weight:900;margin-bottom:6px">${t('gd_card')}</div>
+  const edit = gdEditMode(), pct = gdFreePct();
+  const copyB = w => `<button class="icon-btn sm" title="${t('gd_copy')}" onclick="App.gdCopy('${w}')">⧉</button>`;
+  const eyeB  = w => `<button class="icon-btn sm" title="${gdShow[w] ? t('gd_hide') : t('gd_show')}" onclick="App.gdReveal('${w}')">${gdShow[w] ? '🙈' : '👁'}</button>`;
+  const row = (lbl, inner) => `<div class="form-row"><span class="lbl">${lbl}</span><div class="gd-val">${inner}</div></div>`;
+  const ro = v => `<input readonly value="${esc(v || '')}" placeholder="${t('gd_none')}" onclick="this.select()">`;
+  const status = gdHasKeys() ? `<div class="tiny gd-status">
+      ${gdCfg.has_refresh ? '🟢 ' + t('gd_connected') : '🟡 ' + t('gd_not_conn')}${gdCfg.account ? ' · ' + esc(gdCfg.account) : ''}
+      ${pct !== null ? ` · ${t('gd_space')}: <b class="${pct < GD_LOW_PCT ? 'gd-low' : 'gd-ok'}">${Math.round(pct)}%</b>` : ''}
+    </div>` : '';
+  const body = edit ? `
     <div class="tiny" style="margin-bottom:8px">${t('gd_intro')}</div>
-    <div class="form-row"><span class="lbl">${t('gd_cid')}</span>
-      <input id="gd-cid" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
-    <div class="form-row"><span class="lbl">${t('gd_secret')}</span>
-      <input id="gd-sec" type="password" autocomplete="new-password" placeholder="GOCSPX-…"></div>
-    <div class="form-row"><span class="lbl">${t('gd_folder')}</span>
-      <input id="gd-folder" autocomplete="off" placeholder="ID из адреса папки на Диске"></div>
-    <div class="form-row"><span class="lbl">${t('gd_redirect')}</span>
-      <input readonly value="${esc(redirect)}" onclick="this.select()"></div>
+    ${row(t('gd_cid'), `<input id="gd-cid" autocomplete="off" placeholder="…apps.googleusercontent.com" value="${esc(gdCfg.client_id || '')}">`)}
+    ${row(t('gd_secret'), `<input id="gd-sec" type="password" autocomplete="new-password" placeholder="GOCSPX-…">`)}
+    ${row(t('gd_folder'), `<input id="gd-folder" autocomplete="off" placeholder="${t('gd_folder_ph')}" value="${esc(gdCfg.folder_id || '')}">`)}
+    <div class="tiny gd-hint">${t('gd_folder_hint')}</div>
+    ${row(t('gd_redirect'), ro(redirect) + copyB('redirect'))}
     <div class="btn-rowpp" style="margin:8px 0 0">
       <button class="btn btn-ghost" onclick="App.mediaSaveKeys()">${t('gd_save')}</button>
       <button class="btn btn-blue" onclick="App.mediaConnect()">${t('gd_connect')}</button>
+    </div>` : `
+    ${row(t('gd_cid'), `<input id="gd-cid" readonly value="${esc(gdCfg.client_id || '')}" placeholder="${t('gd_none')}" onclick="this.select()">` + copyB('cid'))}
+    ${row(t('gd_secret'), ro(gdShow.sec ? gdCfg.secret
+        : (gdCfg.has_secret ? gdMask(gdCfg.secret, 'GOCSPX-••••••••••••') : '')) + eyeB('sec') + copyB('sec'))}
+    ${row(t('gd_folder'), ro(gdCfg.folder_id) + copyB('folder'))}
+    ${row(t('gd_token'), ro(gdShow.ref ? gdCfg.refresh
+        : (gdCfg.has_refresh ? gdMask(gdCfg.refresh, '1//••••••••••••') : '')) + eyeB('ref') + copyB('ref'))}
+    ${row(t('gd_redirect'), ro(redirect) + copyB('redirect'))}
+    <button class="btn btn-blue" style="margin-top:8px" onclick="App.mediaConnect()">${t('gd_connect')}</button>`;
+  return `<div class="card" id="gd-card">
+    <div class="gd-head">
+      <div style="font-weight:900;flex:1">${t('gd_card')}</div>
+      ${gdHasKeys() ? `<button class="icon-btn sm" title="${edit ? t('gd_edit_off') : t('gd_edit')}"
+        onclick="App.gdToggleEdit()">${edit ? '✕' : '✏'}</button>` : ''}
     </div>
+    ${status}
+    ${body}
     <button class="btn btn-green" style="margin-top:8px" onclick="App.mediaHealth()">${t('gd_test')}</button>
     <div id="gd-health" class="tiny" style="margin-top:8px"></div>
     <details style="margin-top:8px"><summary class="tiny">${t('gd_help')}</summary>
@@ -7720,18 +7998,23 @@ function mediaSettingsCardHtml(){
 }
 async function mediaSaveKeys(){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
-  const cid = ($('#gd-cid') || {}).value || '', sec = ($('#gd-sec') || {}).value || '',
-        fld = ($('#gd-folder') || {}).value || '';
+  if (!gdEditMode()) return;             // v1.07.64: форма в режиме просмотра — сохранять нечего
+  const cid = (($('#gd-cid') || {}).value || '').trim(),
+        sec = (($('#gd-sec') || {}).value || '').trim(),
+        fld = gdFolderId(($('#gd-folder') || {}).value || '');   // ссылка целиком → ID
   const { error } = await state.sb.rpc('admin_set_drive_config',
     { p_client_id: cid, p_client_secret: sec, p_refresh_token: '', p_folder_id: fld });
   if (error){ toast('⛔ ' + rpcFail(error, 'admin_set_drive_config'), 'err'); return; }
+  if (cid) gdCfg.client_id = cid;
+  if (fld) gdCfg.folder_id = fld;
+  if (sec){ gdCfg.has_secret = true; gdCfg.secret = sec; }
   toast('✓ ' + t('gd_saved'));
 }
 async function mediaConnect(){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
-  const cid = (($('#gd-cid') || {}).value || '').trim();
+  const cid = ((($('#gd-cid') || {}).value || gdCfg.client_id) || '').trim();
   if (!cid){ toast('⚠ ' + t('gd_need_cid'), 'err'); return; }
-  await mediaSaveKeys();
+  await mediaSaveKeys();                 // в режиме просмотра сохранение пропускается
   const redirect = location.origin + location.pathname;
   const u = 'https://accounts.google.com/o/oauth2/v2/auth'
     + '?client_id=' + encodeURIComponent(cid)
@@ -7773,13 +8056,21 @@ async function mediaHealth(){
     } else if (j.drive){
       h += row('Drive', false, esc(String(j.drive.error || '')).slice(0, 120));
     }
+    if (j.folder && j.folder.created)
+      h += row(t('gd_folder'), true, esc(String(j.folder.name || '')) + ' · ' + esc(String(j.folder.id || '')));
     if (j.write) h += row(t('gd_write'), j.write.ok, j.write.error ? esc(String(j.write.error)).slice(0, 120) : '');
-    if (box) box.innerHTML = h || '⛔';
-    if (j.cfg){
-      const c = $('#gd-cid'), f = $('#gd-folder');
-      if (c && !c.value && j.cfg.client_id) c.value = j.cfg.client_id;
-      if (f && !f.value && j.cfg.folder_id) f.value = j.cfg.folder_id;
+    /* v1.07.64: свободное место — в настройки организации (видно менеджеру) */
+    if (j.drive && j.drive.ok && j.drive.free_pct != null){
+      const p = Number(j.drive.free_pct);
+      h += row(t('gd_space'), p >= GD_LOW_PCT, Math.round(p) + '%');
+      const o = state.data.org_settings || {};
+      Object.assign(o, { gd_free_pct: p, gd_used_gb: +j.drive.used_gb, gd_limit_gb: +j.drive.limit_gb,
+        gd_account: j.drive.account || '', gd_checked_at: new Date().toISOString() });
+      state.data.org_settings = o; saveLocal();
     }
+    if (box) box.innerHTML = h || '⛔';
+    if (j.cfg){ Object.assign(gdCfg, j.cfg, { loaded: true }); }
+    if (j.drive && j.drive.account) gdCfg.account = j.drive.account;
   }catch(e){ if (box) box.innerHTML = '🔴 ' + esc(String(e.message || e)); }
 }
 /* =====================================================================
