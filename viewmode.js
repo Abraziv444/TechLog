@@ -160,6 +160,7 @@
   /* v1.07.29: пилюля всегда стоит ПОД бейджем роли, на любой ширине.
      Фиксированные отступы от края окна ломались на планшетах, где контент
      уже окна — теперь позицию считаем от реального положения .role-tag. */
+  var _segState = null;
   function placeSeg() {
     /* v1.07.40: правило одно для всех режимов и ширин. Залогинены
        (#vm-slot в шапке) → плавающая пилюля скрыта: переключатель рисует
@@ -167,8 +168,13 @@
        видна в правом верхнем углу. Раньше на ПК жила отдельная центральная
        пилюля с подписями: две реализации расходились подсветкой, а на
        границе 980px переключатель вовсе пропадал. */
+    /* дешёвый выход: пока состояние «залогинен / экран логина» не менялось,
+       трогать DOM незачем (v1.07.67) */
+    var logged = !!document.getElementById('vm-slot');
+    if (_segState === logged) return;
     var seg = document.querySelector('.vm-seg');
     if (!seg) return;
+    _segState = logged;
     var bar = document.querySelector('.vm-bar');
     if (bar && bar.style.zIndex !== '120') bar.style.zIndex = '120';
     if (bar && seg.parentNode !== bar) bar.appendChild(seg);
@@ -184,8 +190,12 @@
     seg.style.top = 'calc(env(safe-area-inset-top,0px) + 10px)';
   }
   window.TLView = { setMode: setMode };   // v1.07.38: шапка дергает режим напрямую
-  window.addEventListener('resize', placeSeg);
-  window.addEventListener('scroll', placeSeg, { passive: true });
-  setInterval(placeSeg, 400);                             // шапка перерисовывается при render()
+  window.addEventListener('resize', placeSeg, { passive: true });
+  /* v1.07.67: слушателя scroll здесь больше нет. Пилюля — position:fixed,
+     при прокрутке она не двигается, пересчитывать нечего; зато вызов на
+     каждое событие прокрутки давал три querySelector и запись стилей.
+     Периодической проверки раз в 400 мс достаточно (шапка меняется только
+     при render()), а сама она теперь выходит по дешёвой проверке. */
+  setInterval(placeSeg, 400);
   placeSeg();
 })();

@@ -190,12 +190,21 @@
   });
 
   /* следим за перерисовками приложения, сменой режима и шириной окна */
+  /* v1.07.67: «взвёл и жду» вместо сбрасывающегося дебаунса + ранний выход
+     вне ПК-режима: раньше каждая мутация #app заводила новый таймер, а
+     поток перерисовок откладывал его бесконечно. */
   var deb = null;
-  function schedule() { clearTimeout(deb); deb = setTimeout(refresh, 120); }
+  function schedule() {
+    if (deb) return;
+    deb = setTimeout(function () { deb = null; refresh(); }, 120);
+  }
+  /* мутации #app интересны только в ПК-режиме; смена режима и resize
+     идут через schedule() и убирают надстройку в любом случае */
+  function schedDom() { if (isDesktop()) schedule(); }
   function start() {
     try {
       var app = document.getElementById('app');
-      if (app && window.MutationObserver) new MutationObserver(schedule).observe(app, { childList: true, subtree: false });
+      if (app && window.MutationObserver) new MutationObserver(schedDom).observe(app, { childList: true, subtree: false });
       if (window.MutationObserver) new MutationObserver(schedule)
         .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
       window.addEventListener('resize', schedule);
@@ -424,16 +433,17 @@
   }
   function sched() {
     if (deb) return;                       // уже взведён — не сбрасываем, иначе шторм
-    deb = setTimeout(function () { deb = null; refresh(); }, 120);   // событий его вечно откладывает
+    deb = setTimeout(function () { deb = null; refresh(); }, 120);
   }
+  function schedDom() { if (isDesk()) sched(); }   // v1.07.67
   function start() {
     try {
       var app = document.getElementById('app');
-      if (app && window.MutationObserver) new MutationObserver(sched).observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+      if (app && window.MutationObserver) new MutationObserver(schedDom).observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
       if (window.MutationObserver) new MutationObserver(sched)
         .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-      document.addEventListener('change', sched, true);
-      document.addEventListener('input', sched, true);
+      document.addEventListener('change', schedDom, true);
+      document.addEventListener('input', schedDom, true);
       window.addEventListener('resize', sched);
       refresh();
       window.TLDeskTools = { refresh: refresh };   // для отладки
@@ -583,12 +593,13 @@
     if (deb) return;
     deb = setTimeout(function () { deb = null; refresh(); }, 150);
   }
+  function schedDom() { if (isDesk()) sched(); }   // v1.07.67
   function start() {
     try {
       var app = document.getElementById('app');
       if (app && window.MutationObserver) {
         new MutationObserver(function () {
-          sched();
+          schedDom();
           /* форма перерисовалась или ввод изменил данные — перегенерим бланк */
           if (document.documentElement.classList.contains('tl-pdfprev') && jobOpen()) schedGen();
         }).observe(app, { childList: true, subtree: true });
@@ -596,11 +607,11 @@
       if (window.MutationObserver) new MutationObserver(sched)
         .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
       document.addEventListener('input', function () {
-        sched();
+        schedDom();
         if (document.documentElement.classList.contains('tl-pdfprev') && jobOpen()) schedGen();
       }, true);
       document.addEventListener('change', function () {
-        sched();
+        schedDom();
         if (document.documentElement.classList.contains('tl-pdfprev') && jobOpen()) schedGen(250);
       }, true);
       window.addEventListener('resize', sched);
@@ -690,10 +701,11 @@
     if (deb) return;
     deb = setTimeout(function () { deb = null; fit(); }, 120);
   }
+  function schedDom() { if (isDesk()) sched(); }   // v1.07.67
   function start() {
     try {
       var app = document.getElementById('app');
-      if (app && window.MutationObserver) new MutationObserver(sched).observe(app, { childList: true, subtree: true });
+      if (app && window.MutationObserver) new MutationObserver(schedDom).observe(app, { childList: true, subtree: true });
       if (window.MutationObserver) new MutationObserver(sched)
         .observe(html, { attributes: true, attributeFilter: ['class'] });
       window.addEventListener('resize', sched);
@@ -831,7 +843,9 @@
   }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && cal) close(); });
   window.addEventListener('resize', close);
+  /* v1.07.67: passive — слушатель на фазе перехвата у document означал,
+     что браузер ждёт JS на каждой прокрутке любого блока страницы. */
   document.addEventListener('scroll', function (e) {
     if (cal && !(e.target && e.target.nodeType === 1 && cal.contains(e.target))) close();
-  }, true);
+  }, { capture: true, passive: true });
 })();

@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.66';
+const APP_VERSION = '1.07.67';
 const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -275,6 +275,11 @@ const I18N = {
     draft_restored: 'Черновик восстановлен (несохранённые изменения)',
     pdf_blocked: 'PDF недоступен — заполните', batch_skipped: 'пропущено (не заполнены поля)',
     diag: 'Диагностика', diag_copy: 'Скопировать отчёт', diag_running: 'Проверяю…',
+    ui_card: 'Диагностика интерфейса', ui_run: 'Проверить этот экран',
+    ui_chk: 'Кнопка проверки на всех экранах',
+    ui_hint: 'Ищет перекрытия и налезание блоков, вылет за край экрана, обрезанный текст, мелкие кнопки, слабый контраст, битые обработчики и подтормаживание прокрутки. Отчёт можно скопировать или скачать файлом.',
+    ui_keys: 'Горячие клавиши: Ctrl+Alt+D',
+    ui_nomod: 'Модуль диагностики не загрузился — обновите страницу',
     srv_not_ready: 'Сервер не настроен: выполните supabase/schema.sql (нет функции check_invite)',
     invite_check_err: 'Ошибка проверки кода', srv_rejected: 'Сервер отклонил регистрацию — детали в Диагностике',
     login_taken: 'Такой логин уже существует', login_free: 'логин свободен', login_checking: 'проверяю логин…',
@@ -616,6 +621,11 @@ const I18N = {
     draft_restored: 'Draft restored (unsaved changes)',
     pdf_blocked: 'PDF blocked — fill in', batch_skipped: 'skipped (missing required fields)',
     diag: 'Diagnostics', diag_copy: 'Copy report', diag_running: 'Checking…',
+    ui_card: 'Interface diagnostics', ui_run: 'Check this screen',
+    ui_chk: 'Show the check button on every screen',
+    ui_hint: 'Finds overlapping and colliding blocks, overflow past the screen edge, clipped text, small tap targets, weak contrast, broken handlers and scrolling jank. The report can be copied or downloaded.',
+    ui_keys: 'Shortcut: Ctrl+Alt+D',
+    ui_nomod: 'Diagnostics module did not load — reload the page',
     srv_not_ready: 'Server not configured: run supabase/schema.sql (check_invite function is missing)',
     invite_check_err: 'Invite check error', srv_rejected: 'Server rejected sign-up — see Diagnostics',
     login_taken: 'This login already exists', login_free: 'login is free', login_checking: 'checking login…',
@@ -2307,6 +2317,11 @@ function render(){
   else if (state.screen === 'board') body = viewBoard();       // v1.07.25
   else if (state.screen === 'proposals') body = viewProposals(); // v1.07.27
   app.innerHTML = viewHeader() + body + viewTabbar();
+  /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
+  const scls = 'scr-' + state.screen;
+  if (app.className !== scls) app.className = scls;
+  window.TLBoardScroll && window.TLBoardScroll.bind();   // wheel — только на доске
+  dndBindTouch();                                        // touchmove — только на карточках главной
   if (state.screen === 'home' || state.screen === 'board'){
     try { document.querySelector('.day-cell.sel')?.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch(e){}
   }
@@ -4604,6 +4619,8 @@ function viewSettings(){
     ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
   </div>
 
+  ${uiDiagCardHtml()}
+
   ${isAdmin() ? `
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('building')} ${t('org')}</div>
@@ -4907,6 +4924,17 @@ const App = {
   sync(){ syncNow(false); checkForUpdate('кнопка синхронизации', true); },
   addTaskModal, ntCpChange, ntPickWt, createTask, closeModal, ntPropRefresh, ntPropPick,
   mediaQueueModal, mqPing, mqRetry, plHours,
+  /* v1.07.67: диагностика интерфейса (движок — uidiag.js) */
+  uiDiagRun(){
+    if (window.UIDiag) window.UIDiag.open();
+    else toast('⛔ ' + t('ui_nomod'));
+  },
+  uiDiagToggle(v){
+    if (window.UIDiag) window.UIDiag.setEnabled(v);
+    else { try{ localStorage.setItem('techlog_uidiag', v ? '1' : '0'); }catch(e){} }
+    dlog('ui: кнопка диагностики ' + (v ? 'включена' : 'выключена'));
+    render();
+  },
   gdToggleEdit, gdReveal, gdCopy,
   eqHours(etId, v){
     if (!jobDraft) return;
@@ -5140,7 +5168,13 @@ window.addEventListener('tl:viewmode', () => { try { render(); } catch(e){} });
   }
   function stopGlide(){ vel = 0; cancelAnimationFrame(raf); }
 
-  window.addEventListener('wheel', (e) => {
+  /* v1.07.67: слушатель wheel больше НЕ висит на window. Блокирующий
+     (passive:false) обработчик на window заставлял браузер ждать главный
+     поток перед каждой прокруткой колеса — на ЛЮБОМ экране, даже там, где
+     доски нет. Теперь он вешается на сам элемент .board при отрисовке
+     (App.render → TLBoardScroll.bind), а на остальных экранах прокрутка
+     идёт мимо JS, на потоке композитора. */
+  function onWheel(e){
     if (e.ctrlKey) return;                                   // масштаб браузера не перехватываем
     const b = boardOf(e.target); if (!b) return;
     let d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
@@ -5152,7 +5186,17 @@ window.addEventListener('tl:viewmode', () => { try { render(); } catch(e){} });
     e.preventDefault();
     vel = Math.max(-90, Math.min(90, vel + d * 0.3));        // инерция: копим скорость
     glide(b);
-  }, { passive: false });
+  }
+  function bind(){
+    try{
+      document.querySelectorAll('.board').forEach(b => {
+        if (b.__tlWheel) return;
+        b.__tlWheel = 1;
+        b.addEventListener('wheel', onWheel, { passive: false });
+      });
+    }catch(e){}
+  }
+  window.TLBoardScroll = { bind };
 
   let pan = null;
   window.addEventListener('pointerdown', (e) => {
@@ -8169,6 +8213,21 @@ async function mediaHealth(){
    v1.07.34: ДИАГНОСТИКА — интернет, БД, сессия, хранилище, функции и
    подключение к Google Drive (детали Drive — админу через media-health).
    ===================================================================== */
+/* v1.07.67: карточка «Диагностика интерфейса». Сам движок живёт в
+   uidiag.js — автономном модуле; если он не загрузился, карточка честно
+   об этом пишет, а приложение работает как обычно. */
+function uiDiagCardHtml(){
+  const on = (() => { try { return localStorage.getItem('techlog_uidiag') === '1'; } catch(e){ return false; } })();
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('layers')} ${t('ui_card')}</div>
+    <div class="tiny" style="margin-bottom:8px">${t('ui_hint')}</div>
+    <label class="opt ${on ? 'on' : ''}">
+      <input type="checkbox" ${on ? 'checked' : ''} onchange="App.uiDiagToggle(this.checked)"> ${t('ui_chk')}
+    </label>
+    <button class="btn btn-blue sm" style="margin-top:8px" onclick="App.uiDiagRun()">${ic('search')} ${t('ui_run')}</button>
+    <div class="tiny" style="margin-top:6px">${t('ui_keys')}</div>
+  </div>`;
+}
 function diagCardHtml(){
   return `<div class="card" id="dg-card">
     <div style="font-weight:900;margin-bottom:6px">${ic('flask')} ${t('diag_card')}</div>
@@ -8246,13 +8305,25 @@ async function runDiag(){
 }
 /* фейд вместо обрубания: класс вешается только реально обрезанным текстам */
 function updateFadeClips(){
-  document.querySelectorAll('.brand .name,.brand .sub,.tabbar .tab span')  // login-pill исключён: у аватара — прежнее троеточие
-    .forEach(e => e.classList.toggle('fade-clip', e.scrollWidth > e.clientWidth + 1));
+  /* v1.07.67: читаем геометрию всех элементов сначала, пишем классы потом —
+     иначе чередование чтение/запись даёт принудительный пересчёт лэйаута
+     на каждом элементе (layout thrashing). */
+  const els = [...document.querySelectorAll('.brand .name,.brand .sub,.tabbar .tab span')];
+  const need = els.map(e => e.scrollWidth > e.clientWidth + 1);
+  els.forEach((e, i) => e.classList.toggle('fade-clip', need[i]));
 }
 (function initFadeClips(){
-  let tm = 0;
-  const kick = () => { clearTimeout(tm); tm = setTimeout(updateFadeClips, 60); };
-  addEventListener('resize', kick);
+  /* v1.07.67: дебаунс «взвёл и жду» вместо сбрасывающегося. Старый вариант
+     (clearTimeout на каждую мутацию) при потоке перерисовок откладывался
+     бесконечно, а затем стрелял пачкой — та же ловушка, что уже ловили в
+     desktop.js. Плюс сама проверка идёт в rAF, вне обработчика мутаций. */
+  let armed = false;
+  const kick = () => {
+    if (armed) return;
+    armed = true;
+    setTimeout(() => { armed = false; requestAnimationFrame(updateFadeClips); }, 80);
+  };
+  addEventListener('resize', kick, { passive: true });
   const root = document.getElementById('app') || document.body;
   new MutationObserver(kick).observe(root, { childList: true, subtree: true });
   kick();
@@ -8480,6 +8551,20 @@ function backupCardHtml(){
 let dnd = null;              // { el, id, pid, x, y, active, timer, staticTop, grabDY }
 let dndClickBlock = 0;       // подавить клик, случившийся сразу после drag
 function dndItems(){ return [...document.querySelectorAll('#app .item[data-drag-id]')]; }
+/* v1.07.67: блокирующий touchmove — только на перетаскиваемых карточках
+   и только на главной. touchmove всегда приходит в элемент, на котором
+   начался touchstart, поэтому слушателя на карточке достаточно. */
+function dndTouchMove(e){ if (dnd && dnd.active && e.cancelable) e.preventDefault(); }
+function dndBindTouch(){
+  try{
+    if (!state.user || state.screen !== 'home') return;
+    document.querySelectorAll('#app .item[data-drag-id][data-can="1"]').forEach(el => {
+      if (el.__tlTouch) return;
+      el.__tlTouch = 1;
+      el.addEventListener('touchmove', dndTouchMove, { passive: false });
+    });
+  }catch(e){}
+}
 function dndCalib(){
   if (!dnd) return;
   const tr = dnd.el.style.transform;
@@ -8591,14 +8676,13 @@ function initDragSort(){
   /* v1.07.20: на тач-устройствах прокрутку останавливает только touchmove.
      preventDefault на pointermove скролл НЕ отменяет — браузер начинал
      прокрутку и стрелял pointercancel, убивая перетаскивание на первом же
-     движении пальца. Гасим прокрутку, только пока карточка реально «в руке». */
-  document.addEventListener('touchmove', e => {
-    if (dnd && dnd.active && e.cancelable) e.preventDefault();
-  }, { passive: false });
-  /* долгое нажатие не должно вызывать контекстное меню/выделение */
-  document.addEventListener('contextmenu', e => { if (dnd) e.preventDefault(); });
-  // пока карточка «в руке» — не даём странице скроллиться под пальцем
-  document.addEventListener('touchmove', e => { if (dnd && dnd.active && e.cancelable) e.preventDefault(); }, { passive: false });
+     движении пальца. Гасим прокрутку, только пока карточка реально «в руке».
+     v1.07.67: раньше здесь висели ДВА одинаковых блокирующих touchmove на
+     document (и два contextmenu — дубль). Блокирующий touchmove на document
+     означает, что палец на ЛЮБОМ экране ждёт главный поток. Теперь
+     обработчик вешается на сами карточки при отрисовке (dndBindTouch):
+     перетаскивание работает как раньше, а настройки/справочники/отчёты
+     прокручиваются на потоке композитора. */
   document.addEventListener('contextmenu', e => { if (dnd) e.preventDefault(); });
   document.addEventListener('click', e => {
     if (Date.now() < dndClickBlock){ e.preventDefault(); e.stopPropagation(); }
