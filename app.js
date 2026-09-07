@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.56';
+const APP_VERSION = '1.07.57';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -323,8 +323,9 @@ const I18N = {
     prop_new: '＋ Новый пропозал', prop_items: 'Позиции', prop_desc: 'Описание', prop_amount: 'Сумма',
     prop_add_row: '＋ строка', prop_note: 'Примечание',
     pst_draft: 'Черновик', pst_sent: 'Отправлен', pst_approved: 'Одобрен', pst_declined: 'Отклонён',
-    prop_linked: 'Связанные инвойсы', prop_link: 'Связать', prop_unlink: 'Отвязать',
+    prop_linked: 'Связанные документы', prop_link: 'Связать', prop_unlink: 'Отвязать',
     prop_pick: 'Выбрать пропозал…', prop_pick_none: 'нет подходящих (комплекс/статус)',
+    prop_pick_job: 'Выбрать работу…', prop_pick_job_none: 'нет свободных работ этого комплекса',
     prop_requested: 'Сотрудник указал: должен быть пропозал',
     allow_prop_chk: 'Сотрудники могут отмечать «нужен пропозал»',
     prop_pdf: 'PDF пропозала', prop_status: 'Статус', prop_need_cpcx: 'Укажите контрагента и комплекс',
@@ -632,8 +633,9 @@ const I18N = {
     prop_new: '＋ New proposal', prop_items: 'Line items', prop_desc: 'Description', prop_amount: 'Amount',
     prop_add_row: '＋ row', prop_note: 'Notes',
     pst_draft: 'Draft', pst_sent: 'Sent', pst_approved: 'Approved', pst_declined: 'Declined',
-    prop_linked: 'Linked invoices', prop_link: 'Link', prop_unlink: 'Unlink',
+    prop_linked: 'Linked documents', prop_link: 'Link', prop_unlink: 'Unlink',
     prop_pick: 'Pick a proposal…', prop_pick_none: 'no matching (complex/status)',
+    prop_pick_job: 'Pick a job…', prop_pick_job_none: 'no unlinked jobs in this complex',
     prop_requested: 'Tech marked: proposal expected',
     allow_prop_chk: 'Techs may mark “proposal expected”',
     prop_pdf: 'Proposal PDF', prop_status: 'Status', prop_need_cpcx: 'Select counterparty and complex',
@@ -4795,7 +4797,7 @@ const App = {
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
   togglePriority, moveJob, boardMove, setCarNo, restorePk, pdfPreview, pdfPrint,
   comboFilter, comboPick, stockSet, wtChecklistModal, wtChecklistSave,
-  openProposal, propBack, saveProposal, delProposal, makeProposalPdf, linkProposal,
+  openProposal, propBack, saveProposal, delProposal, makeProposalPdf, linkProposal, linkJobFromProp,
   propField(k, v){ if (propDraft) propDraft[k] = v; },
   propFilter(v){ state.propFilter = v; render(); },
   propItem(i, f, v){ if (!propDraft || !propDraft.items[i]) return;
@@ -6737,11 +6739,31 @@ async function linkProposal(jobId, propId){
     const jj = state.data.jobs.find(x => x.id === jobId);
     if (jj){ jj.proposal_id = propId; if (propId) jj.has_proposal = true; }
     if (jobDraft && jobDraft.id === jobId){ jobDraft.proposal_id = propId; if (propId) jobDraft.has_proposal = true; }
+    saveLocal();   // v1.07.57: связь/отвязка сразу в кэш — офлайн и перезагрузка её не теряют
   };
   if (!HAS_SB){ apply(); render(); return; }
   const { error } = await state.sb.rpc('link_job_proposal', { p_job: jobId, p_prop: propId });
   if (error){ toast('⛔ ' + rpcFail(error, 'link_job_proposal'), 'err'); return; }
   apply(); toast('✓ ' + t('saved')); render();
+}
+/* v1.07.57: привязка со стороны пропозала — «Связанные документы» управляются с обеих сторон.
+   Кандидаты: работы того же комплекса без пропозала; связь ставит тот же RPC link_job_proposal. */
+function propJobPickerHtml(p){
+  const cand = (state.data.jobs || [])
+    .filter(j => j.complex_id === p.complex_id && !j.proposal_id)
+    .sort((a,b) => String(b.date).localeCompare(String(a.date))).slice(0, 30);
+  if (!cand.length) return `<div class="tiny" style="margin-top:6px">${t('prop_pick_job_none')}</div>`;
+  return `<div style="display:flex;gap:6px;align-items:center;margin-top:8px">
+    <select id="pr-job-sel" style="flex:1;min-width:130px">
+      <option value="">${t('prop_pick_job')}</option>
+      ${cand.map(j => `<option value="${j.id}">Unit ${esc(j.unit_number || '—')} · ${fmtDMY(j.date)} · ${money(jobGrand(j))} · ${esc(j.technician_name || profName(j.technician_id))}</option>`).join('')}
+    </select>
+    <button class="btn btn-blue sm" onclick="App.linkJobFromProp('${p.id}')">${t('prop_link')}</button></div>`;
+}
+async function linkJobFromProp(propId){
+  const v = (($('#pr-job-sel') || {}).value) || '';
+  if (!v){ toast('⚠ ' + t('prop_pick_job'), 'err'); return; }
+  await linkProposal(v, propId);
 }
 function viewProposals(){
   if (!isManager()) return `<div class="card" style="margin:14px 12px">${t('prop_only')}</div>`;
@@ -6861,6 +6883,7 @@ function viewProposalForm(){
         <button class="btn btn-ghost sm" onclick="App.openJob('${j.id}')">↗</button>
         <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">✕</button></div>`; }).join('')
       || `<div class="tiny">—</div>`}
+    ${propJobPickerHtml(p)}
   </div>` : ''}
   <div style="margin:10px 12px">
     <button class="btn btn-green" onclick="App.saveProposal()">${ic('save')} ${t('save')}</button>
@@ -6898,6 +6921,10 @@ async function delProposal(id){
   if (!isAdmin()) return;
   if (!confirm(t('confirm_del'))) return;
   const p = propById(id);
+  // v1.07.57: в БД jobs.proposal_id обнуляется каскадом (on delete set null) —
+  // повторяем локально, чтобы «Связанные документы» и чипы отразили удаление сразу
+  (state.data.jobs || []).forEach(j => { if (j.proposal_id === id) j.proposal_id = null; });
+  if (jobDraft && jobDraft.proposal_id === id) jobDraft.proposal_id = null;
   await dbDelete('proposals', id);
   audit('proposal_delete', 'proposal', id, { no: p && p.no, unit: p && p.unit_number });
   propDraft = null; toast('🗑 ' + t('deleted')); render();
