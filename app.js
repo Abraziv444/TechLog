@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.70';
+const APP_VERSION = '1.07.71';
 const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -397,6 +397,12 @@ const I18N = {
     gd_p_origin_no: 'сервер не передал Origin — обновите media-begin и media-health',
     gd_p_none: 'ни один путь не работает — фото отправляться не будут',
     gd_p_skip: 'пропущено: сессия не открылась',
+    gd_p_commit: 'Подтверждение загрузки (media-commit)',
+    gd_p_commit_ok: 'отвечает верно (нет такой записи → 404)',
+    gd_p_commit_bad: 'неверный ответ — подтверждение работать не будет',
+    gd_p_thumb_rls: 'доступно · политика активна',
+    gd_p_thumb_srv: 'Хранилище миниатюр (проверка сервером)',
+    mq_l_redo: 'запись и файл разошлись — начинаю файл заново',
     gd_space_warn: 'На Google Диске осталось {P}% свободного места (занято {U} из {L} ГБ). Освободите место или подключите другой архивный аккаунт — иначе фото и видео перестанут загружаться.',
     gd_connected: 'Google подключён', gd_not_conn: 'не подключено',
     gd_db: 'База данных', gd_auth: 'Авторизация Google', gd_acc: 'Аккаунт',
@@ -755,6 +761,12 @@ const I18N = {
     gd_p_origin_no: 'the server sent no Origin — redeploy media-begin and media-health',
     gd_p_none: 'no route works — photos will not upload',
     gd_p_skip: 'skipped: no session',
+    gd_p_commit: 'Upload confirmation (media-commit)',
+    gd_p_commit_ok: 'answers correctly (no such row → 404)',
+    gd_p_commit_bad: 'wrong answer — confirmation will not work',
+    gd_p_thumb_rls: 'reachable · policy enforced',
+    gd_p_thumb_srv: 'Thumbnail storage (server-side check)',
+    mq_l_redo: 'the row and the file diverged — restarting the file',
     gd_space_warn: 'Google Drive has {P}% free space left ({U} of {L} GB used). Free up space or connect another archive account — otherwise photo and video uploads will stop.',
     gd_connected: 'Google connected', gd_not_conn: 'not connected',
     gd_db: 'Database', gd_auth: 'Google auth', gd_acc: 'Account',
@@ -7687,6 +7699,17 @@ async function mPutResumable(it, onProg){
   }
   throw new Error('upload incomplete');
 }
+/* v1.07.71: подтверждение отдельной функцией — код и текст ответа сервера
+   нужны и в журнале, и для решения «переделать файл заново». */
+async function mCommit(it, driveId){
+  const token = await mediaJwt();
+  const r = await fetch(mediaFN() + '/media-commit', { method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ media_id: it.media_id, drive_file_id: driveId }) });
+  let text = '';
+  if (!r.ok){ try{ text = (await r.text()).slice(0, 160); }catch(e){} }
+  return { ok: r.ok, status: r.status, text };
+}
 /* Открыть сессию докачки. Ошибку отдаём с кодом — решение принимает вызывающий. */
 async function mBeginUpload(it, token){
   const r = await fetch(mediaFN() + '/media-begin', { method: 'POST',
@@ -7712,6 +7735,9 @@ async function mediaFlush(verbose){
     let idx = 0;
     for (const it of list){
       idx++;
+      /* v1.07.71: файл, который не удаётся отправить, перестаёт дёргать сервер
+         каждые 30 секунд — ждёт кнопки «Повторить отправку». */
+      if (!verbose && (it.attempts || 0) >= 5) continue;
       const tag = `${esc(mqLabel(it))} ${idx}/${list.length}`;
       const lid = lg(`⬆ ${tag} …`, 'dim');
       let stage = 'mq_st_begin';                 // v1.07.69: этап видно в ошибке
@@ -7756,11 +7782,18 @@ async function mediaFlush(verbose){
             .upload(it.thumb_path, it.thumb, { contentType: 'image/jpeg', upsert: true })
             .catch(() => {});
         }
-        const token2 = await mediaJwt();
-        const c = await fetch(mediaFN() + '/media-commit', { method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token2 },
-          body: JSON.stringify({ media_id: it.media_id, drive_file_id: driveId }) });
-        if (!c.ok) throw new Error('commit ' + c.status);
+        let c = await mCommit(it, driveId);
+        if (!c.ok && (c.status === 404 || c.status === 409)){
+          /* v1.07.71: запись в media и файл на Диске разошлись — так бывает,
+             если сессия осталась от прежней попытки или запись уже закрыли.
+             Начинаем файл заново: новая запись, новая сессия, новая заливка. */
+          lg(`⚠ ${tag} — ${t('mq_l_redo')} (${c.status})`, 'warn');
+          it.upload_url = ''; it.started = false; delete it.media_id; await mQPut(it);
+          stage = 'mq_st_begin'; await mBeginUpload(it, token);
+          stage = 'mq_st_up';    const id2 = await mPutResumable(it, onPct);
+          stage = 'mq_st_commit'; c = await mCommit(it, id2);
+        }
+        if (!c.ok) throw new Error('commit ' + c.status + (c.text ? ': ' + c.text : ''));
         mediaQ = mediaQ.filter(x => x.qid !== it.qid);
         await mQDelIdb(it.qid);
         if (!state.data.media) state.data.media = [];
@@ -8030,6 +8063,7 @@ async function mqPing(){
 async function mqRetry(){
   if (_mqBusy) return;                   // v1.07.63: идёт проверка связи — не мешаем
   mqSetBusy('send');
+  for (const it of mediaQ){ if (it.attempts){ it.attempts = 0; await mQPut(it); } }
   const n0 = mediaQ.length;
   mqLog(`⬆ ${t('mq_l_start')} · ${n0} ${t('mq_l_files')}`, 'dim');
   let r = { photo: 0, video: 0, fail: 0, stopped: false };
@@ -8270,14 +8304,21 @@ async function gdProbe(row){
   const blob = await mTestBlob();
   const ids = [], range = `bytes 0-${blob.size - 1}/${blob.size}`;
 
-  /* 1. хранилище миниатюр — туда же кладёт превью настоящая отправка */
+  /* 1. хранилище миниатюр. Политика пускает запись только по адресу из
+     записи media, поэтому отказ RLS на тестовом пути — это работающая
+     защита, а не поломка: важно, что bucket на месте и правило действует. */
   const key = '_selftest/' + uid() + '.jpg';
   try{
     const { error } = await state.sb.storage.from('media-thumbs')
       .upload(key, blob, { contentType: 'image/jpeg', upsert: true });
-    if (error) throw error;
-    await state.sb.storage.from('media-thumbs').remove([key]);
-    row(t('gd_p_thumb'), true, (blob.size / 1024).toFixed(1) + ' KB');
+    if (error){
+      if (/row-level security|violates/i.test(String(error.message || error)))
+        row(t('gd_p_thumb'), true, t('gd_p_thumb_rls'));
+      else throw error;
+    } else {
+      await state.sb.storage.from('media-thumbs').remove([key]);
+      row(t('gd_p_thumb'), true, (blob.size / 1024).toFixed(1) + ' KB');
+    }
   }catch(e){ row(t('gd_p_thumb'), false, String(e.message || e).slice(0, 90)); }
 
   const session = async () => {
@@ -8335,7 +8376,21 @@ async function gdProbe(row){
     }catch(e){ row(t('gd_p_clean'), false, String(e.message || e).slice(0, 90)); }
   }
 
-  /* 6. вывод — и сразу переключаем настоящую отправку на рабочий путь */
+  /* 6. подтверждение: спрашиваем media-commit про заведомо несуществующую
+     запись. Правильный ответ — 404 NOT_FOUND; всё остальное означает, что
+     последний шаг отправки сломан, и показывается вместе с телом ответа. */
+  try{
+    const r = await fetch(mediaFN() + '/media-commit', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ media_id: '00000000-0000-0000-0000-000000000000',
+                             drive_file_id: 'selftest' }) });
+    const body = await r.text().catch(() => '');
+    const good = r.status === 404 && /NOT_FOUND/.test(body);
+    row(t('gd_p_commit'), good, good ? t('gd_p_commit_ok')
+      : t('gd_p_commit_bad') + ' · HTTP ' + r.status + (body ? ' ' + body.slice(0, 120) : ''));
+  }catch(e){ row(t('gd_p_commit'), false, String(e.message || e).slice(0, 90)); }
+
+  /* 7. вывод — и сразу переключаем настоящую отправку на рабочий путь */
   if (direct){ _mediaRelay = false; row(t('gd_p_way'), true, t('gd_p_direct')); }
   else if (relay){ _mediaRelay = true; row(t('gd_p_way'), true, t('gd_p_relay')); }
   else row(t('gd_p_way'), false, t('gd_p_none'));
