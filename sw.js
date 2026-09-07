@@ -1,10 +1,12 @@
 /* TechLog service worker */
-const VERSION = '1.07.64';
+const VERSION = '1.07.66';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
   './',
   './index.html',
+  './privacy.html',
+  './terms.html',
   './styles.css',
   './desktop.css',
   './app.js',

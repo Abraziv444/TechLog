@@ -1192,6 +1192,21 @@ html:not(.tl-desktop) .topbar::after{
 .mq-log .warn{color:var(--yellow)}
 .mq-log .dim{color:var(--dim)}
 .btn.is-run{opacity:.7}
+/* v1.07.65: рисованные иконки вместо эмодзи — выравнивание в мелких местах */
+.toast .ic{width:16px;height:16px;vertical-align:-.18em;margin-right:6px;flex:0 0 auto}
+.toast{display:flex;align-items:flex-start;gap:0}
+.toast .t-txt{min-width:0;flex:1}
+.toast .ic{margin-top:1px}
+.mth .mvid .ic,.mth .mst .ic{filter:drop-shadow(0 0 3px #000)}
+.mq-log .ic{width:13px;height:13px;vertical-align:-.15em}
+.mvid .ic,.mst .ic,.mx .ic{width:13px;height:13px;vertical-align:-.15em}
+#tl-net .ic{width:15px;height:15px;margin-right:4px}
+.icon-btn.sm .ic{width:18px;height:18px}
+.faqm .ic{vertical-align:-.2em}
+/* v1.07.66: ссылки на юридические страницы в подвале */
+.app-footer .legal-links{margin-top:6px}
+.app-footer .legal-links a{color:var(--dim);text-decoration:underline}
+.app-footer .legal-links a:hover{color:var(--blue)}
 /* v1.07.64: карточка ключей Google Drive — маска, «глаз», копирование */
 .gd-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .gd-val{display:flex;gap:6px;align-items:center}

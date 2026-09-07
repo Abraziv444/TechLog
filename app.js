@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.64';
+const APP_VERSION = '1.07.66';
 const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -289,6 +289,7 @@ const I18N = {
     reg_now_signin: 'Аккаунт создан — теперь войдите',
     quick_title: 'Быстрые настройки', font_soon: 'Настройка шрифта — скоро',
     all_settings: 'Все настройки',
+    legal_privacy: 'Политика конфиденциальности', legal_terms: 'Условия использования',
     footer_rights: '© Никакие права не защищены', footer_city: 'Альфаретта',
     faq: 'Как это работает (FAQ)',
     map_mode_all: 'Общая карта', map_mode_day: 'Карта дня', map_of_day: 'Карта этого дня',
@@ -353,10 +354,10 @@ const I18N = {
     ext_req_btn: 'Запросить продление сверх лимита',
     ext_req_days_q: 'На сколько дней запросить? (макс. 30)',
     ext_req_sent: 'Запрос отправлен на согласование',
-    ext_req_pending: '⏳ запрос на {N} дн. ждёт решения',
+    ext_req_pending: 'запрос на {N} дн. ждёт решения',
     ext_req_title: 'Согласование продлений', ext_req_ok: 'Одобрить', ext_req_no: 'Отклонить',
     b_hide_empty: 'Скрыть свободных',
-    media_title: 'Фото и видео', media_photo: '📷 Фото', media_video: '🎥 Видео',
+    media_title: 'Фото и видео', media_photo: 'Фото', media_video: 'Видео',
     media_sb_only: 'Фото и видео работают только с подключённым Supabase',
     media_vlong: 'Видео длиннее 90 сек — снимите короче',
     media_limit: 'Лимит: {P} фото и {V} видео на документ',
@@ -364,12 +365,12 @@ const I18N = {
     media_lim_photo: 'Фото на документ', media_lim_video: 'Видео на документ',
     media_lim_hint: 'Действует для всех документов. По умолчанию 10 фото и 2 видео. Лимит проверяет и сервер — обойти его из браузера нельзя. Уже загруженные файлы сверх нового лимита остаются на месте, добавить сверх — нельзя. Видео = 0 убирает кнопку съёмки видео.',
     media_open_err: 'Нет доступа или файл ещё грузится', media_del_q: 'Удалить файл из архива',
-    media_offline: '🔴 офлайн', media_wait: 'ждут отправки',
+    media_offline: 'офлайн', media_wait: 'ждут отправки',
     media_not_cfg: 'Google Drive не настроен — фото сохранятся и уйдут после настройки (Настройки → Фото и видео)',
-    gd_card: '📷 Фото и видео → Google Drive',
+    gd_card: 'Фото и видео → Google Drive',
     gd_intro: 'Логин и пароль Google сюда не вводятся — это небезопасно и не нужно. Приложение работает по ключам OAuth: введите три значения ниже, нажмите «Подключить Google» и подтвердите доступ на странице самого Google. Токен доступа сервер сохранит сам.',
     gd_cid: 'Client ID', gd_secret: 'Client Secret', gd_folder: 'ID папки на Диске',
-    gd_save: 'Сохранить ключи', gd_connect: '🔗 Подключить Google', gd_test: '🧪 Тест соединения',
+    gd_save: 'Сохранить ключи', gd_connect: 'Подключить Google', gd_test: 'Тест соединения',
     gd_redirect: 'Redirect URI — вставьте в Google Console',
     gd_saved: 'Ключи сохранены', gd_need_cid: 'Сначала введите Client ID',
     gd_token: 'Токен доступа (refresh)', gd_none: 'не задано',
@@ -384,11 +385,11 @@ const I18N = {
     gd_db: 'База данных', gd_auth: 'Авторизация Google', gd_acc: 'Аккаунт',
     gd_used: 'Занято на Диске', gd_write: 'Пробная запись в папку', gd_status: 'Статус',
     gd_help: 'Как получить ключи (разово, ~15 минут)',
-    bk_card: '💾 Бэкап данных',
+    bk_card: 'Бэкап данных',
     bk_intro: 'Один JSON-файл: все таблицы базы, учётные записи (пароли — bcrypt-хэшами) и, по галочке, секреты. При загрузке дубли пропускаются, ошибки видны построчно; лог можно сохранить в .txt (в базе он не хранится).',
-    bk_export: '💾 Выгрузить бэкап', bk_import: '📥 Загрузить из бэкапа',
+    bk_export: 'Выгрузить бэкап', bk_import: 'Загрузить из бэкапа',
     bk_secrets: 'включая секреты (токены Google, код приглашения)',
-    bk_savelog: '⬇ Сохранить лог (.txt)',
+    bk_savelog: 'Сохранить лог (.txt)',
     bk_reading: 'Чтение файла', bk_notfile: 'это не файл бэкапа TechLog',
     bk_from: 'Бэкап от', bk_by: 'выгрузил',
     bk_added: 'добавлено', bk_dupes: 'дублей', bk_errs: 'ошибок',
@@ -401,7 +402,7 @@ const I18N = {
     bk_secrets_warn: 'в файле токены — храните бережно!',
     bk_new_proj: 'Как восстановиться в новый проект Supabase',
     prop_qty: 'Кол-во', prop_code: 'Код', prop_complete: 'Выполнить до (Complete By)',
-    diag_card: '🧪 Диагностика', diag_run: '▶ Запустить все тесты',
+    diag_card: 'Диагностика', diag_run: 'Запустить все тесты',
     diag_net: 'Интернет', diag_db: 'База данных', diag_auth: 'Сессия входа',
     diag_store: 'Хранилище миниатюр', diag_fn: 'Серверные функции',
     diag_skip: 'пропущено (демо-режим)', diag_fn_admin: 'доступно, детали — админу',
@@ -629,6 +630,7 @@ const I18N = {
     reg_now_signin: 'Account created — now sign in',
     quick_title: 'Quick settings', font_soon: 'Font size — coming soon',
     all_settings: 'All settings',
+    legal_privacy: 'Privacy Policy', legal_terms: 'Terms of Service',
     footer_rights: '© No rights reserved', footer_city: 'Alpharetta',
     faq: 'How it works (FAQ)',
     map_mode_all: 'All complexes', map_mode_day: 'Day map', map_of_day: 'Map of this day',
@@ -693,10 +695,10 @@ const I18N = {
     ext_req_btn: 'Request extension beyond limit',
     ext_req_days_q: 'How many days to request? (max 30)',
     ext_req_sent: 'Request sent for approval',
-    ext_req_pending: '⏳ request for {N} d. awaiting decision',
+    ext_req_pending: 'request for {N} d. awaiting decision',
     ext_req_title: 'Extension approvals', ext_req_ok: 'Approve', ext_req_no: 'Reject',
     b_hide_empty: 'Hide free',
-    media_title: 'Photos & video', media_photo: '📷 Photo', media_video: '🎥 Video',
+    media_title: 'Photos & video', media_photo: 'Photo', media_video: 'Video',
     media_sb_only: 'Media requires Supabase connection',
     media_vlong: 'Video longer than 90s — please retake',
     media_limit: 'Limit: {P} photos & {V} videos per document',
@@ -704,12 +706,12 @@ const I18N = {
     media_lim_photo: 'Photos per document', media_lim_video: 'Videos per document',
     media_lim_hint: 'Applies to every document. Defaults: 10 photos and 2 videos. The server enforces the same limit, so it cannot be bypassed from the browser. Files already uploaded above a new limit stay in place; adding more is blocked. Videos = 0 hides the video button.',
     media_open_err: 'No access or file still uploading', media_del_q: 'Delete file from archive',
-    media_offline: '🔴 offline', media_wait: 'pending upload',
+    media_offline: 'offline', media_wait: 'pending upload',
     media_not_cfg: 'Google Drive is not configured — photos are queued and will upload after setup (Settings → Photos & video)',
-    gd_card: '📷 Photos & video → Google Drive',
+    gd_card: 'Photos & video → Google Drive',
     gd_intro: 'Do NOT enter your Google login/password here — not needed and unsafe. The app uses OAuth keys: fill three values below, press “Connect Google” and confirm on Google’s own page. The server stores the token itself.',
     gd_cid: 'Client ID', gd_secret: 'Client Secret', gd_folder: 'Drive folder ID',
-    gd_save: 'Save keys', gd_connect: '🔗 Connect Google', gd_test: '🧪 Test connection',
+    gd_save: 'Save keys', gd_connect: 'Connect Google', gd_test: 'Test connection',
     gd_redirect: 'Redirect URI — paste into Google Console',
     gd_saved: 'Keys saved', gd_need_cid: 'Enter Client ID first',
     gd_token: 'Access token (refresh)', gd_none: 'not set',
@@ -724,11 +726,11 @@ const I18N = {
     gd_db: 'Database', gd_auth: 'Google auth', gd_acc: 'Account',
     gd_used: 'Drive used', gd_write: 'Test write to folder', gd_status: 'Status',
     gd_help: 'How to get the keys (one-time, ~15 min)',
-    bk_card: '💾 Data backup',
+    bk_card: 'Data backup',
     bk_intro: 'One JSON file: all DB tables, user accounts (passwords as bcrypt hashes) and, optionally, secrets. On import duplicates are skipped, errors are listed line by line; the log can be saved as .txt (never stored in DB).',
-    bk_export: '💾 Export backup', bk_import: '📥 Restore from file',
+    bk_export: 'Export backup', bk_import: 'Restore from file',
     bk_secrets: 'include secrets (Google tokens, invite code)',
-    bk_savelog: '⬇ Save log (.txt)',
+    bk_savelog: 'Save log (.txt)',
     bk_reading: 'Reading file', bk_notfile: 'not a TechLog backup file',
     bk_from: 'Backup from', bk_by: 'by',
     bk_added: 'added', bk_dupes: 'dupes', bk_errs: 'errors',
@@ -741,7 +743,7 @@ const I18N = {
     bk_secrets_warn: 'file contains tokens — store safely!',
     bk_new_proj: 'How to restore into a fresh Supabase project',
     prop_qty: 'Qty', prop_code: 'Item', prop_complete: 'Complete By',
-    diag_card: '🧪 Diagnostics', diag_run: '▶ Run all tests',
+    diag_card: 'Diagnostics', diag_run: 'Run all tests',
     diag_net: 'Internet', diag_db: 'Database', diag_auth: 'Auth session',
     diag_store: 'Thumbs storage', diag_fn: 'Edge functions',
     diag_skip: 'skipped (demo)', diag_fn_admin: 'reachable, details for admin',
@@ -862,7 +864,12 @@ function toast(msg, kind){
   if (toast._m === msg && now - (toast._t || 0) < 1800) return;
   toast._m = msg; toast._t = now;
   const el = document.createElement('div'); el.className = 'toast' + (kind==='err'?' err':kind==='inf'?' inf':'');
-  el.textContent = msg; $('#toasts').appendChild(el); setTimeout(()=>el.remove(), 3800);
+  /* v1.07.65: ведущая метка (✓ ⛔ ⚠ …) превращается в рисованную иконку,
+     остальной текст ставится через textContent — разметку не впустим. */
+  const p = splitMark(msg);
+  if (p.icon){ el.innerHTML = p.icon + '<span class="t-txt"></span>'; el.querySelector('.t-txt').textContent = p.text; }
+  else el.textContent = msg;
+  $('#toasts').appendChild(el); setTimeout(()=>el.remove(), 3800);
 }
 const PALETTE = ['#58CC02','#1CB0F6','#FF4B4B','#FF9600','#FFC800','#CE82FF','#2EC4B6','#111827','#8B9AA3'];
 
@@ -1737,8 +1744,53 @@ const IC = {
   chart: '<path d="M4 19.6h16"/><path d="M7 19.6v-6.2"/><path d="M12 19.6V9"/><path d="M17 19.6V4.8"/>',
   warn: '<path d="M12 3.8L21.5 20.2H2.5z"/><path d="M12 10v4.6"/><path d="M12 17.6v.2"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3.2 2"/>',
-  search: '<circle cx="10.6" cy="10.6" r="6.1"/><path d="M15.3 15.3 20.2 20.2"/>'
+  search: '<circle cx="10.6" cy="10.6" r="6.1"/><path d="M15.3 15.3 20.2 20.2"/>',
+  /* v1.07.65: добор набора — заменяем эмодзи на рисованные иконки везде,
+     где они были элементом интерфейса (кнопки, заголовки, статусы). */
+  camera: '<path d="M3.8 8.2h3.1l1.4-2.4h7.4l1.4 2.4h3.1a1.6 1.6 0 0 1 1.6 1.6v8a1.6 1.6 0 0 1-1.6 1.6H3.8a1.6 1.6 0 0 1-1.6-1.6v-8a1.6 1.6 0 0 1 1.6-1.6z"/><circle cx="12" cy="13.4" r="3.5"/>',
+  video: '<rect x="2.6" y="6.4" width="12.6" height="11.2" rx="2"/><path d="M15.2 11.1 20.9 8v8l-5.7-3.1z"/>',
+  link: '<path d="M10.2 13.4a3.7 3.7 0 0 0 5.5.4l2.5-2.5a3.7 3.7 0 0 0-5.2-5.2l-1.4 1.4"/><path d="M13.8 10.6a3.7 3.7 0 0 0-5.5-.4l-2.5 2.5a3.7 3.7 0 0 0 5.2 5.2l1.4-1.4"/>',
+  eye_off: '<path d="M4.2 4.4 19.8 20"/><path d="M9.7 9.8a3.2 3.2 0 0 0 4.5 4.5"/><path d="M6.6 6.8C4.5 8.1 2.9 9.9 2 12c1.9 4 5.6 6.4 10 6.4 1.6 0 3.2-.3 4.6-.9"/><path d="M19.3 16C20.5 15 21.4 13.6 22 12c-1.9-4-5.6-6.4-10-6.4-.7 0-1.3.05-2 .16"/>',
+  copy: '<rect x="8.8" y="8.8" width="10.8" height="10.8" rx="2"/><path d="M15.4 5.6H6.6a2 2 0 0 0-2 2v8.8"/>',
+  upload: '<path d="M12 19V6.4"/><path d="M6.8 11.6 12 6.4l5.2 5.2"/><path d="M4.6 20.6h14.8"/>',
+  wifi: '<path d="M2.8 9.3a13.2 13.2 0 0 1 18.4 0"/><path d="M6.2 12.7a8.4 8.4 0 0 1 11.6 0"/><path d="M9.6 16.1a3.7 3.7 0 0 1 4.8 0"/><circle cx="12" cy="19.2" r=".6"/>',
+  dot: '<circle cx="12" cy="12" r="5.2" fill="currentColor" stroke="none"/>',
+  play: '<path d="M8.2 5.8 18.6 12 8.2 18.2z"/>',
+  mouse: '<rect x="7" y="3.2" width="10" height="17.6" rx="5"/><path d="M12 7.2v3.4"/>',
+  lock: '<rect x="4.9" y="10.4" width="14.2" height="9.4" rx="2"/><path d="M8.4 10.4V7.9a3.6 3.6 0 0 1 7.2 0v2.5"/>',
+  check: '<path d="M4.9 12.6 9.6 17.3 19.1 6.9"/>',
+  close: '<path d="M6.2 6.2 17.8 17.8"/><path d="M17.8 6.2 6.2 17.8"/>',
+  folder: '<path d="M3.4 6.8a2 2 0 0 1 2-2h3.4l2 2.6h7.8a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2H5.4a2 2 0 0 1-2-2z"/>',
+  image: '<rect x="3.4" y="4.8" width="17.2" height="14.4" rx="2"/><circle cx="8.8" cy="9.9" r="1.5"/><path d="M4.6 16.8 10 11.4l3.4 3.4 2.6-2.4 3.4 3.4"/>',
+  /* v1.07.65: те же контуры, что во вкладках меню — ic() их раньше не находил
+     и рисовал пустоту (карточка очереди, «Доска» в настройках, кнопки PDF). */
+  home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
+  report: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  gear: '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.4a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.4h4l.4-2.4a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.06-.4.1-.8.1-1.2z"/>',
+  board: '<rect x="3" y="4" width="5.4" height="16" rx="1.2"/><rect x="9.8" y="4" width="5.4" height="11" rx="1.2"/><rect x="16.6" y="4" width="5.4" height="7" rx="1.2"/>',
+  prop: '<rect x="4" y="2.8" width="16" height="18.4" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  sync: '<path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/>'
 };
+/* v1.07.65: текстовые метки в начале строки (тост, журнал) заменяем на
+   рисованные иконки — один список на всё приложение. */
+const MARK_IC = { '✓': 'check', '✔': 'check', '✅': 'check', '⛔': 'ban', '✗': 'close',
+  '✕': 'close', '⚠': 'warn', '⏳': 'clock', '🗑': 'trash', '⬆': 'upload', '⬇': 'download',
+  'ℹ': 'help', '🌐': 'wifi', '🔴': 'wifi', '🟢': 'dot', '🧪': 'flask', '🔗': 'link',
+  '💾': 'save', '📥': 'download', '📷': 'camera', '🎥': 'video', '🔄': 'refresh',
+  '🩺': 'steth', '👋': 'hand', '🎉': 'star', '🔔': 'bell', '🔒': 'lock', '📨': 'send',
+  '↩': 'refresh', '♻': 'refresh', '🧹': 'trash', '🗄': 'archive', '🔍': 'search',
+  '📋': 'clipboard', '📄': 'note', '🚚': 'car', '📦': 'box', '…': '' };
+/* → { icon: '<svg…>' | '', text: 'остаток строки' } */
+function splitMark(s){
+  const str = String(s == null ? '' : s);
+  for (const k of Object.keys(MARK_IC)){
+    if (str.startsWith(k)){
+      const name = MARK_IC[k];
+      return { icon: name ? ic(name) : '', text: str.slice(k.length).trim() };
+    }
+  }
+  return { icon: '', text: str };
+}
 function ic(n, style){
   const p = IC[n]; if (!p) return '';
   return `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"${style?` style="${style}"`:''}>${p}</svg>`;
@@ -2230,7 +2282,7 @@ function viewJournal(){
       <option value="">${t('jr_all_staff')}</option>
       ${profs.map(p => `<option value="${p.id}" ${jr.actor === p.id ? 'selected' : ''}>${esc(p.display_name)}</option>`).join('')}
     </select>
-    <button class="btn btn-ghost sm" onclick="App.jrRefresh()">🔄</button>
+    <button class="btn btn-ghost sm" onclick="App.jrRefresh()">${ic('refresh')}</button>
   </div>
   <div class="card">${rowsHtml || `<div class="list-empty">${jr.loading ? '…' : t('jr_empty')}</div>`}</div>
   ${jr.more ? `<button class="btn btn-ghost" onclick="App.jrMore()">${t('jr_more')}</button>` : ''}`;
@@ -2292,10 +2344,16 @@ function viewHeader(){
 /* Подпись внизу каждой страницы */
 function viewFooter(){
   const y = new Date().getFullYear();
+  /* v1.07.66: страницы лежат рядом в репозитории — их же адреса указаны
+     в Google Auth Platform (Branding), поэтому ссылки ведут на них. */
   return `<div class="app-footer ${state.user ? '' : 'nofix'}">
     TechLog · Powered by Abraziv<br>
     ${t('footer_rights')}<br>
     ${y} · ${t('footer_city')}
+    <div class="legal-links">
+      <a href="./privacy.html" target="_blank" rel="noopener">${t('legal_privacy')}</a> ·
+      <a href="./terms.html" target="_blank" rel="noopener">${t('legal_terms')}</a>
+    </div>
   </div>`;
 }
 
@@ -2427,7 +2485,7 @@ function viewHome(){
     <div class="banner a2hs" role="status">${ic('phone')}
       <div class="grow"><b>${t('a2hs_title')}</b><div class="tiny">${t('a2hs_text')}</div></div>
       <button class="btn btn-blue sm" onclick="App.a2hsModal()">${t('a2hs_how')}</button>
-      <button class="btn btn-ghost sm" title="${t('a2hs_hide_hint')}" onclick="App.a2hsHide()">✕</button>
+      <button class="btn btn-ghost sm" title="${t('a2hs_hide_hint')}" onclick="App.a2hsHide()">${ic('close')}</button>
     </div>` : '';
 
   const q = (state.searchQ || '').trim();
@@ -2441,7 +2499,7 @@ function viewHome(){
       <div class="search-box">
         ${ic('search')}
         <input id="home-search" type="search" autocomplete="off" enterkeyhint="search" placeholder="${t('search_ph')}" value="${esc(state.searchQ || '')}" oninput="App.searchInput(this.value)">
-        <button class="x" id="search-clear" style="${q?'':'display:none'}" onclick="App.searchClear()" aria-label="✕">✕</button>
+        <button class="x" id="search-clear" style="${q?'':'display:none'}" onclick="App.searchClear()" aria-label="clear">${ic('close')}</button>
       </div>
     </div>`;
 
@@ -2479,7 +2537,7 @@ function viewHome(){
       return `<div class="item clicky" style="border-left-color:#3a4a52;opacity:.6" onclick="App.openJob('${p0.job_id}')">
         ${rowNumHtml(num.count + di + 1)}
         <div class="info"><div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
-        <div class="s">✓ ${t('picked')}</div></div>
+        <div class="s">${ic('check')} ${t('picked')}</div></div>
         <div class="eq-dots">${eqDotsFor(list)}</div>
       </div>`;
     }).join('');
@@ -2571,7 +2629,7 @@ function searchPkCard(p){
   const cx = cxById(p.complex_id) || { name: '?' };
   const et = state.data.equipment_types.find(e => e.id === p.equipment_type_id) || { abbr: '?', color: '#8B9AA3', name: '?' };
   const st = p.picked_up
-    ? `<span class="chip ok">✓ ${t('picked')}</span>`
+    ? `<span class="chip ok">${ic('check')} ${t('picked')}</span>`
     : `<span class="chip warn">${t('hist_pending')}</span>${p.due_date < todayISO() ? ` <span class="chip bad">${t('overdue')}</span>` : ''}`;
   return `<div class="item clicky" style="border-left-color:${et.color}" onclick="App.searchOpenPk('${p.id}')">
     <div class="info">
@@ -2681,6 +2739,8 @@ function sectionFaqHtml(key){
       <li><b>Лента недели</b> сверху: точки под датой — есть работы/пикапы; клик — выбрать день, стрелки ‹ › — листать недели, «Сегодня» — вернуться.</li>
       <li><b>Счётчики дня</b>: «N РАБОТ» и «N ПИКАПОВ» с разбивкой по типам; «Карта этого дня» строит маршрут по точкам дня.</li>
       <li><b>Мои / Все</b> — фильтр задач; <b>Поиск</b> ищет по юниту, комплексу и адресу.</li>
+      <li><b>${ic('note')} ＋ Добавить задание</b>: дата → контрагент → комплекс → юнит → вид работы. Если по этому комплексу есть непривязанный пропозал, под полем юнита появится зелёная строка-подсказка и карточки пропозалов с галочкой «привязать» — работа создастся уже связанной.</li>
+      <li>В ПК-режиме клик по любому месту поля даты открывает встроенный тёмный календарь; на телефоне — системный выбор даты.</li>
     </ul>
     <h4>${ic('wrench')} Карточка работы</h4>
     <ul>
@@ -2689,14 +2749,15 @@ function sectionFaqHtml(key){
       <li>Статус справа: ${faqStatusLegend()}; под ним сумма и ${ic('compass')} — открыть маршрут в навигаторе.</li>
       <li>${ic('clipboard')} возле адреса — копировать адрес; строка кодов: ${ic('key')} код доступа, callbox.</li>
       <li>Клик по карточке — открыть документ (инвойс).</li>
+      <li>Внутри документа блок <b>${ic('camera')} Фото и видео</b>: съёмка из приложения, счётчик «сколько из лимита» (лимиты задаёт админ, по умолчанию 10 фото и 2 видео). Снятое без сети ждёт в очереди и уходит само; при запуске приложение напомнит поповером, а разбор очереди — в Настройках.</li>
     </ul>
     <h4>${ic('box')} Карточка пикапа (аренда оборудования)</h4>
     <ul>
       <li>Цветные бейджи справа — <b>сколько единиц какого типа</b> забрать: ${faqEqLegend()}.</li>
       <li>Красный бейдж-цифра — просроченные позиции; чип «продление» — аренда продлевалась.</li>
-      <li>${ic('compass')} — маршрут; ${ic('note')} — документ; <b>Забрать</b> — отметить вывоз всего юнита; блеклая карточка «✓ забрано» открывает связанный документ.</li>
+      <li>${ic('compass')} — маршрут; ${ic('note')} — документ; <b>Забрать</b> — отметить вывоз всего юнита; блеклая карточка «${ic('check')} забрано» открывает связанный документ.</li>
     </ul>
-    <h4>🔤 Сокращения</h4>
+    <h4>${ic('font')} Сокращения</h4>
     <div class="tiny">Комплексы: ${faqCxLegend()}</div>
     <div class="tiny" style="margin-top:4px">Оборудование: ${faqEqLegend()}</div>`,
   `
@@ -2712,8 +2773,8 @@ function sectionFaqHtml(key){
     <h4>${ic('box')} Pickup card</h4>
     <ul><li>Colored badges — units to collect per type: ${faqEqLegend()}.</li>
     <li>Red badge — overdue items; "extension" chip — rent was extended.</li>
-    <li>${ic('compass')} navigate; ${ic('note')} document; <b>Pick up</b> marks the whole unit; a dimmed "✓ picked" card opens the linked document.</li></ul>
-    <h4>🔤 Abbreviations</h4>
+    <li>${ic('compass')} navigate; ${ic('note')} document; <b>Pick up</b> marks the whole unit; a dimmed "${ic('check')} picked" card opens the linked document.</li></ul>
+    <h4>${ic('font')} Abbreviations</h4>
     <div class="tiny">Complexes: ${faqCxLegend()}</div>
     <div class="tiny" style="margin-top:4px">Equipment: ${faqEqLegend()}</div>`);
 
@@ -2725,22 +2786,24 @@ function sectionFaqHtml(key){
       <li>${faqMvDemo()} на карточке — перенос задачи между сотрудниками/позициями; клик — открыть документ.</li>
       <li>${faqTriDemo()} — приоритет; жёлтый «!» на дне недели — есть просроченные пикапы.</li>
     </ul>
-    <h4>🖱 Жесты (ПК)</h4>
+    <h4>${ic('mouse')} Жесты (ПК)</h4>
     <ul>
       <li><b>Колесо мыши</b> крутит доску по горизонтали с инерцией; на краях прокрутка отдаётся странице.</li>
       <li><b>Схватить-и-тянуть</b> мышью в любом месте — протяжка с инерцией; обычный клик по карточке работает как раньше.</li>
       <li>Тач — нативные жесты.</li>
     </ul>
-    <h4>⚙ Ширина</h4>
+    <h4>${ic('gear')} Ширина</h4>
     <ul><li>Настройки → «Доска»: <b>минимум сотрудников на экране</b> — если столько не влезает, карточки автоматически сужаются (подписи счётчиков сворачиваются до чисел).</li>
+    <li><b>Авто-уплотнение</b>: когда колонки перестают помещаться (например, 12 сотрудников на Full HD), ширина подбирается так, чтобы влезли все — без горизонтальной прокрутки, до 128 px; в узкой колонке шапка становится вертикальной (аватар сверху, имя под ним).</li>
+    <li>В этом режиме <b>боковое меню уезжает за левый край</b>: наведите на язычок у края — оно выглянет, клик — закрепит; после перехода в раздел снова спрячется. Когда места опять хватает, всё возвращается само.</li>
     <li>У воркера в ПК-режиме доска недельная: колонка = день, только свои задачи; клик по шапке дня выбирает его в календаре.</li></ul>`,
   `
     <h4>${ic('board')} Board — the day by staff</h4>
     <ul><li>Column = employee with their day's cards; "Day is free" = empty; <b>"Hide free"</b> removes empty columns.</li>
     <li>${faqMvDemo()} moves a task between employees/positions; click opens the document; ${faqTriDemo()} — priority.</li></ul>
-    <h4>🖱 Gestures (desktop)</h4>
+    <h4>${ic('mouse')} Gestures (desktop)</h4>
     <ul><li>Mouse wheel scrolls horizontally with inertia (edges pass to the page); grab-and-drag pans; touch is native.</li></ul>
-    <h4>⚙ Width</h4>
+    <h4>${ic('gear')} Width</h4>
     <ul><li>Settings → "Board": <b>minimum staff visible</b> — cards shrink automatically when needed.</li>
     <li>Worker on desktop gets a weekly board (column = weekday, own tasks only).</li></ul>`);
 
@@ -2748,13 +2811,13 @@ function sectionFaqHtml(key){
     <h4>${ic('map')} Карта апарт-комплексов</h4>
     <ul>
       <li>Точки — комплексы, цвет = контрагент; фильтр по контрагенту сверху; клик по строке списка — фокус на точке.</li>
-      <li>${ic('key')} в строке — скопировать код доступа; «⚠ без координат» — у комплекса нет точки (задайте в справочнике или найдите поиском).</li>
+      <li>${ic('key')} в строке — скопировать код доступа; «${ic('warn')} без координат» — у комплекса нет точки (задайте в справочнике или найдите поиском).</li>
       <li>Режим <b>«День»</b>: пронумерованные точки задач выбранной даты и кнопка ${ic('compass')} — маршрут дня в вашем навигаторе (Apple/Google — см. Настройки).</li>
     </ul>
     <h4>${ic('search')} Поиск места и добавление комплекса</h4>
     <ul>
       <li>Введите адрес → <b>Найти</b>: результаты OpenStreetMap; клик — маркер на карте.</li>
-      <li>«✓ Точка найдена» → <b>Добавить как комплекс</b>: название и адрес заполнены, выберите владельца: существующий контрагент, «＋ Новый…», «⏳ Временный владелец» или «— без привязки —».</li>
+      <li>«${ic('check')} Точка найдена» → <b>Добавить как комплекс</b>: название и адрес заполнены, выберите владельца: существующий контрагент, «＋ Новый…», «⏳ Временный владелец» или «— без привязки —».</li>
       <li>Комплексы без владельца (и с временным) помечаются ${faqTriDemo()} здесь и в Справочнике — назначьте контрагента позже.</li>
     </ul>`,
   `
@@ -2763,7 +2826,7 @@ function sectionFaqHtml(key){
     <li><b>"Day"</b> mode: numbered task points and ${ic('compass')} — the day's route in your navigator.</li></ul>
     <h4>${ic('search')} Place search & adding a complex</h4>
     <ul><li>Type an address → <b>Search</b> (OpenStreetMap) → click a result → marker.</li>
-    <li>"✓ Point found" → <b>Add as complex</b>: pick an owner — existing, "＋ New…", "⏳ Temporary owner" or "— no binding —".</li>
+    <li>"${ic('check')} Point found" → <b>Add as complex</b>: pick an owner — existing, "＋ New…", "⏳ Temporary owner" or "— no binding —".</li>
     <li>Ownerless complexes are flagged ${faqTriDemo()} here and in Directory.</li></ul>`);
 
   S.proposals = H(`
@@ -2772,18 +2835,22 @@ function sectionFaqHtml(key){
       <li>Список предложений с номером P-N, статусом и суммой; клик — открыть.</li>
       <li>Внутри: позиции с ценами (степперы количества), фото-вложения, экспорт в PDF, отправка статуса.</li>
       <li>Чип «нужен пропозал» на работе ставит воркер (если разрешено в Настройках) — менеджер видит полосу-напоминание над Доской.</li>
+      <li><b>${ic('link')} Связь с работой — двусторонняя.</b> Блок «Связанные документы» есть и в пропозале, и в инвойсе: привязать и отвязать можно с любой стороны, вторая сторона обновляется сразу. Удалили пропозал — связь у работы исчезает.</li>
+      <li>Привязать можно и в момент создания работы: в форме «Добавить задание» подходящие пропозалы предлагаются сами (по комплексу, а если совпал и номер юнита — отдельной подсказкой), плюс есть список всех непривязанных.</li>
     </ul>`,
   `
     <h4>${ic('note')} Proposals</h4>
     <ul><li>P-N list with status and totals; open to edit items (qty steppers), photos, export PDF.</li>
-    <li>The "needs proposal" flag set by a worker shows managers a reminder strip above the Board.</li></ul>`);
+    <li>The "needs proposal" flag set by a worker shows managers a reminder strip above the Board.</li>
+    <li><b>${ic('link')} Two-way link with a job</b>: the "Linked documents" block works from both sides — link or unlink anywhere, the other side updates instantly; deleting a proposal clears the link.</li>
+    <li>The "Add job" form suggests matching proposals (same complex, and a separate hint when the unit number matches) and lists all unlinked ones.</li></ul>`);
 
   S.reports = H(`
     <h4>${ic('note')} Отчёты</h4>
     <ul>
       <li>Вкладки: <b>Инвойсы</b> и <b>Пикапы</b>. Фильтры: период, контрагент, сотрудник, статус.</li>
       <li>Строка = документ: клик открывает (в т.ч. заблокированные по сроку — на просмотр). Статусы: ${faqStatusLegend()}.</li>
-      <li>Итоги по выборке внизу; выгрузка PDF-пакета — по кнопке.</li>
+      <li>Итоги по выборке внизу; выгрузка PDF-пакета — по кнопке (альбомный лист, два бланка рядом и линия отреза).</li>
       <li>${faqTriDemo()} в строке — документ с проблемами заполнения.</li>
     </ul>`,
   `
@@ -2792,7 +2859,7 @@ function sectionFaqHtml(key){
     <li>Click a row to open (locked-by-age docs open read-only). Totals below; PDF batch export available.</li></ul>`);
 
   S.stats = H(`
-    <h4>${ICONS.stats} Статистика</h4>
+    <h4>${ic('chart')} Статистика</h4>
     <ul>
       <li><b>Период</b> — кнопки быстрых диапазонов и произвольные даты; всё ниже пересчитывается по выборке.</li>
       <li><b>Разрезы</b>: по сотрудникам, по видам работ, по контрагентам — суммы, количество документов и доля в % от итога выборки.</li>
@@ -2802,7 +2869,7 @@ function sectionFaqHtml(key){
       <li>Цвета видов работ — те же, что полоски на карточках главной и Доски.</li>
     </ul>`,
   `
-    <h4>${ICONS.stats} Statistics</h4>
+    <h4>${ic('chart')} Statistics</h4>
     <ul><li>Period plus breakdowns by staff, work types, counterparties; approved totals win over drafts. Click a row for details.</li></ul>`);
 
   S.dirs = H(`
@@ -2813,6 +2880,8 @@ function sectionFaqHtml(key){
       <li>${ic('book')} у комплекса — история кодов доступа; ${ic('pencil')} — редактирование (менеджер+).</li>
       <li>Оборудование: ${faqEqLegend()} — эти же коды и цвета на бейджах пикапов.</li>
       <li>Запросы кода от воркеров появляются входящими сверху — подтвердите или обновите код.</li>
+      <li>${ic('clipboard')} у вида работы — <b>пред-выездной чек-лист</b>: что взять и проверить перед выездом; сотрудник видит его в работе этого вида.</li>
+      <li><b>Остатки склада</b>: сколько единиц каждого типа свободно с учётом выданного; видимость для всех включается в Настройках.</li>
     </ul>`,
   `
     <h4>${ic('book')} Directory</h4>
@@ -2840,18 +2909,20 @@ function sectionFaqHtml(key){
       <li><b>Профиль</b>: имя в документах, смена пароля, язык RU/EN, навигатор (Авто/Apple/Google).</li>
       <li><b>Оборудование и документы</b> (админ): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старше N дней (0 — выкл; заблокированные документы открываются на просмотр).</li>
       <li><b>Лимиты фото и видео на документ</b> (админ): степперы «Фото на документ» (1–50) и «Видео на документ» (0–10), по умолчанию <b>10 и 2</b>. Лимит един для всех документов и проверяется сервером при загрузке — из браузера его не обойти. Уже загруженные сверх нового лимита файлы остаются, добавить больше нельзя; «видео 0» убирает кнопку съёмки видео из карточки работы.</li>
-      <li><b>Фото и видео → Google Drive</b>: ключи OAuth архивного аккаунта. В поле «ID папки» можно вставить <b>ссылку целиком</b> — приложение само возьмёт ID. Сохранённые ключи карточка показывает в режиме просмотра: Client ID и папка — открыто, секрет и токен — звёздочками, 👁 показывает значение (запрашивается с сервера отдельно), ⧉ копирует, ✏ включает правку. «Тест соединения» проверяет доступ, аккаунт, <b>свободное место</b> и запись в папку.</li>
+      <li><b>Фото и видео → Google Drive</b>: ключи OAuth архивного аккаунта. В поле «ID папки» можно вставить <b>ссылку целиком</b> — приложение само возьмёт ID. Сохранённые ключи карточка показывает в режиме просмотра: Client ID и папка — открыто, секрет и токен — звёздочками, ${ic('eye')} показывает значение (запрашивается с сервера отдельно), ${ic('copy')} копирует, ${ic('pencil')} включает правку. «Тест соединения» проверяет доступ, аккаунт, <b>свободное место</b> и запись в папку.</li>
       <li><b>Место на Диске</b>: если свободно меньше 15 %, админ и менеджер видят красный баннер на главной. Показатель снимается при тесте подключения и сам обновляется при загрузке файлов (не чаще раза в 6 часов).</li>
       <li><b>Приглашение</b> (админ): код регистрации сотрудников.</li>
       <li><b>Проверить обновления</b> — применяет новую версию сразу; клик по названию TechLog в шапке делает то же.</li>
+      <li><b>${ic('save')} Бэкап данных</b> (админ): выгрузка всех таблиц, учёток (bcrypt-хэши) и — по галочке — секретов в один JSON; загрузка идёт построчно, дубли отсекает база, ошибки видно в экранном логе с выгрузкой в .txt. Журналы выгружаются, но обратно кнопкой не заливаются.</li>
       <li><b>Диагностика</b>: самоотчёт и проверка таблиц/функций БД — при ошибке подсказывает нужный SQL-файл.</li>
+      <li><b>${ic('upload')} Неотправленные фото и видео</b>: сводка по документам, журнал отправки на пять строк и кнопки «Повторить отправку» / «Проверка соединения» — во время работы одной вторая заблокирована.</li>
     </ul>`,
   `
     <h4>${ic('gear')} Settings</h4>
     <ul><li><b>Board</b> — minimum staff visible (stepper, personal). Profile: display name, password, language, navigator.</li>
     <li><b>Equipment & documents</b> (admin): default rent / max extension steppers, permissions, edit-lock N days (locked docs open read-only).</li>
     <li><b>Photo & video limits</b> (admin): steppers for photos (1–50) and videos (0–10) per document, defaults <b>10 and 2</b>, enforced server-side; videos = 0 hides the video button.</li>
-    <li>Media → Google Drive: paste the whole folder link — the ID is extracted automatically; saved keys show read-only with masked secrets (👁 reveal, ⧉ copy, ✏ edit). The connection test also reports free Drive space; below 15 % admins and managers get a banner on Home.</li>
+    <li>Media → Google Drive: paste the whole folder link — the ID is extracted automatically; saved keys show read-only with masked secrets (${ic('eye')} reveal, ${ic('copy')} copy, ${ic('pencil')} edit). The connection test also reports free Drive space; below 15 % admins and managers get a banner on Home.</li>
     <li>Invite code; "Check updates" applies the new version immediately; DB diagnostics names the exact SQL file on errors.</li></ul>`);
 
   return `<div class="faqm">${S[key] || ''}</div>`;
@@ -2860,7 +2931,7 @@ function sectionFaqOpen(key){
   if (typeof SECTION_HELP !== 'undefined' && SECTION_HELP[key]) return sectionHelpModal(key);
   openModal(`
     <div class="m-head">? FAQ · ${t('tab_' + key) || t(key + '_title') || ''}
-      <button class="m-x" onclick="App.closeModal()">✕</button></div>
+      <button class="m-x" onclick="App.closeModal()">${ic('close')}</button></div>
     ${sectionFaqHtml(key)}`);
 }
 
@@ -2883,7 +2954,7 @@ async function mapSearchRun(){
     const r = await fetch(u, { headers: { 'Accept': 'application/json' } });
     geoResults = (await r.json()) || [];
   }catch(e){ geoResults = []; }
-  if (!geoResults.length){ box.innerHTML = `<div class="tiny" style="padding:6px 2px">⚠ ${t('map_no_results')}</div>`; return; }
+  if (!geoResults.length){ box.innerHTML = `<div class="tiny" style="padding:6px 2px">${ic('warn')} ${t('map_no_results')}</div>`; return; }
   box.innerHTML = geoResults.map((g, i) => `
     <button class="rowline map-row" onclick="App.mapPick(${i})">
       <span class="dot" style="background:var(--blue)"></span>
@@ -2903,7 +2974,7 @@ function mapPickRun(i){
   if (box) box.innerHTML = `
     <div class="rowline" style="border-color:var(--green)">
       <span class="dot" style="background:var(--green)"></span>
-      <div class="grow"><b>✓ ${t('map_found_pt')}</b>
+      <div class="grow"><b>${ic('check', 'color:var(--green)')} ${t('map_found_pt')}</b>
         <div class="tiny">${esc(g.display_name||'')}</div></div>
       <button class="btn btn-green sm" onclick="App.addCxFromMap(${i})">${t('map_add_cx')}</button>
     </div>`;
@@ -2920,7 +2991,7 @@ function addCxModal(i){
   const cps = state.data.counterparties;
   openModal(`
     <div class="m-head">${ic('map')} ${t('cx_add_title')}
-      <button class="m-x" onclick="App.closeModal()">✕</button></div>
+      <button class="m-x" onclick="App.closeModal()">${ic('close')}</button></div>
     <div class="form-row"><span class="lbl">${t('name')}</span>
       <input id="ncx-name" value="${esc(nm)}"></div>
     <div class="form-row"><span class="lbl">${t('address')}</span>
@@ -3241,7 +3312,7 @@ function renderExtendModal(){
       <span class="tiny">${t('days')} · ${t('ext_max_note').replace('{N}', maxExtendDays())}</span>
     </div>
     ${pendingExtReqHtml(d.jobId)}
-    <button class="btn btn-ghost sm" style="margin-bottom:8px" onclick="App.extReqCreate()">⏳ ${t('ext_req_btn')}</button>
+    <button class="btn btn-ghost sm" style="margin-bottom:8px" onclick="App.extReqCreate()">${ic('clock')} ${t('ext_req_btn')}</button>
     <div class="note-green" style="display:block">${t('ext_summary')}: <b>${total} ${t('units_short')}</b> · +${d.daysN} ${t('days')} · ${t('ext_new_due')}: <b>${fmtDMY(newDue)}</b></div>
     <div class="tiny" style="margin:6px 0 10px">${t('ext_invoice_note')}</div>
     <button class="btn btn-blue" onclick="App.extApply()" ${total > 0 ? '' : 'disabled'}>${ic('chk_on')} ${t('extend_rent')}</button>
@@ -3298,7 +3369,7 @@ function jobHistory(jobId){
       || String(a.due_date||'').localeCompare(String(b.due_date||'')));
   const plHtml = pls.map(p => {
     const stateHtml = p.picked_up
-      ? `<span class="chip ok">✓ ${t('hist_picked_at')}: ${fmtTs(p.picked_up_at)}</span>`
+      ? `<span class="chip ok">${ic('check')} ${t('hist_picked_at')}: ${fmtTs(p.picked_up_at)}</span>`
       : p.superseded
         ? `<span class="chip info">${t('hist_superseded')}</span>`
         : `<span class="chip warn">${t('hist_pending')}</span>${p.due_date < todayISO() ? ` <span class="chip bad">${t('overdue')}</span>` : ''}`;
@@ -3318,7 +3389,7 @@ function jobHistory(jobId){
       <div class="hist-t">${ic('receipt')} ${t('hist_invoice')} · <span style="color:${wt.color}">${esc(wt.name)}</span></div>
       <div class="tiny">${esc(cx.name)} · Unit ${esc(j.unit_number || '—')}</div>
       <div class="tiny">${t('hist_created')}: ${fmtTs(j.created_at)} · ${t('hist_workdate')}: <b>${fmtDMY(j.date)}</b></div>
-      <div style="margin-top:4px"><span class="badge-status st-${j.status}">${t('status_' + j.status)}</span>${proposalChipHtml(j)}${j.status === 'approved' && j.approved_at ? ` <span class="tiny">✓ ${esc(profName(j.approved_by))} · ${fmtTs(j.approved_at)}</span>` : ''}</div>
+      <div style="margin-top:4px"><span class="badge-status st-${j.status}">${t('status_' + j.status)}</span>${proposalChipHtml(j)}${j.status === 'approved' && j.approved_at ? ` <span class="tiny">${ic('check')} ${esc(profName(j.approved_by))} · ${fmtTs(j.approved_at)}</span>` : ''}</div>
       <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.closeModal();App.openJob('${j.id}')">${ic('receipt')} ${t('open_invoice')}</button>
     </div>
     ${pls.length ? plHtml : `<div class="tiny" style="margin-top:8px">${t('hist_none')}</div>`}
@@ -3640,17 +3711,17 @@ function viewJob(){
     <div class="qty-line">
       <span class="name">${t('approved_total')}</span>
       <input id="jb-approved" class="price-input" inputmode="decimal" value="${j.approved_total ?? total}">
-      <button class="btn btn-blue sm" onclick="App.approveJob()">${isApproved ? '↻' : '✓'} ${t('approve')}</button>
+      <button class="btn btn-blue sm" onclick="App.approveJob()">${ic(isApproved ? 'refresh' : 'check')} ${t('approve')}</button>
     </div>
-    ${isApproved ? `<div class="tiny">✓ ${t('approved_by')}: ${esc(profName(j.approved_by))} · ${j.approved_at ? j.approved_at.slice(0,16).replace('T',' ') : ''}</div>` : ''}
+    ${isApproved ? `<div class="tiny">${ic('check')} ${t('approved_by')}: ${esc(profName(j.approved_by))} · ${j.approved_at ? j.approved_at.slice(0,16).replace('T',' ') : ''}</div>` : ''}
     <div class="tiny" style="margin-top:6px">${t('approve_reset_note')}</div>
-  </div>` : (isApproved ? `<div class="note-purple">✓ ${t('status_approved')}: ${esc(profName(j.approved_by))} — ${money(j.approved_total ?? total)}</div>` : '')}
+  </div>` : (isApproved ? `<div class="note-purple">${ic('check')} ${t('status_approved')}: ${esc(profName(j.approved_by))} — ${money(j.approved_total ?? total)}</div>` : '')}
 
   <button class="btn btn-ghost" style="margin-bottom:8px" onclick="App.jobHistory('${j.id}')">${ic('clock')} ${t('job_history')}</button>
 
   <div class="total-bar"><span>${t('total')}</span><span class="sum ${j.status==='approved'?'ok':'pend'}" id="jb-total">${money(total)}</span></div>
 
-  ${editLocked(j) ? `<div class="banner b-red" style="margin-bottom:8px">🔒 ${t('lock_note').replace('{N}', editLockDays())}</div>` : ''}
+  ${editLocked(j) ? `<div class="banner b-red" style="margin-bottom:8px">${ic('lock')} ${t('lock_note').replace('{N}', editLockDays())}</div>` : ''}
   <button class="btn btn-green" onclick="App.saveJob()">${ic('save')} ${t('save')}</button>
   <div class="btn-rowpp">
     <button class="btn btn-ghost" onclick="App.pdfPreview()">${ic('search')} ${t('pdf_preview')}</button>
@@ -4013,7 +4084,7 @@ function viewDirs(){
     <button class="tabs-arr" onclick="App.dirTabsScroll(-1)" aria-label="◀">‹</button>
     <div class="tabs" id="dir-tabs">` + tabs.map(([id,l]) =>
     `<button class="tabbtn ${state.dirTab===id?'active':''}" onclick="App.dirTab('${id}')">${l}</button>`).join('') + `</div>
-    <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="▶">›</button>
+    <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="next">›</button>
   </div>`;
   const body = { stock: dirStock, staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
                  equipment: dirEquipment, aux: dirAux, price: dirPrice,
@@ -4084,7 +4155,7 @@ function dirWorkTypes(){
       <span class="icon-circle" style="background:${w.color};color:${textColorFor(w.color)}">●</span>
       <div class="grow"><b style="color:${w.color}">${esc(w.name)}</b>
         ${w.needs_aux?`<div class="tiny">${ic('toolbox')} ${(w.aux_ids||[]).map(id=>esc((state.data.aux_equipment.find(a=>a.id===id)||{}).name||'')).join(' · ')}</div>`:''}</div>
-      <button class="btn btn-ghost sm" title="${t('cl_title')}" onclick="App.wtChecklistModal('${w.id}')">📋${(w.checklist&&w.checklist.length)?' '+w.checklist.length:''}</button>
+      <button class="btn btn-ghost sm" title="${t('cl_title')}" onclick="App.wtChecklistModal('${w.id}')">${ic('clipboard')}${(w.checklist&&w.checklist.length)?' '+w.checklist.length:''}</button>
       <button class="btn btn-ghost sm" onclick="App.editWtModal('${w.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
     <button class="btn btn-green" onclick="App.editWtModal()">＋ ${t('add')}</button>`;
@@ -4522,9 +4593,9 @@ function viewSettings(){
       <div class="grow" style="flex:1">
         <b>${ic('refresh')} ${t('sync')}</b>
         <div class="d">${t('synced')}: ${state.lastSync || t('never')} · ${HAS_SB?'Supabase':'DEMO / localStorage'}</div>
-        ${SYNC_ERRORS.length ? `<div class="d" style="color:var(--red)">⚠ ${SYNC_ERRORS.length} ${t('tables_failed')}: ${SYNC_ERRORS.map(x=>x.tb).join(', ')}</div>` : ''}
+        ${SYNC_ERRORS.length ? `<div class="d" style="color:var(--red)">${ic('warn')} ${SYNC_ERRORS.length} ${t('tables_failed')}: ${SYNC_ERRORS.map(x=>x.tb).join(', ')}</div>` : ''}
         ${WRITE_ERRORS.length ? `<div class="d" style="color:var(--yellow)">${ic('pencil')} ${t('write_err')}: ${WRITE_ERRORS.length}</div>` : ''}
-        ${pendingLoad().length ? `<div class="d" style="color:var(--yellow)">⏳ ${t('pending_writes')}: ${pendingLoad().length}</div>` : ''}
+        ${pendingLoad().length ? `<div class="d" style="color:var(--yellow)">${ic('clock')} ${t('pending_writes')}: ${pendingLoad().length}</div>` : ''}
       </div>
       <button class="btn btn-green sm" onclick="App.sync()">${t('sync')}</button>
     </div>
@@ -4585,16 +4656,16 @@ function viewSettings(){
 
   <div class="card">
     <div class="settings-row"><div class="grow" style="flex:1"><b>${ic('phone')} PWA</b>
-      <div class="d">${isStandalone() ? '✓ ' + t('already_installed') : t('install_hint')}</div>
-      ${IS_IOS && !isStandalone() ? `<div class="d">🍎 ${t('install_ios_hint')}</div><button class="btn btn-blue sm" style="margin-top:6px" onclick="App.a2hsModal()">${ic('phone')} ${t('a2hs_how')}</button>` : ''}
+      <div class="d">${isStandalone() ? ic('check', 'color:var(--green)') + ' ' + t('already_installed') : t('install_hint')}</div>
+      ${IS_IOS && !isStandalone() ? `<div class="d">${ic('phone')} ${t('install_ios_hint')}</div><button class="btn btn-blue sm" style="margin-top:6px" onclick="App.a2hsModal()">${ic('phone')} ${t('a2hs_how')}</button>` : ''}
       <div class="d">${t('install_where_win')}</div></div></div>
     ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">${ic('download')} ${t('install_app')}</button>` : ''}
     <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b>
-      <div class="d">TechLog v${APP_VERSION}${state.lastUpdCheck ? ' · ' + t('upd_last') + ' ' + state.lastUpdCheck : ''}${state.updAvail ? ' · ⬆ ' + t('upd_found') + ': ' + state.updAvail : ''}</div></div>
+      <div class="d">TechLog v${APP_VERSION}${state.lastUpdCheck ? ' · ' + t('upd_last') + ' ' + state.lastUpdCheck : ''}${state.updAvail ? ' · ' + ic('upload') + ' ' + t('upd_found') + ': ' + state.updAvail : ''}</div></div>
       <button class="btn btn-ghost sm" onclick="App.updCheck()">${ic('refresh')} ${t('upd_check')}</button></div>
   </div>
 
-  <button class="btn btn-red" onclick="App.logout()">✕ ${t('logout')}</button>
+  <button class="btn btn-red" onclick="App.logout()">${ic('close')} ${t('logout')}</button>
   ${viewFooter()}`;
 }
 
@@ -5371,7 +5442,7 @@ function viewMap(){
         return `<button class="rowline map-row" ${has?`onclick="App.mapFocus(${cx.lat},${cx.lng})"`:''}>
           <span class="dot" style="background:${cpColor(cx.counterparty_id)}"></span>
           <div class="grow"><b>${esc(cx.name)}</b>${cxNoOwner(cx) ? ' ' + warnTriHtml() : ''} <span class="tiny">${esc((cpById(cx.counterparty_id)||{}).abbr||'')}</span>
-            <div class="tiny">${has ? esc(cx.address||'') : '⚠ ' + t('map_no_coords')}</div></div>
+            <div class="tiny">${has ? esc(cx.address||'') : ic('warn') + ' ' + t('map_no_coords')}</div></div>
           ${cx.access_code?`<span class="tiny key-copy" onclick="event.stopPropagation();App.copyText('${esc(cx.access_code)}')">${ic('key')} ${esc(cx.access_code)}</span>`:''}
         </button>`;
       }).join('');
@@ -5400,7 +5471,7 @@ function viewMap(){
   </div>
   <div id="map" class="map-box"></div>
   ${legend}
-  ${!state.mapDay && noCoords.length ? `<div class="tiny" style="margin-top:6px">⚠ ${noCoords.length} · ${t('map_no_coords')}</div>` : ''}`;
+  ${!state.mapDay && noCoords.length ? `<div class="tiny" style="margin-top:6px">${ic('warn')} ${noCoords.length} · ${t('map_no_coords')}</div>` : ''}`;
 }
 function initMapView(){
   if (!window.L) { setTimeout(initMapView, 150); return; }
@@ -6068,7 +6139,7 @@ function crewChipsHtml(j){
     const nm = pr ? shortName(pr.display_name) : '?';
     const primary = i === 0;
     return `<span class="chip-tech ${primary?'primary':''}">
-      ${esc(nm)}${(primary || !editable) ? '' : ` <button class="x" onclick="App.crewRemove('${id}')" aria-label="remove">✕</button>`}
+      ${esc(nm)}${(primary || !editable) ? '' : ` <button class="x" onclick="App.crewRemove('${id}')" aria-label="remove">${ic('close')}</button>`}
     </span>`;
   }).join('');
 }
@@ -6407,6 +6478,12 @@ function faqHtml(){
     <p>In the Note block, <b>＋ Template</b> inserts items from the “Extra works” directory: a work flagged with a size shows an input in the right units (${ic('ruler')} “Sizes”: ft, sq ft, lb, pcs), while “${ic('cart')} Purchase” opens the “Products” list with quantity and a <b>price</b> that flows into the total and prints as its own PDF line. All three directories are admin-managed.</p>
     <h4>${ic('box')} Automatic pickups</h4>
     <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. <b>Tap a pickup card</b> to open the details: what to collect and how much, where from (address, codes, route), plus buttons “Open invoice”, “Job history”, “Pick up all” and <b>“Extend rental”</b> — all units or selected ones, with a day stepper (1 by default); the extension appears on the new day as a separate pickup with an “extension” chip. <b>Job history</b> (the button is also inside the invoice) shows the whole chain: the invoice with its dates, pickups and extensions with statuses; any pending line can be <b>collected early</b> via “Pick up now” — that’s how both a pickup and an extension are cancelled ahead of time. Everything can be shown on the <b>day map</b> with a route in your navigation app (Apple Maps or Google Maps — see Settings).</p>
+    <h4>${ic('board')} Board — the day by staff</h4>
+    <p>A manager/admin tab where each column is an employee with their jobs and pickups for the selected day. Cards drag between employees, clicking opens the document, "Hide free" removes empty columns. Column width auto-fits: when there are more people than fit, columns shrink to 128 px, headers go vertical and the side menu slides off the left edge (an edge tab brings it back). The minimum number of staff to keep on screen is a personal setting. On desktop a worker gets a weekly board instead: column = weekday, own tasks only.</p>
+    <h4>${ic('note')} Proposals and their link to a job</h4>
+    <p>A proposal is a QuickBooks-style document: number <b>P-N</b>, a Quantity / Item / Description / Amount table, PO Number, Complete By and a PDF matching the client's sample. The link with an invoice is <b>two-way</b>: the "Linked documents" block appears in both, linking and unlinking work from either side, and deleting a proposal clears the link. When creating a job, matching proposals are suggested automatically — by complex, with a separate hint when the unit number matches — or picked manually from the unlinked list.</p>
+    <h4>${ic('save')} Backup, restore & diagnostics</h4>
+    <p>Settings → "Data backup" (admin): one JSON with every table, accounts (passwords as bcrypt hashes) and, optionally, secrets — keep that file safe. Restore goes row by row in dependency order, duplicates are rejected by the database itself, and the on-screen log saves to .txt. Logs are exported but not restored by the button. Next to it, <b>Diagnostics</b> checks internet, database, session, thumbnail storage, edge functions and Google Drive; admins also get a per-table and per-function DB check that names the SQL file to run.</p>
     <h4>${ic('eye')} Roles & access</h4>
     <p><b>Tech</b> sees only their own jobs and pickups. <b>Manager</b> sees everyone (minus those hidden via ${ic('eye')} <b>Visibility</b>), has the Mine/All filter and the pickups report. <b>Admin</b> can do everything: approve, edit directories, manage <b>Staff</b> — roles, ${ic('ban')} <b>blocking</b> (a blocked employee can’t sign in; the red crossed circle toggles it), ${ic('key')} <b>password reset</b> for an employee who forgot theirs, plus code requests. The admin also <b>creates employees</b> right there: the “＋ Add employee” button — name, login, password and role; they can sign in immediately. The list shows each person’s status (Active/Blocked) and the date they joined the app.</p>
     <h4>${ic('receipt')} Statuses & approval</h4>
@@ -6425,7 +6502,7 @@ function faqHtml(){
     <p>The Map tab shows every complex as a dot colored by counterparty, with a filter and a popup (address, codes, a route link). <b>Day mode</b> plots the selected date’s jobs (work-type colors) and pickups (gray, red when overdue) and builds a multi-stop <b>route</b> in your navigation app — Apple Maps on iPhone/iPad (multistop needs iOS 18.4+) or Google Maps; pick one in Settings → “Navigation app”. Coordinates are set in the complex card — “Find by address” or manually.</p>
     <h4>${ic('chart')} Statistics</h4>
     <p>The Stats tab: period chips (today/7/30 days or custom), Mine/All, big totals (jobs, revenue, approved, pickups) and a per-day bar chart.</p>
-    <h4>📷 Job photos & video</h4>
+    <h4>${ic('camera')} Job photos & video</h4>
     <p>Each job card has a <b>Photos & video</b> block: shoot from the app, photos are downscaled to 1920 px, videos are capped at 90 seconds, and the counter shows how many of the allowed files are attached. The <b>admin sets the limits</b> in Settings → “Photo & video limits per document” (defaults <b>10 photos and 2 videos</b>; photos 1–50, videos 0–10); the server enforces them, and videos = 0 hides the video button. Files go to the company <b>Google Drive</b> archive in monthly folders, thumbnails stay in the database. Offline, everything queues on the phone and uploads automatically — see Settings → “Unsent photos & videos” for the per-document summary, the line-by-line upload log, “Retry upload” and “Connection check”. When Drive drops below <b>15 % free space</b>, admins and managers get a red banner on Home; the same figure is measured by the Drive connection test and refreshed automatically as files upload.</p>
     <h4>${ic('mic')} Notes, dictation & translation</h4>
     <p>Every job and pickup has a note. The ${ic('mic')} microphone dictates in RU or EN (Chrome/Android; on iPhone — the 🎤 key on the keyboard, see the iPhone section), text is editable by hand, and the note prints on the PDF as the <b>NOTES</b> line. One tap translates a Russian note to English.</p>
@@ -6447,7 +6524,13 @@ function faqHtml(){
     <h4>${ic('toolbox')} Шаблоны заметки и покупки</h4>
     <p>В блоке «Заметка» кнопка <b>＋ Шаблон</b> подставляет позиции из справочника «Доп. работы»: у работы с флагом размера появляется поле в нужных единицах (${ic('ruler')} «Размеры»: футы, sq ft, паунды, штуки), а «${ic('cart')} Покупка товара» открывает выбор из справочника «Товары», количество и <b>цену</b> — она попадает в итог и печатается в PDF отдельной строкой. Все три справочника редактирует администратор.</p>
     <h4>${ic('box')} Пикапы формируются сами</h4>
-    <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. <b>Тап по карточке пикапа</b> открывает подробности: что и сколько вывозить, откуда (адрес, коды, маршрут), кнопки «Открыть инвойс», «История работы», «Забрать всё» и <b>«Продлить аренду»</b> — целиком или выборочно, степпером выбираете количество дней (по умолчанию 1), и задача-продление появляется в новый день как отдельный пикап с чипом «продление». В <b>истории работы</b> (кнопка есть и в инвойсе) видна вся цепочка: инвойс с датами, пикапы и продления со статусами; любую ожидающую строку можно <b>забрать досрочно</b> кнопкой «Забрать сейчас» — так аннулируются и пикап, и продление. Всё это выводится на <b>карту дня</b> с маршрутом в навигаторе (Apple Maps или Google Maps — см. Настройки).</p>
+    <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. <b>Тап по карточке пикапа</b> открывает подробности: что и сколько вывозить, откуда (адрес, коды, маршрут), кнопки «Открыть инвойс», «История работы», «Забрать всё» и <b>«Продлить аренду»</b> — целиком или выборочно, степпером выбираете количество дней (по умолчанию 1), и задача-продление появляется в новый день как отдельный пикап с чипом «продление». В <b>истории работы</b> (кнопка есть и в инвойсе) видна вся цепочка: инвойс с датами, пикапы и продления со статусами; любую ожидающую строку можно <b>забрать досрочно</b> кнопкой «Забрать сейчас» — так аннулируются и пикап, и продление. Всё это выводится на <b>карту дня</b> с маршрутом в навигаторе (Apple Maps или Google Maps — см. Настройки). У осушителей (DHM) есть <b>моточасы</b>: показание на старте пишется в разделе Equipment Rental формы работы, а при проверке и вывозе — в модалке пикапа; продление наследует показания.</p>
+    <h4>${ic('board')} Доска — день по сотрудникам</h4>
+    <p>Отдельная вкладка для менеджера и админа: колонка = сотрудник, внутри — его работы и пикапы выбранного дня, сверху счётчик «N работ · N пикапов». Карточки <b>переносятся между сотрудниками</b> перетаскиванием (или стрелками ${faqMvDemo()}), клик открывает документ. «Скрыть свободных» убирает пустые колонки. Ширина подстраивается сама: если сотрудников больше, чем помещается, колонки сужаются до 128 px и шапка становится вертикальной, а боковое меню уезжает за левый край (язычок у края возвращает его). Сколько человек держать на экране минимум — личная настройка «Доска» в Настройках. У воркера на ПК доска недельная: колонка = день, только свои задачи.</p>
+    <h4>${ic('note')} Пропозалы и связь с работой</h4>
+    <p>Пропозал — предложение по образцу QuickBooks: номер <b>P-N</b>, таблица «Quantity / Item / Description / Amount», PO Number, Complete By и PDF по образцу клиента. Связь с инвойсом <b>двусторонняя</b>: блок «Связанные документы» есть в обоих документах, привязать и отвязать можно с любой стороны, вторая сторона обновляется сразу, удаление пропозала снимает связь. При создании работы подходящие пропозалы предлагаются сами — по комплексу, а при совпадении номера юнита отдельной подсказкой; можно выбрать и вручную из списка непривязанных. Чип «нужен пропозал» ставит воркер (если разрешено админом) — менеджер видит напоминание над Доской.</p>
+    <h4>${ic('save')} Бэкап, восстановление и диагностика</h4>
+    <p>Настройки → «Бэкап данных» (админ): один JSON со всеми таблицами, учётками (пароли — bcrypt-хэшами) и, по галочке, секретами — файл с секретами храните бережно. Загрузка идёт построчно в порядке зависимостей, дубли отсекает сама база, всё видно в экранном логе, который сохраняется в .txt. Журналы выгружаются, но кнопкой обратно не заливаются. Рядом — <b>Диагностика</b>: интернет, база, сессия, хранилище миниатюр, edge-функции и Google Drive; у админа ещё и проверка всех таблиц и функций БД с указанием нужного SQL-файла, если чего-то не хватает.</p>
     <h4>${ic('eye')} Роли и доступ</h4>
     <p><b>Сотрудник (tech)</b> видит только свои работы и пикапы. <b>Менеджер</b> — всех (кроме скрытых через ${ic('eye')} <b>Видимость</b>), у него есть фильтр «Мои/Все» и отчёт по пикапам. <b>Админ</b> может всё: апрув, справочники, управление <b>Сотрудниками</b> — роли, ${ic('ban')} <b>блокировка</b> (заблокированный не сможет войти; красный перечёркнутый кружок включает и снимает блокировку), ${ic('key')} <b>смена пароля</b> сотруднику, если тот его забыл, а также заявки на коды. Там же админ <b>создаёт сотрудников</b>: кнопка «＋ Добавить сотрудника» — имя, логин, пароль и роль, вход возможен сразу. В списке виден статус каждого (Активен/Заблокирован) и дата регистрации в приложении.</p>
     <h4>${ic('receipt')} Статусы и апрув</h4>
@@ -6458,7 +6541,7 @@ function faqHtml(){
     <p>Две карточки — сводка по <b>выбранному в ленте дню</b> (при открытии приложения это сегодня). Слева — <b>работы</b>: большая цифра — сколько всего работ на день, под ней разбивка по видам, каждый вид подписан своим цветом. Справа — <b>пикапы</b>: большая цифра — сколько единиц оборудования нужно забрать в этот день; каждая иконка — тип оборудования (внутри кружка его сокращение: BLW — блоуэр, DHM — осушитель, SCR — скруббер, OZN — озонатор), под иконкой — количество единиц. Красная плашка «просрочено» появляется, если что-то должны были забрать раньше, но ещё не забрали. Вот пример одного дня:</p>
     <div class="faq-example">${faqDayCardsExample()}</div>
     <p>Читаем пример: на день запланировано <b>7 работ</b> — Steam Clean 4, Air Duct 2, Vetvag 1. Забрать нужно <b>8 единиц оборудования</b> — 5 блоуэров (BLW), 2 осушителя (DHM) и 1 скруббер (SCR), при этом один пикап уже просрочен. Цифры считаются по тем же спискам, что показаны ниже на экране: листаете ленту на другой день — карточки пересчитываются, а у менеджера они подчиняются фильтру «Мои/Все».</p>
-    <h4>📷 Фото и видео работ</h4>
+    <h4>${ic('camera')} Фото и видео работ</h4>
     <p>В карточке работы есть блок <b>«Фото и видео»</b>: съёмка идёт прямо из приложения, фото сжимается до 1920 px, видео принимается длиной до 90 секунд. Рядом с заголовком счётчик — сколько уже прикреплено из лимита. <b>Лимиты задаёт администратор</b>: «Настройки» → «Лимиты фото и видео на документ», два степпера (по умолчанию <b>10 фото и 2 видео</b>; фото 1–50, видео 0–10). Лимит общий для всех документов, его проверяет сервер — из браузера обойти нельзя; при значении «видео 0» кнопка съёмки видео пропадает, а уже загруженные файлы сверх нового лимита остаются на месте. Файлы уходят в архив на <b>Google Диске</b> фирмы (миниатюры — в базе), раскладываются по папкам вида <i>2026-09</i>. Без сети всё копится в очереди на телефоне и уходит само при появлении связи: «Настройки» → «Неотправленные фото и видео» — там сводка по документам, журнал отправки построчно и кнопки «Повторить отправку» / «Проверка соединения». Когда на Диске остаётся <b>менее 15 % свободного места</b>, админ и менеджер видят красный баннер на главной; тот же показатель считается при «Тесте соединения» в настройках Диска и обновляется сам при загрузке файлов.</p>
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
     <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим.</p>
@@ -6833,7 +6916,7 @@ function proposalBoxHtml(j){
     if (p){
       inner = `<span class="chip pr">P-${p.no ?? '·'} · ${money(+p.total || 0)}</span>
         <button class="btn btn-ghost sm" onclick="App.openProposal('${p.id}')">↗</button>
-        <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">✕ ${t('prop_unlink')}</button>`;
+        <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">${ic('close')} ${t('prop_unlink')}</button>`;
     } else {
       const opts = (state.data.proposals || [])
         .filter(x => x.complex_id === j.complex_id && ['sent','approved'].includes(x.status))
@@ -6919,7 +7002,7 @@ function ntPropCardHtml(p, unitHit){
   const on = ntPropSel === p.id;
   return `<label class="opt ${on ? 'on' : ''}" style="display:flex;margin:4px 0">
     <input type="checkbox" ${on ? 'checked' : ''} onchange="App.ntPropPick('${p.id}', this.checked)">
-    <span style="flex:1;min-width:0"><b>P-${p.no ?? '·'}</b> · Unit <b>${esc(p.unit_number || '—')}</b>${unitHit ? ' ✓' : ''} · ${money(+p.total || 0)}
+    <span style="flex:1;min-width:0"><b>P-${p.no ?? '·'}</b> · Unit <b>${esc(p.unit_number || '—')}</b>${unitHit ? ' ' + ic('check') : ''} · ${money(+p.total || 0)}
       <span class="tiny" style="display:block">${fmtDMY(p.date)} · ${t('prop_items')}: ${(p.items || []).length} · ${t('pst_' + p.status)}</span></span></label>`;
 }
 function ntPropRefresh(){
@@ -6930,7 +7013,7 @@ function ntPropRefresh(){
   const m = ntPropMatches(free);
   const unitHit = m.some(x => x.u);
   msg.innerHTML = m.length
-    ? `<div class="nt-prop-hit">✅ ${t(unitHit ? 'nt_prop_avail_unit' : 'nt_prop_avail_cx')}</div>` : '';
+    ? `<div class="nt-prop-hit">${ic('check')} ${t(unitHit ? 'nt_prop_avail_unit' : 'nt_prop_avail_cx')}</div>` : '';
   if (!($('#nt-prop') && $('#nt-prop').checked)){ ntPropSel = null; zone.innerHTML = ''; return; }
   // выбранный вручную пропозал вне совпадений — его карточка сверху, чтобы выбор был виден
   const selTop = ntPropSel && !m.some(x => x.p.id === ntPropSel) ? propById(ntPropSel) : null;
@@ -6969,7 +7052,7 @@ function viewProposalList(){
     return `<button class="rowline map-row" onclick="App.openProposal('${p.id}')">
       <span class="chip pst pst-${p.status}">${t('pst_' + p.status)}</span>
       <div class="grow"><b>P-${p.no ?? '·'}</b> · ${esc(cx.abbr || cx.name)}${p.unit_number ? ` · Unit <b>${esc(p.unit_number)}</b>` : ''}
-        <div class="tiny">${fmtDMY(p.date)}${linked ? ` · 🔗 ${linked}` : ''}</div></div>
+        <div class="tiny">${fmtDMY(p.date)}${linked ? ` · ${ic('link')} ${linked}` : ''}</div></div>
       <span class="money">${money(+p.total || 0)}</span>
     </button>`;
   }).join('');
@@ -7012,7 +7095,7 @@ function propItemsHtml(){
         oninput="App.propItem(${i},'d',this.value)">${esc(it.d || '')}</textarea>
       <input class="pa" inputmode="decimal" value="${it.a || ''}" placeholder="0"
         oninput="App.propItem(${i},'a',this.value)">
-      <button class="btn btn-ghost sm" onclick="App.propItemDel(${i})">✕</button>
+      <button class="btn btn-ghost sm" onclick="App.propItemDel(${i})">${ic('close')}</button>
     </div>`).join('');
 }
 function viewProposalForm(){
@@ -7063,12 +7146,12 @@ function viewProposalForm(){
     <textarea rows="3" style="width:100%" oninput="App.propField('note', this.value)">${esc(p.note || '')}</textarea>
   </div>
   ${propById(p.id) ? `<div class="card" style="margin:8px 12px">
-    <div style="font-weight:900;margin-bottom:6px">🔗 ${t('prop_linked')} (${linked.length})</div>
+    <div style="font-weight:900;margin-bottom:6px">${ic('link')} ${t('prop_linked')} (${linked.length})</div>
     ${linked.map(j => { const jcx = cxById(j.complex_id) || {};
       return `<div class="rowline"><div class="grow">${esc(jcx.abbr || '')} · Unit <b>${esc(j.unit_number || '—')}</b>
         <span class="tiny">· ${fmtDMY(j.date)} · ${money(jobGrand(j))}</span></div>
         <button class="btn btn-ghost sm" onclick="App.openJob('${j.id}')">↗</button>
-        <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">✕</button></div>`; }).join('')
+        <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">${ic('close')}</button></div>`; }).join('')
       || `<div class="tiny">—</div>`}
     ${propJobPickerHtml(p)}
   </div>` : ''}
@@ -7293,7 +7376,7 @@ function propStripHtml(){
 function pendingExtReqHtml(jobId){
   const mine = (state.data.ext_requests || []).filter(r => r.job_id === jobId && r.status === 'pending');
   if (!mine.length) return '';
-  return mine.map(r => `<div class="tiny" style="margin:2px 0 6px">${t('ext_req_pending').replace('{N}', r.days)}</div>`).join('');
+  return mine.map(r => `<div class="tiny" style="margin:2px 0 6px">${ic('clock')} ${t('ext_req_pending').replace('{N}', r.days)}</div>`).join('');
 }
 async function extReqCreate(){
   const d = extDraft; if (!d) return;
@@ -7326,8 +7409,8 @@ function extReqStripHtml(){
       <div><b>Unit ${esc(r.unit || '—')}</b> · ${esc(r.cx || '')}</div>
       <div class="tiny">${esc(r.eq || '')} · +${r.days} ${t('days')} · ${esc(profName(r.requested_by))}</div>
       <div style="display:flex;gap:6px;margin-top:6px">
-        <button class="btn btn-green sm" onclick="App.extReqDecide('${r.id}', true)">✓ ${t('ext_req_ok')}</button>
-        <button class="btn btn-red sm" onclick="App.extReqDecide('${r.id}', false)">✗</button>
+        <button class="btn btn-green sm" onclick="App.extReqDecide('${r.id}', true)">${ic('check')} ${t('ext_req_ok')}</button>
+        <button class="btn btn-red sm" onclick="App.extReqDecide('${r.id}', false)">${ic('close')}</button>
       </div>
     </div>`).join('')}</div>`;
 }
@@ -7584,25 +7667,25 @@ function mediaStripHtml(jobId){
   const cells = rows.map(m => `
     <div class="mth clicky" onclick="App.mediaOpen('${m.id}','${m.kind}')">
       <img data-thumb="${m.thumb_path || ''}" alt="">
-      ${m.kind === 'video' ? '<span class="mvid">▶</span>' : ''}
-      ${m.status !== 'ready' ? '<span class="mst">⏳</span>' : ''}
-      ${isAdmin() ? `<span class="mx" title="${t('media_del_q')}" onclick="event.stopPropagation();App.mediaDelete('${m.id}')">✕</span>` : ''}
+      ${m.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
+      ${m.status !== 'ready' ? `<span class="mst">${ic('clock')}</span>` : ''}
+      ${isAdmin() ? `<span class="mx" title="${t('media_del_q')}" onclick="event.stopPropagation();App.mediaDelete('${m.id}')">${ic('close')}</span>` : ''}
     </div>`).join('')
   + loc.map(x => `
     <div class="mth loc">
       <img src="${x.thumb ? URL.createObjectURL(x.thumb) : ''}" alt="">
-      ${x.kind === 'video' ? '<span class="mvid">▶</span>' : ''}
-      <span class="mst">⏳</span>
-      <span class="mx" onclick="App.mediaQDel('${x.qid}')">✕</span>
+      ${x.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
+      <span class="mst">${ic('clock')}</span>
+      <span class="mx" onclick="App.mediaQDel('${x.qid}')">${ic('close')}</span>
     </div>`).join('');
   if (!_mediaHydPlanned){ _mediaHydPlanned = true; setTimeout(mediaHydrate, 0); }
   const lim = mediaLimits();
   return `<div class="card media-card">
-    <div style="font-weight:900;margin-bottom:6px">📷 ${t('media_title')}
+    <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('media_title')}
       <span class="tiny"> · ${nP}/${lim.photo}${lim.video ? ` · ${nV}/${lim.video}` : ''}</span></div>
     <div class="mstrip">${cells}
-      <button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','photo')">${t('media_photo')}</button>
-      ${lim.video ? `<button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video')">${t('media_video')}</button>` : ''}
+      <button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','photo')">${ic('camera')} ${t('media_photo')}</button>
+      ${lim.video ? `<button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video')">${ic('video')} ${t('media_video')}</button>` : ''}
     </div>
   </div>`;
 }
@@ -7656,14 +7739,15 @@ function mediaBadge(){
     document.body.appendChild(el);
   }
   const n = mediaQ.length, off = !navigator.onLine;
-  const txt = (off ? t('media_offline') : '') + (n ? ` ⬆${n} ${t('media_wait')}` : '');
+  const txt = (off ? t('media_offline') : '') + (n ? ` ${n} ${t('media_wait')}` : '');
   /* v1.07.61: табличка не висит постоянно — 6 секунд при изменении
      (новый файл в очереди / смена сети), дальше прячется. Постоянный
      контроль — поповер при запуске и раздел в Настройках; тап — модалка. */
   if (txt === _mqBadgePrev) return;
   _mqBadgePrev = txt;
   clearTimeout(_mqBadgeT);
-  el.textContent = txt;
+  el.innerHTML = (off ? ic('wifi') : '') + (n ? ic('upload') : '') + '<span class="tl-net-t"></span>';
+  el.querySelector('.tl-net-t').textContent = txt;      // v1.07.65: иконки + текст без разметки
   el.style.display = txt ? 'inline-flex' : 'none';
   if (txt) _mqBadgeT = setTimeout(() => { el.style.display = 'none'; }, 6000);
 }
@@ -7693,7 +7777,10 @@ function mqLog(text, cls, id){
 function mqLogPaint(){
   const box = $('#mq-log'); if (!box) return;
   box.innerHTML = mqLogLines.length
-    ? mqLogLines.map(l => `<div class="mq-l ${l.cls}"><span class="mq-tm">${l.time}</span> ${l.text}</div>`).join('')
+    ? mqLogLines.map(l => {
+        const p = splitMark(l.text);          // v1.07.65: метка → рисованная иконка
+        return `<div class="mq-l ${l.cls}"><span class="mq-tm">${l.time}</span> ${p.icon}${p.icon ? ' ' : ''}${p.text}</div>`;
+      }).join('')
     : `<div class="mq-l dim">${t('mq_l_wait')}</div>`;
   box.scrollTop = box.scrollHeight;
 }
@@ -7721,7 +7808,7 @@ function mediaStartPop(){
     const nV = mediaQ.filter(x => x.kind === 'video').length, nP = mediaQ.length - nV;
     const el = document.createElement('div');
     el.id = 'mq-pop'; el.className = 'mq-pop';
-    el.innerHTML = `<div class="mq-pop-t">⬆ ${t('mq_title')}</div>
+    el.innerHTML = `<div class="mq-pop-t">${ic('upload')} ${t('mq_title')}</div>
       <div class="tiny">${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')} · ${t('media_wait')}</div>
       <div class="btn-rowpp" style="margin-top:8px">
         <button class="btn btn-ghost sm" onclick="document.getElementById('mq-pop').remove()">${t('mq_later')}</button>
@@ -7736,7 +7823,8 @@ function mediaQueueCardHtml(){
   return `<div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('sync')} ${t('mq_title')}</div>
     <div class="tiny" style="margin-bottom:8px">${mediaQ.length
-      ? '⬆' + mediaQ.length + ' ' + t('media_wait') : '✅ ' + t('mq_empty')}</div>
+      ? ic('upload') + ' ' + mediaQ.length + ' ' + t('media_wait')
+      : ic('check', 'color:var(--green)') + ' ' + t('mq_empty')}</div>
     <button class="btn btn-blue" onclick="App.mediaQueueModal()">${t('mq_check')}</button>
   </div>`;
 }
@@ -7760,8 +7848,8 @@ function mediaQueueModal(){
     return `<div class="card" style="padding:8px 10px;margin:6px 0">
       <div style="display:flex;gap:8px;align-items:center">
         <div class="grow">${title}
-          <div class="tiny">⬆ ${ph} ${t('mq_photo')} · ${v} ${t('mq_video')}</div></div>
-        ${j ? `<button class="btn btn-ghost sm" onclick="App.closeModal();App.openJob('${id}')">↗</button>` : ''}
+          <div class="tiny">${ic('upload')} ${ph} ${t('mq_photo')} · ${v} ${t('mq_video')}</div></div>
+        ${j ? `<button class="btn btn-ghost sm" onclick="App.closeModal();App.openJob('${id}')">${ic('send')}</button>` : ''}
       </div>
       ${th ? `<div class="mq-ths">${th}</div>` : ''}
     </div>`;
@@ -7770,13 +7858,13 @@ function mediaQueueModal(){
     ${modalHead(t('mq_title'), 'sync')}
     <div class="card" style="padding:8px 10px;margin-bottom:8px">
       <b>${ids.length} ${t('mq_docs')} · ${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')}</b>
-      <div class="tiny" id="mq-conn" style="margin-top:4px">${navigator.onLine
-        ? '🌐 ' + t('mq_net_on') : '🔴 ' + t('mq_net_off')}</div>
+      <div class="tiny" id="mq-conn" style="margin-top:4px">${ic('wifi',
+        navigator.onLine ? '' : 'color:var(--red)')} ${navigator.onLine ? t('mq_net_on') : t('mq_net_off')}</div>
     </div>
-    ${mediaQ.length ? cards : `<div class="card" style="padding:10px">✅ ${t('mq_empty')}</div>`}
+    ${mediaQ.length ? cards : `<div class="card" style="padding:10px">${ic('check', 'color:var(--green)')} ${t('mq_empty')}</div>`}
     <div class="btn-rowpp" style="margin-top:10px">
       <button class="btn btn-ghost" id="mq-btn-ping" onclick="App.mqPing()">${t('mq_ping')}</button>
-      <button class="btn btn-green" id="mq-btn-send" ${mediaQ.length ? '' : 'disabled'} onclick="App.mqRetry()">⬆ ${t('mq_retry')}</button>
+      <button class="btn btn-green" id="mq-btn-send" ${mediaQ.length ? '' : 'disabled'} onclick="App.mqRetry()">${ic('upload')} ${t('mq_retry')}</button>
     </div>
     <div class="tiny" style="margin:10px 0 4px;color:var(--dim)">${t('mq_log')}</div>
     <div class="mq-log" id="mq-log"></div>`);
@@ -7811,7 +7899,8 @@ async function mqPing(){
         else mqLog('✓ ' + t('mq_l_fn'), 'ok');
       }catch(e){ mqLog('⛔ ' + t('mq_l_fn') + ' — ' + t('mq_l_fn_no'), 'err'); }
     }
-    if (el) el.textContent = (net ? '🌐 ' + t('mq_net_on') : '🔴 ' + t('mq_net_off')) + sb;
+    if (el) el.innerHTML = ic('wifi', net ? '' : 'color:var(--red)') + ' '
+      + esc((net ? t('mq_net_on') : t('mq_net_off')) + sb);
   } finally { mqSetBusy(''); }
 }
 async function mqRetry(){
@@ -7849,7 +7938,7 @@ function mediaLimitsCardHtml(){
   if (!isAdmin()) return '';
   const o = state.data.org_settings || {};
   return `<div class="card">
-    <div style="font-weight:900;margin-bottom:6px">📷 ${t('media_lim_card')}</div>
+    <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('media_lim_card')}</div>
     <div class="qty-line"><span class="name">${t('media_lim_photo')}</span>
       ${orgStepperHtml('media_max_photo', o.media_max_photo ?? 10, 1, 50)}</div>
     <div class="qty-line"><span class="name">${t('media_lim_video')}</span>
@@ -7948,12 +8037,13 @@ function mediaSettingsCardHtml(){
   if (HAS_SB && !gdCfg.loaded) setTimeout(gdLoadCfg, 0);
   const redirect = location.origin + location.pathname;
   const edit = gdEditMode(), pct = gdFreePct();
-  const copyB = w => `<button class="icon-btn sm" title="${t('gd_copy')}" onclick="App.gdCopy('${w}')">⧉</button>`;
-  const eyeB  = w => `<button class="icon-btn sm" title="${gdShow[w] ? t('gd_hide') : t('gd_show')}" onclick="App.gdReveal('${w}')">${gdShow[w] ? '🙈' : '👁'}</button>`;
+  const copyB = w => `<button class="icon-btn sm" title="${t('gd_copy')}" onclick="App.gdCopy('${w}')">${ic('copy')}</button>`;
+  const eyeB  = w => `<button class="icon-btn sm" title="${gdShow[w] ? t('gd_hide') : t('gd_show')}" onclick="App.gdReveal('${w}')">${ic(gdShow[w] ? 'eye_off' : 'eye')}</button>`;
   const row = (lbl, inner) => `<div class="form-row"><span class="lbl">${lbl}</span><div class="gd-val">${inner}</div></div>`;
   const ro = v => `<input readonly value="${esc(v || '')}" placeholder="${t('gd_none')}" onclick="this.select()">`;
   const status = gdHasKeys() ? `<div class="tiny gd-status">
-      ${gdCfg.has_refresh ? '🟢 ' + t('gd_connected') : '🟡 ' + t('gd_not_conn')}${gdCfg.account ? ' · ' + esc(gdCfg.account) : ''}
+      ${gdCfg.has_refresh ? ic('dot', 'color:var(--green)') + ' ' + t('gd_connected')
+                          : ic('dot', 'color:var(--yellow)') + ' ' + t('gd_not_conn')}${gdCfg.account ? ' · ' + esc(gdCfg.account) : ''}
       ${pct !== null ? ` · ${t('gd_space')}: <b class="${pct < GD_LOW_PCT ? 'gd-low' : 'gd-ok'}">${Math.round(pct)}%</b>` : ''}
     </div>` : '';
   const body = edit ? `
@@ -7965,7 +8055,7 @@ function mediaSettingsCardHtml(){
     ${row(t('gd_redirect'), ro(redirect) + copyB('redirect'))}
     <div class="btn-rowpp" style="margin:8px 0 0">
       <button class="btn btn-ghost" onclick="App.mediaSaveKeys()">${t('gd_save')}</button>
-      <button class="btn btn-blue" onclick="App.mediaConnect()">${t('gd_connect')}</button>
+      <button class="btn btn-blue" onclick="App.mediaConnect()">${ic('link')} ${t('gd_connect')}</button>
     </div>` : `
     ${row(t('gd_cid'), `<input id="gd-cid" readonly value="${esc(gdCfg.client_id || '')}" placeholder="${t('gd_none')}" onclick="this.select()">` + copyB('cid'))}
     ${row(t('gd_secret'), ro(gdShow.sec ? gdCfg.secret
@@ -7974,21 +8064,23 @@ function mediaSettingsCardHtml(){
     ${row(t('gd_token'), ro(gdShow.ref ? gdCfg.refresh
         : (gdCfg.has_refresh ? gdMask(gdCfg.refresh, '1//••••••••••••') : '')) + eyeB('ref') + copyB('ref'))}
     ${row(t('gd_redirect'), ro(redirect) + copyB('redirect'))}
-    <button class="btn btn-blue" style="margin-top:8px" onclick="App.mediaConnect()">${t('gd_connect')}</button>`;
+    <button class="btn btn-blue" style="margin-top:8px" onclick="App.mediaConnect()">${ic('link')} ${t('gd_connect')}</button>`;
   return `<div class="card" id="gd-card">
     <div class="gd-head">
-      <div style="font-weight:900;flex:1">${t('gd_card')}</div>
+      <div style="font-weight:900;flex:1">${ic('camera')} ${t('gd_card')}</div>
       ${gdHasKeys() ? `<button class="icon-btn sm" title="${edit ? t('gd_edit_off') : t('gd_edit')}"
-        onclick="App.gdToggleEdit()">${edit ? '✕' : '✏'}</button>` : ''}
+        onclick="App.gdToggleEdit()">${ic(edit ? 'close' : 'pencil')}</button>` : ''}
     </div>
     ${status}
     ${body}
-    <button class="btn btn-green" style="margin-top:8px" onclick="App.mediaHealth()">${t('gd_test')}</button>
+    <button class="btn btn-green" style="margin-top:8px" onclick="App.mediaHealth()">${ic('flask')} ${t('gd_test')}</button>
     <div id="gd-health" class="tiny" style="margin-top:8px"></div>
     <details style="margin-top:8px"><summary class="tiny">${t('gd_help')}</summary>
       <div class="tiny" style="margin-top:6px;line-height:1.5">
         1. console.cloud.google.com → создайте проект → APIs &amp; Services → Library → включите <b>Google Drive API</b>.<br>
-        2. OAuth consent screen → External → заполните название и почту → <b>Publish app</b> (иначе токен умрёт через 7 дней; скоуп drive.file верификации не требует).<br>
+        2. OAuth consent screen → External → заполните название и почту, а в Branding — ссылки
+        <a href="./privacy.html" target="_blank" rel="noopener">privacy.html</a> и
+        <a href="./terms.html" target="_blank" rel="noopener">terms.html</a> (лежат рядом с приложением) → <b>Publish app</b> (иначе токен умрёт через 7 дней; скоуп drive.file верификации не требует).<br>
         3. Credentials → Create OAuth client ID → <b>Web application</b> → в Authorized redirect URIs вставьте адрес из поля выше.<br>
         4. Скопируйте Client ID и Client Secret в поля, укажите ID папки архива на Диске (создайте папку, ID — в адресной строке после /folders/).<br>
         5. «${t('gd_save')}» → «${t('gd_connect')}» → войдите под <b>архивным</b> Google-аккаунтом фирмы и разрешите доступ → «${t('gd_test')}».
@@ -8044,8 +8136,8 @@ async function mediaHealth(){
     const r = await fetch(mediaFN() + '/media-health',
       { headers: { Authorization: 'Bearer ' + token } });
     const j = await r.json().catch(() => ({}));
-    const row = (k, ok, extra) =>
-      `<div>${ok ? '🟢' : '🔴'} ${k}${extra ? ' — ' + extra : ''}</div>`;
+    const row = (k, ok, extra) =>                     // v1.07.65: рисованная точка статуса
+      `<div>${ic('dot', 'color:var(--' + (ok ? 'green' : 'red') + ')')} ${k}${extra ? ' — ' + extra : ''}</div>`;
     let h = '';
     h += row(t('gd_db'), j.db && j.db.ok, j.db && (j.db.ok ? j.db.ms + ' ms' : esc(String(j.db.error || ''))));
     h += row(t('gd_auth'), j.auth && j.auth.ok,
@@ -8079,8 +8171,8 @@ async function mediaHealth(){
    ===================================================================== */
 function diagCardHtml(){
   return `<div class="card" id="dg-card">
-    <div style="font-weight:900;margin-bottom:6px">${t('diag_card')}</div>
-    <button class="btn btn-blue" onclick="App.runDiag()">${t('diag_run')}</button>
+    <div style="font-weight:900;margin-bottom:6px">${ic('flask')} ${t('diag_card')}</div>
+    <button class="btn btn-blue" onclick="App.runDiag()">${ic('play')} ${t('diag_run')}</button>
     <div id="dg-out" class="tiny" style="margin-top:8px"></div>
   </div>`;
 }
@@ -8090,7 +8182,7 @@ async function runDiag(){
   const rows = [];
   const paint = () => { out.innerHTML = rows.join(''); };
   const row = (name, ok, extra) => {
-    rows.push(`<div>${ok === null ? '⚪' : ok ? '🟢' : '🔴'} ${name}${extra ? ' — ' + esc(String(extra)) : ''}</div>`);
+    rows.push(`<div>${ic('dot', 'color:var(--' + (ok === null ? 'dim-2' : ok ? 'green' : 'red') + ')')} ${name}${extra ? ' — ' + esc(String(extra)) : ''}</div>`);
     paint();
   };
   rows.length = 0; paint();
@@ -8359,16 +8451,16 @@ async function bkImportFile(file){
 function backupCardHtml(){
   if (!isAdmin()) return '';
   return `<div class="card" id="bk-card">
-    <div style="font-weight:900;margin-bottom:6px">${t('bk_card')}</div>
+    <div style="font-weight:900;margin-bottom:6px">${ic('save')} ${t('bk_card')}</div>
     <div class="tiny" style="margin-bottom:8px">${t('bk_intro')}</div>
     <div class="btn-rowpp" style="margin:0">
-      <button id="bk-exp" class="btn btn-blue" onclick="App.bkExport()">${t('bk_export')}</button>
-      <button id="bk-imp" class="btn btn-ghost" onclick="App.bkImportPick()">${t('bk_import')}</button>
+      <button id="bk-exp" class="btn btn-blue" onclick="App.bkExport()">${ic('save')} ${t('bk_export')}</button>
+      <button id="bk-imp" class="btn btn-ghost" onclick="App.bkImportPick()">${ic('download')} ${t('bk_import')}</button>
     </div>
     <label class="opt" style="margin:8px 0 0">
       <input type="checkbox" id="bk-sec"> ${t('bk_secrets')}</label>
     <pre id="bk-log" style="display:none;max-height:260px;overflow:auto;background:#17232A;border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;white-space:pre-wrap;margin-top:8px"></pre>
-    <button id="bk-save" class="btn btn-ghost sm" style="display:none;margin-top:6px" onclick="App.bkSaveLog()">${t('bk_savelog')}</button>
+    <button id="bk-save" class="btn btn-ghost sm" style="display:none;margin-top:6px" onclick="App.bkSaveLog()">${ic('download')} ${t('bk_savelog')}</button>
     <details style="margin-top:8px"><summary class="tiny">${t('bk_new_proj')}</summary>
       <div class="tiny" style="margin-top:6px;line-height:1.5">
         1. В новом проекте выполните ОДИН файл supabase/full-install-1_07_35.sql — это вся схема и все обновления разом.<br>
@@ -8704,8 +8796,8 @@ function codeRequestsHtml(){
           <b>${esc(cx.name)}</b> · <span class="tiny">${t('req_by')} ${esc(profName(r.requested_by))} · ${fmtDMY(String(r.requested_at).slice(0,10))}</span>
           <div class="tiny">${ch.join(' · ') || t('no_changes')}</div>
         </div>
-        <button class="btn btn-green sm" onclick="App.decideReq('${r.id}',true)">✓</button>
-        <button class="btn btn-red sm" onclick="App.decideReq('${r.id}',false)">✕</button>
+        <button class="btn btn-green sm" onclick="App.decideReq('${r.id}',true)">${ic('check')}</button>
+        <button class="btn btn-red sm" onclick="App.decideReq('${r.id}',false)">${ic('close')}</button>
       </div>`;
     }).join('')}
   </div>`;
@@ -8774,7 +8866,7 @@ function extraListHtml(){
       const prods = [...(state.data.product_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
       return `<div class="ex-item">
         <div class="ex-head"><b>${ic('cart')} ${esc(it.name)}</b>
-          <button class="ex-del" onclick="App.exDel(${i})">✕</button></div>
+          <button class="ex-del" onclick="App.exDel(${i})">${ic('close')}</button></div>
         <div class="qty-line">
           <select data-ex-prod="${i}" style="flex:1;min-width:130px">
             <option value="">${t('product')}…</option>
@@ -8790,7 +8882,7 @@ function extraListHtml(){
     const lineSum = extraLineTotal(it);
     return `<div class="ex-item">
       <div class="ex-head"><b>${ic('toolbox')} ${esc(it.name)}</b>
-        <button class="ex-del" onclick="App.exDel(${i})">✕</button></div>
+        <button class="ex-del" onclick="App.exDel(${i})">${ic('close')}</button></div>
       ${it.needs_size ? `
       <div class="qty-line size-presets">
         ${[1,2,3].map(n=>`<button type="button" class="chip-preset ${(+it.size_a===n && +it.size_b===n)?'on':''}" onclick="App.exPreset(${i},${n})">${n}×${n}</button>`).join('')}
@@ -9137,7 +9229,7 @@ function viewStats(){
     <div class="stat-lg c-purple"><div class="n">${d.miles.toFixed(1)}</div><div class="l">${ic('car')} ${t('st_miles')}</div>
       <div class="s">${t('st_miles_hint')}</div></div>
     <div class="stat-lg c-gray"><div class="n">${d.pickedCnt}</div><div class="l">${ic('box')} ${t('st_picked')}</div>
-      <div class="s">✓ ${t('st_ontime')}: ${d.onTime} · ${ic('clock')} ${t('st_late')}: ${d.late}</div></div>
+      <div class="s">${ic('check')} ${t('st_ontime')}: ${d.onTime} · ${ic('clock')} ${t('st_late')}: ${d.late}</div></div>
     <div class="stat-lg c-teal"><div class="n">${d.visited}</div><div class="l">${ic('building')} ${t('st_visited')}</div>
       <div class="s">${ic('toolbox')} ${t('st_eq')}: ${d.eqUnits} ${t('st_units')}</div></div>
     <div class="stat-lg c-yellow"><div class="n">${money(d.purchases)}</div><div class="l">${ic('cart')} ${t('st_purchases')}</div>
