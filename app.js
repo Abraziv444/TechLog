@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.55';
+const APP_VERSION = '1.07.56';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -4640,7 +4640,11 @@ async function applyUpdateNow(){
     if (reg){
       try{ await reg.update(); }catch(e){ dlog('update: reg.update():', e); }
       const t0 = Date.now();
-      while (Date.now() - t0 < 8000){
+      /* v1.07.56: install нового воркера тянет все ассеты с сети
+         (cache:'reload') — 8 секунд не хватало, фолбэк обрывал честный
+         путь и страница оставалась без контроля SW. */
+      const WAIT = +window.__updWaitMs || 25000;
+      while (Date.now() - t0 < WAIT){
         const w = reg.waiting || reg.installing;
         if (w && w.state === 'installed') w.postMessage({ type: 'SKIP_WAITING' });
         await new Promise(r => setTimeout(r, 250));
@@ -4680,7 +4684,11 @@ function initSW(){
      обновляет» первые 10 минут после деплоя. */
   navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(()=>{});
   let ctrlReloaded = false;                     // дублирующий канал к SW_ACTIVATED
+  let hadCtrl = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
+    /* v1.07.56: первичный claim (страница пришла без контроллера) — не
+       перезагрузка, а просто взятие контроля; рефрешим только СМЕНУ. */
+    if (!hadCtrl){ hadCtrl = true; return; }
     if (ctrlReloaded || editingBusy()) return;
     ctrlReloaded = true;
     sessionStorage.setItem('techlog_updated', '1');
@@ -7577,7 +7585,12 @@ async function runDiag(){
       if (j.write) row(t('gd_write'), !!j.write.ok,
         j.write.error ? String(j.write.error).slice(0, 90) : '');
     }
-  }catch(e){ row(t('diag_fn'), false, e.message || e); }
+  }catch(e){
+    /* v1.07.56: недеплоенная edge-функция даёт сетевой TypeError («Failed
+       to fetch») без HTTP-кода — показываем ту же инструкцию, что и 404. */
+    const noFn = (e && (e.name === 'TypeError' || /Failed to fetch|NetworkError/i.test(e.message || '')));
+    row(t('diag_fn'), false, noFn ? t('diag_deploy') : (e.message || e));
+  }
 }
 /* фейд вместо обрубания: класс вешается только реально обрезанным текстам */
 function updateFadeClips(){
