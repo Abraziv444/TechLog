@@ -4,7 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.60';
+const APP_VERSION = '1.07.62';
+const DB_SQL_FILE = 'full-install-1_07_62.sql';   // v1.07.62: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -221,7 +222,7 @@ const I18N = {
     shared_set_title: 'Общий доступ к документам',
     shared_set_chk: 'Разрешить общий доступ к документам для коворкеров',
     shared_set_hint: 'Если выключить — каждый работает только со своими документами: галочка «Общий доступ» в работах скрывается и перестаёт действовать. Сами отметки в документах сохраняются и снова заработают после включения.',
-    db_needs_update: 'Обновите БД: выполните свежие supabase/update-to-*.sql в SQL-редакторе (последний — update-to-1_07_33.sql)',
+    db_needs_update: `Обновите БД: выполните supabase/${DB_SQL_FILE} в SQL-редакторе Supabase (один файл, безопасен для повторного запуска)`,
     open_invoice: 'Открыть инвойс', job_history: 'История работы',
     what_where: 'Что и откуда вывозим',
     extend_rent: 'Продлить аренду', extend_title: 'Продление аренды',
@@ -258,7 +259,7 @@ const I18N = {
     registered: 'в приложении с', cant_self: 'Нельзя выполнить для самого себя',
     set_pass: 'Сменить пароль', new_pass: 'Новый пароль (мин. 6 символов)',
     pass_short: 'Пароль — минимум 6 символов', pass_changed: 'Пароль изменён. Старые сессии сотрудника завершены',
-    rpc_missing: 'Обновите БД: выполните свежий supabase/schema.sql в SQL-редакторе Supabase',
+    rpc_missing: `Обновите БД: выполните supabase/${DB_SQL_FILE} в SQL-редакторе Supabase`,
     demo_only_sb: 'В демо-режиме пароли не используются — доступно только с Supabase',
     price_std_tab: 'Стандартные', price_ind_tab: 'Индивидуальные',
     price_ind_hint: 'Галочка включает индивидуальную цену для выбранного контрагента; без галочки действует стандартная.',
@@ -329,6 +330,12 @@ const I18N = {
     nt_prop_avail_cx: 'Для данного апарт-комплекса доступен пропозал',
     nt_prop_avail_unit: 'Для данного юнита в апарт-комплексе доступен пропозал',
     nt_prop_pick_any: 'Выбрать из всех свободных…', nt_prop_none: 'Свободных пропозалов нет',
+    mq_title: 'Неотправленные фото и видео', mq_check: 'Проверить неотправленные',
+    mq_retry: 'Повторить отправку', mq_ping: 'Проверка соединения',
+    mq_docs: 'докум.', mq_photo: 'фото', mq_video: 'видео',
+    mq_empty: 'Всё отправлено', mq_later: 'Позже', mq_doc: 'Документ',
+    mq_net_on: 'сеть: онлайн', mq_net_off: 'сеть: офлайн', mq_sb_fail: 'сервер недоступен',
+    eq_hours: 'Моточасы DHM', eq_h_start: 'старт', eq_h_check: 'при проверке',
     prop_requested: 'Сотрудник указал: должен быть пропозал',
     allow_prop_chk: 'Сотрудники могут отмечать «нужен пропозал»',
     prop_pdf: 'PDF пропозала', prop_status: 'Статус', prop_need_cpcx: 'Укажите контрагента и комплекс',
@@ -535,7 +542,7 @@ const I18N = {
     shared_set_title: 'Shared document access',
     shared_set_chk: 'Allow shared document access for co-workers',
     shared_set_hint: 'When off, everyone works only with their own documents: the “Shared access” checkbox in jobs is hidden and stops working. The marks saved in documents are kept and work again after re-enabling.',
-    db_needs_update: 'Update the DB: run the latest supabase/update-to-*.sql in the SQL editor (newest — update-to-1_07_33.sql)',
+    db_needs_update: `Update the DB: run supabase/${DB_SQL_FILE} in the Supabase SQL editor (single file, safe to re-run)`,
     open_invoice: 'Open invoice', job_history: 'Job history',
     what_where: 'What to collect & where from',
     extend_rent: 'Extend rental', extend_title: 'Rental extension',
@@ -571,7 +578,7 @@ const I18N = {
     registered: 'joined', cant_self: 'You can’t do this to yourself',
     set_pass: 'Change password', new_pass: 'New password (min 6 chars)',
     pass_short: 'Password must be at least 6 characters', pass_changed: 'Password changed. Old sessions were revoked',
-    rpc_missing: 'Update the DB: run the latest supabase/schema.sql in the Supabase SQL editor',
+    rpc_missing: `Update the DB: run supabase/${DB_SQL_FILE} in the Supabase SQL editor`,
     demo_only_sb: 'Demo mode has no passwords — available with Supabase only',
     price_std_tab: 'Standard', price_ind_tab: 'Individual',
     price_ind_hint: 'The checkbox enables an individual price for the selected counterparty; unchecked — the standard price applies.',
@@ -642,6 +649,12 @@ const I18N = {
     nt_prop_avail_cx: 'A proposal is available for this complex',
     nt_prop_avail_unit: 'A proposal is available for this unit in the complex',
     nt_prop_pick_any: 'Pick from all free proposals…', nt_prop_none: 'No free proposals',
+    mq_title: 'Unsent photos & videos', mq_check: 'Check unsent',
+    mq_retry: 'Retry upload', mq_ping: 'Connection check',
+    mq_docs: 'docs', mq_photo: 'photo', mq_video: 'video',
+    mq_empty: 'Everything uploaded', mq_later: 'Later', mq_doc: 'Document',
+    mq_net_on: 'network: online', mq_net_off: 'network: offline', mq_sb_fail: 'server unreachable',
+    eq_hours: 'DHM hours', eq_h_start: 'start', eq_h_check: 'at check',
     prop_requested: 'Tech marked: proposal expected',
     allow_prop_chk: 'Techs may mark “proposal expected”',
     prop_pdf: 'Proposal PDF', prop_status: 'Status', prop_need_cpcx: 'Select counterparty and complex',
@@ -1170,7 +1183,7 @@ async function dbUpsert(table, row){
         }
         if (!error && stripped){
           pendingDone('upsert', table, row.id);    // v1.07.21: сервер принял (без новых колонок)
-          dlog('⚠ upsert', table, 'сохранено без новых колонок — выполните свежие supabase/update-to-*.sql (последний: update-to-1_07_33.sql)');
+          dlog('⚠ upsert', table, 'сохранено без новых колонок — выполните supabase/' + DB_SQL_FILE);
           toast('⚠ ' + t('db_needs_update'), 'err');
           return;
         }
@@ -3094,11 +3107,19 @@ function pkRowsFor(jobId, dateISO){
 function pkLineHtml(p, withDue){
   const et = state.data.equipment_types.find(e => e.id === p.equipment_type_id) || { abbr:'?', color:'#8B9AA3', name:'?' };
   const od = pkPending(p) && p.due_date < todayISO();
+  const isDhm = /dhm|dehum|осуш/i.test((et.abbr || '') + ' ' + (et.name || ''));
+  const can = state.user && canTouchPk(p);
   return `<div class="qty-line pk-line">
     <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>
     <span class="name">${esc(et.name)}${p.ext_of ? ` <span class="chip info">${t('ext_chip')}</span>` : ''}</span>
     <b>× ${+p.qty || 1}</b>
     ${withDue ? `<span class="tiny">${t('due')}: ${fmtDMY(p.due_date)}${od ? ` <span class="chip bad">${t('overdue')}</span>` : ''}</span>` : ''}
+    ${withDue && isDhm ? `<span class="pk-hours tiny">${t('eq_hours')}: ${t('eq_h_start')}
+      <input class="pk-h" inputmode="decimal" value="${p.dhm_hours_start ?? ''}" ${can ? '' : 'disabled'}
+        onchange="App.plHours('${p.id}','dhm_hours_start',this.value)">
+      · ${t('eq_h_check')}
+      <input class="pk-h" inputmode="decimal" value="${p.dhm_hours_check ?? ''}" ${can ? '' : 'disabled'}
+        onchange="App.plHours('${p.id}','dhm_hours_check',this.value)"></span>` : ''}
   </div>`;
 }
 
@@ -3399,6 +3420,7 @@ function viewJob(){
   const eqRows = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0)).map(et => {
     const e = fd.equipment[et.id] || { qty:0, days: defRentDays() };
     const line = (+e.qty||0) * Math.max(1,+e.days||1) * eqDayPrice(et,p);
+    const isDhm = /dhm|dehum|осуш/i.test((et.abbr || '') + ' ' + (et.name || ''));
     return `<div class="qty-line eq-line">
       <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}" title="${esc(et.name)}">${esc(et.abbr)}</span>
       <span class="eq-name" title="${esc(et.name)} · ${money(eqDayPrice(et,p))}/${t('days')}">
@@ -3410,7 +3432,10 @@ function viewJob(){
       ${stepperHtml('eq-d-'+et.id, e.days||3)}
       <span class="tiny eq-dlbl">${t('days')}</span>
       <span class="money eq-sum" data-eqline="${et.id}">${line>0?money(line):'—'}</span>
-    </div>`;
+    </div>${isDhm ? `<div class="qty-line eq-hline">
+      <span class="tiny">${t('eq_hours')} · ${t('eq_h_start')}</span>
+      <input class="eq-h" inputmode="decimal" placeholder="0" value="${e.hours_start ?? ''}"
+        oninput="App.eqHours('${et.id}', this.value)"></div>` : ''}`;
   }).join('');
 
   return `
@@ -3781,7 +3806,10 @@ async function syncPlacementsForJob(j){
       picked_up_at: found ? found.picked_up_at : null,
       picked_up_by: found ? found.picked_up_by : null,
       technician_id: j.technician_id,
-      complex_id: j.complex_id, counterparty_id: j.counterparty_id, unit_number: j.unit_number
+      complex_id: j.complex_id, counterparty_id: j.counterparty_id, unit_number: j.unit_number,
+      /* v1.07.61: моточасы осушителя — старт из формы работы; «при проверке» живёт в пикапе */
+      dhm_hours_start: (e.hours_start !== undefined) ? e.hours_start
+        : (found ? (found.dhm_hours_start ?? null) : null)
     };
     await dbUpsert('placements', row);
   }
@@ -4396,6 +4424,7 @@ function viewSettings(){
   const org = state.data.org_settings;
   return `
   <div class="section-title">${t('settings')}${helpBtn('settings')}</div>
+  ${mediaQueueCardHtml()}
   ${bcolsCard}
 
   <div class="card">
@@ -4753,6 +4782,14 @@ const App = {
   setMine(v){ state.filterMine = v; render(); },
   sync(){ syncNow(false); checkForUpdate('кнопка синхронизации', true); },
   addTaskModal, ntCpChange, ntPickWt, createTask, closeModal, ntPropRefresh, ntPropPick,
+  mediaQueueModal, mqPing, mqRetry, plHours,
+  eqHours(etId, v){
+    if (!jobDraft) return;
+    const e = jobDraft.form_data.equipment[etId] || (jobDraft.form_data.equipment[etId] = { qty: 0, days: defRentDays() });
+    const n = parseFloat(String(v).replace(',', '.'));
+    e.hours_start = isNaN(n) ? null : n;
+    autosaveDraft();
+  },
   openJob, saveJob, approveJob, deleteJob, makePdf, pdfPreviewBlob, pickupGroup,
   setReportDate(v){ state.reportDate = v; render(); }, copyReport,
   repTab(v){ state.repTab = v; render(); },
@@ -7302,6 +7339,7 @@ async function initMedia(){
     }, 700);
     setTimeout(() => clearInterval(tmr), 90000);
   }
+  mediaStartPop();                      // v1.07.61: поповер о неотправленных при запуске
 }
 /* ---------- сжатие ---------- */
 async function mShrink(file, maxW, q){
@@ -7524,16 +7562,129 @@ async function mediaDelete(id){
   state.data.media = (state.data.media || []).filter(m => m.id !== id);
   toast('🗑 ' + t('deleted')); render();
 }
+let _mqBadgeT = null, _mqBadgePrev = null;
 function mediaBadge(){
   let el = document.getElementById('tl-net');
   if (!el){
     el = document.createElement('div'); el.id = 'tl-net';
+    el.style.pointerEvents = 'auto'; el.style.cursor = 'pointer';
+    el.onclick = () => mediaQueueModal();
     document.body.appendChild(el);
   }
-  const n = mediaQ.length;
-  const off = !navigator.onLine;
-  el.textContent = (off ? t('media_offline') : '') + (n ? ` ⬆${n} ${t('media_wait')}` : '');
-  el.style.display = (off || n) ? 'inline-flex' : 'none';
+  const n = mediaQ.length, off = !navigator.onLine;
+  const txt = (off ? t('media_offline') : '') + (n ? ` ⬆${n} ${t('media_wait')}` : '');
+  /* v1.07.61: табличка не висит постоянно — 6 секунд при изменении
+     (новый файл в очереди / смена сети), дальше прячется. Постоянный
+     контроль — поповер при запуске и раздел в Настройках; тап — модалка. */
+  if (txt === _mqBadgePrev) return;
+  _mqBadgePrev = txt;
+  clearTimeout(_mqBadgeT);
+  el.textContent = txt;
+  el.style.display = txt ? 'inline-flex' : 'none';
+  if (txt) _mqBadgeT = setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+/* =====================================================================
+   v1.07.61 · КОНТРОЛЬ НЕОТПРАВЛЕННЫХ МЕДИА.
+   Поповер при запуске → «Проверить» → модалка: сводка (документов /
+   фото / видео), карточки по документам с миниатюрами, «Повторить
+   отправку», «Проверка соединения». Та же модалка — из Настроек.
+   ===================================================================== */
+let _mqPopDone = false;
+function mediaStartPop(){
+  if (_mqPopDone) return;
+  const tick = setInterval(() => {
+    if (_mqPopDone){ clearInterval(tick); return; }
+    if (!state.user) return;
+    clearInterval(tick); _mqPopDone = true;
+    if (!mediaQ.length) return;
+    const nV = mediaQ.filter(x => x.kind === 'video').length, nP = mediaQ.length - nV;
+    const el = document.createElement('div');
+    el.id = 'mq-pop'; el.className = 'mq-pop';
+    el.innerHTML = `<div class="mq-pop-t">⬆ ${t('mq_title')}</div>
+      <div class="tiny">${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')} · ${t('media_wait')}</div>
+      <div class="btn-rowpp" style="margin-top:8px">
+        <button class="btn btn-ghost sm" onclick="document.getElementById('mq-pop').remove()">${t('mq_later')}</button>
+        <button class="btn btn-blue sm" onclick="document.getElementById('mq-pop').remove();App.mediaQueueModal()">${t('mq_check')}</button>
+      </div>`;
+    document.body.appendChild(el);
+    setTimeout(() => { const q = document.getElementById('mq-pop'); if (q) q.remove(); }, 30000);
+  }, 800);
+  setTimeout(() => clearInterval(tick), 60000);
+}
+function mediaQueueCardHtml(){
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('sync')} ${t('mq_title')}</div>
+    <div class="tiny" style="margin-bottom:8px">${mediaQ.length
+      ? '⬆' + mediaQ.length + ' ' + t('media_wait') : '✅ ' + t('mq_empty')}</div>
+    <button class="btn btn-blue" onclick="App.mediaQueueModal()">${t('mq_check')}</button>
+  </div>`;
+}
+function mediaQueueModal(){
+  const nV = mediaQ.filter(x => x.kind === 'video').length, nP = mediaQ.length - nV;
+  const groups = {};
+  mediaQ.forEach(it => { (groups[it.job_id] = groups[it.job_id] || []).push(it); });
+  const ids = Object.keys(groups);
+  const cards = ids.map(id => {
+    const arr = groups[id];
+    const j = state.data.jobs.find(x => x.id === id);
+    const cx = j ? (cxById(j.complex_id) || {}) : {};
+    const title = j
+      ? `${esc(cx.abbr || cx.name || '—')} · Unit <b>${esc(j.unit_number || '—')}</b> · ${fmtDMY(j.date)}`
+      : `${t('mq_doc')} …${esc(String(id).slice(0, 8))}`;
+    const v = arr.filter(x => x.kind === 'video').length, ph = arr.length - v;
+    const th = arr.slice(0, 4).map(x => {
+      try{ return x.thumb ? `<img class="mq-th" src="${URL.createObjectURL(x.thumb)}" alt="">` : ''; }
+      catch(e){ return ''; }
+    }).join('');
+    return `<div class="card" style="padding:8px 10px;margin:6px 0">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="grow">${title}
+          <div class="tiny">⬆ ${ph} ${t('mq_photo')} · ${v} ${t('mq_video')}</div></div>
+        ${j ? `<button class="btn btn-ghost sm" onclick="App.closeModal();App.openJob('${id}')">↗</button>` : ''}
+      </div>
+      ${th ? `<div class="mq-ths">${th}</div>` : ''}
+    </div>`;
+  }).join('');
+  openModal(`
+    ${modalHead(t('mq_title'), 'sync')}
+    <div class="card" style="padding:8px 10px;margin-bottom:8px">
+      <b>${ids.length} ${t('mq_docs')} · ${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')}</b>
+      <div class="tiny" id="mq-conn" style="margin-top:4px">${navigator.onLine
+        ? '🌐 ' + t('mq_net_on') : '🔴 ' + t('mq_net_off')}</div>
+    </div>
+    ${mediaQ.length ? cards : `<div class="card" style="padding:10px">✅ ${t('mq_empty')}</div>`}
+    <div class="btn-rowpp" style="margin-top:10px">
+      <button class="btn btn-ghost" onclick="App.mqPing()">${t('mq_ping')}</button>
+      <button class="btn btn-green" ${mediaQ.length ? '' : 'disabled'} onclick="App.mqRetry()">⬆ ${t('mq_retry')}</button>
+    </div>`);
+}
+async function mqPing(){
+  const el = $('#mq-conn'); if (!el) return;
+  el.textContent = '…';
+  const net = navigator.onLine;
+  let sb = '';
+  if (HAS_SB && state.sb){
+    const t0 = Date.now();
+    try{
+      const { error } = await state.sb.from('profiles').select('id', { head: true, count: 'exact' }).limit(1);
+      sb = error ? ' · ⛔ Supabase: ' + t('mq_sb_fail') : ` · Supabase ✓ ${Date.now() - t0} ms`;
+    }catch(e){ sb = ' · ⛔ Supabase: ' + t('mq_sb_fail'); }
+  }
+  el.textContent = (net ? '🌐 ' + t('mq_net_on') : '🔴 ' + t('mq_net_off')) + sb;
+}
+async function mqRetry(){
+  toast('⬆ ' + t('mq_retry') + '…');
+  await mediaFlush();
+  mediaQueueModal();                     // пересобрать с актуальной очередью
+  toast(mediaQ.length ? '⚠ ⬆' + mediaQ.length + ' ' + t('media_wait') : '✓ ' + t('mq_empty'));
+}
+/* ---------- моточасы осушителя ---------- */
+async function plHours(pid, field, val){
+  const p = state.data.placements.find(x => x.id === pid);
+  if (!p || !state.user || !canTouchPk(p)) return;
+  const v = String(val).trim() === '' ? null : parseFloat(String(val).replace(',', '.'));
+  if (v !== null && !(v >= 0)){ toast('⚠ 0+', 'err'); return; }
+  await dbUpsert('placements', { ...p, [field]: v });
 }
 /* ---------- админка: ключи, подключение, тест ---------- */
 function mediaSettingsCardHtml(){
