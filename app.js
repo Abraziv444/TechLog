@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.69';
+const APP_VERSION = '1.07.70';
 const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -389,6 +389,14 @@ const I18N = {
     gd_folder_ph: 'вставьте ссылку целиком — возьмём ID',
     gd_folder_hint: 'Откройте папку архива на Диске и вставьте сюда адрес целиком: drive.google.com/drive/folders/<b class="gd-mark">1AbC…XyZ</b>?usp=sharing — приложение само возьмёт выделенную часть.',
     gd_space: 'Свободно на Диске',
+    gd_probe: 'Сквозная проверка загрузки', gd_p_thumb: 'Запись миниатюры в хранилище',
+    gd_p_session: 'Сессия загрузки в Google', gd_p_direct: 'Заливка из браузера напрямую',
+    gd_p_relay: 'Заливка через сервер-посредник', gd_p_clean: 'Тестовые файлы удалены',
+    gd_p_way: 'Каким путём пойдут фото',
+    gd_p_cors: 'браузер к сессии не пускают (CORS) — фото пойдут через сервер',
+    gd_p_origin_no: 'сервер не передал Origin — обновите media-begin и media-health',
+    gd_p_none: 'ни один путь не работает — фото отправляться не будут',
+    gd_p_skip: 'пропущено: сессия не открылась',
     gd_space_warn: 'На Google Диске осталось {P}% свободного места (занято {U} из {L} ГБ). Освободите место или подключите другой архивный аккаунт — иначе фото и видео перестанут загружаться.',
     gd_connected: 'Google подключён', gd_not_conn: 'не подключено',
     gd_db: 'База данных', gd_auth: 'Авторизация Google', gd_acc: 'Аккаунт',
@@ -739,6 +747,14 @@ const I18N = {
     gd_folder_ph: 'paste the whole link — we take the ID',
     gd_folder_hint: 'Open the archive folder in Drive and paste the whole address here: drive.google.com/drive/folders/<b class="gd-mark">1AbC…XyZ</b>?usp=sharing — the app extracts the highlighted part itself.',
     gd_space: 'Drive free space',
+    gd_probe: 'End-to-end upload test', gd_p_thumb: 'Thumbnail written to storage',
+    gd_p_session: 'Google upload session', gd_p_direct: 'Direct upload from the browser',
+    gd_p_relay: 'Upload through the server relay', gd_p_clean: 'Test files removed',
+    gd_p_way: 'Route photos will take',
+    gd_p_cors: 'the browser is blocked from the session (CORS) — photos will go through the server',
+    gd_p_origin_no: 'the server sent no Origin — redeploy media-begin and media-health',
+    gd_p_none: 'no route works — photos will not upload',
+    gd_p_skip: 'skipped: no session',
     gd_space_warn: 'Google Drive has {P}% free space left ({U} of {L} GB used). Free up space or connect another archive account — otherwise photo and video uploads will stop.',
     gd_connected: 'Google connected', gd_not_conn: 'not connected',
     gd_db: 'Database', gd_auth: 'Google auth', gd_acc: 'Account',
@@ -8236,6 +8252,95 @@ async function mediaOauthExchange(code){
     App.go('settings');
   }catch(e){ toast('⛔ Google OAuth: ' + (e.message || e), 'err'); }
 }
+/* v1.07.70: маленькая тестовая картинка — рисуем на месте, чтобы проверять
+   загрузку настоящими байтами, а не пустым запросом. */
+async function mTestBlob(){
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = '#0F171B'; g.fillRect(0, 0, 64, 64);
+  g.fillStyle = '#58CC02'; g.fillRect(4, 4, 56, 56);
+  g.fillStyle = '#0E2A00'; g.font = 'bold 22px sans-serif'; g.fillText('TL', 15, 32);
+  g.font = '8px sans-serif'; g.fillText(new Date().toISOString().slice(11, 19), 8, 50);
+  return await new Promise(res => c.toBlob(res, 'image/jpeg', 0.8));
+}
+/* Проверяем путь настоящего фото целиком. row(name, ok|null, extra) — строка
+   отчёта, одна и та же и в «Тесте соединения», и в «Диагностике». */
+async function gdProbe(row){
+  const token = await mediaJwt();
+  const blob = await mTestBlob();
+  const ids = [], range = `bytes 0-${blob.size - 1}/${blob.size}`;
+
+  /* 1. хранилище миниатюр — туда же кладёт превью настоящая отправка */
+  const key = '_selftest/' + uid() + '.jpg';
+  try{
+    const { error } = await state.sb.storage.from('media-thumbs')
+      .upload(key, blob, { contentType: 'image/jpeg', upsert: true });
+    if (error) throw error;
+    await state.sb.storage.from('media-thumbs').remove([key]);
+    row(t('gd_p_thumb'), true, (blob.size / 1024).toFixed(1) + ' KB');
+  }catch(e){ row(t('gd_p_thumb'), false, String(e.message || e).slice(0, 90)); }
+
+  const session = async () => {
+    const r = await fetch(mediaFN() + '/media-health?probe=1', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ size: blob.size }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.upload_url) throw new Error(j.error || ('HTTP ' + r.status));
+    return j;
+  };
+
+  /* 2. сессия докачки + признак, ушёл ли Origin (без него браузер не пустят) */
+  let s1 = null;
+  try{
+    s1 = await session();
+    row(t('gd_p_session'), !!s1.origin, s1.origin ? 'Origin ✓' : t('gd_p_origin_no'));
+  }catch(e){ row(t('gd_p_session'), false, String(e.message || e).slice(0, 90)); }
+
+  /* 3. байты из браузера напрямую — тот самый шаг, который молча падал */
+  let direct = false;
+  if (s1){
+    try{
+      const r = await fetch(s1.upload_url, { method: 'PUT',
+        headers: { 'Content-Range': range }, body: blob });
+      const j = r.ok ? await r.json().catch(() => ({})) : {};
+      direct = !!j.id; if (j.id) ids.push(j.id);
+      row(t('gd_p_direct'), direct, direct ? '' : 'HTTP ' + r.status);
+    }catch(e){
+      row(t('gd_p_direct'), false,
+        mIsNetErr(e) ? t('gd_p_cors') : String(e.message || e).slice(0, 90));
+    }
+  } else row(t('gd_p_direct'), null, t('gd_p_skip'));
+
+  /* 4. байты через сервер-посредник — запасной путь тоже должен работать */
+  let relay = false;
+  try{
+    const s2 = await session();
+    const r = await fetch(mediaFN() + '/media-put', { method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'x-tl-url': s2.upload_url, 'x-tl-range': range },
+      body: blob });
+    const j = await r.json().catch(() => ({}));
+    relay = !!j.id; if (j.id) ids.push(j.id);
+    row(t('gd_p_relay'), relay, relay ? '' :
+      String(j.error || ('HTTP ' + (j.status || r.status))).slice(0, 90));
+  }catch(e){ row(t('gd_p_relay'), false, String(e.message || e).slice(0, 90)); }
+
+  /* 5. уборка: тестовые файлы на Диске не копим */
+  if (ids.length){
+    try{
+      const r = await fetch(mediaFN() + '/media-health?cleanup=1', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ ids }) });
+      const j = await r.json().catch(() => ({}));
+      row(t('gd_p_clean'), (j.deleted || 0) === ids.length, (j.deleted || 0) + '/' + ids.length);
+    }catch(e){ row(t('gd_p_clean'), false, String(e.message || e).slice(0, 90)); }
+  }
+
+  /* 6. вывод — и сразу переключаем настоящую отправку на рабочий путь */
+  if (direct){ _mediaRelay = false; row(t('gd_p_way'), true, t('gd_p_direct')); }
+  else if (relay){ _mediaRelay = true; row(t('gd_p_way'), true, t('gd_p_relay')); }
+  else row(t('gd_p_way'), false, t('gd_p_none'));
+  return { direct, relay };
+}
 async function mediaHealth(){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   const box = $('#gd-health'); if (box) box.textContent = '⏳ …';
@@ -8244,9 +8349,12 @@ async function mediaHealth(){
     const r = await fetch(mediaFN() + '/media-health',
       { headers: { Authorization: 'Bearer ' + token } });
     const j = await r.json().catch(() => ({}));
-    const row = (k, ok, extra) =>                     // v1.07.65: рисованная точка статуса
-      `<div>${ic('dot', 'color:var(--' + (ok ? 'green' : 'red') + ')')} ${k}${extra ? ' — ' + extra : ''}</div>`;
+    /* v1.07.70: строка отчёта; ok === null — серая точка «пропущено» */
     let h = '';
+    const line = (k, ok, extra) =>
+      `<div>${ic('dot', 'color:var(--' + (ok === null ? 'dim-2' : ok ? 'green' : 'red') + ')')} ${k}${extra ? ' — ' + extra : ''}</div>`;
+    const row = (k, ok, extra) => line(k, ok, extra);
+    const push = (k, ok, extra) => { h += line(k, ok, extra); if (box) box.innerHTML = h; };
     h += row(t('gd_db'), j.db && j.db.ok, j.db && (j.db.ok ? j.db.ms + ' ms' : esc(String(j.db.error || ''))));
     h += row(t('gd_auth'), j.auth && j.auth.ok,
       j.auth && j.auth.ok ? j.auth.ms + ' ms' : t('gd_not_conn'));
@@ -8271,6 +8379,11 @@ async function mediaHealth(){
     if (box) box.innerHTML = h || '⛔';
     if (j.cfg){ Object.assign(gdCfg, j.cfg, { loaded: true }); }
     if (j.drive && j.drive.account) gdCfg.account = j.drive.account;
+    /* v1.07.70: сквозная проверка — тем же путём, что и настоящее фото */
+    if (j.drive && j.drive.ok){
+      h += `<div class="gd-probe-h">${t('gd_probe')}</div>`; if (box) box.innerHTML = h;
+      await gdProbe((k, ok, extra) => push(k, ok, extra ? esc(String(extra)) : ''));
+    }
   }catch(e){ if (box) box.innerHTML = '🔴 ' + esc(String(e.message || e)); }
 }
 /* =====================================================================
@@ -8360,6 +8473,8 @@ async function runDiag(){
       }
       if (j.write) row(t('gd_write'), !!j.write.ok,
         j.write.error ? String(j.write.error).slice(0, 90) : '');
+      /* v1.07.70: тот же сквозной прогон, что и в «Тесте соединения» */
+      if (j.drive && j.drive.ok) await gdProbe(row);
     }
   }catch(e){
     /* v1.07.56: недеплоенная edge-функция даёт сетевой TypeError («Failed

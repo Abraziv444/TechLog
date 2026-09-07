@@ -1217,6 +1217,8 @@ html:not(.tl-desktop) .topbar::after{
 .gd-ok{color:var(--green)}
 .gd-hint{margin:-4px 0 10px;line-height:1.45}
 .gd-mark{color:var(--green);background:rgba(88,204,2,.12);border-radius:5px;padding:0 3px}
+/* v1.07.70: подзаголовок сквозной проверки в отчёте теста */
+.gd-probe-h{margin:6px 0 2px;font-weight:900;color:var(--dim);text-transform:uppercase;font-size:.72rem;letter-spacing:.03em}
 .banner .grow{flex:1;min-width:0;font-weight:800}
 .pk-line{flex-wrap:wrap}
 .pk-hours{display:flex;align-items:center;gap:4px;flex-wrap:wrap;width:100%;margin-top:2px}

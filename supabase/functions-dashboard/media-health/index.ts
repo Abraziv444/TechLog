@@ -71,6 +71,54 @@ Deno.serve(async (req) => {
 
   if (url.searchParams.get("cfg")) return jres(r);              // быстрый режим для карточки
 
+  /* v1.07.70 · сквозная проверка загрузки.
+     ?probe=1   — открыть сессию докачки для тестовой картинки (с Origin
+                  браузера, как для настоящего фото) и вернуть её адрес;
+     ?cleanup=1 — удалить тестовые файлы с Диска по списку id.
+     В таблицу media ничего не пишется, лимиты документа не расходуются. */
+  const SELFTEST = "TechLog-selftest-";
+  if (url.searchParams.get("probe")) {
+    try {
+      const { size } = await req.json().catch(() => ({ size: 0 }));
+      const t = await driveToken();
+      const origin = req.headers.get("Origin") ?? "";
+      const name = SELFTEST + new Date().toISOString().replace(/[:.]/g, "-") + ".jpg";
+      const init = await fetch(
+        "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json",
+          ...(origin ? { Origin: origin } : {}),
+          "X-Upload-Content-Type": "image/jpeg",
+          ...(Number(size) > 0 ? { "X-Upload-Content-Length": String(size) } : {}) },
+        body: JSON.stringify({ name, parents: folder ? [folder] : undefined,
+          appProperties: { techlog: "selftest" } }) });
+      const upload_url = init.headers.get("Location");
+      if (!upload_url) return jres({ error: "DRIVE_INIT: " + (await init.text()).slice(0, 200) }, 502);
+      return jres({ upload_url, name, origin: !!origin });
+    } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
+  }
+  if (url.searchParams.get("cleanup")) {
+    try {
+      const { ids } = await req.json().catch(() => ({ ids: [] }));
+      const t = await driveToken();
+      let deleted = 0;
+      for (const raw of (Array.isArray(ids) ? ids : []).slice(0, 10)) {
+        const id = encodeURIComponent(String(raw));
+        // удаляем только собственные тестовые файлы — чужое не трогаем
+        const info = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${id}?fields=name,appProperties`,
+          { headers: { Authorization: `Bearer ${t}` } });
+        if (!info.ok) continue;
+        const f = await info.json();
+        if (f?.appProperties?.techlog !== "selftest" && !String(f?.name ?? "").startsWith(SELFTEST)) continue;
+        const d = await fetch(`https://www.googleapis.com/drive/v3/files/${id}`,
+          { method: "DELETE", headers: { Authorization: `Bearer ${t}` } });
+        if (d.ok || d.status === 404) deleted++;
+      }
+      return jres({ deleted });
+    } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
+  }
+
   try {
     const t0 = Date.now();
     await s.from("org_settings").select("id").limit(1);
