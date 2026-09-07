@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.59';
+const APP_VERSION = '1.07.60';
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -2995,14 +2995,25 @@ function comboPick(kind, id){
   const box = $('#cb-' + kind);
   box.querySelector('.combo-in').value = it.label;
   box.querySelector('.combo-list').style.display = 'none';
+  /* v1.07.60: форма пропозала — выбор сразу в propDraft, чтобы перерисовка
+     (статус, строки позиций) не сбрасывала контрагента и комплекс */
+  const inProp = !!(propDraft && state.screen === 'proposals' && !$('#overlay'));
   if (kind === 'cp'){
-    /* v1.07.35: комплекс сбрасываем ТОЛЬКО если он чужой для выбранного
-       контрагента — свой остаётся на месте */
-    const cxId = ($('#nt-cx') || {}).value;
-    const cx = cxId && state.data.complexes.find(c => c.id === cxId);
-    if (cx && cx.counterparty_id !== id){
+    if (inProp){
+      /* зависимость: смена контрагента сбрасывает комплекс и номер юнита */
+      propDraft.counterparty_id = id; propDraft.complex_id = ''; propDraft.unit_number = '';
       $('#nt-cx').value = '';
       const cbx = $('#cb-cx'); if (cbx) cbx.querySelector('.combo-in').value = '';
+      const un = $('#pr-unit'); if (un) un.value = '';
+    } else {
+      /* v1.07.35: комплекс сбрасываем ТОЛЬКО если он чужой для выбранного
+         контрагента — свой остаётся на месте */
+      const cxId = ($('#nt-cx') || {}).value;
+      const cx = cxId && state.data.complexes.find(c => c.id === cxId);
+      if (cx && cx.counterparty_id !== id){
+        $('#nt-cx').value = '';
+        const cbx = $('#cb-cx'); if (cbx) cbx.querySelector('.combo-in').value = '';
+      }
     }
   } else if (kind === 'cx'){
     /* выбор комплекса автоматически подставляет его контрагента */
@@ -3012,6 +3023,10 @@ function comboPick(kind, id){
       const hid = $('#nt-cp'); if (hid) hid.value = cx.counterparty_id;
       const cbp = $('#cb-cp');
       if (cbp && cp) cbp.querySelector('.combo-in').value = cp.name;
+    }
+    if (inProp){
+      propDraft.complex_id = id;
+      if (cx && cx.counterparty_id) propDraft.counterparty_id = cx.counterparty_id;
     }
   }
   if ($('#nt-prop-zone')) ntPropRefresh();   // v1.07.58: форма «Добавить задание»
@@ -6931,7 +6946,7 @@ function viewProposalForm(){
         <div class="combo-list" id="cb-cx-list"></div>
       </div></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
-      <input value="${esc(p.unit_number || '')}" oninput="App.propField('unit_number', this.value)"></div>
+      <input id="pr-unit" value="${esc(p.unit_number || '')}" oninput="App.propField('unit_number', this.value)"></div>
     <div class="form-row"><span class="lbl">${t('prop_status')}</span>
       <div class="lang-seg">${stSeg}</div></div>
     <div class="form-row"><span class="lbl">PO Number</span>

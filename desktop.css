@@ -635,36 +635,51 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
 
 
 /* =====================================================================
-   ============ v1.07.59 · АВТО-УПЛОТНЕНИЕ ДОСКИ (html.tl-fit) ============
+   ====== v1.07.59/60 · АВТО-УПЛОТНЕНИЕ ДОСКИ (html.tl-fit) ======
    Класс ставит desktop.js, когда колонки сотрудников перестают влезать
-   по ширине (начинается скролл/обрезка). Меню уезжает вниз горизонтальной
-   полосой, освобождая слева ~112px; ширину колонок задаёт --dsk-fit.
+   по ширине. v1.07.60: меню больше не переезжает вниз — оно ПЛАВНО
+   уезжает за левый край, контент забирает его полосу (~112px). У края
+   остаётся язычок #dsk-menu-tab: наведение выдвигает меню поверх
+   контента, клик закрепляет. Ширину колонок задаёт --dsk-fit.
    Всё строго под html.tl-desktop — мобильная версия этих правил не видит.
    ===================================================================== */
 @media (min-width: 980px){
 
-  /* ---------- Меню вниз: контент и доска забирают левую полосу ---------- */
+  /* меню всегда двигается плавно (и уезд, и возврат) */
+  html.tl-desktop .tabbar{ transition:transform .28s ease, box-shadow .28s ease; }
+
+  /* ---------- Контент забирает полосу меню ---------- */
   html.tl-desktop.tl-fit{ --tl-padl:16px; }
   html.tl-desktop.tl-fit.tl-staff{ --tl-padl:124px; }
-  html.tl-desktop.tl-fit body{ padding-left:16px; padding-bottom:92px; }
+  html.tl-desktop.tl-fit body{ padding-left:16px; }
   html.tl-desktop.tl-fit.tl-staff body{ padding-left:124px; }
   html.tl-desktop.tl-fit #dsk-staff{ left:16px; }
 
-  html.tl-desktop.tl-fit .tabbar{
-    top:auto; bottom:10px; left:50%; right:auto; transform:translateX(-50%);
-    flex-direction:row; justify-content:flex-start;
-    width:max-content; max-width:calc(100vw - 190px);
-    max-height:none; overflow-x:auto; overflow-y:hidden;
-    padding:5px 8px; gap:2px; border-radius:16px;
+  /* ---------- Меню уезжает влево; наведение/закрепление возвращает ---------- */
+  html.tl-desktop.tl-fit .tabbar{ transform:translate(calc(-100% - 22px), -50%); }
+  html.tl-desktop.tl-fit .tabbar:hover,
+  html.tl-desktop.tl-fit.tl-menu-open .tabbar{
+    transform:translate(0, -50%);
+    box-shadow:10px 0 26px rgba(0,0,0,.45);
   }
-  html.tl-desktop.tl-fit .tab{ width:auto; flex:0 0 auto; padding:7px 10px; gap:2px; border-radius:12px; }
-  html.tl-desktop.tl-fit .tab svg{ width:22px; height:22px; }
-  html.tl-desktop.tl-fit .tab span{ font-size:.54rem; }
 
-  /* углы свободны: полоса меню ограничена по ширине */
-  html.tl-desktop.tl-fit .fab{ right:16px; bottom:14px; }
-  html.tl-desktop.tl-fit .app-footer{ margin-bottom:100px; }
-  html.tl-desktop.tl-fit .board{ padding-bottom:14px; }  /* запас снизу даёт padding body */
+  /* ---------- Язычок вызова меню у левого края ---------- */
+  html.tl-desktop #dsk-menu-tab{ display:none; }
+  html.tl-desktop.tl-fit #dsk-menu-tab{
+    display:grid; place-items:center;
+    position:fixed; left:0; top:50%; transform:translateY(-50%); z-index:47;
+    width:20px; height:72px; padding:0; cursor:pointer;
+    font:inherit; font-weight:900; font-size:1rem;
+    background:var(--panel,#17232A); color:var(--dim,#8AA0AB);
+    border:2px solid var(--line,#31434C); border-left:none;
+    border-radius:0 12px 12px 0; user-select:none;
+  }
+  html.tl-desktop.tl-fit.tl-menu-open #dsk-menu-tab{
+    color:var(--blue,#1CB0F6); border-color:var(--blue,#1CB0F6);
+  }
+  @media (hover:hover){
+    html.tl-desktop.tl-fit #dsk-menu-tab:hover{ color:var(--blue,#1CB0F6); }
+  }
 
   /* ---------- Узкая колонка: шапка сотрудника вертикально ----------
      Триггер — фактическая ширина колонки (container query), поэтому
@@ -684,4 +699,58 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     .bjob{ padding:4px 14px 4px 12px; }
     .bjob .bnum{ left:4px; font-size:.56rem; }
   }
+}
+
+/* =====================================================================
+   ============ v1.07.60 · КАЛЕНДАРЬ ДЛЯ ПОЛЕЙ ДАТЫ (#dsk-cal) ============
+   Открывает desktop.js кликом по input[type=date]. Родная иконка пикера
+   скрыта — календарь единый и в стиле приложения.
+   ===================================================================== */
+html.tl-desktop input[type="date"]::-webkit-calendar-picker-indicator{ display:none; }
+html.tl-desktop input[type="date"]{ cursor:pointer; }
+
+#dsk-cal{
+  position:fixed; z-index:10060; width:272px;
+  background:var(--panel,#17232A);
+  border:2px solid var(--line,#31434C); border-radius:16px;
+  box-shadow:0 14px 38px rgba(0,0,0,.5);
+  padding:10px; user-select:none;
+}
+#dsk-cal .dcal-h{ display:flex; align-items:center; justify-content:space-between; margin:0 2px 6px; }
+#dsk-cal .dcal-h b{ font-size:.92rem; }
+#dsk-cal .dcal-nav{
+  width:32px; height:32px; border-radius:10px; cursor:pointer;
+  font:inherit; font-weight:900; font-size:1rem;
+  background:var(--panel-2,#1C2B33); color:var(--dim,#8AA0AB);
+  border:2px solid var(--line,#31434C);
+}
+#dsk-cal .dcal-w{
+  display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:2px;
+  font-size:.62rem; font-weight:900; letter-spacing:.4px; text-transform:uppercase;
+  color:var(--dim-2,#5D737E); text-align:center;
+}
+#dsk-cal .dcal-g{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+#dsk-cal .dcal-day{
+  height:32px; border-radius:9px; cursor:pointer;
+  font:inherit; font-weight:800; font-size:.8rem;
+  background:transparent; color:var(--text,#F1F7FB);
+  border:2px solid transparent;
+}
+#dsk-cal .dcal-day.out{ color:var(--dim-2,#5D737E); font-weight:600; }
+#dsk-cal .dcal-day.today{ border-color:var(--dim,#8AA0AB); }
+#dsk-cal .dcal-day.sel{
+  background:var(--green,#58CC02); border-color:var(--green,#58CC02);
+  color:var(--green-ink,#0E2A00); font-weight:900;
+}
+#dsk-cal .dcal-day.dis{ opacity:.3; cursor:default; }
+#dsk-cal .dcal-f{ display:flex; gap:6px; margin-top:8px; }
+#dsk-cal .dcal-btn{
+  flex:1; padding:8px 0; border-radius:10px; cursor:pointer;
+  font:inherit; font-weight:900; font-size:.72rem; letter-spacing:.3px; text-transform:uppercase;
+  background:var(--panel-2,#1C2B33); color:var(--dim,#8AA0AB);
+  border:2px solid var(--line,#31434C);
+}
+@media (hover:hover){
+  #dsk-cal .dcal-day:not(.sel):not(.dis):hover{ border-color:var(--blue,#1CB0F6); }
+  #dsk-cal .dcal-nav:hover, #dsk-cal .dcal-btn:hover{ border-color:var(--blue,#1CB0F6); color:var(--blue,#1CB0F6); }
 }

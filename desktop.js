@@ -384,12 +384,8 @@
         if (x) { x.click(); e.preventDefault(); }
         return;
       }
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      var n = parseInt(e.key, 10);
-      if (n >= 1 && n <= 9) {
-        var tabs = document.querySelectorAll('.tabbar .tab');
-        if (tabs[n - 1]) { tabs[n - 1].click(); e.preventDefault(); }
-      }
+      /* v1.07.60: переключение вкладок цифрами убрано — случайное нажатие
+         уводило с открытого документа и «листало» меню. Esc для модалок остался. */
     } catch (err) {}
   });
 
@@ -633,9 +629,34 @@
   var html = document.documentElement;
   function q(s) { return document.querySelector(s); }
   function isDesk() { return html.classList.contains('tl-desktop'); }
+  var pin = false;
   function off() {
     html.classList.remove('tl-fit');
+    html.classList.remove('tl-menu-open');
+    pin = false;
     html.style.removeProperty('--dsk-fit');
+  }
+  /* язычок у левого края: наведение выдвигает меню, клик закрепляет */
+  function buildTab() {
+    if (document.getElementById('dsk-menu-tab')) return;
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'dsk-menu-tab'; b.textContent = '›';
+    b.title = (localStorage.getItem('techlog_lang') === 'en') ? 'Menu' : 'Меню';
+    b.addEventListener('mouseenter', function () { html.classList.add('tl-menu-open'); });
+    b.addEventListener('click', function () {
+      pin = !pin;
+      html.classList.toggle('tl-menu-open', pin);
+    });
+    document.body.appendChild(b);
+    var bar = document.querySelector('.tabbar');
+    if (bar) {
+      bar.addEventListener('mouseleave', function () { if (!pin) html.classList.remove('tl-menu-open'); });
+      /* клик по пункту меню: переход состоялся — меню уезжает обратно */
+      bar.addEventListener('click', function (e) {
+        if (e.target.closest && e.target.closest('.tab'))
+          setTimeout(function () { pin = false; html.classList.remove('tl-menu-open'); }, 150);
+      });
+    }
   }
   function fit() {
     try {
@@ -661,6 +682,7 @@
       w = Math.max(MINW, Math.min(BASE, w));
       html.classList.add('tl-fit');
       html.style.setProperty('--dsk-fit', w + 'px');
+      buildTab();
     } catch (e) { off(); }
   }
   var deb = null;
@@ -681,4 +703,135 @@
   }
   if (document.body) start();
   else document.addEventListener('DOMContentLoaded', function () { try { start(); } catch (e) {} });
+})();
+
+
+/* =====================================================================
+   v1.07.60 · КАЛЕНДАРЬ ДЛЯ ПОЛЕЙ ДАТЫ (ПК-режим). Клик в любое место
+   input[type=date] открывает тёмный календарь в стиле приложения:
+   неделя с понедельника, «Сегодня» / «Очистить», ‹ › по месяцам.
+   Выбор пишет value и шлёт input+change — все onchange мобильной версии
+   срабатывают как обычно. Родной пикер и его иконка скрыты только под
+   html.tl-desktop; мобильная версия живёт с системным как раньше.
+   ===================================================================== */
+(function () {
+  'use strict';
+  var html = document.documentElement;
+  var cal = null, curInput = null, view = null;   // view = {y, m}
+  function ru() { return localStorage.getItem('techlog_lang') !== 'en'; }
+  var M_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  var M_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var W_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  var W_EN = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function iso(y, m, d) { return y + '-' + pad(m + 1) + '-' + pad(d); }
+  function parse(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || ''));
+    return m ? { y: +m[1], m: +m[2] - 1, d: +m[3] } : null;
+  }
+  function close() {
+    if (cal) cal.remove();
+    cal = null; curInput = null; view = null;
+  }
+  function setVal(v) {
+    if (!curInput) return close();
+    curInput.value = v;
+    try {
+      curInput.dispatchEvent(new Event('input',  { bubbles: true }));
+      curInput.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (e) {}
+    close();
+  }
+  function inRange(v) {
+    if (!curInput) return true;
+    if (curInput.min && v < curInput.min) return false;
+    if (curInput.max && v > curInput.max) return false;
+    return true;
+  }
+  function grid() {
+    var t = new Date(), tISO = iso(t.getFullYear(), t.getMonth(), t.getDate());
+    var sel = parse(curInput && curInput.value);
+    var first = new Date(view.y, view.m, 1);
+    var lead = (first.getDay() + 6) % 7;                    // Пн=0
+    var days = new Date(view.y, view.m + 1, 0).getDate();
+    var prevDays = new Date(view.y, view.m, 0).getDate();
+    var cells = '';
+    for (var i = 0; i < 42; i++) {
+      var d = i - lead + 1, y = view.y, m = view.m, out = false;
+      if (d < 1) { m--; d = prevDays + d; out = true; if (m < 0) { m = 11; y--; } }
+      else if (d > days) { d -= days; m++; out = true; if (m > 11) { m = 0; y++; } }
+      var v = iso(y, m, d);
+      var cls = 'dcal-day' + (out ? ' out' : '') +
+        (v === tISO ? ' today' : '') +
+        (sel && v === iso(sel.y, sel.m, sel.d) ? ' sel' : '') +
+        (inRange(v) ? '' : ' dis');
+      cells += '<button type="button" class="' + cls + '" data-v="' + v + '">' + d + '</button>';
+    }
+    return cells;
+  }
+  function paint() {
+    var mm = (ru() ? M_RU : M_EN)[view.m];
+    var wd = (ru() ? W_RU : W_EN).map(function (w) { return '<span>' + w + '</span>'; }).join('');
+    cal.innerHTML =
+      '<div class="dcal-h">' +
+        '<button type="button" class="dcal-nav" data-nav="-1">‹</button>' +
+        '<b>' + mm + ' ' + view.y + '</b>' +
+        '<button type="button" class="dcal-nav" data-nav="1">›</button>' +
+      '</div>' +
+      '<div class="dcal-w">' + wd + '</div>' +
+      '<div class="dcal-g">' + grid() + '</div>' +
+      '<div class="dcal-f">' +
+        '<button type="button" class="dcal-btn" data-act="today">' + (ru() ? 'Сегодня' : 'Today') + '</button>' +
+        '<button type="button" class="dcal-btn" data-act="clear">' + (ru() ? 'Очистить' : 'Clear') + '</button>' +
+      '</div>';
+  }
+  function place(inp) {
+    var r = inp.getBoundingClientRect(), W = 272, H = cal.offsetHeight || 330;
+    var x = Math.max(8, Math.min(r.left, window.innerWidth - W - 8));
+    var y = r.bottom + 6;
+    if (y + H > window.innerHeight - 8) y = Math.max(8, r.top - H - 6);
+    cal.style.left = x + 'px'; cal.style.top = y + 'px';
+  }
+  function open(inp) {
+    if (curInput === inp) return close();                   // повторный клик — закрыть
+    close();
+    curInput = inp;
+    var s = parse(inp.value), t = new Date();
+    view = s ? { y: s.y, m: s.m } : { y: t.getFullYear(), m: t.getMonth() };
+    cal = document.createElement('div');
+    cal.id = 'dsk-cal';
+    cal.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('button') : null;
+      if (!b) return;
+      if (b.dataset.nav) {
+        view.m += +b.dataset.nav;
+        if (view.m < 0) { view.m = 11; view.y--; }
+        if (view.m > 11) { view.m = 0; view.y++; }
+        paint(); return;
+      }
+      if (b.dataset.act === 'today') {
+        var n = new Date(), v = iso(n.getFullYear(), n.getMonth(), n.getDate());
+        if (inRange(v)) setVal(v);
+        return;
+      }
+      if (b.dataset.act === 'clear') { setVal(''); return; }
+      if (b.dataset.v && !b.classList.contains('dis')) setVal(b.dataset.v);
+    });
+    document.body.appendChild(cal);
+    paint(); place(inp);
+  }
+  document.addEventListener('click', function (e) {
+    try {
+      if (!html.classList.contains('tl-desktop')) return;
+      var t = e.target;
+      var inp = t && t.closest ? t.closest('input[type="date"]') : null;
+      if (inp) { open(inp); return; }
+      if (cal && !cal.contains(t)) close();
+    } catch (err) {}
+  }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && cal) close(); });
+  window.addEventListener('resize', close);
+  document.addEventListener('scroll', function (e) {
+    if (cal && !(e.target && e.target.nodeType === 1 && cal.contains(e.target))) close();
+  }, true);
 })();
