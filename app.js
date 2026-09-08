@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.72';
+const APP_VERSION = '1.07.73';
 const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -7665,14 +7665,18 @@ function mediaPick(jobId, kind){
         state: 'new', attempts: 0, at: Date.now() };
       mediaQ.push(it); await mQPut(it);
       navigator.vibrate?.(15);
+      mediaStripRefresh(jobId);        // v1.07.73: в том числе внутри модалки
       render(); mediaFlush();
     }catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
   };
   inp.click();
 }
 async function mediaQDel(qid){
+  const gone = mediaQ.find(x => x.qid === qid);
   mediaQ = mediaQ.filter(x => x.qid !== qid);
   await mQDelIdb(qid);
+  mqThumbDrop(qid);
+  mediaStripRefresh(gone && gone.job_id);
   render(); mediaBadge();
 }
 /* ---------- отправка (докачка чанками) ---------- */
@@ -7817,8 +7821,14 @@ async function mediaFlush(verbose){
         if (!state.data.media) state.data.media = [];
         state.data.media.push({ id: it.media_id, job_id: it.job_id, owner_id: state.user.id,
           kind: it.kind, seq: 0, file_name: '', thumb_path: it.thumb_path, status: 'ready' });
+        /* v1.07.73: превью уже есть на телефоне — показываем его сразу, не
+           дожидаясь, пока картинка доедет до хранилища и вернётся обратно. */
+        if (it.thumb && it.thumb_path && !mediaThumbCache.has(it.thumb_path))
+          mediaThumbCache.set(it.thumb_path, mqThumbUrl(it));
+        mqThumbUrls.delete(it.qid);          // ссылка ушла в кеш миниатюр
         if (it.kind === 'video') res.video++; else res.photo++;
         lg(`✓ ${tag}`, 'ok', lid);
+        mediaStripRefresh(it.job_id);        // полоса обновляется и в модалке
         render();
       }catch(e){
         it.attempts = (it.attempts || 0) + 1; await mQPut(it);
@@ -7832,6 +7842,30 @@ async function mediaFlush(verbose){
   return res;
 }
 /* ---------- полоса миниатюр ---------- */
+/* v1.07.73: ссылка на локальное превью создаётся один раз на файл —
+   иначе каждая перерисовка плодила blob-ссылки и картинка моргала. */
+const mqThumbUrls = new Map();
+function mqThumbUrl(x){
+  if (!x.thumb) return '';
+  let u = mqThumbUrls.get(x.qid);
+  if (!u){ u = URL.createObjectURL(x.thumb); mqThumbUrls.set(x.qid, u); }
+  return u;
+}
+function mqThumbDrop(qid){
+  const u = mqThumbUrls.get(qid);
+  if (u){ try{ URL.revokeObjectURL(u); }catch(e){} mqThumbUrls.delete(qid); }
+}
+/* Перерисовать полосу «Фото и видео» на месте — и на экране, и в открытой
+   модалке (render() обновляет только #app, модалку он не видит). */
+function mediaStripRefresh(jobId){
+  const sel = jobId ? `.media-card[data-mjob="${jobId}"]` : '.media-card[data-mjob]';
+  document.querySelectorAll(sel).forEach(el => {
+    const id = el.getAttribute('data-mjob');
+    if (!id) return;
+    el.outerHTML = mediaStripHtml(id);
+  });
+  mediaHydrate();
+}
 function mediaStripHtml(jobId){
   const rows = (state.data.media || []).filter(m => m.job_id === jobId)
     .sort((a, b) => (a.kind > b.kind ? 1 : a.kind < b.kind ? -1 : (a.seq || 0) - (b.seq || 0)));
@@ -7847,14 +7881,14 @@ function mediaStripHtml(jobId){
     </div>`).join('')
   + loc.map(x => `
     <div class="mth loc">
-      <img src="${x.thumb ? URL.createObjectURL(x.thumb) : ''}" alt="">
+      <img src="${mqThumbUrl(x)}" alt="">
       ${x.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
       <span class="mst">${ic('clock')}</span>
       <span class="mx" onclick="App.mediaQDel('${x.qid}')">${ic('close')}</span>
     </div>`).join('');
   if (!_mediaHydPlanned){ _mediaHydPlanned = true; setTimeout(mediaHydrate, 0); }
   const lim = mediaLimits();
-  return `<div class="card media-card">
+  return `<div class="card media-card" data-mjob="${jobId}">
     <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('media_title')}
       <span class="tiny"> · ${nP}/${lim.photo}${lim.video ? ` · ${nV}/${lim.video}` : ''}</span></div>
     <div class="mstrip">${cells}
@@ -7894,6 +7928,7 @@ async function mediaOpen(id, kind){
 }
 async function mediaDelete(id){
   if (!isAdmin()) return;
+  const own = (state.data.media || []).find(m => m.id === id);
   if (!confirm(t('media_del_q') + '?')) return;
   const token = await mediaJwt();
   const r = await fetch(mediaFN() + '/media-delete', { method: 'POST',
@@ -7901,6 +7936,7 @@ async function mediaDelete(id){
     body: JSON.stringify({ media_id: id }) });
   if (!r.ok){ toast('⛔', 'err'); return; }
   state.data.media = (state.data.media || []).filter(m => m.id !== id);
+  mediaStripRefresh(own && own.job_id);      // v1.07.73: и в модалке тоже
   toast('🗑 ' + t('deleted')); render();
 }
 let _mqBadgeT = null, _mqBadgePrev = null;
