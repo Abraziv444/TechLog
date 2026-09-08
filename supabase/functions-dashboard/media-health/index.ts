@@ -191,12 +191,12 @@ Deno.serve(async (req) => {
     if (r.cfg) (r.cfg as Record<string, unknown>).account = about.user?.emailAddress ?? "";
 
     // доступна ли папка приложению?
-    let reachable = false;
+    let reachable = false, rootName = "";
     if (folder) {
       const chk = await fetch(
         `https://www.googleapis.com/drive/v3/files/${folder}?fields=id,name,trashed`,
         { headers: { Authorization: `Bearer ${t}` } });
-      if (chk.ok) { const f = await chk.json(); reachable = !f.trashed; }
+      if (chk.ok) { const f = await chk.json(); reachable = !f.trashed; rootName = f.name ?? ""; }
     }
     if (!reachable) {                     // папка сделана руками в Диске — создаём свою
       const mkf = await (await fetch("https://www.googleapis.com/drive/v3/files", {
@@ -204,12 +204,30 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ name: "TechLog Archive",
           mimeType: "application/vnd.google-apps.folder" }) })).json();
       if (mkf.id) {
-        folder = mkf.id;
+        folder = mkf.id; rootName = "TechLog Archive";
         await s.from("app_secrets").upsert({ key: "gd_folder_id", value: folder });
         if (r.cfg) (r.cfg as Record<string, unknown>).folder_id = folder;
-        r.folder = { ok: true, created: true, id: folder, name: "TechLog Archive" };
+        r.folder = { ok: true, created: true, id: folder, name: rootName };
       } else r.folder = { ok: false, error: JSON.stringify(mkf).slice(0, 200) };
-    } else r.folder = { ok: true, id: folder };
+    } else r.folder = { ok: true, id: folder, name: rootName };
+
+    /* v1.07.78: наглядно, куда что ложится. Админ видит в настройках две
+       строки с иконкой папки и её именем — как в самом Google Диске:
+       фото и видео → «архив / ГГГГ-ММ», документы → «архив / Files / ГГГГ-ММ».
+       Папки те же самые, что использует настоящая отправка (monthFolder),
+       поэтому проверка заодно создаёт их заранее. */
+    if (folder) {
+      try {
+        const ym = new Date().toISOString().slice(0, 7);
+        const photoMonth = await monthFolder(t, folder, ym);
+        const filesRoot = await monthFolder(t, folder, "Files");
+        const fileMonth = filesRoot ? await monthFolder(t, filesRoot, ym) : "";
+        r.paths = {
+          photo: { id: photoMonth, name: ym, path: `${rootName || "—"} / ${ym}` },
+          file: { id: fileMonth, name: ym, path: `${rootName || "—"} / Files / ${ym}` },
+        };
+      } catch (_e) { /* не критично: тест продолжается */ }
+    }
 
     const mk = await (await fetch("https://www.googleapis.com/drive/v3/files", {
       method: "POST", headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },

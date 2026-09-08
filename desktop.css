@@ -278,16 +278,16 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
 @media (min-width: 1180px){
 
   /* --- реквизиты сверху: слева дата/статус, справа бригада (как шапка бланка) --- */
-  html.tl-desktop #app:has(.inv-sec) .back-top + .card{
+  html.tl-desktop #app:has(.inv-sec) .docbar + .card{
     display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start;
   }
-  html.tl-desktop #app:has(.inv-sec) .back-top + .card > div:first-child{ grid-column:1 / -1; }
-  html.tl-desktop #app:has(.inv-sec) .back-top + .card > .grid-2{ grid-column:1; margin-top:0; align-content:start; }
-  html.tl-desktop #app:has(.inv-sec) .back-top + .card > .crew-box{
+  html.tl-desktop #app:has(.inv-sec) .docbar + .card > div:first-child{ grid-column:1 / -1; }
+  html.tl-desktop #app:has(.inv-sec) .docbar + .card > .grid-2{ grid-column:1; margin-top:0; align-content:start; }
+  html.tl-desktop #app:has(.inv-sec) .docbar + .card > .crew-box{
     grid-column:2; grid-row:2; margin:0; padding:10px 12px;
     border:2px dashed var(--line,#31434C); border-radius:12px;
   }
-  html.tl-desktop #app:has(.inv-sec) .back-top + .card > .note-green{ grid-column:1 / -1; }
+  html.tl-desktop #app:has(.inv-sec) .docbar + .card > .note-green{ grid-column:1 / -1; }
 
   /* --- секции → непрерывная таблица бланка --- */
   html.tl-desktop #app:has(.inv-sec) .inv-sec{
@@ -618,6 +618,8 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     font-size:.8rem; padding:12px 6px; letter-spacing:.2px; white-space:nowrap;
   }
   html.tl-desktop .pstrip{ padding-left:0; padding-right:0; }
+  /* v1.07.78: подписи полос (пропозалы, работы без исполнителя) — по той же сетке */
+  html.tl-desktop .strip-h{ margin-left:0; margin-right:0; }
   /* v1.07.49: ширина .bcol задаётся выше через var(--bcolw,260px) — старый фикс 260px удалён */
 }
 
@@ -701,56 +703,7 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   }
 }
 
-/* =====================================================================
-   ============ v1.07.60 · КАЛЕНДАРЬ ДЛЯ ПОЛЕЙ ДАТЫ (#dsk-cal) ============
-   Открывает desktop.js кликом по input[type=date]. Родная иконка пикера
-   скрыта — календарь единый и в стиле приложения.
-   ===================================================================== */
-html.tl-desktop input[type="date"]::-webkit-calendar-picker-indicator{ display:none; }
-html.tl-desktop input[type="date"]{ cursor:pointer; }
-
-#dsk-cal{
-  position:fixed; z-index:10060; width:272px;
-  background:var(--panel,#17232A);
-  border:2px solid var(--line,#31434C); border-radius:16px;
-  box-shadow:0 14px 38px rgba(0,0,0,.5);
-  padding:10px; user-select:none;
-}
-#dsk-cal .dcal-h{ display:flex; align-items:center; justify-content:space-between; margin:0 2px 6px; }
-#dsk-cal .dcal-h b{ font-size:.92rem; }
-#dsk-cal .dcal-nav{
-  width:32px; height:32px; border-radius:10px; cursor:pointer;
-  font:inherit; font-weight:900; font-size:1rem;
-  background:var(--panel-2,#1C2B33); color:var(--dim,#8AA0AB);
-  border:2px solid var(--line,#31434C);
-}
-#dsk-cal .dcal-w{
-  display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:2px;
-  font-size:.62rem; font-weight:900; letter-spacing:.4px; text-transform:uppercase;
-  color:var(--dim-2,#5D737E); text-align:center;
-}
-#dsk-cal .dcal-g{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-#dsk-cal .dcal-day{
-  height:32px; border-radius:9px; cursor:pointer;
-  font:inherit; font-weight:800; font-size:.8rem;
-  background:transparent; color:var(--text,#F1F7FB);
-  border:2px solid transparent;
-}
-#dsk-cal .dcal-day.out{ color:var(--dim-2,#5D737E); font-weight:600; }
-#dsk-cal .dcal-day.today{ border-color:var(--dim,#8AA0AB); }
-#dsk-cal .dcal-day.sel{
-  background:var(--green,#58CC02); border-color:var(--green,#58CC02);
-  color:var(--green-ink,#0E2A00); font-weight:900;
-}
-#dsk-cal .dcal-day.dis{ opacity:.3; cursor:default; }
-#dsk-cal .dcal-f{ display:flex; gap:6px; margin-top:8px; }
-#dsk-cal .dcal-btn{
-  flex:1; padding:8px 0; border-radius:10px; cursor:pointer;
-  font:inherit; font-weight:900; font-size:.72rem; letter-spacing:.3px; text-transform:uppercase;
-  background:var(--panel-2,#1C2B33); color:var(--dim,#8AA0AB);
-  border:2px solid var(--line,#31434C);
-}
-@media (hover:hover){
-  #dsk-cal .dcal-day:not(.sel):not(.dis):hover{ border-color:var(--blue,#1CB0F6); }
-  #dsk-cal .dcal-nav:hover, #dsk-cal .dcal-btn:hover{ border-color:var(--blue,#1CB0F6); color:var(--blue,#1CB0F6); }
-}
+/* v1.07.78: шапка документа (.docbar) заменила .back-top — ПК-раскладка
+   карточки работы цепляется теперь за неё. Оформление календаря (#dsk-cal)
+   переехало в styles.css —
+   он теперь общий для телефона и ПК (см. ui.js). */

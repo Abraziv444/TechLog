@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.76';
-const DB_SQL_FILE = 'full-install-1_07_76.sql';   // v1.07.76: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.07.78';
+const DB_SQL_FILE = 'full-install-1_07_78.sql';   // v1.07.78: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -366,6 +366,23 @@ const I18N = {
     ext_req_pending: 'запрос на {N} дн. ждёт решения',
     ext_req_title: 'Согласование продлений', ext_req_ok: 'Одобрить', ext_req_no: 'Отклонить',
     b_hide_empty: 'Скрыть свободных',
+    b_free_on: 'Свободные показаны', b_free_off: 'Свободные скрыты',
+    b_prop_strip: 'Пропозалы на этот день', b_prop_draft_n: 'из них черновиков',
+    b_free_jobs: 'Работы без исполнителя', b_free_jobs_hint: 'черновики: сотрудник ещё не назначен',
+    b_assign: 'Назначить…', b_assigned: 'Назначен',
+    nt_tech: 'Исполнитель', nt_tech_none: '— не назначен —', nt_tech_me: 'Я',
+    doc_close: 'Закрыть', doc_unsaved_t: 'Несохранённые изменения',
+    doc_unsaved: 'В документе есть правки, которые ещё не сохранены.',
+    doc_save_close: 'Сохранить и закрыть', doc_close_nosave: 'Закрыть без сохранения',
+    font_title: 'Размер шрифта', font_hint: 'Личная настройка: меняет весь интерфейс на этом устройстве — и на телефоне, и на компьютере.',
+    font_reset: 'Обычный', font_demo: 'Так будет выглядеть текст',
+    mq_all_ok: 'Все фото и видео отправлены', mq_sending: 'Идёт отправка фото и видео',
+    mq_pending: 'Ждут отправки', mq_open: 'Открыть',
+    gd_trim: 'Обрезать вставленную ссылку до ID папки',
+    gd_trim_hint: 'Вставляйте адрес папки целиком — приложение оставит только ID.',
+    gd_where: 'Куда сохраняются файлы', gd_where_photo: 'Фото и видео',
+    gd_where_files: 'Документы и вложения', gd_open_drive: 'Открыть на Диске',
+    gd_folder_unknown: 'папка появится после первой загрузки',
     media_title: 'Фото и видео', media_photo: 'Фото', media_video: 'Видео',
     media_sb_only: 'Фото и видео работают только с подключённым Supabase',
     media_vlong: 'Видео длиннее 90 сек — снимите короче',
@@ -375,6 +392,22 @@ const I18N = {
     media_lim_hint: 'Действует для всех документов. По умолчанию 10 фото и 2 видео. Лимит проверяет и сервер — обойти его из браузера нельзя. Уже загруженные файлы сверх нового лимита остаются на месте, добавить сверх — нельзя. Видео = 0 убирает кнопку съёмки видео.',
     media_open_err: 'Нет доступа или файл ещё грузится', media_del_q: 'Удалить файл из архива',
     media_offline: 'офлайн', media_wait: 'ждут отправки',
+    media_blur: 'Похоже, снимок смазан — лучше переснять',
+    media_heic: 'Браузер не открыл этот снимок — уйдёт в архив как документ',
+    mt_prep: 'готовлю снимок',
+    cam_card: 'Съёмка',
+    cam_mode_lbl: 'Как открывать камеру',
+    cam_mode_full: 'Полная', cam_mode_quick: 'Быстрая',
+    cam_mode_full_h: 'Открывается родное приложение камеры со всеми режимами — HDR, ночной, зум. Можно снять серию и отдать все кадры разом.',
+    cam_mode_quick_h: 'Камера открывается сразу, одним касанием, но в служебном режиме: часть обработки телефон выключает, снимки бледнее и мягче.',
+    cam_q_lbl: 'Качество снимка',
+    cam_q_eco: 'Экономно', cam_q_std: 'Обычное', cam_q_hi: 'Высокое', cam_q_orig: 'Оригинал',
+    cam_q_eco_h: '1600 пикселей по длинной стороне — для слабой связи, около 0,2 МБ на кадр.',
+    cam_q_std_h: '2048 пикселей — золотая середина, около 0,4 МБ на кадр.',
+    cam_q_hi_h: '3000 пикселей, почти без пережатия — видно надписи на счётчиках и мелкие дефекты. Около 1 МБ на кадр.',
+    cam_q_orig_h: 'Файл из камеры уходит как есть, без пережатия вовсе. Максимум качества и максимум места на Диске.',
+    cam_sharp_chk: 'Предупреждать о смазанных снимках',
+    cam_hint: 'Настройки личные и действуют только на этом телефоне. Кадр готовится в фоне, поэтому приложение больше не подвисает после снимка.',
     media_not_cfg: 'Google Drive не настроен — фото сохранятся и уйдут после настройки (Настройки → Фото и видео)',
     gd_card: 'Фото и видео → Google Drive',
     gd_intro: 'Логин и пароль Google сюда не вводятся — это небезопасно и не нужно. Приложение работает по ключам OAuth: введите три значения ниже, нажмите «Подключить Google» и подтвердите доступ на странице самого Google. Токен доступа сервер сохранит сам.',
@@ -752,6 +785,23 @@ const I18N = {
     ext_req_pending: 'request for {N} d. awaiting decision',
     ext_req_title: 'Extension approvals', ext_req_ok: 'Approve', ext_req_no: 'Reject',
     b_hide_empty: 'Hide free',
+    b_free_on: 'Free staff shown', b_free_off: 'Free staff hidden',
+    b_prop_strip: 'Proposals for this day', b_prop_draft_n: 'drafts among them',
+    b_free_jobs: 'Jobs with no assignee', b_free_jobs_hint: 'drafts: nobody assigned yet',
+    b_assign: 'Assign…', b_assigned: 'Assigned',
+    nt_tech: 'Assignee', nt_tech_none: '— unassigned —', nt_tech_me: 'Me',
+    doc_close: 'Close', doc_unsaved_t: 'Unsaved changes',
+    doc_unsaved: 'This document has edits that are not saved yet.',
+    doc_save_close: 'Save and close', doc_close_nosave: 'Close without saving',
+    font_title: 'Font size', font_hint: 'Personal setting: changes the whole interface on this device — phone and desktop alike.',
+    font_reset: 'Normal', font_demo: 'This is how text will look',
+    mq_all_ok: 'All photos and videos uploaded', mq_sending: 'Uploading photos and videos',
+    mq_pending: 'Waiting to upload', mq_open: 'Open',
+    gd_trim: 'Trim a pasted link down to the folder ID',
+    gd_trim_hint: 'Paste the whole folder address — the app keeps only the ID.',
+    gd_where: 'Where files are stored', gd_where_photo: 'Photos and videos',
+    gd_where_files: 'Documents and attachments', gd_open_drive: 'Open in Drive',
+    gd_folder_unknown: 'the folder appears after the first upload',
     media_title: 'Photos & video', media_photo: 'Photo', media_video: 'Video',
     media_sb_only: 'Media requires Supabase connection',
     media_vlong: 'Video longer than 90s — please retake',
@@ -761,6 +811,22 @@ const I18N = {
     media_lim_hint: 'Applies to every document. Defaults: 10 photos and 2 videos. The server enforces the same limit, so it cannot be bypassed from the browser. Files already uploaded above a new limit stay in place; adding more is blocked. Videos = 0 hides the video button.',
     media_open_err: 'No access or file still uploading', media_del_q: 'Delete file from archive',
     media_offline: 'offline', media_wait: 'pending upload',
+    media_blur: 'This shot looks blurry — better retake it',
+    media_heic: 'The browser could not open this image — it will be archived as a document',
+    mt_prep: 'preparing shot',
+    cam_card: 'Camera',
+    cam_mode_lbl: 'How the camera opens',
+    cam_mode_full: 'Full', cam_mode_quick: 'Quick',
+    cam_mode_full_h: 'Opens the phone’s own camera app with every mode — HDR, night, zoom. Shoot a series and hand over all frames at once.',
+    cam_mode_quick_h: 'Camera opens in one tap, but in capture-intent mode: the phone disables part of its processing, so shots look flatter and softer.',
+    cam_q_lbl: 'Photo quality',
+    cam_q_eco: 'Light', cam_q_std: 'Normal', cam_q_hi: 'High', cam_q_orig: 'Original',
+    cam_q_eco_h: '1600 px on the long side — for weak signal, about 0.2 MB per shot.',
+    cam_q_std_h: '2048 px — the middle ground, about 0.4 MB per shot.',
+    cam_q_hi_h: '3000 px, almost no recompression — meter readings and small defects stay legible. About 1 MB per shot.',
+    cam_q_orig_h: 'The camera file goes through untouched, no recompression at all. Best quality, most Drive space.',
+    cam_sharp_chk: 'Warn about blurry shots',
+    cam_hint: 'These settings are personal and apply to this phone only. Frames are prepared in the background, so the app no longer freezes after a shot.',
     media_not_cfg: 'Google Drive is not configured — photos are queued and will upload after setup (Settings → Photos & video)',
     gd_card: 'Photos & video → Google Drive',
     gd_intro: 'Do NOT enter your Google login/password here — not needed and unsafe. The app uses OAuth keys: fill three values below, press “Connect Google” and confirm on Google’s own page. The server stores the token itself.',
@@ -934,6 +1000,9 @@ function shortName(full){
   const p = String(full||'').trim().split(/\s+/);
   return p[0] ? p[0] + (p[1] ? ' ' + p[1][0].toUpperCase() + '.' : '') : '';
 }
+/* v1.07.78: размер шрифта живёт в ui.js (он общий для телефона и ПК) */
+function fontPct(){ try{ return window.TLUI ? TLUI.fontPct() : 100; }catch(e){ return 100; } }
+
 function techNamesFor(j){
   const ids = [j.technician_id, ...(j.helper_ids||[])].filter(Boolean);
   const names = ids.map(id => {
@@ -1788,6 +1857,13 @@ const ICONS = {
    контур stroke=currentColor — цвет наследуется от соседнего текста)
    ===================================================================== */
 const IC = {
+  /* v1.07.78: плюс/минус/стрелки — рисованные, чтобы «＋ − ← ▲ ▼ ‹ ›»
+     выглядели одинаково в обоих режимах и не зависели от шрифта ОС */
+  plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>',
+  chev_u: '<path d="M5 15l7-7 7 7"/>',
+  chev_d: '<path d="M5 9l7 7 7-7"/>',
+  arr_l: '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>',
   ioshare: '<rect x="5" y="9.5" width="14" height="11" rx="2"/><path d="M12 15V3.6"/><path d="M8.5 6.6 12 3.1l3.5 3.5"/>',  /* v1.07.23: значок «Поделиться» iOS */
   ban: '<circle cx="12" cy="12" r="8.2"/><path d="M6.4 6.6 17.6 17.4"/>',
   steam: '<path d="M7 4.2C5.3 6.3 5.3 8.4 7 10.5c1.7 2.1 1.7 4.2 0 6.3"/><path d="M12 4.2c-1.7 2.1-1.7 4.2 0 6.3 1.7 2.1 1.7 4.2 0 6.3"/><path d="M17 4.2c-1.7 2.1-1.7 4.2 0 6.3 1.7 2.1 1.7 4.2 0 6.3"/><path d="M5.5 20.5h13"/>',
@@ -2515,9 +2591,9 @@ function viewWeek(){
   }
   return `
   <div class="week">
-    <button class="wk-arrow" onclick="App.shiftWeek(-1)" aria-label="prev week">‹</button>
+    <button class="wk-arrow" onclick="App.shiftWeek(-1)" aria-label="prev week">${ic('chev_l')}</button>
     <div class="week-days" id="week-days">${days.join('')}</div>
-    <button class="wk-arrow" onclick="App.shiftWeek(1)" aria-label="next week">›</button>
+    <button class="wk-arrow" onclick="App.shiftWeek(1)" aria-label="next week">${ic('chev_r')}</button>
   </div>
   ${state.selDate!==today ? `<button class="today-jump" onclick="App.jumpToday()">⌂ ${t('back_today')}</button>` : ''}`;
 }
@@ -2539,8 +2615,8 @@ function railHtml(j){
   const can = canReorder(j);
   if (!can) return '';
   return `<div class="rail" onclick="event.stopPropagation()">
-    <button class="mv" title="${t('move_up')}" onclick="App.moveJob('${j.id}',-1)">▲</button>
-    <button class="mv" title="${t('move_down')}" onclick="App.moveJob('${j.id}',1)">▼</button>
+    <button class="mv" title="${t('move_up')}" onclick="App.moveJob('${j.id}',-1)">${ic('chev_u')}</button>
+    <button class="mv" title="${t('move_down')}" onclick="App.moveJob('${j.id}',1)">${ic('chev_d')}</button>
   </div>`;
 }
 /* Адрес целиком + кнопка копирования; коды доступа/callbox целиком, копирование тапом */
@@ -2698,8 +2774,8 @@ function viewHome(){
     + (pkGroups.length ? `<div class="section-title">${t('pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
     + (jobs.length ? `<div class="section-title">${t('jobs')}</div>` + jobsHtml : '')
     + pkDoneHtml + empty
-    + `<button class="btn btn-green" style="margin-top:12px" onclick="App.addTaskModal()">＋ ${t('add_task')}</button>
-       <button class="fab" onclick="App.addTaskModal()" aria-label="${t('add_task')}">＋</button>`
+    + `<button class="btn btn-green" style="margin-top:12px" onclick="App.addTaskModal()">${ic('plus')} ${t('add_task')}</button>
+       <button class="fab" onclick="App.addTaskModal()" aria-label="${t('add_task')}">${ic('plus')}</button>`
     + `</div>`;
 }
 
@@ -2841,7 +2917,7 @@ function faqAuditLegend(){
     .map(k => esc(dict[k])).filter(Boolean);
   return acts.length ? acts.join(' · ') : '—';
 }
-function faqMvDemo(){ return `<span class="demo"><button class="mv" style="pointer-events:none">▲</button><button class="mv" style="pointer-events:none">▼</button></span>`; }
+function faqMvDemo(){ return `<span class="demo"><button class="mv" style="pointer-events:none">${ic('chev_u')}</button><button class="mv" style="pointer-events:none">${ic('chev_d')}</button></span>`; }
 
 function sectionFaqHtml(key){
   const ru = (state.lang || 'ru') !== 'en';
@@ -2864,7 +2940,7 @@ function sectionFaqHtml(key){
       <li>Статус справа: ${faqStatusLegend()}; под ним сумма и ${ic('compass')} — открыть маршрут в навигаторе.</li>
       <li>${ic('clipboard')} возле адреса — копировать адрес; строка кодов: ${ic('key')} код доступа, callbox.</li>
       <li>Клик по карточке — открыть документ (инвойс).</li>
-      <li>Внутри документа блок <b>${ic('camera')} Фото и видео</b>: съёмка из приложения, счётчик «сколько из лимита» (лимиты задаёт админ, по умолчанию 10 фото и 2 видео). Снятое без сети ждёт в очереди и уходит само; при запуске приложение напомнит поповером, а разбор очереди — в Настройках.</li>
+      <li>Внутри документа блок <b>${ic('camera')} Фото и видео</b>: съёмка из приложения, счётчик «сколько из лимита» (лимиты задаёт админ, по умолчанию 10 фото и 2 видео). Снятое без сети ждёт в очереди и уходит само; при запуске приложение напомнит поповером, а разбор очереди — в Настройках. Кнопка «Фото» открывает обычное приложение камеры телефона со всеми режимами, так что можно снять серию и отдать все кадры разом; как именно открывать камеру и с каким качеством сохранять — в Настройках, карточка «Съёмка» (у каждого своя, на своём телефоне).</li>
     </ul>
     <h4>${ic('box')} Карточка пикапа (аренда оборудования)</h4>
     <ul>
@@ -3170,7 +3246,7 @@ function openModal(html){
   document.body.appendChild(ov);
 }
 function closeModal(){ $('#overlay')?.remove(); maybeApplyPendingUpdate(); }
-function modalHead(title, iconName){ return `<h3><button class="back-x" onclick="App.closeModal()">←</button> ${iconName?ic(iconName)+' ':''}${esc(title)}</h3>`; }
+function modalHead(title, iconName){ return `<h3><button class="back-x" aria-label="${t('back')}" onclick="App.closeModal()">${ic('arr_l')}</button> ${iconName?ic(iconName)+' ':''}${esc(title)}</h3>`; }
 
 /* ---------- Добавить задание ---------- */
 function addTaskModal(){
@@ -3193,6 +3269,14 @@ function addTaskModal(){
       </div></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
       <input id="nt-unit" inputmode="numeric" placeholder="916" oninput="App.ntPropRefresh()"></div>
+    ${isManager() ? `<div class="form-row"><span class="lbl">${t('nt_tech')}</span>
+      <select id="nt-tech">
+        <option value="${state.user.id}">${t('nt_tech_me')} · ${esc(shortName(state.user.display_name))}</option>
+        <option value="">${t('nt_tech_none')}</option>
+        ${[...state.data.profiles].filter(p => !p.blocked && p.id !== state.user.id)
+          .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name))
+          .map(p => `<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_' + p.role)})</option>`).join('')}
+      </select></div>` : ''}
     <div id="nt-prop-msg"></div>
     <label class="opt" style="margin:2px 0 8px"><input type="checkbox" id="nt-prop" onchange="App.ntPropRefresh()"> ${t('proposal_chk')}</label>
     <div id="nt-prop-zone"></div>
@@ -3295,10 +3379,16 @@ async function createTask(){
   if (!cxId) missing.push(t('complex'));
   if (!ntWt) missing.push(t('work_type'));
   if (missing.length){ toast('⚠ ' + t('not_selected') + ': ' + missing.join(', '), 'err'); return; }
+  /* v1.07.78: менеджер и админ могут создать работу «без исполнителя» —
+     такая работа висит на доске в полосе черновиков, пока её не назначат. */
+  const techSel = $('#nt-tech');
+  const techId = isManager() ? ((techSel ? techSel.value : state.user.id) || null) : state.user.id;
+  const techPr = techId ? state.data.profiles.find(p => p.id === techId) : null;
+  const techName = techPr ? shortName(techPr.display_name) : shortName(state.user.display_name);
   const job = {
     id: uid(), date, counterparty_id: cpId, complex_id: cxId, unit_number: unit,
     has_proposal: !!($('#nt-prop') && $('#nt-prop').checked),
-    work_type_id: ntWt, technician_id: state.user.id, technician_name: shortName(state.user.display_name), helper_ids: [], shared_with_helpers: false, priority: false, sort_order: jobsOn(date).length,
+    work_type_id: ntWt, technician_id: techId, technician_name: techId ? techName : '', helper_ids: [], shared_with_helpers: false, priority: false, sort_order: jobsOn(date).length,
     status: 'draft', note: '', form_data: emptyFormData(), total: 0,
     approved_total: null, approved_by: null, approved_at: null,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString()
@@ -3408,7 +3498,7 @@ function renderExtendModal(){
       <span class="name">${esc(et.name)}${p.ext_of ? ` <span class="chip info">${t('ext_chip')}</span>` : ''}<span class="tiny"> · ${t('due')}: ${fmtDMY(p.due_date)}</span></span>
       ${d.mode === 'all'
         ? `<b>× ${+p.qty || 1}</b>`
-        : `<span class="stepper"><button type="button" onclick="App.extQty('${p.id}',-1)">−</button><span class="val">${q}</span><button type="button" onclick="App.extQty('${p.id}',1)">＋</button></span><span class="tiny">/ ${+p.qty || 1}</span>`}
+        : `<span class="stepper"><button type="button" aria-label="−" onclick="App.extQty('${p.id}',-1)">${ic('minus')}</button><span class="val">${q}</span><button type="button" aria-label="+" onclick="App.extQty('${p.id}',1)">${ic('plus')}</button></span><span class="tiny">/ ${+p.qty || 1}</span>`}
     </div>`;
   }).join('');
   const newDue = addDaysISO(extBaseDue(d.rows[0]), d.daysN);
@@ -3423,7 +3513,7 @@ function renderExtendModal(){
     <div class="card" style="padding:8px 10px">${lines}</div>
     <div class="qty-line" style="margin:10px 0">
       <span class="name">${t('ext_days_lbl')}</span>
-      <span class="stepper"><button type="button" onclick="App.extDays(-1)">−</button><span class="val">${d.daysN}</span><button type="button" onclick="App.extDays(1)">＋</button></span>
+      <span class="stepper"><button type="button" aria-label="−" onclick="App.extDays(-1)">${ic('minus')}</button><span class="val">${d.daysN}</span><button type="button" aria-label="+" onclick="App.extDays(1)">${ic('plus')}</button></span>
       <span class="tiny">${t('days')} · ${t('ext_max_note').replace('{N}', maxExtendDays())}</span>
     </div>
     ${pendingExtReqHtml(d.jobId)}
@@ -3623,7 +3713,7 @@ function chk(section, key, label, extra){
 }
 function stepperHtml(id, val, min){
   return `<span class="stepper" data-st="${id}">
-    <button type="button" data-act="-">−</button><span class="val">${val}</span><button type="button" data-act="+">＋</button>
+    <button type="button" data-act="-" aria-label="−">${ic('minus')}</button><span class="val">${val}</span><button type="button" data-act="+" aria-label="+">${ic('plus')}</button>
   </span>`;
 }
 
@@ -3677,7 +3767,8 @@ function viewJob(){
   }).join('');
 
   return `
-  <button class="back-top" onclick="App.go('home')">← ${t('back')}</button>
+  ${docBarHtml({ title: `${esc(cx.abbr || cx.name || '')} · Unit ${esc(j.unit_number || '—')}`,
+                 save: 'App.saveJob(false)', close: 'App.jobClose()', dirty: jobDirty() })}
   <div class="card" style="border-left:6px solid ${wt.color}">
     <div style="display:flex;gap:10px;align-items:center">
       <div class="abbr" style="border-color:${wt.color}">${esc(cx.abbr||'—')}</div>
@@ -3703,6 +3794,13 @@ function viewJob(){
     <div class="crew-box">
       <div class="tiny" style="font-weight:900;margin-bottom:6px">${(j.technician_id||(j.helper_ids||[]).length)?'':warnIcon()}${ic('crew')} ${t('crew')}</div>
       <div class="crew-chips" id="crew-chips">${crewChipsHtml(j)}</div>
+      ${(!j.technician_id && isManager()) ? `<div class="crew-add">
+        <select id="jb-tech" onchange="App.setJobTech(this.value)">
+          <option value="">${t('b_assign')}</option>
+          ${[...state.data.profiles].filter(p => !p.blocked)
+            .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name))
+            .map(p => `<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_' + p.role)})</option>`).join('')}
+        </select></div>` : ''}
       ${crewEditable ? `
       <div class="crew-add">
         <select id="crew-sel" onchange="App.crewAdd(this.value)">
@@ -3811,7 +3909,7 @@ function viewJob(){
       ${dictationHTML('jb-note', j.note || '')}
       <div class="tiny">${t('note_hint')}</div>
       <div id="extra-list">${(jobDraft.form_data.extra||[]).length ? extraListHtml() : ''}</div>
-      <button class="btn btn-blue sm" onclick="App.extraPicker()">＋ ${t('template')}</button>
+      <button class="btn btn-blue sm" onclick="App.extraPicker()">${ic('plus')} ${t('template')}</button>
     </div></div>
 
   ${mediaStripHtml(j.id)}
@@ -3853,6 +3951,52 @@ function viewJob(){
   `;
 }
 function amtWrap(id, v){ return `<span class="amt" data-amt="${id}">${v>0?money(v):'—'}</span>`; }
+
+/* =====================================================================
+   v1.07.78 · ШАПКА ДОКУМЕНТА. «Сохранить» и крестик всегда на виду —
+   и в работе, и в пропозале, и на телефоне, и на ПК. Липкая полоса
+   сверху: назад · название · Сохранить · ✕.
+   ===================================================================== */
+function docBarHtml(o){
+  return `<div class="docbar">
+    <button type="button" class="db-back" onclick="${o.close}">${ic('arr_l')}<span>${t('back')}</span></button>
+    <span class="db-t">${o.dirty ? '<span class="dirty-dot" title="' + t('doc_unsaved_t') + '"></span> ' : ''}${o.title || ''}</span>
+    <button type="button" class="db-save" onclick="${o.save}">${ic('save')}<span>${t('save')}</span></button>
+    <button type="button" class="db-x" title="${t('doc_close')}" aria-label="${t('doc_close')}" onclick="${o.close}">${ic('close')}</button>
+  </div>`;
+}
+/* Есть ли несохранённые правки: сравниваем черновик с тем, что в базе.
+   Сравнение по значимым полям — updated_at и служебное меняются сами. */
+function jobKey(j){
+  if (!j) return '';
+  const chk = $('#jb-done');
+  const st = (chk && jobDraft && j === jobDraft) ? (chk.checked ? 'done' : 'draft') : (j.status === 'approved' ? 'approved' : j.status);
+  return JSON.stringify([j.date, j.unit_number || '', j.note || '', j.technician_id || '',
+    (j.helper_ids || []).slice().sort(), !!j.shared_with_helpers, j.proposal_id || '',
+    st === 'approved' ? 'approved' : st, j.form_data]);
+}
+function jobDirty(){
+  if (!jobDraft) return false;
+  const orig = (state.data.jobs || []).find(x => x.id === jobDraft.id);
+  if (!orig) return true;
+  return jobKey(jobDraft) !== jobKey(orig);
+}
+function jobClose(){
+  if (!jobDirty()){ localStorage.removeItem('techlog_draft'); App.go('home'); return; }
+  docCloseModal('App.jobSaveClose()', 'App.jobDrop()');
+}
+async function jobSaveClose(){ closeModal(); await saveJob(true); }
+function jobDrop(){ closeModal(); localStorage.removeItem('techlog_draft'); jobDraft = null; App.go('home'); }
+function docCloseModal(saveCall, dropCall){
+  openModal(`${modalHead(t('doc_unsaved_t'), 'warn')}
+    <div class="tiny" style="margin-bottom:10px">${t('doc_unsaved')}</div>
+    <button class="btn btn-green" onclick="${saveCall}">${ic('save')} ${t('doc_save_close')}</button>
+    <div class="btn-rowpp" style="margin-top:8px">
+      <button class="btn btn-red" onclick="${dropCall}">${ic('close')} ${t('doc_close_nosave')}</button>
+      <button class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
+      <span></span>
+    </div>`);
+}
 
 /* --- биндинг формы (изменения без полного ререндера, чтобы не терять фокус) --- */
 let jobFormBound = false;
@@ -4196,15 +4340,19 @@ function viewDirs(){
   ].filter(x=>x[2]);
   if (!tabs.find(x=>x[0]===state.dirTab)) state.dirTab = tabs[0][0];
   const nav = `<div class="tabs-nav">
-    <button class="tabs-arr" onclick="App.dirTabsScroll(-1)" aria-label="◀">‹</button>
+    <button class="tabs-arr" onclick="App.dirTabsScroll(-1)" aria-label="prev">${ic('chev_l')}</button>
     <div class="tabs" id="dir-tabs">` + tabs.map(([id,l]) =>
     `<button class="tabbtn ${state.dirTab===id?'active':''}" onclick="App.dirTab('${id}')">${l}</button>`).join('') + `</div>
-    <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="next">›</button>
+    <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="next">${ic('chev_r')}</button>
   </div>`;
   const body = { stock: dirStock, staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
                  equipment: dirEquipment, aux: dirAux, price: dirPrice,
                  extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts }[state.dirTab]();
-  return `<div class="section-title">${t('dirs')}${helpBtn('dirs')}</div>` + nav + body;
+  /* v1.07.78: карусель кнопок уезжает вбок, и после выбора было не видно,
+     какой справочник открыт. Название выбранного — отдельной строкой. */
+  const cur = (tabs.find(x => x[0] === state.dirTab) || [,''])[1];
+  const curHead = `<div class="section-title" style="margin:2px 0 8px">${ic('book')} ${cur}</div>`;
+  return `<div class="section-title">${t('dirs')}${helpBtn('dirs')}</div>` + nav + curHead + body;
 }
 
 function dirCounterparties(){
@@ -4216,7 +4364,7 @@ function dirCounterparties(){
         <div class="tiny">${state.data.complexes.filter(x=>x.counterparty_id===c.id).length} ${t('d_complexes').toLowerCase()}</div></div>
       <button class="btn btn-ghost sm" onclick="App.openCp('${c.id}')">${t('edit')}</button>
     </div>`).join('') || `<div class="list-empty">—</div>`) + `</div>
-    <button class="btn btn-green" onclick="App.editCpModal()">＋ ${t('add')}</button>`;
+    <button class="btn btn-green" onclick="App.editCpModal()">${ic('plus')} ${t('add')}</button>`;
 }
 
 function dirComplexes(){
@@ -4253,7 +4401,7 @@ function dirComplexes(){
             : `<button class="btn btn-ghost sm" title="${t('propose_code')}" onclick="App.proposeCode('${cx.id}')">${ic('key')}</button>`}
         </div>`).join('') || `<div class="tiny">—</div>`}
     </div>`).join('');
-  return inbox + blocks + (canEdit ? `<button class="btn btn-green" onclick="App.editCxModal()">＋ ${t('add')}</button>` : '');
+  return inbox + blocks + (canEdit ? `<button class="btn btn-green" onclick="App.editCxModal()">${ic('plus')} ${t('add')}</button>` : '');
 }
 
 function colorPicker(cur, inputId){
@@ -4273,7 +4421,7 @@ function dirWorkTypes(){
       <button class="btn btn-ghost sm" title="${t('cl_title')}" onclick="App.wtChecklistModal('${w.id}')">${ic('clipboard')}${(w.checklist&&w.checklist.length)?' '+w.checklist.length:''}</button>
       <button class="btn btn-ghost sm" onclick="App.editWtModal('${w.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
-    <button class="btn btn-green" onclick="App.editWtModal()">＋ ${t('add')}</button>`;
+    <button class="btn btn-green" onclick="App.editWtModal()">${ic('plus')} ${t('add')}</button>`;
 }
 /* v1.07.26: чек-лист вида работ — редактор (админ) */
 function wtChecklistModal(wtId){
@@ -4315,7 +4463,7 @@ function dirEquipment(){
       <div class="grow"><b>${esc(e.name)}</b><div class="tiny">${money(p(e.price_key))}/${t('days')}</div></div>
       <button class="btn btn-ghost sm" onclick="App.editEtModal('${e.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
-    <button class="btn btn-green" onclick="App.editEtModal()">＋ ${t('add')}</button>`;
+    <button class="btn btn-green" onclick="App.editEtModal()">${ic('plus')} ${t('add')}</button>`;
 }
 
 /* v1.07.26: СКЛАД — остатки оборудования (правит админ, видят по галочке) */
@@ -4361,7 +4509,7 @@ function dirAux(){
     <div class="rowline"><div class="grow">${ic('toolbox')} ${esc(a.name)}</div>
       <button class="btn btn-ghost sm" onclick="App.editAuxModal('${a.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
-    <button class="btn btn-green" onclick="App.editAuxModal()">＋ ${t('add')}</button>`;
+    <button class="btn btn-green" onclick="App.editAuxModal()">${ic('plus')} ${t('add')}</button>`;
 }
 
 function dirPrice(){
@@ -4475,7 +4623,7 @@ function renderCpModal(){
         <div class="grow"><b>${esc(cx.name)}</b><div class="tiny">${esc(cx.address||'')} ${cx.access_code?'· '+ic('key')+' '+esc(cx.access_code):''}</div></div>
         <button class="btn btn-ghost sm" onclick="App.editCxModal('${cx.id}','${c.id}')">${t('edit')}</button>
       </div>`).join('') || `<div class="tiny">—</div>`;
-    body += `<button class="btn btn-green" style="margin-top:10px" onclick="App.editCxModal(null,'${c.id}')">＋ ${t('add')}</button>`;
+    body += `<button class="btn btn-green" style="margin-top:10px" onclick="App.editCxModal(null,'${c.id}')">${ic('plus')} ${t('add')}</button>`;
   }
   openModal(`
     ${modalHead(c.name)}
@@ -4652,9 +4800,9 @@ function viewSettings(){
     <div style="font-weight:900;margin-bottom:6px">${ic('board')} ${t('b_cols')}</div>
     <div class="qty-line"><span class="name">${t('b_cols_lbl')}</span>
       <span class="stepper set-step">
-        <button type="button" onclick="App.boardColsStep(-1)">−</button>
+        <button type="button" aria-label="−" onclick="App.boardColsStep(-1)">${ic('minus')}</button>
         <span class="val" id="bcols-val">${+state.user.board_cols ? +state.user.board_cols : t('b_cols_auto')}</span>
-        <button type="button" onclick="App.boardColsStep(1)">＋</button>
+        <button type="button" aria-label="+" onclick="App.boardColsStep(1)">${ic('plus')}</button>
       </span></div>
     <div class="tiny">${t('b_cols_note')}</div>
   </div>` : '';
@@ -4699,8 +4847,20 @@ function viewSettings(){
       </div>
     </div>
     <div class="settings-row">
-      <div class="grow" style="flex:1"><b>${ic('font')} ${t('font_soon').split(' — ')[0]}</b><div class="d">${t('font_soon')}</div></div>
+      <div class="grow" style="flex:1"><b>${ic('font')} ${t('font_title')}</b>
+        <div class="d">${t('font_hint')}</div></div>
+      <div class="fs-row">
+        <span class="fs-a sm">A</span>
+        <span class="stepper set-step">
+          <button type="button" aria-label="−" onclick="App.fontStep(-1)">${ic('minus')}</button>
+          <span class="val fs-val" id="fs-val">${fontPct()}%</span>
+          <button type="button" aria-label="+" onclick="App.fontStep(1)">${ic('plus')}</button>
+        </span>
+        <span class="fs-a lg">A</span>
+        <button class="btn btn-ghost sm" onclick="App.fontSet(100)">${t('font_reset')}</button>
+      </div>
     </div>
+    <div class="fs-demo">${t('font_demo')}: <b>Unit 916 · Riverstone · ${money(1240)}</b></div>
   </div>
 
   <div class="card" style="border-color:var(--green)">
@@ -4719,6 +4879,7 @@ function viewSettings(){
     ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
   </div>
 
+  ${camCardHtml()}
   ${uiDiagCardHtml()}
 
   ${isAdmin() ? `
@@ -5039,6 +5200,10 @@ const App = {
     dlog('ui: кнопка диагностики ' + (v ? 'включена' : 'выключена'));
     render();
   },
+  /* v1.07.77: съёмка */
+  camMode(v){ camSet('mode', v); dlog('камера: режим ' + v); render(); },
+  camQ(v){ camSet('q', v); dlog('камера: качество ' + v); render(); },
+  camSharp(v){ camSet('sharp', v ? '1' : '0'); render(); },
   gdToggleEdit, gdReveal, gdCopy,
   mediaOpenLocal, mvClose, mvGo, mvDownload, mvDelete, mediaAttach,
   eqHours(etId, v){
@@ -5100,6 +5265,18 @@ const App = {
   dictToggle, dictLang(l){ state.dictLang = l; localStorage.setItem('techlog_dictlang', l); document.querySelectorAll('.dict-row .lang-seg button').forEach(b=>b.classList.toggle('on', b.textContent === (l==='ru-RU'?'RU':'EN'))); },
   noteModal, saveNote, auxToggle, sectionHelp: sectionHelpModal,
   crewAdd, crewAll, crewRemove, navToCx, copyText, copyCxAddr,
+  /* v1.07.78: доска (назначение исполнителя), шапка документа, шрифт, папки Диска */
+  assignJob, jobClose, jobSaveClose, jobDrop, propClose, propSaveClose, propDrop,
+  gdFolderInput, gdTrimToggle,
+  setJobTech(id){
+    if (!jobDraft || !isManager() || !id) return;
+    const pr = state.data.profiles.find(p => p.id === id);
+    jobDraft.technician_id = id;
+    jobDraft.technician_name = pr ? shortName(pr.display_name) : '';
+    autosaveDraft(); render();
+  },
+  fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} render(); },
+  fontSet(v){ try{ if (window.TLUI) TLUI.fontSet(v); }catch(e){} render(); },
   mapSearch: mapSearchRun, mapPick: mapPickRun, addCxFromMap: addCxModal, saveCxFromMap: saveCxFromMapRun, closeModal, sectionFaq: sectionFaqOpen,
   pickupModal, extendModal, extMode, extDays, extQty, extApply, jobHistory, pickupOne,
   searchInput, searchKindSet, searchClear, searchOpenPk, logoHome, checkVerClick,
@@ -6098,7 +6275,7 @@ function dirStaff(){
         <button class="icon-btn ban-btn ${u.blocked?'off':''}" title="${u.blocked?t('unblock'):t('block')}" aria-label="${u.blocked?t('unblock'):t('block')}" onclick="App.staffBlock('${u.id}')">${ic('ban')}</button>`}
       </div>
     </div>`; }).join('') + `</div>
-    <button class="btn btn-green" onclick="App.staffAddModal()">＋ ${t('add_staff')}</button>`;
+    <button class="btn btn-green" onclick="App.staffAddModal()">${ic('plus')} ${t('add_staff')}</button>`;
 }
 async function setRole(uid_, role){
   const u = state.data.profiles.find(p=>p.id===uid_); if (!u) return;
@@ -6940,9 +7117,15 @@ function viewBoard(){
       ${cards || `<div class="tiny bempty">${t('b_empty')}</div>`}
     </div>`;
   }).join('');
-  const tools = `<div class="board-tools"><label class="opt ${hideEmpty?'on':''}">
-    <input type="checkbox" ${hideEmpty?'checked':''} onchange="App.boardHideEmpty(this.checked)"> ${t('b_hide_empty')}</label>${helpBtn('board')}</div>`;
-  return viewWeek() + extReqStripHtml() + propStripHtml() + tools + `<div class="board"${boardColsStyle(staff.length)}>${cols}</div>`;
+  /* v1.07.78: «Скрыть свободных» — глаз вместо чекбокса. Открытый глаз =
+     свободные колонки видны, перечёркнутый = скрыты. */
+  const tools = `<div class="board-tools">
+    <button type="button" class="brd-eye ${hideEmpty ? '' : 'on'}" aria-pressed="${hideEmpty ? 'false' : 'true'}"
+      title="${hideEmpty ? t('b_free_off') : t('b_free_on')}"
+      onclick="App.boardHideEmpty(${hideEmpty ? 'false' : 'true'})">${ic(hideEmpty ? 'eye_off' : 'eye')}
+      <span>${hideEmpty ? t('b_free_off') : t('b_free_on')}</span></button>${helpBtn('board')}</div>`;
+  return viewWeek() + extReqStripHtml() + propStripHtml() + freeJobsStripHtml() + tools
+       + `<div class="board"${boardColsStyle(staff.length)}>${cols}</div>`;
 }
 
 /* v1.07.49: личная ширина колонок доски. N сотрудников на экран (профиль,
@@ -6952,10 +7135,10 @@ function viewBoard(){
    прямой ввод в поле сохранён (тот же setOrgNum). */
 function orgStepperHtml(key, val, min, max){
   return `<span class="stepper set-step">
-    <button type="button" onclick="App.orgStep('${key}',-1,${min},${max})">−</button>
+    <button type="button" aria-label="−" onclick="App.orgStep('${key}',-1,${min},${max})">${ic('minus')}</button>
     <input class="price-input" inputmode="numeric" value="${val}"
       onchange="App.setOrgNum('${key}', this.value, ${min}, ${max})">
-    <button type="button" onclick="App.orgStep('${key}',1,${min},${max})">＋</button>
+    <button type="button" aria-label="+" onclick="App.orgStep('${key}',1,${min},${max})">${ic('plus')}</button>
   </span>`;
 }
 
@@ -7002,8 +7185,8 @@ function boardJobCard(j, idx, canOrd){
   const wt = wtById(j.work_type_id), cx = cxById(j.complex_id);
   const col = (wt && wt.color) || '#8AA0AB';
   const rail = canOrd ? `<div class="rail brail" onclick="event.stopPropagation()">
-      <button class="mv" title="${t('move_up')}" onclick="App.boardMove('${j.id}',-1)">▲</button>
-      <button class="mv" title="${t('move_down')}" onclick="App.boardMove('${j.id}',1)">▼</button>
+      <button class="mv" title="${t('move_up')}" onclick="App.boardMove('${j.id}',-1)">${ic('chev_u')}</button>
+      <button class="mv" title="${t('move_down')}" onclick="App.boardMove('${j.id}',1)">${ic('chev_d')}</button>
     </div>` : '';
   return `<div class="bjob clicky" style="border-left-color:${col}" onclick="App.openJob('${j.id}')">
     ${rail}
@@ -7226,6 +7409,27 @@ function openProposal(id){
   render();
 }
 function propBack(){ propDraft = null; render(); }
+/* v1.07.78: закрытие пропозала крестиком — с проверкой несохранённого */
+function propKey(p){
+  if (!p) return '';
+  return JSON.stringify([p.date, p.counterparty_id || '', p.complex_id || '', p.unit_number || '',
+    p.po_number || '', p.complete_by || '', p.note || '', p.status,
+    (p.items || []).map(it => [it.q, it.code || '', it.d || '', +it.a || 0])]);
+}
+function propDirty(){
+  if (!propDraft) return false;
+  const orig = propById(propDraft.id);
+  if (!orig) return propKey(propDraft) !== propKey({ ...propDraft,
+    counterparty_id: '', complex_id: '', unit_number: '', po_number: '', complete_by: '', note: '',
+    items: [{ q: 1, code: '', d: '', a: 0 }] });
+  return propKey(propDraft) !== propKey(orig);
+}
+function propClose(){
+  if (!propDirty()) return propBack();
+  docCloseModal('App.propSaveClose()', 'App.propDrop()');
+}
+async function propSaveClose(){ closeModal(); await saveProposal(); propDraft = null; render(); }
+function propDrop(){ closeModal(); propDraft = null; render(); }
 function propRecalc(){
   if (!propDraft) return 0;
   const s = (propDraft.items || []).reduce((n, it) => n + (+it.a || 0), 0);
@@ -7255,7 +7459,8 @@ function viewProposalForm(){
   const stSeg = ['draft','sent','approved','declined'].map(s =>
     `<button class="${p.status===s?'on':''}" onclick="App.setPropStatus('${s}')">${t('pst_'+s)}</button>`).join('');
   return `<div class="prop-wrap">
-  <div class="section-title"><button class="icon-btn" onclick="App.propBack()">←</button> ${t('tab_proposals')} · <b>P-${p.no ?? '…'}</b></div>
+  ${docBarHtml({ title: `${t('tab_proposals')} · P-${p.no ?? '…'}`,
+                 save: 'App.saveProposal()', close: 'App.propClose()', dirty: propDirty() })}
   <div class="card" style="margin:0 12px">
     <div class="form-row"><span class="lbl">${t('date')}</span>
       <input type="date" value="${p.date}" onchange="App.propField('date', this.value)"></div>
@@ -7299,7 +7504,7 @@ function viewProposalForm(){
     ${linked.map(j => { const jcx = cxById(j.complex_id) || {};
       return `<div class="rowline"><div class="grow">${esc(jcx.abbr || '')} · Unit <b>${esc(j.unit_number || '—')}</b>
         <span class="tiny">· ${fmtDMY(j.date)} · ${money(jobGrand(j))}</span></div>
-        <button class="btn btn-ghost sm" onclick="App.openJob('${j.id}')">↗</button>
+        <button class="btn btn-ghost sm" title="${t('mq_open')}" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button>
         <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">${ic('close')}</button></div>`; }).join('')
       || `<div class="tiny">—</div>`}
     ${propJobPickerHtml(p)}
@@ -7510,7 +7715,14 @@ function makeProposalPdf(id){
 function propStripHtml(){
   const list = (state.data.proposals || []).filter(p => p.date === state.selDate);
   if (!list.length) return '';
-  return `<div class="pstrip">${list.map(p => {
+  /* v1.07.78: раньше полоса висела без подписи — было непонятно, что это
+     вообще пропозалы и что среди них есть черновики. Теперь заголовок со
+     счётчиком и отдельным счётчиком черновиков. */
+  const drafts = list.filter(p => p.status === 'draft').length;
+  const head = `<div class="strip-h">${ic('prop')} <span class="ttl">${t('b_prop_strip')}</span>
+    <span class="chip">${list.length}</span>
+    ${drafts ? `<span class="chip pst pst-draft">${t('pst_draft')}: ${drafts}</span>` : ''}</div>`;
+  return head + `<div class="pstrip">${list.map(p => {
     const cx = cxById(p.complex_id) || {abbr:'—'};
     return `<div class="pcard clicky" onclick="App.openProposal('${p.id}')">
       <span class="chip pst pst-${p.status}">${t('pst_' + p.status)}</span>
@@ -7549,6 +7761,53 @@ async function extReqCreate(){
   extDraft = null; closeModal();
   toast('⏳ ' + t('ext_req_sent')); render();
 }
+/* v1.07.78: черновики работ, на которые ещё никого не назначили. В колонки
+   доски они не попадают (колонка = сотрудник), поэтому идут отдельной
+   полосой сверху — с явной подписью и возможностью назначить прямо здесь. */
+function freeJobsStripHtml(){
+  const list = (state.data.jobs || [])
+    .filter(j => j.date === state.selDate && !j.technician_id)
+    .sort(jobSortCmp);
+  if (!list.length) return '';
+  const staff = [...state.data.profiles].filter(p => !p.blocked)
+    .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name));
+  const head = `<div class="strip-h">${ic('warn')} <span class="ttl">${t('b_free_jobs')}</span>
+    <span class="chip warn">${list.length}</span>
+    <span class="tiny">${t('b_free_jobs_hint')}</span></div>`;
+  return head + `<div class="pstrip">${list.map(j => {
+    const cx = cxById(j.complex_id) || { abbr: '—' };
+    const wt = wtById(j.work_type_id) || { name: '', color: '#8AA0AB' };
+    return `<div class="pcard freecard">
+      <div class="clicky" onclick="App.openJob('${j.id}')">
+        <span class="chip pst pst-draft">${t('status_draft')}</span>
+        <div><b>${esc(j.unit_number || '—')}</b> <span class="tiny">· ${esc(cx.abbr || cx.name || '—')}</span></div>
+        <div class="tiny"><span class="dotc" style="background:${wt.color}"></span>${esc(wt.name)}</div>
+      </div>
+      ${isManager() ? `<div class="pc-assign"><select onchange="App.assignJob('${j.id}', this.value)">
+        <option value="">${t('b_assign')}</option>
+        ${staff.map(p => `<option value="${p.id}">${esc(shortName(p.display_name))}</option>`).join('')}
+      </select></div>` : ''}
+    </div>`; }).join('')}</div>`;
+}
+/* Назначение исполнителя одним движением — из полосы черновиков. */
+async function assignJob(id, techId){
+  if (!isManager() || !techId) return;
+  const j = (state.data.jobs || []).find(x => x.id === id); if (!j) return;
+  const pr = state.data.profiles.find(p => p.id === techId);
+  j.technician_id = techId;
+  j.technician_name = pr ? shortName(pr.display_name) : '';
+  j.updated_at = new Date().toISOString();
+  await dbUpsert('jobs', JSON.parse(JSON.stringify(j)));
+  /* пикапы этой работы едут за исполнителем */
+  for (const pl of (state.data.placements || []).filter(x => x.job_id === id && !x.picked_up)){
+    pl.technician_id = techId;
+    await dbUpsert('placements', JSON.parse(JSON.stringify(pl)));
+  }
+  audit('job_assign', 'job', id, { unit: j.unit_number, to: j.technician_name });
+  toast('✓ ' + t('b_assigned') + ': ' + j.technician_name);
+  render();
+}
+
 function extReqStripHtml(){
   const list = (state.data.ext_requests || []).filter(r => r.status === 'pending');
   if (!list.length) return '';
@@ -7583,7 +7842,19 @@ async function extReqDecide(id, ok){
    PUT байтов НАПРЯМУЮ в Google → миниатюра в Supabase Storage →
    media-commit (журнал пишет сервер). Токены Google клиента не касаются.
    ===================================================================== */
-const M_MAXW = 1920, M_THUMBW = 320, M_JPEGQ = 0.8, M_THQ = 0.7;
+/* v1.07.77: качество съёмки выбирается на устройстве. Пресет — длинная
+   грань кадра и качество JPEG; «Оригинал» не пережимает вовсе. Раньше было
+   жёстко 1920 / 0.8 на любой телефон — отсюда и «мыло» на снимках. */
+const M_QP = { eco:  { w: 1600, q: 0.75 }, std: { w: 2048, q: 0.85 },
+               hi:   { w: 3000, q: 0.92 }, orig: { w: 0,    q: 0.95 } };
+const M_QDEF = 'hi', M_ORIG_MAX = 24 * 1024 * 1024;
+const M_THUMBW = 320, M_THQ = 0.7;
+/* Порог «похоже, смазано». Голая величина лапласиана не годится: у резкого
+   снимка ровной стены она меньше, чем у смазанной комнаты. Поэтому сначала
+   смотрим, есть ли в кадре вообще что оценивать (СКО яркости), и только там
+   сравниваем долю высоких частот. Обе величины пишутся в журнал — порог
+   можно подкрутить по реальным снимкам с объектов. */
+const M_BLUR_CONTRAST = 15, M_BLUR_RATIO = 0.25;
 const M_VMAX = 90, M_CHUNK = 8 * 1024 * 1024;
 /* v1.07.69: через посредника кусок меньше — он проходит через edge-функцию,
    у которой ограничение на размер запроса. Кратно 256 КБ, как требует Google. */
@@ -7592,9 +7863,17 @@ let _mediaRelay = false;          // включается сам, когда п�
 const mIsNetErr = e => (e instanceof TypeError)
   || /failed to fetch|networkerror|network error|load failed/i.test(String(e && e.message || e));
 const mediaFN = () => (CFG.SUPABASE_URL || '') + '/functions/v1';
+/* Настройки съёмки личные, на устройстве: телефоны у техников разные, тащить
+   это в общие настройки организации незачем. */
+function camGet(k, def){ try{ const v = localStorage.getItem('techlog_cam_' + k); return v === null ? def : v; }catch(e){ return def; } }
+function camSet(k, v){ try{ localStorage.setItem('techlog_cam_' + k, v); }catch(e){} }
+function camMode(){ return camGet('mode', 'full') === 'quick' ? 'quick' : 'full'; }
+function camQual(){ const v = camGet('q', M_QDEF); return M_QP[v] ? v : M_QDEF; }
+function camSharpOn(){ return camGet('sharp', '1') !== '0'; }
 let mediaQ = [];                       // зеркало IndexedDB-очереди для мгновенного рендера
 const mediaThumbCache = new Map();     // thumb_path -> objectURL
 let _mediaHydPlanned = false, _mediaBusy = false;
+let _mqSentOnce = false;      // v1.07.78: в этом сеансе отправка уже проходила
 
 async function mediaJwt(){
   try{ const { data } = await state.sb.auth.getSession(); return data.session && data.session.access_token; }
@@ -7638,25 +7917,187 @@ async function initMedia(){
   }
   mediaStartPop();                      // v1.07.61: поповер о неотправленных при запуске
 }
-/* ---------- сжатие ---------- */
-async function mShrink(file, maxW, q){
+/* ---------- подготовка снимка ---------- */
+/* v1.07.77. Что было не так до этой версии:
+   1) файл разбирался ДВА раза — отдельно кадр, отдельно миниатюра. Каждый
+      раз это полное декодирование 12-мегапиксельного JPEG прямо в главном
+      потоке: экран замирал на секунду-две сразу после снимка;
+   2) уменьшение шло одним проходом (4032 → 1920) обычной интерполяцией
+      canvas, качество сглаживания по умолчанию «low» — картинка выходила
+      мыльной, тонкие надписи на приборах расплывались;
+   3) createImageBitmap звался без imageOrientation — кадры с повёрнутого
+      телефона могли лечь в архив боком.
+   Теперь: разбор ровно один и в отдельном воркере на OffscreenCanvas (в
+   главном потоке не остаётся ничего тяжёлого), уменьшение — шагами не круче
+   чем вдвое за проход с imageSmoothingQuality:'high', миниатюра берётся из
+   уже уменьшенного кадра, ориентация читается из EXIF. Заодно считаем
+   резкость, чтобы поймать смазанный снимок сразу, а не через неделю. */
+/* Метрика резкости. Живая функция — её же исходный текст уезжает в воркер
+   (SHARP_CALC.toString() ниже), так что формула в главном потоке и в воркере
+   не разъедется физически. lap — сколько в кадре высоких частот, gStd —
+   насколько кадр вообще контрастный. */
+function SHARP_CALC(d, w, h){
+  const g = new Float32Array(w * h);
+  let gs = 0, gs2 = 0;
+  for (let i = 0, p = 0; p < g.length; i += 4, p++){
+    g[p] = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+    gs += g[p]; gs2 += g[p] * g[p];
+  }
+  const gm = gs / g.length;
+  const gStd = Math.sqrt(Math.max(0, gs2 / g.length - gm * gm));
+  let s = 0, s2 = 0, n = 0;
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++){
+    const i = y * w + x;
+    const v = 4 * g[i] - g[i - 1] - g[i + 1] - g[i - w] - g[i + w];
+    s += v; s2 += v * v; n++;
+  }
+  if (!n) return { lap: 0, gStd: gStd, ratio: 1 };
+  const m = s / n, lap = Math.sqrt(Math.max(0, s2 / n - m * m));
+  return { lap: lap, gStd: gStd, ratio: lap / Math.max(1, gStd) };
+}
+const M_WSRC = SHARP_CALC.toString() + `
+const QQ = 'high';
+const mk = (w, h) => new OffscreenCanvas(w, h);
+function paint(c, src, w, h){
+  const x = c.getContext('2d');
+  x.imageSmoothingEnabled = true; x.imageSmoothingQuality = QQ;
+  x.drawImage(src, 0, 0, w, h);
+  return c;
+}
+function down(src, sw, sh, tw, th){
+  let cur = src, cw = sw, ch = sh;
+  while (cw > tw * 2 && ch > th * 2){
+    cw = Math.max(tw, Math.round(cw / 2)); ch = Math.max(th, Math.round(ch / 2));
+    cur = paint(mk(cw, ch), cur, cw, ch);
+  }
+  return paint(mk(tw, th), cur, tw, th);
+}
+function sharpOf(cv){
+  const S = 200, k = Math.min(1, S / Math.max(cv.width, cv.height));
+  const w = Math.max(8, Math.round(cv.width * k)), h = Math.max(8, Math.round(cv.height * k));
+  const c = paint(mk(w, h), cv, w, h);
+  return SHARP_CALC(c.getContext('2d').getImageData(0, 0, w, h).data, w, h);
+}
+onmessage = async (e) => {
+  const d = e.data || {}, rid = d.rid;
+  try{
+    const bmp = await createImageBitmap(d.file, { imageOrientation: 'from-image' });
+    const iw = bmp.width, ih = bmp.height;
+    const k = d.maxW ? Math.min(1, d.maxW / Math.max(iw, ih)) : 1;
+    const tw = Math.max(1, Math.round(iw * k)), th = Math.max(1, Math.round(ih * k));
+    const big = down(bmp, iw, ih, tw, th);
+    if (bmp.close) bmp.close();
+    const sc = d.sharp ? sharpOf(big) : null;
+    const blob = d.keep ? null : await big.convertToBlob({ type: 'image/jpeg', quality: d.q });
+    const kt = Math.min(1, d.thumbW / Math.max(tw, th));
+    const thumb = await down(big, tw, th, Math.max(1, Math.round(tw * kt)),
+      Math.max(1, Math.round(th * kt))).convertToBlob({ type: 'image/jpeg', quality: d.thq });
+    postMessage({ rid, ok: true, blob, thumb, iw, ih, w: tw, h: th, sharp: sc });
+  }catch(err){ postMessage({ rid, ok: false, err: String((err && err.message) || err) }); }
+};
+`;
+let _mw, _mwTried = false;
+function mWorker(){
+  if (_mwTried) return _mw || null;
+  _mwTried = true; _mw = null;
+  try{
+    if (typeof Worker === 'function' && typeof OffscreenCanvas === 'function'
+        && typeof createImageBitmap === 'function'
+        && new OffscreenCanvas(1, 1).convertToBlob){
+      const u = URL.createObjectURL(new Blob([M_WSRC], { type: 'text/javascript' }));
+      _mw = new Worker(u);
+      setTimeout(() => { try{ URL.revokeObjectURL(u); }catch(e){} }, 5000);
+      _mw.onerror = () => { try{ _mw.terminate(); }catch(e){} _mw = null; };
+    }
+  }catch(e){ _mw = null; }
+  return _mw;
+}
+function mPrepWorker(file, o){
+  const w = mWorker();
+  if (!w) return Promise.reject(new Error('нет воркера'));
+  return new Promise((res, rej) => {
+    const rid = 'p' + Math.random().toString(36).slice(2);
+    const off = () => { clearTimeout(tmr); w.removeEventListener('message', on); };
+    const on = e => { if (!e.data || e.data.rid !== rid) return; off();
+      e.data.ok ? res(e.data) : rej(new Error(e.data.err || 'worker')); };
+    const tmr = setTimeout(() => { off(); rej(new Error('таймаут')); }, 60000);
+    w.addEventListener('message', on);
+    try{ w.postMessage(Object.assign({ rid, file }, o)); }
+    catch(err){ off(); rej(err); }
+  });
+}
+/* Запасной путь — тот же алгоритм обычным canvas: старые Safari без
+   OffscreenCanvas и любой случай, когда воркер не поднялся. */
+function mPaint2(w, h, src, sw, sh){
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d');
+  x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+  x.drawImage(src, 0, 0, w, h);
+  return c;
+}
+function mDown2(src, sw, sh, tw, th){
+  let cur = src, cw = sw, ch = sh;
+  while (cw > tw * 2 && ch > th * 2){
+    cw = Math.max(tw, Math.round(cw / 2)); ch = Math.max(th, Math.round(ch / 2));
+    cur = mPaint2(cw, ch, cur, cw, ch);
+  }
+  return mPaint2(tw, th, cur, tw, th);
+}
+const mToBlob = (c, q) => new Promise(r => c.toBlob(r, 'image/jpeg', q));
+async function mPrepMain(file, o){
   let src, iw, ih;
-  const bmp = await createImageBitmap(file).catch(() => null);
+  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null);
   if (bmp){ src = bmp; iw = bmp.width; ih = bmp.height; }
   else {
     src = await new Promise((res, rej) => {
       const u = URL.createObjectURL(file), im = new Image();
       im.onload = () => { URL.revokeObjectURL(u); res(im); };
-      im.onerror = rej; im.src = u;
+      im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('decode')); };
+      im.src = u;
     });
     iw = src.naturalWidth; ih = src.naturalHeight;
   }
-  const k = Math.min(1, maxW / Math.max(iw, ih));
-  const c = document.createElement('canvas');
-  c.width = Math.max(1, Math.round(iw * k)); c.height = Math.max(1, Math.round(ih * k));
-  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  const k = o.maxW ? Math.min(1, o.maxW / Math.max(iw, ih)) : 1;
+  const tw = Math.max(1, Math.round(iw * k)), th = Math.max(1, Math.round(ih * k));
+  const big = mDown2(src, iw, ih, tw, th);
   if (bmp && bmp.close) bmp.close();
-  return new Promise(res => c.toBlob(res, 'image/jpeg', q));
+  let sharp = null;
+  if (o.sharp) try{
+    const ss = Math.min(1, 200 / Math.max(tw, th));
+    const sw = Math.max(8, Math.round(tw * ss)), shh = Math.max(8, Math.round(th * ss));
+    const sc = mPaint2(sw, shh, big, sw, shh);
+    sharp = SHARP_CALC(sc.getContext('2d').getImageData(0, 0, sw, shh).data, sw, shh);
+  }catch(e){}
+  const blob = o.keep ? null : await mToBlob(big, o.q);
+  const kt = Math.min(1, o.thumbW / Math.max(tw, th));
+  const thumb = await mToBlob(mDown2(big, tw, th, Math.max(1, Math.round(tw * kt)),
+    Math.max(1, Math.round(th * kt))), o.thq);
+  return { blob, thumb, iw, ih, w: tw, h: th, sharp };
+}
+/* Готовит снимок к отправке. Возвращает null, если браузер файл не открыл
+   (HEIC на Android) — вызывающий тогда отправит его как документ, с родным
+   расширением: сервер именует съёмку строго «.jpg», подложить туда чужие
+   байты нельзя. */
+async function mPrepPhoto(f){
+  const qn = camQual(), qp = M_QP[qn];
+  const isJpg = /^image\/jpe?g$/i.test(f.type || '');
+  const keep = qn === 'orig' && isJpg && f.size <= M_ORIG_MAX;
+  const o = { maxW: keep ? 0 : (qp.w || 3000), q: qp.q || 0.92,
+              thumbW: M_THUMBW, thq: M_THQ, sharp: camSharpOn(), keep };
+  let r = null;
+  try{ r = await mPrepWorker(f, o); }
+  catch(e){ dlog('media: воркер снимка не сработал (' + (e.message || e) + '), считаю в главном потоке'); }
+  if (!r){ try{ r = await mPrepMain(f, o); }catch(e){ dlog('media: снимок не открылся: ' + (e.message || e)); } }
+  if (!r) return null;
+  const sh = r.sharp;
+  if (sh) dlog('media: резкость lap=' + sh.lap.toFixed(1) + ' контраст=' + sh.gStd.toFixed(1)
+    + ' доля=' + sh.ratio.toFixed(3) + ' (порог ' + M_BLUR_RATIO + ' при контрасте от ' + M_BLUR_CONTRAST + ')');
+  /* если кадр и так меньше предела, а пережатие вышло тяжелее оригинала —
+     оставляем оригинал: и байты целее, и место на Диске */
+  const same = r.iw === r.w && r.ih === r.h;
+  const orig = keep || !r.blob || (same && isJpg && r.blob.size >= f.size);
+  return { blob: orig ? f : r.blob, thumb: r.thumb, mime: 'image/jpeg',
+           blur: !!(camSharpOn() && sh && sh.gStd >= M_BLUR_CONTRAST && sh.ratio < M_BLUR_RATIO) };
 }
 const mVideoDur = f => new Promise(res => {
   const u = URL.createObjectURL(f), v = document.createElement('video');
@@ -7693,9 +8134,13 @@ async function mediaEnqueueFile(jobId, f, kind){
   }
   let blob, thumb = null, mime;
   if (kind === 'photo'){
-    blob = await mShrink(f, M_MAXW, M_JPEGQ);
-    thumb = await mShrink(f, M_THUMBW, M_THQ);
-    mime = 'image/jpeg';
+    const p = await mPrepPhoto(f);
+    if (!p){                       /* браузер не открыл файл — уводим в документы */
+      toast('⚠ ' + t('media_heic'), 'err');
+      return mediaEnqueueFile(jobId, f, 'file');
+    }
+    blob = p.blob; thumb = p.thumb; mime = p.mime;
+    if (p.blur) toast('⚠ ' + t('media_blur'), 'err');
   } else if (kind === 'video'){
     const dur = await mVideoDur(f);
     if (dur > M_VMAX + 2){ toast('⚠ ' + t('media_vlong'), 'err'); return false; }
@@ -7709,46 +8154,76 @@ async function mediaEnqueueFile(jobId, f, kind){
   mediaQ.push(it); await mQPut(it);
   return true;
 }
+/* v1.07.77: пока снимок готовится, на полосе стоит плитка-заглушка — раньше
+   на этом месте был просто замерший экран и непонятно, принял он кадр или нет. */
+const mPrepN = new Map();
+function mPrepBusy(jobId, d){
+  const v = Math.max(0, (mPrepN.get(jobId) || 0) + d);
+  if (v) mPrepN.set(jobId, v); else mPrepN.delete(jobId);
+  mediaStripRefresh(jobId);
+}
+/* Сколько ещё файлов этого вида влезает в документ */
+function mediaFree(jobId, kind){
+  const lim = mediaLimits();
+  const max = kind === 'file' ? M_FILE_MAX : (kind === 'video' ? lim.video : lim.photo);
+  return max - (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind).length
+             - mediaQ.filter(x => x.job_id === jobId && x.kind === kind).length;
+}
+/* Общий разбор выбранных файлов: заглушки на полосе, по одному в работу,
+   чтобы не съесть память на слабом телефоне. */
+async function mediaTakeFiles(jobId, files, kind){
+  if (!files.length) return;
+  mPrepBusy(jobId, files.length);
+  let added = 0;
+  try{
+    for (const f of files){
+      try{ if (await mediaEnqueueFile(jobId, f, kind || mKindOf(f))) added++; }
+      catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+      mPrepBusy(jobId, -1);
+    }
+  } finally { if (mPrepN.has(jobId)) mPrepN.delete(jobId); }
+  if (!added){ mediaStripRefresh(jobId); return; }
+  navigator.vibrate?.(15);
+  mediaStripRefresh(jobId);
+  mediaBgPop();
+  render(); mediaFlush();
+}
 /* Скрепка: файлы с телефона и с компьютера — без камеры, можно несколько */
 function mediaAttach(jobId){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   const inp = document.createElement('input');
   inp.type = 'file'; inp.multiple = true;
   inp.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.rtf,.heic,.zip';
-  inp.onchange = async () => {
-    const files = [...(inp.files || [])];
-    if (!files.length) return;
-    let added = 0;
-    for (const f of files){
-      try{ if (await mediaEnqueueFile(jobId, f, mKindOf(f))) added++; }
-      catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
-    }
-    if (!added) return;
-    navigator.vibrate?.(15);
-    mediaStripRefresh(jobId); mediaBgPop(); render(); mediaFlush();
-  };
+  inp.onchange = () => mediaTakeFiles(jobId, [...(inp.files || [])], null);
   inp.click();
 }
 function mediaPick(jobId, kind){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
-  const rows = (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind);
-  const loc = mediaQ.filter(x => x.job_id === jobId && x.kind === kind);
   const lim = mediaLimits();
-  if (rows.length + loc.length >= (kind === 'video' ? lim.video : lim.photo)){
+  const left = mediaFree(jobId, kind);
+  if (left <= 0){
     toast('⚠ ' + t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video), 'err'); return; }
   const inp = document.createElement('input');
   inp.type = 'file';
   inp.accept = kind === 'video' ? 'video/*' : 'image/*';
-  inp.capture = 'environment';
-  inp.onchange = async () => {
-    const f = inp.files && inp.files[0]; if (!f) return;
-    try{
-      if (!await mediaEnqueueFile(jobId, f, kind)) return;
-      navigator.vibrate?.(15);
-      mediaStripRefresh(jobId);        // v1.07.73: в том числе внутри модалки
-      mediaBgPop();                    // v1.07.75: «догрузится само, можно закрыть»
-      render(); mediaFlush();
-    }catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+  /* v1.07.77: главная причина «камера не такая, как обычная». С атрибутом
+     capture телефон открывает камеру в служебном режиме съёмки-по-запросу:
+     урезанный интерфейс, часть обработки выключена — ни HDR, ни ночного
+     режима, ни склейки нескольких кадров, из-за которой родная камера и
+     вытягивает резкость в полутьме подвала. Без capture система показывает
+     обычный выбор и запускает НАСТОЯЩЕЕ приложение камеры со всеми режимами,
+     а заодно позволяет отдать сразу несколько снятых кадров.
+     Кому важнее скорость — в настройках есть «Быстрая». */
+  /* setAttribute, а не inp.capture: свойство capture отражается не во всех
+     движках (на десктопном Chrome его нет вовсе), и присваивание молча
+     оседало обычным полем объекта — атрибут до разметки не доезжал. */
+  if (camMode() === 'quick') inp.setAttribute('capture', 'environment');
+  else if (kind === 'photo' && left > 1) inp.multiple = true;
+  inp.onchange = () => {
+    const files = [...(inp.files || [])].slice(0, left);
+    if (files.length < (inp.files || []).length)
+      toast('⚠ ' + t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video), 'err');
+    mediaTakeFiles(jobId, files, kind);
   };
   inp.click();
 }
@@ -7924,7 +8399,8 @@ async function mediaFlush(verbose){
         break;                              // сеть шалит — дождёмся online/интервала
       }
     }
-  } finally { _mediaBusy = false; mediaBadge(); if (!$('#mq-log')) mqMini(true); }
+  } finally { _mediaBusy = false; if (res && (res.photo || res.video)) _mqSentOnce = true;
+    mediaBadge(); if (!$('#mq-log')) mqMini(true); }
   return res;
 }
 /* ---------- полоса миниатюр ---------- */
@@ -8015,7 +8491,10 @@ function mediaStripHtml(jobId){
             : `<span class="mspin" style="--p:${Math.max(8, Math.min(100, pct))}%;--c:${mSpinColor(pct)}"></span>`}
       <span class="mx" onclick="event.stopPropagation();App.mediaQDel('${x.qid}')">${ic('close')}</span>
       <span class="mbar"><i style="width:${Math.min(100, pct)}%"></i></span>
-    </div>`; }).join('');
+    </div>`; }).join('')
+  + Array.from({ length: mPrepN.get(jobId) || 0 }, () => `
+    <div class="mth prep" title="${t('mt_prep')}">
+      <span class="mspin" style="--p:100%;--c:var(--blue)"></span></div>`).join('');
   if (!_mediaHydPlanned){ _mediaHydPlanned = true; setTimeout(mediaHydrate, 0); }
   const lim = mediaLimits();
   const nF = rows.filter(m => m.kind === 'file').length + loc.filter(x => x.kind === 'file').length;
@@ -8192,6 +8671,25 @@ async function mediaDelete(id){
   mediaStripRefresh(own && own.job_id);      // v1.07.73: и в модалке тоже
   toast('🗑 ' + t('deleted')); render();
 }
+/* v1.07.78 · Одно место, которое решает, ЧТО написано про фото и видео.
+   Раньше и карточка в настройках, и мини-журнал, и модалка всегда были
+   подписаны «Неотправленные фото и видео» — даже когда всё отправлено и
+   очередь пуста. Теперь заголовок отражает настоящее положение дел:
+     идёт отправка       → «Идёт отправка фото и видео»
+     очередь не пуста    → «Неотправленные фото и видео: N»
+     очередь пуста       → «Все фото и видео отправлены» (зелёная галочка). */
+function mqState(){
+  const n = mediaQ.length;
+  if (_mediaBusy) return { key: 'send', icon: 'upload', color: 'var(--blue)',
+    text: t('mq_sending') + (n ? ` · ${n}` : '') };
+  if (n) return { key: 'wait', icon: 'upload', color: 'var(--orange)',
+    text: t('mq_title') + ': ' + n };
+  return { key: 'ok', icon: 'check', color: 'var(--green)', text: t('mq_all_ok') };
+}
+function mqStateHtml(){
+  const st = mqState();
+  return `${ic(st.icon, 'color:' + st.color)} ${st.text}`;
+}
 let _mqBadgeT = null, _mqBadgePrev = null;
 function mediaBadge(){
   let el = document.getElementById('tl-net');
@@ -8202,14 +8700,18 @@ function mediaBadge(){
     document.body.appendChild(el);
   }
   const n = mediaQ.length, off = !navigator.onLine;
-  const txt = (off ? t('media_offline') : '') + (n ? ` ${n} ${t('media_wait')}` : '');
+  /* v1.07.78: пустая очередь — не молчание, а явное «всё отправлено»
+     (короткой зелёной табличкой, если только что что-то отправляли) */
+  const txt = (off ? t('media_offline') : '')
+    + (n ? ` ${n} ${t('media_wait')}` : (_mqSentOnce ? ' ' + t('mq_all_ok') : ''));
   /* v1.07.61: табличка не висит постоянно — 6 секунд при изменении
      (новый файл в очереди / смена сети), дальше прячется. Постоянный
      контроль — поповер при запуске и раздел в Настройках; тап — модалка. */
   if (txt === _mqBadgePrev) return;
   _mqBadgePrev = txt;
   clearTimeout(_mqBadgeT);
-  el.innerHTML = (off ? ic('wifi') : '') + (n ? ic('upload') : '') + '<span class="tl-net-t"></span>';
+  el.classList.toggle('ok', !n && !off && !!_mqSentOnce);
+  el.innerHTML = (off ? ic('wifi') : '') + (n ? ic('upload') : (_mqSentOnce ? ic('check') : '')) + '<span class="tl-net-t"></span>';
   el.querySelector('.tl-net-t').textContent = txt;      // v1.07.65: иконки + текст без разметки
   el.style.display = txt ? 'inline-flex' : 'none';
   if (txt) _mqBadgeT = setTimeout(() => { el.style.display = 'none'; }, 6000);
@@ -8260,7 +8762,7 @@ function mqMini(show){
     const p = splitMark(l.text);
     return `<div class="mq-l ${l.cls}">${p.icon}${p.icon ? ' ' : ''}${p.text}</div>`;
   }).join('');
-  el.innerHTML = `<div class="mq-mini-h">${ic('upload')} ${t('mq_title')}
+  el.innerHTML = `<div class="mq-mini-h">${mqStateHtml()}
       <span class="mq-mini-x">${t('mq_mini_open')}</span></div>${tail}`;
   clearTimeout(_mqMiniTimer);
   _mqMiniTimer = setTimeout(() => { if (!_mediaBusy) mqMini(false); }, 6000);
@@ -8299,8 +8801,8 @@ function mediaStartPop(){
     const nV = mediaQ.filter(x => x.kind === 'video').length, nP = mediaQ.length - nV;
     const el = document.createElement('div');
     el.id = 'mq-pop'; el.className = 'mq-pop';
-    el.innerHTML = `<div class="mq-pop-t">${ic('upload')} ${t('mq_title')}</div>
-      <div class="tiny">${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')} · ${t('media_wait')}</div>
+    el.innerHTML = `<div class="mq-pop-t">${ic('upload', 'color:var(--orange)')} ${t('mq_title')}: ${mediaQ.length}</div>
+      <div class="tiny">${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')} · ${t('mq_pending')}</div>
       <div class="btn-rowpp" style="margin-top:8px">
         <button class="btn btn-ghost sm" onclick="document.getElementById('mq-pop').remove()">${t('mq_later')}</button>
         <button class="btn btn-blue sm" onclick="document.getElementById('mq-pop').remove();App.mediaQueueModal()">${t('mq_check')}</button>
@@ -8328,12 +8830,14 @@ function mediaBgPop(){
   setTimeout(() => { const q = $('#mq-bgpop'); if (q) q.remove(); }, 9000);
 }
 function mediaQueueCardHtml(){
-  return `<div class="card">
-    <div style="font-weight:900;margin-bottom:6px">${ic('sync')} ${t('mq_title')}</div>
-    <div class="tiny" style="margin-bottom:8px">${mediaQ.length
-      ? ic('upload') + ' ' + mediaQ.length + ' ' + t('media_wait')
-      : ic('check', 'color:var(--green)') + ' ' + t('mq_empty')}</div>
-    <button class="btn btn-blue" onclick="App.mediaQueueModal()">${t('mq_check')}</button>
+  const st = mqState();
+  const nV = mediaQ.filter(x => x.kind === 'video').length, nP = mediaQ.length - nV;
+  return `<div class="card"${st.key === 'ok' ? '' : ' style="border-color:var(--orange)"'}>
+    <div style="font-weight:900;margin-bottom:6px">${mqStateHtml()}</div>
+    ${st.key === 'ok'
+      ? `<div class="tiny" style="margin-bottom:8px">${t('mq_empty')}</div>`
+      : `<div class="tiny" style="margin-bottom:8px">${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')} · ${t('mq_pending')}</div>`}
+    <button class="btn ${st.key === 'ok' ? 'btn-ghost' : 'btn-blue'}" onclick="App.mediaQueueModal()">${st.key === 'ok' ? t('mq_open') : t('mq_check')}</button>
   </div>`;
 }
 function mediaQueueModal(){
@@ -8363,9 +8867,10 @@ function mediaQueueModal(){
     </div>`;
   }).join('');
   openModal(`
-    ${modalHead(t('mq_title'), 'sync')}
+    ${modalHead(mqState().text, mqState().key === 'ok' ? 'check' : 'sync')}
     <div class="card" style="padding:8px 10px;margin-bottom:8px">
-      <b>${ids.length} ${t('mq_docs')} · ${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')}</b>
+      <b>${mediaQ.length ? `${ids.length} ${t('mq_docs')} · ${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')}`
+                         : t('mq_all_ok')}</b>
       <div class="tiny" id="mq-conn" style="margin-top:4px">${ic('wifi',
         navigator.onLine ? '' : 'color:var(--red)')} ${navigator.onLine ? t('mq_net_on') : t('mq_net_off')}</div>
     </div>
@@ -8480,6 +8985,52 @@ function gdSpaceBannerHtml(){
 let gdCfg = { loaded: false, client_id: '', folder_id: '', account: '',
               has_secret: false, has_refresh: false, secret: '', refresh: '' };
 let gdEdit = false;
+/* v1.07.78: где на Диске лежат файлы — заполняется «Тестом соединения»
+   (media-health возвращает имена и адреса папок) и рисуется карточкой. */
+let gdFolders = null;
+function gdTrimOn(){ try{ return localStorage.getItem('techlog_gd_trim') !== '0'; }catch(e){ return true; } }
+function gdTrimToggle(on){
+  try{ localStorage.setItem('techlog_gd_trim', on ? '1' : '0'); }catch(e){}
+  render();
+}
+/* Живая обрезка вставленного адреса: из
+   https://drive.google.com/drive/folders/1AbC…XyZ?usp=sharing остаётся 1AbC…XyZ */
+function gdFolderInput(el){
+  if (!el) return;
+  const raw = el.value;
+  if (gdTrimOn()){
+    const id = gdFolderId(raw);
+    if (id && id !== raw) el.value = id;
+  }
+  const chip = $('#gd-folder-chip');
+  if (chip){
+    const v = (el.value || '').trim();
+    const known = gdFolders && gdFolders.root && gdFolders.root.id === v ? gdFolders.root.name : '';
+    chip.innerHTML = v
+      ? `${ic('folder')} ${esc(known || v)}${known ? '' : ` · <span class="tiny">${t('gd_folder_unknown')}</span>`}`
+      : '';
+    chip.style.display = v ? 'inline-flex' : 'none';
+  }
+}
+/* Карточка «куда сохраняются файлы»: отдельно фото и видео, отдельно
+   документы — с именем папки и ссылкой, как в Google Диске. */
+function gdFoldersHtml(){
+  if (!gdFolders || !gdFolders.root) return '';
+  const row = (lbl, f) => {
+    if (!f || !f.id) return `<div class="gd-fold">${ic('folder')}
+      <div class="gf-b"><div class="gf-n">${esc(lbl)}</div>
+        <div class="gf-p">${t('gd_folder_unknown')}</div></div></div>`;
+    return `<div class="gd-fold">${ic('folder')}
+      <div class="gf-b"><div class="gf-n">${esc(lbl)}: ${esc(f.name || '—')}</div>
+        <div class="gf-p">${esc(f.path || '')}</div></div>
+      <a href="https://drive.google.com/drive/folders/${encodeURIComponent(f.id)}" target="_blank" rel="noopener">${t('gd_open_drive')}</a></div>`;
+  };
+  return `<div style="margin-top:8px">
+    <div class="tiny" style="font-weight:900;margin-bottom:4px">${t('gd_where')}</div>
+    ${row(t('gd_where_photo'), gdFolders.photo || gdFolders.root)}
+    ${row(t('gd_where_files'), gdFolders.file)}
+  </div>`;
+}
 const gdShow = { sec: false, ref: false };
 function gdHasKeys(){ return !!(gdCfg.client_id || gdCfg.has_secret || gdCfg.folder_id); }
 function gdEditMode(){ return gdEdit || !gdHasKeys(); }
@@ -8560,8 +9111,14 @@ function mediaSettingsCardHtml(){
     <div class="tiny" style="margin-bottom:8px">${t('gd_intro')}</div>
     ${row(t('gd_cid'), `<input id="gd-cid" autocomplete="off" placeholder="…apps.googleusercontent.com" value="${esc(gdCfg.client_id || '')}">`)}
     ${row(t('gd_secret'), `<input id="gd-sec" type="password" autocomplete="new-password" placeholder="GOCSPX-…">`)}
-    ${row(t('gd_folder'), `<input id="gd-folder" autocomplete="off" placeholder="${t('gd_folder_ph')}" value="${esc(gdCfg.folder_id || '')}">`)}
-    <div class="tiny gd-hint">${t('gd_folder_hint')}</div>
+    ${row(t('gd_folder'), `<input id="gd-folder" autocomplete="off" placeholder="${t('gd_folder_ph')}"
+      value="${esc(gdCfg.folder_id || '')}" oninput="App.gdFolderInput(this)" onchange="App.gdFolderInput(this)">`)}
+    <label class="opt ${gdTrimOn() ? 'on' : ''}" style="margin:2px 0 6px">
+      <input type="checkbox" ${gdTrimOn() ? 'checked' : ''} onchange="App.gdTrimToggle(this.checked)"> ${t('gd_trim')}</label>
+    <div class="tiny gd-hint">${gdTrimOn() ? t('gd_trim_hint') : t('gd_folder_hint')}</div>
+    <span class="gd-folder-chip" id="gd-folder-chip" style="${gdCfg.folder_id ? '' : 'display:none'}">${gdCfg.folder_id
+      ? ic('folder') + ' ' + esc((gdFolders && gdFolders.root && gdFolders.root.id === gdCfg.folder_id && gdFolders.root.name) || gdCfg.folder_id)
+      : ''}</span>
     ${row(t('gd_redirect'), ro(redirect) + copyB('redirect'))}
     <div class="btn-rowpp" style="margin:8px 0 0">
       <button class="btn btn-ghost" onclick="App.mediaSaveKeys()">${t('gd_save')}</button>
@@ -8570,7 +9127,8 @@ function mediaSettingsCardHtml(){
     ${row(t('gd_cid'), `<input id="gd-cid" readonly value="${esc(gdCfg.client_id || '')}" placeholder="${t('gd_none')}" onclick="this.select()">` + copyB('cid'))}
     ${row(t('gd_secret'), ro(gdShow.sec ? gdCfg.secret
         : (gdCfg.has_secret ? gdMask(gdCfg.secret, 'GOCSPX-••••••••••••') : '')) + eyeB('sec') + copyB('sec'))}
-    ${row(t('gd_folder'), ro(gdCfg.folder_id) + copyB('folder'))}
+    ${row(t('gd_folder'), ro((gdFolders && gdFolders.root && gdFolders.root.name)
+      ? gdFolders.root.name + ' · ' + gdCfg.folder_id : gdCfg.folder_id) + copyB('folder'))}
     ${row(t('gd_token'), ro(gdShow.ref ? gdCfg.refresh
         : (gdCfg.has_refresh ? gdMask(gdCfg.refresh, '1//••••••••••••') : '')) + eyeB('ref') + copyB('ref'))}
     ${row(t('gd_redirect'), ro(redirect) + copyB('redirect'))}
@@ -8584,6 +9142,7 @@ function mediaSettingsCardHtml(){
     ${status}
     ${body}
     <button class="btn btn-green" style="margin-top:8px" onclick="App.mediaHealth()">${ic('flask')} ${t('gd_test')}</button>
+    <div id="gd-folders">${gdFoldersHtml()}</div>
     <div id="gd-health" class="tiny" style="margin-top:8px"></div>
     <details style="margin-top:8px"><summary class="tiny">${t('gd_help')}</summary>
       <div class="tiny" style="margin-top:6px;line-height:1.5">
@@ -8643,10 +9202,10 @@ async function mediaOauthExchange(code){
    перепутанный при ручном деплое код, и забытую при обновлении функцию. */
 const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
                    'media-view', 'media-delete', 'media-oauth'];
-const MEDIA_FN_VER = '1.07.76';
+const MEDIA_FN_VER = '1.07.78';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
-const MEDIA_FN_MIN = { 'media-begin': '1.07.76', 'media-health': '1.07.76' };
+const MEDIA_FN_MIN = { 'media-begin': '1.07.76', 'media-health': '1.07.78' };
 const MEDIA_FN_MIN_DEF = '1.07.72';
 function mFnVerOk(ver, name){
   const need = (MEDIA_FN_MIN[name] || MEDIA_FN_MIN_DEF).split('.').map(Number);
@@ -8849,8 +9408,18 @@ async function mediaHealth(){
     } else if (j.drive){
       h += row('Drive', false, esc(String(j.drive.error || '')).slice(0, 120));
     }
-    if (j.folder && j.folder.created)
-      h += row(t('gd_folder'), true, esc(String(j.folder.name || '')) + ' · ' + esc(String(j.folder.id || '')));
+    if (j.folder && j.folder.id){
+      h += row(t('gd_folder'), j.folder.ok !== false,
+        esc(String(j.folder.name || '')) + ' · ' + esc(String(j.folder.id || '')));
+      /* v1.07.78: наглядно — какая папка для фото, какая для документов */
+      gdFolders = { root: { id: j.folder.id, name: j.folder.name || '', path: j.folder.name || '' },
+                    photo: (j.paths && j.paths.photo) || null,
+                    file:  (j.paths && j.paths.file)  || null };
+      const fb = $('#gd-folders'); if (fb) fb.innerHTML = gdFoldersHtml();
+      const chip = $('#gd-folder-chip');
+      if (chip && j.folder.name){ chip.style.display = 'inline-flex';
+        chip.innerHTML = ic('folder') + ' ' + esc(j.folder.name); }
+    }
     if (j.write) h += row(t('gd_write'), j.write.ok, j.write.error ? esc(String(j.write.error)).slice(0, 120) : '');
     /* v1.07.64: свободное место — в настройки организации (видно менеджеру) */
     if (j.drive && j.drive.ok && j.drive.free_pct != null){
@@ -8881,6 +9450,39 @@ async function mediaHealth(){
 /* v1.07.67: карточка «Диагностика интерфейса». Сам движок живёт в
    uidiag.js — автономном модуле; если он не загрузился, карточка честно
    об этом пишет, а приложение работает как обычно. */
+/* v1.07.77: настройки съёмки — у каждого свои, на своём телефоне */
+function camCardHtml(){
+  const md = camMode(), q = camQual(), sh = camSharpOn();
+  const seg = (cur, val, lbl, fn) =>
+    `<button class="${cur === val ? 'on' : ''}" onclick="App.${fn}('${val}')">${lbl}</button>`;
+  /* подпись и переключатель — в столбик: подсказки длинные, в две колонки
+     они на 414 px сминаются в узкий столбец из одного слова */
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('cam_card')}</div>
+    <div class="cam-set">
+      <b>${t('cam_mode_lbl')}</b>
+      <div class="tiny">${md === 'quick' ? t('cam_mode_quick_h') : t('cam_mode_full_h')}</div>
+      <div class="lang-seg cam-seg">
+        ${seg(md, 'full', t('cam_mode_full'), 'camMode')}
+        ${seg(md, 'quick', t('cam_mode_quick'), 'camMode')}
+      </div>
+    </div>
+    <div class="cam-set">
+      <b>${t('cam_q_lbl')}</b>
+      <div class="tiny">${t('cam_q_' + q + '_h')}</div>
+      <div class="lang-seg cam-seg cam-q">
+        ${seg(q, 'eco', t('cam_q_eco'), 'camQ')}
+        ${seg(q, 'std', t('cam_q_std'), 'camQ')}
+        ${seg(q, 'hi', t('cam_q_hi'), 'camQ')}
+        ${seg(q, 'orig', t('cam_q_orig'), 'camQ')}
+      </div>
+    </div>
+    <label class="opt ${sh ? 'on' : ''}" style="margin-top:10px">
+      <input type="checkbox" ${sh ? 'checked' : ''} onchange="App.camSharp(this.checked)"> ${t('cam_sharp_chk')}
+    </label>
+    <div class="tiny" style="margin-top:6px">${t('cam_hint')}</div>
+  </div>`;
+}
 function uiDiagCardHtml(){
   const on = (() => { try { return localStorage.getItem('techlog_uidiag') === '1'; } catch(e){ return false; } })();
   return `<div class="card">
@@ -9705,7 +10307,7 @@ function dirSizes(){
       <div class="grow">${ic('ruler')} <b>${esc(s.name)}</b> <span class="tiny">· ${esc(s.unit)}</span></div>
       <button class="btn btn-ghost sm" onclick="App.editSzModal('${s.id}')">${t('edit')}</button>
     </div>`).join('') || `<div class="tiny">—</div>`) + `</div>
-    <button class="btn btn-green" onclick="App.editSzModal()">＋ ${t('add')}</button>`;
+    <button class="btn btn-green" onclick="App.editSzModal()">${ic('plus')} ${t('add')}</button>`;
 }
 function editSzModal(id){
   const s = id ? szById(id) : { id: uid(), name:'', unit:'', sort: (state.data.size_types||[]).length+1 };
@@ -9733,7 +10335,7 @@ function dirExtraWorks(){
       <button class="btn btn-ghost sm" onclick="App.editEwModal('${w.id}')">${t('edit')}</button>
     </div>`;
   }).join('') || `<div class="tiny">—</div>`) + `</div>
-    <button class="btn btn-green" onclick="App.editEwModal()">＋ ${t('add')}</button>`;
+    <button class="btn btn-green" onclick="App.editEwModal()">${ic('plus')} ${t('add')}</button>`;
 }
 function editEwModal(id){
   const w = id ? ewById(id) : { id: uid(), name:'', kind:'work', needs_size:false, size_type_id:null, sort:(state.data.extra_works||[]).length+1 };
@@ -9779,7 +10381,7 @@ function dirProducts(){
       <div class="grow">${ic('cart')} <b>${esc(p.name)}</b><div class="tiny">${t('default_price')}: ${money(+p.default_price||0)}</div></div>
       <button class="btn btn-ghost sm" onclick="App.editPtModal('${p.id}')">${t('edit')}</button>
     </div>`).join('') || `<div class="tiny">—</div>`) + `</div>
-    <button class="btn btn-green" onclick="App.editPtModal()">＋ ${t('add')}</button>`;
+    <button class="btn btn-green" onclick="App.editPtModal()">${ic('plus')} ${t('add')}</button>`;
 }
 function editPtModal(id){
   const p = id ? ptById(id) : { id: uid(), name:'', default_price:0, sort:(state.data.product_types||[]).length+1 };

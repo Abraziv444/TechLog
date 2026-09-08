@@ -61,7 +61,7 @@ export async function monthFolder(t: string, rootId: string, ym: string) {
 /* v1.07.72: версия комплекта функций. Диагностика в приложении спрашивает
    каждую функцию «кто ты и какой версии» — так видно и перепутанный код,
    и функцию, которую забыли передеплоить. */
-export const FN_VER = "1.07.76";
+export const FN_VER = "1.07.78";
 
 export const CORS = {
   "Access-Control-Allow-Origin": "*",
