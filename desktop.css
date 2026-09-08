@@ -362,6 +362,10 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   }
   html.tl-desktop #app:has(#dir-tabs) #dir-tabs .tabbtn{
     width:100%; text-align:left; font-size:.8rem; padding:10px 12px; border-radius:12px;
+    /* v1.07.79: колонка вкладок фиксированной ширины (200px), а названия
+       вроде «Контрагенты» при шрифте ×1.6 в неё не влезали и распирали
+       сетку. Длинному слову разрешаем перенос — колонка остаётся на месте. */
+    white-space:normal; overflow-wrap:anywhere; hyphens:auto;
   }
   /* строки справочников: просторнее, полный текст, подсветка под мышью */
   html.tl-desktop #app:has(#dir-tabs) .rowline{ padding:10px 8px; border-radius:10px; }
@@ -700,6 +704,7 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     .bcol-h .grow .tiny{ font-size:.54rem; }
     .bjob{ padding:4px 14px 4px 12px; }
     .bjob .bnum{ left:4px; font-size:.56rem; }
+    .bjob .bst{ left:3px; width:8px; height:8px; }   /* v1.07.79: точка статуса — в левом жёлобе */
   }
 }
 

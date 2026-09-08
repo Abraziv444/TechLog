@@ -7,7 +7,7 @@
   --line-soft:#26363E;
   --text:#F1F7FB;
   --dim:#8AA0AB;
-  --dim-2:#5D737E;
+  --dim-2:#8296A0;                 /* v1.07.79: было #5D737E — 3.22 на панели, ниже нормы 4.5 */
   --green:#58CC02; --green-hi:#79E23A; --green-dk:#3F9A02; --green-ink:#0E2A00;
   --blue:#1CB0F6;  --blue-dk:#0E86C0;
   --red:#FF4B4B;   --red-dk:#C93636;
@@ -49,18 +49,18 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .logo{
   width:44px;height:44px;border-radius:12px;flex:0 0 auto;
   background:var(--green);box-shadow:var(--shadow-press) var(--green-dk);
-  display:grid;place-items:center;color:#fff;font-weight:900;font-size:1.15rem;
-  transform:rotate(-4deg);
+  display:grid;place-items:center;color:var(--green-ink);font-weight:900;font-size:1.15rem;
+  transform:rotate(-4deg);   /* v1.07.79: белый по зелёному давал 2.09 */
 }
 .logo span{transform:rotate(4deg)}
 .brand{line-height:1.05;flex:1;min-width:0}
 .brand .name{font-weight:900;font-size:1.25rem}
 .brand .name b{color:var(--blue)}
 .brand .sub{font-size:.7rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.avatar-wrap{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;width:52px}
+.avatar-wrap{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;width:clamp(52px,3.25em,68px)}
 .avatar{
-  width:44px;height:44px;border-radius:50%;
-  border:3px solid var(--blue);
+  width:clamp(44px,2.75em,60px);height:clamp(44px,2.75em,60px);border-radius:50%;
+  border:3px solid var(--blue);   /* v1.07.79: em — инициалы не вылезают при шрифте ×1.6 */
   background:var(--panel-2);
   display:grid;place-items:center;font-weight:900;color:var(--blue);
 }
@@ -114,8 +114,8 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .btn-green:active{box-shadow:0 1px 0 var(--green-dk)}
 .btn-blue{background:var(--blue);color:#04314A;box-shadow:var(--shadow-press) var(--blue-dk)}
 .btn-blue:active{box-shadow:0 1px 0 var(--blue-dk)}
-.btn-red{background:var(--red);color:#fff;box-shadow:var(--shadow-press) var(--red-dk)}
-.btn-red:active{box-shadow:0 1px 0 var(--red-dk)}
+.btn-red{background:#D23A3A;color:#fff;box-shadow:var(--shadow-press) #A32C2C}   /* v1.07.79: контраст 4.77 */
+.btn-red:active{box-shadow:0 1px 0 #A32C2C}
 .btn-ghost{background:var(--panel);border-color:var(--line);color:var(--dim);box-shadow:var(--shadow-press) #0a1013}
 .btn-ghost:active{box-shadow:0 1px 0 #0a1013}
 .btn.sm{padding:9px 12px;border-radius:var(--r-sm);font-size:.85rem;width:auto}
@@ -151,7 +151,7 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .item .right{text-align:right}
 .eq-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
 .eq-dot{
-  width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  width:2.26em;height:2.26em;border-radius:50%;   /* v1.07.79: em вместо px — растёт вместе со шрифтом */display:grid;place-items:center;
   color:#fff;font-size:.72rem;font-weight:900;border:2px solid rgba(255,255,255,.18)
 }
 .chip{
@@ -261,7 +261,7 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 }
 .tab{
   flex:1;max-width:120px;display:flex;flex-direction:column;align-items:center;gap:2px;
-  color:var(--dim-2);font-size:.62rem;font-weight:800;padding:6px 4px;border-radius:12px;text-transform:uppercase
+  color:var(--dim);font-size:.62rem;font-weight:800;padding:6px 4px;border-radius:12px;text-transform:uppercase
 }
 .tab svg{width:24px;height:24px}
 .tab.active{color:var(--blue);background:rgba(28,176,246,.1)}
@@ -345,7 +345,7 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .rowline:last-child{border-bottom:none}
 .rowline .grow{flex:1;min-width:0}
 .icon-circle{
-  width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  width:3.04em;height:3.04em;border-radius:50%;   /* v1.07.79: em вместо px */display:grid;place-items:center;
   color:#fff;font-weight:900;font-size:.7rem;border:2px solid rgba(255,255,255,.2);flex:0 0 auto
 }
 .color-dots{display:flex;gap:8px;flex-wrap:wrap}
@@ -503,11 +503,13 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 
 .mini-nav{
   background:var(--card); border:1.5px solid var(--line); color:var(--blue);
-  border-radius:8px; padding:2px 8px; font:inherit; font-size:.68rem; font-weight:900; cursor:pointer;
+  border-radius:8px; padding:4px 10px; min-height:24px; font:inherit; font-size:.68rem; font-weight:900; cursor:pointer;
 }
 .key-copy{
   background:none; border:none; color:var(--yellow); font:inherit; font-weight:800; cursor:pointer; padding:0;
   text-decoration:underline dotted;
+  /* v1.07.79: палец ловится по 24px, строка при этом не растёт — отрицательные поля */
+  display:inline-flex; align-items:center; min-height:24px; margin:-4px 0; vertical-align:-6px;
 }
 .today-jump{
   display:block; margin:2px auto 10px; padding:6px 14px; border-radius:999px;
@@ -624,10 +626,10 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .item > .rail{position:absolute;left:8px;bottom:10px;margin-right:0}
 .item.has-rail{
   padding-left:44px !important;          /* 8 + 26 (кнопка) + 10 (зазор) */
-  min-height:88px;                       /* 26 (номер) + 4 + 48 (▲▼) + 10 */
+  min-height:92px;                       /* 26 (номер) + 4 + 52 (▲▼ по 24) + 10 */
 }
 .rail .mv{
-  width:26px;height:22px;border-radius:8px;border:2px solid var(--line);
+  width:26px;height:24px;border-radius:8px;border:2px solid var(--line);
   background:var(--panel-2);color:var(--dim);font-size:.6rem;font-weight:900;
   line-height:1;cursor:pointer;padding:0;
 }
@@ -643,15 +645,17 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   background:#4a5a63;color:#fff;font-weight:900;font-size:.6rem;
   padding-top:5px;line-height:1;transition:background .15s;
 }
-.pri.on .tri, span.pri.on .tri{background:var(--red)}
+.pri.on .tri, span.pri.on .tri{background:var(--red);color:#0B1A22}   /* v1.07.79: тёмная тушь по красному — 5.37 */
 /* v1.07.41: треугольник в конце названия комплекса (главная).
    .tail держит «Unit N» и треугольник одной неразрывной группой: между
    текстом и inline-блоком есть точка переноса даже без пробела, и на
    зауженном .info (ПК ≥1180px) значок падал на отдельную строку. */
 .t .tail{white-space:nowrap}
 .pri.inline{
-  display:inline-grid;place-items:center;width:20px;height:17px;
-  padding:0;margin-left:6px;vertical-align:-2px;
+  /* v1.07.79: сама кнопка 24×24 (палец), треугольник прежние 20×17;
+     отрицательные поля держат высоту строки как была */
+  display:inline-grid;place-items:center;width:24px;height:24px;
+  padding:0;margin:-4px 0 -4px 4px;vertical-align:-5px;
 }
 .pri.inline .tri{width:20px;height:17px;font-size:.55rem;padding-top:4px}
 .pri.on{filter:drop-shadow(0 0 5px rgba(255,75,75,.55))}
@@ -821,7 +825,7 @@ h3 .ic{width:21px;height:21px}
   position:absolute;top:6px;left:8px;height:20px;min-width:20px;z-index:2;
 }
 .pri.corner{
-  position:absolute;top:7px;right:8px;z-index:2;width:26px;height:20px;
+  position:absolute;top:7px;right:8px;z-index:2;width:26px;height:24px;
 }
 .item .info .t{white-space:normal;overflow:visible;text-overflow:clip}
 .item .info .s.addr{
@@ -931,11 +935,16 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .bjob .pri.corner{right:28px}
 .bjob .bwt{display:flex;align-items:center;gap:5px;margin-top:2px}
 .bjob .dotc{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
-.bjob .bst{position:absolute;right:9px;bottom:9px;width:9px;height:9px;border-radius:50%;background:#8AA0AB}
+/* v1.07.79: точка статуса — в левый жёлоб (под номером). Правый жёлоб
+   целиком отдан рельсе ▲▼: её кнопки выросли до 24px ради пальца и
+   перекрывали точку в углу. */
+.bjob .bst{position:absolute;left:6px;bottom:8px;right:auto;width:9px;height:9px;border-radius:50%;background:#8AA0AB}
 .bjob .bst.st-done{background:var(--blue)}
 .bjob .bst.st-approved{background:var(--green)}
 .bjob .brail{position:absolute;right:2px;top:2px;bottom:auto;display:flex;flex-direction:column;gap:2px}
-.bjob .brail .mv{width:22px;height:19px;font-size:.6rem;line-height:1;padding:0}
+/* карточке с рельсой нужен рост под две кнопки: 2 + 24 + 2 + 24 + 2 */
+.bjob.has-brail{min-height:56px}
+.bjob .brail .mv{width:24px;height:24px;font-size:.6rem;line-height:1;padding:0}
 .bpk{background:#17232A;border:1px dashed var(--line);border-radius:10px;
   padding:6px 8px;margin:6px 0;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
 .bpk.over{border:1px solid var(--red)}
@@ -954,9 +963,10 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .brand .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(1rem,4.5vw,1.3rem)}
 .brand .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:400px){ .name-tag{display:none} }
-.info-i{cursor:pointer;opacity:.85;font-weight:900;margin-left:2px}
+.info-i{cursor:pointer;opacity:.85;font-weight:900;margin-left:2px;
+  display:inline-grid;place-items:center;width:24px;height:24px;margin-top:-3px;margin-bottom:-3px;vertical-align:-6px}
 /* v1.07.54: кнопка «?» FAQ раздела и вёрстка справки */
-.faq-i{width:22px;height:22px;min-width:22px;border-radius:50%;border:2px solid var(--line);
+.faq-i{width:24px;height:24px;min-width:24px;border-radius:50%;border:2px solid var(--line);
   color:var(--blue);font-weight:900;font-size:.78rem;margin-left:8px;vertical-align:2px;
   display:inline-grid;place-items:center;background:var(--panel-2);cursor:pointer}
 .faq-i:active{transform:scale(.92)}
@@ -1161,7 +1171,7 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .cam-set > b{display:block}
 .cam-set .tiny{margin:3px 0 8px;line-height:1.4}
 .lang-seg.cam-seg{width:100%;flex-wrap:wrap}
-.lang-seg.cam-seg button{flex:1 1 0;min-width:0;text-align:center;padding:9px 6px;
+.lang-seg.cam-seg button{flex:1 1 0;min-width:0;text-align:center;padding:11px 6px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lang-seg.cam-q button{flex:1 1 40%}   /* четыре подписи в один ряд обрезаются — 2×2 */
 /* вложение «скрепкой»: плитка документа и кнопка под полосой */
@@ -1247,7 +1257,7 @@ html:not(.tl-desktop) .topbar::after{
    ===================================================================== */
 .vm-inline{display:inline-flex;gap:4px;padding:3px;border-radius:999px;
   background:var(--panel-2);border:2px solid var(--line);min-height:0}
-.vm-inline button{display:grid;place-items:center;width:34px;height:22px;
+.vm-inline button{display:grid;place-items:center;width:34px;height:26px;
   border-radius:999px;background:transparent;color:var(--dim);border:0;padding:0}
 .vm-inline button.on{background:var(--blue);color:#04314A}
 .vm-inline svg{width:15px;height:15px}
@@ -1555,3 +1565,64 @@ select:disabled{opacity:.55;cursor:default}
   border:2px solid var(--line);border-radius:999px;color:var(--dim);font-size:.72rem;font-weight:800
 }
 .gd-folder-chip .ic{width:14px;height:14px;color:var(--blue)}
+
+/* =====================================================================
+   v1.07.79 · КАРТА: СВОЙ СЛОЙ И ЧИТАЕМАЯ ПОДПИСЬ
+   ---------------------------------------------------------------------
+   Leaflet раздаёт своим панелям z-index 200…1000 — это выше нижней
+   панели (40) и шапки. Пока карта не создаёт своего контекста наложения,
+   её контролы формально живут в одном слое со всем приложением.
+   isolation:isolate запирает всю внутреннюю кухню Leaflet внутри #map:
+   снаружи карта остаётся обычным блоком в потоке.
+   Заодно подпись «Leaflet | © OpenStreetMap» была почти не видна (1.31).
+   ===================================================================== */
+#map, .leaflet-container{ isolation:isolate; }
+.leaflet-control-attribution{
+  background:rgba(15,23,27,.92) !important; color:var(--dim) !important;
+  font-size:.66rem; padding:2px 6px;
+}
+.leaflet-control-attribution a{ color:#7CC7F0 !important; }
+
+/* =====================================================================
+   v1.07.79 · ПАЛЕЦ И КРУПНЫЙ ШРИФТ
+   ---------------------------------------------------------------------
+   1. Мелкие управляющие элементы дорастают до пальцевой нормы (40px)
+      там, где это ничего не ломает: вкладки, сегменты «Мои | Все»,
+      кнопка-глаз на доске, стрелки вкладок справочников.
+   2. Круглые кнопки со значком («?») меряются в em: при системном шрифте
+      ×1.3…×1.6 знак больше не вылезает из кружка.
+   3. Длинные слова («комплексы», адреса, названия комплексов) при
+      крупном шрифте переносятся внутри своей ячейки, а не распирают
+      строку. Это единственный способ: сжимать флекс уже некуда.
+   ===================================================================== */
+.tabbtn{padding:10px 12px}
+.lang-seg button{padding:10px 14px}
+.tabs-arr{height:42px;width:40px}
+.brd-eye{min-height:40px}
+.brand.clicky{display:flex;flex-direction:column;justify-content:center;min-height:40px}
+
+.faq-i{width:max(24px,1.92em);height:max(24px,1.92em);min-width:max(24px,1.92em)}
+
+.rowline .grow, .rowline .grow .tiny,
+.map-row .grow, .map-row .grow .tiny,
+.item .info .t, .item .info .s,
+.banner .grow, .banner .tiny,
+.qty-line .name, .settings-row .d{ overflow-wrap:anywhere; }
+.section-title{ flex-wrap:wrap; }
+.settings-row{ flex-wrap:wrap; row-gap:8px; }
+.rowline .money, .map-row .money{ flex:0 0 auto; }
+
+/* --- v1.07.79 · остатки пальцевой нормы (только для сенсорных экранов) --- */
+@media (pointer: coarse){
+  /* поля ввода и мелкие круглые кнопки: 40px — минимум, за который
+     промахиваются редко */
+  input, select, textarea{ min-height:42px; }
+  .icon-btn, .sync-btn, .staff-ctl .icon-btn, .icon-btn.sm{ width:40px; height:40px; }
+  .week .wk-arrow{ width:40px; height:40px; }
+  .banner .btn{ min-height:40px; }
+  .mini-nav{ min-height:40px; }
+  .rowline.map-row{ min-height:42px; }
+  /* переключатель «Телефон | ПК»: шире по горизонтали, высоту добирает
+     прозрачная зона (см. правило ниже) — шапка не становится выше */
+  .vm-inline button{ width:40px; }
+}

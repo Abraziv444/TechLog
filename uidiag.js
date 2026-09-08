@@ -315,6 +315,10 @@
       if (items.length > 14 || !visible(el)) return;
       if (/INPUT|TEXTAREA|SELECT|SVG|PATH/.test(el.tagName)) return;
       if (el.classList.contains('fade-clip') || el.closest('.board,.tabs,.week,.tabbar')) return;
+      /* v1.07.79: карта — не текст. Leaflet держит панели тайлов заведомо
+         шире окна карты и двигает их трансформом; это его устройство, а не
+         обрезанная надпись. */
+      if (el.id === 'map' || el.closest('.leaflet-container')) return;
       var s = getComputedStyle(el);
       var scrollable = /auto|scroll/.test(s.overflowX + s.overflowY);
       if (scrollable) return;
@@ -367,6 +371,7 @@
     hits().forEach(function (el) {
       if (items.length > 12) return;
       if (el.closest('.stepper') || el.tagName === 'A' && el.closest('.legal-links,.tiny')) return;
+      if (el.closest('.leaflet-control-attribution')) return;   // v1.07.79: обязательная подпись карты, размер задаёт Leaflet
       var r = hitBox(el);
       if (Math.min(r.w, r.h) >= MIN) return;
       var e = effectiveHit(el, r);
@@ -540,7 +545,10 @@
           /* одна случайная задержка бывает от сборки мусора и на выводы не
              тянет; дефект — это либо очень долгая пауза, либо несколько подряд */
           var bad = worst > 200 || LONG.length > 2;
-          items.push({ level: bad ? 'err' : 'warn',
+          /* v1.07.79: одна пауза короче 120 мс — фон браузера (сборка мусора,
+             декодирование), чинить в приложении нечего: показываем справочно */
+          var calm = LONG.length === 1 && worst <= 120;
+          items.push({ level: bad ? 'err' : (calm ? 'ok' : 'warn'),
                        msg: 'во время прокрутки главный поток блокировался ' + LONG.length + ' раз, дольше всего на ' + worst + ' мс', el: null });
         }
         items.push({ level: 'ok', msg: 'высота страницы ' + h + 'px, узлов ' + nodes, el: null });
@@ -557,7 +565,9 @@
     qsa('#app *').forEach(function (el) {
       if (items.length > 8 || !visible(el)) return;
       var z = parseInt(css(el, 'zIndex'), 10);
-      if (z >= 100 && !el.closest('.overlay,.tabbar,.topbar,.vm-bar,.modal'))
+      /* v1.07.79: #map изолирован (isolation:isolate) — внутренние слои
+         Leaflet живут в своём контексте и наверх приложения не выходят */
+      if (z >= 100 && !el.closest('.overlay,.tabbar,.topbar,.vm-bar,.modal,.leaflet-container'))
         items.push({ level: 'warn', msg: 'z-index ' + z + ' выше панелей: ' + pathOf(el), el: el });
     });
     return mk('layers', T('c_layers'), items);
@@ -715,6 +725,13 @@
   function checkNarrow() {
     var items = [], app = document.getElementById('app');
     if (!app || innerWidth <= 340) return mk('narrow', T('c_narrow'), items);
+    /* v1.07.79: в режиме ПК сужать #app до 320px бессмысленно. Раскладка ПК
+       включается классом tl-desktop и живёт по медиазапросам ширины ОКНА
+       (≥1180px и т.д.) — они при сжатии одного блока не пересчитываются, и
+       проверка ловила несуществующие поломки. Базовая — мобильная — версия
+       проверяется как раньше. */
+    if (document.documentElement.classList.contains('tl-desktop'))
+      return mk('narrow', T('c_narrow'), [{ level: 'ok', msg: 'в режиме ПК не проверяем: раскладка ПК рассчитана на широкое окно, на узком экране включается мобильная', el: null }]);
     var before = {};
     overflowNow().forEach(function (o) { before[o.what] = 1; });
     var prev = app.style.cssText;
@@ -821,7 +838,8 @@
       if ((s2.boxShadow && s2.boxShadow !== 'none') || (s2.filter && s2.filter !== 'none') ||
           (s2.backdropFilter && s2.backdropFilter !== 'none')) heavy++;
       if (s2.position === 'fixed') fixed++;
-      if (el.tagName === 'IMG' && !(el.getAttribute('width') && el.getAttribute('height')) && !s2.aspectRatio.startsWith('auto ')) noSize++;
+      if (el.tagName === 'IMG' && !(el.getAttribute('width') && el.getAttribute('height')) && !s2.aspectRatio.startsWith('auto ')
+          && !el.closest('.leaflet-pane')) noSize++;   // v1.07.79: тайлы карты абсолютны — страница от них не прыгает
       var d = 0, p = el;
       while (p && p !== document.body) { d++; p = p.parentElement; }
       if (d > deep) { deep = d; deepEl = el; }
@@ -859,7 +877,7 @@
     return mk('safe', T('c_safe'), items);
   }
 
-  /* --- 18. блок фото/видео: съёмка, скрепка, состояние плиток ---------- */
+  /* --- 19. блок фото/видео: съёмка, скрепка, состояние плиток ---------- */
   /* v1.07.76: карточка «Фото и видео» должна вести себя одинаково на
      телефоне и на ПК — те же три кнопки, доступные для пальца, и плитки,
      по которым видно, что файл ещё грузится. */
@@ -958,7 +976,7 @@
 
   function runAll(onStep) {
     var list = available();
-    var back = (window.App && window.App.state && window.App.state.screen) ||
+    var back = (window.App && window.App.curScreen && window.App.curScreen()) ||
                ((document.getElementById('app') || {}).className || '').replace('scr-', '') || 'home';
     var out = [], i = 0;
     function step() {

@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.78';
+const APP_VERSION = '1.07.80';
 const DB_SQL_FILE = 'full-install-1_07_78.sql';   // v1.07.78: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -117,7 +117,7 @@ const I18N = {
     tab_journal: 'Журнал', jr_title: 'Журнал действий', jr_refresh: 'Обновить', jr_more: 'Показать ещё',
     jr_empty: 'Записей пока нет', jr_all_actions: 'Все действия', jr_all_staff: 'Все сотрудники',
     jr_local: 'локально (демо)', jr_open: 'Открыть',
-    jr_need_db: 'Таблица журнала не найдена — выполните supabase/update-to-1_07_18.sql',
+    jr_need_db: `Таблица журнала не найдена — выполните supabase/${DB_SQL_FILE}`,
     act_user_register: 'регистрация', act_user_create: 'создан сотрудник', act_user_block: 'блокировка',
     act_user_unblock: 'разблокировка', act_role_change: 'смена роли', act_password_change: 'смена своего пароля',
     act_password_reset: 'сброс пароля сотрудника', act_job_create: 'создан инвойс', act_job_update: 'изменён инвойс',
@@ -130,7 +130,6 @@ const I18N = {
     vacant: 'Vacant (пусто)', occupied: 'Occupied (заселён)',
     equipment: 'Оборудование (аренда, пикап через N дней)',
     aux_needed: 'Возьмите с собой',
-    other_services: 'Другие услуги (свободный текст)',
     desc: 'Описание', amount: 'Сумма',
     total: 'Итого', approved_total: 'Итог (утв.)',
     approve: 'Поставить апрув', approved_by: 'Апрув', approve_reset_note: 'Изменение стоимости после апрува снимет статус',
@@ -145,11 +144,11 @@ const I18N = {
     std_price: 'Стандартная цена', custom_price: 'Индивидуальная цена', price_list: 'Прейскурант',
     name: 'Название', abbr: 'Сокращение', color: 'Цвет', address: 'Адрес', access_code: 'Код доступа',
     day_price: 'Цена $/сутки', needs_aux: 'Нужно доп. оборудование',
-    complexes_of: 'Комплексы контрагента', info: 'Инфо', prices: 'Цены',
+    info: 'Инфо', prices: 'Цены',
     settings: 'Настройки', profile: 'Профиль', doc_name: 'Имя в документах и работах',
     language: 'Язык интерфейса', sync: 'Синхронизировать', synced: 'Синхронизировано',
     never: 'ещё не было', org: 'Организация (для PDF)', org_name: 'Название компании (в тексте условий)',
-    org_short: 'Короткое имя (APC)', org_assoc: 'Ассоциация (шапка)', org_addr: 'Адрес (шапка, по строке)',
+    org_short: 'Короткое имя (APC)', org_assoc: 'Ассоциация (шапка)',
     logout: 'Выйти', version: 'Версия приложения', updated_to: 'Приложение обновлено до версии',
     update_after_form: 'Есть обновление — применю после закрытия формы',
     upd_check: 'Проверить обновления', upd_latest: 'Версия актуальна',
@@ -160,12 +159,12 @@ const I18N = {
     role_admin: 'Админ', role_manager: 'Менеджер', role_tech: 'Сотрудник',
     saved: 'Сохранено', deleted: 'Удалено', created: 'Создано',
     confirm_del: 'Удалить безвозвратно?',
-    days: 'дн.', qty: 'Кол-во', for_days: 'Дней',
+    days: 'дн.', qty: 'Кол-во',
     tech: 'Техник', no_access: 'Нет доступа', stats_jobs: 'работ', stats_pk: 'пикапов',
     stats_due: 'на вывоз', stats_over: 'просрочено', day_empty: 'на этот день нет',
     sync_err: 'Ошибка синхронизации', offline_note: 'Оффлайн: показаны сохранённые данные',
     not_selected: 'Не выбрано', aux_take_hint: 'нажмите то, что нужно взять',
-    back_exit_hint: 'Чтобы выйти из приложения, нажмите «назад» ещё раз', help_title: 'Справка',
+    back_exit_hint: 'Чтобы выйти из приложения, нажмите «назад» ещё раз',
     select: '— выбрать —', install_hint: 'Меню браузера → «Установить приложение» / «Добавить на главный экран»',
     tab_map: 'Карта', tab_reports: 'Отчёты',
     map_title: 'Карта апарт-комплексов', all_counterparties: 'Все контрагенты',
@@ -179,7 +178,7 @@ const I18N = {
     cx_added: 'Комплекс добавлен', cx_no_owner: 'Владелец не назначен — привяжите контрагента',
     dir_no_owner_grp: 'Без владельца',
     faq_btn: 'FAQ раздела',
-    map_day_mode: 'Показать день на карте', map_day_hint: 'Работы и пикапы за выбранную дату',
+    map_day_hint: 'Работы и пикапы за выбранную дату',
     map_no_coords: 'без координат — откройте комплекс и нажмите «Найти по адресу»',
     route_day_in: 'Маршрут дня в', open_in: 'Открыть в',
     nav_app: 'Навигатор', nav_auto: 'Авто',
@@ -200,7 +199,6 @@ const I18N = {
     note: 'Заметка', note_hint: 'Текст попадёт в PDF-инвойс (строка NOTES)',
     dictate: 'Надиктовать', listening: 'Слушаю… нажмите ещё раз, чтобы остановить',
     dict_unsupported: 'Голосовой ввод не поддерживается этим браузером (нужен Chrome)',
-    dict_lang: 'Язык диктовки',
     reports_pdf: 'Инвойсы (PDF)', rep_pickups: 'Пикапы',
     rep_range: 'Период', from: 'с', to: 'по',
     rep_yesterday: 'Вчера', rep_7: '7 дней', rep_30: '30 дней',
@@ -211,8 +209,6 @@ const I18N = {
     d_staff: 'Сотрудники', role: 'Роль', visibility: 'Видимость для менеджера',
     vis_hint: 'Отмеченные сотрудники видны этому менеджеру', vis_btn: 'Доступные сотрудники',
     confirm_email: 'Подтвердите email по ссылке из письма, затем войдите',
-    auth_loading: 'Проверяю авторизацию…',
-    no_coords_yet: 'Нет координат',
     req_missing: 'Не заполнено', issue_complex: 'апарт-комплекс', issue_unit: 'номер юнита', issue_tech: 'сотрудник',
     crew: 'Кто выполнял', add_helper: '＋ добавить сотрудника', all_staff: 'Все',
     shared_chk: 'Общий доступ к документу для коворкера',
@@ -251,7 +247,6 @@ const I18N = {
     back_today: 'Сегодня', navigate: 'Маршрут', copied_code: 'Код скопирован',
     app_tag: 'учёт работ', copy_addr: 'Копировать адрес', copied_addr: 'Адрес скопирован',
     today_tag: 'сегодня',
-    drag_hint: 'Тяните карточку мышью или удерживайте пальцем и тяните вверх/вниз',
     st_active: 'Активен', st_blocked: 'Заблокирован', block: 'Заблокировать', unblock: 'Разблокировать',
     block_confirm: 'Заблокировать сотрудника? Он не сможет войти в приложение:',
     blocked_done: 'Сотрудник заблокирован', unblocked_done: 'Сотрудник разблокирован',
@@ -281,11 +276,11 @@ const I18N = {
     ui_keys: 'Горячие клавиши: Ctrl+Alt+D',
     ui_nomod: 'Модуль диагностики не загрузился — обновите страницу',
     ui_all: 'Обойти все экраны и собрать отчёт',
-    srv_not_ready: 'Сервер не настроен: выполните supabase/schema.sql (нет функции check_invite)',
+    srv_not_ready: `Сервер не настроен: выполните supabase/${DB_SQL_FILE} (нет функции check_invite)`,
     invite_check_err: 'Ошибка проверки кода', srv_rejected: 'Сервер отклонил регистрацию — детали в Диагностике',
     login_taken: 'Такой логин уже существует', login_free: 'логин свободен', login_checking: 'проверяю логин…',
     srv500: 'Сервер отклонил регистрацию (500). Точная причина — в Supabase → Logs → Postgres; отчёт скопируйте в Диагностике',
-    run_new_schema: 'выполните новую supabase/schema.sql',
+    run_new_schema: `выполните supabase/${DB_SQL_FILE}`,
     install_app: 'Установить приложение', installed_ok: 'Приложение установлено',
     already_installed: 'Открыто как установленное приложение',
     install_declined: 'Установка отменена',
@@ -293,8 +288,6 @@ const I18N = {
     install_no_prompt: 'Браузер пока не предложил установку — проверьте раздел PWA в Диагностике',
     reg_ok: 'Регистрация успешна', welcome: 'Добро пожаловать',
     reg_now_signin: 'Аккаунт создан — теперь войдите',
-    quick_title: 'Быстрые настройки', font_soon: 'Настройка шрифта — скоро',
-    all_settings: 'Все настройки',
     legal_privacy: 'Политика конфиденциальности', legal_terms: 'Условия использования',
     footer_rights: '© Никакие права не защищены', footer_city: 'Альфаретта',
     faq: 'Как это работает (FAQ)',
@@ -305,7 +298,7 @@ const I18N = {
     checking_tables: 'Проверяю таблицы…',
     priority: 'Приоритет', move_up: 'Выше', move_down: 'Ниже',
     tab_board: 'Доска', b_jobs: 'работ', b_pk: 'пикапов', b_empty: 'День свободен',
-    b_ext: 'продление', b_over: 'просрочен', b_only: 'Доска доступна менеджеру и администратору.',
+    b_ext: 'продление', b_over: 'просрочен',
     b_cols: 'Доска', b_cols_lbl: 'Минимум сотрудников на экране без скролла (ПК)', b_cols_auto: 'Авто',
     b_cols_note: 'Личная настройка (хранится в профиле). Если столько не влезает — карточки сужаются; когда людей меньше, ширина остаётся обычной.',
     car_no: 'Номер машины', mgr_reorder_chk: 'Менеджер может менять очерёдность задач (Доска и ▲▼)',
@@ -328,7 +321,7 @@ const I18N = {
     pdf_preview: 'Просмотр PDF', pdf_print: 'Печать',
     print_hint: 'Откроется системная печать; если нет — PDF откроется в новой вкладке (меню браузера → Печать).',
     tab_proposals: 'Пропозалы', prop_only: 'Пропозалы доступны менеджеру и администратору.',
-    prop_new: '＋ Новый пропозал', prop_items: 'Позиции', prop_desc: 'Описание', prop_amount: 'Сумма',
+    prop_new: '＋ Новый пропозал', prop_items: 'Позиции', prop_desc: 'Описание',
     prop_add_row: '＋ строка', prop_note: 'Примечание',
     pst_draft: 'Черновик', pst_sent: 'Отправлен', pst_approved: 'Одобрен', pst_declined: 'Отклонён',
     prop_linked: 'Связанные документы', prop_link: 'Связать', prop_unlink: 'Отвязать',
@@ -365,10 +358,10 @@ const I18N = {
     ext_req_sent: 'Запрос отправлен на согласование',
     ext_req_pending: 'запрос на {N} дн. ждёт решения',
     ext_req_title: 'Согласование продлений', ext_req_ok: 'Одобрить', ext_req_no: 'Отклонить',
-    b_hide_empty: 'Скрыть свободных',
     b_free_on: 'Свободные показаны', b_free_off: 'Свободные скрыты',
-    b_prop_strip: 'Пропозалы на этот день', b_prop_draft_n: 'из них черновиков',
+    b_prop_strip: 'Пропозалы на этот день',
     b_free_jobs: 'Работы без исполнителя', b_free_jobs_hint: 'черновики: сотрудник ещё не назначен',
+    b_free_pk: 'Пикапы без исполнителя', b_free_pk_hint: 'оборудование стоит, забрать некому',
     b_assign: 'Назначить…', b_assigned: 'Назначен',
     nt_tech: 'Исполнитель', nt_tech_none: '— не назначен —', nt_tech_me: 'Я',
     doc_close: 'Закрыть', doc_unsaved_t: 'Несохранённые изменения',
@@ -453,7 +446,7 @@ const I18N = {
     mt_bg_t: 'Загрузка идёт в фоне',
     mt_bg: 'Фото и видео догрузятся сами — документ можно закрыть и продолжать работу. Следить за отправкой можно в «Настройках».',
     mt_bg_ok: 'Понятно', mt_done: 'отправлено',
-    media_attach: 'Прикрепить файл', media_files: 'Документы',
+    media_attach: 'Прикрепить файл',
     media_file_big: 'Файл больше 25 МБ — прикрепите ссылку или сожмите',
     media_file_lim: 'Лимит: {N} документов на один документ',
     media_file_hint: 'Фото и видео лягут в архив вместе со съёмкой, документы — в отдельную папку «Files».',
@@ -461,7 +454,7 @@ const I18N = {
     gd_space_warn: 'На Google Диске осталось {P}% свободного места (занято {U} из {L} ГБ). Освободите место или подключите другой архивный аккаунт — иначе фото и видео перестанут загружаться.',
     gd_connected: 'Google подключён', gd_not_conn: 'не подключено',
     gd_db: 'База данных', gd_auth: 'Авторизация Google', gd_acc: 'Аккаунт',
-    gd_used: 'Занято на Диске', gd_write: 'Пробная запись в папку', gd_status: 'Статус',
+    gd_used: 'Занято на Диске', gd_write: 'Пробная запись в папку',
     gd_help: 'Как получить ключи (разово, ~15 минут)',
     bk_card: 'Бэкап данных',
     bk_intro: 'Один JSON-файл: все таблицы базы, учётные записи (пароли — bcrypt-хэшами) и, по галочке, секреты. При загрузке дубли пропускаются, ошибки видны построчно; лог можно сохранить в .txt (в базе он не хранится).',
@@ -472,7 +465,7 @@ const I18N = {
     bk_from: 'Бэкап от', bk_by: 'выгрузил',
     bk_added: 'добавлено', bk_dupes: 'дублей', bk_errs: 'ошибок',
     bk_total: 'ИТОГО', bk_users_c: 'создано', bk_users_e: 'уже были',
-    bk_need_sql: 'Выполните update-to-1_07_32.sql — функции бэкапа не найдены',
+    bk_need_sql: `Выполните supabase/${DB_SQL_FILE} — функции бэкапа не найдены`,
     bk_confirm: 'Загрузить данные из файла?\n\nСуществующие записи не изменяются, дубли пропускаются, добавляются только недостающие строки.',
     bk_journal_skip: 'журналы (audit_log, tech_log) кнопкой не восстанавливаются — защита от подделки; сниппет для SQL-редактора в update-to-1_07_32.sql',
     bk_demo_imp: 'Загрузка бэкапа — только с подключённым Supabase',
@@ -484,7 +477,7 @@ const I18N = {
     diag_net: 'Интернет', diag_db: 'База данных', diag_auth: 'Сессия входа',
     diag_store: 'Хранилище миниатюр', diag_fn: 'Серверные функции',
     diag_skip: 'пропущено (демо-режим)', diag_fn_admin: 'доступно, детали — админу',
-    diag_no_sess: 'нет сессии', diag_sql31: 'выполните update-to-1_07_31.sql',
+    diag_no_sess: 'нет сессии', diag_sql31: `выполните supabase/${DB_SQL_FILE}`,
     diag_deploy: 'функции не задеплоены',
     ext_req_done: 'Продление применено', ext_req_rej: 'Запрос отклонён',
     act_price_change: 'изменение цены', act_approve_reset: 'сброс апрува',
@@ -504,8 +497,8 @@ const I18N = {
     req_by: 'заявка от', no_changes: 'без изменений',
     req_approved: 'Заявка одобрена, код обновлён', req_rejected: 'Заявка отклонена',
     no_history: 'Изменений ещё не было', since: 'с', by_word: 'добавил',
-    last_code_upd: 'код обновлён', code_pending_note: 'Ваша заявка ждёт решения админа',
-    template: 'Шаблон', pick_template: 'Выберите шаблон',
+    last_code_upd: 'код обновлён',
+    template: 'Шаблон',
     d_extraworks: 'Доп. работы', d_sizes: 'Размеры', d_products: 'Товары',
     kind_work: 'Работа', kind_purchase: 'Покупка товара',
     needs_size: 'Указывать размер', size_type: 'Вид размера', unit_lbl: 'Ед. изм.',
@@ -536,7 +529,7 @@ const I18N = {
     tab_journal: 'Journal', jr_title: 'Activity journal', jr_refresh: 'Refresh', jr_more: 'Show more',
     jr_empty: 'No records yet', jr_all_actions: 'All actions', jr_all_staff: 'All staff',
     jr_local: 'local (demo)', jr_open: 'Open',
-    jr_need_db: 'Journal table missing — run supabase/update-to-1_07_18.sql',
+    jr_need_db: `Journal table missing — run supabase/${DB_SQL_FILE}`,
     act_user_register: 'sign-up', act_user_create: 'staff created', act_user_block: 'blocked',
     act_user_unblock: 'unblocked', act_role_change: 'role changed', act_password_change: 'own password changed',
     act_password_reset: 'staff password reset', act_job_create: 'invoice created', act_job_update: 'invoice updated',
@@ -549,7 +542,6 @@ const I18N = {
     vacant: 'Vacant', occupied: 'Occupied',
     equipment: 'Equipment (rental, pickup in N days)',
     aux_needed: 'Bring with you',
-    other_services: 'Other services (free text)',
     desc: 'Description', amount: 'Amount',
     total: 'Total', approved_total: 'Approved total',
     approve: 'Approve', approved_by: 'Approved', approve_reset_note: 'Changing the total after approval resets it',
@@ -564,11 +556,11 @@ const I18N = {
     std_price: 'Standard price', custom_price: 'Custom price', price_list: 'Price list',
     name: 'Name', abbr: 'Abbr', color: 'Color', address: 'Address', access_code: 'Access code',
     day_price: 'Price $/day', needs_aux: 'Needs aux equipment',
-    complexes_of: 'Counterparty complexes', info: 'Info', prices: 'Prices',
+    info: 'Info', prices: 'Prices',
     settings: 'Settings', profile: 'Profile', doc_name: 'Name in documents & jobs',
     language: 'Interface language', sync: 'Sync now', synced: 'Synced',
     never: 'never', org: 'Organization (for PDF)', org_name: 'Company name (terms text)',
-    org_short: 'Short name (APC)', org_assoc: 'Association (header)', org_addr: 'Address (header, per line)',
+    org_short: 'Short name (APC)', org_assoc: 'Association (header)',
     logout: 'Log out', version: 'App version', updated_to: 'App updated to version',
     update_after_form: 'Update ready — will apply after you close the form',
     upd_check: 'Check for updates', upd_latest: 'You are up to date',
@@ -580,12 +572,12 @@ const I18N = {
     role_admin: 'Admin', role_manager: 'Manager', role_tech: 'Technician',
     saved: 'Saved', deleted: 'Deleted', created: 'Created',
     confirm_del: 'Delete permanently?',
-    days: 'd.', qty: 'Qty', for_days: 'Days',
+    days: 'd.', qty: 'Qty',
     tech: 'Technician', no_access: 'No access', stats_jobs: 'jobs', stats_pk: 'pickups',
     stats_due: 'to pick up', stats_over: 'overdue', day_empty: 'none for this day',
     sync_err: 'Sync error', offline_note: 'Offline: showing cached data',
     not_selected: 'Not selected', aux_take_hint: 'tap what you need to take',
-    back_exit_hint: 'Press back again to exit the app', help_title: 'Help',
+    back_exit_hint: 'Press back again to exit the app',
     select: '— select —', install_hint: 'Browser menu → "Install app" / "Add to Home screen"',
     tab_map: 'Map', tab_reports: 'Reports',
     map_title: 'Apartment complexes map', all_counterparties: 'All counterparties',
@@ -599,7 +591,7 @@ const I18N = {
     cx_added: 'Complex added', cx_no_owner: 'No owner assigned — bind a counterparty',
     dir_no_owner_grp: 'No owner',
     faq_btn: 'Section FAQ',
-    map_day_mode: 'Show day on map', map_day_hint: 'Jobs and pickups for the selected date',
+    map_day_hint: 'Jobs and pickups for the selected date',
     map_no_coords: 'no coordinates — open the complex and tap "Find by address"',
     route_day_in: 'Day route in', open_in: 'Open in',
     nav_app: 'Navigation app', nav_auto: 'Auto',
@@ -620,7 +612,6 @@ const I18N = {
     note: 'Note', note_hint: 'This text goes to the PDF invoice (NOTES line)',
     dictate: 'Dictate', listening: 'Listening… tap again to stop',
     dict_unsupported: 'Voice input is not supported by this browser (use Chrome)',
-    dict_lang: 'Dictation language',
     reports_pdf: 'Invoices (PDF)', rep_pickups: 'Pickups',
     rep_range: 'Period', from: 'from', to: 'to',
     rep_yesterday: 'Yesterday', rep_7: '7 days', rep_30: '30 days',
@@ -631,8 +622,6 @@ const I18N = {
     d_staff: 'Staff', role: 'Role', visibility: 'Visibility for manager',
     vis_hint: 'Checked employees are visible to this manager', vis_btn: 'Available staff',
     confirm_email: 'Confirm your email via the link, then sign in',
-    auth_loading: 'Checking authorization…',
-    no_coords_yet: 'No coordinates',
     req_missing: 'Missing', issue_complex: 'apartment complex', issue_unit: 'unit number', issue_tech: 'technician',
     crew: 'Performed by', add_helper: '＋ add employee', all_staff: 'All',
     shared_chk: 'Shared document access for co-worker',
@@ -670,7 +659,6 @@ const I18N = {
     back_today: 'Today', navigate: 'Navigate', copied_code: 'Code copied',
     app_tag: 'work log', copy_addr: 'Copy address', copied_addr: 'Address copied',
     today_tag: 'today',
-    drag_hint: 'Drag a card with the mouse, or press & hold and drag up/down',
     st_active: 'Active', st_blocked: 'Blocked', block: 'Block', unblock: 'Unblock',
     block_confirm: 'Block this employee? They will not be able to sign in:',
     blocked_done: 'Employee blocked', unblocked_done: 'Employee unblocked',
@@ -700,11 +688,11 @@ const I18N = {
     ui_keys: 'Shortcut: Ctrl+Alt+D',
     ui_nomod: 'Diagnostics module did not load — reload the page',
     ui_all: 'Walk every screen and build one report',
-    srv_not_ready: 'Server not configured: run supabase/schema.sql (check_invite function is missing)',
+    srv_not_ready: `Server not configured: run supabase/${DB_SQL_FILE} (check_invite function is missing)`,
     invite_check_err: 'Invite check error', srv_rejected: 'Server rejected sign-up — see Diagnostics',
     login_taken: 'This login already exists', login_free: 'login is free', login_checking: 'checking login…',
     srv500: 'Server rejected sign-up (500). See Supabase → Logs → Postgres; copy the report in Diagnostics',
-    run_new_schema: 'run the new supabase/schema.sql',
+    run_new_schema: `run supabase/${DB_SQL_FILE}`,
     install_app: 'Install app', installed_ok: 'App installed',
     already_installed: 'Running as installed app',
     install_declined: 'Install dismissed',
@@ -712,8 +700,6 @@ const I18N = {
     install_no_prompt: 'Browser has not offered install yet — check the PWA section in Diagnostics',
     reg_ok: 'Sign-up successful', welcome: 'Welcome',
     reg_now_signin: 'Account created — now sign in',
-    quick_title: 'Quick settings', font_soon: 'Font size — coming soon',
-    all_settings: 'All settings',
     legal_privacy: 'Privacy Policy', legal_terms: 'Terms of Service',
     footer_rights: '© No rights reserved', footer_city: 'Alpharetta',
     faq: 'How it works (FAQ)',
@@ -724,7 +710,7 @@ const I18N = {
     checking_tables: 'Checking tables…',
     priority: 'Priority', move_up: 'Up', move_down: 'Down',
     tab_board: 'Board', b_jobs: 'jobs', b_pk: 'pickups', b_empty: 'Free day',
-    b_ext: 'extension', b_over: 'overdue', b_only: 'The Board is for managers and admins.',
+    b_ext: 'extension', b_over: 'overdue',
     b_cols: 'Board', b_cols_lbl: 'Minimum staff visible without scrolling (desktop)', b_cols_auto: 'Auto',
     b_cols_note: 'Personal setting (stored in your profile). If they do not fit, cards shrink; with fewer people the width stays normal.',
     car_no: 'Vehicle #', mgr_reorder_chk: 'Manager can reorder tasks (Board & ▲▼)',
@@ -747,7 +733,7 @@ const I18N = {
     pdf_preview: 'Preview PDF', pdf_print: 'Print',
     print_hint: 'System print will open; otherwise the PDF opens in a new tab (browser menu → Print).',
     tab_proposals: 'Proposals', prop_only: 'Proposals are for managers and admins.',
-    prop_new: '＋ New proposal', prop_items: 'Line items', prop_desc: 'Description', prop_amount: 'Amount',
+    prop_new: '＋ New proposal', prop_items: 'Line items', prop_desc: 'Description',
     prop_add_row: '＋ row', prop_note: 'Notes',
     pst_draft: 'Draft', pst_sent: 'Sent', pst_approved: 'Approved', pst_declined: 'Declined',
     prop_linked: 'Linked documents', prop_link: 'Link', prop_unlink: 'Unlink',
@@ -784,10 +770,10 @@ const I18N = {
     ext_req_sent: 'Request sent for approval',
     ext_req_pending: 'request for {N} d. awaiting decision',
     ext_req_title: 'Extension approvals', ext_req_ok: 'Approve', ext_req_no: 'Reject',
-    b_hide_empty: 'Hide free',
     b_free_on: 'Free staff shown', b_free_off: 'Free staff hidden',
-    b_prop_strip: 'Proposals for this day', b_prop_draft_n: 'drafts among them',
+    b_prop_strip: 'Proposals for this day',
     b_free_jobs: 'Jobs with no assignee', b_free_jobs_hint: 'drafts: nobody assigned yet',
+    b_free_pk: 'Pickups with no assignee', b_free_pk_hint: 'equipment is out, nobody to collect it',
     b_assign: 'Assign…', b_assigned: 'Assigned',
     nt_tech: 'Assignee', nt_tech_none: '— unassigned —', nt_tech_me: 'Me',
     doc_close: 'Close', doc_unsaved_t: 'Unsaved changes',
@@ -872,7 +858,7 @@ const I18N = {
     mt_bg_t: 'Uploading in the background',
     mt_bg: 'Photos and videos finish uploading on their own — you can close the document and carry on. Progress is in Settings.',
     mt_bg_ok: 'Got it', mt_done: 'uploaded',
-    media_attach: 'Attach a file', media_files: 'Documents',
+    media_attach: 'Attach a file',
     media_file_big: 'File over 25 MB — attach a link or compress it',
     media_file_lim: 'Limit: {N} documents per record',
     media_file_hint: 'Photos and videos join the shoot in the archive, documents go to a separate “Files” folder.',
@@ -880,7 +866,7 @@ const I18N = {
     gd_space_warn: 'Google Drive has {P}% free space left ({U} of {L} GB used). Free up space or connect another archive account — otherwise photo and video uploads will stop.',
     gd_connected: 'Google connected', gd_not_conn: 'not connected',
     gd_db: 'Database', gd_auth: 'Google auth', gd_acc: 'Account',
-    gd_used: 'Drive used', gd_write: 'Test write to folder', gd_status: 'Status',
+    gd_used: 'Drive used', gd_write: 'Test write to folder',
     gd_help: 'How to get the keys (one-time, ~15 min)',
     bk_card: 'Data backup',
     bk_intro: 'One JSON file: all DB tables, user accounts (passwords as bcrypt hashes) and, optionally, secrets. On import duplicates are skipped, errors are listed line by line; the log can be saved as .txt (never stored in DB).',
@@ -891,7 +877,7 @@ const I18N = {
     bk_from: 'Backup from', bk_by: 'by',
     bk_added: 'added', bk_dupes: 'dupes', bk_errs: 'errors',
     bk_total: 'TOTAL', bk_users_c: 'created', bk_users_e: 'existed',
-    bk_need_sql: 'Run update-to-1_07_32.sql — backup functions not found',
+    bk_need_sql: `Run supabase/${DB_SQL_FILE} — backup functions not found`,
     bk_confirm: 'Restore data from file?\n\nExisting rows are untouched, duplicates skipped, only missing rows are added.',
     bk_journal_skip: 'journals (audit_log, tech_log) are not restorable via button — tamper protection; SQL snippet is in update-to-1_07_32.sql',
     bk_demo_imp: 'Restore requires Supabase connection',
@@ -903,7 +889,7 @@ const I18N = {
     diag_net: 'Internet', diag_db: 'Database', diag_auth: 'Auth session',
     diag_store: 'Thumbs storage', diag_fn: 'Edge functions',
     diag_skip: 'skipped (demo)', diag_fn_admin: 'reachable, details for admin',
-    diag_no_sess: 'no session', diag_sql31: 'run update-to-1_07_31.sql',
+    diag_no_sess: 'no session', diag_sql31: `run supabase/${DB_SQL_FILE}`,
     diag_deploy: 'functions not deployed',
     ext_req_done: 'Extension applied', ext_req_rej: 'Request rejected',
     act_price_change: 'price change', act_approve_reset: 'approve reset',
@@ -923,8 +909,8 @@ const I18N = {
     req_by: 'request by', no_changes: 'no changes',
     req_approved: 'Approved, code updated', req_rejected: 'Request rejected',
     no_history: 'No changes yet', since: 'since', by_word: 'added by',
-    last_code_upd: 'code updated', code_pending_note: 'Your request awaits admin decision',
-    template: 'Template', pick_template: 'Pick a template',
+    last_code_upd: 'code updated',
+    template: 'Template',
     d_extraworks: 'Extra works', d_sizes: 'Sizes', d_products: 'Products',
     kind_work: 'Work', kind_purchase: 'Purchase',
     needs_size: 'Requires size', size_type: 'Size type', unit_lbl: 'Unit',
@@ -949,6 +935,10 @@ function t(k){ const d = I18N[state.lang] || I18N.ru; return (k in d) ? d[k] : (
 /* v1.07.67: словарь виден диагностике интерфейса — она сверяет полноту
    ru/en и ловит ключи, вытекшие в разметку вместо перевода */
 window.TL_I18N = I18N;
+/* v1.07.80: const верхнего уровня не создаёт свойство window — «Диагностика
+   интерфейса» читала версию из вёрстки (.brand .sub) и на экране входа
+   получала пустую строку. */
+window.APP_VERSION = APP_VERSION;
 
 /* ---------------- Глобальное состояние ---------------- */
 const state = {
@@ -1020,7 +1010,25 @@ function jobIssues(j){
 }
 function warnIcon(sm){ return `<span class="warn${sm?' sm':''}" title="${t('req_missing')}">!</span>`; }
 function initials(name){ return String(name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
-function textColorFor(hex){ const h = (hex||'#888').replace('#',''); const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16); return (r*299+g*587+b*114)/1000 > 150 ? '#10251a' : '#ffffff'; }
+/* v1.07.79: тушь на цветной заливке выбирается по настоящему контрасту WCAG.
+   Прежний порог яркости (YIQ > 150) оставлял белый текст на фирменных
+   цветах — «BLW» на синем давал 2.09 при норме 4.5. Считаем оба варианта
+   и берём тот, что читается лучше. */
+const INK_DARK = '#0B1A22';
+function _srgb(c){ c/=255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+function lumOf(hex){
+  let h = (hex || '#888888').replace('#','').trim();
+  if (h.length === 3) h = h.split('').map(x=>x+x).join('');
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) h = '888888';
+  return 0.2126*_srgb(parseInt(h.substr(0,2),16)) + 0.7152*_srgb(parseInt(h.substr(2,2),16)) + 0.0722*_srgb(parseInt(h.substr(4,2),16));
+}
+function contrastRatio(a, b){
+  const la = lumOf(a), lb = lumOf(b);
+  return (Math.max(la,lb) + 0.05) / (Math.min(la,lb) + 0.05);
+}
+function textColorFor(hex){
+  return contrastRatio('#ffffff', hex) >= contrastRatio(INK_DARK, hex) ? '#ffffff' : INK_DARK;
+}
 function toast(msg, kind){
   const now = Date.now();                                  // v1.07.26: не спамим одинаковыми
   if (toast._m === msg && now - (toast._t || 0) < 1800) return;
@@ -1270,6 +1278,26 @@ function pendingApplyLocal(data){
     }
   }
 }
+
+/* v1.07.80: БД-диагностика проверяла только наличие таблиц и трёх функций
+   входа. Стоило добавиться колонке или RPC новой версии — отчёт молчал, а
+   приложение падало уже в бою. Список ниже держим рядом с DB_SQL_FILE:
+   пополняется вместе с каждой миграцией. */
+const DB_NEED_COLS = [
+  ['profiles',      'board_cols'],
+  ['jobs',          'proposal_id'],
+  ['jobs',          'has_proposal'],
+  ['jobs',          'shared_with_helpers'],
+  ['placements',    'dhm_hours_start'],
+  ['placements',    'dhm_hours_check'],
+  ['placements',    'ext_of'],
+  ['media',         'thumb_path'],
+  ['org_settings',  'media_max_photo'],
+  ['org_settings',  'media_max_video'],
+];
+const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
+                      'decide_ext_request', 'throttle', 'admin_restore_rows',
+                      'admin_set_drive_config'];
 
 const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','ext_requests','media'];
 
@@ -2702,7 +2730,6 @@ function viewHome(){
     return `
     <div class="item clicky${canReorder(pkJob)?' has-rail':''}" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}" onclick="App.pickupModal('${jobId}','${iso}',event)">
       ${rowNumHtml(num.pkNum[jobId])}
-      ${railHtml(pkJob)}
       <div class="info">
         <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(p0.unit_number||'')}${triHtml(!!pkJob.priority, jobId, canPrio(pkJob), true)}</span></div>
         ${addrLineHtml(cx)}
@@ -2718,6 +2745,7 @@ function viewHome(){
           <button class="btn btn-green sm" onclick="App.pickupGroup('${jobId}','${iso}')">${t('pick_up')}</button>
         </div>
       </div>
+      ${railHtml(pkJob)}
     </div>`;
   }).join('');
 
@@ -2741,7 +2769,6 @@ function viewHome(){
     return `
     <div class="item clicky${canReorder(j)?' has-rail':''}" data-drag-id="${j.id}" data-can="${canReorder(j)?1:0}" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
       ${rowNumHtml(num.jobNum[j.id])}
-      ${railHtml(j)}
       <div class="info">
         <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(j.unit_number||'—')}${triHtml(!!j.priority, j.id, canPrio(j), true)}</span></div>
         ${addrLineHtml(cx)}
@@ -2754,6 +2781,7 @@ function viewHome(){
         <button class="btn btn-ghost sm" style="margin-top:6px" title="${t('navigate')}"
           onclick="event.stopPropagation();App.navToCx('${j.complex_id}')">${ic('compass')}</button>
       </div>
+      ${railHtml(j)}
     </div>`;
   }).join('');
 
@@ -2899,7 +2927,7 @@ function helpBtn(key){
 }
 function faqEqLegend(){
   return (state.data.equipment_types||[]).slice().sort((a,b)=>(a.sort||0)-(b.sort||0)).map(et =>
-    `<span class="demo"><span class="eq-dot" style="background:${et.color}">${esc(et.abbr||autoAbbr(et.name))}</span> ${esc(et.name)}</span>`).join(' ');
+    `<span class="demo"><span class="eq-dot" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr||autoAbbr(et.name))}</span> ${esc(et.name)}</span>`).join(' ');
 }
 function faqCxLegend(){
   const list = (state.data.complexes||[]).filter(c=>c.abbr).slice(0,8);
@@ -3120,9 +3148,12 @@ function sectionFaqHtml(key){
 }
 function sectionFaqOpen(key){
   if (typeof SECTION_HELP !== 'undefined' && SECTION_HELP[key]) return sectionHelpModal(key);
+  /* v1.07.80: шапка стояла на паре старых классов (m-head + m-x), под которые
+     нет ни одного правила ни в styles.css, ни в desktop.css — окно рисовалось
+     без оформления и без кнопки «Назад». Переведено на общий modalHead. */
+  const nm = t('tab_' + key);
   openModal(`
-    <div class="m-head">? FAQ · ${t('tab_' + key) || t(key + '_title') || ''}
-      <button class="m-x" onclick="App.closeModal()">${ic('close')}</button></div>
+    ${modalHead('FAQ' + (nm && nm !== 'tab_' + key ? ' · ' + nm : ''), 'help')}
     ${sectionFaqHtml(key)}`);
 }
 
@@ -3181,8 +3212,7 @@ function addCxModal(i){
   const nm = (g.display_name||'').split(',')[0].trim();
   const cps = state.data.counterparties;
   openModal(`
-    <div class="m-head">${ic('map')} ${t('cx_add_title')}
-      <button class="m-x" onclick="App.closeModal()">${ic('close')}</button></div>
+    ${modalHead(t('cx_add_title'), 'map')}
     <div class="form-row"><span class="lbl">${t('name')}</span>
       <input id="ncx-name" value="${esc(nm)}"></div>
     <div class="form-row"><span class="lbl">${t('address')}</span>
@@ -5180,7 +5210,22 @@ const App = {
     checkForUpdate('переключение → ' + s, s === 'settings');
   },
   selDay(iso){ state.selDate = iso; render(); },
+  /* v1.07.80: публичная ручка вместо App.state — uidiag ждал state прямо на
+     App, а его там нет; ветка «вернуться на исходный экран» была мертва. */
+  curScreen(){ return state.screen; },
   shiftWeek(n){ state.weekStart = addDaysISO(state.weekStart, n*7); const cand = addDaysISO(state.selDate, n*7); state.selDate = cand; render(); },
+  /* v1.07.80: свайп влево/вправо по дням. Метод существовал только в вызове
+     из initSwipes — сам обработчик никогда не навешивался, а App.swipeDay
+     не был объявлен вовсе. Если новый день ушёл за пределы показанной
+     недели — лента недели переезжает следом. */
+  swipeDay(n){
+    const next = shiftWorkday(state.selDate, n);
+    state.selDate = next;
+    if (next < state.weekStart || next > addDaysISO(state.weekStart, 6))
+      state.weekStart = mondayOf(next);
+    navigator.vibrate?.(10);
+    render();
+  },
   setMine(v){ state.filterMine = v; render(); },
   sync(){ syncNow(false); checkForUpdate('кнопка синхронизации', true); },
   addTaskModal, ntCpChange, ntPickWt, createTask, closeModal, ntPropRefresh, ntPropPick,
@@ -5551,6 +5596,7 @@ function initBackGuard(){
     initBackGuard();
     initDragSort();
     initTabsDrag();
+    initSwipes();          // v1.07.80: раньше функция была объявлена, но не вызывалась
     /* v1.07.21: iOS замораживает фон — досылаем недоставленные записи,
        когда приложение снова видно или появилась сеть */
     document.addEventListener('visibilitychange', () => {
@@ -6582,7 +6628,7 @@ async function runDiagnostics(){
       const { error, count } = await state.sb.from('profiles').select('id', { count: 'exact', head: true });
       if (error){
         const s = errStr(error);
-        put(`${mark(false)} таблица profiles: ${s}${/42P01|does not exist|schema cache/i.test(s) ? '  ← ТАБЛИЦ НЕТ: выполните supabase/schema.sql целиком' : ''}`);
+        put(`${mark(false)} таблица profiles: ${s}${/42P01|does not exist|schema cache/i.test(s) ? ('  ← ТАБЛИЦ НЕТ: выполните supabase/' + DB_SQL_FILE + ' целиком') : ''}`);
       } else put(`${mark(true)} таблица profiles: доступна${count!=null ? ' (видно строк: ' + count + ')' : ''}`);
     }catch(e){ put(`${mark(false)} profiles: ${errStr(e)}`); }
 
@@ -6592,7 +6638,7 @@ async function runDiagnostics(){
       if (error){
         const s = errStr(error);
         const noFn = /PGRST202|schema cache|does not exist|find the function/i.test(s);
-        put(`${mark(false)} функция check_invite: ${s}${noFn ? '  ← ФУНКЦИИ НЕТ: выполните supabase/schema.sql целиком' : ''}`);
+        put(`${mark(false)} функция check_invite: ${s}${noFn ? ('  ← ФУНКЦИИ НЕТ: выполните supabase/' + DB_SQL_FILE + ' целиком') : ''}`);
       } else put(`${mark(data === false)} функция check_invite: отвечает (пустой код → ${data})`);
     }catch(e){ put(`${mark(false)} check_invite: ${errStr(e)}`); }
 
@@ -6601,14 +6647,14 @@ async function runDiagnostics(){
       const { data, error } = await state.sb.rpc('login_available', { p_login: 'zz_diag_probe_999' });
       if (error){
         const s = errStr(error);
-        put(`${mark(false)} функция login_available: ${s}${/PGRST202|find the function/i.test(s) ? '  ← выполните НОВУЮ schema.sql (v1.03.04)' : ''}`);
+        put(`${mark(false)} функция login_available: ${s}${/PGRST202|find the function/i.test(s) ? '  ← выполните supabase/' + DB_SQL_FILE : ''}`);
       } else put(`${mark(data === true)} функция login_available: отвечает (тестовый логин свободен: ${data})`);
     }catch(e){ put(`${mark(false)} login_available: ${errStr(e)}`); }
     try{
       const { data, error } = await state.sb.rpc('signup_precheck', { p_login: '', p_invite: '' });
       if (error){
         const s = errStr(error);
-        put(`${mark(false)} функция signup_precheck: ${s}${/PGRST202|find the function/i.test(s) ? '  ← выполните НОВУЮ schema.sql (v1.03.04)' : ''}`);
+        put(`${mark(false)} функция signup_precheck: ${s}${/PGRST202|find the function/i.test(s) ? '  ← выполните supabase/' + DB_SQL_FILE : ''}`);
       } else put(`${mark(data === 'BAD_LOGIN')} функция signup_precheck: отвечает (пустой ввод → ${data})`);
     }catch(e){ put(`${mark(false)} signup_precheck: ${errStr(e)}`); }
 
@@ -6980,7 +7026,7 @@ async function runDbDiagnostics(){
         const s = errStr(error);
         const miss = /42P01|does not exist|schema cache/i.test(s);
         const denied = tb === 'app_secrets';   // v1.07.35: секреты закрыты RLS — отказ это норма
-        L.push(`${denied ? '✅' : '⛔'} ${tb}: ${denied ? 'доступ закрыт (RLS работает как надо)' : s}${miss ? '  ← таблицы нет: выполните schema.sql' : ''} · ${ms} мс`);
+        L.push(`${denied ? '✅' : '⛔'} ${tb}: ${denied ? 'доступ закрыт (RLS работает как надо)' : s}${miss ? ('  ← таблицы нет: выполните supabase/' + DB_SQL_FILE) : ''} · ${ms} мс`);
       } else {
         L.push(`✅ ${tb}: строк видно ${count ?? '?'} · ${ms} мс`);
       }
@@ -6998,11 +7044,46 @@ async function runDbDiagnostics(){
       const ms = Date.now() - t0;
       if (error){
         const ro = String(error.code||'') === '25006' || /read-only transaction/i.test(errStr(error));
-        L.push(`⛔ функция ${fn}: ${errStr(error)}${ro ? '  ← функция помечена STABLE при INSERT внутри (анти-брутфорс): выполните supabase/update-to-1_07_51.sql — до этого регистрация по инвайту не работает' : ''} · ${ms} мс`);
+        L.push(`⛔ функция ${fn}: ${errStr(error)}${ro ? ('  ← функция помечена STABLE при INSERT внутри (анти-брутфорс): выполните supabase/' + DB_SQL_FILE + ' — до этого регистрация по инвайту не работает') : ''} · ${ms} мс`);
       }
       else L.push(`${data === expect ? '✅' : '⚠️'} функция ${fn}: → ${data} · ${ms} мс`);
     }catch(e){ L.push(`⛔ функция ${fn}: ${errStr(e)}`); }
   }
+  /* v1.07.80: колонки текущей версии. head+limit(0) не тянет ни одной
+     строки — если колонки нет, PostgREST отвечает 42703. */
+  L.push('');
+  let colMiss = 0;
+  for (const [tb, col] of DB_NEED_COLS){
+    try{
+      const { error } = await state.sb.from(tb).select(col, { head: true, count: 'exact' }).limit(0);
+      if (error){
+        const s = errStr(error);
+        const nocol = /42703|column .* does not exist|schema cache/i.test(s);
+        if (nocol) colMiss++;
+        L.push(`${nocol ? '⛔' : '⚠️'} колонка ${tb}.${col}: ${nocol ? 'НЕТ' : s}`);
+      }
+    }catch(e){ L.push(`⚠️ колонка ${tb}.${col}: ${errStr(e)}`); }
+  }
+  if (!colMiss) L.push(`✅ колонки версии ${APP_VERSION}: все ${DB_NEED_COLS.length} на месте`);
+
+  /* Наличие функций без их выполнения: зовём с заведомо чужим именем
+     параметра — подобрать перегрузку PostgREST не может и отвечает
+     PGRST202. Если функция есть, в hint приходит «Perhaps you meant to
+     call the function public.<имя>(…)»; если её нет — hint пустой. */
+  let fnMiss = 0;
+  for (const fn of DB_NEED_RPCS){
+    try{
+      const { error } = await state.sb.rpc(fn, { tl_diag_probe: 1 });
+      if (!error){ L.push(`✅ функция ${fn}: есть`); continue; }
+      const s = (error.hint || '') + ' ' + errStr(error);
+      const found = new RegExp('public\\.' + fn + '\\(').test(s);
+      if (!found) fnMiss++;
+      L.push(`${found ? '✅' : '⛔'} функция ${fn}: ${found ? 'есть' : 'НЕТ'}`);
+    }catch(e){ L.push(`⚠️ функция ${fn}: ${errStr(e)}`); }
+  }
+  if (colMiss || fnMiss)
+    L.push(`← база отстаёт от клиента: выполните supabase/${DB_SQL_FILE} в SQL-редакторе Supabase (безопасен для повторного запуска)`);
+
   L.push('');
   L.push(`локальный кеш: ${TABLES.map(tb => tb + '=' + ((state.data||{})[tb]||[]).length).join(' ')}`);
   L.push(`последняя синхронизация: ${state.lastSync || '—'}${state.data && state.data._syncMs ? ' · ' + state.data._syncMs + ' мс' : ''}`);
@@ -7188,7 +7269,7 @@ function boardJobCard(j, idx, canOrd){
       <button class="mv" title="${t('move_up')}" onclick="App.boardMove('${j.id}',-1)">${ic('chev_u')}</button>
       <button class="mv" title="${t('move_down')}" onclick="App.boardMove('${j.id}',1)">${ic('chev_d')}</button>
     </div>` : '';
-  return `<div class="bjob clicky" style="border-left-color:${col}" onclick="App.openJob('${j.id}')">
+  return `<div class="bjob clicky${rail ? ' has-brail' : ''}" style="border-left-color:${col}" onclick="App.openJob('${j.id}')">
     ${rail}
     <span class="bnum">${idx + 1}</span>
     ${triHtml(!!j.priority, j.id, canPrio(j))}
@@ -7768,13 +7849,47 @@ function freeJobsStripHtml(){
   const list = (state.data.jobs || [])
     .filter(j => j.date === state.selDate && !j.technician_id)
     .sort(jobSortCmp);
-  if (!list.length) return '';
+  /* v1.07.80: у ничейной работы и размещения ничейные (в saveJob они
+     наследуют technician_id работы). Колонка доски = сотрудник, поэтому
+     такой пикап не попадал ни в одну колонку и пропадал с экрана вовсе.
+     Показываем его здесь же, рядом с работой, и назначаем тем же
+     App.assignJob — он переводит и работу, и её пикапы. */
+  const freePk = (state.data.placements || [])
+    .filter(p => pkPending(p) && !p.technician_id && p.due_date <= state.selDate);
+  const pkByJob = {};
+  freePk.forEach(p => { (pkByJob[p.job_id] = pkByJob[p.job_id] || []).push(p); });
+  const pkJobs = Object.keys(pkByJob);
+  if (!list.length && !pkJobs.length) return '';
   const staff = [...state.data.profiles].filter(p => !p.blocked)
     .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name));
+  const pickSel = (jobId) => isManager() ? `<div class="pc-assign"><select onchange="App.assignJob('${jobId}', this.value)">
+        <option value="">${t('b_assign')}</option>
+        ${staff.map(p => `<option value="${p.id}">${esc(shortName(p.display_name))}</option>`).join('')}
+      </select></div>` : '';
+  const pkHtml = !pkJobs.length ? '' : `<div class="strip-h">${ic('box')} <span class="ttl">${t('b_free_pk')}</span>
+      <span class="chip warn">${freePk.length}</span>
+      <span class="tiny">${t('b_free_pk_hint')}</span></div>
+    <div class="pstrip">${pkJobs.map(jid => {
+      const arr = pkByJob[jid];
+      const j0 = (state.data.jobs || []).find(x => x.id === jid) || {};
+      const cx0 = cxById(j0.complex_id || arr[0].complex_id) || { abbr: '—' };
+      const agg = {};
+      arr.forEach(p => { const e = etById(p.equipment_type_id); const k = e ? e.abbr : '?'; agg[k] = (agg[k] || 0) + (+p.qty || 1); });
+      const due = arr.map(p => p.due_date).sort()[0];
+      const over = due < todayISO();
+      return `<div class="pcard freecard">
+        <div class="clicky" onclick="App.openJob('${jid}')">
+          <span class="chip ${over ? 'bad' : 'info'}">${over ? t('overdue') : t('pickup')}</span>
+          <div><b>${esc(j0.unit_number || arr[0].unit_number || '—')}</b> <span class="tiny">· ${esc(cx0.abbr || cx0.name || '—')}</span></div>
+          <div class="tiny">${esc(Object.entries(agg).map(([k,q]) => k + '×' + q).join(' '))} · ${t('due')}: ${fmtDMY(due)}</div>
+        </div>
+        ${pickSel(jid)}
+      </div>`; }).join('')}</div>`;
+  if (!list.length) return pkHtml;
   const head = `<div class="strip-h">${ic('warn')} <span class="ttl">${t('b_free_jobs')}</span>
     <span class="chip warn">${list.length}</span>
     <span class="tiny">${t('b_free_jobs_hint')}</span></div>`;
-  return head + `<div class="pstrip">${list.map(j => {
+  return pkHtml + head + `<div class="pstrip">${list.map(j => {
     const cx = cxById(j.complex_id) || { abbr: '—' };
     const wt = wtById(j.work_type_id) || { name: '', color: '#8AA0AB' };
     return `<div class="pcard freecard">
@@ -7783,10 +7898,7 @@ function freeJobsStripHtml(){
         <div><b>${esc(j.unit_number || '—')}</b> <span class="tiny">· ${esc(cx.abbr || cx.name || '—')}</span></div>
         <div class="tiny"><span class="dotc" style="background:${wt.color}"></span>${esc(wt.name)}</div>
       </div>
-      ${isManager() ? `<div class="pc-assign"><select onchange="App.assignJob('${j.id}', this.value)">
-        <option value="">${t('b_assign')}</option>
-        ${staff.map(p => `<option value="${p.id}">${esc(shortName(p.display_name))}</option>`).join('')}
-      </select></div>` : ''}
+      ${pickSel(j.id)}
     </div>`; }).join('')}</div>`;
 }
 /* Назначение исполнителя одним движением — из полосы черновиков. */
@@ -10198,19 +10310,6 @@ function extraLineTotal(it){
   if (it.kind === 'purchase') return Math.max(1, parseInt(it.qty)||1) * (parseFloat(it.price)||0);
   const rate = parseFloat(it.price)||0;
   return it.needs_size ? exSizeVal(it) * rate : rate;
-}
-function extraItemText(it){
-  if (it.kind === 'purchase'){
-    const q = Math.max(1, parseInt(it.qty)||1);
-    return (it.product_name || it.name) + (q > 1 ? ' ×' + q : '');
-  }
-  let sz = '';
-  if (it.needs_size){
-    const a = Math.max(1, parseInt(it.size_a)||0), b = Math.max(1, parseInt(it.size_b)||0);
-    const v = exSizeVal(it);
-    sz = ' — ' + ((it.size_a && b > 1) ? a + '×' + b + ' = ' : '') + v + ' ' + (it.size_unit||'');
-  }
-  return it.name + sz;
 }
 
 function extraListHtml(){
