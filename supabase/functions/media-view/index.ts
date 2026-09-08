@@ -1,7 +1,10 @@
-import { userClient, driveToken, CORS } from "../_shared/google.ts";
+import { userClient, driveToken, CORS, FN_VER } from "../_shared/google.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»
+    return new Response(JSON.stringify({ fn: "media-view", ver: FN_VER }),
+      { headers: { ...CORS, "Content-Type": "application/json" } });
   const id = new URL(req.url).searchParams.get("id") ?? "";
   const sb = userClient(req);
   const { data: { user } } = await sb.auth.getUser();

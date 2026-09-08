@@ -1,10 +1,13 @@
-import { svc, userClient, CORS, jres } from "../_shared/google.ts";
+import { svc, userClient, CORS, jres, FN_VER } from "../_shared/google.ts";
 
 /* v1.07.31: обмен одноразового кода Google на refresh-token — прямо из
    интерфейса админки (кнопка «Подключить Google»). Секреты клиента и
    токен живут только на сервере (app_secrets), в браузер не попадают. */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»
+    return new Response(JSON.stringify({ fn: "media-oauth", ver: FN_VER }),
+      { headers: { ...CORS, "Content-Type": "application/json" } });
   try {
     const sb = userClient(req);
     const { data: { user } } = await sb.auth.getUser();

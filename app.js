@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.71';
+const APP_VERSION = '1.07.72';
 const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -403,6 +403,14 @@ const I18N = {
     gd_p_thumb_rls: 'доступно · политика активна',
     gd_p_thumb_srv: 'Хранилище миниатюр (проверка сервером)',
     mq_l_redo: 'запись и файл разошлись — начинаю файл заново',
+    gd_fns: 'Функции на сервере', gd_fn_no: 'не задеплоена',
+    gd_fn_wrong: 'ОТВЕЧАЕТ ДРУГАЯ ФУНКЦИЯ: {X} — перезалейте код',
+    gd_fn_old: 'старая версия без опознания — передеплойте',
+    gd_fn_stale: 'версия {V}, ожидается {E} — передеплойте',
+    gd_dir: 'Каталог на Диске', gd_dir_bad: 'файл лёг вне папки архива',
+    gd_dir_none: 'папка не проверена: файл не залился',
+    gd_size_bad: 'на Диске другой размер: {A} вместо {B} байт',
+    mq_mini_open: 'подробнее',
     gd_space_warn: 'На Google Диске осталось {P}% свободного места (занято {U} из {L} ГБ). Освободите место или подключите другой архивный аккаунт — иначе фото и видео перестанут загружаться.',
     gd_connected: 'Google подключён', gd_not_conn: 'не подключено',
     gd_db: 'База данных', gd_auth: 'Авторизация Google', gd_acc: 'Аккаунт',
@@ -767,6 +775,14 @@ const I18N = {
     gd_p_thumb_rls: 'reachable · policy enforced',
     gd_p_thumb_srv: 'Thumbnail storage (server-side check)',
     mq_l_redo: 'the row and the file diverged — restarting the file',
+    gd_fns: 'Server functions', gd_fn_no: 'not deployed',
+    gd_fn_wrong: 'ANOTHER FUNCTION ANSWERS: {X} — redeploy the code',
+    gd_fn_old: 'old version without self-id — redeploy',
+    gd_fn_stale: 'version {V}, expected {E} — redeploy',
+    gd_dir: 'Drive folder', gd_dir_bad: 'the file landed outside the archive folder',
+    gd_dir_none: 'folder not checked: nothing was uploaded',
+    gd_size_bad: 'different size on Drive: {A} instead of {B} bytes',
+    mq_mini_open: 'details',
     gd_space_warn: 'Google Drive has {P}% free space left ({U} of {L} GB used). Free up space or connect another archive account — otherwise photo and video uploads will stop.',
     gd_connected: 'Google connected', gd_not_conn: 'not connected',
     gd_db: 'Database', gd_auth: 'Google auth', gd_acc: 'Account',
@@ -7724,7 +7740,9 @@ async function mBeginUpload(it, token){
 /* v1.07.63: verbose=true — ход отправки построчно уходит в журнал модалки
    «Неотправленные фото и видео»; возвращается сводка для итоговой строки. */
 async function mediaFlush(verbose){
-  const lg = (txt, cls, id) => verbose ? mqLog(txt, cls, id) : null;
+  /* v1.07.72: журнал пишем всегда — при фоновой отправке он виден в
+     мини-области над панелью вкладок, а в модалке это тот же журнал. */
+  const lg = (txt, cls, id) => mqLog(txt, cls, id);
   const res = { photo: 0, video: 0, fail: 0, stopped: false };
   if (_mediaBusy){ lg('⏳ ' + t('mq_l_busy'), 'warn'); mediaBadge(); return res; }
   if (!HAS_SB || !state.user){ lg('⛔ ' + t('mq_l_nosb'), 'err'); mediaBadge(); return res; }
@@ -7810,7 +7828,7 @@ async function mediaFlush(verbose){
         break;                              // сеть шалит — дождёмся online/интервала
       }
     }
-  } finally { _mediaBusy = false; mediaBadge(); }
+  } finally { _mediaBusy = false; mediaBadge(); if (!$('#mq-log')) mqMini(true); }
   return res;
 }
 /* ---------- полоса миниатюр ---------- */
@@ -7928,7 +7946,35 @@ function mqLog(text, cls, id){
     if (mqLogLines.length > MQ_LOG_MAX) mqLogLines = mqLogLines.slice(-MQ_LOG_MAX);
   }
   mqLogPaint();
+  /* модалка открыта — мини-область не нужна, там журнал целиком */
+  if (!$('#mq-log')) mqMini(true);
   return line.id;
+}
+/* v1.07.72: мини-журнал отправки — три последние строки над таббаром.
+   Показывается, пока идёт отправка, и гаснет через несколько секунд. */
+let _mqMiniTimer = null;
+function mqMini(show){
+  let el = $('#mq-mini');
+  if (!show){
+    if (el) el.remove();
+    document.body.classList.remove('has-mq-mini');
+    return;
+  }
+  document.body.classList.add('has-mq-mini');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'mq-mini'; el.className = 'mq-mini';
+    el.onclick = () => { mqMini(false); App.mediaQueueModal(); };
+    document.body.appendChild(el);
+  }
+  const tail = mqLogLines.slice(-3).map(l => {
+    const p = splitMark(l.text);
+    return `<div class="mq-l ${l.cls}">${p.icon}${p.icon ? ' ' : ''}${p.text}</div>`;
+  }).join('');
+  el.innerHTML = `<div class="mq-mini-h">${ic('upload')} ${t('mq_title')}
+      <span class="mq-mini-x">${t('mq_mini_open')}</span></div>${tail}`;
+  clearTimeout(_mqMiniTimer);
+  _mqMiniTimer = setTimeout(() => { if (!_mediaBusy) mqMini(false); }, 6000);
 }
 function mqLogPaint(){
   const box = $('#mq-log'); if (!box) return;
@@ -8286,6 +8332,31 @@ async function mediaOauthExchange(code){
     App.go('settings');
   }catch(e){ toast('⛔ Google OAuth: ' + (e.message || e), 'err'); }
 }
+/* v1.07.72: комплект функций, который должен стоять на сервере, и ожидаемая
+   версия. Каждая функция на ?ping=1 отвечает своим именем — так видно и
+   перепутанный при ручном деплое код, и забытую при обновлении функцию. */
+const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
+                   'media-view', 'media-delete', 'media-oauth'];
+const MEDIA_FN_VER = '1.07.72';
+async function gdFnCheck(row){
+  const token = await mediaJwt();
+  let bad = 0;
+  for (const name of MEDIA_FNS){
+    try{
+      const r = await fetch(`${mediaFN()}/${name}?ping=1`,
+        { headers: { Authorization: 'Bearer ' + token } });
+      if (r.status === 404){ row(name, false, t('gd_fn_no')); bad++; continue; }
+      const j = await r.json().catch(() => ({}));
+      if (!j || !j.fn){ row(name, false, t('gd_fn_old') + ' · HTTP ' + r.status); bad++; continue; }
+      if (j.fn !== name){ row(name, false, t('gd_fn_wrong').replace('{X}', esc(String(j.fn)))); bad++; continue; }
+      const fresh = j.ver === MEDIA_FN_VER;
+      row(name, fresh, fresh ? 'v' + j.ver
+        : t('gd_fn_stale').replace('{V}', esc(String(j.ver || '?'))).replace('{E}', MEDIA_FN_VER));
+      if (!fresh) bad++;
+    }catch(e){ row(name, false, String(e.message || e).slice(0, 80)); bad++; }
+  }
+  return bad;
+}
 /* v1.07.70: маленькая тестовая картинка — рисуем на месте, чтобы проверять
    загрузку настоящими байтами, а не пустым запросом. */
 async function mTestBlob(){
@@ -8320,6 +8391,14 @@ async function gdProbe(row){
       row(t('gd_p_thumb'), true, (blob.size / 1024).toFixed(1) + ' KB');
     }
   }catch(e){ row(t('gd_p_thumb'), false, String(e.message || e).slice(0, 90)); }
+  /* v1.07.72: та же проверка сервером — RLS её не закрывает, поэтому видно,
+     жив ли сам bucket, а не только политика */
+  try{
+    const r = await fetch(mediaFN() + '/media-health?storage=1',
+      { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json().catch(() => ({}));
+    row(t('gd_p_thumb_srv'), !!j.ok, j.ok ? '' : String(j.error || ('HTTP ' + r.status)).slice(0, 90));
+  }catch(e){ row(t('gd_p_thumb_srv'), false, String(e.message || e).slice(0, 90)); }
 
   const session = async () => {
     const r = await fetch(mediaFN() + '/media-health?probe=1', { method: 'POST',
@@ -8365,7 +8444,25 @@ async function gdProbe(row){
       String(j.error || ('HTTP ' + (j.status || r.status))).slice(0, 90));
   }catch(e){ row(t('gd_p_relay'), false, String(e.message || e).slice(0, 90)); }
 
-  /* 5. уборка: тестовые файлы на Диске не копим */
+  /* 5. каталог: где файл оказался на самом деле и того ли он размера */
+  if (ids.length){
+    try{
+      const r = await fetch(mediaFN() + '/media-health?verify=' + encodeURIComponent(ids[0]),
+        { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+      const v = await r.json().catch(() => ({}));
+      if (!v.ok) row(t('gd_dir'), false, String(v.error || ('HTTP ' + r.status)).slice(0, 90));
+      else {
+        const sizeOk = !v.size || v.size === blob.size;
+        const where = (s1 && s1.folder ? s1.folder.root_name + ' / ' : '') + (v.parent_name || '—');
+        row(t('gd_dir'), !!v.in_archive && sizeOk,
+          !v.in_archive ? t('gd_dir_bad') + ' · ' + esc(where)
+          : !sizeOk ? t('gd_size_bad').replace('{A}', v.size).replace('{B}', blob.size)
+          : esc(where));
+      }
+    }catch(e){ row(t('gd_dir'), false, String(e.message || e).slice(0, 90)); }
+  } else row(t('gd_dir'), null, t('gd_dir_none'));
+
+  /* 6. уборка: тестовые файлы на Диске не копим */
   if (ids.length){
     try{
       const r = await fetch(mediaFN() + '/media-health?cleanup=1', { method: 'POST',
@@ -8376,7 +8473,7 @@ async function gdProbe(row){
     }catch(e){ row(t('gd_p_clean'), false, String(e.message || e).slice(0, 90)); }
   }
 
-  /* 6. подтверждение: спрашиваем media-commit про заведомо несуществующую
+  /* 7. подтверждение: спрашиваем media-commit про заведомо несуществующую
      запись. Правильный ответ — 404 NOT_FOUND; всё остальное означает, что
      последний шаг отправки сломан, и показывается вместе с телом ответа. */
   try{
@@ -8390,7 +8487,7 @@ async function gdProbe(row){
       : t('gd_p_commit_bad') + ' · HTTP ' + r.status + (body ? ' ' + body.slice(0, 120) : ''));
   }catch(e){ row(t('gd_p_commit'), false, String(e.message || e).slice(0, 90)); }
 
-  /* 7. вывод — и сразу переключаем настоящую отправку на рабочий путь */
+  /* 8. вывод — и сразу переключаем настоящую отправку на рабочий путь */
   if (direct){ _mediaRelay = false; row(t('gd_p_way'), true, t('gd_p_direct')); }
   else if (relay){ _mediaRelay = true; row(t('gd_p_way'), true, t('gd_p_relay')); }
   else row(t('gd_p_way'), false, t('gd_p_none'));
@@ -8435,9 +8532,12 @@ async function mediaHealth(){
     if (j.cfg){ Object.assign(gdCfg, j.cfg, { loaded: true }); }
     if (j.drive && j.drive.account) gdCfg.account = j.drive.account;
     /* v1.07.70: сквозная проверка — тем же путём, что и настоящее фото */
+    const prow = (k, ok, extra) => push(k, ok, extra ? esc(String(extra)) : '');
+    h += `<div class="gd-probe-h">${t('gd_fns')}</div>`; if (box) box.innerHTML = h;
+    await gdFnCheck(prow);                       // v1.07.72: кто задеплоен и какой версии
     if (j.drive && j.drive.ok){
       h += `<div class="gd-probe-h">${t('gd_probe')}</div>`; if (box) box.innerHTML = h;
-      await gdProbe((k, ok, extra) => push(k, ok, extra ? esc(String(extra)) : ''));
+      await gdProbe(prow);
     }
   }catch(e){ if (box) box.innerHTML = '🔴 ' + esc(String(e.message || e)); }
 }
@@ -8529,6 +8629,7 @@ async function runDiag(){
       if (j.write) row(t('gd_write'), !!j.write.ok,
         j.write.error ? String(j.write.error).slice(0, 90) : '');
       /* v1.07.70: тот же сквозной прогон, что и в «Тесте соединения» */
+      await gdFnCheck(row);
       if (j.drive && j.drive.ok) await gdProbe(row);
     }
   }catch(e){

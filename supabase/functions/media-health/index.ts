@@ -1,4 +1,4 @@
-import { svc, userClient, driveToken, CORS, jres } from "../_shared/google.ts";
+import { svc, userClient, driveToken, monthFolder, CORS, jres, FN_VER } from "../_shared/google.ts";
 
 /* v1.07.64 · три режима:
    ?cfg=1     — только конфиг без секретов (быстро, для отрисовки карточки);
@@ -34,6 +34,8 @@ async function saveQuota(s: ReturnType<typeof svc>, about: Record<string, any>) 
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (new URL(req.url).searchParams.get("ping"))         // v1.07.72: «кто ты»
+    return jres({ fn: "media-health", ver: FN_VER });
   const sb = userClient(req);
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return jres({ error: "UNAUTHORIZED" }, 401);
@@ -83,6 +85,13 @@ Deno.serve(async (req) => {
       const t = await driveToken();
       const origin = req.headers.get("Origin") ?? "";
       const name = SELFTEST + new Date().toISOString().replace(/[:.]/g, "-") + ".jpg";
+      /* v1.07.72: кладём туда же, куда настоящее фото — в месячную подпапку
+         архива, чтобы проверка касалась и каталога тоже. */
+      const ym = new Date().toISOString().slice(0, 7);
+      const month = folder ? await monthFolder(t, folder, ym) : "";
+      const root = folder ? await (await fetch(
+        `https://www.googleapis.com/drive/v3/files/${folder}?fields=id,name`,
+        { headers: { Authorization: `Bearer ${t}` } })).json() : {};
       const init = await fetch(
         "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable", {
         method: "POST",
@@ -90,12 +99,44 @@ Deno.serve(async (req) => {
           ...(origin ? { Origin: origin } : {}),
           "X-Upload-Content-Type": "image/jpeg",
           ...(Number(size) > 0 ? { "X-Upload-Content-Length": String(size) } : {}) },
-        body: JSON.stringify({ name, parents: folder ? [folder] : undefined,
+        body: JSON.stringify({ name, parents: month ? [month] : (folder ? [folder] : undefined),
           appProperties: { techlog: "selftest" } }) });
       const upload_url = init.headers.get("Location");
       if (!upload_url) return jres({ error: "DRIVE_INIT: " + (await init.text()).slice(0, 200) }, 502);
-      return jres({ upload_url, name, origin: !!origin });
+      return jres({ upload_url, name, origin: !!origin,
+        folder: { root_id: folder, root_name: root?.name ?? "", month_id: month, month: ym,
+          path: (root?.name ?? "—") + " / " + ym } });
     } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
+  }
+  /* v1.07.72: где файл оказался на самом деле — сверка каталога */
+  if (url.searchParams.get("verify")) {
+    try {
+      const id = encodeURIComponent(String(url.searchParams.get("verify")));
+      const t = await driveToken();
+      const f = await (await fetch(
+        `https://www.googleapis.com/drive/v3/files/${id}?fields=id,name,size,parents`,
+        { headers: { Authorization: `Bearer ${t}` } })).json();
+      if (!f?.id) return jres({ error: "NOT_ON_DRIVE" }, 404);
+      const parent = (f.parents ?? [])[0] ?? "";
+      const p = parent ? await (await fetch(
+        `https://www.googleapis.com/drive/v3/files/${parent}?fields=id,name,parents`,
+        { headers: { Authorization: `Bearer ${t}` } })).json() : {};
+      const grand = (p?.parents ?? [])[0] ?? "";
+      return jres({ ok: true, name: f.name, size: Number(f.size ?? 0),
+        parent_id: parent, parent_name: p?.name ?? "",
+        in_archive: grand === folder || parent === folder, root_id: folder });
+    } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
+  }
+  /* v1.07.72: bucket миниатюр — проверяем сервером, RLS его не закрывает */
+  if (url.searchParams.get("storage")) {
+    try {
+      const key = `_selftest/${crypto.randomUUID()}.txt`;
+      const up = await s.storage.from("media-thumbs")
+        .upload(key, new Blob(["techlog"]), { contentType: "text/plain", upsert: true });
+      if (up.error) return jres({ ok: false, error: up.error.message }, 200);
+      await s.storage.from("media-thumbs").remove([key]);
+      return jres({ ok: true });
+    } catch (e) { return jres({ ok: false, error: String((e as Error)?.message ?? e) }, 200); }
   }
   if (url.searchParams.get("cleanup")) {
     try {

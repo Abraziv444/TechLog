@@ -55,6 +55,11 @@ export async function monthFolder(t: string, rootId: string, ym: string) {
   folders.set(ym, id); return id;
 }
 
+/* v1.07.72: версия комплекта функций. Диагностика в приложении спрашивает
+   каждую функцию «кто ты и какой версии» — так видно и перепутанный код,
+   и функцию, которую забыли передеплоить. */
+export const FN_VER = "1.07.72";
+
 export const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, content-type",

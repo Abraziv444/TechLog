@@ -1,4 +1,4 @@
-import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres } from "./google.ts";
+import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_VER } from "./google.ts";
 
 /* v1.07.64: max — это дефолт; действующий лимит на документ админ задаёт
    в настройках (org_settings.media_max_photo / media_max_video). Проверка
@@ -16,6 +16,9 @@ const clean = (s: string, n = 24) =>
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»
+    return new Response(JSON.stringify({ fn: "media-begin", ver: FN_VER }),
+      { headers: { ...CORS, "Content-Type": "application/json" } });
   try {
     const sb = userClient(req);
     const { data: { user } } = await sb.auth.getUser();

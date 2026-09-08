@@ -1,4 +1,4 @@
-import { userClient, CORS } from "../_shared/google.ts";
+import { userClient, CORS, FN_VER } from "../_shared/google.ts";
 
 /* v1.07.69 · сервер-посредник для докачки.
    Обычно браузер льёт байты прямо в сессию Google. Если это не проходит
@@ -18,6 +18,8 @@ const res = (b: unknown, s = 200) => new Response(JSON.stringify(b),
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS_RELAY });
+  if (new URL(req.url).searchParams.get("ping"))         // v1.07.72: «кто ты»
+    return res({ fn: "media-put", ver: FN_VER });
   try {
     const sb = userClient(req);
     const { data: { user } } = await sb.auth.getUser();
