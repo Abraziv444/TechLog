@@ -1087,10 +1087,17 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .mfull{position:fixed;inset:0;background:rgba(4,10,14,.94);z-index:9999;
   display:flex;align-items:center;justify-content:center;cursor:zoom-out}
 .mfull img,.mfull video{max-width:96vw;max-height:92vh;object-fit:contain;border-radius:8px}
-/* v1.07.74: просмотрщик фото и видео — один и тот же на телефоне и на ПК */
-.mv{position:fixed;inset:0;z-index:9999;background:rgba(4,10,14,.96);
+/* v1.07.74: просмотрщик фото и видео — один и тот же на телефоне и на ПК.
+   v1.07.78: класс переименован .mv → .mviewer. Имя .mv с v1.07.05 занято
+   кнопками ▲▼ переноса карточек, и правило position:fixed;inset:0 цепляло
+   их тоже: две кнопки прилипали к левому верхнему углу окна, а демо-кнопки
+   ▲▼ внутри FAQ (они не в .rail) разворачивались в чёрный лист на весь
+   экран и закрывали справку целиком. */
+.mviewer{position:fixed;inset:0;z-index:9999;background:rgba(4,10,14,.96);
   display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto 1fr;
   align-items:center;animation:mv-in .16s ease-out}
+/* защита от повторного столкновения имён: кнопки ▲▼ всегда в потоке */
+.rail .mv, .brail .mv, .demo .mv{position:static;inset:auto;z-index:auto}
 @keyframes mv-in{from{opacity:0}to{opacity:1}}
 .mv-top{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:10px 12px;
   padding-top:calc(10px + env(safe-area-inset-top,0px))}

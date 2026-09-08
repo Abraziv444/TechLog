@@ -8564,7 +8564,7 @@ function mediaViewer(list, idx){
   if (!list.length) return;
   mvClose();
   const el = document.createElement('div');
-  el.className = 'mv'; el.id = 'mv';
+  el.className = 'mviewer'; el.id = 'mviewer';
   el.innerHTML = `
     <div class="mv-top">
       <button class="mv-btn" title="${t('mv_close')}" onclick="App.mvClose()">${ic('close')}</button>
@@ -8596,7 +8596,7 @@ function mediaViewer(list, idx){
   mvShow();
 }
 function mvClose(){
-  const el = $('#mv'); if (el) el.remove();
+  const el = $('#mviewer'); if (el) el.remove();
   if (_mv){ document.removeEventListener('keydown', _mv.keyHandler); _mv = null; }
 }
 function mvGo(d){
@@ -8608,7 +8608,7 @@ async function mvShow(){
   if (!_mv) return;
   const cur = _mv.list[_mv.idx], stage = $('#mv-stage'), title = $('#mv-title');
   const many = _mv.list.length > 1;
-  document.querySelectorAll('#mv .mv-nav').forEach(b => b.style.display = many ? '' : 'none');
+  document.querySelectorAll('#mviewer .mv-nav').forEach(b => b.style.display = many ? '' : 'none');
   if (title) title.textContent =
     (many ? t('mv_of').replace('{N}', _mv.idx + 1).replace('{M}', _mv.list.length) + ' · ' : '')
     + (cur.name || '');
