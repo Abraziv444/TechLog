@@ -80,7 +80,8 @@
       c_narrow: 'Узкий экран (320px)', c_i18n: 'Переводы', c_store: 'Хранилище',
       c_paint: 'Вес отрисовки', c_safe: 'Безопасные зоны экрана',
       c_media: 'Фото, видео и вложения',
-      env: 'Устройство', all_title: 'Отчёт по всем экранам', walking: 'Обхожу экраны…'
+      env: 'Устройство', all_title: 'Отчёт по всем экранам', walking: 'Обхожу экраны…',
+      s_dir: 'справочник', s_doc: 'документ', s_cal: 'календарь', s_modal: 'модалка'
     },
     en: {
       title: 'Interface diagnostics', run: 'Check this screen', again: 'Run again', close: 'Close',
@@ -96,7 +97,8 @@
       c_narrow: 'Narrow screen (320px)', c_i18n: 'Translations', c_store: 'Storage',
       c_paint: 'Paint weight', c_safe: 'Screen safe areas',
       c_media: 'Photos, video and attachments',
-      env: 'Device', all_title: 'Report for every screen', walking: 'Walking the screens…'
+      env: 'Device', all_title: 'Report for every screen', walking: 'Walking the screens…',
+      s_dir: 'directory', s_doc: 'document', s_cal: 'calendar', s_modal: 'modal'
     }
   };
   function T(k) { return (TXT[lang()] || TXT.ru)[k] || k; }
@@ -387,6 +389,10 @@
   /* --- 6. перекрытие нижней панелью в самом низу страницы -------------- */
   function checkBars() {
     var items = [], y0 = window.scrollY;
+    /* v1.07.83: содержимое модалки лежит в слое над шапкой и нижней панелью
+       (overlay z-index 1100 против 45 и 40) — сравнивать их рамки бессмысленно,
+       иначе высокое окно каждый раз «уходит под шапку». */
+    var inOverlay = function (el) { return !!(el.closest && el.closest('.overlay')); };
     /* низ страницы: что осталось под нижней панелью — до того уже не
        доскроллить, значит элемент недоступен навсегда */
     var bar = document.querySelector('.tabbar');
@@ -394,7 +400,7 @@
       window.scrollTo(0, document.documentElement.scrollHeight);
       var br = box(bar);
       hits().forEach(function (el) {
-        if (items.length > 8 || bar.contains(el)) return;
+        if (items.length > 8 || bar.contains(el) || inOverlay(el)) return;
         var r = box(el);
         if (r.b > br.t + 2 && r.t < br.b - 2 && r.r > br.l && r.l < br.r)
           items.push({ level: 'err', msg: 'недоступно под нижней панелью: ' + pathOf(el), el: el });
@@ -406,7 +412,7 @@
       window.scrollTo(0, 0);
       var tr = box(top);
       hits().forEach(function (el) {
-        if (items.length > 12 || top.contains(el)) return;
+        if (items.length > 12 || top.contains(el) || inOverlay(el)) return;
         var r = box(el);
         if (r.t < tr.b - 2 && r.b > tr.t + 2 && r.r > tr.l && r.l < tr.r)
           items.push({ level: 'err', msg: 'недоступно под шапкой: ' + pathOf(el), el: el });
@@ -522,6 +528,13 @@
 
       var y0 = window.scrollY, frames = [], last = performance.now(), i = 0;
       LONG.length = 0;                       // считаем только то, что случилось во время замера
+      /* v1.07.83: открыта модалка — страница под ней и не должна прокручиваться,
+         замер плавности там показывал случайные числа */
+      if (qsa('.overlay').filter(visible)[0]) {
+        items.push({ level: 'ok', msg: 'открыта модалка — прокрутку страницы не меряем', el: null });
+        done(mk('scroll', T('c_scroll'), items));
+        return;
+      }
       var canScroll = document.documentElement.scrollHeight - innerHeight > 120;
       if (!canScroll) { finish(); return; }
       window.scrollTo(0, 0);
@@ -631,8 +644,14 @@
   var FOCUSABLE = 'a[href],button,input,select,textarea,summary,[tabindex]';
   function checkTab() {
     var items = [];
+    /* v1.07.83: подветка с inert выключена целиком — её элементы не
+       фокусируются и в порядок табуляции не входят. Если браузер inert не
+       поддерживает, продолжаем считать их доступными: там ловушки нет. */
+    var inertOK = false;
+    try { inertOK = ('inert' in HTMLElement.prototype); } catch (e) {}
     var all = qsa('#app ' + FOCUSABLE.split(',').join(',#app ') + ',.overlay ' + FOCUSABLE.split(',').join(',.overlay '))
-      .filter(function (el) { return visible(el) && !el.disabled && el.tabIndex >= 0; });
+      .filter(function (el) { return visible(el) && !el.disabled && el.tabIndex >= 0; })
+      .filter(function (el) { return !(inertOK && el.closest('[inert]')); });
 
     all.forEach(function (el) {
       if (items.length > 10) return;
@@ -919,7 +938,7 @@
      3. ЗАПУСК
      ------------------------------------------------------------------ */
   var LAST = null;
-  function run() {
+  function run(label) {
     var fab = document.getElementById('uidiag-fab');
     if (fab) fab.style.visibility = 'hidden';
     var checks = [];
@@ -945,7 +964,7 @@
         c.items.forEach(function (i) { if (i.level === 'err') errors++; else if (i.level === 'warn') warns++; });
       });
       LAST = {
-        screen: (document.getElementById('app') || {}).className || '?',
+        screen: label || ((document.getElementById('app') || {}).className || '?'),
         version: (window.APP_VERSION || document.querySelector('.brand .sub') && document.querySelector('.brand .sub').textContent || '').trim(),
         w: innerWidth, h: innerHeight, ts: new Date().toISOString(),
         env: envInfo(),
@@ -974,27 +993,179 @@
     return list.length ? list : ['settings'];
   }
 
-  function runAll(onStep) {
-    var list = available();
-    var back = (window.App && window.App.curScreen && window.App.curScreen()) ||
+  /* v1.07.83: обход стал полным. Раньше кнопка проходила только по вкладкам
+     нижней панели: справочники смотрелись на одном (последнем открытом), а
+     документы и модалки не открывались вовсе — хотя вся форма живёт именно
+     там. Теперь один прогон трогает КАЖДЫЙ тип документа:
+       • все экраны роли;
+       • все вкладки справочников и по одному редактору в каждой;
+       • инвойс, пропозал, пикап, заметку, «Добавить задание», очередь
+         отправки и справку — документ выбирается случайно;
+       • календарь: другой день недели и возврат «сегодня».
+     После каждого шага состояние возвращается: модалки закрываются,
+     черновик документа отбрасывается — данные не меняются. */
+  function A() { return window.App || {}; }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function pick(a) { return (a && a.length) ? a[Math.floor(Math.random() * a.length)] : null; }
+  function idsOf(re) {
+    var out = [], m, rx = new RegExp(re.source, 'g'), src = '';
+    try { src = document.body.innerHTML; } catch (e) { return out; }
+    while ((m = rx.exec(src))) if (out.indexOf(m[1]) < 0) out.push(m[1]);
+    return out;
+  }
+  function nodesWith(sub) {
+    return qsa('#app [onclick]').filter(function (el) {
+      return (el.getAttribute('onclick') || '').indexOf(sub) >= 0 && visible(el);
+    });
+  }
+  function modalOpen() { return !!document.getElementById('overlay'); }
+  function closeAny() {
+    var A0 = A();
+    try { if (modalOpen() && A0.closeModal) A0.closeModal(); } catch (e) {}
+    try { if (A0.curScreen && A0.curScreen() === 'job' && A0.jobDrop) A0.jobDrop(); } catch (e) {}
+    try { if (document.querySelector('.prop-wrap') && A0.propBack) A0.propBack(); } catch (e) {}
+  }
+
+  function runAll(onStep, opts) {
+    var deep = !opts || opts.deep !== false;   // v1.07.83: матрица устройств ходит только по экранам
+    var A0 = A();
+    var back = (A0.curScreen && A0.curScreen()) ||
                ((document.getElementById('app') || {}).className || '').replace('scr-', '') || 'home';
-    var out = [], i = 0;
-    function step() {
-      if (i >= list.length) {
-        try { window.App.go(back); } catch (e) {}
+    var out = [], done = 0, total = available().length;
+
+    function step(label, enter, leave) {
+      return Promise.resolve()
+        .then(function () {
+          done++;
+          if (onStep) onStep(label, done, Math.max(total, done));
+          try { if (enter) enter(); } catch (e) {}
+        })
+        .then(function () { return wait(300); })
+        .then(function () { return run(label); })
+        .then(function (r) { out.push(r); })
+        .catch(function (e) {
+          out.push({ screen: label, errors: 0, warns: 1, ts: new Date().toISOString(),
+                     checks: [mk('?', label, [{ level: 'warn', msg: 'шаг не прошёл: ' + (e && e.message), el: null }])] });
+        })
+        .then(function () { try { if (leave) leave(); } catch (e) {} closeAny(); return wait(140); });
+    }
+    function seq(list) {
+      return list.reduce(function (p, f) { return p.then(f); }, Promise.resolve());
+    }
+
+    /* 1. экраны роли */
+    function phaseScreens() {
+      return seq(available().map(function (scr) {
+        return function () { return step(scr, function () { A0.go(scr); }); };
+      }));
+    }
+
+    /* 2. справочники: каждая вкладка + один редактор из неё */
+    function phaseDirs() {
+      if (available().indexOf('dirs') < 0) return Promise.resolve();
+      try { A0.go('dirs'); } catch (e) {}
+      return wait(260).then(function () {
+        var tabs = qsa('#dir-tabs .tabbtn').map(function (b) {
+          var m = /App\.dirTab\('([^']+)'\)/.exec(b.getAttribute('onclick') || '');
+          return m ? { id: m[1], name: (b.textContent || '').trim() } : null;
+        }).filter(Boolean);
+        total += tabs.length;
+        return seq(tabs.map(function (tb) {
+          return function () {
+            return step(T('s_dir') + ' · ' + tb.name, function () { A0.go('dirs'); A0.dirTab(tb.id); })
+              .then(function () {
+                /* редактор строки справочника — это тоже документ */
+                try { A0.go('dirs'); A0.dirTab(tb.id); } catch (e) {}
+                return wait(200);
+              })
+              .then(function () {
+                var b = pick(nodesWith('Modal(').concat(nodesWith('App.openCp(')));
+                if (!b) return null;
+                total++;
+                return step(T('s_dir') + ' · ' + tb.name + ' · ' + T('s_modal'),
+                            function () { b.click(); });
+              });
+          };
+        }));
+      });
+    }
+
+    /* 3. документы: по одному каждого типа, сам документ — случайный.
+       Ссылку на документ ищем на нескольких экранах: в ПК-режиме главная
+       показывает карточки пикапов, а «открыть инвойс» живёт на доске и в
+       отчётах. Если готового документа нет вовсе (пустая база) — открываем
+       пустую форму того же типа: проверять надо саму форму. */
+    function phaseDocs() {
+      var have = available();
+      var plan = [
+        { lbl: 'инвойс', scr: ['board', 'reports', 'home'], re: /App\.openJob\('([^']+)'\)/,
+          open: function (id) { A0.openJob(id); },
+          leave: function () { if (A0.jobDrop) A0.jobDrop(); } },
+        { lbl: 'пропозал', scr: ['proposals'], re: /App\.openProposal\('([^']+)'\)/,
+          open: function (id) { A0.openProposal(id); },
+          blank: function () { if (A0.openProposal) A0.openProposal(); },
+          leave: function () { if (A0.propBack) A0.propBack(); } },
+        { lbl: 'пикап', scr: ['home', 'board'], click: 'App.pickupModal(' },
+        { lbl: 'заметка', scr: ['home'], click: 'App.noteModal(' },
+        { lbl: 'новое задание', scr: ['home'], click: 'App.addTaskModal(' },
+        { lbl: 'очередь отправки', scr: ['settings', 'home'], call: function () { A0.mediaQueueModal(); } },
+        { lbl: 'справка', scr: ['home'], call: function () { A0.faq(); } }
+      ];
+
+      return seq(plan.map(function (d) {
+        return function () {
+          var screens = (d.scr || ['home']).filter(function (x) { return have.indexOf(x) >= 0; });
+          if (!screens.length) return null;
+          var enter = null;
+          /* ищем документ по экранам, пока не найдём */
+          return seq(screens.map(function (scr) {
+            return function () {
+              if (enter) return null;
+              try { A0.go(scr); } catch (e) {}
+              return wait(240).then(function () {
+                if (d.re) { var id = pick(idsOf(d.re)); if (id) enter = function () { A0.go(scr); d.open(id); }; }
+                else if (d.click) { var b = pick(nodesWith(d.click)); if (b) enter = function () { b.click(); }; }
+                else if (d.call) enter = d.call;
+              });
+            };
+          })).then(function () {
+            if (!enter && d.blank) enter = d.blank;      // пустая форма — тоже документ
+            if (!enter) return null;                     // такого документа у этой роли нет
+            total++;
+            return step(T('s_doc') + ' · ' + d.lbl, enter, d.leave);
+          });
+        };
+      }));
+    }
+
+    /* 4. календарь: другой день недели, затем «сегодня» */
+    function phaseCalendar() {
+      try { A0.go('home'); } catch (e) {}
+      return wait(240).then(function () {
+        var day = pick(nodesWith('App.selDay(').filter(function (el) { return !/\bsel\b/.test(el.className); }));
+        if (!day) return null;
+        total++;
+        return step(T('s_cal'), function () { day.click(); },
+                    function () { try { if (A0.jumpToday) A0.jumpToday(); } catch (e) {} });
+      });
+    }
+
+    var chain = phaseScreens();
+    if (deep) chain = chain.then(phaseDirs).then(phaseDocs).then(phaseCalendar);
+    return chain
+      .then(function () {
+        closeAny();
+        try { A0.go(back); } catch (e) {}
         ALL = { ts: new Date().toISOString(), env: envInfo(), screens: out,
                 errors: out.reduce(function (a, x) { return a + x.errors; }, 0),
                 warns: out.reduce(function (a, x) { return a + x.warns; }, 0) };
-        return Promise.resolve(ALL);
-      }
-      var scr = list[i++];
-      if (onStep) onStep(scr, i, list.length);
-      try { window.App.go(scr); } catch (e) {}
-      return new Promise(function (res) { setTimeout(res, 320); })
-        .then(run)
-        .then(function (r) { out.push(r); return step(); });
-    }
-    return step();
+        return ALL;
+      })
+      .catch(function (e) {
+        closeAny();
+        try { A0.go(back); } catch (e2) {}
+        throw e;
+      });
   }
 
   function allText(a) {
@@ -1036,7 +1207,9 @@
     var st = document.createElement('style');
     st.id = 'uidiag-style';
     st.textContent = [
-      '#uidiag-fab{position:fixed;right:10px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:95;',
+      /* v1.07.83: z-index выше оверлея приложения (1100) — иначе при открытой
+         модалке кнопка была недоступна, а модалки тоже нужно проверять */
+      '#uidiag-fab{position:fixed;right:10px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:1150;',
       ' width:44px;height:44px;border-radius:50%;border:2px solid var(--line,#31434C);background:var(--panel,#17232A);',
       ' color:var(--blue,#1CB0F6);display:flex;align-items:center;justify-content:center;cursor:pointer;',
       ' box-shadow:0 4px 0 rgba(0,0,0,.35);padding:0}',
@@ -1148,6 +1321,7 @@
   function openAll() {
     styles(); close();
     var m = buildWin(T('all_title'));
+    wire(m);                                   // v1.07.83: без этого кнопки отчёта были мертвы
     var body = m.querySelector('.ud-body');
     body.innerHTML = '<div class="ud-it"><span class="m">' + T('walking') + '</span></div>';
     setTimeout(function () {
@@ -1174,28 +1348,37 @@
     return m;
   }
 
-  function open() {
-    styles(); close();
-    var m = buildWin(T('title'));
+  /* v1.07.83: обработчик кнопок отчёта вынесен из open(). Окно обхода всех
+     экранов строилось тем же buildWin(), но слушателя ему никто не вешал:
+     после обхода не работали ни «Ещё раз», ни «Скопировать», ни «Закрыть»,
+     а полноэкранная подложка окна перехватывала клики по всему приложению —
+     выглядело так, будто приложение зависло. */
+  function isAllWin(m) {
+    return !!(ALL && m.querySelector('.ud-hd b').textContent.indexOf(T('all_title')) >= 0);
+  }
+  function currentText(m) { return isAllWin(m) ? allText(ALL) : asText(LAST); }
+  function paintWait(m) {
+    m.querySelector('.ud-body').innerHTML = '<div class="ud-it"><span class="m">' + T('working') + '</span></div>';
+  }
+  function wire(m) {
     m.addEventListener('click', function (e) {
       if (e.target === m) return close();
       var b = e.target.closest('[data-a],.ud-x'); if (!b) return;
       var a = b.dataset ? b.dataset.a : null;
       if (b.classList.contains('ud-x') || a === 'close') return close();
       if (a === 'again') {
-        if (ALL && m.querySelector('.ud-hd b').textContent.indexOf(T('all_title')) >= 0) { close(); openAll(); return; }
-        paintWait(); run().then(paint); return;
+        if (isAllWin(m)) { close(); openAll(); return; }
+        paintWait(m); run().then(paint); return;
       }
       if (a === 'copy' && (LAST || ALL)) {
-        var txt = current();
-        try { navigator.clipboard.writeText(txt); } catch (e2) {}
+        try { navigator.clipboard.writeText(currentText(m)); } catch (e2) {}
         b.textContent = T('copied'); setTimeout(function () { b.textContent = T('copy'); }, 1500);
       }
       if (a === 'save' && (LAST || ALL)) {
-        var isAll = !!(ALL && m.querySelector('.ud-hd b').textContent.indexOf(T('all_title')) >= 0);
+        var isAll = isAllWin(m);
         var stamp = (isAll ? ALL.ts : LAST.ts).slice(0, 19).replace(/[:T]/g, '-');
         var e2 = (isAll ? ALL.env : (LAST.env || {}));
-        var blob = new Blob([current()], { type: 'text/plain;charset=utf-8' });
+        var blob = new Blob([currentText(m)], { type: 'text/plain;charset=utf-8' });
         var a2 = document.createElement('a');
         a2.href = URL.createObjectURL(blob);
         a2.download = 'techlog-ui-' + (e2.device || 'dev') + '-' + (e2.view || '') + '-' +
@@ -1203,12 +1386,13 @@
         a2.click(); setTimeout(function () { URL.revokeObjectURL(a2.href); }, 4000);
       }
     });
-    function paintWait() { m.querySelector('.ud-body').innerHTML = '<div class="ud-it"><span class="m">' + T('working') + '</span></div>'; }
-    function current() {
-      var isAll = !!(ALL && m.querySelector('.ud-hd b').textContent.indexOf(T('all_title')) >= 0);
-      return isAll ? allText(ALL) : asText(LAST);
-    }
-    paintWait();
+  }
+
+  function open() {
+    styles(); close();
+    var m = buildWin(T('title'));
+    wire(m);
+    paintWait(m);
     /* даём модалке отрисоваться, потом гасим её на время замеров */
     setTimeout(function () {
       m.style.display = 'none';
@@ -1258,7 +1442,7 @@
       window.UIDiag = {
         run: run, open: open, close: close, openAll: openAll, runAll: runAll,
         /* сериализуемый отчёт по всем экранам — для автотестов */
-        jsonAll: function () { return runAll().then(function (a) { return JSON.parse(JSON.stringify(a, function (k, v) { return k === 'el' ? undefined : v; })); }); },
+        jsonAll: function (opts) { return runAll(null, opts).then(function (a) { return JSON.parse(JSON.stringify(a, function (k, v) { return k === 'el' ? undefined : v; })); }); },
         textAll: function () { return ALL ? allText(ALL) : ''; },
         env: envInfo,
         /* сериализуемый отчёт для автотестов: те же данные без DOM-узлов */

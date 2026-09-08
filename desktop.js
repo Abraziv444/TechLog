@@ -721,3 +721,47 @@
 /* v1.07.78 · КАЛЕНДАРЬ ДЛЯ ПОЛЕЙ ДАТЫ переехал в ui.js: он должен быть
    одинаковым и на телефоне, и на ПК, а desktop.js — надстройка только
    для ПК-режима. Здесь ничего не осталось намеренно. */
+
+
+/* =====================================================================
+   v1.07.83 · ВЫСОТА ЛИПКОЙ ШАПКИ → --tbh
+   ---------------------------------------------------------------------
+   На ПК шапка приложения прилипает к верху (position:sticky, top:0), и
+   шапка документа (.docbar) прилипала туда же — кнопки «Назад» и
+   «Сохранить» наезжали на логотип и аватар. Высота шапки зависит от
+   масштаба шрифта, поэтому она не константа: меряем и кладём в
+   переменную --tbh, а desktop.css сдвигает на неё .docbar и тосты.
+   ===================================================================== */
+(function () {
+  var html = document.documentElement, last = -1;
+  function isDesk() { try { return html.classList.contains('tl-desktop'); } catch (e) { return false; } }
+  function measure() {
+    try {
+      if (!isDesk()) { if (last !== 0) { html.style.removeProperty('--tbh'); last = 0; } return; }
+      var tb = document.querySelector('#app > .topbar');
+      if (!tb) return;
+      var h = Math.round(tb.getBoundingClientRect().height);
+      if (!h || Math.abs(h - last) < 2) return;      // без дрожания на каждый рендер
+      last = h;
+      html.style.setProperty('--tbh', h + 'px');
+    } catch (e) {}
+  }
+  var deb = null;
+  function sched() {                                 // «завёл и жду» — как в остальных модулях
+    if (deb) return;
+    deb = setTimeout(function () { deb = null; measure(); }, 120);
+  }
+  function start() {
+    try {
+      var app = document.getElementById('app');
+      if (app && window.MutationObserver) new MutationObserver(sched).observe(app, { childList: true });
+      if (window.MutationObserver) new MutationObserver(sched)
+        .observe(html, { attributes: true, attributeFilter: ['class', 'style'] });
+      window.addEventListener('resize', sched);
+      measure();
+      window.TLTopbarH = measure;                    // для отладки и автотестов
+    } catch (e) {}
+  }
+  if (document.body) start();
+  else document.addEventListener('DOMContentLoaded', function () { try { start(); } catch (e) {} });
+})();

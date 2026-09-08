@@ -114,7 +114,10 @@ const norm = s => String(s).replace(/\d+([.,]\d+)?/g, '#').replace(/«[^»]*»/g
 
       const screens = SCREENS ? SCREENS.split(',').map(x => x.trim()) : null;
       const all = await page.evaluate(async only => {
-        if (!only) return window.UIDiag.jsonAll();
+        /* v1.07.83: по матрице устройств гоняем только экраны — полный обход
+           (справочники, документы, календарь) живёт в кнопке приложения и в
+           ui-check.js, здесь он растянул бы прогон на час */
+        if (!only) return window.UIDiag.jsonAll({ deep: false });
         const out = [];
         for (const s of only) {
           window.App.go(s);

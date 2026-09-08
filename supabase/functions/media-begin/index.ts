@@ -1,14 +1,15 @@
-import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_VER } from "../_shared/google.ts";
+import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_VER,
+         PHOTOS_DIR, FILES_DIR } from "../_shared/google.ts";
 
 /* v1.07.64: max — это дефолт; действующий лимит на документ админ задаёт
    в настройках (org_settings.media_max_photo / media_max_video). Проверка
    именно здесь: клиент лимит только показывает, обойти его нельзя. */
 const LIMITS = { photo: { max: 10, bytes: 8_000_000 },
                  video: { max: 2,  bytes: 120_000_000 },
-                 /* v1.07.76: вложение «скрепкой» — документ. Лимит фиксированный:
-                    в настройках админ задаёт только фото и видео. */
+                 /* v1.07.81: вложение «скрепкой» — документ. Его лимит админ
+                    тоже задаёт в настройках (org_settings.media_max_file);
+                    значение ниже — только запасное. */
                  file:  { max: 20, bytes: 25_000_000 } };
-const FILES_DIR = "Files";                    // отдельная папка для документов
 
 const translit = (s: string) => s.replace(/[а-яё]/gi, (ch) => ({
   а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"e",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",
@@ -41,10 +42,21 @@ Deno.serve(async (req) => {
     if (!job) return jres({ error: "NO_ACCESS" }, 403);
 
     const s = svc();
-    const { data: org } = await s.from("org_settings")
-      .select("media_max_photo,media_max_video").eq("id", "org").maybeSingle();
+    /* v1.07.81: media_max_file мог ещё не появиться в базе (SQL не выполнен) —
+       тогда запрос падает целиком и обнулил бы заодно лимиты фото и видео.
+       Поэтому при ошибке перечитываем старым набором колонок. */
+    let org: Record<string, unknown> | null = null;
+    {
+      const q = await s.from("org_settings")
+        .select("media_max_photo,media_max_video,media_max_file").eq("id", "org").maybeSingle();
+      if (q.error) {
+        const q2 = await s.from("org_settings")
+          .select("media_max_photo,media_max_video").eq("id", "org").maybeSingle();
+        org = (q2.data ?? null) as Record<string, unknown> | null;
+      } else org = (q.data ?? null) as Record<string, unknown> | null;
+    }
     const maxCount = kind === "video" ? Number(org?.media_max_video ?? LIMITS.video.max)
-      : kind === "file" ? LIMITS.file.max
+      : kind === "file" ? Number(org?.media_max_file ?? LIMITS.file.max)
       : Number(org?.media_max_photo ?? LIMITS.photo.max);
     await s.from("media").delete().eq("job_id", job_id).eq("status", "uploading")
       .lt("created_at", new Date(Date.now() - 86_400_000).toISOString());
@@ -81,12 +93,12 @@ Deno.serve(async (req) => {
 
     const t = await driveToken();
     const cfg = await driveConfig();
-    /* v1.07.76: фото и видео — в месячную папку архива, документы — в такую
-       же месячную папку, но внутри отдельной «Files». */
+    /* v1.07.81: у съёмки и у документов теперь по своей папке в архиве:
+       «Photos/ГГГГ-ММ» и «Files/ГГГГ-ММ». Старые месяцы из корня архива
+       переносит кнопка в настройках (media-health?migrate=1). */
     const ym = String(job.date).slice(0, 7);
-    const parent = kind === "file"
-      ? await monthFolder(t, await monthFolder(t, cfg.gd_folder_id, FILES_DIR), ym)
-      : await monthFolder(t, cfg.gd_folder_id, ym);
+    const parent = await monthFolder(t,
+      await monthFolder(t, cfg.gd_folder_id, kind === "file" ? FILES_DIR : PHOTOS_DIR), ym);
     /* v1.07.69: сессию открывает сервер, а байты льёт браузер. Google отдаёт
        CORS-заголовки на адрес сессии только если при открытии был передан
        Origin браузера — иначе браузерный PUT отбивается («Failed to fetch»),

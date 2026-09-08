@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.80';
-const DB_SQL_FILE = 'full-install-1_07_78.sql';   // v1.07.78: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.07.83';
+const DB_SQL_FILE = 'full-install-1_07_83.sql';   // v1.07.83: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -121,6 +121,7 @@ const I18N = {
     act_user_register: 'регистрация', act_user_create: 'создан сотрудник', act_user_block: 'блокировка',
     act_user_unblock: 'разблокировка', act_role_change: 'смена роли', act_password_change: 'смена своего пароля',
     act_password_reset: 'сброс пароля сотрудника', act_job_create: 'создан инвойс', act_job_update: 'изменён инвойс',
+    act_doc_translate: 'сформирован перевод заметок',
     act_job_done: 'работа выполнена', act_job_reopen: 'возврат в черновик', act_job_approve: 'апрув',
     act_job_delete: 'удалён инвойс', act_crew_add: 'бригада: добавлен', act_crew_remove: 'бригада: убран',
     act_pickup_done: 'пикап выполнен', act_pickup_early: 'досрочный вывоз', act_extension_create: 'продление аренды',
@@ -293,6 +294,39 @@ const I18N = {
     faq: 'Как это работает (FAQ)',
     map_mode_all: 'Общая карта', map_mode_day: 'Карта дня', map_of_day: 'Карта этого дня',
     translate_en: 'Перевести на EN', translating: 'Перевожу…', translate_err: 'Перевод не удался (сеть или дневной лимит)',
+    /* v1.07.83: двуязычные заметки — русская живёт в приложении, английская печатается в PDF */
+    tr_pdf_card: 'Перевод для PDF (EN)',
+    tr_pdf_hint: 'В PDF печатается только английский текст. Русский остаётся в приложении и никуда не пропадает.',
+    tr_ok_all: 'Всё на английском — перевод не нужен',
+    tr_all_btn: 'Перевести всё',
+    tr_en_lbl: 'EN — печатается в PDF',
+    tr_no_tr: 'без перевода',
+    tr_f_note: 'Заметка', tr_f_oth: 'Прочее', tr_f_ad: 'Air Duct', tr_f_item: 'Позиция',
+    tr_pend_t: 'Документы без перевода',
+    tr_pend_n: 'без английского перевода',
+    tr_run: 'Сформировать переводы',
+    tr_later: 'Позже',
+    tr_done_n: 'Переведено документов',
+    tr_nothing: 'Нечего переводить — английский перевод есть везде',
+    tr_set_card: 'Переводы заметок для PDF',
+    tr_remind: 'Напоминать о непереведённых',
+    tr_auto: 'Переводить автоматически',
+    tr_int: 'Проверять раз в, мин',
+    tr_email: 'E-mail для переводчика',
+    tr_email_h: 'необязательно: с ним у бесплатного MyMemory дневной лимит выше',
+    tr_set_hint: 'Проверка идёт раз в заданное время и берёт только документы, где есть русская заметка и нет английского перевода. Русский текст не меняется.',
+    tr_warn_pdf: 'Есть русские заметки без перевода — в PDF они не попадут',
+    tr_go_wo: 'Сформировать без них',
+    tr_tr_go: 'Перевести и продолжить',
+    tr_saved: 'Перевод сохранён',
+    tr_scope: 'Показаны документы, которые вам разрешено править',
+    tr_busy: 'Перевод уже идёт',
+    /* v1.07.83: где показывать всплывашки — настройка своя на каждом устройстве */
+    pop_card: 'Всплывающие подсказки',
+    pop_hint: 'Где показывать тосты и напоминания — в этом браузере, и в мобильном режиме, и в ПК',
+    pop_top: 'Сверху', pop_bottom: 'Снизу', pop_side: 'Сбоку',
+    pop_demo: 'Показать пример',
+    pop_demo_txt: 'Вот здесь будут подсказки',
     log_title: 'Журнал событий', clear: 'Очистить',
     db_diag: 'Диагностика БД (все таблицы)', admin_only: 'Доступно только администратору',
     checking_tables: 'Проверяю таблицы…',
@@ -375,14 +409,21 @@ const I18N = {
     gd_trim_hint: 'Вставляйте адрес папки целиком — приложение оставит только ID.',
     gd_where: 'Куда сохраняются файлы', gd_where_photo: 'Фото и видео',
     gd_where_files: 'Документы и вложения', gd_open_drive: 'Открыть на Диске',
+    gd_move: 'Перенести старые фото в папку Photos',
+    gd_move_hint: 'Разовая операция: месячные папки из корня архива переезжают внутрь «Photos». Файлы сохраняют свои адреса — уже загруженные снимки открываются как раньше.',
+    gd_move_done: 'Перенесено папок: {N}', gd_move_none: 'Переносить нечего — фото уже в папке Photos',
+    gd_p_photo: 'Съёмка → папка Photos',
     gd_folder_unknown: 'папка появится после первой загрузки',
     media_title: 'Фото и видео', media_photo: 'Фото', media_video: 'Видео',
     media_sb_only: 'Фото и видео работают только с подключённым Supabase',
     media_vlong: 'Видео длиннее 90 сек — снимите короче',
     media_limit: 'Лимит: {P} фото и {V} видео на документ',
-    media_lim_card: 'Лимиты фото и видео на документ',
+    media_lim_card: 'Лимиты фото, видео и вложений на документ',
     media_lim_photo: 'Фото на документ', media_lim_video: 'Видео на документ',
-    media_lim_hint: 'Действует для всех документов. По умолчанию 10 фото и 2 видео. Лимит проверяет и сервер — обойти его из браузера нельзя. Уже загруженные файлы сверх нового лимита остаются на месте, добавить сверх — нельзя. Видео = 0 убирает кнопку съёмки видео.',
+    media_lim_file: 'Вложений на документ',
+    media_lim_hint: 'Действует для всех документов. По умолчанию 10 фото, 2 видео и 20 вложений. Лимит проверяет и сервер — обойти его из браузера нельзя. Уже загруженные файлы сверх нового лимита остаются на месте, добавить сверх — нельзя. Видео = 0 убирает кнопку съёмки видео.',
+    media_del_left: 'Файлы с Диска убрать не удалось — удалите их вручную',
+    act_media_purge: 'файлы работы удалены',
     media_open_err: 'Нет доступа или файл ещё грузится', media_del_q: 'Удалить файл из архива',
     media_offline: 'офлайн', media_wait: 'ждут отправки',
     media_blur: 'Похоже, снимок смазан — лучше переснять',
@@ -533,6 +574,7 @@ const I18N = {
     act_user_register: 'sign-up', act_user_create: 'staff created', act_user_block: 'blocked',
     act_user_unblock: 'unblocked', act_role_change: 'role changed', act_password_change: 'own password changed',
     act_password_reset: 'staff password reset', act_job_create: 'invoice created', act_job_update: 'invoice updated',
+    act_doc_translate: 'note translation built',
     act_job_done: 'job done', act_job_reopen: 'back to draft', act_job_approve: 'approved',
     act_job_delete: 'invoice deleted', act_crew_add: 'crew: added', act_crew_remove: 'crew: removed',
     act_pickup_done: 'pickup done', act_pickup_early: 'early pickup', act_extension_create: 'rental extension',
@@ -705,6 +747,37 @@ const I18N = {
     faq: 'How it works (FAQ)',
     map_mode_all: 'All complexes', map_mode_day: 'Day map', map_of_day: 'Map of this day',
     translate_en: 'Translate to EN', translating: 'Translating…', translate_err: 'Translation failed (network or daily limit)',
+    tr_pdf_card: 'Translation for PDF (EN)',
+    tr_pdf_hint: 'Only English is printed in the PDF. The Russian text stays in the app.',
+    tr_ok_all: 'All English — no translation needed',
+    tr_all_btn: 'Translate all',
+    tr_en_lbl: 'EN — goes to the PDF',
+    tr_no_tr: 'not translated',
+    tr_f_note: 'Note', tr_f_oth: 'Other', tr_f_ad: 'Air Duct', tr_f_item: 'Line',
+    tr_pend_t: 'Documents without translation',
+    tr_pend_n: 'without an English translation',
+    tr_run: 'Build translations',
+    tr_later: 'Later',
+    tr_done_n: 'Documents translated',
+    tr_nothing: 'Nothing to translate — every note has an English version',
+    tr_set_card: 'Note translations for PDF',
+    tr_remind: 'Remind about untranslated',
+    tr_auto: 'Translate automatically',
+    tr_int: 'Check every, min',
+    tr_email: 'E-mail for the translator',
+    tr_email_h: 'optional: raises the free MyMemory daily limit',
+    tr_set_hint: 'The check runs on the set interval and only takes documents that have a Russian note and no English translation. The Russian text is never changed.',
+    tr_warn_pdf: 'Some Russian notes have no translation — they will not appear in the PDF',
+    tr_go_wo: 'Build without them',
+    tr_tr_go: 'Translate and continue',
+    tr_saved: 'Translation saved',
+    tr_scope: 'Showing documents you are allowed to edit',
+    tr_busy: 'A translation run is already going',
+    pop_card: 'Pop-up messages',
+    pop_hint: 'Where toasts and reminders appear — in this browser, both in mobile and desktop mode',
+    pop_top: 'Top', pop_bottom: 'Bottom', pop_side: 'Side',
+    pop_demo: 'Show an example',
+    pop_demo_txt: 'Pop-ups will appear here',
     log_title: 'Event log', clear: 'Clear',
     db_diag: 'DB diagnostics (all tables)', admin_only: 'Admins only',
     checking_tables: 'Checking tables…',
@@ -787,14 +860,21 @@ const I18N = {
     gd_trim_hint: 'Paste the whole folder address — the app keeps only the ID.',
     gd_where: 'Where files are stored', gd_where_photo: 'Photos and videos',
     gd_where_files: 'Documents and attachments', gd_open_drive: 'Open in Drive',
+    gd_move: 'Move older photos into the Photos folder',
+    gd_move_hint: 'One-off action: monthly folders move from the archive root into «Photos». File links stay the same, so uploaded shots open exactly as before.',
+    gd_move_done: 'Folders moved: {N}', gd_move_none: 'Nothing to move — photos are already in the Photos folder',
+    gd_p_photo: 'Camera shots → Photos folder',
     gd_folder_unknown: 'the folder appears after the first upload',
     media_title: 'Photos & video', media_photo: 'Photo', media_video: 'Video',
     media_sb_only: 'Media requires Supabase connection',
     media_vlong: 'Video longer than 90s — please retake',
     media_limit: 'Limit: {P} photos & {V} videos per document',
-    media_lim_card: 'Photo & video limits per document',
+    media_lim_card: 'Photo, video & attachment limits per document',
     media_lim_photo: 'Photos per document', media_lim_video: 'Videos per document',
-    media_lim_hint: 'Applies to every document. Defaults: 10 photos and 2 videos. The server enforces the same limit, so it cannot be bypassed from the browser. Files already uploaded above a new limit stay in place; adding more is blocked. Videos = 0 hides the video button.',
+    media_lim_file: 'Attachments per document',
+    media_lim_hint: 'Applies to every document. Defaults: 10 photos, 2 videos and 20 attachments. The server enforces the same limit, so it cannot be bypassed from the browser. Files already uploaded above a new limit stay in place; adding more is blocked. Videos = 0 hides the video button.',
+    media_del_left: 'Could not remove the files from Drive — delete them manually',
+    act_media_purge: 'job files deleted',
     media_open_err: 'No access or file still uploading', media_del_q: 'Delete file from archive',
     media_offline: 'offline', media_wait: 'pending upload',
     media_blur: 'This shot looks blurry — better retake it',
@@ -1028,6 +1108,41 @@ function contrastRatio(a, b){
 }
 function textColorFor(hex){
   return contrastRatio('#ffffff', hex) >= contrastRatio(INK_DARK, hex) ? '#ffffff' : INK_DARK;
+}
+/* =====================================================================
+   v1.07.83: положение всплывашек (тосты, поповеры очереди и переводов).
+   Настройка своя на каждом устройстве — как «Съёмка», живёт в localStorage
+   и действует в обоих режимах. По умолчанию — сверху по центру.
+   ===================================================================== */
+const LS_POP = 'techlog_pop_pos';
+const POP_POS = ['top', 'bottom', 'side'];
+function popPos(){
+  try{ const v = localStorage.getItem(LS_POP); return POP_POS.indexOf(v) >= 0 ? v : 'top'; }
+  catch(e){ return 'top'; }
+}
+function applyPopPos(){
+  try{
+    const cur = popPos(), r = document.documentElement;
+    POP_POS.forEach(x => r.classList.toggle('tl-pop-' + x, x === cur));
+  }catch(e){}
+}
+function setPopPos(v){
+  if (POP_POS.indexOf(v) < 0) return;
+  try{ localStorage.setItem(LS_POP, v); }catch(e){}
+  applyPopPos(); render();
+  toast('🔔 ' + t('pop_demo_txt'), 'inf');
+}
+function popCardHtml(){
+  const cur = popPos();
+  const seg = (val, lbl) => `<button class="${cur === val ? 'on' : ''}" onclick="App.popPos('${val}')">${lbl}</button>`;
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('bell')} ${t('pop_card')}</div>
+    <div class="tiny" style="margin-bottom:6px">${t('pop_hint')}</div>
+    <div class="lang-seg cam-seg">
+      ${seg('top', t('pop_top'))}${seg('bottom', t('pop_bottom'))}${seg('side', t('pop_side'))}
+    </div>
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.popDemo()">${ic('bell')} ${t('pop_demo')}</button>
+  </div>`;
 }
 function toast(msg, kind){
   const now = Date.now();                                  // v1.07.26: не спамим одинаковыми
@@ -1294,6 +1409,10 @@ const DB_NEED_COLS = [
   ['media',         'thumb_path'],
   ['org_settings',  'media_max_photo'],
   ['org_settings',  'media_max_video'],
+  ['org_settings',  'media_max_file'],
+  ['jobs',          'note_en'],
+  ['proposals',     'note_en'],
+  ['org_settings',  'tr_auto'],
 ];
 const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
@@ -1542,10 +1661,10 @@ function emptyFormData(){
     treatments: { on:false, sealant:false, mold:false, degreaser:false },
     wetvac: { wet_vac:false, flood:false, sewer:false, fresh:false,
               areas: { ktc:false, lr:false, dr:false, hall:false, brs:false, all:false } },
-    airduct: { air_duct:false, dryer_vent:false, bedrooms:1, note:'' },
+    airduct: { air_duct:false, dryer_vent:false, bedrooms:1, note:'', note_en:'' },
     equipment: {},                 // { [equipment_type_id]: {qty, days} }
     pad: { on:false, size:null, rooms:0, all_unit:false },   // size: q14|q12|q34|roll
-    others: [ {desc:'',amount:0}, {desc:'',amount:0}, {desc:'',amount:0} ],
+    others: [ {desc:'',desc_en:'',amount:0}, {desc:'',desc_en:'',amount:0}, {desc:'',desc_en:'',amount:0} ],
     extra: [],
     aux_take: {},                  // { [aux_id]: true } — отмеченное «взять с собой»
   };
@@ -1807,11 +1926,13 @@ function mKindOf(f){
   if (/^video\//.test(ty)) return 'video';
   return 'file';
 }
-/* v1.07.64: лимиты фото/видео на документ — из настроек организации */
+/* v1.07.64: лимиты фото/видео на документ — из настроек организации;
+   v1.07.81: вложения «скрепкой» тоже настраиваются, а не зашиты в код. */
 function mediaLimits(){
   const o = (state.data && state.data.org_settings) || {};
-  const p = parseInt(o.media_max_photo, 10), v = parseInt(o.media_max_video, 10);
-  return { photo: p >= 1 ? p : 10, video: v >= 0 ? v : 2 };
+  const p = parseInt(o.media_max_photo, 10), v = parseInt(o.media_max_video, 10),
+        f = parseInt(o.media_max_file, 10);
+  return { photo: p >= 1 ? p : 10, video: v >= 0 ? v : 2, file: f >= 1 ? f : M_FILE_MAX };
 }
 function editLockDays(){ const v = +((state.data && state.data.org_settings || {}).edit_lock_days); return v >= 1 ? v : 0; }
 function editLocked(j){ const n = editLockDays(); if (!n || isManager()) return false; return j.date < addDaysISO(todayISO(), -n); }
@@ -2381,7 +2502,8 @@ const JR_DOC_ACTIONS = ['job_create','job_update','job_done','job_reopen','job_a
   'approve_reset','price_change','priority_set','crew_add','crew_remove',
   'pickup_done','pickup_early','pickup_restore','extension_create',
   'ext_request','ext_request_approved','ext_request_rejected',
-  'proposal_create','proposal_update','proposal_delete','proposal_link','proposal_unlink'];
+  'proposal_create','proposal_update','proposal_delete','proposal_link','proposal_unlink',
+  'doc_translate'];
 const JR_TECH_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
   'password_change','password_reset','car_no_set','org_toggle','org_set','stock_set',
   'backup_export','backup_restore'];
@@ -2517,6 +2639,7 @@ function render(){
   else if (state.screen === 'board') body = viewBoard();       // v1.07.25
   else if (state.screen === 'proposals') body = viewProposals(); // v1.07.27
   app.innerHTML = viewHeader() + body + viewTabbar();
+  if (!$('#overlay') && app.inert) modalTrap(false);   // v1.07.83: страховка от «залипшего» inert
   /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
   const scls = 'scr-' + state.screen;
   if (app.className !== scls) app.className = scls;
@@ -3274,8 +3397,22 @@ function openModal(html){
   ov.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${html}</div>`;
   ov.addEventListener('click', e => { if (e.target === ov) closeModal(); });
   document.body.appendChild(ov);
+  modalTrap(true);
 }
-function closeModal(){ $('#overlay')?.remove(); maybeApplyPendingUpdate(); }
+/* v1.07.83: пока окно открыто, страница под ним выключается (inert). Раньше
+   Tab уводил фокус под модалку — «Диагностика интерфейса» нашла это на всех
+   двенадцати окнах: «доступно 39 элементов под модалкой, нет ловушки фокуса».
+   Кнопка диагностики и тосты лежат вне #app и остаются доступны. */
+function modalTrap(on){
+  const app = $('#app'); if (!app) return;
+  try{
+    /* только inert: он и из порядка табуляции убирает, и из дерева
+       доступности. Отдельный aria-hidden в браузере без поддержки inert
+       дал бы худшее из двух — от скринридера спрятано, а Tab доходит. */
+    app.inert = !!on;
+  }catch(e){}
+}
+function closeModal(){ $('#overlay')?.remove(); modalTrap(false); maybeApplyPendingUpdate(); }
 function modalHead(title, iconName){ return `<h3><button class="back-x" aria-label="${t('back')}" onclick="App.closeModal()">${ic('arr_l')}</button> ${iconName?ic(iconName)+' ':''}${esc(title)}</h3>`; }
 
 /* ---------- Добавить задание ---------- */
@@ -3936,12 +4073,13 @@ function viewJob(){
 
   <div class="inv-sec"><div class="inv-head">${ic('note')} ${t('note')} · ${t('extra_section')} ${helpBtn('note')} ${amtWrap('extra',sec.extra)}</div>
     <div class="inv-body">
-      ${dictationHTML('jb-note', j.note || '')}
+      ${dictationHTML('jb-note', j.note || '', 'draft')}
       <div class="tiny">${t('note_hint')}</div>
       <div id="extra-list">${(jobDraft.form_data.extra||[]).length ? extraListHtml() : ''}</div>
       <button class="btn btn-blue sm" onclick="App.extraPicker()">${ic('plus')} ${t('template')}</button>
     </div></div>
 
+  ${trCardHtml('job', j)}
   ${mediaStripHtml(j.id)}
   ${proposalBoxHtml(j)}
   <label class="opt ${j.status!=='draft'?'on':''}" style="margin:4px 0 8px">
@@ -4261,6 +4399,7 @@ async function deleteJob(){
   localStorage.removeItem('techlog_draft');
   const id = jobDraft.id;
   const _dj = state.data.jobs.find(x=>x.id===id) || jobDraft;             // v1.07.18: для журнала
+  await mediaDropJob(id);                        // v1.07.81: файлы работы — с Диска
   for (const p of state.data.placements.filter(p=>p.job_id===id)) await dbDelete('placements', p.id);
   await dbDelete('jobs', id);
   audit('job_delete', 'job', id, { unit: _dj.unit_number, date: _dj.date,
@@ -4909,6 +5048,7 @@ function viewSettings(){
     ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
   </div>
 
+  ${popCardHtml()}
   ${camCardHtml()}
   ${uiDiagCardHtml()}
 
@@ -4950,6 +5090,7 @@ function viewSettings(){
     <div class="tiny">${t('lock_hint')}</div>
   </div>
   ${mediaLimitsCardHtml()}
+  ${trSettingsCardHtml()}
   ${mediaSettingsCardHtml()}
   ${backupCardHtml()}
   ${diagCardHtml()}
@@ -5038,12 +5179,16 @@ function savePdfCompat(doc, fname){
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 function makePdf(){
-  const doc = buildInvoicePdfDoc(false);
-  if (!doc) return;
-  const j = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
-  const cx = cxById(j.complex_id) || {name:'', address:''};
-  const fname = 'Invoice_' + (cx.abbr||'UNIT') + '_' + (j.unit_number||'x') + '_' + j.date + '.pdf';
-  savePdfCompat(doc, fname);   // v1.07.21
+  const j0 = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
+  if (!j0) return;
+  trPdfGuard('job', j0, () => {                    // v1.07.83: сначала перевод, потом бланк
+    const doc = buildInvoicePdfDoc(false);
+    if (!doc) return;
+    const j = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
+    const cx = cxById(j.complex_id) || {name:'', address:''};
+    const fname = 'Invoice_' + (cx.abbr||'UNIT') + '_' + (j.unit_number||'x') + '_' + j.date + '.pdf';
+    savePdfCompat(doc, fname);   // v1.07.21
+  });
 }
 /* публичная ручка для ПК-режима: Blob с актуальным бланком или null */
 function pdfPreviewBlob(){
@@ -5054,12 +5199,18 @@ function pdfPreviewBlob(){
 }
 /* v1.07.26: предпросмотр PDF в новой вкладке и печать с телефона */
 function pdfPreview(){
-  const b = pdfPreviewBlob(); if (!b){ toast('⛔ PDF', 'err'); return; }
-  const u = URL.createObjectURL(b);
-  window.open(u, '_blank', 'noopener');
-  setTimeout(() => URL.revokeObjectURL(u), 60000);
+  const j0 = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
+  const show = () => {
+    const b = pdfPreviewBlob(); if (!b){ toast('⛔ PDF', 'err'); return; }
+    const u = URL.createObjectURL(b);
+    window.open(u, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(u), 60000);
+  };
+  if (j0) trPdfGuard('job', j0, show); else show();
 }
-function pdfPrint(){
+function pdfPrint(_go){
+  const j0 = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
+  if (!_go && j0){ trPdfGuard('job', j0, () => pdfPrint(true)); return; }
   const b = pdfPreviewBlob(); if (!b){ toast('⛔ PDF', 'err'); return; }
   const u = URL.createObjectURL(b);
   const fr = document.createElement('iframe');
@@ -5249,7 +5400,7 @@ const App = {
   camMode(v){ camSet('mode', v); dlog('камера: режим ' + v); render(); },
   camQ(v){ camSet('q', v); dlog('камера: качество ' + v); render(); },
   camSharp(v){ camSet('sharp', v ? '1' : '0'); render(); },
-  gdToggleEdit, gdReveal, gdCopy,
+  gdToggleEdit, gdReveal, gdCopy, gdMove,
   mediaOpenLocal, mvClose, mvGo, mvDownload, mvDelete, mediaAttach,
   eqHours(etId, v){
     if (!jobDraft) return;
@@ -5332,7 +5483,23 @@ const App = {
   priceCpSel(v){ state.priceCp = v; render(); },
   diag: showDiagnostics, copyDiag,
   faq: faqModal,
+  popPos: setPopPos,
+  popDemo(){ toast('🔔 ' + t('pop_demo_txt'), 'inf'); },
   translateEn: translateToEn,
+  /* v1.07.83: двуязычные заметки */
+  trSet(kind, id, v){
+    const doc = kind === 'prop' ? propDraft : jobDraft;
+    if (!doc) return;
+    const f = trFieldById(kind, doc, id); if (!f) return;
+    f.set(String(v || ''));
+    if (kind === 'job') autosaveDraft();
+  },
+  trFill: trFillDraft,
+  trRun(){ trRunPending(false); },
+  trOneDoc: trOneDoc,
+  trPendingModal: trPendingModal,
+  trPdfNow: trPdfNow,
+  trPdfSkip: trPdfSkip,
   openDayMap(){ state.mapDay = true; state.mapDate = state.selDate; App.go('map'); },
   mapMode(v){ state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
   showLog: showLogModal, copyLog, clearLog,
@@ -5348,10 +5515,10 @@ const App = {
     propDraft.items[i][f] = (f === 'a') ? (parseFloat(v) || 0)
       : (f === 'q') ? (parseFloat(v) || 1) : v;
     if (f === 'a') propRecalc(); },
-  propItemAdd(){ if (!propDraft) return; propDraft.items.push({ q: 1, code: '', d: '', a: 0 });
+  propItemAdd(){ if (!propDraft) return; propDraft.items.push({ q: 1, code: '', d: '', d_en: '', a: 0 });
     const el = $('#prop-rows'); if (el) el.innerHTML = propItemsHtml(); },
   propItemDel(i){ if (!propDraft) return; propDraft.items.splice(i, 1);
-    if (!propDraft.items.length) propDraft.items.push({ q: 1, code: '', d: '', a: 0 });
+    if (!propDraft.items.length) propDraft.items.push({ q: 1, code: '', d: '', d_en: '', a: 0 });
     const el = $('#prop-rows'); if (el) el.innerHTML = propItemsHtml(); propRecalc(); },
   setPropStatus(s){ if (!propDraft) return; propDraft.status = s;
     if (s === 'approved' || s === 'declined'){ propDraft.decided_by = state.user.id;
@@ -5417,20 +5584,26 @@ const App = {
     dbSaveOrg(org); audit('org_toggle', 'org', key, { on: !!v });
     toast('✓ ' + t('saved')); render();
   },
-  orgStep(key, d, min, max){                       /* v1.07.53: шаг степпера настроек */
+  orgStep(key, d, min, max, step){                 /* v1.07.53: шаг степпера настроек */
     /* фолбэк = тот же дефолт, что показывает поле и применяют
        defRentDays()/maxExtendDays()/editLockDays() — иначе первый клик
        по «＋» на нетронутой настройке прыгал бы от min, а не от видимого */
     const DEF = { default_rent_days: 3, max_extend_days: 3, edit_lock_days: 0,
-                  media_max_photo: 10, media_max_video: 2 };
+                  media_max_photo: 10, media_max_video: 2, media_max_file: 20,
+                  tr_interval_min: 60 };
     const cur = +((state.data.org_settings || {})[key] ?? (DEF[key] ?? 0));
-    App.setOrgNum(key, cur + d, min, max);
+    App.setOrgNum(key, cur + d * (+step || 1), min, max);
   },
   boardColsStep(d){                                /* «Авто» ↔ 3…12 */
     const cur = +((state.user || {}).board_cols) || 0;
     const next = d > 0 ? (cur === 0 ? 3 : Math.min(12, cur + 1))
                        : (cur <= 3 ? 0 : cur - 1);
     if (next !== cur) App.setBoardCols(next);
+  },
+  setOrgText(key, v){                              /* v1.07.83: строковая настройка (e-mail переводчика) */
+    const org = { ...state.data.org_settings, [key]: String(v || '').trim() };
+    dbSaveOrg(org); audit('org_set', 'org', key, { v: String(v || '').trim().slice(0, 60) });
+    toast('✓ ' + t('saved')); render();
   },
   setOrgNum(key, v, min, max){
     const n = Math.max(min, Math.min(max, parseInt(v, 10) || 0));
@@ -5592,6 +5765,7 @@ function initBackGuard(){
 
 (async function start(){
   try {
+    applyPopPos();                 // v1.07.83: место всплывашек — до первого тоста
     initSW();
     initBackGuard();
     initDragSort();
@@ -5614,6 +5788,10 @@ function initBackGuard(){
     render();
     if (state.user) checkPickupBanner(true);
     setInterval(() => checkForUpdate('таймер 10 мин'), 10 * 60 * 1000);
+    /* v1.07.83: раз в минуту смотрим на часы; сама проверка переводов
+       срабатывает не чаще интервала из настроек (по умолчанию час) */
+    setTimeout(trTick, 25000);
+    setInterval(trTick, 60 * 1000);
   } catch (e) {
     console.error('TechLog start failed:', e);
     window.__tlErr = e && (e.message || String(e));
@@ -5631,7 +5809,7 @@ const DICT_ANDROID = /android/i.test(navigator.userAgent);
    результаты не приходят). Свою кнопку на iOS скрываем — системная диктовка
    кнопкой 🎤 на клавиатуре iPhone работает в любое поле и распознаёт RU/EN. */
 function dictSupported(){ return !IS_IOS && !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
-function dictationHTML(taId, value){
+function dictationHTML(taId, value, enTarget){
   const micRow = dictSupported() ? `
       <button type="button" class="mic ${dictTa===taId?'rec':''}" id="mic-${taId}" onclick="App.dictToggle('${taId}')" title="${t('dictate')}">${ic('mic')}</button>
       <div class="lang-seg sm">
@@ -5642,7 +5820,7 @@ function dictationHTML(taId, value){
   return `<div class="dict-wrap">
     <textarea id="${taId}" class="note-ta" rows="3" placeholder="${t('note')}…">${esc(value||'')}</textarea>
     <div class="dict-row">${micRow}
-      <button type="button" class="btn btn-ghost sm" onclick="App.translateEn('${taId}')">${ic('globe')} ${t('translate_en')}</button>
+      <button type="button" class="btn btn-ghost sm" onclick="App.translateEn('${taId}','${enTarget || ''}')">${ic('globe')} ${t('translate_en')}</button>
       ${iosHint}<span class="tiny" id="mic-hint-${taId}">${dictTa===taId ? t('listening') : ''}</span>
     </div>
   </div>`;
@@ -5751,7 +5929,9 @@ function noteModal(jobId){
   const j = state.data.jobs.find(x=>x.id===jobId); if (!j) return;
   openModal(`
     ${modalHead(t('note'), 'note')}
-    ${dictationHTML('pk-note', j.note || '')}
+    ${dictationHTML('pk-note', j.note || '', 'pk-note-en')}
+    <div class="tiny" style="margin:6px 0 2px">${t('tr_en_lbl')}</div>
+    <textarea id="pk-note-en" class="note-ta" rows="2" placeholder="English…">${esc(j.note_en || '')}</textarea>
     <div class="tiny" style="margin-bottom:10px">${t('note_hint')}</div>
     <button class="btn btn-green" onclick="App.saveNote('${jobId}')">${t('save')}</button>
   `);
@@ -5760,7 +5940,8 @@ async function saveNote(jobId){
   dictStop();
   const j = state.data.jobs.find(x=>x.id===jobId); if (!j) return;
   const v = document.getElementById('pk-note')?.value ?? '';
-  await dbUpsert('jobs', { ...j, note: v, updated_at: new Date().toISOString() });
+  const ven = document.getElementById('pk-note-en')?.value ?? '';
+  await dbUpsert('jobs', { ...j, note: v, note_en: ven, updated_at: new Date().toISOString() });
   closeModal(); toast('✓ ' + t('saved')); render();
 }
 
@@ -6032,6 +6213,10 @@ function drawInvoiceVert(doc, j, left, top){
   const p = priceResolver(j.counterparty_id);
   const sec = calcSections(fd, p);
   const grand = (j.status==='approved' && j.approved_total != null) ? +j.approved_total : calcTotal(fd, p);
+  /* v1.07.83: в бланк идёт только английский текст. Русский лежит рядом
+     (note / desc / airduct.note) и остаётся в приложении; если перевода
+     ещё нет, строка в PDF пустая — кириллицу helvetica всё равно не рисует. */
+  const noteEn = enText(j.note, j.note_en);
 
   const L = left + 6, R = left + INV_W - 6, W = R - L;
   const C1 = L + 27;              // SERVICES | DESCRIPTION
@@ -6153,7 +6338,8 @@ function drawInvoiceVert(doc, j, left, top){
   box(L+1.3, ry+4.3, fd.airduct.dryer_vent, 2.5); txt('Dryer Vent Cleaning', L+4.6, ry+6.5);
   F('bold',6); txt('Bedrooms:', C1+2, ry+3.1);
   doc.rect(C1+15, ry+0.6, 5.5, 3.4); if (fd.airduct.air_duct){ F('bold',6.4); txt(String(fd.airduct.bedrooms||1), C1+17.7, ry+3.2, {align:'center'}); }
-  if (fd.airduct.note){ F('bolditalic',5.9); txt(String(fd.airduct.note).slice(0,34), C1+2, ry+6.7); }
+  const adEn = enText(fd.airduct.note, fd.airduct.note_en);
+  if (adEn){ F('bolditalic',5.9); txt(adEn.slice(0,34), C1+2, ry+6.7); }
   amt(sec.airduct, ry+4);
 
   const eqList = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0)).slice(0,5);
@@ -6188,7 +6374,7 @@ function drawInvoiceVert(doc, j, left, top){
   const oth = (fd.others||[]).filter(o => (o.desc && o.desc.trim()) || +o.amount > 0);
   ry = row(4.8);
   F('bold',6.4); txt('OTHER SERVICES:', L+1.3, ry+3.2);
-  if (oth[0]){ F('bolditalic',6.2); txt(String(oth[0].desc||'').slice(0,46), L+26, ry+3.2); amt(+oth[0].amount||0, ry+3.2); }
+  if (oth[0]){ F('bolditalic',6.2); txt(enText(oth[0].desc, oth[0].desc_en).slice(0,46), L+26, ry+3.2); amt(+oth[0].amount||0, ry+3.2); }
   doc.setLineWidth(.15); line(L+25, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
   const rest = oth.slice(1);
   const exList = (fd.extra||[]);
@@ -6196,7 +6382,7 @@ function drawInvoiceVert(doc, j, left, top){
     ry = row(4.8);
     if (rest.length){
       F('bolditalic',6.2);
-      txt(rest.map(o=>o.desc||'').join(' · ').slice(0,58), L+2, ry+3.2);
+      txt(rest.map(o=>enText(o.desc, o.desc_en)).filter(Boolean).join(' · ').slice(0,58), L+2, ry+3.2);
       amt(rest.reduce((s,o)=>s+(+o.amount||0),0), ry+3.2);
     }
     doc.setLineWidth(.15); line(L+1.3, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
@@ -6215,8 +6401,8 @@ function drawInvoiceVert(doc, j, left, top){
     }
   }
 
-  if (j.note){
-    const nl = doc.splitTextToSize(String(j.note).replace(/\s+/g,' '), W - 16).slice(0,2);
+  if (noteEn){
+    const nl = doc.splitTextToSize(noteEn.replace(/\s+/g,' '), W - 16).slice(0,2);
     ry = row(2.2 + nl.length*2.8 + 1.6);
     F('bold',6.2); txt('NOTES:', L+1.3, ry+3.1);
     F('bolditalic',6);
@@ -6231,7 +6417,7 @@ function drawInvoiceVert(doc, j, left, top){
   const tBot = y;
   doc.setLineWidth(.35); doc.rect(L, tTop, W, tBot - tTop); doc.setLineWidth(.2);
   rows.forEach((yy,i)=>{ if (i>0) line(L, yy, R, yy); });
-  const c1Bot = rows[rows.length - (j.note ? 3 : 2)] ?? tBot;   /* колонка SERVICES не пересекает OTHER/NOTES/TOTAL */
+  const c1Bot = rows[rows.length - (noteEn ? 3 : 2)] ?? tBot;   /* колонка SERVICES не пересекает OTHER/NOTES/TOTAL */
   line(C1, tTop, C1, c1Bot);
   line(C2, tTop, C2, tBot);
 
@@ -6936,39 +7122,318 @@ function faqModal(){
   `);
 }
 
-/* ---------- Перевод заметки на английский (MyMemory, без ключей) ---------- */
+/* =====================================================================
+   v1.07.83: ДВУЯЗЫЧНЫЕ ЗАМЕТКИ. Русский текст остаётся в приложении,
+   в PDF печатается только английский: helvetica в jsPDF кириллицу не
+   рисует вовсе, а бланк уходит клиенту. Перевод лежит РЯДОМ с оригиналом
+   (note_en, desc_en, d_en) и никогда его не затирает — как было раньше,
+   когда кнопка «Перевести» заменяла текст в поле.
+   Движок — бесплатный MyMemory (без ключей); с e-mail в настройках
+   дневная норма у него выше.
+   ===================================================================== */
+const CYR_RE = /[\u0400-\u04FF]/;
+function hasCyr(s){ return CYR_RE.test(String(s || '')); }
+/* Что печатать в PDF: перевод; если оригинал и так латиницей — его самого;
+   если русский текст есть, а перевода нет — ничего (мусор в бланк не идёт) */
+function enText(src, en){
+  const e = String(en || '').trim();
+  if (e) return e;
+  const s0 = String(src || '').trim();
+  return (s0 && !hasCyr(s0)) ? s0 : '';
+}
+function needsTr(src, en){ return hasCyr(src) && !String(en || '').trim(); }
 function decodeEntities(s){
   const d = document.createElement('textarea'); d.innerHTML = s; return d.value;
 }
-async function translateToEn(taId){
+const trSleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+/* Поля документа, которые печатаются в PDF: где русский и куда класть перевод */
+function trFields(kind, doc){
+  const out = [];
+  if (kind === 'prop'){
+    out.push({ id:'note', label:t('tr_f_note'), ru:doc.note || '', en:doc.note_en || '',
+               set:v => { doc.note_en = v; } });
+    (doc.items || []).forEach((it, i) => out.push({
+      id:'it' + i, label:t('tr_f_item') + ' ' + (i + 1), ru:it.d || '', en:it.d_en || '',
+      set:v => { it.d_en = v; } }));
+  } else {
+    const fd = doc.form_data || (doc.form_data = {});
+    out.push({ id:'note', label:t('tr_f_note'), ru:doc.note || '', en:doc.note_en || '',
+               set:v => { doc.note_en = v; } });
+    (fd.others || []).forEach((o, i) => out.push({
+      id:'oth' + i, label:t('tr_f_oth') + ' ' + (i + 1), ru:o.desc || '', en:o.desc_en || '',
+      set:v => { o.desc_en = v; } }));
+    const ad = fd.airduct || {};
+    out.push({ id:'ad', label:t('tr_f_ad'), ru:ad.note || '', en:ad.note_en || '',
+               set:v => { (fd.airduct = fd.airduct || {}).note_en = v; } });
+  }
+  return out.filter(f => String(f.ru).trim());
+}
+function trMiss(kind, doc){ return trFields(kind, doc).filter(f => needsTr(f.ru, f.en)); }
+function trFieldById(kind, doc, id){ return trFields(kind, doc).find(f => f.id === id) || null; }
+
+/* Права на запись — те же, что у RLS: свои работы (и общие), у пропозалов
+   менеджер и админ. Иначе счётчик обещал бы перевод, который сервер не примет. */
+function trCanWrite(kind, doc){
+  if (!state.user) return false;
+  if (kind === 'prop') return isManager();
+  /* как в политике jobs_upd: свои, общие, админ — и ничейная работа у менеджера */
+  return isAdmin() || doc.technician_id === state.user.id || isJobSharedWithMe(doc)
+      || (isManager() && !doc.technician_id);
+}
+function trPending(){
+  const d = state.data || {};
+  const out = [];
+  (d.jobs || []).forEach(j => { if (trCanWrite('job', j) && trMiss('job', j).length) out.push({ kind:'job', doc:j }); });
+  (d.proposals || []).forEach(p => { if (trCanWrite('prop', p) && trMiss('prop', p).length) out.push({ kind:'prop', doc:p }); });
+  out.sort((a, b) => String(b.doc.date || '').localeCompare(String(a.doc.date || '')));
+  return out;
+}
+function trDocLabel(kind, doc){
+  if (kind === 'prop') return 'P-' + (doc.no ?? '…') + ' · ' + fmtDMY(doc.date);
+  const cx = cxById(doc.complex_id) || {};
+  return (cx.abbr || cx.name || '—') + ' · ' + (doc.unit_number || '—') + ' · ' + fmtDMY(doc.date);
+}
+
+/* ---------- сам переводчик ---------- */
+const TR_CHUNK = 450, TR_PAUSE = 900, TR_MAX_DOCS = 12;
+async function trApi(text){
+  const chunks = [];
+  let buf = '';
+  String(text).split(/(?<=[.!?…])\s+/).forEach(s2 => {
+    if ((buf + ' ' + s2).length > TR_CHUNK){ if (buf) chunks.push(buf); buf = s2; }
+    else buf = buf ? buf + ' ' + s2 : s2;
+  });
+  if (buf) chunks.push(buf);
+  const email = String(((state.data && state.data.org_settings) || {}).tr_email || '').trim();
+  const de = email ? '&de=' + encodeURIComponent(email) : '';
+  const out = [];
+  for (let i = 0; i < chunks.length; i++){
+    const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(chunks[i]) + '&langpair=ru|en' + de);
+    const js = await r.json();
+    const tr = js && js.responseData && js.responseData.translatedText;
+    if (!tr) throw new Error((js && js.responseDetails) || 'empty');
+    /* переполненная норма приходит не ошибкой, а текстом в поле перевода */
+    if (/MYMEMORY WARNING|QUOTA|ALL AVAILABLE FREE TRANSLATIONS/i.test(tr)) throw new Error(tr.slice(0, 90));
+    out.push(decodeEntities(tr));
+    if (i < chunks.length - 1) await trSleep(TR_PAUSE);
+  }
+  return out.join(' ');
+}
+/* Перевод одного документа: только пустые EN-поля, оригинал не трогаем */
+async function trDoc(kind, doc){
+  const miss = trMiss(kind, doc);
+  let n = 0;
+  for (let i = 0; i < miss.length; i++){
+    const en = await trApi(miss[i].ru);
+    if (en){ miss[i].set(en); n++; }
+    if (i < miss.length - 1) await trSleep(TR_PAUSE);
+  }
+  return n;
+}
+async function trSaveDoc(kind, doc, fields){
+  const row = JSON.parse(JSON.stringify(doc));
+  row.updated_at = new Date().toISOString();
+  await dbUpsert(kind === 'prop' ? 'proposals' : 'jobs', row);
+  audit('doc_translate', kind === 'prop' ? 'proposal' : 'job', doc.id,
+        { doc: trDocLabel(kind, doc), fields });
+}
+
+/* ---------- пакетный прогон: рука админа или почасовой таймер ---------- */
+let trBusy = false;
+async function trRunPending(silent){
+  if (trBusy){ if (!silent) toast('⏳ ' + t('tr_busy'), 'inf'); return; }
+  const list = trPending();
+  if (!list.length){ if (!silent) toast('✓ ' + t('tr_nothing')); return; }
+  trBusy = true;
+  const batch = list.slice(0, TR_MAX_DOCS);
+  let done = 0, err = null;
+  if (!silent) toast('🌐 ' + t('translating'), 'inf');
+  for (const it of batch){
+    try{
+      const n = await trDoc(it.kind, it.doc);
+      if (n){ await trSaveDoc(it.kind, it.doc, n); done++; }
+    }catch(e){ dlog('⛔ trRun:', e); err = e; break; }
+    await trSleep(TR_PAUSE);
+  }
+  trBusy = false;
+  if (done) toast('✓ ' + t('tr_done_n') + ': ' + done + (list.length > done ? ' / ' + list.length : ''));
+  if (err) toast('⛔ ' + t('translate_err'), 'err');
+  saveLocal(); render();
+}
+/* Перевод одного документа по кнопке (карточка документа или список) */
+async function trOneDoc(kind, id){
+  const doc = kind === 'prop' ? propById(id) : state.data.jobs.find(x => x.id === id);
+  if (!doc || trBusy) return;
+  trBusy = true; toast('🌐 ' + t('translating'), 'inf');
+  try{
+    const n = await trDoc(kind, doc);
+    if (n) await trSaveDoc(kind, doc, n);
+    toast('✓ ' + t('tr_saved'));
+  }catch(e){ dlog('⛔ trOneDoc:', e); toast('⛔ ' + t('translate_err'), 'err'); }
+  trBusy = false;
+  saveLocal();
+  if ($('#overlay')) trPendingModal(); else render();
+}
+/* Перевод незаполненных EN-полей открытого черновика (кнопка «Перевести всё») */
+async function trFillDraft(kind){
+  const doc = kind === 'prop' ? propDraft : jobDraft;
+  if (!doc || trBusy) return;
+  if (!trMiss(kind, doc).length){ toast('✓ ' + t('tr_nothing')); return; }
+  trBusy = true; toast('🌐 ' + t('translating'), 'inf');
+  try{ await trDoc(kind, doc); toast('✓ ' + t('tr_saved')); }
+  catch(e){ dlog('⛔ trFillDraft:', e); toast('⛔ ' + t('translate_err'), 'err'); }
+  trBusy = false;
+  if (kind === 'job') autosaveDraft();
+  render();
+}
+/* Кнопка «Перевести» под заметкой: перевод ложится в EN-поле, русский цел */
+async function translateToEn(taId, target){
   const ta = document.getElementById(taId); if (!ta) return;
   const text = ta.value.trim();
   if (!text) return;
+  if (!hasCyr(text)){ toast('ℹ ' + t('tr_ok_all'), 'inf'); return; }
   toast('🌐 ' + t('translating'), 'inf');
   dlog('translate: ru→en,', text.length, 'символов');
-  const chunks = [];
-  let buf = '';
-  text.split(/(?<=[.!?…])\s+/).forEach(s => {
-    if ((buf + ' ' + s).length > 450){ if (buf) chunks.push(buf); buf = s; }
-    else buf = buf ? buf + ' ' + s : s;
-  });
-  if (buf) chunks.push(buf);
   try{
-    const out = [];
-    for (const ch of chunks){
-      const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(ch) + '&langpair=ru|en');
-      const js = await r.json();
-      const tr = js && js.responseData && js.responseData.translatedText;
-      if (!tr) throw new Error(js && js.responseDetails || 'empty');
-      out.push(decodeEntities(tr));
+    const en = await trApi(text);
+    if (target === 'draft' && jobDraft){
+      jobDraft.note = ta.value; jobDraft.note_en = en; autosaveDraft(); render();
+    } else {
+      const el = document.getElementById(target || (taId + '-en'));
+      if (el){ el.value = en; el.dispatchEvent(new Event('input', { bubbles: true })); }
     }
-    ta.value = out.join(' ');
-    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    toast('✓ ' + t('tr_saved'));
     dlog('translate: ок');
   }catch(e){
     dlog('⛔ translate:', e);
     toast('⛔ ' + t('translate_err'), 'err');
   }
+}
+
+/* ---------- почасовая проверка: напоминание или автоперевод ---------- */
+const TR_LS_LAST = 'techlog_tr_last';
+function trIntervalMs(){
+  const v = +(((state.data && state.data.org_settings) || {}).tr_interval_min);
+  return Math.max(15, Math.min(480, v || 60)) * 60000;
+}
+function trTick(){
+  try{
+    if (!state.user || !state.data || !navigator.onLine || trBusy) return;
+    const o = state.data.org_settings || {};
+    const remind = o.tr_remind !== false;                 // по умолчанию напоминаем
+    if (!remind && !o.tr_auto) return;
+    const last = +localStorage.getItem(TR_LS_LAST) || 0;
+    if (Date.now() - last < trIntervalMs()) return;
+    const pend = trPending();
+    localStorage.setItem(TR_LS_LAST, String(Date.now()));
+    if (!pend.length) return;
+    dlog('перевод: без английского', pend.length, 'док.,', o.tr_auto ? 'перевожу сам' : 'напоминаю');
+    if (o.tr_auto) trRunPending(true);
+    else if (remind) trPop(pend.length);
+  }catch(e){ dlog('⛔ trTick:', e); }
+}
+function trPop(n){
+  const old = $('#tr-pop'); if (old) old.remove();
+  const el = document.createElement('div');
+  el.id = 'tr-pop'; el.className = 'mq-pop';
+  el.innerHTML = `<div class="mq-pop-t">${ic('globe', 'color:var(--blue)')} ${t('tr_pend_t')}: ${n}</div>
+    <div class="tiny">${n} ${t('tr_pend_n')}</div>
+    <div class="btn-rowpp" style="margin-top:8px">
+      <button class="btn btn-ghost sm" onclick="document.getElementById('tr-pop').remove()">${t('tr_later')}</button>
+      <button class="btn btn-blue sm" onclick="document.getElementById('tr-pop').remove();App.trPendingModal()">${t('tr_run')}</button>
+    </div>`;
+  document.body.appendChild(el);
+  setTimeout(() => { const q = document.getElementById('tr-pop'); if (q) q.remove(); }, 30000);
+}
+function trPendingModal(){
+  const list = trPending();
+  openModal(`
+    ${modalHead(t('tr_pend_t'), 'globe')}
+    <div class="tiny" style="margin-bottom:8px">${t('tr_scope')}</div>
+    <div class="card">${list.map(it => `
+      <div class="rowline">
+        <div class="grow"><b>${esc(trDocLabel(it.kind, it.doc))}</b>
+          <div class="tiny">${trMiss(it.kind, it.doc).map(f => esc(f.label)).join(' · ')}</div></div>
+        <button class="btn btn-ghost sm" onclick="App.trOneDoc('${it.kind}','${it.doc.id}')">${ic('globe')}</button>
+      </div>`).join('') || `<div class="list-empty">${t('tr_nothing')}</div>`}</div>
+    ${list.length ? `<button class="btn btn-blue" style="margin-top:8px" onclick="App.closeModal();App.trRun()">${ic('globe')} ${t('tr_run')} (${Math.min(list.length, TR_MAX_DOCS)})</button>` : ''}
+  `);
+}
+
+/* ---------- карточка «Перевод для PDF» в документе ---------- */
+function trCardHtml(kind, doc){
+  const fs = trFields(kind, doc).filter(f => hasCyr(f.ru));
+  if (!fs.length) return '';
+  const miss = fs.filter(f => needsTr(f.ru, f.en)).length;
+  return `<div class="card tr-card">
+    <div style="font-weight:900;margin-bottom:4px">${ic('globe')} ${t('tr_pdf_card')}
+      <span class="chip ${miss ? 'warn' : 'ok'}">${miss ? miss + ' ' + t('tr_no_tr') : '✓'}</span></div>
+    <div class="tiny" style="margin-bottom:6px">${t('tr_pdf_hint')}</div>
+    ${fs.map(f => `<div class="tr-row">
+      <div class="tiny">${esc(f.label)} · RU</div>
+      <div class="tr-ru">${esc(f.ru)}</div>
+      <textarea class="tr-en" rows="2" data-tr="${f.id}" placeholder="English…"
+        oninput="App.trSet('${kind}','${f.id}',this.value)">${esc(f.en)}</textarea>
+    </div>`).join('')}
+    ${miss ? `<button class="btn btn-blue sm" onclick="App.trFill('${kind}')">${ic('globe')} ${t('tr_all_btn')} (${miss})</button>` : ''}
+  </div>`;
+}
+/* ---------- предупреждение перед PDF ---------- */
+let _trGo = null;
+function trPdfGuard(kind, doc, go){
+  const miss = trMiss(kind, doc);
+  if (!miss.length){ go(); return; }
+  _trGo = go;
+  openModal(`
+    ${modalHead(t('tr_pdf_card'), 'globe')}
+    <div class="tiny" style="margin-bottom:8px">${t('tr_warn_pdf')}: ${miss.map(f => esc(f.label)).join(' · ')}</div>
+    <button class="btn btn-green" onclick="App.trPdfNow('${kind}','${doc.id}')">${ic('globe')} ${t('tr_tr_go')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.trPdfSkip()">${t('tr_go_wo')}</button>
+  `);
+}
+async function trPdfNow(kind, id){
+  closeModal();
+  const doc = kind === 'prop' ? propDraft || propById(id) : jobDraft || state.data.jobs.find(x => x.id === id);
+  if (!doc){ _trGo = null; return; }
+  trBusy = true; toast('🌐 ' + t('translating'), 'inf');
+  try{ await trDoc(kind, doc); if (!(kind === 'job' && jobDraft) && !(kind === 'prop' && propDraft)) await trSaveDoc(kind, doc, 0); }
+  catch(e){ dlog('⛔ trPdfNow:', e); toast('⛔ ' + t('translate_err'), 'err'); }
+  trBusy = false;
+  if (kind === 'job' && jobDraft) autosaveDraft();
+  saveLocal();
+  const go = _trGo; _trGo = null;
+  if (go) go();
+}
+function trPdfSkip(){ closeModal(); const go = _trGo; _trGo = null; if (go) go(); }
+
+/* ---------- карточка в настройках ---------- */
+function trSettingsCardHtml(){
+  const o = (state.data && state.data.org_settings) || {};
+  const n = trPending().length;
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('globe')} ${t('tr_set_card')}</div>
+    <div class="rowline">
+      <div class="grow">${t('tr_pend_t')}<div class="tiny">${t('tr_pdf_hint')}</div></div>
+      <span class="chip ${n ? 'warn' : 'ok'}">${n}</span>
+    </div>
+    <div class="btn-rowpp" style="margin-top:8px">
+      <button class="btn btn-ghost sm" onclick="App.trPendingModal()">${ic('inbox')} ${t('tr_pend_t')}</button>
+      <button class="btn btn-blue sm" onclick="App.trRun()">${ic('globe')} ${t('tr_run')}</button>
+    </div>
+    ${isAdmin() ? `
+    <label class="opt ${o.tr_remind !== false ? 'on' : ''}" style="margin-top:8px">
+      <input type="checkbox" ${o.tr_remind !== false ? 'checked' : ''} onchange="App.setOrgFlag('tr_remind', this.checked)"> ${t('tr_remind')}</label>
+    <label class="opt ${o.tr_auto ? 'on' : ''}">
+      <input type="checkbox" ${o.tr_auto ? 'checked' : ''} onchange="App.setOrgFlag('tr_auto', this.checked)"> ${t('tr_auto')}</label>
+    <div class="qty-line"><span class="name">${t('tr_int')}</span>
+      ${orgStepperHtml('tr_interval_min', o.tr_interval_min ?? 60, 15, 480, 15)}</div>
+    <div class="form-row"><span class="lbl">${t('tr_email')}</span>
+      <input value="${esc(o.tr_email || '')}" placeholder="name@mail.com"
+        onchange="App.setOrgText('tr_email', this.value)"></div>
+    <div class="tiny">${t('tr_email_h')}</div>
+    <div class="tiny" style="margin-top:6px">${t('tr_set_hint')}</div>` : ''}
+  </div>`;
 }
 
 /* ---------- Свайпы по дням недели (влево/вправо, будни) ---------- */
@@ -7214,12 +7679,13 @@ function viewBoard(){
    Мобильная раскладка переменную игнорирует (там фикс 232px). */
 /* v1.07.53: степпер числовой настройки организации — «−» поле «＋»;
    прямой ввод в поле сохранён (тот же setOrgNum). */
-function orgStepperHtml(key, val, min, max){
+function orgStepperHtml(key, val, min, max, step){
+  const st = +step || 1;                       /* v1.07.83: шаг ≠ 1 — интервал проверки перевода */
   return `<span class="stepper set-step">
-    <button type="button" aria-label="−" onclick="App.orgStep('${key}',-1,${min},${max})">${ic('minus')}</button>
+    <button type="button" aria-label="−" onclick="App.orgStep('${key}',-1,${min},${max},${st})">${ic('minus')}</button>
     <input class="price-input" inputmode="numeric" value="${val}"
       onchange="App.setOrgNum('${key}', this.value, ${min}, ${max})">
-    <button type="button" aria-label="+" onclick="App.orgStep('${key}',1,${min},${max})">${ic('plus')}</button>
+    <button type="button" aria-label="+" onclick="App.orgStep('${key}',1,${min},${max},${st})">${ic('plus')}</button>
   </span>`;
 }
 
@@ -7482,7 +7948,7 @@ function openProposal(id){
     propDraft = p ? JSON.parse(JSON.stringify(p)) : null;
     if (propDraft && !Array.isArray(propDraft.items)) propDraft.items = [];
   } else {
-    propDraft = { id: uid(), no: null, date: state.selDate, counterparty_id: '', complex_id: '',
+    propDraft = { id: uid(), no: null, note_en: '', date: state.selDate, counterparty_id: '', complex_id: '',
       unit_number: '', po_number: '', complete_by: null,
       note: '', status: 'draft', items: [{ q: 1, code: '', d: '', a: 0 }], total: 0,
       created_by: state.user.id, created_at: new Date().toISOString() };
@@ -7495,7 +7961,8 @@ function propKey(p){
   if (!p) return '';
   return JSON.stringify([p.date, p.counterparty_id || '', p.complex_id || '', p.unit_number || '',
     p.po_number || '', p.complete_by || '', p.note || '', p.status,
-    (p.items || []).map(it => [it.q, it.code || '', it.d || '', +it.a || 0])]);
+    p.note_en || '',
+    (p.items || []).map(it => [it.q, it.code || '', it.d || '', it.d_en || '', +it.a || 0])]);
 }
 function propDirty(){
   if (!propDraft) return false;
@@ -7580,6 +8047,7 @@ function viewProposalForm(){
     <div style="font-weight:900;margin-bottom:6px">${t('prop_note')}</div>
     <textarea rows="3" style="width:100%" oninput="App.propField('note', this.value)">${esc(p.note || '')}</textarea>
   </div>
+  <div style="margin:8px 12px">${trCardHtml('prop', p)}</div>
   ${propById(p.id) ? `<div class="card" style="margin:8px 12px">
     <div style="font-weight:900;margin-bottom:6px">${ic('link')} ${t('prop_linked')} (${linked.length})</div>
     ${linked.map(j => { const jcx = cxById(j.complex_id) || {};
@@ -7605,8 +8073,9 @@ async function saveProposal(){
   if (!p.counterparty_id || !p.complex_id){ toast('⚠ ' + t('prop_need_cpcx'), 'err'); return; }
   p.items = (p.items || [])
     .filter(it => String(it.d || '').trim() || String(it.code || '').trim() || +it.a)
-    .map(it => ({ q: +it.q || 1, code: String(it.code || ''), d: String(it.d || ''), a: +it.a || 0 }));
-  if (!p.items.length) p.items = [{ q: 1, code: '', d: '', a: 0 }];
+    .map(it => ({ q: +it.q || 1, code: String(it.code || ''), d: String(it.d || ''),
+                  d_en: String(it.d_en || ''), a: +it.a || 0 }));   // v1.07.83: перевод едет вместе со строкой
+  if (!p.items.length) p.items = [{ q: 1, code: '', d: '', d_en: '', a: 0 }];
   propRecalc();
   const isNew = !propById(p.id);
   p.updated_at = new Date().toISOString();
@@ -7634,7 +8103,7 @@ async function delProposal(id){
   audit('proposal_delete', 'proposal', id, { no: p && p.no, unit: p && p.unit_number });
   propDraft = null; toast('🗑 ' + t('deleted')); render();
 }
-function makeProposalPdf(id){
+function makeProposalPdf(id, _go){
   /* v1.07.33: печатная форма по образцу QuickBooks-пропозала клиента:
      шапка PROPOSAL + Number/Date/Complete By/Page, блоки To/Ship To,
      сетка Customer ID / PO Number / Contact / Shipping Method (Airborne),
@@ -7642,6 +8111,7 @@ function makeProposalPdf(id){
      итоги Subtotal/Sales Tax/Freight/TOTAL и юридическая приписка. */
   const p = (propDraft && propDraft.id === id) ? propDraft : propById(id);
   if (!p || !window.jspdf){ toast('⛔ PDF', 'err'); return; }
+  if (!_go){ trPdfGuard('prop', p, () => makeProposalPdf(id, true)); return; }   // v1.07.83
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'letter' });      // 215.9 × 279.4
   const org = state.data.org_settings || {};
@@ -7745,8 +8215,8 @@ function makeProposalPdf(id){
   };
   const rows = [];
   if (p.unit_number) rows.push({ q: 1, code: '1', d: 'Unit # ' + p.unit_number, a: 0 });
-  (p.items || []).forEach(it => rows.push({
-    q: (it.q ?? 1), code: it.code || '', d: it.d || '', a: +it.a || 0 }));
+  (p.items || []).forEach(it => rows.push({                 /* v1.07.83: только английский */
+    q: (it.q ?? 1), code: it.code || '', d: enText(it.d, it.d_en), a: +it.a || 0 }));
   doc.setFontSize(9);
   rows.forEach(it => {
     const lines = doc.splitTextToSize(String(it.d), wD - 4);
@@ -7758,8 +8228,9 @@ function makeProposalPdf(id){
     if (it.a) doc.text(money2(it.a), R - 2, y + 3.6, { align: 'right' });
     y += h;
   });
-  if (p.note){
-    const nl = doc.splitTextToSize('Note:\n' + p.note, wD - 4);
+  const pNoteEn = enText(p.note, p.note_en);
+  if (pNoteEn){
+    const nl = doc.splitTextToSize('Note:\n' + pNoteEn, wD - 4);
     const h = nl.length * LH + 2.4;
     ensure(h);
     doc.text(nl, cD + 2, y + 3.6);
@@ -8238,9 +8709,9 @@ async function mediaEnqueueFile(jobId, f, kind){
   const lim = mediaLimits();
   const rows = (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind);
   const loc = mediaQ.filter(x => x.job_id === jobId && x.kind === kind);
-  const max = kind === 'file' ? M_FILE_MAX : (kind === 'video' ? lim.video : lim.photo);
+  const max = kind === 'file' ? lim.file : (kind === 'video' ? lim.video : lim.photo);
   if (rows.length + loc.length >= max){
-    toast('⚠ ' + (kind === 'file' ? t('media_file_lim').replace('{N}', M_FILE_MAX)
+    toast('⚠ ' + (kind === 'file' ? t('media_file_lim').replace('{N}', lim.file)
       : t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video)), 'err');
     return false;
   }
@@ -8277,7 +8748,7 @@ function mPrepBusy(jobId, d){
 /* Сколько ещё файлов этого вида влезает в документ */
 function mediaFree(jobId, kind){
   const lim = mediaLimits();
-  const max = kind === 'file' ? M_FILE_MAX : (kind === 'video' ? lim.video : lim.photo);
+  const max = kind === 'file' ? lim.file : (kind === 'video' ? lim.video : lim.photo);
   return max - (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind).length
              - mediaQ.filter(x => x.job_id === jobId && x.kind === kind).length;
 }
@@ -8620,7 +9091,7 @@ function mediaStripHtml(jobId){
     </div>
     <button type="button" class="btn btn-ghost sm mattach" data-mattach="${jobId}"
       title="${t('media_file_hint')}" onclick="App.mediaAttach('${jobId}')">
-      ${ic('clip')} ${t('media_attach')}${nF ? ` · ${nF}/${M_FILE_MAX}` : ''}</button>
+      ${ic('clip')} ${t('media_attach')}${nF ? ` · ${nF}/${mediaLimits().file}` : ''}</button>
   </div>`;
 }
 async function mediaHydrate(){
@@ -8770,6 +9241,37 @@ async function mvDelete(){
   _mv.idx = _mv.idx % _mv.list.length;
   mvShow();
 }
+/* v1.07.81 · удаление работы уносит с собой её файлы.
+   Строка media и раньше исчезала по каскаду вместе с работой, но сам файл
+   оставался на Google Диске без единой ссылки — сирота, которую уже никак
+   не найти из приложения. Теперь сначала зовём media-delete с job_id: файлы
+   уходят в корзину Диска (30 дней на передумать), миниатюры — из хранилища.
+   Неотправленное из очереди убираем локально. Если сервер недоступен или
+   функции не задеплоены, удаление работы всё равно продолжается — про файлы
+   честно предупреждаем, чтобы их можно было убрать вручную. */
+async function mediaDropJob(jobId){
+  for (const q of mediaQ.filter(x => x.job_id === jobId)){
+    try{ await mediaQDel(q.qid); }catch(e){ dlog('media: очередь', e); }
+  }
+  const own = (state.data.media || []).filter(m => m.job_id === jobId);
+  if (!HAS_SB || !own.length) return true;
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-delete', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ job_id: jobId }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+    state.data.media = (state.data.media || []).filter(m => m.job_id !== jobId);
+    saveLocal();
+    dlog('media: с Диска убрано файлов', j.files || 0, '· в корзину', j.trashed || 0);
+    return true;
+  }catch(e){
+    dlog('⚠ media: файлы работы остались на Диске —', e.message || e);
+    toast('⚠ ' + t('media_del_left'), 'err');
+    return false;
+  }
+}
 async function mediaDelete(id){
   if (!isAdmin()) return false;
   const own = (state.data.media || []).find(m => m.id === id);
@@ -8884,7 +9386,7 @@ function mqLogPaint(){
   box.innerHTML = mqLogLines.length
     ? mqLogLines.map(l => {
         const p = splitMark(l.text);          // v1.07.65: метка → рисованная иконка
-        return `<div class="mq-l ${l.cls}"><span class="mq-tm">${l.time}</span> ${p.icon}${p.icon ? ' ' : ''}${p.text}</div>`;
+        return `<div class="mq-l ${l.cls}"><span class="mq-tm">${l.time}</span><span class="m">${p.icon}${p.icon ? ' ' : ''}${p.text}</span></div>`;
       }).join('')
     : `<div class="mq-l dim">${t('mq_l_wait')}</div>`;
   box.scrollTop = box.scrollHeight;
@@ -9070,6 +9572,8 @@ function mediaLimitsCardHtml(){
       ${orgStepperHtml('media_max_photo', o.media_max_photo ?? 10, 1, 50)}</div>
     <div class="qty-line"><span class="name">${t('media_lim_video')}</span>
       ${orgStepperHtml('media_max_video', o.media_max_video ?? 2, 0, 10)}</div>
+    <div class="qty-line"><span class="name">${t('media_lim_file')}</span>
+      ${orgStepperHtml('media_max_file', o.media_max_file ?? 20, 1, 50)}</div>
     <div class="tiny">${t('media_lim_hint')}</div>
   </div>`;
 }
@@ -9141,7 +9645,31 @@ function gdFoldersHtml(){
     <div class="tiny" style="font-weight:900;margin-bottom:4px">${t('gd_where')}</div>
     ${row(t('gd_where_photo'), gdFolders.photo || gdFolders.root)}
     ${row(t('gd_where_files'), gdFolders.file)}
+    <button class="btn btn-ghost" style="margin-top:6px" onclick="App.gdMove()">${ic('folder')} ${t('gd_move')}</button>
+    <div class="tiny dim" style="margin-top:4px">${t('gd_move_hint')}</div>
   </div>`;
+}
+/* v1.07.81 · разовый переезд старых месяцев в «Photos».
+   До этой версии съёмка ложилась прямо в корень архива, поэтому у тех, кто
+   работает давно, там уже лежат папки 2026-08, 2026-09 … Кнопка просит
+   media-health перенести их внутрь «Photos»; адреса файлов не меняются,
+   повторное нажатие ничего не ломает — переносить будет нечего. */
+async function gdMove(){
+  if (!HAS_SB || !isAdmin()) return;
+  const box = $('#gd-health');
+  try{
+    const token = await mediaJwt();
+    toast('⏳ …', 'inf');
+    const r = await fetch(mediaFN() + '/media-health?migrate=1',
+      { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+    const n = j.moved || 0;
+    toast('✓ ' + (n ? t('gd_move_done').replace('{N}', n) : t('gd_move_none')));
+    dlog('drive: перенесено папок', n, '· файлов', j.merged || 0);
+    if (box) box.innerHTML += `<div>${ic('dot', 'color:var(--green)')} ${t('gd_move')} — ${esc(String(n))}</div>`;
+    await mediaHealth();                       // пути в карточке — заново
+  }catch(e){ toast('⛔ ' + String(e.message || e).slice(0, 90), 'err'); }
 }
 const gdShow = { sec: false, ref: false };
 function gdHasKeys(){ return !!(gdCfg.client_id || gdCfg.has_secret || gdCfg.folder_id); }
@@ -9314,10 +9842,11 @@ async function mediaOauthExchange(code){
    перепутанный при ручном деплое код, и забытую при обновлении функцию. */
 const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
                    'media-view', 'media-delete', 'media-oauth'];
-const MEDIA_FN_VER = '1.07.78';
+const MEDIA_FN_VER = '1.07.81';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
-const MEDIA_FN_MIN = { 'media-begin': '1.07.76', 'media-health': '1.07.78' };
+const MEDIA_FN_MIN = { 'media-begin': '1.07.81', 'media-health': '1.07.81',
+                       'media-delete': '1.07.81' };
 const MEDIA_FN_MIN_DEF = '1.07.72';
 function mFnVerOk(ver, name){
   const need = (MEDIA_FN_MIN[name] || MEDIA_FN_MIN_DEF).split('.').map(Number);
@@ -9434,6 +9963,12 @@ async function gdProbe(row){
     row(t('gd_p_relay'), relay, relay ? '' :
       String(j.error || ('HTTP ' + (j.status || r.status))).slice(0, 90));
   }catch(e){ row(t('gd_p_relay'), false, String(e.message || e).slice(0, 90)); }
+
+  /* v1.07.81: у съёмки теперь тоже своя папка — показываем, куда именно
+     открылась сессия, и краснеем, если это не «Photos» (значит, на сервере
+     осталась старая media-begin/media-health). */
+  const wPhoto = (s1 && s1.folder && s1.folder.path) || '';
+  if (wPhoto) row(t('gd_p_photo'), /Photos/.test(wPhoto), esc(wPhoto));
 
   /* v1.07.76: вложение «скрепкой» проверяем отдельно — у него своя папка */
   try{

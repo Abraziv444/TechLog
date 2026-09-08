@@ -39,6 +39,10 @@
   }
 
   /* ---------- Шапка: прилипает к верху при прокрутке ---------- */
+  /* v1.07.83: --tbh — высота этой шапки, её меряет desktop.js. На неё
+     сдвигаются шапка документа и поповеры: раньше .docbar прилипала к
+     top:0 поверх логотипа, и «Назад»/«Сохранить» наезжали на шапку. */
+  html.tl-desktop .docbar{ top:var(--tbh, 88px); }
   html.tl-desktop .topbar{
     position:sticky; top:0; z-index:45;
     background:var(--bg,#0F171B);
@@ -83,8 +87,11 @@
   html.tl-desktop .grid-2{ grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
   html.tl-desktop .grid-3{ grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); }
 
-  /* ---------- Тосты: в правый верхний угол, не по центру ---------- */
-  html.tl-desktop #toasts{ left:auto; right:20px; align-items:flex-end; }
+  /* ---------- Тосты: место выбирает пользователь (v1.07.83) ----------
+     Раньше на ПК они безусловно уезжали в правый верхний угол — прямо на
+     аватар и роль в шапке. Теперь по умолчанию сверху по центру, а
+     «Сбоку» включается в настройках. */
+  html.tl-desktop.tl-pop-side #toasts{ left:auto; right:20px; align-items:flex-end; }
 
   /* ---------- Диагностика: длиннее лог ---------- */
   html.tl-desktop .diag-pre{ max-height:62vh; }
@@ -348,8 +355,15 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     column-gap:18px; align-items:start;
   }
   html.tl-desktop #app:has(#dir-tabs) > *{ grid-column:2; min-width:0; }
+  /* v1.07.82: во всю ширину — только шапка и заголовок страницы
+     «Справочники» (он единственный стоит перед колонкой кнопок). Раньше
+     правило ловило и второй заголовок — название открытого справочника;
+     элемент на обе колонки не может встать в строки 3…92, занятые
+     колонкой кнопок, поэтому он вместе со всем содержимым уезжал вниз,
+     под кнопки. Теперь он живёт в правой колонке и начинается вровень
+     с первой кнопкой. */
   html.tl-desktop #app:has(#dir-tabs) > .topbar,
-  html.tl-desktop #app:has(#dir-tabs) > .section-title{ grid-column:1 / -1; }
+  html.tl-desktop #app:has(#dir-tabs) > .section-title:has(+ .tabs-nav){ grid-column:1 / -1; }
   html.tl-desktop #app:has(#dir-tabs) > .tabs-nav{
     grid-column:1; grid-row:3 / span 90;
     display:block; margin:0;
@@ -461,12 +475,19 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop #app:has(.inv-sec) .btn-row3 > *:nth-child(3){ /* Удалить */
     grid-row:103; grid-column:6; margin:0 0 8px;
   }
+  /* Просмотр/Печать — та же правая пара колонок (перенесено сюда из блока
+     980px в v1.07.83: без сетки эти правила ломали подвал) */
+  html.tl-desktop #app:has(.inv-sec) > .btn-rowpp{ display:contents; width:auto; margin:0; }
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(1){ grid-row:104; grid-column:5; margin:0; }
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(2){ grid-row:104; grid-column:6; margin:0; }
 }
 
 /* ---------- Полировка ---------- */
 @media (min-width: 980px){
   html.tl-desktop .overlay{ backdrop-filter:blur(3px); }
-  html.tl-desktop #toasts{ top:70px; }        /* не под липкой шапкой */
+  /* v1.07.83: отступ сверху = липкая шапка + зазор; сторону и верх/низ
+     выбирает пользователь в настройках (класс tl-pop-* на <html>) */
+  html.tl-desktop{ --pop-top:calc(var(--tbh, 88px) + 10px); }
   html.tl-desktop .card{ padding:14px 16px; }
   html.tl-desktop .item{ padding:11px 14px; }
 }
@@ -602,7 +623,8 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   }
 
   /* тосты — левее панели, чтобы не накрывали бланк */
-  html.tl-desktop.tl-pdfprev #toasts{ right:632px; }
+  html.tl-desktop.tl-pdfprev.tl-pop-side #toasts{ right:632px; }
+  html.tl-desktop.tl-pdfprev.tl-pop-side .mq-pop{ right:632px; }
 }
 
 /* ===== v1.07.27: пилюля не растягивается; Просмотр/Печать в сетке формы ===== */
@@ -612,9 +634,12 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
      свёрстана гридом (row/column заданы блоку целиком). */
   /* v1.07.46: Просмотр/Печать кладём в ТЕ ЖЕ колонки грида, что Скачать и
      Удалить — ширины совпадают по построению, хак width:380px удалён. */
-  html.tl-desktop #app:has(.inv-sec) .btn-rowpp{ display:contents; }
-  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(1){ grid-row:104; grid-column:5; margin:0; }
-  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(2){ grid-row:104; grid-column:6; margin:0; }
+  /* v1.07.83: display:contents тут больше нет. Сетка подвала живёт только
+     от 1420px, а это правило работало с 980px — на окнах 1280…1419 кнопки
+     «Просмотр PDF» и «Печать» вываливались из правого столбца и растягивались
+     во всю ширину страницы, пока «Итого», «Сохранить» и «Скачать PDF» стояли
+     справа. Ниже 1420px пара живёт своей строкой той же ширины, что .btn-row3. */
+  html.tl-desktop #app:has(.inv-sec) > .btn-rowpp{ width:380px; margin-left:auto; }
   html.tl-desktop #app:has(.inv-sec) .btn-rowpp > span{ display:none; }
   /* кнопки правой зоны — компакт как у btn-row3, текст в одну строку при 205px */
   html.tl-desktop #app:has(.inv-sec) .btn-row3 > .btn,
@@ -629,7 +654,7 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
 
 /* ===== v1.07.30: ПК — тосты в правом верхнем углу, Пропозалы читабельной ширины ===== */
 @media (min-width: 980px){
-  html.tl-desktop #toasts{top:64px;bottom:auto;left:auto;right:16px;align-items:flex-end}
+  html.tl-desktop.tl-pop-side #toasts{left:auto;right:16px;align-items:flex-end}
   html.tl-desktop .prop-wrap{display:block;max-width:780px;margin:0 auto}
 }
 

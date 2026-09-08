@@ -1,4 +1,5 @@
-import { svc, userClient, driveToken, monthFolder, CORS, jres, FN_VER } from "./google.ts";
+import { svc, userClient, driveToken, monthFolder, CORS, jres, FN_VER,
+         PHOTOS_DIR, FILES_DIR } from "./google.ts";
 
 /* v1.07.64 · три режима:
    ?cfg=1     — только конфиг без секретов (быстро, для отрисовки карточки);
@@ -87,10 +88,10 @@ Deno.serve(async (req) => {
       const isFile = kind === "file";
       const name = SELFTEST + new Date().toISOString().replace(/[:.]/g, "-")
         + (isFile ? ".txt" : ".jpg");
-      /* v1.07.72: кладём туда же, куда настоящее фото — в месячную подпапку
-         архива; v1.07.76: для вложения — в месячную папку внутри «Files». */
+      /* v1.07.81: кладём туда же, куда пойдёт настоящий файл —
+         «Photos/ГГГГ-ММ» для съёмки, «Files/ГГГГ-ММ» для вложения. */
       const ym = new Date().toISOString().slice(0, 7);
-      const base = folder && isFile ? await monthFolder(t, folder, "Files") : folder;
+      const base = folder ? await monthFolder(t, folder, isFile ? FILES_DIR : PHOTOS_DIR) : "";
       const month = base ? await monthFolder(t, base, ym) : "";
       const root = folder ? await (await fetch(
         `https://www.googleapis.com/drive/v3/files/${folder}?fields=id,name`,
@@ -108,7 +109,7 @@ Deno.serve(async (req) => {
       if (!upload_url) return jres({ error: "DRIVE_INIT: " + (await init.text()).slice(0, 200) }, 502);
       return jres({ upload_url, name, origin: !!origin, kind: isFile ? "file" : "photo",
         folder: { root_id: folder, root_name: root?.name ?? "", month_id: month, month: ym,
-          path: (root?.name ?? "—") + (isFile ? " / Files" : "") + " / " + ym } });
+          path: (root?.name ?? "—") + " / " + (isFile ? FILES_DIR : PHOTOS_DIR) + " / " + ym } });
     } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
   }
   /* v1.07.72: где файл оказался на самом деле — сверка каталога */
@@ -170,6 +171,62 @@ Deno.serve(async (req) => {
     } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
   }
 
+  /* v1.07.81 · разовый переезд старых месяцев в папку «Photos».
+     До этой версии съёмка ложилась прямо в корень архива (архив/ГГГГ-ММ),
+     и месячные папки соседствовали с «Files» и служебными файлами. Кнопка
+     в настройках переносит их внутрь «Photos». Идентификаторы файлов при
+     переносе не меняются, поэтому ссылки в базе остаются рабочими, а
+     повторный запуск просто вернёт moved: 0 — переносить будет нечего. */
+  if (url.searchParams.get("migrate")) {
+    try {
+      if (!folder) return jres({ error: "NO_FOLDER" }, 400);
+      const t = await driveToken();
+      const photos = await monthFolder(t, folder, PHOTOS_DIR);
+      if (!photos) return jres({ error: "NO_PHOTOS_DIR" }, 502);
+      const q = encodeURIComponent(
+        `'${folder}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+      const list = await (await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=200`,
+        { headers: { Authorization: `Bearer ${t}` } })).json();
+      const months = (list.files ?? [])
+        .filter((f: { name: string }) => /^\d{4}-\d{2}$/.test(f.name));
+      let moved = 0, merged = 0;
+      for (const m of months) {
+        /* такой месяц уже заведён внутри Photos? тогда переносим содержимое
+           по одному файлу, а пустую папку из корня отправляем в корзину */
+        const qq = encodeURIComponent(
+          `name='${m.name}' and '${photos}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+        const ex = await (await fetch(
+          `https://www.googleapis.com/drive/v3/files?q=${qq}&fields=files(id)`,
+          { headers: { Authorization: `Bearer ${t}` } })).json();
+        const twin = ex.files?.[0]?.id;
+        if (!twin) {
+          const mv = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${m.id}?addParents=${photos}&removeParents=${folder}&fields=id`,
+            { method: "PATCH", headers: { Authorization: `Bearer ${t}` } });
+          if (mv.ok) moved++;
+          continue;
+        }
+        const qf = encodeURIComponent(`'${m.id}' in parents and trashed=false`);
+        const inner = await (await fetch(
+          `https://www.googleapis.com/drive/v3/files?q=${qf}&fields=files(id)&pageSize=1000`,
+          { headers: { Authorization: `Bearer ${t}` } })).json();
+        for (const f of inner.files ?? []) {
+          const mv = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${f.id}?addParents=${twin}&removeParents=${m.id}&fields=id`,
+            { method: "PATCH", headers: { Authorization: `Bearer ${t}` } });
+          if (mv.ok) merged++;
+        }
+        await fetch(`https://www.googleapis.com/drive/v3/files/${m.id}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ trashed: true }) });
+        moved++;
+      }
+      return jres({ ok: true, moved, merged, months: months.length, folder: photos });
+    } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
+  }
+
   try {
     const t0 = Date.now();
     await s.from("org_settings").select("id").limit(1);
@@ -212,19 +269,21 @@ Deno.serve(async (req) => {
     } else r.folder = { ok: true, id: folder, name: rootName };
 
     /* v1.07.78: наглядно, куда что ложится. Админ видит в настройках две
-       строки с иконкой папки и её именем — как в самом Google Диске:
-       фото и видео → «архив / ГГГГ-ММ», документы → «архив / Files / ГГГГ-ММ».
+       строки с иконкой папки и её именем — как в самом Google Диске;
+       v1.07.81: у съёмки появилась своя папка, поэтому пути стали
+       симметричными: «архив / Photos / ГГГГ-ММ» и «архив / Files / ГГГГ-ММ».
        Папки те же самые, что использует настоящая отправка (monthFolder),
        поэтому проверка заодно создаёт их заранее. */
     if (folder) {
       try {
         const ym = new Date().toISOString().slice(0, 7);
-        const photoMonth = await monthFolder(t, folder, ym);
-        const filesRoot = await monthFolder(t, folder, "Files");
+        const photoRoot = await monthFolder(t, folder, PHOTOS_DIR);
+        const photoMonth = photoRoot ? await monthFolder(t, photoRoot, ym) : "";
+        const filesRoot = await monthFolder(t, folder, FILES_DIR);
         const fileMonth = filesRoot ? await monthFolder(t, filesRoot, ym) : "";
         r.paths = {
-          photo: { id: photoMonth, name: ym, path: `${rootName || "—"} / ${ym}` },
-          file: { id: fileMonth, name: ym, path: `${rootName || "—"} / Files / ${ym}` },
+          photo: { id: photoMonth, name: ym, path: `${rootName || "—"} / ${PHOTOS_DIR} / ${ym}` },
+          file: { id: fileMonth, name: ym, path: `${rootName || "—"} / ${FILES_DIR} / ${ym}` },
         };
       } catch (_e) { /* не критично: тест продолжается */ }
     }
