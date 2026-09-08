@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.74';
-const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.07.76';
+const DB_SQL_FILE = 'full-install-1_07_76.sql';   // v1.07.76: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -402,6 +402,7 @@ const I18N = {
     gd_p_commit_bad: 'неверный ответ — подтверждение работать не будет',
     gd_p_thumb_rls: 'доступно · политика активна',
     gd_p_thumb_srv: 'Хранилище миниатюр (проверка сервером)',
+    gd_p_file: 'Вложение «скрепкой» → папка Files',
     mq_l_redo: 'запись и файл разошлись — начинаю файл заново',
     gd_fns: 'Функции на сервере', gd_fn_no: 'не задеплоена',
     gd_fn_wrong: 'ОТВЕЧАЕТ ДРУГАЯ ФУНКЦИЯ: {X} — перезалейте код',
@@ -416,6 +417,14 @@ const I18N = {
     mv_local: 'ещё не отправлено — показан снимок с телефона',
     mt_queued: 'в очереди', mt_send: 'отправляю', mt_err: 'не отправилось — нажмите, чтобы повторить',
     media_hint0: 'Снимайте прямо отсюда — файлы уйдут в архив сами, даже если сейчас нет сети.',
+    mt_bg_t: 'Загрузка идёт в фоне',
+    mt_bg: 'Фото и видео догрузятся сами — документ можно закрыть и продолжать работу. Следить за отправкой можно в «Настройках».',
+    mt_bg_ok: 'Понятно', mt_done: 'отправлено',
+    media_attach: 'Прикрепить файл', media_files: 'Документы',
+    media_file_big: 'Файл больше 25 МБ — прикрепите ссылку или сожмите',
+    media_file_lim: 'Лимит: {N} документов на один документ',
+    media_file_hint: 'Фото и видео лягут в архив вместе со съёмкой, документы — в отдельную папку «Files».',
+    mv_file: 'Документ', mv_open: 'Открыть',
     gd_space_warn: 'На Google Диске осталось {P}% свободного места (занято {U} из {L} ГБ). Освободите место или подключите другой архивный аккаунт — иначе фото и видео перестанут загружаться.',
     gd_connected: 'Google подключён', gd_not_conn: 'не подключено',
     gd_db: 'База данных', gd_auth: 'Авторизация Google', gd_acc: 'Аккаунт',
@@ -779,6 +788,7 @@ const I18N = {
     gd_p_commit_bad: 'wrong answer — confirmation will not work',
     gd_p_thumb_rls: 'reachable · policy enforced',
     gd_p_thumb_srv: 'Thumbnail storage (server-side check)',
+    gd_p_file: 'Attachment → Files folder',
     mq_l_redo: 'the row and the file diverged — restarting the file',
     gd_fns: 'Server functions', gd_fn_no: 'not deployed',
     gd_fn_wrong: 'ANOTHER FUNCTION ANSWERS: {X} — redeploy the code',
@@ -793,6 +803,14 @@ const I18N = {
     mv_local: 'not uploaded yet — showing the copy from this phone',
     mt_queued: 'queued', mt_send: 'uploading', mt_err: 'upload failed — tap to retry',
     media_hint0: 'Shoot right here — files reach the archive on their own, even with no signal now.',
+    mt_bg_t: 'Uploading in the background',
+    mt_bg: 'Photos and videos finish uploading on their own — you can close the document and carry on. Progress is in Settings.',
+    mt_bg_ok: 'Got it', mt_done: 'uploaded',
+    media_attach: 'Attach a file', media_files: 'Documents',
+    media_file_big: 'File over 25 MB — attach a link or compress it',
+    media_file_lim: 'Limit: {N} documents per record',
+    media_file_hint: 'Photos and videos join the shoot in the archive, documents go to a separate “Files” folder.',
+    mv_file: 'Document', mv_open: 'Open',
     gd_space_warn: 'Google Drive has {P}% free space left ({U} of {L} GB used). Free up space or connect another archive account — otherwise photo and video uploads will stop.',
     gd_connected: 'Google connected', gd_not_conn: 'not connected',
     gd_db: 'Database', gd_auth: 'Google auth', gd_acc: 'Account',
@@ -1683,6 +1701,15 @@ function canPrio(j){ return j && (isAdmin() || state.user.role === 'manager' || 
 function mgrReorderOn(){ const o = state.data && state.data.org_settings; return !!(o && o.manager_can_reorder); }
 function defRentDays(){ const v = +((state.data && state.data.org_settings || {}).default_rent_days); return v >= 1 ? v : 3; }
 function maxExtendDays(){ const v = +((state.data && state.data.org_settings || {}).max_extend_days); return v >= 1 ? v : 3; }
+/* v1.07.76: вложения «скрепкой». Лимит документов фиксированный — тот же,
+   что проверяет сервер; фото и видео идут по обычным лимитам из настроек. */
+const M_FILE_MAX = 20, M_FILE_BYTES = 25 * 1024 * 1024;
+function mKindOf(f){
+  const ty = String(f.type || '');
+  if (/^image\//.test(ty)) return 'photo';
+  if (/^video\//.test(ty)) return 'video';
+  return 'file';
+}
 /* v1.07.64: лимиты фото/видео на документ — из настроек организации */
 function mediaLimits(){
   const o = (state.data && state.data.org_settings) || {};
@@ -1837,6 +1864,7 @@ const IC = {
   close: '<path d="M6.2 6.2 17.8 17.8"/><path d="M17.8 6.2 6.2 17.8"/>',
   folder: '<path d="M3.4 6.8a2 2 0 0 1 2-2h3.4l2 2.6h7.8a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2H5.4a2 2 0 0 1-2-2z"/>',
   image: '<rect x="3.4" y="4.8" width="17.2" height="14.4" rx="2"/><circle cx="8.8" cy="9.9" r="1.5"/><path d="M4.6 16.8 10 11.4l3.4 3.4 2.6-2.4 3.4 3.4"/>',
+  clip: '<path d="M20 11.6 12.3 19.3a4.6 4.6 0 0 1-6.5-6.5l7.9-7.9a3.1 3.1 0 0 1 4.4 4.4l-7.9 7.9a1.6 1.6 0 0 1-2.2-2.2l7.3-7.3"/>',
   chev_l: '<path d="M15 5.4 8.4 12l6.6 6.6"/>',
   chev_r: '<path d="M9 5.4 15.6 12 9 18.6"/>',
   /* v1.07.65: те же контуры, что во вкладках меню — ic() их раньше не находил
@@ -5012,7 +5040,7 @@ const App = {
     render();
   },
   gdToggleEdit, gdReveal, gdCopy,
-  mediaOpenLocal, mvClose, mvGo, mvDownload, mvDelete,
+  mediaOpenLocal, mvClose, mvGo, mvDownload, mvDelete, mediaAttach,
   eqHours(etId, v){
     if (!jobDraft) return;
     const e = jobDraft.form_data.equipment[etId] || (jobDraft.form_data.equipment[etId] = { qty: 0, days: defRentDays() });
@@ -7650,6 +7678,57 @@ const mVideoThumb = f => new Promise(res => {
   v.onerror = () => { URL.revokeObjectURL(u); res(null); };
 });
 /* ---------- съёмка ---------- */
+/* v1.07.76: один путь для съёмки и для вложения — из файла делаем элемент
+   очереди. Фото сжимаем и делаем превью, видео проверяем по длительности,
+   документ уходит как есть, без превью. */
+async function mediaEnqueueFile(jobId, f, kind){
+  const lim = mediaLimits();
+  const rows = (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind);
+  const loc = mediaQ.filter(x => x.job_id === jobId && x.kind === kind);
+  const max = kind === 'file' ? M_FILE_MAX : (kind === 'video' ? lim.video : lim.photo);
+  if (rows.length + loc.length >= max){
+    toast('⚠ ' + (kind === 'file' ? t('media_file_lim').replace('{N}', M_FILE_MAX)
+      : t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video)), 'err');
+    return false;
+  }
+  let blob, thumb = null, mime;
+  if (kind === 'photo'){
+    blob = await mShrink(f, M_MAXW, M_JPEGQ);
+    thumb = await mShrink(f, M_THUMBW, M_THQ);
+    mime = 'image/jpeg';
+  } else if (kind === 'video'){
+    const dur = await mVideoDur(f);
+    if (dur > M_VMAX + 2){ toast('⚠ ' + t('media_vlong'), 'err'); return false; }
+    blob = f; thumb = await mVideoThumb(f).catch(() => null); mime = f.type || 'video/mp4';
+  } else {
+    if (f.size > M_FILE_BYTES){ toast('⚠ ' + t('media_file_big'), 'err'); return false; }
+    blob = f; mime = f.type || 'application/octet-stream';
+  }
+  const it = { qid: uid(), job_id: jobId, kind, mime, blob, thumb,
+    name: f.name || '', state: 'new', attempts: 0, at: Date.now() };
+  mediaQ.push(it); await mQPut(it);
+  return true;
+}
+/* Скрепка: файлы с телефона и с компьютера — без камеры, можно несколько */
+function mediaAttach(jobId){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.multiple = true;
+  inp.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.rtf,.heic,.zip';
+  inp.onchange = async () => {
+    const files = [...(inp.files || [])];
+    if (!files.length) return;
+    let added = 0;
+    for (const f of files){
+      try{ if (await mediaEnqueueFile(jobId, f, mKindOf(f))) added++; }
+      catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+    }
+    if (!added) return;
+    navigator.vibrate?.(15);
+    mediaStripRefresh(jobId); mediaBgPop(); render(); mediaFlush();
+  };
+  inp.click();
+}
 function mediaPick(jobId, kind){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   const rows = (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind);
@@ -7664,21 +7743,10 @@ function mediaPick(jobId, kind){
   inp.onchange = async () => {
     const f = inp.files && inp.files[0]; if (!f) return;
     try{
-      let blob, thumb, mime;
-      if (kind === 'photo'){
-        blob = await mShrink(f, M_MAXW, M_JPEGQ);
-        thumb = await mShrink(f, M_THUMBW, M_THQ);
-        mime = 'image/jpeg';
-      } else {
-        const dur = await mVideoDur(f);
-        if (dur > M_VMAX + 2){ toast('⚠ ' + t('media_vlong'), 'err'); return; }
-        blob = f; thumb = await mVideoThumb(f); mime = f.type || 'video/mp4';
-      }
-      const it = { qid: uid(), job_id: jobId, kind, mime, blob, thumb,
-        state: 'new', attempts: 0, at: Date.now() };
-      mediaQ.push(it); await mQPut(it);
+      if (!await mediaEnqueueFile(jobId, f, kind)) return;
       navigator.vibrate?.(15);
       mediaStripRefresh(jobId);        // v1.07.73: в том числе внутри модалки
+      mediaBgPop();                    // v1.07.75: «догрузится само, можно закрыть»
       render(); mediaFlush();
     }catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
   };
@@ -7747,7 +7815,8 @@ async function mCommit(it, driveId){
 async function mBeginUpload(it, token){
   const r = await fetch(mediaFN() + '/media-begin', { method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-    body: JSON.stringify({ job_id: it.job_id, kind: it.kind, mime: it.mime, size: it.blob.size }) });
+    body: JSON.stringify({ job_id: it.job_id, kind: it.kind, mime: it.mime,
+                           size: it.blob.size, name: it.name || '' }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok){ const e = new Error(j.error || r.status); e.status = r.status; throw e; }
   Object.assign(it, { media_id: j.media_id, upload_url: j.upload_url, thumb_path: j.thumb_path });
@@ -7842,6 +7911,7 @@ async function mediaFlush(verbose){
         mqThumbUrls.delete(it.qid);          // ссылка ушла в кеш миниатюр
         if (it.kind === 'video') res.video++; else res.photo++;
         lg(`✓ ${tag}`, 'ok', lid);
+        mediaMarkDone(it.media_id, it.job_id);   // v1.07.75: зелёная галочка на плитке
         mediaStripRefresh(it.job_id);        // полоса обновляется и в модалке
         render();
       }catch(e){
@@ -7871,6 +7941,26 @@ function mqThumbDrop(qid){
   const u = mqThumbUrls.get(qid);
   if (u){ try{ URL.revokeObjectURL(u); }catch(e){} mqThumbUrls.delete(qid); }
 }
+/* v1.07.76: на плитке документа показываем короткое имя с расширением. */
+function mFileTail(name){
+  const s = String(name || '').split(/[\\/]/).pop();
+  const ext = (s.match(/\.([A-Za-z0-9]{1,8})$/) || [])[1];
+  return (ext ? ext.toUpperCase() : (s.slice(0, 6) || '—')).slice(0, 6);
+}
+/* v1.07.75: круг отправки светлеет по мере загрузки — от серого к белому. */
+function mSpinColor(pct){
+  const k = Math.max(0, Math.min(1, Number(pct || 0) / 100));
+  const from = [0x5D, 0x73, 0x7E], to = [0xFF, 0xFF, 0xFF];
+  const c = from.map((v, i) => Math.round(v + (to[i] - v) * k));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+/* Файлы, только что уехавшие на Диск: на плитке ненадолго зажигается
+   зелёная галочка, потом снимок остаётся обычным. */
+const _mediaJustDone = new Set();
+function mediaMarkDone(mediaId, jobId){
+  _mediaJustDone.add(mediaId);
+  setTimeout(() => { _mediaJustDone.delete(mediaId); mediaStripRefresh(jobId); }, 2600);
+}
 /* v1.07.74: проценты отправки рисуем прямо на плитке, без перерисовки
    всей полосы — иначе на каждый чанк моргала бы вся карточка. */
 function mediaTilePct(qid, pct){
@@ -7878,6 +7968,9 @@ function mediaTilePct(qid, pct){
   document.querySelectorAll(`.mth.loc[data-qid="${qid}"]`).forEach(el => {
     const bar = el.querySelector('.mbar i');
     if (bar) bar.style.width = Math.min(100, pct) + '%';
+    const sp = el.querySelector('.mspin');
+    if (sp){ sp.style.setProperty('--p', Math.max(8, Math.min(100, pct)) + '%');
+             sp.style.setProperty('--c', mSpinColor(pct)); }
     el.classList.toggle('up', pct > 0);
   });
 }
@@ -7899,8 +7992,10 @@ function mediaStripHtml(jobId){
   const nP = rows.filter(m => m.kind === 'photo').length + loc.filter(x => x.kind === 'photo').length;
   const nV = rows.filter(m => m.kind === 'video').length + loc.filter(x => x.kind === 'video').length;
   const cells = rows.map(m => `
-    <div class="mth clicky" title="${esc(m.file_name || '')}" onclick="App.mediaOpen('${m.id}','${m.kind}')">
-      <img data-thumb="${m.thumb_path || ''}" alt="">
+    <div class="mth clicky ${m.kind === 'file' ? 'file' : ''} ${_mediaJustDone.has(m.id) ? 'done' : ''}" title="${esc(m.file_name || '')}" onclick="App.mediaOpen('${m.id}','${m.kind}')">
+      ${_mediaJustDone.has(m.id) ? `<span class="mdone" title="${t('mt_done')}">${ic('check')}</span>` : ''}
+      ${m.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(m.file_name))}</b></span>`
+        : `<img data-thumb="${m.thumb_path || ''}" alt="">`}
       ${m.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
       ${m.status !== 'ready' ? `<span class="mst">${ic('clock')}</span>` : ''}
       ${isAdmin() ? `<span class="mx" title="${t('media_del_q')}" onclick="event.stopPropagation();App.mediaDelete('${m.id}')">${ic('close')}</span>` : ''}
@@ -7913,14 +8008,17 @@ function mediaStripHtml(jobId){
     <div class="mth loc ${err ? 'bad' : ''}" data-qid="${x.qid}"
       title="${err ? esc(t('mt_err')) : (pct ? t('mt_send') + ' ' + pct + '%' : t('mt_queued'))}"
       onclick="${err ? `App.mqRetry()` : `App.mediaOpenLocal('${x.qid}')`}">
-      <img src="${mqThumbUrl(x)}" alt="">
+      ${x.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(x.name || ''))}</b></span>`
+        : `<img src="${mqThumbUrl(x)}" alt="">`}
       ${x.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
-      <span class="mst">${ic(err ? 'warn' : 'clock')}</span>
+      ${err ? `<span class="mst">${ic('warn')}</span>`
+            : `<span class="mspin" style="--p:${Math.max(8, Math.min(100, pct))}%;--c:${mSpinColor(pct)}"></span>`}
       <span class="mx" onclick="event.stopPropagation();App.mediaQDel('${x.qid}')">${ic('close')}</span>
       <span class="mbar"><i style="width:${Math.min(100, pct)}%"></i></span>
     </div>`; }).join('');
   if (!_mediaHydPlanned){ _mediaHydPlanned = true; setTimeout(mediaHydrate, 0); }
   const lim = mediaLimits();
+  const nF = rows.filter(m => m.kind === 'file').length + loc.filter(x => x.kind === 'file').length;
   return `<div class="card media-card" data-mjob="${jobId}">
     <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('media_title')}
       <span class="tiny"> · ${nP}/${lim.photo}${lim.video ? ` · ${nV}/${lim.video}` : ''}</span></div>
@@ -7929,6 +8027,9 @@ function mediaStripHtml(jobId){
       <button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','photo')">${ic('camera')} ${t('media_photo')}</button>
       ${lim.video ? `<button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video')">${ic('video')} ${t('media_video')}</button>` : ''}
     </div>
+    <button type="button" class="btn btn-ghost sm mattach" data-mattach="${jobId}"
+      title="${t('media_file_hint')}" onclick="App.mediaAttach('${jobId}')">
+      ${ic('clip')} ${t('media_attach')}${nF ? ` · ${nF}/${M_FILE_MAX}` : ''}</button>
   </div>`;
 }
 async function mediaHydrate(){
@@ -8039,7 +8140,10 @@ async function mvShow(){
     if (!_mv || _mv.list[_mv.idx] !== cur) return;              // успели пролистать
     stage.innerHTML = cur.kind === 'video'
       ? `<video src="${url}" controls playsinline autoplay></video>`
-      : `<img src="${url}" alt="" ondblclick="this.classList.toggle('zoom')">`;
+      : cur.kind === 'file'
+        ? `<div class="mv-file">${ic('note')}<div class="nm">${esc(cur.name || t('mv_file'))}</div>
+             <a class="btn btn-blue sm" href="${url}" target="_blank" rel="noopener">${ic('eye')} ${t('mv_open')}</a></div>`
+        : `<img src="${url}" alt="" ondblclick="this.classList.toggle('zoom')">`;
     if (many) [1, -1].forEach(d => {                            // соседние — заранее
       const nx = _mv.list[(_mv.idx + d + _mv.list.length) % _mv.list.length];
       if (nx && !nx.local) mvFetch(nx.id).catch(() => {});
@@ -8205,6 +8309,23 @@ function mediaStartPop(){
     setTimeout(() => { const q = document.getElementById('mq-pop'); if (q) q.remove(); }, 30000);
   }, 800);
   setTimeout(() => clearInterval(tick), 60000);
+}
+/* v1.07.75: один раз за запуск объясняем, что закрывать документ можно —
+   отправка идёт в фоне и переживает и закрытие карточки, и потерю сети. */
+let _mqBgPopShown = false;
+function mediaBgPop(){
+  if (_mqBgPopShown) return;
+  _mqBgPopShown = true;
+  const old = $('#mq-bgpop'); if (old) old.remove();
+  const el = document.createElement('div');
+  el.id = 'mq-bgpop'; el.className = 'mq-pop';
+  el.innerHTML = `<div class="mq-pop-t">${ic('upload')} ${t('mt_bg_t')}</div>
+    <div class="tiny">${t('mt_bg')}</div>
+    <div class="btn-rowpp" style="margin-top:8px">
+      <button class="btn btn-blue sm" onclick="document.getElementById('mq-bgpop').remove()">${t('mt_bg_ok')}</button>
+    </div>`;
+  document.body.appendChild(el);
+  setTimeout(() => { const q = $('#mq-bgpop'); if (q) q.remove(); }, 9000);
 }
 function mediaQueueCardHtml(){
   return `<div class="card">
@@ -8522,7 +8643,20 @@ async function mediaOauthExchange(code){
    перепутанный при ручном деплое код, и забытую при обновлении функцию. */
 const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
                    'media-view', 'media-delete', 'media-oauth'];
-const MEDIA_FN_VER = '1.07.72';
+const MEDIA_FN_VER = '1.07.76';
+/* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
+   и передеплоя просит только та, где код действительно поменялся. */
+const MEDIA_FN_MIN = { 'media-begin': '1.07.76', 'media-health': '1.07.76' };
+const MEDIA_FN_MIN_DEF = '1.07.72';
+function mFnVerOk(ver, name){
+  const need = (MEDIA_FN_MIN[name] || MEDIA_FN_MIN_DEF).split('.').map(Number);
+  const got = String(ver || '0').split('.').map(Number);
+  for (let i = 0; i < 3; i++){
+    if ((got[i] || 0) > (need[i] || 0)) return true;
+    if ((got[i] || 0) < (need[i] || 0)) return false;
+  }
+  return true;
+}
 async function gdFnCheck(row){
   const token = await mediaJwt();
   let bad = 0;
@@ -8534,9 +8668,10 @@ async function gdFnCheck(row){
       const j = await r.json().catch(() => ({}));
       if (!j || !j.fn){ row(name, false, t('gd_fn_old') + ' · HTTP ' + r.status); bad++; continue; }
       if (j.fn !== name){ row(name, false, t('gd_fn_wrong').replace('{X}', esc(String(j.fn)))); bad++; continue; }
-      const fresh = j.ver === MEDIA_FN_VER;
+      const fresh = mFnVerOk(j.ver, name);
       row(name, fresh, fresh ? 'v' + j.ver
-        : t('gd_fn_stale').replace('{V}', esc(String(j.ver || '?'))).replace('{E}', MEDIA_FN_VER));
+        : t('gd_fn_stale').replace('{V}', esc(String(j.ver || '?')))
+            .replace('{E}', MEDIA_FN_MIN[name] || MEDIA_FN_MIN_DEF));
       if (!fresh) bad++;
     }catch(e){ row(name, false, String(e.message || e).slice(0, 80)); bad++; }
   }
@@ -8585,10 +8720,10 @@ async function gdProbe(row){
     row(t('gd_p_thumb_srv'), !!j.ok, j.ok ? '' : String(j.error || ('HTTP ' + r.status)).slice(0, 90));
   }catch(e){ row(t('gd_p_thumb_srv'), false, String(e.message || e).slice(0, 90)); }
 
-  const session = async () => {
+  const session = async (kind) => {
     const r = await fetch(mediaFN() + '/media-health?probe=1', { method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ size: blob.size }) });
+      body: JSON.stringify({ size: blob.size, kind: kind || 'photo' }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.upload_url) throw new Error(j.error || ('HTTP ' + r.status));
     return j;
@@ -8629,6 +8764,19 @@ async function gdProbe(row){
       String(j.error || ('HTTP ' + (j.status || r.status))).slice(0, 90));
   }catch(e){ row(t('gd_p_relay'), false, String(e.message || e).slice(0, 90)); }
 
+  /* v1.07.76: вложение «скрепкой» проверяем отдельно — у него своя папка */
+  try{
+    const sf = await session('file');
+    const r = await fetch(mediaFN() + '/media-put', { method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'x-tl-url': sf.upload_url, 'x-tl-range': range },
+      body: blob });
+    const j = await r.json().catch(() => ({}));
+    if (j.id) ids.push(j.id);
+    const where = (sf.folder && sf.folder.path) || '';
+    row(t('gd_p_file'), !!j.id && /Files/.test(where), j.id
+      ? esc(where) : String(j.error || ('HTTP ' + (j.status || r.status))).slice(0, 90));
+  }catch(e){ row(t('gd_p_file'), false, String(e.message || e).slice(0, 90)); }
+
   /* 5. каталог: где файл оказался на самом деле и того ли он размера */
   if (ids.length){
     try{
@@ -8638,7 +8786,7 @@ async function gdProbe(row){
       if (!v.ok) row(t('gd_dir'), false, String(v.error || ('HTTP ' + r.status)).slice(0, 90));
       else {
         const sizeOk = !v.size || v.size === blob.size;
-        const where = (s1 && s1.folder ? s1.folder.root_name + ' / ' : '') + (v.parent_name || '—');
+        const where = v.path || ((s1 && s1.folder ? s1.folder.root_name + ' / ' : '') + (v.parent_name || '—'));
         row(t('gd_dir'), !!v.in_archive && sizeOk,
           !v.in_archive ? t('gd_dir_bad') + ' · ' + esc(where)
           : !sizeOk ? t('gd_size_bad').replace('{A}', v.size).replace('{B}', blob.size)

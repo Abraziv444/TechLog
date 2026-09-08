@@ -4,7 +4,11 @@ import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_V
    в настройках (org_settings.media_max_photo / media_max_video). Проверка
    именно здесь: клиент лимит только показывает, обойти его нельзя. */
 const LIMITS = { photo: { max: 10, bytes: 8_000_000 },
-                 video: { max: 2,  bytes: 120_000_000 } };
+                 video: { max: 2,  bytes: 120_000_000 },
+                 /* v1.07.76: вложение «скрепкой» — документ. Лимит фиксированный:
+                    в настройках админ задаёт только фото и видео. */
+                 file:  { max: 20, bytes: 25_000_000 } };
+const FILES_DIR = "Files";                    // отдельная папка для документов
 
 const translit = (s: string) => s.replace(/[а-яё]/gi, (ch) => ({
   а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"e",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",
@@ -24,8 +28,8 @@ Deno.serve(async (req) => {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return jres({ error: "UNAUTHORIZED" }, 401);
 
-    const { job_id, kind, mime, size } = await req.json();
-    const lim = LIMITS[kind as "photo" | "video"];
+    const { job_id, kind, mime, size, name } = await req.json();
+    const lim = LIMITS[kind as "photo" | "video" | "file"];
     if (!lim) return jres({ error: "BAD_KIND" }, 400);
     if (!Number.isFinite(size) || size <= 0 || size > lim.bytes)
       return jres({ error: "TOO_BIG", max: lim.bytes }, 413);
@@ -39,8 +43,8 @@ Deno.serve(async (req) => {
     const s = svc();
     const { data: org } = await s.from("org_settings")
       .select("media_max_photo,media_max_video").eq("id", "org").maybeSingle();
-    const maxCount = kind === "video"
-      ? Number(org?.media_max_video ?? LIMITS.video.max)
+    const maxCount = kind === "video" ? Number(org?.media_max_video ?? LIMITS.video.max)
+      : kind === "file" ? LIMITS.file.max
       : Number(org?.media_max_photo ?? LIMITS.photo.max);
     await s.from("media").delete().eq("job_id", job_id).eq("status", "uploading")
       .lt("created_at", new Date(Date.now() - 86_400_000).toISOString());
@@ -53,15 +57,23 @@ Deno.serve(async (req) => {
     if ((count ?? 0) >= maxCount) return jres({ error: "LIMIT", max: maxCount }, 409);
     const seq = (rows?.[0]?.seq ?? 0) + 1;
 
+    const orig = String(name ?? "");
     const ext = kind === "video"
-      ? (/quicktime/.test(mime) ? "mov" : /webm/.test(mime) ? "webm" : "mp4") : "jpg";
+      ? (/quicktime/.test(mime) ? "mov" : /webm/.test(mime) ? "webm" : "mp4")
+      : kind === "file"
+        ? ((orig.match(/\.([A-Za-z0-9]{1,8})$/) ?? [])[1] ?? "bin").toLowerCase()
+        : "jpg";
     const cx = (job as any).complexes, wt = (job as any).work_types;
+    /* у вложения в имени остаётся исходное название файла, у съёмки — вид работы */
+    const tail = kind === "file"
+      ? clean(orig.replace(/\.[^.]*$/, "") || "FILE", 32)
+      : clean(wt?.name || "WORK", 12);
     const file_name = [ job.date, clean(cx?.abbr || cx?.name || "CX"),
-      clean(job.unit_number || "0", 10), clean(wt?.name || "WORK", 12),
+      clean(job.unit_number || "0", 10), tail,
       String(seq).padStart(2, "0") ].join("_") + "." + ext;
 
     const id = crypto.randomUUID();
-    const thumb_path = `${job_id}/${id}.jpg`;
+    const thumb_path = kind === "file" ? null : `${job_id}/${id}.jpg`;   // у документа превью нет
     const { error: insErr } = await s.from("media").insert({
       id, job_id, owner_id: user.id, kind, seq, file_name,
       mime: String(mime ?? ""), size_bytes: size, thumb_path, status: "uploading" });
@@ -69,7 +81,12 @@ Deno.serve(async (req) => {
 
     const t = await driveToken();
     const cfg = await driveConfig();
-    const parent = await monthFolder(t, cfg.gd_folder_id, String(job.date).slice(0, 7));
+    /* v1.07.76: фото и видео — в месячную папку архива, документы — в такую
+       же месячную папку, но внутри отдельной «Files». */
+    const ym = String(job.date).slice(0, 7);
+    const parent = kind === "file"
+      ? await monthFolder(t, await monthFolder(t, cfg.gd_folder_id, FILES_DIR), ym)
+      : await monthFolder(t, cfg.gd_folder_id, ym);
     /* v1.07.69: сессию открывает сервер, а байты льёт браузер. Google отдаёт
        CORS-заголовки на адрес сессии только если при открытии был передан
        Origin браузера — иначе браузерный PUT отбивается («Failed to fetch»),

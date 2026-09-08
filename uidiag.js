@@ -79,6 +79,7 @@
       c_tab: 'Порядок табуляции и фокус', c_text: 'Крупный шрифт (×1.3 и ×1.6)',
       c_narrow: 'Узкий экран (320px)', c_i18n: 'Переводы', c_store: 'Хранилище',
       c_paint: 'Вес отрисовки', c_safe: 'Безопасные зоны экрана',
+      c_media: 'Фото, видео и вложения',
       env: 'Устройство', all_title: 'Отчёт по всем экранам', walking: 'Обхожу экраны…'
     },
     en: {
@@ -94,6 +95,7 @@
       c_tab: 'Tab order and focus', c_text: 'Large text (×1.3 and ×1.6)',
       c_narrow: 'Narrow screen (320px)', c_i18n: 'Translations', c_store: 'Storage',
       c_paint: 'Paint weight', c_safe: 'Screen safe areas',
+      c_media: 'Photos, video and attachments',
       env: 'Device', all_title: 'Report for every screen', walking: 'Walking the screens…'
     }
   };
@@ -857,6 +859,44 @@
     return mk('safe', T('c_safe'), items);
   }
 
+  /* --- 18. блок фото/видео: съёмка, скрепка, состояние плиток ---------- */
+  /* v1.07.76: карточка «Фото и видео» должна вести себя одинаково на
+     телефоне и на ПК — те же три кнопки, доступные для пальца, и плитки,
+     по которым видно, что файл ещё грузится. */
+  function checkMedia() {
+    var items = [];
+    var cards = qsa('.media-card[data-mjob]');
+    if (!cards.length)
+      return mk('media', T('c_media'), [{ level: 'ok', msg: 'на этом экране блока фото нет', el: null }]);
+    cards.forEach(function (card) {
+      var job = card.getAttribute('data-mjob');
+      var photo = card.querySelector('[onclick*="mediaPick"][onclick*="photo"]');
+      var clip  = card.querySelector('[data-mattach]');
+      if (!photo) items.push({ level: 'err', msg: 'нет кнопки съёмки фото: ' + pathOf(card), el: card });
+      if (!clip)  items.push({ level: 'err', msg: 'нет кнопки «прикрепить файл»: ' + pathOf(card), el: card });
+      if (clip && clip.getAttribute('data-mattach') !== job)
+        items.push({ level: 'err', msg: 'скрепка привязана к чужому документу', el: clip });
+      [photo, clip].forEach(function (b) {
+        if (!b || !visible(b)) return;
+        var r = box(b);
+        if (r.h < 40) items.push({ level: 'warn', msg: 'кнопка ниже 40px (' + Math.round(r.h) + '): ' + pathOf(b), el: b });
+      });
+      qsa('.mth.loc', card).forEach(function (el) {
+        if (!el.querySelector('.mspin') && !el.classList.contains('bad'))
+          items.push({ level: 'err', msg: 'у незагруженного файла нет индикатора отправки', el: el });
+        var img = el.querySelector('img');
+        if (img && parseFloat(getComputedStyle(img).opacity) > .9)
+          items.push({ level: 'warn', msg: 'незагруженный снимок не приглушён', el: el });
+      });
+      qsa('.mth.file', card).forEach(function (el) {
+        if (!el.querySelector('.mfile b'))
+          items.push({ level: 'warn', msg: 'у вложения не видно типа файла', el: el });
+      });
+    });
+    if (!items.length) items.push({ level: 'ok', msg: 'блок фото, видео и вложений в порядке', el: null });
+    return mk('media', T('c_media'), items);
+  }
+
   /* ------------------------------------------------------------------
      3. ЗАПУСК
      ------------------------------------------------------------------ */
@@ -867,7 +907,7 @@
     var checks = [];
     var sync = [checkCover, checkFlow, checkOverflow, checkClip, checkHit, checkBars,
                 checkSafe, checkTab, checkText, checkNarrow, checkI18n,
-                checkContrast, checkHandlers, checkDom, checkPaint, checkLayers];
+                checkContrast, checkHandlers, checkDom, checkPaint, checkLayers, checkMedia];
     sync.forEach(function (f) {
       try { checks.push(f()); }
       catch (e) { checks.push(mk('?', f.name, [{ level: 'warn', msg: 'проверка упала: ' + (e && e.message), el: null }])); }

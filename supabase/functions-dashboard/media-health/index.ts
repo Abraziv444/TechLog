@@ -81,14 +81,17 @@ Deno.serve(async (req) => {
   const SELFTEST = "TechLog-selftest-";
   if (url.searchParams.get("probe")) {
     try {
-      const { size } = await req.json().catch(() => ({ size: 0 }));
+      const { size, kind } = await req.json().catch(() => ({ size: 0, kind: "photo" }));
       const t = await driveToken();
       const origin = req.headers.get("Origin") ?? "";
-      const name = SELFTEST + new Date().toISOString().replace(/[:.]/g, "-") + ".jpg";
+      const isFile = kind === "file";
+      const name = SELFTEST + new Date().toISOString().replace(/[:.]/g, "-")
+        + (isFile ? ".txt" : ".jpg");
       /* v1.07.72: кладём туда же, куда настоящее фото — в месячную подпапку
-         архива, чтобы проверка касалась и каталога тоже. */
+         архива; v1.07.76: для вложения — в месячную папку внутри «Files». */
       const ym = new Date().toISOString().slice(0, 7);
-      const month = folder ? await monthFolder(t, folder, ym) : "";
+      const base = folder && isFile ? await monthFolder(t, folder, "Files") : folder;
+      const month = base ? await monthFolder(t, base, ym) : "";
       const root = folder ? await (await fetch(
         `https://www.googleapis.com/drive/v3/files/${folder}?fields=id,name`,
         { headers: { Authorization: `Bearer ${t}` } })).json() : {};
@@ -97,15 +100,15 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json",
           ...(origin ? { Origin: origin } : {}),
-          "X-Upload-Content-Type": "image/jpeg",
+          "X-Upload-Content-Type": isFile ? "text/plain" : "image/jpeg",
           ...(Number(size) > 0 ? { "X-Upload-Content-Length": String(size) } : {}) },
         body: JSON.stringify({ name, parents: month ? [month] : (folder ? [folder] : undefined),
           appProperties: { techlog: "selftest" } }) });
       const upload_url = init.headers.get("Location");
       if (!upload_url) return jres({ error: "DRIVE_INIT: " + (await init.text()).slice(0, 200) }, 502);
-      return jres({ upload_url, name, origin: !!origin,
+      return jres({ upload_url, name, origin: !!origin, kind: isFile ? "file" : "photo",
         folder: { root_id: folder, root_name: root?.name ?? "", month_id: month, month: ym,
-          path: (root?.name ?? "—") + " / " + ym } });
+          path: (root?.name ?? "—") + (isFile ? " / Files" : "") + " / " + ym } });
     } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
   }
   /* v1.07.72: где файл оказался на самом деле — сверка каталога */
@@ -117,14 +120,21 @@ Deno.serve(async (req) => {
         `https://www.googleapis.com/drive/v3/files/${id}?fields=id,name,size,parents`,
         { headers: { Authorization: `Bearer ${t}` } })).json();
       if (!f?.id) return jres({ error: "NOT_ON_DRIVE" }, 404);
-      const parent = (f.parents ?? [])[0] ?? "";
-      const p = parent ? await (await fetch(
-        `https://www.googleapis.com/drive/v3/files/${parent}?fields=id,name,parents`,
-        { headers: { Authorization: `Bearer ${t}` } })).json() : {};
-      const grand = (p?.parents ?? [])[0] ?? "";
+      /* v1.07.76: путь считаем вглубь — вложения лежат на уровень ниже
+         (архив / Files / 2026-09), и проверка каталога должна это понимать. */
+      let cursor = (f.parents ?? [])[0] ?? "", inArchive = false;
+      const chain: string[] = [];
+      for (let i = 0; i < 4 && cursor; i++) {
+        if (cursor === folder) { inArchive = true; break; }
+        const p = await (await fetch(
+          `https://www.googleapis.com/drive/v3/files/${cursor}?fields=id,name,parents`,
+          { headers: { Authorization: `Bearer ${t}` } })).json();
+        chain.unshift(p?.name ?? "?");
+        cursor = (p?.parents ?? [])[0] ?? "";
+      }
       return jres({ ok: true, name: f.name, size: Number(f.size ?? 0),
-        parent_id: parent, parent_name: p?.name ?? "",
-        in_archive: grand === folder || parent === folder, root_id: folder });
+        parent_id: (f.parents ?? [])[0] ?? "", parent_name: chain[chain.length - 1] ?? "",
+        path: chain.join(" / "), in_archive: inArchive, root_id: folder });
     } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 500); }
   }
   /* v1.07.72: bucket миниатюр — проверяем сервером, RLS его не закрывает */

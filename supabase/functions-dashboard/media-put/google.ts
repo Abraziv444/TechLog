@@ -35,9 +35,12 @@ export async function driveToken(): Promise<string> {
   return tok.v;
 }
 
+/* v1.07.76: ключ кеша — родитель + имя. Раньше ключом было только имя, и
+   папка «2026-09» внутри архива перекрывала одноимённую внутри «Files». */
 const folders = new Map<string,string>();
 export async function monthFolder(t: string, rootId: string, ym: string) {
-  const hit = folders.get(ym); if (hit) return hit;
+  const key = rootId + "/" + ym;
+  const hit = folders.get(key); if (hit) return hit;
   const q = encodeURIComponent(
     `name='${ym}' and '${rootId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
   const s = await (await fetch(
@@ -52,13 +55,13 @@ export async function monthFolder(t: string, rootId: string, ym: string) {
         mimeType: "application/vnd.google-apps.folder" }) })).json();
     id = c.id;
   }
-  folders.set(ym, id); return id;
+  folders.set(key, id); return id;
 }
 
 /* v1.07.72: версия комплекта функций. Диагностика в приложении спрашивает
    каждую функцию «кто ты и какой версии» — так видно и перепутанный код,
    и функцию, которую забыли передеплоить. */
-export const FN_VER = "1.07.72";
+export const FN_VER = "1.07.76";
 
 export const CORS = {
   "Access-Control-Allow-Origin": "*",

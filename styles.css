@@ -1125,6 +1125,37 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .mth.loc.bad .mbar i{background:var(--red)}
 .mth:active{transform:scale(.96)}
 .mstrip-hint{margin:-2px 0 8px;line-height:1.4}
+/* v1.07.75: пока файл не ушёл — снимок приглушён и поверх крутится круг */
+.mth.loc img{opacity:.55;filter:saturate(.8)}
+.mth.loc.bad img{opacity:.7}
+.mth .mspin{position:absolute;top:50%;left:50%;width:26px;height:26px;margin:-13px 0 0 -13px;
+  border-radius:50%;background:conic-gradient(var(--c,#5D737E) var(--p,10%), rgba(255,255,255,.16) 0);
+  -webkit-mask:radial-gradient(circle, transparent 54%, #000 56%);
+          mask:radial-gradient(circle, transparent 54%, #000 56%);
+  animation:mspin 1.05s linear infinite;pointer-events:none}
+@keyframes mspin{to{transform:rotate(360deg)}}
+/* и зелёная галочка, когда файл уже на Диске */
+.mth .mdone{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+  background:rgba(4,10,14,.35);animation:mdone .25s ease-out}
+.mth .mdone .ic{width:28px;height:28px;color:var(--green-hi);
+  filter:drop-shadow(0 0 4px rgba(0,0,0,.7))}
+@keyframes mdone{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
+.mth.done img{opacity:1}
+/* v1.07.76: пока файл грузится, снимок слегка переливается */
+.mth.loc::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(105deg, transparent 38%, rgba(255,255,255,.28) 50%, transparent 62%);
+  background-size:260% 100%;animation:mshine 1.6s ease-in-out infinite}
+.mth.loc.bad::after{animation:none;background:none}
+@keyframes mshine{0%{background-position:130% 0}100%{background-position:-30% 0}}
+/* вложение «скрепкой»: плитка документа и кнопка под полосой */
+.mth.file{display:grid;place-items:center;background:var(--panel-2)}
+.mth .mfile{display:grid;place-items:center;gap:2px;color:var(--dim);text-align:center;padding:4px}
+.mth .mfile .ic{width:24px;height:24px;color:var(--blue)}
+.mth .mfile b{font-size:.62rem;letter-spacing:.04em;color:var(--text)}
+.btn.sm.mattach{margin-top:8px;width:100%;justify-content:center}
+.mv-file{display:grid;place-items:center;gap:10px;color:var(--text);padding:24px;text-align:center}
+.mv-file .ic{width:46px;height:46px;color:var(--blue)}
+.mv-file .nm{font-weight:800;word-break:break-word;max-width:80vw}
 #tl-net{position:fixed;left:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);
   z-index:95;display:none;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
   background:var(--panel);border:2px solid var(--orange);color:var(--orange);
