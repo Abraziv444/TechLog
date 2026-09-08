@@ -1087,6 +1087,44 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .mfull{position:fixed;inset:0;background:rgba(4,10,14,.94);z-index:9999;
   display:flex;align-items:center;justify-content:center;cursor:zoom-out}
 .mfull img,.mfull video{max-width:96vw;max-height:92vh;object-fit:contain;border-radius:8px}
+/* v1.07.74: просмотрщик фото и видео — один и тот же на телефоне и на ПК */
+.mv{position:fixed;inset:0;z-index:9999;background:rgba(4,10,14,.96);
+  display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto 1fr;
+  align-items:center;animation:mv-in .16s ease-out}
+@keyframes mv-in{from{opacity:0}to{opacity:1}}
+.mv-top{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:10px 12px;
+  padding-top:calc(10px + env(safe-area-inset-top,0px))}
+.mv-title{flex:1;min-width:0;color:var(--text);font-weight:800;font-size:.85rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mv-btn{width:44px;height:44px;display:grid;place-items:center;flex:0 0 auto;
+  color:var(--text);background:rgba(255,255,255,.08);border:2px solid var(--line);
+  border-radius:12px;cursor:pointer}
+.mv-btn:active{transform:translateY(1px)}
+.mv-btn .ic{width:20px;height:20px}
+.mv-stage{grid-row:2;display:flex;align-items:center;justify-content:center;
+  padding:0 4px 12px;min-height:0;min-width:0}
+.mv-stage img,.mv-stage video{max-width:100%;max-height:100%;object-fit:contain;
+  border-radius:10px;background:#000}
+.mv-stage img.zoom{object-fit:cover;width:100%;height:100%;cursor:zoom-out}
+.mv-wait{color:var(--dim);font-weight:800;font-size:.85rem;text-align:center;padding:20px}
+.mv-wait.err{color:var(--red)}
+.mv-nav{grid-row:2;width:52px;height:72px;display:grid;place-items:center;
+  color:#fff;background:rgba(255,255,255,.07);border:none;cursor:pointer;
+  border-radius:0 12px 12px 0}
+.mv-nav.next{border-radius:12px 0 0 12px}
+.mv-nav:hover{background:rgba(255,255,255,.16)}
+.mv-nav .ic{width:26px;height:26px}
+/* v1.07.74: состояние файла прямо на плитке */
+.mth{transition:transform .12s ease-out}
+.mth.clicky{cursor:zoom-in}
+.mth.loc{cursor:pointer;animation:mth-in .18s ease-out}
+@keyframes mth-in{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+.mth.loc.bad{outline-color:var(--red);outline-style:solid}
+.mth .mbar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(0,0,0,.55)}
+.mth .mbar i{display:block;height:100%;width:0;background:var(--green);transition:width .2s ease-out}
+.mth.loc.bad .mbar i{background:var(--red)}
+.mth:active{transform:scale(.96)}
+.mstrip-hint{margin:-2px 0 8px;line-height:1.4}
 #tl-net{position:fixed;left:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);
   z-index:95;display:none;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
   background:var(--panel);border:2px solid var(--orange);color:var(--orange);

@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.73';
+const APP_VERSION = '1.07.74';
 const DB_SQL_FILE = 'full-install-1_07_64.sql';   // v1.07.64: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -411,6 +411,11 @@ const I18N = {
     gd_dir_none: 'папка не проверена: файл не залился',
     gd_size_bad: 'на Диске другой размер: {A} вместо {B} байт',
     mq_mini_open: 'подробнее',
+    mv_of: '{N} из {M}', mv_load: 'загружаю…', mv_dl: 'Скачать', mv_del: 'Удалить',
+    mv_close: 'Закрыть', mv_prev: 'Предыдущее', mv_next: 'Следующее',
+    mv_local: 'ещё не отправлено — показан снимок с телефона',
+    mt_queued: 'в очереди', mt_send: 'отправляю', mt_err: 'не отправилось — нажмите, чтобы повторить',
+    media_hint0: 'Снимайте прямо отсюда — файлы уйдут в архив сами, даже если сейчас нет сети.',
     gd_space_warn: 'На Google Диске осталось {P}% свободного места (занято {U} из {L} ГБ). Освободите место или подключите другой архивный аккаунт — иначе фото и видео перестанут загружаться.',
     gd_connected: 'Google подключён', gd_not_conn: 'не подключено',
     gd_db: 'База данных', gd_auth: 'Авторизация Google', gd_acc: 'Аккаунт',
@@ -783,6 +788,11 @@ const I18N = {
     gd_dir_none: 'folder not checked: nothing was uploaded',
     gd_size_bad: 'different size on Drive: {A} instead of {B} bytes',
     mq_mini_open: 'details',
+    mv_of: '{N} of {M}', mv_load: 'loading…', mv_dl: 'Download', mv_del: 'Delete',
+    mv_close: 'Close', mv_prev: 'Previous', mv_next: 'Next',
+    mv_local: 'not uploaded yet — showing the copy from this phone',
+    mt_queued: 'queued', mt_send: 'uploading', mt_err: 'upload failed — tap to retry',
+    media_hint0: 'Shoot right here — files reach the archive on their own, even with no signal now.',
     gd_space_warn: 'Google Drive has {P}% free space left ({U} of {L} GB used). Free up space or connect another archive account — otherwise photo and video uploads will stop.',
     gd_connected: 'Google connected', gd_not_conn: 'not connected',
     gd_db: 'Database', gd_auth: 'Google auth', gd_acc: 'Account',
@@ -1827,6 +1837,8 @@ const IC = {
   close: '<path d="M6.2 6.2 17.8 17.8"/><path d="M17.8 6.2 6.2 17.8"/>',
   folder: '<path d="M3.4 6.8a2 2 0 0 1 2-2h3.4l2 2.6h7.8a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2H5.4a2 2 0 0 1-2-2z"/>',
   image: '<rect x="3.4" y="4.8" width="17.2" height="14.4" rx="2"/><circle cx="8.8" cy="9.9" r="1.5"/><path d="M4.6 16.8 10 11.4l3.4 3.4 2.6-2.4 3.4 3.4"/>',
+  chev_l: '<path d="M15 5.4 8.4 12l6.6 6.6"/>',
+  chev_r: '<path d="M9 5.4 15.6 12 9 18.6"/>',
   /* v1.07.65: те же контуры, что во вкладках меню — ic() их раньше не находил
      и рисовал пустоту (карточка очереди, «Доска» в настройках, кнопки PDF). */
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
@@ -5000,6 +5012,7 @@ const App = {
     render();
   },
   gdToggleEdit, gdReveal, gdCopy,
+  mediaOpenLocal, mvClose, mvGo, mvDownload, mvDelete,
   eqHours(etId, v){
     if (!jobDraft) return;
     const e = jobDraft.form_data.equipment[etId] || (jobDraft.form_data.equipment[etId] = { qty: 0, days: defRentDays() });
@@ -7783,7 +7796,8 @@ async function mediaFlush(verbose){
           }
         }
         stage = 'mq_st_up';
-        const onPct = pct => lg(`⬆ ${tag} · ${pct}%`, 'dim', lid);
+        const onPct = pct => { mediaTilePct(it.qid, pct); lg(`⬆ ${tag} · ${pct}%`, 'dim', lid); };
+        it.error = ''; mediaTilePct(it.qid, 0);
         let driveId;
         try{ driveId = await mPutResumable(it, onPct); }
         catch (e){
@@ -7831,7 +7845,9 @@ async function mediaFlush(verbose){
         mediaStripRefresh(it.job_id);        // полоса обновляется и в модалке
         render();
       }catch(e){
-        it.attempts = (it.attempts || 0) + 1; await mQPut(it);
+        it.attempts = (it.attempts || 0) + 1;
+        it.error = String(e && e.message || e).slice(0, 120); it.pct = 0;
+        await mQPut(it); mediaStripRefresh(it.job_id);
         dlog('media stuck', it.qid, e);
         lg(`⛔ ${tag} — ${t(stage)}: ${esc(String(e && e.message || e))}`, 'err', lid);
         res.fail++; res.stopped = true;
@@ -7855,6 +7871,16 @@ function mqThumbDrop(qid){
   const u = mqThumbUrls.get(qid);
   if (u){ try{ URL.revokeObjectURL(u); }catch(e){} mqThumbUrls.delete(qid); }
 }
+/* v1.07.74: проценты отправки рисуем прямо на плитке, без перерисовки
+   всей полосы — иначе на каждый чанк моргала бы вся карточка. */
+function mediaTilePct(qid, pct){
+  const it = mediaQ.find(x => x.qid === qid); if (it) it.pct = pct;
+  document.querySelectorAll(`.mth.loc[data-qid="${qid}"]`).forEach(el => {
+    const bar = el.querySelector('.mbar i');
+    if (bar) bar.style.width = Math.min(100, pct) + '%';
+    el.classList.toggle('up', pct > 0);
+  });
+}
 /* Перерисовать полосу «Фото и видео» на месте — и на экране, и в открытой
    модалке (render() обновляет только #app, модалку он не видит). */
 function mediaStripRefresh(jobId){
@@ -7873,24 +7899,32 @@ function mediaStripHtml(jobId){
   const nP = rows.filter(m => m.kind === 'photo').length + loc.filter(x => x.kind === 'photo').length;
   const nV = rows.filter(m => m.kind === 'video').length + loc.filter(x => x.kind === 'video').length;
   const cells = rows.map(m => `
-    <div class="mth clicky" onclick="App.mediaOpen('${m.id}','${m.kind}')">
+    <div class="mth clicky" title="${esc(m.file_name || '')}" onclick="App.mediaOpen('${m.id}','${m.kind}')">
       <img data-thumb="${m.thumb_path || ''}" alt="">
       ${m.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
       ${m.status !== 'ready' ? `<span class="mst">${ic('clock')}</span>` : ''}
       ${isAdmin() ? `<span class="mx" title="${t('media_del_q')}" onclick="event.stopPropagation();App.mediaDelete('${m.id}')">${ic('close')}</span>` : ''}
     </div>`).join('')
-  + loc.map(x => `
-    <div class="mth loc">
+  + loc.map(x => {
+    /* v1.07.74: по плитке видно, что с файлом: ждёт, идёт отправка с
+       процентами или ошибка — по ней же и повтор отправки. */
+    const err = !!x.error, pct = Number(x.pct || 0);
+    return `
+    <div class="mth loc ${err ? 'bad' : ''}" data-qid="${x.qid}"
+      title="${err ? esc(t('mt_err')) : (pct ? t('mt_send') + ' ' + pct + '%' : t('mt_queued'))}"
+      onclick="${err ? `App.mqRetry()` : `App.mediaOpenLocal('${x.qid}')`}">
       <img src="${mqThumbUrl(x)}" alt="">
       ${x.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
-      <span class="mst">${ic('clock')}</span>
-      <span class="mx" onclick="App.mediaQDel('${x.qid}')">${ic('close')}</span>
-    </div>`).join('');
+      <span class="mst">${ic(err ? 'warn' : 'clock')}</span>
+      <span class="mx" onclick="event.stopPropagation();App.mediaQDel('${x.qid}')">${ic('close')}</span>
+      <span class="mbar"><i style="width:${Math.min(100, pct)}%"></i></span>
+    </div>`; }).join('');
   if (!_mediaHydPlanned){ _mediaHydPlanned = true; setTimeout(mediaHydrate, 0); }
   const lim = mediaLimits();
   return `<div class="card media-card" data-mjob="${jobId}">
     <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('media_title')}
       <span class="tiny"> · ${nP}/${lim.photo}${lim.video ? ` · ${nV}/${lim.video}` : ''}</span></div>
+    ${(!rows.length && !loc.length) ? `<div class="tiny mstrip-hint">${t('media_hint0')}</div>` : ''}
     <div class="mstrip">${cells}
       <button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','photo')">${ic('camera')} ${t('media_photo')}</button>
       ${lim.video ? `<button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video')">${ic('video')} ${t('media_video')}</button>` : ''}
@@ -7910,31 +7944,146 @@ async function mediaHydrate(){
     }catch(e){}
   }
 }
-async function mediaOpen(id, kind){
-  if (!HAS_SB) return;
-  toast('⏳ …', 'inf');
+/* =====================================================================
+   v1.07.74: ПРОСМОТРЩИК ФОТО И ВИДЕО
+   Один и тот же на телефоне и на ПК: стрелки по краям, свайп, клавиши
+   ← → Esc, счётчик, скачивание и удаление. Соседние файлы подгружаются
+   заранее, уже открытые лежат в кеше — переключение мгновенное.
+   ===================================================================== */
+const MV_CACHE_MAX = 8;
+const mvCache = new Map();                 // media_id → blob-URL
+let _mv = null;                            // { list, idx, keyHandler }
+function mvCachePut(id, url){
+  mvCache.set(id, url);
+  while (mvCache.size > MV_CACHE_MAX){
+    const [k, v] = mvCache.entries().next().value;
+    mvCache.delete(k); try{ URL.revokeObjectURL(v); }catch(e){}
+  }
+}
+async function mvFetch(id){
+  if (mvCache.has(id)) return mvCache.get(id);
   const token = await mediaJwt();
   const r = await fetch(mediaFN() + '/media-view?id=' + encodeURIComponent(id),
     { headers: { Authorization: 'Bearer ' + token } });
-  if (!r.ok){ toast('⛔ ' + t('media_open_err'), 'err'); return; }
+  if (!r.ok) throw new Error('HTTP ' + r.status);
   const u = URL.createObjectURL(await r.blob());
-  const w = document.createElement('div');
-  w.className = 'mfull';
-  w.onclick = () => { URL.revokeObjectURL(u); w.remove(); };
-  w.innerHTML = kind === 'video'
-    ? `<video src="${u}" controls playsinline autoplay></video>`
-    : `<img src="${u}" alt="">`;
-  document.body.appendChild(w);
+  mvCachePut(id, u);
+  return u;
+}
+function mediaOpen(id, kind){                       // клик по загруженной плитке
+  const all = (state.data.media || []).filter(m => m.job_id ===
+    ((state.data.media || []).find(x => x.id === id) || {}).job_id);
+  mediaViewer(all.map(m => ({ id: m.id, kind: m.kind, name: m.file_name || '' })),
+    Math.max(0, all.findIndex(m => m.id === id)));
+}
+function mediaOpenLocal(qid){                       // клик по ещё не отправленной
+  const it = mediaQ.find(x => x.qid === qid); if (!it) return;
+  mediaViewer([{ local: it, kind: it.kind, name: t('mv_local') }], 0);
+}
+function mediaViewer(list, idx){
+  if (!list.length) return;
+  mvClose();
+  const el = document.createElement('div');
+  el.className = 'mv'; el.id = 'mv';
+  el.innerHTML = `
+    <div class="mv-top">
+      <button class="mv-btn" title="${t('mv_close')}" onclick="App.mvClose()">${ic('close')}</button>
+      <div class="mv-title" id="mv-title"></div>
+      <button class="mv-btn" id="mv-dl" title="${t('mv_dl')}" onclick="App.mvDownload()">${ic('download')}</button>
+      ${isAdmin() ? `<button class="mv-btn" title="${t('mv_del')}" onclick="App.mvDelete()">${ic('trash')}</button>` : ''}
+    </div>
+    <button class="mv-nav prev" title="${t('mv_prev')}" onclick="App.mvGo(-1)">${ic('chev_l')}</button>
+    <div class="mv-stage" id="mv-stage"></div>
+    <button class="mv-nav next" title="${t('mv_next')}" onclick="App.mvGo(1)">${ic('chev_r')}</button>`;
+  el.addEventListener('click', e => { if (e.target === el) mvClose(); });
+  /* свайп: только по сцене, чтобы не мешать управлению видео */
+  let x0 = null;
+  const stageEl = () => el.querySelector('.mv-stage');
+  el.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  el.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if (Math.abs(dx) > 60) mvGo(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  const keyHandler = e => {
+    if (e.key === 'Escape') mvClose();
+    else if (e.key === 'ArrowLeft') mvGo(-1);
+    else if (e.key === 'ArrowRight') mvGo(1);
+  };
+  document.addEventListener('keydown', keyHandler);
+  document.body.appendChild(el);
+  _mv = { list, idx, keyHandler, stageEl };
+  mvShow();
+}
+function mvClose(){
+  const el = $('#mv'); if (el) el.remove();
+  if (_mv){ document.removeEventListener('keydown', _mv.keyHandler); _mv = null; }
+}
+function mvGo(d){
+  if (!_mv || _mv.list.length < 2) return;
+  _mv.idx = (_mv.idx + d + _mv.list.length) % _mv.list.length;
+  mvShow();
+}
+async function mvShow(){
+  if (!_mv) return;
+  const cur = _mv.list[_mv.idx], stage = $('#mv-stage'), title = $('#mv-title');
+  const many = _mv.list.length > 1;
+  document.querySelectorAll('#mv .mv-nav').forEach(b => b.style.display = many ? '' : 'none');
+  if (title) title.textContent =
+    (many ? t('mv_of').replace('{N}', _mv.idx + 1).replace('{M}', _mv.list.length) + ' · ' : '')
+    + (cur.name || '');
+  if (!stage) return;
+  stage.innerHTML = `<div class="mv-wait">${t('mv_load')}</div>`;
+  try{
+    const url = cur.local ? mvLocalUrl(cur.local) : await mvFetch(cur.id);
+    if (!_mv || _mv.list[_mv.idx] !== cur) return;              // успели пролистать
+    stage.innerHTML = cur.kind === 'video'
+      ? `<video src="${url}" controls playsinline autoplay></video>`
+      : `<img src="${url}" alt="" ondblclick="this.classList.toggle('zoom')">`;
+    if (many) [1, -1].forEach(d => {                            // соседние — заранее
+      const nx = _mv.list[(_mv.idx + d + _mv.list.length) % _mv.list.length];
+      if (nx && !nx.local) mvFetch(nx.id).catch(() => {});
+    });
+  }catch(e){
+    stage.innerHTML = `<div class="mv-wait err">${esc(t('media_open_err'))} · ${esc(String(e.message || e))}</div>`;
+  }
+}
+const mvLocalUrls = new Map();
+function mvLocalUrl(it){
+  let u = mvLocalUrls.get(it.qid);
+  if (!u){ u = URL.createObjectURL(it.blob); mvLocalUrls.set(it.qid, u); }
+  return u;
+}
+function mvDownload(){
+  if (!_mv) return;
+  const cur = _mv.list[_mv.idx];
+  const url = cur.local ? mvLocalUrl(cur.local) : mvCache.get(cur.id);
+  if (!url) return;
+  const a = document.createElement('a');
+  a.href = url; a.download = cur.name || ('techlog.' + (cur.kind === 'video' ? 'mp4' : 'jpg'));
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function mvDelete(){
+  if (!_mv) return;
+  const cur = _mv.list[_mv.idx];
+  if (cur.local){ await mediaQDel(cur.local.qid); mvClose(); return; }
+  const okDel = await mediaDelete(cur.id);
+  if (okDel === false) return;
+  mvCache.delete(cur.id);
+  _mv.list.splice(_mv.idx, 1);
+  if (!_mv.list.length){ mvClose(); return; }
+  _mv.idx = _mv.idx % _mv.list.length;
+  mvShow();
 }
 async function mediaDelete(id){
-  if (!isAdmin()) return;
+  if (!isAdmin()) return false;
   const own = (state.data.media || []).find(m => m.id === id);
-  if (!confirm(t('media_del_q') + '?')) return;
+  if (!confirm(t('media_del_q') + '?')) return false;
   const token = await mediaJwt();
   const r = await fetch(mediaFN() + '/media-delete', { method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
     body: JSON.stringify({ media_id: id }) });
-  if (!r.ok){ toast('⛔', 'err'); return; }
+  if (!r.ok){ toast('⛔', 'err'); return false; }
   state.data.media = (state.data.media || []).filter(m => m.id !== id);
   mediaStripRefresh(own && own.job_id);      // v1.07.73: и в модалке тоже
   toast('🗑 ' + t('deleted')); render();
