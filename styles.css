@@ -158,6 +158,10 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
    нормы зоны нажатия; сенсорные экраны их расширяет правило ниже, но и мышью
    попадать должно быть удобно */
 .rowline input[type="checkbox"]{width:24px;height:24px;flex:none}
+/* v1.07.84: классы стояли в разметке без единого правила (аудит v1.07.80) */
+.size-presets{flex-wrap:wrap;gap:6px}
+.aux-mk{display:inline-flex;align-items:center;margin-right:4px}
+.aux-mk svg{width:1em;height:1em}
 .chip{
   display:inline-flex;align-items:center;gap:6px;border-radius:999px;
   border:2px solid var(--line);padding:2px 10px;font-size:.72rem;font-weight:800;color:var(--dim)

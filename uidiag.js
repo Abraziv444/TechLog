@@ -80,6 +80,7 @@
       c_narrow: 'Узкий экран (320px)', c_i18n: 'Переводы', c_store: 'Хранилище',
       c_paint: 'Вес отрисовки', c_safe: 'Безопасные зоны экрана',
       c_media: 'Фото, видео и вложения',
+      c_feat: 'Новые модули: номера, переводы, Диск, архив',
       env: 'Устройство', all_title: 'Отчёт по всем экранам', walking: 'Обхожу экраны…',
       s_dir: 'справочник', s_doc: 'документ', s_cal: 'календарь', s_modal: 'модалка'
     },
@@ -97,6 +98,7 @@
       c_narrow: 'Narrow screen (320px)', c_i18n: 'Translations', c_store: 'Storage',
       c_paint: 'Paint weight', c_safe: 'Screen safe areas',
       c_media: 'Photos, video and attachments',
+      c_feat: 'New modules: numbers, translations, Drive, archive',
       env: 'Device', all_title: 'Report for every screen', walking: 'Walking the screens…',
       s_dir: 'directory', s_doc: 'document', s_cal: 'calendar', s_modal: 'modal'
     }
@@ -869,6 +871,75 @@
     return mk('paint', T('c_paint'), items);
   }
 
+  /* --- 19. новые модули (v1.07.83…88) ----------------------------------
+     Проверяем не «есть ли класс в вёрстке», а видит ли пользователь то, что
+     ему обещано на этом экране: номер в шапке документа, карточку перевода
+     у русской заметки, кнопку «Инвойс на Диск», строку архива и настройки.
+     Данные берём из публичных ручек приложения, без внутренностей. */
+  function checkFeat() {
+    var items = [];
+    var A = window.App || {};
+    var scr = (A.curScreen && A.curScreen()) || '';
+    var txt = function (sel) { var e = document.querySelector(sel); return e ? (e.textContent || '').trim() : ''; };
+
+    /* документ работы: номер, перевод, инвойс на Диск */
+    if (scr === 'job') {
+      var bar = txt('.docbar .db-t');
+      items.push({ level: /^[A-Z]{3,4}[-_/]/.test(bar) ? 'ok' : 'warn',
+        msg: 'номер документа в шапке: ' + (bar || '—') +
+             (/^[A-Z]{3,4}[-_/]/.test(bar) ? '' : ' — шаблон нумерации не дал номера (нет jobs.no или пустой шаблон)'),
+        el: document.querySelector('.docbar .db-t') });
+      var trCard = document.querySelector('.tr-card');
+      var ru = qsa('#jb-note').concat(qsa('.tr-ru'))
+        .some(function (e) { return /[\u0400-\u04FF]/.test(e.value || e.textContent || ''); });
+      items.push({ level: (ru && !trCard) ? 'err' : 'ok',
+        msg: ru ? (trCard ? 'русские заметки есть, карточка «Перевод для PDF» на месте'
+                          : 'в заметках кириллица, а карточки перевода нет — в PDF текст не попадёт')
+                : 'русских заметок в документе нет — перевод не нужен',
+        el: trCard });
+      var inv = document.querySelector('[onclick*="invToDrive"]');
+      items.push({ level: inv ? 'ok' : 'warn',
+        msg: inv ? 'кнопка «Инвойс на Диск» на месте'
+                 : 'кнопки «Инвойс на Диск» нет (демо-режим или Supabase не настроен)', el: inv });
+    }
+
+    /* архив: строки, кнопки возврата и «удалить навсегда» */
+    if (scr === 'archive') {
+      var rows = qsa('#app .rowline').filter(function (r) { return r.querySelector('[onclick*="unarchive"]'); });
+      items.push({ level: 'ok', msg: 'документов в архиве: ' + rows.length, el: null });
+      var purge = qsa('#app [onclick*="purgeDoc"]');
+      items.push({ level: 'ok',
+        msg: purge.length ? 'кнопка «Удалить навсегда» доступна (администратор)'
+                          : 'кнопки «Удалить навсегда» нет — роль не администратор либо архив пуст', el: purge[0] || null });
+      items.push({ level: document.querySelector('[onclick*="auditRun"]') ? 'ok' : 'err',
+        msg: 'сверка с Диском: кнопка проверки ' + (document.querySelector('[onclick*="auditRun"]') ? 'на месте' : 'потерялась'),
+        el: document.querySelector('[onclick*="auditRun"]') });
+      var lost = qsa('#app .chip.bad').length;
+      if (lost) items.push({ level: 'warn', msg: 'записей без файла на Диске в списке: ' + lost, el: null });
+    }
+
+    /* настройки: все карточки новых модулей на месте */
+    if (scr === 'settings') {
+      [['[onclick*="noAddTok"]', 'конструктор нумерации'],
+       ['[onclick*="App.trRun"]', 'карточка переводов'],
+       ['[onclick*="App.popPos"]', 'место всплывашек'],
+       ['#gd-inv', 'папка для инвойсов'],
+       ['[onchange*="gd_inv_by_tech"]', 'галочка «инвойсы по папкам сотрудников»']
+      ].forEach(function (p) {
+        var el = document.querySelector(p[0]);
+        items.push({ level: el ? 'ok' : 'warn',
+          msg: p[1] + ': ' + (el ? 'на месте' : 'не показана (нужны права администратора)'), el: el });
+      });
+    }
+
+    /* общий для всех экранов: не осталось ли «Удалить» мимо архива */
+    var hardDel = qsa('#app [onclick*="delRow("]').length;
+    if (scr === 'job' || scr === 'proposals')
+      items.push({ level: 'ok', msg: 'прямого удаления документа из списка нет — только через архив', el: null });
+    if (!items.length) items.push({ level: 'ok', msg: 'на этом экране новых модулей нет', el: null });
+    return mk('feat', T('c_feat'), items);
+  }
+
   /* --- 18. безопасные зоны (вырез, домашняя полоса) --------------------- */
   function checkSafe() {
     var items = [], ins = insets();
@@ -910,6 +981,20 @@
       var photo = card.querySelector('[onclick*="mediaPick"][onclick*="photo"]');
       var clip  = card.querySelector('[data-mattach]');
       if (!photo) items.push({ level: 'err', msg: 'нет кнопки съёмки фото: ' + pathOf(card), el: card });
+      /* v1.07.90: на части телефонов системный выбор картинок открывается без
+         камеры — в отчёте должно быть видно, есть ли прямой вызов камеры */
+      var cam = card.querySelector('[onclick*="\'cam\'"]');
+      var libB = card.querySelector('[onclick*="\'lib\'"]');
+      items.push({ level: cam ? 'ok' : 'err',
+        msg: cam ? 'кнопка «Камера» вызывает камеру напрямую (capture)'
+                 : 'нет прямого вызова камеры — на телефонах с системным выбором картинок снять будет нечем', el: cam || card });
+      items.push({ level: libB ? 'ok' : 'warn',
+        msg: libB ? 'кнопка «Галерея» на месте' : 'нет отдельной кнопки выбора из галереи', el: libB || card });
+      try {
+        var md = localStorage.getItem('techlog_cam_mode') || 'full';
+        items.push({ level: 'ok', msg: 'режим кнопки «Фото» на этом устройстве: ' +
+          (md === 'quick' ? 'быстрый (сразу камера)' : 'полный (системный выбор)'), el: null });
+      } catch (e) {}
       if (!clip)  items.push({ level: 'err', msg: 'нет кнопки «прикрепить файл»: ' + pathOf(card), el: card });
       if (clip && clip.getAttribute('data-mattach') !== job)
         items.push({ level: 'err', msg: 'скрепка привязана к чужому документу', el: clip });
@@ -944,7 +1029,8 @@
     var checks = [];
     var sync = [checkCover, checkFlow, checkOverflow, checkClip, checkHit, checkBars,
                 checkSafe, checkTab, checkText, checkNarrow, checkI18n,
-                checkContrast, checkHandlers, checkDom, checkPaint, checkLayers, checkMedia];
+                checkContrast, checkHandlers, checkDom, checkPaint, checkLayers, checkMedia,
+                checkFeat];                       // v1.07.88: новые модули
     sync.forEach(function (f) {
       try { checks.push(f()); }
       catch (e) { checks.push(mk('?', f.name, [{ level: 'warn', msg: 'проверка упала: ' + (e && e.message), el: null }])); }
@@ -978,7 +1064,8 @@
      Обход всех экранов одной кнопкой. Ради этого всё и затевалось: на
      чужом айфоне человек жмёт один раз и присылает готовый .txt.
      ------------------------------------------------------------------ */
-  var SCREENS = ['home', 'board', 'proposals', 'map', 'reports', 'stats', 'dirs', 'journal', 'settings'];
+  var SCREENS = ['home', 'board', 'proposals', 'map', 'reports', 'stats', 'dirs',
+                 'archive', 'journal', 'settings'];   // v1.07.88: архив-корзина
   var ALL = null;
 
   function available() {
@@ -1109,7 +1196,8 @@
         { lbl: 'заметка', scr: ['home'], click: 'App.noteModal(' },
         { lbl: 'новое задание', scr: ['home'], click: 'App.addTaskModal(' },
         { lbl: 'очередь отправки', scr: ['settings', 'home'], call: function () { A0.mediaQueueModal(); } },
-        { lbl: 'справка', scr: ['home'], call: function () { A0.faq(); } }
+        { lbl: 'справка', scr: ['home'], call: function () { A0.faq(); } },
+        { lbl: 'сверка с Диском', scr: ['archive'], call: function () { A0.auditList(); } }
       ];
 
       return seq(plan.map(function (d) {

@@ -1,5 +1,5 @@
 import { svc, userClient, driveToken, monthFolder, CORS, jres, FN_VER,
-         PHOTOS_DIR, FILES_DIR } from "./google.ts";
+         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf } from "./google.ts";
 
 /* v1.07.64 · три режима:
    ?cfg=1     — только конфиг без секретов (быстро, для отрисовки карточки);
@@ -45,6 +45,29 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const s = svc();
+
+  /* v1.07.88 · СВЕРКА С ДИСКОМ. Проходим по записям media и спрашиваем Диск,
+     жив ли файл. Отвечаем списком потерянных id — приложение помечает их в
+     карточках документов. За один прогон берём не больше 400 записей. */
+  if (new URL(req.url).searchParams.get("audit")) {
+    try {
+      const t = await driveToken();
+      const { data: rows } = await s.from("media")
+        .select("id,drive_file_id,job_id,kind,archived_at")
+        .not("drive_file_id", "is", null).limit(400);
+      const lost: string[] = [];
+      for (const m of rows ?? []) {
+        const r = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${m.drive_file_id}?fields=id,trashed`,
+          { headers: { Authorization: `Bearer ${t}` } });
+        if (r.status === 404) { lost.push(m.id); continue; }
+        if (r.ok) { const j = await r.json(); if (j.trashed) lost.push(m.id); }
+      }
+      return jres({ audit: { checked: rows?.length ?? 0, lost: lost.length, lost_ids: lost } });
+    } catch (e) {
+      return jres({ audit: { error: String((e as Error)?.message ?? e) } }, 200);
+    }
+  }
   const r: Record<string, unknown> = {};
 
   // ---- секреты: только по явному запросу админа, в базе они и остаются ----
@@ -281,9 +304,26 @@ Deno.serve(async (req) => {
         const photoMonth = photoRoot ? await monthFolder(t, photoRoot, ym) : "";
         const filesRoot = await monthFolder(t, folder, FILES_DIR);
         const fileMonth = filesRoot ? await monthFolder(t, filesRoot, ym) : "";
+        /* v1.07.85: третья строка — инвойсы. Если админ указал в настройках
+           чужую папку Диска, показываем её же, а не «архив / Invoices». */
+        let invName = "", byTech = false;
+        try {
+          const q = await svc().from("org_settings")
+            .select("gd_inv_folder,gd_inv_by_tech").eq("id", "org").maybeSingle();
+          invName = folderIdOf(String(q.data?.gd_inv_folder ?? ""));
+          byTech = !!q.data?.gd_inv_by_tech;
+        } catch (_e) { invName = ""; }
+        const invRoot = invName || await monthFolder(t, folder, INVOICES_DIR);
+        /* v1.07.87: с галочкой «по сотрудникам» месяц лежит внутри папки
+           исполнителя, поэтому показываем сам корень инвойсов и схему пути —
+           заранее создавать папки под каждого сотрудника незачем. */
+        const invMonth = byTech ? invRoot : (invRoot ? await monthFolder(t, invRoot, ym) : "");
         r.paths = {
           photo: { id: photoMonth, name: ym, path: `${rootName || "—"} / ${PHOTOS_DIR} / ${ym}` },
           file: { id: fileMonth, name: ym, path: `${rootName || "—"} / ${FILES_DIR} / ${ym}` },
+          invoice: { id: invMonth, name: byTech ? "…" : ym,
+            path: (invName ? `(${INVOICES_DIR})` : `${rootName || "—"} / ${INVOICES_DIR}`) +
+                  (byTech ? ` / <сотрудник> / ${ym}` : ` / ${ym}`) },
         };
       } catch (_e) { /* не критично: тест продолжается */ }
     }

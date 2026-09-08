@@ -61,7 +61,7 @@ export async function monthFolder(t: string, rootId: string, ym: string) {
 /* v1.07.72: версия комплекта функций. Диагностика в приложении спрашивает
    каждую функцию «кто ты и какой версии» — так видно и перепутанный код,
    и функцию, которую забыли передеплоить. */
-export const FN_VER = "1.07.81";
+export const FN_VER = "1.07.88";
 
 /* v1.07.81: имена служебных папок внутри архива — одни на все функции.
    Фото и видео лежат в «Photos/ГГГГ-ММ», документы — в «Files/ГГГГ-ММ»:
@@ -69,6 +69,34 @@ export const FN_VER = "1.07.81";
    корень архива вперемешку со служебными папками. */
 export const PHOTOS_DIR = "Photos";
 export const FILES_DIR  = "Files";
+/* v1.07.85: PDF-инвойсы — в свою папку. Админ может увести их в чужую
+   папку Диска (org_settings.gd_inv_folder), тогда корнем служит она. */
+export const INVOICES_DIR = "Invoices";
+/* v1.07.88: корзина. Документ, помеченный на удаление, уезжает сюда вместе
+   со своими файлами; из рабочих папок ничего не удаляется. Насовсем файлы
+   уходят в корзину Google Диска только отсюда. */
+export const ARCHIVE_DIR = "Архив TechLog";
+
+/* Переложить файл в другую папку Диска (родитель заменяется целиком) */
+export async function moveFile(t: string, fileId: string, parentId: string) {
+  const cur = await (await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?fields=parents`,
+    { headers: { Authorization: `Bearer ${t}` } })).json();
+  const old = (cur.parents ?? []).join(",");
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?addParents=${parentId}` +
+    (old ? `&removeParents=${old}` : "") + "&fields=id,parents",
+    { method: "PATCH", headers: { Authorization: `Bearer ${t}` } });
+  return r.ok;
+}
+
+/* ID папки из вставленной ссылки Google Диска (или сам ID, как есть) */
+export function folderIdOf(v: string) {
+  const s = String(v ?? "").trim();
+  const m = s.match(/\/folders\/([^/?#]+)/) ?? s.match(/[?&]id=([^&#]+)/);
+  if (m) return m[1];
+  return s.replace(/^https?:\/\/[^/]+\//i, "").replace(/[?#].*$/, "").replace(/\/+$/, "");
+}
 
 export const CORS = {
   "Access-Control-Allow-Origin": "*",

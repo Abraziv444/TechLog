@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.83';
-const DB_SQL_FILE = 'full-install-1_07_83.sql';   // v1.07.83: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.07.93';
+const DB_SQL_FILE = 'full-install-1_07_88.sql';   // v1.07.88: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -122,6 +122,8 @@ const I18N = {
     act_user_unblock: 'разблокировка', act_role_change: 'смена роли', act_password_change: 'смена своего пароля',
     act_password_reset: 'сброс пароля сотрудника', act_job_create: 'создан инвойс', act_job_update: 'изменён инвойс',
     act_doc_translate: 'сформирован перевод заметок',
+    act_job_archive: 'инвойс отправлен в архив', act_job_restore: 'инвойс возвращён из архива',
+    act_proposal_archive: 'пропозал отправлен в архив', act_proposal_restore: 'пропозал возвращён из архива',
     act_job_done: 'работа выполнена', act_job_reopen: 'возврат в черновик', act_job_approve: 'апрув',
     act_job_delete: 'удалён инвойс', act_crew_add: 'бригада: добавлен', act_crew_remove: 'бригада: убран',
     act_pickup_done: 'пикап выполнен', act_pickup_early: 'досрочный вывоз', act_extension_create: 'продление аренды',
@@ -327,6 +329,53 @@ const I18N = {
     pop_top: 'Сверху', pop_bottom: 'Снизу', pop_side: 'Сбоку',
     pop_demo: 'Показать пример',
     pop_demo_txt: 'Вот здесь будут подсказки',
+    /* v1.07.84: в бланк уходит только латиница */
+    name_en_hint: 'В PDF печатается английский вариант: пишите «Осушитель / Dehumidifier» — в бланк уйдёт Dehumidifier. Если английской части нет, напечатается аббревиатура.',
+    /* v1.07.85: инвойс уезжает на Диск в свою папку */
+    inv_drive: 'Инвойс на Диск',
+    inv_drive_hint: 'PDF бланка уйдёт в папку «Invoices» на Google Диске — рядом с фото и вложениями этой работы',
+    inv_queued: 'Инвойс поставлен в очередь на Диск',
+    inv_need_save: 'Сначала сохраните работу',
+    gd_where_inv: 'Инвойсы',
+    gd_inv_folder: 'Папка для инвойсов',
+    gd_inv_hint: 'Пусто — папка «Invoices» внутри архива. Можно вставить ссылку на другую папку Google Диска: инвойсы пойдут прямо туда, а фото останутся в архиве.',
+    /* v1.07.86: конструктор номера документа и имени файла */
+    no_card: 'Нумерация документов',
+    no_doc_lbl: 'Шаблон номера документа',
+    no_file_lbl: 'Шаблон имени файла на Диске',
+    no_pad_lbl: 'Знаков в порядковом номере',
+    no_preview: 'Пример',
+    no_add: 'Добавить кусочек:',
+    no_reset: 'Вернуть по умолчанию',
+    no_hint: 'Соберите номер из кусочков. Не нужны инициалы сотрудника — уберите {TECH}, и их не будет. Пустой кусочек выпадает вместе с лишним разделителем. Разделитель — любой символ между кусочками.',
+    no_file_hint: 'Так называются фото, видео и вложения на Google Диске. {NAME} — вид работы у съёмки и исходное имя у вложения. Применяет сервер, поэтому после правки передеплойте media-begin.',
+    no_t_TYPE: 'тип (WORK/PROP/PICK/LONG)', no_t_DATE: 'дата', no_t_YEAR: 'год',
+    no_t_CP: 'контрагент', no_t_CX: 'комплекс', no_t_UNIT: 'юнит',
+    no_t_TECH: 'инициалы сотрудника', no_t_WT: 'вид работы', no_t_SEQ: 'порядковый номер',
+    no_t_NAME: 'название', no_t_KIND: 'вид файла',
+    doc_no: 'Номер',
+    /* v1.07.87: инвойсы по папкам сотрудников */
+    gd_inv_tech: 'Инвойсы по папкам сотрудников',
+    gd_inv_tech_tip: 'Галочка снята — все инвойсы лежат в общей папке по месяцам: «Invoices / 2026-09». Галочка стоит — сначала папка исполнителя, а месяц уже внутри неё: «Invoices / Ivan P / 2026-09», и так у каждого сотрудника каждый месяц своя папка. Имя папки берётся из профиля: имя и первая буква фамилии латиницей — как подпись исполнителя в документах. Уже загруженные инвойсы остаются там, где лежали.',
+    gd_inv_tech_ex: 'Пример пути',
+    /* v1.07.88: архив-корзина и сверка с Диском */
+    tab_archive: 'Архив', arch_title: 'Архив документов',
+    arch_hint: 'Сюда попадают документы, помеченные на удаление. Их файлы на Диске переезжают в папку «Архив TechLog», из рабочих папок ничего не пропадает. Насовсем документ и его файлы удаляются только отсюда.',
+    arch_to: 'В архив', arch_back: 'Вернуть из архива', arch_purge: 'Удалить навсегда',
+    arch_empty: 'Архив пуст',
+    arch_q: 'Пометить документ на удаление? Он уйдёт в архив, файлы на Диске — в папку «Архив TechLog». Вернуть можно оттуда же.',
+    arch_purge_q: 'Удалить навсегда? Документ исчезнет из базы, файлы уйдут в корзину Google Диска (30 дней на передумать). Действие необратимо.',
+    arch_by: 'в архиве с', arch_who: 'отправил',
+    arch_moved: 'файлов перенесено',
+    arch_restored: 'Документ вернулся из архива',
+    arch_only_admin: 'Удалять навсегда может только администратор',
+    aud_card: 'Сверка с Google Диском',
+    aud_hint: 'Что из документов лежит на Диске: PDF-инвойс, фото, видео, вложения. Проверка «на Диске» опрашивает сам Диск и находит записи, у которых файла уже нет.',
+    aud_run: 'Проверить файлы на Диске', aud_docs: 'документов',
+    aud_pdf: 'PDF', aud_photo: 'фото', aud_video: 'видео', aud_file: 'вложения',
+    aud_none: 'ничего нет', aud_all_ok: 'Все записи на месте',
+    aud_lost: 'нет на Диске', aud_arch: 'в архиве',
+    aud_f_all: 'Все', aud_f_nopdf: 'Без PDF', aud_f_nomedia: 'Без фото',
     log_title: 'Журнал событий', clear: 'Очистить',
     db_diag: 'Диагностика БД (все таблицы)', admin_only: 'Доступно только администратору',
     checking_tables: 'Проверяю таблицы…',
@@ -430,9 +479,30 @@ const I18N = {
     media_heic: 'Браузер не открыл этот снимок — уйдёт в архив как документ',
     mt_prep: 'готовлю снимок',
     cam_card: 'Съёмка',
+    /* v1.07.90: на части телефонов «Фото» без capture открывает системный
+       выбор картинок вообще без камеры — теперь камера вызывается кнопкой */
+    media_cam: 'Камера', media_lib: 'Родная камера',
+    media_cam_hint: 'Быстрый вызов камеры: один кадр, служебный режим — без HDR и ночной съёмки',
+    media_lib_hint: 'Системный выбор: родная камера со всеми режимами (HDR, ночной, зум) или уже снятые кадры — можно несколько сразу',
+    cam_native_btn: 'Резкость как у родной камеры',
+    cam_native_h: 'Одним нажатием: съёмка — родной камерой, файл уходит на Диск как есть, без уменьшения и пережатия. Байт в байт то, что снял телефон. Весит больше, зато резкость ровно та же.',
+    cam_usm: 'Подрезкость после уменьшения',
+    cam_usm_h: 'Любое уменьшение съедает микроконтраст, и кадр кажется мягче оригинала. Слабое нерезкое маскирование возвращает его. При качестве «Оригинал» не применяется — там кадр не уменьшается вовсе.',
+    cam_native_done: 'Съёмка — родной камерой, файл без пережатия',
+    cam_hdr_t: 'HDR и ночная съёмка',
+    cam_hdr_h: 'HDR, ночной режим и склейку кадров делает само приложение камеры телефона — включить их из браузера нельзя, такого веб-интерфейса не существует. Работают они, когда снимок делается родной камерой: кнопка «Родная камера» в документе или обычная съёмка телефоном, а потом передача кадров той же кнопкой. Кнопка «Камера» вызывает камеру напрямую и быстро, но телефон включает служебный режим — часть обработки в нём выключена.',
+    cam_small: 'Телефон отдал мелкий кадр ({MP} Мп) — снимок будет мягким. Снимайте через «Галерея» родной камерой или включите «Полная» в «Настройки» → «Съёмка».',
+    cam_mode_now: 'Съёмка сейчас',
+    cam_mode_soft: 'прямой вызов камеры — кадр мягче',
+    cam_mode_best: 'родная камера — полное качество',
+    cam_switch_best: 'Вернуть полное качество',
+    cam_quality_now: 'качество',
+    cam_nocam: 'Камера не открылась?',
+    cam_nocam_hint: 'На некоторых телефонах системный выбор картинок открывается без камеры. Кнопка «Камера» вызывает её напрямую; поведение кнопки исправлено — теперь она сразу открывает камеру. Вернуть выбор из галереи можно в «Настройки» → «Съёмка».',
+    cam_switched: 'Камера теперь открывается сразу',
     cam_mode_lbl: 'Как открывать камеру',
     cam_mode_full: 'Полная', cam_mode_quick: 'Быстрая',
-    cam_mode_full_h: 'Открывается родное приложение камеры со всеми режимами — HDR, ночной, зум. Можно снять серию и отдать все кадры разом.',
+    cam_mode_full_h: 'Открывается родное приложение камеры со всеми режимами — HDR, ночной, зум. Можно снять серию и отдать все кадры разом. Именно так снимки получаются резкими в полутьме.',
     cam_mode_quick_h: 'Камера открывается сразу, одним касанием, но в служебном режиме: часть обработки телефон выключает, снимки бледнее и мягче.',
     cam_q_lbl: 'Качество снимка',
     cam_q_eco: 'Экономно', cam_q_std: 'Обычное', cam_q_hi: 'Высокое', cam_q_orig: 'Оригинал',
@@ -575,6 +645,8 @@ const I18N = {
     act_user_unblock: 'unblocked', act_role_change: 'role changed', act_password_change: 'own password changed',
     act_password_reset: 'staff password reset', act_job_create: 'invoice created', act_job_update: 'invoice updated',
     act_doc_translate: 'note translation built',
+    act_job_archive: 'invoice archived', act_job_restore: 'invoice restored',
+    act_proposal_archive: 'proposal archived', act_proposal_restore: 'proposal restored',
     act_job_done: 'job done', act_job_reopen: 'back to draft', act_job_approve: 'approved',
     act_job_delete: 'invoice deleted', act_crew_add: 'crew: added', act_crew_remove: 'crew: removed',
     act_pickup_done: 'pickup done', act_pickup_early: 'early pickup', act_extension_create: 'rental extension',
@@ -778,6 +850,48 @@ const I18N = {
     pop_top: 'Top', pop_bottom: 'Bottom', pop_side: 'Side',
     pop_demo: 'Show an example',
     pop_demo_txt: 'Pop-ups will appear here',
+    name_en_hint: 'The PDF prints the English part: type «Осушитель / Dehumidifier» and the form gets Dehumidifier. With no English part the abbreviation is printed.',
+    inv_drive: 'Invoice to Drive',
+    inv_drive_hint: 'The PDF goes to the «Invoices» folder on Google Drive — next to this job\'s photos and attachments',
+    inv_queued: 'Invoice queued for Drive',
+    inv_need_save: 'Save the job first',
+    gd_where_inv: 'Invoices',
+    gd_inv_folder: 'Folder for invoices',
+    gd_inv_hint: 'Empty — the «Invoices» folder inside the archive. Paste a link to another Google Drive folder and invoices go straight there, while photos stay in the archive.',
+    no_card: 'Document numbering',
+    no_doc_lbl: 'Document number template',
+    no_file_lbl: 'Drive file name template',
+    no_pad_lbl: 'Digits in the sequential number',
+    no_preview: 'Example',
+    no_add: 'Add a piece:',
+    no_reset: 'Reset to default',
+    no_hint: 'Build the number from pieces. Don\'t want staff initials — remove {TECH} and they are gone. An empty piece drops together with its separator. The separator is any character between pieces.',
+    no_file_hint: 'This is how photos, videos and attachments are named on Google Drive. {NAME} is the work type for captures and the original file name for attachments. Applied by the server, so redeploy media-begin after changing it.',
+    no_t_TYPE: 'type (WORK/PROP/PICK/LONG)', no_t_DATE: 'date', no_t_YEAR: 'year',
+    no_t_CP: 'counterparty', no_t_CX: 'complex', no_t_UNIT: 'unit',
+    no_t_TECH: 'staff initials', no_t_WT: 'work type', no_t_SEQ: 'sequential number',
+    no_t_NAME: 'name', no_t_KIND: 'file kind',
+    doc_no: 'Number',
+    gd_inv_tech: 'Invoices in per-staff folders',
+    gd_inv_tech_tip: 'Unchecked — every invoice sits in one folder by month: «Invoices / 2026-09». Checked — the staff folder comes first and the month lives inside it: «Invoices / Ivan P / 2026-09», so every person gets a fresh folder each month. The folder name comes from the profile: first name and the first letter of the surname, in Latin — the same signature as in documents. Invoices already uploaded stay where they are.',
+    gd_inv_tech_ex: 'Path example',
+    tab_archive: 'Archive', arch_title: 'Archive of documents',
+    arch_hint: 'Documents marked for deletion land here. Their Drive files move to the «Архив TechLog» folder — nothing disappears from the working folders. A document and its files are deleted for good only from here.',
+    arch_to: 'To archive', arch_back: 'Restore', arch_purge: 'Delete for good',
+    arch_empty: 'The archive is empty',
+    arch_q: 'Mark the document for deletion? It goes to the archive and its Drive files move to «Архив TechLog». You can restore it from there.',
+    arch_purge_q: 'Delete for good? The document disappears from the database and the files go to the Google Drive trash (30 days to change your mind). This cannot be undone.',
+    arch_by: 'archived', arch_who: 'by',
+    arch_moved: 'files moved',
+    arch_restored: 'The document is back',
+    arch_only_admin: 'Only an admin can delete for good',
+    aud_card: 'Check against Google Drive',
+    aud_hint: 'What each document has on Drive: invoice PDF, photos, video, attachments. The «on Drive» check asks Drive itself and finds records whose file is already gone.',
+    aud_run: 'Check files on Drive', aud_docs: 'documents',
+    aud_pdf: 'PDF', aud_photo: 'photos', aud_video: 'video', aud_file: 'attachments',
+    aud_none: 'nothing', aud_all_ok: 'Every record is in place',
+    aud_lost: 'missing on Drive', aud_arch: 'archived',
+    aud_f_all: 'All', aud_f_nopdf: 'No PDF', aud_f_nomedia: 'No photos',
     log_title: 'Event log', clear: 'Clear',
     db_diag: 'DB diagnostics (all tables)', admin_only: 'Admins only',
     checking_tables: 'Checking tables…',
@@ -881,6 +995,25 @@ const I18N = {
     media_heic: 'The browser could not open this image — it will be archived as a document',
     mt_prep: 'preparing shot',
     cam_card: 'Camera',
+    media_cam: 'Camera', media_lib: 'Native camera',
+    media_cam_hint: 'Quick camera call: one frame, capture-intent mode — no HDR or night',
+    media_lib_hint: 'System chooser: the phone camera with every mode (HDR, night, zoom) or shots you already took — several at once',
+    cam_native_btn: 'Sharpness like the native camera',
+    cam_native_h: 'One tap: shoot with the native camera and send the file to Drive as is — no resize, no recompression. Byte for byte what the phone shot. Heavier, but exactly as sharp.',
+    cam_usm: 'Sharpen after downscale',
+    cam_usm_h: 'Any downscale eats micro-contrast and the frame looks softer than the original. A light unsharp mask brings it back. Not applied at «Original» quality — nothing is resized there.',
+    cam_native_done: 'Native camera, file sent without recompression',
+    cam_hdr_t: 'HDR and night mode',
+    cam_hdr_h: 'HDR, night mode and multi-frame merging are done by the phone camera app itself — a browser cannot switch them on, no such web API exists. They work when the shot is taken by the native camera: the «Native camera» button in a document, or shooting with the phone and handing the frames over with the same button. The «Camera» button calls the camera directly and fast, but the phone turns on capture-intent mode, where part of the processing is off.',
+    cam_small: 'The phone returned a small frame ({MP} MP) — the shot will be soft. Use «Gallery» with the native camera or switch to «Full» in Settings → Capture.',
+    cam_mode_now: 'Capture now',
+    cam_mode_soft: 'direct camera call — softer frame',
+    cam_mode_best: 'native camera — full quality',
+    cam_switch_best: 'Back to full quality',
+    cam_quality_now: 'quality',
+    cam_nocam: 'Camera did not open?',
+    cam_nocam_hint: 'On some phones the system picker opens without a camera at all. The «Camera» button calls it directly; the button is fixed now — it opens the camera right away. Gallery picking comes back in Settings → Capture.',
+    cam_switched: 'The camera now opens right away',
     cam_mode_lbl: 'How the camera opens',
     cam_mode_full: 'Full', cam_mode_quick: 'Quick',
     cam_mode_full_h: 'Opens the phone’s own camera app with every mode — HDR, night, zoom. Shoot a series and hand over all frames at once.',
@@ -1132,6 +1265,50 @@ function setPopPos(v){
   applyPopPos(); render();
   toast('🔔 ' + t('pop_demo_txt'), 'inf');
 }
+/* v1.07.86: конструктор номера. Шаблон правится руками, кусочки вставляются
+   кнопками в место курсора, рядом — живой пример на первом документе базы. */
+function noSampleJob(){
+  const j = (state.data.jobs || [])[0];
+  return j || { date: todayISO(), unit_number: '916', no: 1,
+                complex_id: (state.data.complexes || [])[0]?.id,
+                counterparty_id: (state.data.counterparties || [])[0]?.id,
+                work_type_id: (state.data.work_types || [])[0]?.id,
+                technician_id: state.user?.id };
+}
+function noTokenBtns(list, target){
+  return list.map(k => `<button type="button" class="chip-preset" title="${t('no_t_' + k)}"
+    onclick="App.noAddTok('${target}','${k}')">{${k}}</button>`).join('');
+}
+function numberingCardHtml(){
+  if (!isAdmin()) return '';
+  const smp = noSampleJob();
+  const prevDoc = renderNoFmt(docFmt(), docNoVals('job', { ...smp, no: smp.no || 1 }));
+  const v = docNoVals('job', { ...smp, no: smp.no || 1 });
+  const prevFile = renderNoFmt(fileFmt(), { ...v, NAME: v.WT || 'WORK', KIND: 'PHOTO', SEQ: '01' }) + '.jpg';
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('receipt')} ${t('no_card')}</div>
+    <div class="tiny" style="margin-bottom:6px">${t('no_hint')}</div>
+
+    <div class="form-row"><span class="lbl">${t('no_doc_lbl')}</span>
+      <input id="no-doc" value="${esc(docFmt())}"
+        onchange="App.setOrgText('doc_no_fmt', this.value)"></div>
+    <div class="qty-line size-presets"><span class="tiny">${t('no_add')}</span>
+      ${noTokenBtns(DOC_TOKENS, 'doc')}</div>
+    <div class="tiny"><b>${t('no_preview')}:</b> <span class="gd-mark">${esc(prevDoc || '—')}</span></div>
+
+    <div class="form-row" style="margin-top:10px"><span class="lbl">${t('no_file_lbl')}</span>
+      <input id="no-file" value="${esc(fileFmt())}"
+        onchange="App.setOrgText('file_name_fmt', this.value)"></div>
+    <div class="qty-line size-presets"><span class="tiny">${t('no_add')}</span>
+      ${noTokenBtns(FILE_TOKENS, 'file')}</div>
+    <div class="tiny"><b>${t('no_preview')}:</b> <span class="gd-mark">${esc(prevFile)}</span></div>
+    <div class="tiny" style="margin-top:4px">${t('no_file_hint')}</div>
+
+    <div class="qty-line" style="margin-top:8px"><span class="name">${t('no_pad_lbl')}</span>
+      ${orgStepperHtml('doc_no_pad', docPad(), 1, 9)}</div>
+    <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.noReset()">${ic('refresh')} ${t('no_reset')}</button>
+  </div>`;
+}
 function popCardHtml(){
   const cur = popPos();
   const seg = (val, lbl) => `<button class="${cur === val ? 'on' : ''}" onclick="App.popPos('${val}')">${lbl}</button>`;
@@ -1308,6 +1485,10 @@ function seedDemoData(){
     jobs: [job1, job2], placements, ...cat
   };
   job1.total = calcTotal(job1.form_data, priceResolver(cp1.id, data), data);
+  /* v1.07.86: сквозные номера. На сервере их выдаёт база (identity),
+     в демо-режиме раздаём сами — иначе номер документа выходил бы без {SEQ}. */
+  data.jobs.forEach((j, i) => { j.no = i + 1; });
+  data.placements.forEach((p, i) => { p.no = i + 1; });
   return data;
 }
 
@@ -1413,6 +1594,13 @@ const DB_NEED_COLS = [
   ['jobs',          'note_en'],
   ['proposals',     'note_en'],
   ['org_settings',  'tr_auto'],
+  ['org_settings',  'gd_inv_folder'],
+  ['org_settings',  'doc_no_fmt'],
+  ['org_settings',  'gd_inv_by_tech'],
+  ['jobs',          'archived_at'],
+  ['media',         'archived_at'],
+  ['jobs',          'no'],
+  ['placements',    'no'],
 ];
 const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
@@ -1519,7 +1707,15 @@ async function syncNow(silent){
 
 /* Универсальные записи: локально + (если есть) Supabase */
 function tableOf(name){ return state.data[name]; }
+const NUMBERED = ['jobs', 'placements', 'proposals'];
 async function dbUpsert(table, row){
+  /* v1.07.86: сквозной номер выдаёт база (identity). Явный null сервер не
+     принял бы, а в демо-режиме сервера нет — там считаем сами. */
+  if (NUMBERED.indexOf(table) >= 0 && (row.no == null)){
+    row = { ...row };
+    if (HAS_SB) delete row.no;
+    else row.no = (tableOf(table).reduce((m, r) => Math.max(m, +r.no || 0), 0) || 0) + 1;
+  }
   const arr = tableOf(table);
   const i = arr.findIndex(r => r.id === row.id);
   if (i >= 0) arr[i] = row; else arr.push(row);
@@ -1668,6 +1864,19 @@ function emptyFormData(){
     extra: [],
     aux_take: {},                  // { [aux_id]: true } — отмеченное «взять с собой»
   };
+}
+
+/* v1.07.86: номер новой строки известен только серверу — дочитываем его,
+   иначе документ до следующей синхронизации был бы без номера. */
+async function fetchDocNo(table, row){
+  if (row.no != null) return row.no;
+  const loc = tableOf(table).find(x => x.id === row.id);
+  if (!HAS_SB){ row.no = loc ? loc.no : null; return row.no; }
+  try{
+    const { data } = await state.sb.from(table).select('no').eq('id', row.id).single();
+    if (data && data.no != null){ row.no = data.no; if (loc) loc.no = data.no; saveLocal(); }
+  }catch(e){ dlog('⛔ номер', table + ':', e); }
+  return row.no;
 }
 
 /* Резолвер цены: индивидуальная цена контрагента → стандартная */
@@ -1892,16 +2101,25 @@ function scopeFilter(list, techKey){
   }
   return list;
 }
+/* v1.07.88: помеченное на удаление живёт в Архиве и в рабочих списках не
+   показывается — ни на главной, ни на доске, ни в отчётах, ни в статистике. */
+const isArch = (x) => !!(x && x.archived_at);
+function archJobs(){ return (state.data.jobs || []).filter(isArch); }
+function archProps(){ return (state.data.proposals || []).filter(isArch); }
+function liveJobs(){ return (state.data.jobs || []).filter(j => !isArch(j)); }
+function jobById(id){ return (state.data.jobs || []).find(x => x.id === id); }
 function visibleJobs(){
-  let js = scopeFilter(state.data.jobs, 'technician_id');
+  let js = scopeFilter(liveJobs(), 'technician_id');
   // v1.07.10: работы с общим доступом, где я коворкер, видны наравне со своими
-  const shared = state.data.jobs.filter(j => isJobSharedWithMe(j) && !js.includes(j));
+  const shared = liveJobs().filter(j => isJobSharedWithMe(j) && !js.includes(j));
   if (shared.length) js = js.concat(shared);
   if (!isManager() || state.filterMine) js = js.filter(j => j.technician_id === state.user.id || isJobSharedWithMe(j));
   return js;
 }
 function visiblePlacements(){
-  let ps = scopeFilter(state.data.placements, 'technician_id');
+  /* пикапы архивной работы уезжают в архив вместе с ней */
+  const dead = new Set(archJobs().map(j => j.id));
+  let ps = scopeFilter((state.data.placements || []).filter(p => !dead.has(p.job_id)), 'technician_id');
   // v1.07.10: пикапы работ с общим доступом тоже видны коворкеру
   const shared = state.data.placements.filter(p => isPlacementSharedWithMe(p) && !ps.includes(p));
   if (shared.length) ps = ps.concat(shared);
@@ -1920,6 +2138,7 @@ function maxExtendDays(){ const v = +((state.data && state.data.org_settings || 
 /* v1.07.76: вложения «скрепкой». Лимит документов фиксированный — тот же,
    что проверяет сервер; фото и видео идут по обычным лимитам из настроек. */
 const M_FILE_MAX = 20, M_FILE_BYTES = 25 * 1024 * 1024;
+const M_INV_MAX = 50;            /* v1.07.85: предохранитель на число PDF-инвойсов документа */
 function mKindOf(f){
   const ty = String(f.type || '');
   if (/^image\//.test(ty)) return 'photo';
@@ -1996,6 +2215,7 @@ const ICONS = {
   sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>',
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H20V3H7.5A2.5 2.5 0 0 0 5 5.5z"/><path d="M5 19.5A2.5 2.5 0 0 0 7.5 22H20v-5"/><path d="M10 7h6"/></svg>',
   board: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5.4" height="16" rx="1.2"/><rect x="9.8" y="4" width="5.4" height="11" rx="1.2"/><rect x="16.6" y="4" width="5.4" height="7" rx="1.2"/></svg>',
+  archive: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4.5" rx="1.2"/><path d="M5 8.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V8.5"/><path d="M10 12h4"/></svg>',
   prop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.8" width="16" height="18.4" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
   phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>',
   monitor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M9 20.5h6M12 16.5v4"/></svg>',
@@ -2503,7 +2723,7 @@ const JR_DOC_ACTIONS = ['job_create','job_update','job_done','job_reopen','job_a
   'pickup_done','pickup_early','pickup_restore','extension_create',
   'ext_request','ext_request_approved','ext_request_rejected',
   'proposal_create','proposal_update','proposal_delete','proposal_link','proposal_unlink',
-  'doc_translate'];
+  'doc_translate','job_archive','job_restore','proposal_archive','proposal_restore'];
 const JR_TECH_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
   'password_change','password_reset','car_no_set','org_toggle','org_set','stock_set',
   'backup_export','backup_restore'];
@@ -2636,6 +2856,7 @@ function render(){
   else if (state.screen === 'dirs') body = viewDirs();
   else if (state.screen === 'settings') body = viewSettings();
   else if (state.screen === 'journal') body = viewJournal();   // v1.07.18
+  else if (state.screen === 'archive') body = viewArchive();   // v1.07.88
   else if (state.screen === 'board') body = viewBoard();       // v1.07.25
   else if (state.screen === 'proposals') body = viewProposals(); // v1.07.27
   app.innerHTML = viewHeader() + body + viewTabbar();
@@ -2708,6 +2929,7 @@ function viewTabbar(){
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
     ['dirs', ICONS.dirs, t('tab_dirs')],
+    ...(isManager() ? [['archive', ICONS.archive, t('tab_archive')]] : []),   // v1.07.88
     ...(isAdmin() ? [['journal', ICONS.book, t('tab_journal')]] : []),   // v1.07.18
     ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
@@ -3628,6 +3850,7 @@ function pickupModal(jobId, dateISO, ev){
   const cp = cpById(p0.counterparty_id) || { name:'' };
   openModal(`
     ${modalHead(t('pickup').toUpperCase() + ' · Unit ' + (p0.unit_number || '—'), 'box')}
+    ${pickNo(p0) ? `<div class="tiny" style="margin:-4px 0 4px"><b>${t('doc_no')}:</b> <span class="gd-mark">${esc(pickNo(p0))}</span></div>` : ''}
     <div class="tiny" style="margin:-4px 0 8px">${esc(cx.name)}${cp.name ? ' · ' + esc(cp.name) : ''}<br>${esc(cx.address||'')}
       <button class="mini-nav" onclick="App.navToCx('${p0.complex_id}')">${ic('compass')} ${t('navigate')}</button></div>
     ${(cx.access_code || cx.callbox_code) ? `<div class="tiny" style="margin-bottom:8px">${codeLineHtml(cx, true)}</div>` : ''}
@@ -3934,7 +4157,7 @@ function viewJob(){
   }).join('');
 
   return `
-  ${docBarHtml({ title: `${esc(cx.abbr || cx.name || '')} · Unit ${esc(j.unit_number || '—')}`,
+  ${docBarHtml({ title: `${docNo('job', j) ? esc(docNo('job', j)) + ' · ' : ''}${esc(cx.abbr || cx.name || '')} · Unit ${esc(j.unit_number || '—')}`,
                  save: 'App.saveJob(false)', close: 'App.jobClose()', dirty: jobDirty() })}
   <div class="card" style="border-left:6px solid ${wt.color}">
     <div style="display:flex;gap:10px;align-items:center">
@@ -4311,6 +4534,7 @@ async function saveJob(goHome){
   localStorage.removeItem('techlog_draft');
   navigator.vibrate?.(30);
   await dbUpsert('jobs', JSON.parse(JSON.stringify(j)));
+  await fetchDocNo('jobs', j);            // v1.07.86: номер присваивает база
   await syncPlacementsForJob(j);
   { // v1.07.18: журнал — статус и бригада
     const cx = cxById(j.complex_id) || {};
@@ -4393,18 +4617,75 @@ async function approveJob(){
   }
 }
 
+/* v1.07.88: из документа больше не удаляют — помечают на удаление. Документ
+   уходит в Архив, файлы на Диске переезжают в «Архив TechLog». Насовсем всё
+   стирается только из Архива, кнопкой «Удалить навсегда». */
 async function deleteJob(){
   if (editLocked(jobDraft)){ toast('🔒 ' + t('lock_note').replace('{N}', editLockDays()), 'err'); return; }
-  if (!confirm(t('confirm_del'))) return;
+  if (!confirm(t('arch_q'))) return;
   localStorage.removeItem('techlog_draft');
-  const id = jobDraft.id;
-  const _dj = state.data.jobs.find(x=>x.id===id) || jobDraft;             // v1.07.18: для журнала
-  await mediaDropJob(id);                        // v1.07.81: файлы работы — с Диска
-  for (const p of state.data.placements.filter(p=>p.job_id===id)) await dbDelete('placements', p.id);
-  await dbDelete('jobs', id);
-  audit('job_delete', 'job', id, { unit: _dj.unit_number, date: _dj.date,
-    complex: (cxById(_dj.complex_id) || {}).abbr || '' });
-  state.screen = 'home'; toast('🗑 ' + t('deleted')); render();
+  await archiveDoc('job', jobDraft.id);
+  state.screen = 'home'; render();
+}
+/* Пометить документ на удаление (работа или пропозал) */
+async function archiveDoc(kind, id){
+  const row = kind === 'prop' ? propById(id) : jobById(id);
+  if (!row || isArch(row)) return;
+  const patch = { archived_at: new Date().toISOString(), archived_by: state.user.id };
+  await dbUpsert(kind === 'prop' ? 'proposals' : 'jobs', { ...row, ...patch });
+  if (kind === 'job'){
+    let moved = 0;
+    try{ const r = await mediaMoveJob(id, 'archive'); moved = (r && r.moved) || 0; }
+    catch(e){ dlog('⛔ архив файлов:', e); }
+    (state.data.media || []).forEach(m => { if (m.job_id === id) m.archived_at = patch.archived_at; });
+    audit('job_archive', 'job', id, { unit: row.unit_number, date: row.date, files: moved });
+    toast('🗄 ' + t('arch_to') + (moved ? ' · ' + moved + ' ' + t('arch_moved') : ''));
+  } else {
+    audit('proposal_archive', 'proposal', id, { no: row.no });
+    toast('🗄 ' + t('arch_to'));
+  }
+  saveLocal(); render();
+}
+/* Вернуть документ из архива: файлы едут обратно в рабочие папки */
+async function unarchiveDoc(kind, id){
+  const row = kind === 'prop' ? propById(id) : jobById(id);
+  if (!row) return;
+  await dbUpsert(kind === 'prop' ? 'proposals' : 'jobs',
+    { ...row, archived_at: null, archived_by: null });
+  if (kind === 'job'){
+    try{ await mediaMoveJob(id, 'restore'); }catch(e){ dlog('⛔ возврат файлов:', e); }
+    (state.data.media || []).forEach(m => { if (m.job_id === id) m.archived_at = null; });
+  }
+  audit(kind === 'prop' ? 'proposal_restore' : 'job_restore', kind === 'prop' ? 'proposal' : 'job', id, {});
+  toast('✓ ' + t('arch_restored')); saveLocal(); render();
+}
+/* Удалить навсегда — только из архива и только админ */
+async function purgeDoc(kind, id){
+  if (!isAdmin()){ toast('⚠ ' + t('arch_only_admin'), 'err'); return; }
+  const row = kind === 'prop' ? propById(id) : jobById(id);
+  if (!row || !isArch(row)){ toast('⚠ ' + t('arch_title'), 'err'); return; }
+  if (!confirm(t('arch_purge_q'))) return;
+  if (kind === 'prop'){
+    await dbDelete('proposals', id);
+    audit('proposal_delete', 'proposal', id, { no: row.no });
+  } else {
+    await mediaDropJob(id);                      // файлы — в корзину Google Диска
+    for (const p of state.data.placements.filter(p => p.job_id === id)) await dbDelete('placements', p.id);
+    await dbDelete('jobs', id);
+    audit('job_delete', 'job', id, { unit: row.unit_number, date: row.date,
+      complex: (cxById(row.complex_id) || {}).abbr || '' });
+  }
+  toast('🗑 ' + t('deleted')); render();
+}
+/* Переезд файлов документа между рабочими папками и «Архив TechLog» */
+async function mediaMoveJob(jobId, mode){
+  if (!HAS_SB) return { moved: 0 };
+  const token = await mediaJwt();
+  const r = await fetch(mediaFN() + '/media-delete', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ job_id: jobId, mode }) });
+  return await r.json().catch(() => ({}));
 }
 
 /* =====================================================================
@@ -4488,6 +4769,111 @@ function copyReport(){
     });
   });
   navigator.clipboard?.writeText(txt).then(()=>toast('✓ ' + t('copied'))).catch(()=>toast(txt.slice(0,80)+'…','inf'));
+}
+
+/* =====================================================================
+   v1.07.88 · АРХИВ ДОКУМЕНТОВ (корзина) И СВЕРКА С ДИСКОМ
+   Помеченное на удаление уходит сюда, файлы на Диске — в «Архив TechLog».
+   Насовсем стирается только отсюда. Здесь же видно, что у документа есть
+   на Диске: PDF-инвойса, фото, видео, вложения.
+   ===================================================================== */
+function mediaOf(jobId){
+  const rows = (state.data.media || []).filter(m => m.job_id === jobId);
+  const by = (k) => rows.filter(m => m.kind === k).length;
+  return { pdf: by('invoice'), photo: by('photo'), video: by('video'), file: by('file'),
+           total: rows.length, lost: rows.filter(m => m.__lost).length };
+}
+function mediaChips(jobId){
+  const m = mediaOf(jobId);
+  if (!m.total) return `<span class="chip">${t('aud_none')}</span>`;
+  const c = [];
+  if (m.pdf)   c.push(`<span class="chip ok">${ic('pdf')} ${t('aud_pdf')} ${m.pdf}</span>`);
+  if (m.photo) c.push(`<span class="chip">${ic('camera')} ${m.photo}</span>`);
+  if (m.video) c.push(`<span class="chip">${ic('video')} ${m.video}</span>`);
+  if (m.file)  c.push(`<span class="chip">${ic('clip')} ${m.file}</span>`);
+  if (m.lost)  c.push(`<span class="chip bad">${ic('warn')} ${m.lost} ${t('aud_lost')}</span>`);
+  return c.join(' ');
+}
+function archRowHtml(kind, o){
+  const cx = cxById(o.complex_id) || {};
+  const who = profName(o.archived_by);
+  const title = kind === 'prop'
+    ? (docNo('prop', o) || 'P-' + (o.no ?? '—'))
+    : (docNo('job', o) || ((cx.abbr || cx.name || '—') + ' · ' + (o.unit_number || '—')));
+  return `<div class="rowline">
+    <div class="grow"><b>${esc(title)}</b>
+      <div class="tiny">${esc(cx.abbr || cx.name || '')} · ${fmtDMY(o.date)} · ${t('arch_by')} ${fmtDMY(String(o.archived_at || '').slice(0, 10))}${who && who !== '—' ? ' · ' + esc(who) : ''}</div>
+      ${kind === 'job' ? `<div class="tiny" style="margin-top:2px">${mediaChips(o.id)}</div>` : ''}</div>
+    <button class="btn btn-ghost sm" title="${t('arch_back')}" onclick="App.unarchive('${kind}','${o.id}')">${ic('refresh')}</button>
+    ${isAdmin() ? `<button class="btn btn-red sm" title="${t('arch_purge')}" onclick="App.purgeDoc('${kind}','${o.id}')">${ic('trash')}</button>` : ''}
+  </div>`;
+}
+function viewArchive(){
+  const jobs = archJobs().sort((a, b) => String(b.archived_at).localeCompare(String(a.archived_at)));
+  const props = archProps().sort((a, b) => String(b.archived_at).localeCompare(String(a.archived_at)));
+  const n = jobs.length + props.length;
+  return `<div class="section-title">${ic('archive')} ${t('arch_title')}${helpBtn('archive')}</div>
+  <div class="card"><div class="tiny">${t('arch_hint')}</div></div>
+  ${auditCardHtml()}
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${t('arch_title')} <span class="chip">${n}</span></div>
+    ${n ? jobs.map(j => archRowHtml('job', j)).join('') + props.map(p => archRowHtml('prop', p)).join('')
+        : `<div class="list-empty"><div class="big">${ic('archive')}</div>${t('arch_empty')}</div>`}
+  </div>`;
+}
+/* Сверка: что у документов есть на Диске + опрос самого Диска */
+let auditRes = null;
+function auditCardHtml(){
+  const live = liveJobs();
+  const withPdf = live.filter(j => mediaOf(j.id).pdf).length;
+  const withPh  = live.filter(j => mediaOf(j.id).photo || mediaOf(j.id).video).length;
+  const arch = archJobs().reduce((a, j) => a + mediaOf(j.id).total, 0);
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('steth')} ${t('aud_card')}</div>
+    <div class="tiny" style="margin-bottom:6px">${t('aud_hint')}</div>
+    <div class="rowline"><div class="grow">${t('aud_pdf')}</div><span class="chip ${withPdf ? 'ok' : ''}">${withPdf} / ${live.length} ${t('aud_docs')}</span></div>
+    <div class="rowline"><div class="grow">${t('aud_photo')} · ${t('aud_video')}</div><span class="chip ${withPh ? 'ok' : ''}">${withPh} / ${live.length} ${t('aud_docs')}</span></div>
+    <div class="rowline"><div class="grow">${t('aud_arch')}</div><span class="chip">${arch}</span></div>
+    <button class="btn btn-blue sm" style="margin-top:8px" onclick="App.auditRun()">${ic('sync')} ${t('aud_run')}</button>
+    <div id="aud-out" class="tiny" style="margin-top:6px">${auditRes ? esc(auditRes) : ''}</div>
+    <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.auditList()">${ic('inbox')} ${t('aud_card')}</button>
+  </div>`;
+}
+/* Табличка «у каких документов что есть» */
+function auditListModal(filter){
+  const f = filter || 'all';
+  let list = liveJobs().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  if (f === 'nopdf') list = list.filter(j => !mediaOf(j.id).pdf);
+  if (f === 'nomedia') list = list.filter(j => !mediaOf(j.id).photo && !mediaOf(j.id).video);
+  const chip = (k, lbl) => `<button class="tabbtn ${f === k ? 'active' : ''}" onclick="App.auditList('${k}')">${lbl}</button>`;
+  openModal(`
+    ${modalHead(t('aud_card'), 'steth')}
+    <div class="tabs">${chip('all', t('aud_f_all'))}${chip('nopdf', t('aud_f_nopdf'))}${chip('nomedia', t('aud_f_nomedia'))}</div>
+    <div class="tiny" style="margin:6px 0">${list.length} ${t('aud_docs')}</div>
+    <div class="card" style="max-height:52vh;overflow:auto">${list.slice(0, 200).map(j => {
+      const cx = cxById(j.complex_id) || {};
+      return `<div class="rowline"><div class="grow"><b>${esc(docNo('job', j) || (cx.abbr || '—') + ' · ' + (j.unit_number || '—'))}</b>
+        <div class="tiny">${fmtDMY(j.date)} · ${mediaChips(j.id)}</div></div>
+        <button class="btn btn-ghost sm" onclick="App.closeModal();App.openJob('${j.id}')">${ic('chev_r')}</button></div>`;
+    }).join('') || `<div class="list-empty">${t('aud_all_ok')}</div>`}</div>
+  `);
+}
+/* Опрос Диска: живы ли файлы, на которые ссылается база */
+async function auditRun(){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  const box = $('#aud-out'); if (box) box.textContent = '⏳ …';
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-health?audit=1',
+      { headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json().catch(() => ({}));
+    const a = j.audit || {};
+    (state.data.media || []).forEach(m => { m.__lost = (a.lost_ids || []).indexOf(m.id) >= 0; });
+    auditRes = (a.checked ?? 0) + ' ' + t('aud_docs') + ' · ' +
+      (a.lost ? '⛔ ' + a.lost + ' ' + t('aud_lost') : '✓ ' + t('aud_all_ok'));
+    if (box) box.textContent = auditRes;
+    render();
+  }catch(e){ dlog('⛔ audit:', e); if (box) box.textContent = '⛔ ' + (e.message || e); }
 }
 
 /* =====================================================================
@@ -4916,6 +5302,7 @@ function editEtModal(id){
   openModal(`
     ${modalHead(t('d_equipment'))}
     <div class="form-row"><span class="lbl">${t('name')}</span><input id="et-name" value="${esc(e.name)}"></div>
+    <div class="tiny" style="margin:-4px 0 8px">${t('name_en_hint')}</div>
     <div class="form-row"><span class="lbl">${t('abbr')} (3)</span><input id="et-abbr" maxlength="3" value="${esc(e.abbr)}"></div>
     <div class="form-row"><span class="lbl">${t('color')}</span>${colorPicker(e.color,'et-color')}</div>
     <div class="form-row"><span class="lbl">${t('day_price')}</span><input id="et-price" inputmode="decimal" value="${priceRow?priceRow.price:30}"></div>
@@ -5048,6 +5435,8 @@ function viewSettings(){
     ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
   </div>
 
+  ${numberingCardHtml()}
+  ${trSettingsCardHtml()}
   ${popCardHtml()}
   ${camCardHtml()}
   ${uiDiagCardHtml()}
@@ -5090,7 +5479,6 @@ function viewSettings(){
     <div class="tiny">${t('lock_hint')}</div>
   </div>
   ${mediaLimitsCardHtml()}
-  ${trSettingsCardHtml()}
   ${mediaSettingsCardHtml()}
   ${backupCardHtml()}
   ${diagCardHtml()}
@@ -5135,7 +5523,7 @@ function buildInvoicePdfDoc(quiet){
   }
   const { jsPDF } = window.jspdf;
   // v1.07.06: одиночный инвойс — тот же ВЕРТИКАЛЬНЫЙ бланк, по центру портретного Letter
-  const doc = new jsPDF({ unit: 'mm', format: 'letter' });          // 215.9 × 279.4
+  const doc = pdfLatinize(new jsPDF({ unit: 'mm', format: 'letter' }));   // 215.9 × 279.4
   const left = (215.9 - INV_W) / 2, top = (279.4 - INV_H) / 2;
   doc.setLineDashPattern([2,2],0); doc.setDrawColor(190);
   doc.rect(left, top, INV_W, INV_H);                                 // контур половинки-бланка (линия отреза)
@@ -5422,7 +5810,7 @@ const App = {
     try { await dbUpsert('profiles', { ...(p || state.user), board_cols: n }); } catch(e){}
     render();
   },
-  mediaPick, mediaFlush, mediaOpen, mediaDelete, mediaQDel,
+  mediaPick, mediaFlush, mediaOpen, mediaDelete, mediaQDel, invToDrive,
   mediaSaveKeys, mediaConnect, mediaHealth,
   bkExport, bkImportPick, bkSaveLog, runDiag,
   setVm(v){
@@ -5464,6 +5852,7 @@ const App = {
   /* v1.07.78: доска (назначение исполнителя), шапка документа, шрифт, папки Диска */
   assignJob, jobClose, jobSaveClose, jobDrop, propClose, propSaveClose, propDrop,
   gdFolderInput, gdTrimToggle,
+  gdFolderIdOf: gdFolderId,        /* v1.07.85: вставленная ссылка на папку → её ID */
   setJobTech(id){
     if (!jobDraft || !isManager() || !id) return;
     const pr = state.data.profiles.find(p => p.id === id);
@@ -5483,6 +5872,42 @@ const App = {
   priceCpSel(v){ state.priceCp = v; render(); },
   diag: showDiagnostics, copyDiag,
   faq: faqModal,
+  /* v1.07.86: конструктор нумерации */
+  noAddTok(target, tok){
+    const el = $(target === 'doc' ? '#no-doc' : '#no-file');
+    if (!el) return;
+    const at = el.selectionStart ?? el.value.length;
+    el.value = el.value.slice(0, at) + '{' + tok + '}' + el.value.slice(el.selectionEnd ?? at);
+    App.setOrgText(target === 'doc' ? 'doc_no_fmt' : 'file_name_fmt', el.value);
+  },
+  noReset(){
+    const org = { ...state.data.org_settings, doc_no_fmt: DOC_FMT_DEF,
+                  file_name_fmt: FILE_FMT_DEF, doc_no_pad: 5 };
+    dbSaveOrg(org); audit('org_set', 'org', 'doc_no_fmt', { v: DOC_FMT_DEF });
+    toast('✓ ' + t('saved')); render();
+  },
+  /* v1.07.88: архив-корзина и сверка */
+  archive(kind, id){ if (confirm(t('arch_q'))) archiveDoc(kind, id); },
+  unarchive: unarchiveDoc,
+  purgeDoc,
+  auditRun,
+  auditList: auditListModal,
+  /* v1.07.90: «камера не открылась» — объясняем и разом чиним кнопку «Фото» */
+  /* v1.07.93: «резкость как у родной камеры» — родная камера + оригинал файла */
+  camNative(){
+    camSet('mode', 'full'); camSet('q', 'orig');
+    toast('✓ ' + t('cam_native_done')); render();
+  },
+  camUsm(v){ camSet('usm', v ? '1' : '0'); render(); },
+  camFix(){
+    /* v1.07.91: раньше эта кнопка молча включала служебный режим съёмки — и
+       снимки становились мягче. Теперь предупреждаем и переключаем только по
+       согласию; «Камера» и без этого вызывает камеру напрямую. */
+    if (camMode() === 'quick'){ toast('ℹ ' + t('cam_nocam_hint'), 'inf'); return; }
+    if (confirm(t('cam_nocam_hint') + '\n\n' + t('cam_mode_quick_h'))){
+      App.camMode('quick'); toast('✓ ' + t('cam_switched'));
+    }
+  },
   popPos: setPopPos,
   popDemo(){ toast('🔔 ' + t('pop_demo_txt'), 'inf'); },
   translateEn: translateToEn,
@@ -6106,9 +6531,9 @@ function gmapsCx(){
    ЭКРАН: ОТЧЁТЫ — вкладки «Инвойсы (PDF)» и «Пикапы»
    ===================================================================== */
 function repScopeJobs(){
-  let js = scopeFilter(state.data.jobs, 'technician_id');
+  let js = scopeFilter(liveJobs(), 'technician_id');
   // v1.07.10: работы с общим доступом видны коворкеру и в отчётах
-  const shared = state.data.jobs.filter(j => isJobSharedWithMe(j) && !js.includes(j));
+  const shared = liveJobs().filter(j => isJobSharedWithMe(j) && !js.includes(j));
   return shared.length ? js.concat(shared) : js;
 }
 function repJobs(){
@@ -6239,6 +6664,9 @@ function drawInvoiceVert(doc, j, left, top){
   F('italic',4.9); txt(org.assoc_line||'', L, y+11.2);
   F('bold',12); txt(org.invoice_title||'INVOICE #CC', L + W*0.55, y+4.6, {align:'center'});
   F('bold',6.6); txt(org.header_city||'', L + W*0.55, y+9, {align:'center'});
+  /* v1.07.86: номер документа по шаблону из настроек */
+  { const no = docNo('job', j);
+    if (no){ F('bold',5.6); txt(no, L + W*0.55, y+12.6, {align:'center'}); } }
   F('bold',5);
   txt(org.addr1||'', R-1, y+12.2, {align:'right'}); txt(org.addr2||'', R-1, y+15, {align:'right'}); txt(org.addr3||'', R-1, y+17.8, {align:'right'});
   y += 20;
@@ -6348,7 +6776,10 @@ function drawInvoiceVert(doc, j, left, top){
     if (i===0) svc('Equipment', ry, Object.values(fd.equipment).some(e=>+e.qty>0));
     if (i===1){ F('bold',6.4); txt('Rental', L+4.8, ry+3.1); }
     const e = fd.equipment[et.id] || {qty:0, days:0};
-    F('bold',6.1); txt(String(et.name).slice(0,16), C1+2, ry+3.2);
+    /* v1.07.84: «Осушитель / Dehumidifier» → в бланк уходит Dehumidifier;
+       если английской части нет, а название русское — печатаем аббревиатуру */
+    const etEn = enName(et.name);
+    F('bold',6.1); txt((hasCyr(etEn) ? (et.abbr || translit(etEn)) : etEn).slice(0,16), C1+2, ry+3.2);
     F('bold',5.8); txt('Qty', C1+27, ry+3.2);
     doc.rect(C1+32, ry+0.6, 5, 3.4); if (+e.qty>0){ F('bold',6.4); txt(String(e.qty), C1+34.5, ry+3.2, {align:'center'}); }
     F('bold',5.8); txt('For', C2-16.5, ry+3.2);
@@ -6441,7 +6872,7 @@ function buildBatchDoc(){
   const { jsPDF } = window.jspdf;
   // альбомный Letter: два ВЕРТИКАЛЬНЫХ бланка рядом, между ними линия отреза;
   // если инвойс один — вторая половина листа остаётся пустой
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' }); // 279.4 × 215.9
+  const doc = pdfLatinize(new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' })); // 279.4 × 215.9
   js.forEach((j, i) => {
     const pos = i % 2;
     if (i > 0 && pos === 0) doc.addPage();
@@ -6453,6 +6884,10 @@ function buildBatchDoc(){
     drawInvoiceVert(doc, j, pos * INV_W, 0);
   });
   doc._cnt = js.length; doc._skipped = skipped;
+  /* v1.07.83: пакет не останавливаем вопросом — печатают его десятками, —
+     но честно говорим, у скольких бланков заметки останутся пустыми */
+  const noTr = js.filter(j => trMiss('job', j).length).length;
+  if (noTr) toast('⚠ ' + t('tr_warn_pdf') + ' · ' + noTr, 'err');
   return doc;
 }
 function batchPdf(){
@@ -6886,6 +7321,42 @@ async function runDiagnostics(){
     }catch(e){ put(`${mark(false)} ${ic}: ${errStr(e)}`); }
   }
   put(`${mark(!!pwaPrompt || isStandalone())} предложение установки: ${isStandalone() ? 'не нужно (уже установлено)' : pwaPrompt ? 'получено — кнопка «Установить приложение» активна' : 'ещё не поступало от браузера'}`);
+
+  /* v1.07.88: то, что появилось в 1.07.83…1.07.88, теперь видно в отчёте —
+     иначе о переводах, нумерации, инвойсах на Диске и архиве приходилось
+     догадываться по поведению. */
+  put('');
+  put('— документы, номера, переводы, архив —');
+  try{
+    const org = (state.data && state.data.org_settings) || {};
+    const jobs = (state.data && state.data.jobs) || [];
+    const media = (state.data && state.data.media) || [];
+    const live = jobs.filter(j => !j.archived_at), arch = jobs.filter(j => j.archived_at);
+    const archProp = ((state.data && state.data.proposals) || []).filter(p => p.archived_at);
+    /* нумерация */
+    const smp = live[0] || jobs[0];
+    put(`${mark(!!org.doc_no_fmt || true)} номер документа: шаблон «${org.doc_no_fmt || DOC_FMT_DEF}», знаков ${docPad()}` +
+        (smp ? ` · пример: ${docNo('job', smp) || '—'}` : ''));
+    put(`${mark(true)} имя файла на Диске: шаблон «${org.file_name_fmt || FILE_FMT_DEF}»`);
+    const noNo = live.filter(j => j.no == null).length;
+    put(`${mark(!noNo)} работ без сквозного номера: ${noNo}${noNo ? '  ← выполните supabase/' + DB_SQL_FILE + ' (колонка jobs.no)' : ''}`);
+    /* переводы */
+    const pend = jobs.filter(j => !j.archived_at && hasCyr(j.note) && !String(j.note_en || '').trim()).length;
+    put(`${mark(!pend)} заметок без английского перевода: ${pend} · напоминание ${org.tr_remind !== false ? 'вкл' : 'выкл'} · автоперевод ${org.tr_auto ? 'вкл' : 'выкл'} · интервал ${Math.round(trIntervalMs() / 60000)} мин`);
+    /* инвойсы и файлы на Диске */
+    const byKind = (k) => media.filter(m => m.kind === k).length;
+    /* v1.07.91: последние снимки — размер и вес, чтобы «мыло» было видно в отчёте */
+    put(`${mark(true)} съёмка: ${camMode() === 'quick' ? 'прямой вызов камеры (кадр мягче)' : 'родная камера'} · качество ${camQual()} (${(M_QP[camQual()] || {}).w || 'оригинал'} px, q ${(M_QP[camQual()] || {}).q || '—'}) · предупреждение о смазе ${camSharpOn() ? 'вкл' : 'выкл'}`);
+    put(`${mark(true)} файлы на Диске по базе: фото ${byKind('photo')} · видео ${byKind('video')} · вложения ${byKind('file')} · PDF-инвойсы ${byKind('invoice')}`);
+    const noPdf = live.filter(j => !media.some(m => m.job_id === j.id && m.kind === 'invoice')).length;
+    put(`${mark(true)} работ без PDF-инвойса на Диске: ${noPdf} из ${live.length}`);
+    put(`${mark(true)} папка инвойсов: ${org.gd_inv_folder ? 'своя (' + String(org.gd_inv_folder).slice(0, 24) + ')' : 'архив / Invoices'} · по папкам сотрудников: ${org.gd_inv_by_tech ? 'да' : 'нет'}`);
+    /* архив */
+    const archFiles = media.filter(m => m.archived_at).length;
+    put(`${mark(true)} архив: работ ${arch.length}, пропозалов ${archProp.length}, файлов в «Архив TechLog» ${archFiles}`);
+    const lost = media.filter(m => m.__lost).length;
+    put(`${mark(!lost)} записей без файла на Диске (последняя сверка): ${lost || '—'}`);
+  }catch(e){ put(`${mark(false)} сводка по документам: ${errStr(e)}`); }
 
   // хвост журнала
   put('');
@@ -7636,7 +8107,7 @@ function viewBoard(){
   if (!isManager()) return viewBoardWeek();   // v1.07.49: воркер — недельная доска (ПК)
   const iso = state.selDate;
   const hid = state.user.role === 'manager' ? hiddenSetFor(state.user.id) : new Set();
-  const dayJobs = state.data.jobs.filter(j => j.date === iso && !hid.has(j.technician_id));
+  const dayJobs = liveJobs().filter(j => j.date === iso && !hid.has(j.technician_id));
   const dayPk   = state.data.placements.filter(p => pkPending(p) && p.due_date <= iso && !hid.has(p.technician_id));
   const hideEmpty = localStorage.getItem('tl_board_hide_empty') === '1';   // v1.07.30
   const staff = [...state.data.profiles]
@@ -7922,7 +8393,7 @@ function viewProposalList(){
   const f = state.propFilter || 'all';
   const chips = ['all','draft','sent','approved','declined'].map(s =>
     `<button class="tabbtn ${f===s?'active':''}" onclick="App.propFilter('${s}')">${s==='all'?t('all'):t('pst_'+s)}</button>`).join('');
-  const list = [...(state.data.proposals || [])]
+  const list = [...(state.data.proposals || [])].filter(p => !isArch(p))
     .filter(p => f === 'all' || p.status === f)
     .sort((a,b) => String(b.date).localeCompare(String(a.date)) || (b.no||0) - (a.no||0));
   const rows = list.map(p => {
@@ -8007,7 +8478,7 @@ function viewProposalForm(){
   const stSeg = ['draft','sent','approved','declined'].map(s =>
     `<button class="${p.status===s?'on':''}" onclick="App.setPropStatus('${s}')">${t('pst_'+s)}</button>`).join('');
   return `<div class="prop-wrap">
-  ${docBarHtml({ title: `${t('tab_proposals')} · P-${p.no ?? '…'}`,
+  ${docBarHtml({ title: `${docNo('prop', p) || t('tab_proposals') + ' · P-' + (p.no ?? '…')}`,
                  save: 'App.saveProposal()', close: 'App.propClose()', dirty: propDirty() })}
   <div class="card" style="margin:0 12px">
     <div class="form-row"><span class="lbl">${t('date')}</span>
@@ -8093,7 +8564,11 @@ async function saveProposal(){
 }
 async function delProposal(id){
   if (!isAdmin()) return;
-  if (!confirm(t('confirm_del'))) return;
+  if (!confirm(t('arch_q'))) return;                 // v1.07.88: в архив, а не в никуда
+  await archiveDoc('prop', id);
+  propDraft = null; render();
+}
+async function delProposalHard(id){
   const p = propById(id);
   // v1.07.57: в БД jobs.proposal_id обнуляется каскадом (on delete set null) —
   // повторяем локально, чтобы «Связанные документы» и чипы отразили удаление сразу
@@ -8113,7 +8588,7 @@ function makeProposalPdf(id, _go){
   if (!p || !window.jspdf){ toast('⛔ PDF', 'err'); return; }
   if (!_go){ trPdfGuard('prop', p, () => makeProposalPdf(id, true)); return; }   // v1.07.83
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'mm', format: 'letter' });      // 215.9 × 279.4
+  const doc = pdfLatinize(new jsPDF({ unit: 'mm', format: 'letter' }));   // 215.9 × 279.4
   const org = state.data.org_settings || {};
   const cp = cpById(p.counterparty_id) || { name: '' };
   const cx = cxById(p.complex_id) || { name: '', address: '', abbr: '' };
@@ -8139,7 +8614,7 @@ function makeProposalPdf(id, _go){
     doc.setFont('helvetica','bold'); doc.text(String(v ?? ''), R, ry, { align: 'right' });
     ry += 4.6;
   };
-  pair('Proposal Number:', p.no ?? '—');
+  pair('Proposal Number:', docNo('prop', p) || (p.no ?? '—'));
   pair('Proposal Date:', fmtUS(p.date));
   if (p.complete_by) pair('Complete By:', fmtUS(p.complete_by));
   pair('Page:', '1');
@@ -8432,6 +8907,11 @@ const M_QP = { eco:  { w: 1600, q: 0.75 }, std: { w: 2048, q: 0.85 },
                hi:   { w: 3000, q: 0.92 }, orig: { w: 0,    q: 0.95 } };
 const M_QDEF = 'hi', M_ORIG_MAX = 24 * 1024 * 1024;
 const M_THUMBW = 320, M_THQ = 0.7;
+/* v1.07.91: ниже этого телефон отдал заведомо ужатый кадр — обычно так себя
+   ведёт служебный режим съёмки (capture). Резкости в таком кадре уже нет. */
+const M_SMALL_MP = 3;
+/* сила нерезкого маскирования после уменьшения (0 — выключено) */
+const M_USM = 0.6;
 /* Порог «похоже, смазано». Голая величина лапласиана не годится: у резкого
    снимка ровной стены она меньше, чем у смазанной комнаты. Поэтому сначала
    смотрим, есть ли в кадре вообще что оценивать (СКО яркости), и только там
@@ -8453,6 +8933,7 @@ function camSet(k, v){ try{ localStorage.setItem('techlog_cam_' + k, v); }catch(
 function camMode(){ return camGet('mode', 'full') === 'quick' ? 'quick' : 'full'; }
 function camQual(){ const v = camGet('q', M_QDEF); return M_QP[v] ? v : M_QDEF; }
 function camSharpOn(){ return camGet('sharp', '1') !== '0'; }
+function camUsmOn(){ return camGet('usm', '1') !== '0'; }
 let mediaQ = [];                       // зеркало IndexedDB-очереди для мгновенного рендера
 const mediaThumbCache = new Map();     // thumb_path -> objectURL
 let _mediaHydPlanned = false, _mediaBusy = false;
@@ -8555,6 +9036,33 @@ function down(src, sw, sh, tw, th){
   }
   return paint(mk(tw, th), cur, tw, th);
 }
+/* v1.07.93: уменьшение любой интерполяцией съедает микроконтраст — глазом это
+   и читается как «мягче, чем в галерее телефона». Возвращаем его нерезким
+   маскированием: копия с лёгким размытием, разница добавляется к оригиналу.
+   Радиус 1 пиксель, сила 0.6 — так делают камеры и редакторы при ресайзе;
+   ореолов на такой силе не видно, а мелкие детали снова читаются. */
+function usm(cv, amount){
+  const w = cv.width, h = cv.height, x = cv.getContext('2d');
+  const src = x.getImageData(0, 0, w, h), d = src.data;
+  const bl = new Uint8ClampedArray(d);          // размытие 3×3 (аппроксимация Гаусса r≈1)
+  const idx = (px, py) => ((py * w) + px) * 4;
+  for (let y = 1; y < h - 1; y++){
+    for (let px = 1; px < w - 1; px++){
+      const i = idx(px, y);
+      for (let c = 0; c < 3; c++){
+        bl[i + c] = (
+          d[i - w * 4 - 4 + c] + 2 * d[i - w * 4 + c] + d[i - w * 4 + 4 + c] +
+          2 * d[i - 4 + c]     + 4 * d[i + c]         + 2 * d[i + 4 + c] +
+          d[i + w * 4 - 4 + c] + 2 * d[i + w * 4 + c] + d[i + w * 4 + 4 + c]) / 16;
+      }
+    }
+  }
+  for (let i = 0; i < d.length; i += 4){
+    for (let c = 0; c < 3; c++) d[i + c] = d[i + c] + amount * (d[i + c] - bl[i + c]);
+  }
+  x.putImageData(src, 0, 0);
+  return cv;
+}
 function sharpOf(cv){
   const S = 200, k = Math.min(1, S / Math.max(cv.width, cv.height));
   const w = Math.max(8, Math.round(cv.width * k)), h = Math.max(8, Math.round(cv.height * k));
@@ -8566,10 +9074,16 @@ onmessage = async (e) => {
   try{
     const bmp = await createImageBitmap(d.file, { imageOrientation: 'from-image' });
     const iw = bmp.width, ih = bmp.height;
-    const k = d.maxW ? Math.min(1, d.maxW / Math.max(iw, ih)) : 1;
+    /* v1.07.93: уменьшение «на чуть-чуть» стоит резкости, а весит почти
+       столько же — если кадр перерастает предел меньше чем на десятую,
+       оставляем как есть */
+    let k = d.maxW ? Math.min(1, d.maxW / Math.max(iw, ih)) : 1;
+    if (k > 0.9) k = 1;
     const tw = Math.max(1, Math.round(iw * k)), th = Math.max(1, Math.round(ih * k));
     const big = down(bmp, iw, ih, tw, th);
     if (bmp.close) bmp.close();
+    /* подрезкость — только если кадр реально уменьшали */
+    if (d.usm && (tw < iw || th < ih)) usm(big, d.usm);
     const sc = d.sharp ? sharpOf(big) : null;
     const blob = d.keep ? null : await big.convertToBlob({ type: 'image/jpeg', quality: d.q });
     const kt = Math.min(1, d.thumbW / Math.max(tw, th));
@@ -8627,6 +9141,26 @@ function mDown2(src, sw, sh, tw, th){
   return mPaint2(tw, th, cur, tw, th);
 }
 const mToBlob = (c, q) => new Promise(r => c.toBlob(r, 'image/jpeg', q));
+/* Нерезкое маскирование для запасного пути (тот же расчёт, что в воркере) */
+function mUsm2(cv, amount){
+  const w = cv.width, h = cv.height, x = cv.getContext('2d');
+  const src = x.getImageData(0, 0, w, h), d = src.data, bl = new Uint8ClampedArray(d);
+  for (let y = 1; y < h - 1; y++){
+    for (let px = 1; px < w - 1; px++){
+      const i = ((y * w) + px) * 4;
+      for (let c = 0; c < 3; c++){
+        bl[i + c] = (
+          d[i - w * 4 - 4 + c] + 2 * d[i - w * 4 + c] + d[i - w * 4 + 4 + c] +
+          2 * d[i - 4 + c]     + 4 * d[i + c]         + 2 * d[i + 4 + c] +
+          d[i + w * 4 - 4 + c] + 2 * d[i + w * 4 + c] + d[i + w * 4 + 4 + c]) / 16;
+      }
+    }
+  }
+  for (let i = 0; i < d.length; i += 4)
+    for (let c = 0; c < 3; c++) d[i + c] = d[i + c] + amount * (d[i + c] - bl[i + c]);
+  x.putImageData(src, 0, 0);
+  return cv;
+}
 async function mPrepMain(file, o){
   let src, iw, ih;
   const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null);
@@ -8640,10 +9174,12 @@ async function mPrepMain(file, o){
     });
     iw = src.naturalWidth; ih = src.naturalHeight;
   }
-  const k = o.maxW ? Math.min(1, o.maxW / Math.max(iw, ih)) : 1;
+  let k = o.maxW ? Math.min(1, o.maxW / Math.max(iw, ih)) : 1;
+  if (k > 0.9) k = 1;                                   // v1.07.93: см. воркер
   const tw = Math.max(1, Math.round(iw * k)), th = Math.max(1, Math.round(ih * k));
   const big = mDown2(src, iw, ih, tw, th);
   if (bmp && bmp.close) bmp.close();
+  if (o.usm && (tw < iw || th < ih)) mUsm2(big, o.usm);  // подрезкость после уменьшения
   let sharp = null;
   if (o.sharp) try{
     const ss = Math.min(1, 200 / Math.max(tw, th));
@@ -8666,7 +9202,8 @@ async function mPrepPhoto(f){
   const isJpg = /^image\/jpe?g$/i.test(f.type || '');
   const keep = qn === 'orig' && isJpg && f.size <= M_ORIG_MAX;
   const o = { maxW: keep ? 0 : (qp.w || 3000), q: qp.q || 0.92,
-              thumbW: M_THUMBW, thq: M_THQ, sharp: camSharpOn(), keep };
+              thumbW: M_THUMBW, thq: M_THQ, sharp: camSharpOn(), keep,
+              usm: camUsmOn() ? M_USM : 0 };      // v1.07.93: подрезкость после уменьшения
   let r = null;
   try{ r = await mPrepWorker(f, o); }
   catch(e){ dlog('media: воркер снимка не сработал (' + (e.message || e) + '), считаю в главном потоке'); }
@@ -8675,10 +9212,19 @@ async function mPrepPhoto(f){
   const sh = r.sharp;
   if (sh) dlog('media: резкость lap=' + sh.lap.toFixed(1) + ' контраст=' + sh.gStd.toFixed(1)
     + ' доля=' + sh.ratio.toFixed(3) + ' (порог ' + M_BLUR_RATIO + ' при контрасте от ' + M_BLUR_CONTRAST + ')');
-  /* если кадр и так меньше предела, а пережатие вышло тяжелее оригинала —
-     оставляем оригинал: и байты целее, и место на Диске */
+  /* v1.07.91: кадр не уменьшался — отдаём ИСХОДНЫЕ байты камеры. Раньше он
+     всё равно пережимался в JPEG поверх JPEG (второе сжатие поверх первого),
+     и оригинал оставляли только если пережатие вышло тяжелее. Именно это и
+     подмыливало снимки с телефонов, которые сами отдают некрупный кадр. */
   const same = r.iw === r.w && r.ih === r.h;
-  const orig = keep || !r.blob || (same && isJpg && r.blob.size >= f.size);
+  const orig = keep || !r.blob || (same && isJpg);
+  const mp = (r.iw * r.ih) / 1e6;
+  dlog('media: кадр ' + r.iw + '×' + r.ih + ' (' + mp.toFixed(1) + ' Мп, ' + Math.round(f.size / 1024)
+    + ' КБ) → ' + r.w + '×' + r.h + ', ' + Math.round((orig ? f.size : r.blob.size) / 1024) + ' КБ'
+    + (orig ? ' — без пережатия' : ' — качество ' + camQual()));
+  /* маленький кадр = телефон снимал в служебном режиме или ужал сам:
+     виноват не сервис, и человеку стоит об этом сказать сразу */
+  if (mp < M_SMALL_MP) toast('⚠ ' + t('cam_small').replace('{MP}', mp.toFixed(1)), 'err');
   return { blob: orig ? f : r.blob, thumb: r.thumb, mime: 'image/jpeg',
            blur: !!(camSharpOn() && sh && sh.gStd >= M_BLUR_CONTRAST && sh.ratio < M_BLUR_RATIO) };
 }
@@ -8709,7 +9255,9 @@ async function mediaEnqueueFile(jobId, f, kind){
   const lim = mediaLimits();
   const rows = (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind);
   const loc = mediaQ.filter(x => x.job_id === jobId && x.kind === kind);
-  const max = kind === 'file' ? lim.file : (kind === 'video' ? lim.video : lim.photo);
+  /* v1.07.85: инвойс лимитами документа не считается — бланк перевыпускают */
+  const max = kind === 'invoice' ? M_INV_MAX
+    : kind === 'file' ? lim.file : (kind === 'video' ? lim.video : lim.photo);
   if (rows.length + loc.length >= max){
     toast('⚠ ' + (kind === 'file' ? t('media_file_lim').replace('{N}', lim.file)
       : t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video)), 'err');
@@ -8780,7 +9328,34 @@ function mediaAttach(jobId){
   inp.onchange = () => mediaTakeFiles(jobId, [...(inp.files || [])], null);
   inp.click();
 }
-function mediaPick(jobId, kind){
+/* v1.07.85: PDF-инвойс уезжает на Диск той же очередью, что фото и вложения:
+   офлайн подождёт, отправка возобновляемая, файл ложится в «Invoices». */
+async function invToDrive(jobId){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  const j = (jobDraft && jobDraft.id === jobId) ? jobDraft : state.data.jobs.find(x => x.id === jobId);
+  if (!j){ toast('⚠ ' + t('inv_need_save'), 'err'); return; }
+  const go = async () => {
+    const doc = buildInvoicePdfDoc(true);
+    if (!doc){ toast('⛔ PDF', 'err'); return; }
+    let blob = null;
+    try{ blob = doc.output('blob'); }catch(e){ dlog('⛔ inv blob:', e); }
+    if (!blob){ toast('⛔ PDF', 'err'); return; }
+    const cx = cxById(j.complex_id) || {};
+    const name = 'Invoice_' + (cx.abbr || 'UNIT') + '_' + (j.unit_number || 'x') + '_' + j.date + '.pdf';
+    const f = new File([blob], name, { type: 'application/pdf' });
+    if (await mediaEnqueueFile(jobId, f, 'invoice')){
+      toast('✓ ' + t('inv_queued'));
+      render(); mediaFlush();
+    }
+  };
+  trPdfGuard('job', j, go);                 // сначала перевод заметок, потом бланк
+}
+/* v1.07.90: src — чем открывать. 'cam' — всегда камера (capture),
+   'lib' — всегда системный выбор без камеры, пусто — как настроено
+   в «Съёмке». Причина: на части телефонов (Android с новым системным
+   выбором картинок) вариант без capture показывает только галерею —
+   камеры в нём нет вовсе, и кнопка «Фото» выглядела сломанной. */
+function mediaPick(jobId, kind, src){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   const lim = mediaLimits();
   const left = mediaFree(jobId, kind);
@@ -8788,7 +9363,16 @@ function mediaPick(jobId, kind){
     toast('⚠ ' + t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video), 'err'); return; }
   const inp = document.createElement('input');
   inp.type = 'file';
-  inp.accept = kind === 'video' ? 'video/*' : 'image/*';
+  /* v1.07.92: HDR и ночной режим — это функции САМОГО приложения камеры,
+     веб-API их не включает. Единственный способ их получить — чтобы система
+     запустила родную камеру. Мешает этому новый системный «выбор картинок»
+     (Android Photo Picker, Samsung): при accept только из картинок Chrome
+     открывает именно его, а камеры в нём нет вовсе. Добавляем к accept
+     нефотографический тип — тогда система показывает обычный выбор, где
+     есть и камера со всеми режимами, и галерея. */
+  const NAT_EXTRA = ',application/octet-stream';
+  inp.accept = kind === 'video' ? 'video/*'
+    : (src === 'lib' ? 'image/*' + NAT_EXTRA : 'image/*');
   /* v1.07.77: главная причина «камера не такая, как обычная». С атрибутом
      capture телефон открывает камеру в служебном режиме съёмки-по-запросу:
      урезанный интерфейс, часть обработки выключена — ни HDR, ни ночного
@@ -8800,7 +9384,8 @@ function mediaPick(jobId, kind){
   /* setAttribute, а не inp.capture: свойство capture отражается не во всех
      движках (на десктопном Chrome его нет вовсе), и присваивание молча
      оседало обычным полем объекта — атрибут до разметки не доезжал. */
-  if (camMode() === 'quick') inp.setAttribute('capture', 'environment');
+  const useCam = src === 'cam' || (src !== 'lib' && camMode() === 'quick');
+  if (useCam) inp.setAttribute('capture', 'environment');
   else if (kind === 'photo' && left > 1) inp.multiple = true;
   inp.onchange = () => {
     const files = [...(inp.files || [])].slice(0, left);
@@ -9051,9 +9636,10 @@ function mediaStripHtml(jobId){
   const nP = rows.filter(m => m.kind === 'photo').length + loc.filter(x => x.kind === 'photo').length;
   const nV = rows.filter(m => m.kind === 'video').length + loc.filter(x => x.kind === 'video').length;
   const cells = rows.map(m => `
-    <div class="mth clicky ${m.kind === 'file' ? 'file' : ''} ${_mediaJustDone.has(m.id) ? 'done' : ''}" title="${esc(m.file_name || '')}" onclick="App.mediaOpen('${m.id}','${m.kind}')">
+    <div class="mth clicky ${(m.kind === 'file' || m.kind === 'invoice') ? 'file' : ''} ${_mediaJustDone.has(m.id) ? 'done' : ''}" title="${esc(m.file_name || '')}" onclick="App.mediaOpen('${m.id}','${m.kind}')">
       ${_mediaJustDone.has(m.id) ? `<span class="mdone" title="${t('mt_done')}">${ic('check')}</span>` : ''}
-      ${m.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(m.file_name))}</b></span>`
+      ${m.kind === 'invoice' ? `<span class="mfile">${ic('pdf')}<b>PDF</b></span>`
+        : m.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(m.file_name))}</b></span>`
         : `<img data-thumb="${m.thumb_path || ''}" alt="">`}
       ${m.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
       ${m.status !== 'ready' ? `<span class="mst">${ic('clock')}</span>` : ''}
@@ -9067,7 +9653,8 @@ function mediaStripHtml(jobId){
     <div class="mth loc ${err ? 'bad' : ''}" data-qid="${x.qid}"
       title="${err ? esc(t('mt_err')) : (pct ? t('mt_send') + ' ' + pct + '%' : t('mt_queued'))}"
       onclick="${err ? `App.mqRetry()` : `App.mediaOpenLocal('${x.qid}')`}">
-      ${x.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(x.name || ''))}</b></span>`
+      ${x.kind === 'invoice' ? `<span class="mfile">${ic('pdf')}<b>PDF</b></span>`
+        : x.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(x.name || ''))}</b></span>`
         : `<img src="${mqThumbUrl(x)}" alt="">`}
       ${x.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
       ${err ? `<span class="mst">${ic('warn')}</span>`
@@ -9081,17 +9668,31 @@ function mediaStripHtml(jobId){
   if (!_mediaHydPlanned){ _mediaHydPlanned = true; setTimeout(mediaHydrate, 0); }
   const lim = mediaLimits();
   const nF = rows.filter(m => m.kind === 'file').length + loc.filter(x => x.kind === 'file').length;
+  const nI = rows.filter(m => m.kind === 'invoice').length + loc.filter(x => x.kind === 'invoice').length;
   return `<div class="card media-card" data-mjob="${jobId}">
     <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('media_title')}
       <span class="tiny"> · ${nP}/${lim.photo}${lim.video ? ` · ${nV}/${lim.video}` : ''}</span></div>
     ${(!rows.length && !loc.length) ? `<div class="tiny mstrip-hint">${t('media_hint0')}</div>` : ''}
     <div class="mstrip">${cells}
-      <button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','photo')">${ic('camera')} ${t('media_photo')}</button>
+      <button type="button" class="btn btn-ghost sm" title="${t('media_cam_hint')}"
+        onclick="App.mediaPick('${jobId}','photo','cam')">${ic('camera')} ${t('media_cam')}</button>
+      <button type="button" class="btn btn-ghost sm" title="${t('media_lib_hint')}"
+        onclick="App.mediaPick('${jobId}','photo','lib')">${ic('image')} ${t('media_lib')}</button>
       ${lim.video ? `<button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video')">${ic('video')} ${t('media_video')}</button>` : ''}
     </div>
+    <div class="tiny" style="margin-top:6px">${t('cam_mode_now')}:
+      <b class="${camMode() === 'quick' ? 'gd-low' : 'gd-ok'}">${camMode() === 'quick' ? t('cam_mode_soft') : t('cam_mode_best')}</b>
+      · ${t('cam_quality_now')}: ${t('cam_q_' + camQual())}
+      ${camMode() === 'quick' ? `<button type="button" class="btn btn-ghost sm" style="margin-top:4px"
+        onclick="App.camMode('full')">${ic('camera')} ${t('cam_switch_best')}</button>` : ''}</div>
+    <button type="button" class="btn btn-ghost sm" style="margin-top:6px"
+      title="${esc(t('cam_nocam_hint'))}" onclick="App.camFix()">${ic('help')} ${t('cam_nocam')}</button>
     <button type="button" class="btn btn-ghost sm mattach" data-mattach="${jobId}"
       title="${t('media_file_hint')}" onclick="App.mediaAttach('${jobId}')">
       ${ic('clip')} ${t('media_attach')}${nF ? ` · ${nF}/${mediaLimits().file}` : ''}</button>
+    ${HAS_SB ? `<button type="button" class="btn btn-ghost sm" style="margin-top:6px"
+      title="${t('inv_drive_hint')}" onclick="App.invToDrive('${jobId}')">
+      ${ic('pdf')} ${t('inv_drive')}${nI ? ` · ${nI}` : ''}</button>` : ''}
   </div>`;
 }
 async function mediaHydrate(){
@@ -9630,6 +10231,14 @@ function gdFolderInput(el){
 }
 /* Карточка «куда сохраняются файлы»: отдельно фото и видео, отдельно
    документы — с именем папки и ссылкой, как в Google Диске. */
+/* v1.07.87: как будет выглядеть путь инвойса при нынешних настройках */
+function gdInvPathSample(){
+  const o = state.data.org_settings || {};
+  const ym = todayISO().slice(0, 7);
+  const root = String(o.gd_inv_folder || '').trim() ? '(своя папка)' : 'архив / Invoices';
+  const me = translit(shortName((state.user && state.user.display_name) || 'Ivan Petrov')).replace(/\.$/, '');
+  return o.gd_inv_by_tech ? `${root} / ${me} / ${ym}` : `${root} / ${ym}`;
+}
 function gdFoldersHtml(){
   if (!gdFolders || !gdFolders.root) return '';
   const row = (lbl, f) => {
@@ -9645,6 +10254,7 @@ function gdFoldersHtml(){
     <div class="tiny" style="font-weight:900;margin-bottom:4px">${t('gd_where')}</div>
     ${row(t('gd_where_photo'), gdFolders.photo || gdFolders.root)}
     ${row(t('gd_where_files'), gdFolders.file)}
+    ${row(t('gd_where_inv'), gdFolders.invoice)}
     <button class="btn btn-ghost" style="margin-top:6px" onclick="App.gdMove()">${ic('folder')} ${t('gd_move')}</button>
     <div class="tiny dim" style="margin-top:4px">${t('gd_move_hint')}</div>
   </div>`;
@@ -9756,6 +10366,18 @@ function mediaSettingsCardHtml(){
     <label class="opt ${gdTrimOn() ? 'on' : ''}" style="margin:2px 0 6px">
       <input type="checkbox" ${gdTrimOn() ? 'checked' : ''} onchange="App.gdTrimToggle(this.checked)"> ${t('gd_trim')}</label>
     <div class="tiny gd-hint">${gdTrimOn() ? t('gd_trim_hint') : t('gd_folder_hint')}</div>
+    ${row(t('gd_inv_folder'), `<input id="gd-inv" autocomplete="off" placeholder="${t('gd_folder_ph')}"
+      value="${esc(((state.data.org_settings || {}).gd_inv_folder) || '')}"
+      onchange="App.setOrgText('gd_inv_folder', App.gdFolderIdOf(this.value))">`)}
+    <div class="tiny gd-hint">${t('gd_inv_hint')}</div>
+    <label class="opt ${((state.data.org_settings || {}).gd_inv_by_tech) ? 'on' : ''}"
+      style="margin:6px 0 2px" title="${esc(t('gd_inv_tech_tip'))}">
+      <input type="checkbox" ${((state.data.org_settings || {}).gd_inv_by_tech) ? 'checked' : ''}
+        onchange="App.setOrgFlag('gd_inv_by_tech', this.checked)"> ${t('gd_inv_tech')}
+      <button type="button" class="pri inline" title="${esc(t('gd_inv_tech_tip'))}"
+        onclick="event.preventDefault();event.stopPropagation();App.toastInfo('gd_inv_tech_tip')">${ic('help')}</button>
+    </label>
+    <div class="tiny gd-hint">${t('gd_inv_tech_ex')}: <span class="gd-mark">${esc(gdInvPathSample())}</span></div>
     <span class="gd-folder-chip" id="gd-folder-chip" style="${gdCfg.folder_id ? '' : 'display:none'}">${gdCfg.folder_id
       ? ic('folder') + ' ' + esc((gdFolders && gdFolders.root && gdFolders.root.id === gdCfg.folder_id && gdFolders.root.name) || gdCfg.folder_id)
       : ''}</span>
@@ -9842,11 +10464,11 @@ async function mediaOauthExchange(code){
    перепутанный при ручном деплое код, и забытую при обновлении функцию. */
 const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
                    'media-view', 'media-delete', 'media-oauth'];
-const MEDIA_FN_VER = '1.07.81';
+const MEDIA_FN_VER = '1.07.88';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
-const MEDIA_FN_MIN = { 'media-begin': '1.07.81', 'media-health': '1.07.81',
-                       'media-delete': '1.07.81' };
+const MEDIA_FN_MIN = { 'media-begin': '1.07.87', 'media-health': '1.07.88',
+                       'media-delete': '1.07.88' };
 const MEDIA_FN_MIN_DEF = '1.07.72';
 function mFnVerOk(ver, name){
   const need = (MEDIA_FN_MIN[name] || MEDIA_FN_MIN_DEF).split('.').map(Number);
@@ -10061,7 +10683,8 @@ async function mediaHealth(){
       /* v1.07.78: наглядно — какая папка для фото, какая для документов */
       gdFolders = { root: { id: j.folder.id, name: j.folder.name || '', path: j.folder.name || '' },
                     photo: (j.paths && j.paths.photo) || null,
-                    file:  (j.paths && j.paths.file)  || null };
+                    file:  (j.paths && j.paths.file)  || null,
+                    invoice: (j.paths && j.paths.invoice) || null };   // v1.07.85
       const fb = $('#gd-folders'); if (fb) fb.innerHTML = gdFoldersHtml();
       const chip = $('#gd-folder-chip');
       if (chip && j.folder.name){ chip.style.display = 'inline-flex';
@@ -10124,6 +10747,15 @@ function camCardHtml(){
         ${seg(q, 'orig', t('cam_q_orig'), 'camQ')}
       </div>
     </div>
+    <div class="cam-set">
+      <b>${ic('camera')} ${t('cam_hdr_t')}</b>
+      <div class="tiny">${t('cam_hdr_h')}</div>
+    </div>
+    <button class="btn btn-green sm" style="margin-top:10px" onclick="App.camNative()">${ic('camera')} ${t('cam_native_btn')}</button>
+    <div class="tiny" style="margin:4px 0 6px">${t('cam_native_h')}</div>
+    <label class="opt ${camUsmOn() ? 'on' : ''}">
+      <input type="checkbox" ${camUsmOn() ? 'checked' : ''} onchange="App.camUsm(this.checked)"> ${t('cam_usm')}</label>
+    <div class="tiny" style="margin-bottom:6px">${t('cam_usm_h')}</div>
     <label class="opt ${sh ? 'on' : ''}" style="margin-top:10px">
       <input type="checkbox" ${sh ? 'checked' : ''} onchange="App.camSharp(this.checked)"> ${t('cam_sharp_chk')}
     </label>
@@ -10812,6 +11444,100 @@ function szById(id){ return (state.data.size_types||[]).find(s=>s.id===id); }
 function ewById(id){ return (state.data.extra_works||[]).find(s=>s.id===id); }
 function ptById(id){ return (state.data.product_types||[]).find(s=>s.id===id); }
 
+/* =====================================================================
+   v1.07.84: В БЛАНК НЕ ДОЛЖНА ПОПАДАТЬ КИРИЛЛИЦА. Заметки переводятся
+   (v1.07.83), названия справочников дают английский вариант через слэш
+   (enName), но имена сотрудников, контрагентов, комплексов и адреса
+   переводить нечем — а helvetica в jsPDF кириллицу не рисует вовсе:
+   в PDF на её месте пусто или мусор. Такие строки транслитерируем.
+   ===================================================================== */
+const TRANSLIT = {
+  а:'a', б:'b', в:'v', г:'g', д:'d', е:'e', ё:'e', ж:'zh', з:'z', и:'i', й:'y',
+  к:'k', л:'l', м:'m', н:'n', о:'o', п:'p', р:'r', с:'s', т:'t', у:'u', ф:'f',
+  х:'kh', ц:'ts', ч:'ch', ш:'sh', щ:'shch', ъ:'', ы:'y', ь:'', э:'e', ю:'yu', я:'ya',
+  і:'i', ї:'yi', є:'ye', ґ:'g'
+};
+function translit(s){
+  const str = String(s == null ? '' : s);
+  if (!CYR_RE.test(str)) return str;
+  let out = '';
+  for (const ch of str){
+    const low = ch.toLowerCase();
+    const rep = TRANSLIT[low];
+    if (rep === undefined){ out += ch; continue; }
+    out += (ch === low) ? rep : (rep.charAt(0).toUpperCase() + rep.slice(1));
+  }
+  return out;
+}
+/* Одна точка контроля: подменяем doc.text у готового бланка, и что бы в
+   него ни писали дальше — кириллицы там не будет. */
+function pdfLatinize(doc){
+  if (!doc || doc.__latin) return doc;
+  const orig = doc.text.bind(doc);
+  doc.text = function(txt, ...rest){
+    const f = (x) => (typeof x === 'string' ? translit(x) : x);
+    return orig(Array.isArray(txt) ? txt.map(f) : f(txt), ...rest);
+  };
+  doc.__latin = true;
+  return doc;
+}
+/* =====================================================================
+   v1.07.86 · НУМЕРАЦИЯ ДОКУМЕНТОВ И ИМЁН ФАЙЛОВ — КОНСТРУКТОРОМ.
+   Админ сам собирает номер из кусочков: тип документа, дата, контрагент,
+   комплекс, юнит, инициалы сотрудника, порядковый номер. Не нужны
+   инициалы — убрал из шаблона, и их нет. Тот же конструктор отдельно
+   для имён фото и вложений на Диске (его применяет media-begin).
+   Пустые кусочки выпадают вместе с лишними разделителями.
+   ===================================================================== */
+const DOC_FMT_DEF  = '{TYPE}-{DATE}-{CX}-{UNIT}-{SEQ}';
+const FILE_FMT_DEF = '{DATE}_{CX}_{UNIT}_{NAME}_{SEQ}';
+const DOC_TOKENS  = ['TYPE','DATE','YEAR','CP','CX','UNIT','TECH','WT','SEQ'];
+const FILE_TOKENS = ['DATE','YEAR','CP','CX','UNIT','TECH','WT','NAME','KIND','SEQ'];
+/* метки типов: работа, пропозал, пикап, продление */
+const DOC_TYPE_TAG = { job: 'WORK', prop: 'PROP', pick: 'PICK', ext: 'LONG' };
+
+function docFmt(){ return String(((state.data && state.data.org_settings) || {}).doc_no_fmt || DOC_FMT_DEF); }
+function fileFmt(){ return String(((state.data && state.data.org_settings) || {}).file_name_fmt || FILE_FMT_DEF); }
+function docPad(){
+  const v = parseInt(((state.data && state.data.org_settings) || {}).doc_no_pad, 10);
+  return (v >= 1 && v <= 9) ? v : 5;
+}
+/* ASCII-кусочек: номер уходит и в PDF, и в имя файла на Диске */
+function noPart(v, len){
+  const s = translit(String(v == null ? '' : v)).replace(/[^A-Za-z0-9.]+/g, '');
+  return len ? s.slice(0, len).toUpperCase() : s.toUpperCase();
+}
+function renderNoFmt(fmt, vals){
+  let out = String(fmt).replace(/\{([A-Z]+)\}/g, (m, k) =>
+    (vals[k] == null || vals[k] === '') ? '\u0000' : String(vals[k]));
+  /* выпавший кусочек уносит с собой соседний разделитель */
+  out = out.replace(/\u0000[^A-Za-z0-9\u0000]*/g, '').replace(/[^A-Za-z0-9]*\u0000/g, '');
+  return out.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '').replace(/([^A-Za-z0-9])\1+/g, '$1');
+}
+/* Инициалы сотрудника для номера: «Иван Петров» → IP */
+function techTag(id){
+  const p = (state.data.profiles || []).find(x => x.id === id);
+  return p ? noPart(initials(p.display_name), 3) : '';
+}
+function docNoVals(kind, o){
+  const cx = cxById(o.complex_id) || {}, cp = cpById(o.counterparty_id) || {};
+  const wt = wtById(o.work_type_id) || {};
+  const date = String(o.date || '');
+  return {
+    TYPE: DOC_TYPE_TAG[kind] || '', DATE: date.replace(/-/g, ''), YEAR: date.slice(0, 4),
+    CP: noPart(cp.abbr || cp.name, 4), CX: noPart(cx.abbr || cx.name, 4),
+    UNIT: noPart(o.unit_number, 6), TECH: techTag(o.technician_id || o.created_by),
+    WT: noPart(enName(wt.name), 6),
+    SEQ: o.no == null ? '' : String(o.no).padStart(docPad(), '0')
+  };
+}
+/* Номер документа: работа, пропозал, пикап, продление */
+function docNo(kind, o){ return o ? renderNoFmt(docFmt(), docNoVals(kind, o)) : ''; }
+function pickNo(pk){
+  const j = (state.data.jobs || []).find(x => x.id === pk.job_id) || {};
+  return renderNoFmt(docFmt(), { ...docNoVals(pk.ext_of ? 'ext' : 'pick', { ...j, ...pk }),
+    SEQ: pk.no == null ? '' : String(pk.no).padStart(docPad(), '0') });
+}
 function enName(s){
   s = String(s||'');
   if (s.includes('/')){
