@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.03';
+const APP_VERSION = '1.08.04';
 const DB_SQL_FILE = 'full-install-1_07_98.sql';   // v1.07.98: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -1546,9 +1546,42 @@ function seedDemoData(){
 /* =====================================================================
    ХРАНИЛИЩЕ / СИНХРОНИЗАЦИЯ
    ===================================================================== */
-function saveLocal(){
+/* =====================================================================
+   v1.08.04: КЭШ В LOCALSTORAGE ПИШЕТСЯ НЕ СРАЗУ.
+   JSON.stringify всей базы — синхронная работа в главном потоке: на живом
+   объёме (800 работ и 3000 записей о файлах, 1.7 МБ) один вызов занимает
+   ~69 мс. Пара таких подряд — и получается тот самый рывок прокрутки на
+   129 мс из отчёта. Теперь запись откладывается и склеивается: несколько
+   изменений подряд дают одну запись, и она не случается во время прокрутки.
+   Критические моменты (уход со страницы, синхронизация, выход) пишут сразу.
+   ===================================================================== */
+let _saveDirty = false, _saveTimer = null, _lastScrollAt = 0;
+try{
+  addEventListener('scroll', () => { _lastScrollAt = Date.now(); }, { passive: true, capture: true });
+  addEventListener('pagehide', () => saveFlush());
+  addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveFlush(); });
+}catch(e){}
+function saveLocalNow(){
+  _saveDirty = false;
+  if (_saveTimer){ clearTimeout(_saveTimer); _saveTimer = null; }
   try { return saveLocalUnsafe(); }
   catch(e){ dlog('⛔ saveLocal (квота localStorage?):', e); }
+}
+function saveFlush(){ if (_saveDirty) saveLocalNow(); }
+function saveLocal(){
+  _saveDirty = true;
+  if (_saveTimer) return;
+  const run = () => {
+    _saveTimer = null;
+    if (!_saveDirty) return;
+    /* палец ещё ведёт страницу — не занимаем главный поток, подождём */
+    if (Date.now() - _lastScrollAt < 300){ _saveTimer = setTimeout(run, 300); return; }
+    saveLocalNow();
+  };
+  const idle = window.requestIdleCallback;
+  _saveTimer = setTimeout(() => {
+    if (idle) idle(run, { timeout: 1200 }); else run();
+  }, 400);
 }
 /* v1.07.21: без внутреннего try — иначе QuotaExceededError глотался молча,
    кеш переставал обновляться, и офлайн тихо «протухал». Теперь квоту видно в журнале. */
@@ -1569,8 +1602,23 @@ function loadLocalUnsafe(){ const s = localStorage.getItem(LS_KEY); return s ? J
    полном синке недоставленные записи накатываются поверх снимка.
    ===================================================================== */
 const LS_PENDING = 'techlog_pending';
-function pendingLoad(){ try{ return JSON.parse(localStorage.getItem(LS_PENDING)) || []; }catch(e){ return []; } }
-function pendingSave(q){ try{ localStorage.setItem(LS_PENDING, JSON.stringify(q)); }catch(e){ dlog('⛔ pendingSave:', e); } }
+/* v1.08.04: экран «Настройки» показывает счётчик отложенных записей, а
+   pendingLoad() каждый раз читал и разбирал строку из localStorage — синхронно,
+   в главном потоке. Очередь хранит целые строки документов, так что на живой
+   базе это десятки миллисекунд НА КАЖДЫЙ рендер, а рендер бывает и по таймеру
+   синхронизации: отсюда рывок прокрутки на «Настройках». Держим разобранную
+   очередь в памяти, из хранилища читаем один раз. */
+let _pendCache = null;
+function pendingLoad(){
+  if (_pendCache) return _pendCache;
+  try{ _pendCache = JSON.parse(localStorage.getItem(LS_PENDING)) || []; }
+  catch(e){ _pendCache = []; }
+  return _pendCache;
+}
+function pendingSave(q){
+  _pendCache = Array.isArray(q) ? q : [];
+  try{ localStorage.setItem(LS_PENDING, JSON.stringify(q)); }catch(e){ dlog('⛔ pendingSave:', e); }
+}
 function pendingKey(op, table, id){ return op + ':' + table + ':' + id; }
 function pendingAdd(op, table, payload){          // payload: строка (upsert) или id (delete)
   const id = op === 'upsert' ? payload.id : payload;
@@ -1717,6 +1765,7 @@ async function sbLoadAll(){
 }
 
 async function syncNow(silent){
+  saveFlush();                       // v1.08.04: перед обменом кэш должен быть на диске
   dlog('sync: старт', HAS_SB ? 'Supabase' : 'demo');
   if (!HAS_SB){ state.lastSync = nowStamp(); localStorage.setItem('techlog_lastsync', state.lastSync); if(!silent) toast('✓ ' + t('synced') + ': ' + state.lastSync); render(); return; }
   if (state.syncing) return;
@@ -9922,7 +9971,7 @@ function mediaStripHtml(jobId){
       ${_mediaJustDone.has(m.id) ? `<span class="mdone" title="${t('mt_done')}">${ic('check')}</span>` : ''}
       ${m.kind === 'invoice' ? `<span class="mfile">${ic('pdf')}<b>PDF</b></span>`
         : m.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(m.file_name))}</b></span>`
-        : `<img data-thumb="${m.thumb_path || ''}" alt="">`}
+        : `<img data-thumb="${m.thumb_path || ''}" width="72" height="72" alt="">`}
       ${m.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
       ${m.status !== 'ready' ? `<span class="mst">${ic('clock')}</span>` : ''}
       ${isAdmin() ? `<span class="mx" title="${t('media_del_q')}" onclick="event.stopPropagation();App.mediaDelete('${m.id}')">${ic('close')}</span>` : ''}
@@ -9937,7 +9986,7 @@ function mediaStripHtml(jobId){
       onclick="${err ? `App.mqRetry()` : `App.mediaOpenLocal('${x.qid}')`}">
       ${x.kind === 'invoice' ? `<span class="mfile">${ic('pdf')}<b>PDF</b></span>`
         : x.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(x.name || ''))}</b></span>`
-        : `<img src="${mqThumbUrl(x)}" alt="">`}
+        : `<img src="${mqThumbUrl(x)}" width="72" height="72" alt="">`}
       ${x.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
       ${err ? `<span class="mst">${ic('warn')}</span>`
             : `<span class="mspin" style="--p:${Math.max(8, Math.min(100, pct))}%;--c:${mSpinColor(pct)}"></span>`}
