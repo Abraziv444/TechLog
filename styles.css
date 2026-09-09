@@ -1713,3 +1713,31 @@ select:disabled{opacity:.55;cursor:default}
 .fold.on .fold-h{border-radius:16px 16px 0 0;border-bottom-color:transparent}
 .fold-b{border:2px solid var(--line);border-top:0;border-radius:0 0 16px 16px;padding:2px 8px 8px}
 .fold-b > .card{margin:6px 0;border:0}
+
+/* ============ v1.08.08: цепочка документов ============
+   Карточки выстраиваются в линию: на широком экране — горизонтально,
+   на узком — вертикально, стрелка между ними поворачивается вместе с ними. */
+.chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.chain-item{
+  flex:1 1 150px;min-width:0;max-width:100%;
+  display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:left;
+  background:var(--panel);border:2px solid var(--line);border-radius:14px;
+  padding:10px 12px;color:var(--text);font:inherit;cursor:pointer;
+}
+.chain-item b{font-weight:900;overflow-wrap:anywhere}
+.chain-item .tiny{color:var(--dim)}
+.chain-tag{
+  font-size:.62rem;font-weight:900;letter-spacing:.04em;
+  border:2px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--dim);
+}
+.chain-item.t-prop{border-color:var(--purple)} .chain-item.t-prop .chain-tag{border-color:var(--purple);color:var(--purple)}
+.chain-item.t-job{border-color:var(--blue)}    .chain-item.t-job .chain-tag{border-color:var(--blue);color:var(--blue)}
+.chain-item.t-pick{border-color:var(--green)}  .chain-item.t-pick .chain-tag{border-color:var(--green);color:var(--green)}
+.chain-item.t-ext{border-color:var(--orange)}  .chain-item.t-ext .chain-tag{border-color:var(--orange);color:var(--orange)}
+.chain-arr{display:flex;align-items:center;color:var(--dim);flex:none}
+.chain-arr svg{width:1.2em;height:1.2em}
+@media (max-width:640px){
+  .chain{flex-direction:column}
+  .chain-item{flex:0 0 auto;width:100%}
+  .chain-arr{justify-content:center;transform:rotate(90deg)}
+}

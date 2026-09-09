@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.06';
+const APP_VERSION = '1.08.10';
 const DB_SQL_FILE = 'full-install-1_07_98.sql';   // v1.07.98: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -370,6 +370,30 @@ const I18N = {
     no_t_TECH: 'инициалы сотрудника', no_t_WT: 'вид работы', no_t_SEQ: 'порядковый номер',
     no_t_NAME: 'название', no_t_KIND: 'вид файла',
     doc_no: 'Номер',
+    db_more: 'Подробнее',
+    gd_cyc: 'Проверить цикл с обрывом',
+    gd_cyc_hint: 'Пробный файл проходит весь путь: сессия → первая половина → обрыв связи → дозагрузка с того же места → подтверждение → ссылка → удаление. Так проверяется именно то, что ломается на объектах: обрыв мобильной сети посреди загрузки.',
+    gd_cyc_begin: 'Открыть сессию (media-begin)',
+    gd_cyc_part1: 'Первая половина файла',
+    gd_cyc_break: 'Обрыв связи и опрос сервера',
+    gd_cyc_resume: 'Дозагрузка после обрыва',
+    gd_cyc_commit: 'Подтверждение (media-commit)',
+    gd_cyc_view: 'Ссылка на файл (media-view)',
+    gd_cyc_del: 'Удаление пробного файла',
+    gd_cyc_done: 'Цикл Диска: {N} из {T} шагов',
+    gd_cyc_nojob: 'Нужна хотя бы одна работа, к которой у вас есть доступ',
+    db_help_t: 'Как обновить базу',
+    db_help_why: 'Приложение обновилось, а таблицы в Supabase — ещё нет: новые поля просто отсутствуют. Данные при этом целы, но часть возможностей не работает, пока не выполнен скрипт. Это делает администратор один раз после каждого обновления, которое просит SQL.',
+    db_help_1: 'Возьмите из архива приложения файл {F} — он один и содержит всё сразу, отдельные дельты выполнять не нужно.',
+    db_help_2: 'Откройте свой проект на supabase.com → раздел «SQL Editor» → «New query».',
+    db_help_3: 'Вставьте туда содержимое файла целиком и нажмите «Run».',
+    db_help_4: 'Вернитесь в приложение и обновите страницу. Если предупреждение осталось — нажмите «Проверить базу» ниже, там будет видно, какой колонки не хватает.',
+    db_help_safe: 'Скрипт безопасен для повторного запуска: он добавляет только недостающее и ничего не удаляет. Если сомневаетесь — сначала сделайте резервную копию в «Настройках».',
+    db_help_check: 'Проверить базу',
+    ch_title: 'Цепочка документов',
+    ch_hint: 'Что за чем шло: пропозал → работа → аренда → продление. Нажатие открывает документ.',
+    ch_empty: 'Связанных документов нет',
+    ch_closed: 'закрыт продлением',
     /* v1.07.87: инвойсы по папкам сотрудников */
     gd_inv_tech: 'Инвойсы по папкам сотрудников',
     gd_inv_tech_tip: 'Галочка снята — все инвойсы лежат в общей папке по месяцам: «Invoices / 2026-09». Галочка стоит — сначала папка исполнителя, а месяц уже внутри неё: «Invoices / Ivan P / 2026-09», и так у каждого сотрудника каждый месяц своя папка. Имя папки берётся из профиля: имя и первая буква фамилии латиницей — как подпись исполнителя в документах. Уже загруженные инвойсы остаются там, где лежали.',
@@ -903,6 +927,30 @@ const I18N = {
     no_t_TECH: 'staff initials', no_t_WT: 'work type', no_t_SEQ: 'sequential number',
     no_t_NAME: 'name', no_t_KIND: 'file kind',
     doc_no: 'Number',
+    db_more: 'Details',
+    gd_cyc: 'Test the cycle with a drop',
+    gd_cyc_hint: 'A test file goes the whole way: session → first half → connection drop → resume from the same offset → commit → link → delete. This checks exactly what breaks in the field: a mobile network drop mid-upload.',
+    gd_cyc_begin: 'Open the session (media-begin)',
+    gd_cyc_part1: 'First half of the file',
+    gd_cyc_break: 'Drop and ask the server',
+    gd_cyc_resume: 'Resume after the drop',
+    gd_cyc_commit: 'Commit (media-commit)',
+    gd_cyc_view: 'File link (media-view)',
+    gd_cyc_del: 'Remove the test file',
+    gd_cyc_done: 'Drive cycle: {N} of {T} steps',
+    gd_cyc_nojob: 'Needs at least one job you can write to',
+    db_help_t: 'How to update the database',
+    db_help_why: 'The app has been updated but the Supabase tables have not: the new columns are simply missing. Your data is intact, but part of the features stays off until the script is run. An admin does this once after every update that asks for SQL.',
+    db_help_1: 'Take the file {F} from the app archive — it is a single file containing everything; separate deltas are not needed.',
+    db_help_2: 'Open your project at supabase.com → «SQL Editor» → «New query».',
+    db_help_3: 'Paste the whole file there and press «Run».',
+    db_help_4: 'Come back to the app and reload the page. If the warning stays, press «Check the database» below — it shows exactly which column is missing.',
+    db_help_safe: 'The script is safe to re-run: it only adds what is missing and deletes nothing. If in doubt, make a backup in Settings first.',
+    db_help_check: 'Check the database',
+    ch_title: 'Document chain',
+    ch_hint: 'What followed what: proposal → job → rental → extension. Tap to open a document.',
+    ch_empty: 'No linked documents',
+    ch_closed: 'closed by an extension',
     gd_inv_tech: 'Invoices in per-staff folders',
     gd_inv_tech_tip: 'Unchecked — every invoice sits in one folder by month: «Invoices / 2026-09». Checked — the staff folder comes first and the month lives inside it: «Invoices / Ivan P / 2026-09», so every person gets a fresh folder each month. The folder name comes from the profile: first name and the first letter of the surname, in Latin — the same signature as in documents. Invoices already uploaded stay where they are.',
     gd_inv_tech_ex: 'Path example',
@@ -1393,6 +1441,201 @@ function popCardHtml(){
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.popDemo()">${ic('bell')} ${t('pop_demo')}</button>
   </div>`;
 }
+/* v1.08.08: «Обновите БД» без объяснений пугает и ничего не говорит о том,
+   ЧТО делать. Показываем тост с кнопкой, которая открывает пошаговую
+   инструкцию: где взять файл, куда вставить, почему это безопасно. */
+/* =====================================================================
+   v1.08.09 · МЕТРИКИ В ТЕХНИЧЕСКИЙ ЖУРНАЛ.
+   Связь на объектах рвётся, и разбирать потом приходится по журналу.
+   Пишем туда числа, а не только события: сколько грузилось приложение,
+   сколько шла синхронизация и что принесла, какие операции были долгими,
+   сколько сетевых отказов и каких, сколько занято в хранилищах, и
+   «здоровье сессии» — сколько раз приложение перезапускалось и сколько
+   кадров не вернулось из камеры.
+   ===================================================================== */
+const LS_HEALTH = 'techlog_health';
+const NETERR = {};
+function netErr(kind){ NETERR[kind] = (NETERR[kind] || 0) + 1; }
+function healthGet(){
+  try{ return JSON.parse(localStorage.getItem(LS_HEALTH)) || {}; }catch(e){ return {}; }
+}
+function healthBump(k, by){
+  try{
+    const h = healthGet();
+    h[k] = (+h[k] || 0) + (by == null ? 1 : by);
+    h.last = new Date().toISOString();
+    localStorage.setItem(LS_HEALTH, JSON.stringify(h));
+    return h;
+  }catch(e){ return {}; }
+}
+function kb(n){ return Math.round((+n || 0) / 1024) + ' КБ'; }
+function lsBytes(){
+  let sum = 0;
+  try{ for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i); sum += (k.length + (localStorage.getItem(k) || '').length) * 2; } }catch(e){}
+  return sum;
+}
+/* Сводка при старте: сколько грузились и с чем пришли */
+function metricsBoot(){
+  try{
+    const nav = (performance.getEntriesByType('navigation') || [])[0] || {};
+    const ttfb = Math.round(nav.responseStart || 0);
+    const dcl = Math.round(nav.domContentLoadedEventEnd || 0);
+    const ready = Math.round(performance.now());
+    const h = healthBump('starts');
+    const d = state.data || {};
+    dlog('метрики·старт: TTFB ' + ttfb + ' мс · DOM ' + dcl + ' мс · интерфейс готов ' + ready + ' мс' +
+         ' · тип загрузки ' + (nav.type || '—') +
+         ' · sw ' + (navigator.serviceWorker && navigator.serviceWorker.controller ? 'из кэша' : 'сеть'));
+    dlog('метрики·данные: работ ' + (d.jobs || []).length + ' · аренд ' + (d.placements || []).length +
+         ' · пропозалов ' + (d.proposals || []).length + ' · файлов ' + (d.media || []).length +
+         ' · кэш ' + kb(lsBytes()) + ' · отложенных записей ' + pendingLoad().length +
+         ' · очередь фото ' + mediaQ.length);
+    dlog('метрики·сессия: запусков ' + (h.starts || 1) + ' · потерянных кадров ' + (h.shot_lost || 0) +
+         ' · сорванных отправок ' + (h.upload_fail || 0));
+  }catch(e){ dlog('⛔ метрики·старт:', e); }
+}
+/* Сводка при уходе: что было долгим и сколько отказов */
+function metricsBye(){
+  try{
+    const long = (window.TLPERF && TLPERF.log || []).slice(-3)
+      .map(x => x.n + ' ' + x.ms + ' мс').join(' · ');
+    const errs = Object.keys(NETERR).map(k => k + ':' + NETERR[k]).join(' · ');
+    dlog('метрики·итог: время в приложении ' + Math.round(performance.now() / 1000) + ' с' +
+         (long ? ' · самые долгие: ' + long : '') +
+         (errs ? ' · сетевые отказы: ' + errs : ' · сетевых отказов нет'));
+  }catch(e){}
+}
+try{ addEventListener('pagehide', metricsBye); }catch(e){}
+
+/* =====================================================================
+   v1.08.09 · ПРОВЕРКА ЦИКЛА GOOGLE ДИСКА С ОБРЫВОМ.
+   Связь на объектах мобильная и рвётся посреди загрузки. Проверяем не
+   «отвечает ли сервер», а весь путь файла: открыть сессию → залить первый
+   кусок → ОБОРВАТЬ → возобновить с того же места → подтвердить → прочитать
+   ссылку → удалить. Каждый шаг со своим временем. Файл пробный, крошечный,
+   и в конце убирается — в архиве работ он не остаётся.
+   ===================================================================== */
+async function gdCycle(){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  const out = [], t0 = performance.now();
+  const say = (name, ok, ms, extra) => {
+    out.push({ name, ok, ms: Math.round(ms), extra: extra || '' });
+    const box = $('#gd-cycle');
+    if (box) box.innerHTML = out.map(x =>
+      `<div class="tiny">${x.ok ? ic('check') : ic('warn')} ${esc(x.name)} — ${x.ms} мс${x.extra ? ' · ' + esc(x.extra) : ''}</div>`).join('');
+  };
+  const step = async (name, fn) => {
+    const a = performance.now();
+    try { const r = await fn(); say(name, true, performance.now() - a, r && r.note); return r; }
+    catch (e){ say(name, false, performance.now() - a, errStr(e)); throw e; }
+  };
+  const job = liveJobs().find(j => trCanWrite('job', j)) || (state.data.jobs || [])[0];
+  if (!job){ toast('⚠ ' + t('gd_cyc_nojob'), 'err'); return; }
+  const token = await mediaJwt();
+  const H = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+  /* пробный файл: две части, чтобы было что обрывать */
+  const body = new Uint8Array(512 * 1024).fill(65);
+  let sess = null, mediaId = null;
+  try{
+    sess = await step(t('gd_cyc_begin'), async () => {
+      const r = await fetch(mediaFN() + '/media-begin', { method: 'POST', headers: H,
+        body: JSON.stringify({ job_id: job.id, kind: 'file', mime: 'text/plain',
+                               size: body.length, name: '_selftest.txt' }) });
+      const j = await r.json();
+      if (!r.ok || !j.upload_url) throw new Error(j.error || ('HTTP ' + r.status));
+      mediaId = j.media_id || j.id || null;
+      return { j, note: 'сессия открыта' };
+    });
+    const url = sess.j.upload_url;
+    const half = Math.floor(body.length / 2);
+    await step(t('gd_cyc_part1'), async () => {
+      const p = await mPutChunk(url, `bytes 0-${half - 1}/${body.length}`, body.slice(0, half));
+      if (p.status !== 308 && p.status !== 200 && p.status !== 201)
+        throw new Error('ответ ' + p.status);
+      return { note: 'первая половина ушла' };
+    });
+    await step(t('gd_cyc_break'), async () => {
+      /* имитируем обрыв: прерываем запрос на середине и спрашиваем сервер,
+         сколько он успел принять — так же ведёт себя мобильная сеть */
+      const ac = new AbortController();
+      setTimeout(() => ac.abort(), 30);
+      try{
+        await fetch(mediaFN() + '/media-put', { method: 'POST', signal: ac.signal,
+          headers: { Authorization: 'Bearer ' + token, 'x-tl-url': url,
+                     'x-tl-range': `bytes ${half}-${body.length - 1}/${body.length}` },
+          body: body.slice(half) });
+      }catch(e){ /* так и задумано */ }
+      const p = await mPutChunk(url, `bytes */${body.length}`);
+      return { note: 'сервер принял ' + (p.range || 'нисколько') + ', продолжаем' };
+    });
+    await step(t('gd_cyc_resume'), async () => {
+      const p = await mPutChunk(url, `bytes ${half}-${body.length - 1}/${body.length}`, body.slice(half));
+      if (p.status !== 200 && p.status !== 201 && p.status !== 308) throw new Error('ответ ' + p.status);
+      return { note: 'дозалито после обрыва' };
+    });
+    await step(t('gd_cyc_commit'), async () => {
+      const r = await fetch(mediaFN() + '/media-commit', { method: 'POST', headers: H,
+        body: JSON.stringify({ media_id: mediaId }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+      return { note: 'запись подтверждена' };
+    });
+    await step(t('gd_cyc_view'), async () => {
+      const r = await fetch(mediaFN() + '/media-view', { method: 'POST', headers: H,
+        body: JSON.stringify({ media_id: mediaId }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !(j.url || j.link)) throw new Error(j.error || ('HTTP ' + r.status));
+      return { note: 'ссылка получена' };
+    });
+  }catch(e){ /* шаг уже записан */ }
+  if (mediaId){
+    try{
+      await step(t('gd_cyc_del'), async () => {
+        const r = await fetch(mediaFN() + '/media-delete', { method: 'POST', headers: H,
+          body: JSON.stringify({ media_id: mediaId }) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return { note: 'пробный файл убран' };
+      });
+    }catch(e){}
+  }
+  const okN = out.filter(x => x.ok).length;
+  dlog('метрики·цикл Диска: ' + okN + '/' + out.length + ' шагов за ' +
+       Math.round(performance.now() - t0) + ' мс · ' +
+       out.map(x => x.name + ' ' + x.ms + (x.ok ? '' : ' ⛔')).join(' · '));
+  toast((okN === out.length ? '✓ ' : '⚠ ') + t('gd_cyc_done').replace('{N}', okN).replace('{T}', out.length));
+  await sync(true);
+}
+function dbUpdateToast(){
+  toast('⚠ ' + t('db_needs_update'), 'err');
+  try{
+    const box = $('#toasts'); const el = box && box.lastElementChild;
+    if (!el) return;
+    const b = document.createElement('button');
+    b.className = 'btn btn-ghost sm';
+    b.style.cssText = 'margin-top:6px;pointer-events:auto';
+    b.textContent = t('db_more');
+    b.onclick = () => dbUpdateHelp();
+    el.appendChild(b);
+    el.style.pointerEvents = 'auto';
+  }catch(e){}
+}
+function dbUpdateHelp(){
+  openModal(`
+    ${modalHead(t('db_help_t'), 'warn')}
+    <div class="card"><div class="tiny">${t('db_help_why')}</div></div>
+    <div class="card">
+      <ol style="margin:0;padding-left:20px;line-height:1.6">
+        <li>${t('db_help_1').replace('{F}', '<b>supabase/' + DB_SQL_FILE + '</b>')}</li>
+        <li>${t('db_help_2')}</li>
+        <li>${t('db_help_3')}</li>
+        <li>${t('db_help_4')}</li>
+      </ol>
+    </div>
+    <div class="card"><div class="tiny">${t('db_help_safe')}</div></div>
+    <button class="btn btn-ghost" onclick="App.dbDiag()">${ic('steth')} ${t('db_help_check')}</button>
+  `);
+}
 function toast(msg, kind){
   const now = Date.now();                                  // v1.07.26: не спамим одинаковыми
   if (toast._m === msg && now - (toast._t || 0) < 1800) return;
@@ -1811,6 +2054,7 @@ async function sbLoadAll(){
 
 async function syncNow(silent){
   saveFlush();                       // v1.08.04: перед обменом кэш должен быть на диске
+  const _syncT0 = performance.now();
   dlog('sync: старт', HAS_SB ? 'Supabase' : 'demo');
   if (!HAS_SB){ state.lastSync = nowStamp(); localStorage.setItem('techlog_lastsync', state.lastSync); if(!silent) toast('✓ ' + t('synced') + ': ' + state.lastSync); render(); return; }
   if (state.syncing) return;
@@ -1827,6 +2071,14 @@ async function syncNow(silent){
     dlog('sync:', failN ? '⚠ частично' : 'ок', '·', t('sync_dur'), ms + ' мс ·',
       TABLES.map(tb => tb + '=' + (state.data[tb]||[]).length).join(' '),
       failN ? '· ошибки: ' + SYNC_ERRORS.map(x=>x.tb).join(',') : '');
+    /* v1.08.09: метрика обмена — сколько шло и сколько строк принесло */
+    try{
+      const rows = TABLES.reduce((a, tb) => a + (state.data[tb] || []).length, 0);
+      dlog('метрики·обмен: ' + Math.round(performance.now() - _syncT0) + ' мс (сервер ' + ms +
+           ' мс) · строк всего ' + rows + ' · отложенных ' + pendingLoad().length +
+           ' · очередь фото ' + mediaQ.length + (failN ? ' · таблиц с ошибкой ' + failN : ''));
+      if (failN) netErr('sync');
+    }catch(e){}
     if (failN) toast('⚠ ' + t('sync_partial') + ': ' + SYNC_ERRORS.map(x=>x.tb).join(', '), 'err');
     if (isAdmin() && pendingCodeRequests().length && !state._reqToasted){
       state._reqToasted = true;
@@ -1887,7 +2139,7 @@ async function dbUpsert(table, row){
         if (!error && stripped){
           pendingDone('upsert', table, row.id);    // v1.07.21: сервер принял (без новых колонок)
           dlog('⚠ upsert', table, 'сохранено без новых колонок — выполните supabase/' + DB_SQL_FILE);
-          toast('⚠ ' + t('db_needs_update'), 'err');
+          dbUpdateToast();
           return;
         }
         if (error){
@@ -1938,7 +2190,7 @@ async function dbSaveOrg(org){
       if (miss && Object.prototype.hasOwnProperty.call(org, miss)){
         const clean = { ...org }; delete clean[miss];
         const r2 = await Promise.resolve(state.sb.from('org_settings').upsert(clean)).catch(e2 => ({ error: e2 }));
-        if (!r2.error){ toast('⚠ ' + t('db_needs_update'), 'err'); return; }
+        if (!r2.error){ dbUpdateToast(); return; }
       }
       toast(t('sync_err') + ': ' + error.message, 'err');
     }
@@ -3999,7 +4251,8 @@ function pickupModal(jobId, dateISO, ev){
   const cp = cpById(p0.counterparty_id) || { name:'' };
   openModal(`
     ${modalHead(t('pickup').toUpperCase() + ' · Unit ' + (p0.unit_number || '—'), 'box')}
-    ${pickNo(p0) ? `<div class="tiny" style="margin:-4px 0 4px"><b>${t('doc_no')}:</b> <span class="gd-mark">${esc(pickNo(p0))}</span></div>` : ''}
+    ${pickNo(p0) ? `<div class="tiny" style="margin:-4px 0 4px"><b>${t('doc_no')}:</b> <span class="gd-mark">${esc(pickNo(p0))}</span>
+      <button class="btn btn-ghost sm" style="margin-left:6px" onclick="App.chain('pick','${p0.id}')">${ic('link')} ${t('ch_title')}</button></div>` : ''}
     <div class="tiny" style="margin:-4px 0 8px">${esc(cx.name)}${cp.name ? ' · ' + esc(cp.name) : ''}<br>${esc(cx.address||'')}
       <button class="mini-nav" onclick="App.navToCx('${p0.complex_id}')">${ic('compass')} ${t('navigate')}</button></div>
     ${(cx.access_code || cx.callbox_code) ? `<div class="tiny" style="margin-bottom:8px">${codeLineHtml(cx, true)}</div>` : ''}
@@ -6106,6 +6359,9 @@ const App = {
     }
   },
   foldToggle(k){ foldSet(k, !foldOpen(k)); render(); },
+  chain: chainModal,
+  dbHelp: dbUpdateHelp,
+  gdCycle,
   popPos: setPopPos,
   popDemo(){ toast('🔔 ' + t('pop_demo_txt'), 'inf'); },
   translateEn: translateToEn,
@@ -6419,6 +6675,7 @@ function initBackGuard(){
   try {
     applyPopPos();                 // v1.07.83: место всплывашек — до первого тоста
     setTimeout(() => { try{ pickRestore(); }catch(e){ dlog('⛔ pickRestore:', e); } }, 900);
+    setTimeout(() => { try{ metricsBoot(); }catch(e){} }, 1500);   // v1.08.09
     initSW();
     initBackGuard();
     initDragSort();
@@ -8295,12 +8552,79 @@ async function runDbDiagnostics(){
   dlog('db-diag: выполнена,', tbs.length, 'таблиц');
   return report;
 }
+/* =====================================================================
+   v1.08.10 · ЧТО ЕЩЁ ПРОВЕРЯЕМ У БАЗЫ.
+   Раньше отчёт отвечал на вопрос «есть ли колонки». Этого мало: база
+   может отвечать медленно, часы клиента и сервера — расходиться (тогда
+   даты документов уезжают на день), а права RLS — молча не пускать
+   запись, и человек узнаёт об этом, когда работа не сохранилась.
+   ===================================================================== */
+async function dbDeepChecks(){
+  const L = [];
+  if (!HAS_SB || !state.sb) return '';
+  /* 1. скорость: пять лёгких запросов, медиана и худший */
+  try{
+    const t = [];
+    for (let i = 0; i < 5; i++){
+      const a = performance.now();
+      await state.sb.from('org_settings').select('id').limit(1);
+      t.push(performance.now() - a);
+    }
+    t.sort((x, y) => x - y);
+    const p50 = Math.round(t[2]), p95 = Math.round(t[4]);
+    L.push((p95 > 1500 ? '⛔' : p95 > 600 ? '⚠' : '✓') +
+           ' скорость базы: медиана ' + p50 + ' мс, худший из пяти ' + p95 + ' мс');
+  }catch(e){ L.push('⛔ скорость базы: ' + errStr(e)); }
+
+  /* 2. часы: расхождение клиента и сервера — из заголовка Date ответа */
+  try{
+    const r = await fetch((CFG.SUPABASE_URL || '') + '/rest/v1/', {
+      headers: { apikey: CFG.SUPABASE_ANON_KEY || '' } });
+    const srv = new Date(r.headers.get('date') || 0).getTime();
+    if (srv){
+      const skew = Math.round((Date.now() - srv) / 1000);
+      L.push((Math.abs(skew) > 120 ? '⛔' : Math.abs(skew) > 30 ? '⚠' : '✓') +
+             ' часы устройства расходятся с сервером на ' + skew + ' с' +
+             (Math.abs(skew) > 120 ? ' — даты документов могут уехать на день' : ''));
+    }
+  }catch(e){ L.push('⚠ часы: сверить не вышло (' + errStr(e) + ')'); }
+
+  /* 3. права: своя строка пишется, чужая — нет. Значение не меняем:
+        записываем то же самое, что и было. */
+  try{
+    const mine = (state.data.jobs || []).find(j => j.technician_id === state.user.id);
+    if (mine){
+      const r1 = await state.sb.from('jobs').update({ note: mine.note ?? '' }).eq('id', mine.id).select('id');
+      L.push((r1.error ? '⛔' : (r1.data || []).length ? '✓' : '⚠') +
+             ' запись своей работы: ' + (r1.error ? errStr(r1.error) : ((r1.data || []).length ? 'разрешена' : 'политики не пропустили')));
+    } else L.push('· своих работ нет — запись не проверялась');
+    const alien = (state.data.jobs || []).find(j => j.technician_id && j.technician_id !== state.user.id &&
+                                                    !isJobSharedWithMe(j));
+    if (alien && !isAdmin()){
+      const r2 = await state.sb.from('jobs').update({ note: alien.note ?? '' }).eq('id', alien.id).select('id');
+      const blocked = !!r2.error || !(r2.data || []).length;
+      L.push((blocked ? '✓' : '⛔') + ' чужая работа: ' + (blocked ? 'запись не проходит, как и должно' :
+             'ЗАПИСЬ ПРОШЛА — политики RLS настроены слишком широко'));
+    } else if (alien) L.push('· вы администратор — запись чужих работ разрешена по роли');
+  }catch(e){ L.push('⚠ права: ' + errStr(e)); }
+
+  /* 4. сквозные номера: выдаёт ли база identity */
+  try{
+    const noNo = (state.data.jobs || []).filter(j => j.no == null).length;
+    L.push((noNo ? '⚠' : '✓') + ' сквозные номера: без номера ' + noNo + ' работ(ы)' +
+           (noNo ? ' — выполните supabase/' + DB_SQL_FILE : ''));
+  }catch(e){}
+  return L.length ? ('\n— глубокая проверка —\n' + L.join('\n') + '\n') : '';
+}
 async function showDbDiagnostics(){
   if (!isAdmin()){ toast('⛔ ' + t('admin_only'), 'err'); return; }
   toast('🗄 ' + t('checking_tables'), 'inf');
   let report = '';
   try{ report = await runDbDiagnostics(); }
   catch(e){ report = '⛔ ' + errStr(e); dlog('⛔ db-diag:', e); }
+  try{ report += await dbDeepChecks(); }
+  catch(e){ report += '\n⛔ глубокая проверка: ' + errStr(e); }
+  try{ dlog('метрики·база: ' + report.split('\n').filter(l => /^[⛔⚠]/.test(l)).length + ' замечаний'); }catch(e){}
   window.__lastDiag = report;
   openModal(`
     ${modalHead(t('db_diag'), 'archive')}
@@ -8514,6 +8838,79 @@ function proposalChipHtml(j, short){
   if (j && j.has_proposal) return ` <span class="chip prq" title="${t('prop_requested')}">P?</span>`;
   return '';
 }
+/* =====================================================================
+   v1.08.08 · ЦЕПОЧКА ДОКУМЕНТОВ.
+   Пропозал → работа → аренда → продление. В базе связи разные: у работы
+   proposal_id, у аренды job_id, у продления ext_of на предыдущую аренду,
+   а закрытая продлением аренда помечена superseded. Собираем это в один
+   ряд карточек со стрелками, чтобы было видно, что за чем шло.
+   ===================================================================== */
+function chainOf(kind, id){
+  const out = [];
+  let job = null, prop = null;
+  if (kind === 'prop'){ prop = propById(id); }
+  else if (kind === 'pick'){
+    const pk = (state.data.placements || []).find(x => x.id === id);
+    job = pk ? (state.data.jobs || []).find(j => j.id === pk.job_id) : null;
+  } else { job = (state.data.jobs || []).find(j => j.id === id); }
+  if (job && job.proposal_id) prop = propById(job.proposal_id);
+  if (prop) out.push({ t: 'prop', o: prop });
+
+  const jobs = job ? [job]
+    : (prop ? (state.data.jobs || []).filter(j => j.proposal_id === prop.id) : []);
+  jobs.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  jobs.forEach(j => {
+    out.push({ t: 'job', o: j });
+    const all = (state.data.placements || []).filter(p => p.job_id === j.id);
+    const roots = all.filter(p => !p.ext_of)
+      .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+    roots.forEach(r => {
+      out.push({ t: 'pick', o: r });
+      /* продления идут цепочкой: каждое ссылается на предыдущее */
+      let cur = r, guard = 0;
+      while (guard++ < 20){
+        const next = all.find(p => p.ext_of === cur.id);
+        if (!next) break;
+        out.push({ t: 'ext', o: next });
+        cur = next;
+      }
+    });
+  });
+  return out;
+}
+function chainCard(node, i){
+  const o = node.o, cx = cxById(o.complex_id) || {};
+  const et = node.t === 'pick' || node.t === 'ext' ? (etById(o.equipment_type_id) || {}) : null;
+  const T2 = { prop: 'PROP', job: 'WORK', pick: 'PICK', ext: 'LONG' }[node.t];
+  const no = node.t === 'prop' ? docNo('prop', o)
+           : node.t === 'job' ? docNo('job', o) : pickNo(o);
+  const title = node.t === 'prop' ? (no || 'P-' + (o.no ?? '·'))
+              : node.t === 'job' ? (no || ((cx.abbr || cx.name || '—') + ' · ' + (o.unit_number || '—')))
+              : (et.abbr || et.name || '—') + ' × ' + (+o.qty || 1);
+  const sub = node.t === 'prop' ? fmtDMY(o.date) + ' · ' + t('pst_' + (o.status || 'draft'))
+            : node.t === 'job' ? fmtDMY(o.date) + ' · ' + t('st_' + (o.status || 'draft'))
+            : fmtDMY(o.date) + ' → ' + fmtDMY(o.due_date) +
+              (o.superseded ? ' · ' + t('ch_closed') : '');
+  const open = node.t === 'prop' ? `App.openProposal('${o.id}')`
+             : node.t === 'job' ? `App.openJob('${o.id}')`
+             : `App.openJob('${o.job_id}')`;
+  return `${i ? `<span class="chain-arr" aria-hidden="true">${ic('chev_r')}</span>` : ''}
+    <button class="chain-item t-${node.t}" onclick="App.closeModal();${open}">
+      <span class="chain-tag">${T2}</span>
+      <b>${esc(title)}</b>
+      <span class="tiny">${esc(sub)}</span>
+      ${no && node.t !== 'prop' && node.t !== 'job' ? `<span class="tiny gd-mark">${esc(no)}</span>` : ''}
+    </button>`;
+}
+function chainModal(kind, id){
+  const list = chainOf(kind, id);
+  openModal(`
+    ${modalHead(t('ch_title'), 'link')}
+    <div class="tiny" style="margin-bottom:8px">${t('ch_hint')}</div>
+    ${list.length ? `<div class="chain">${list.map(chainCard).join('')}</div>`
+                  : `<div class="list-empty">${t('ch_empty')}</div>`}
+  `);
+}
 function proposalBoxHtml(j){
   const p = j.proposal_id ? propById(j.proposal_id) : null;
   if (isManager()){
@@ -8521,6 +8918,7 @@ function proposalBoxHtml(j){
     if (p){
       inner = `<span class="chip pr">P-${p.no ?? '·'} · ${money(+p.total || 0)}</span>
         <button class="btn btn-ghost sm" onclick="App.openProposal('${p.id}')">↗</button>
+        <button class="btn btn-ghost sm" title="${t('ch_title')}" onclick="App.chain('job','${j.id}')">${ic('link')}</button>
         <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">${ic('close')} ${t('prop_unlink')}</button>`;
     } else {
       const opts = (state.data.proposals || [])
@@ -9755,6 +10153,7 @@ function pickRestore(){
   const j = (state.data.jobs || []).find(x => x.id === v.job);
   if (!j) return;
   dlog('съёмка: страница была выгружена во время съёмки, возвращаю документ');
+  healthBump('shot_lost');
   openJob(v.job);
   setTimeout(() => toast('⚠ ' + t('pick_lost'), 'err'), 600);
 }
@@ -9946,6 +10345,13 @@ async function mediaFlush(verbose){
     }
   } finally { _mediaBusy = false; if (res && (res.photo || res.video)) _mqSentOnce = true;
     mediaBadge(); if (!$('#mq-log')) mqMini(true); }
+  /* v1.08.09: метрика отправки — сколько ушло, сколько сорвалось */
+  try{
+    dlog('метрики·отправка: фото ' + res.photo + ' · видео ' + res.video +
+         ' · сорвалось ' + res.fail + ' · осталось в очереди ' + mediaQ.length +
+         (res.stopped ? ' · остановлено (нет связи)' : ''));
+    if (res.fail){ netErr('upload'); healthBump('upload_fail', res.fail); }
+  }catch(e){}
   return res;
 }
 /* ---------- полоса миниатюр ---------- */
@@ -10634,6 +11040,9 @@ function gdFoldersHtml(){
     ${row(t('gd_where_photo'), gdFolders.photo || gdFolders.root)}
     ${row(t('gd_where_files'), gdFolders.file)}
     ${row(t('gd_where_inv'), gdFolders.invoice)}
+    <button class="btn btn-blue" style="margin-top:6px" onclick="App.gdCycle()">${ic('sync')} ${t('gd_cyc')}</button>
+    <div class="tiny gd-hint">${t('gd_cyc_hint')}</div>
+    <div id="gd-cycle" style="margin:4px 0"></div>
     <button class="btn btn-ghost" style="margin-top:6px" onclick="App.gdMove()">${ic('folder')} ${t('gd_move')}</button>
     <div class="tiny dim" style="margin-top:4px">${t('gd_move_hint')}</div>
   </div>`;

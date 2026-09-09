@@ -98,6 +98,13 @@
       c_media: 'Фото, видео и вложения',
       c_feat: 'Новые модули: номера, переводы, Диск, архив',
       env: 'Устройство', all_title: 'Отчёт по всем экранам', walking: 'Обхожу экраны…',
+      matrix: 'Матрица устройств', matrix_go: 'Гоняю размеры…',
+      matrix_t: 'Матрица устройств',
+      matrix_hint: 'Приложение открывается в рамке заданного размера — с настоящим окном такого разрешения — и внутри прогоняются все проверки. Так видно, что ломается на узком телефоне или на планшете, не меняя окна браузера.',
+      shots: 'Снимки экранов', shots_go: 'Снимаю экраны…',
+      shots_ok: 'Готово: страниц {P}, снимков {S}, архив {KB} КБ — файл уже в загрузках',
+      shots_nocap: 'Снимки не сняты (нет доступа к экрану) — в архиве только сведения об окружении и размеры страниц',
+      shots_err: 'Снять не вышло: ',
       s_dir: 'справочник', s_doc: 'документ', s_cal: 'календарь', s_modal: 'модалка'
     },
     en: {
@@ -116,6 +123,13 @@
       c_media: 'Photos, video and attachments',
       c_feat: 'New modules: numbers, translations, Drive, archive',
       env: 'Device', all_title: 'Report for every screen', walking: 'Walking the screens…',
+      matrix: 'Device matrix', matrix_go: 'Running sizes…',
+      matrix_t: 'Device matrix',
+      matrix_hint: 'The app opens in a frame of the given size — a real viewport of that resolution — and every check runs inside. You see what breaks on a narrow phone or a tablet without resizing your browser.',
+      shots: 'Screenshots', shots_go: 'Capturing screens…',
+      shots_ok: 'Done: pages {P}, shots {S}, archive {KB} KB — the file is in your downloads',
+      shots_nocap: 'No shots taken (screen access denied) — the archive holds environment info and page sizes only',
+      shots_err: 'Capture failed: ',
       s_dir: 'directory', s_doc: 'document', s_cal: 'calendar', s_modal: 'modal'
     }
   };
@@ -1617,6 +1631,68 @@
     }, 60);
   }
 
+  /* v1.08.10 · МАТРИЦА УСТРОЙСТВ ВНУТРИ ПРИЛОЖЕНИЯ.
+     Страница не может менять размер окна браузера, зато может открыть себя
+     в рамке нужного размера: у iframe настоящий вьюпорт,медиазапросы и
+     раскладка считаются как на телефоне такого разрешения. Диагностика
+     внутри рамки — та же самая, отчёт собираем наружу. */
+  var MATRIX = [
+    { n: 'телефон 320', w: 320, h: 568 },
+    { n: 'телефон 375', w: 375, h: 667 },
+    { n: 'телефон 414', w: 414, h: 896 },
+    { n: 'планшет 768', w: 768, h: 1024 },
+    { n: 'ноутбук 1280', w: 1280, h: 800 },
+    { n: 'широкий 1600', w: 1600, h: 900 }
+  ];
+  function runMatrix(onLine) {
+    var host = document.createElement('div');
+    host.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1';
+    document.body.appendChild(host);
+    var total = 0, bad = 0;
+    return MATRIX.reduce(function (p, dev) {
+      return p.then(function () {
+        return new Promise(function (res) {
+          var fr = document.createElement('iframe');
+          fr.style.cssText = 'border:0;width:' + dev.w + 'px;height:' + dev.h + 'px';
+          fr.src = location.pathname + '?uidiag=1';
+          var done = false;
+          var stop = setTimeout(function () { finish('не открылось за 25 с'); }, 25000);
+          fr.onload = function () {
+            var tries = 0;
+            (function wait2() {
+              var w = fr.contentWindow;
+              if (w && w.UIDiag && w.App) {
+                w.UIDiag.jsonAll({ deep: false }).then(function (a) {
+                  finish(null, a);
+                }).catch(function (e) { finish((e && e.message) || 'ошибка'); });
+              } else if (++tries < 60) setTimeout(wait2, 250);
+              else finish('приложение не поднялось в рамке');
+            })();
+          };
+          function finish(err, a) {
+            if (done) return; done = true;
+            clearTimeout(stop);
+            try { fr.remove(); } catch (e) {}
+            total++;
+            if (err) { bad++; onLine('[!] ' + dev.n + ' (' + dev.w + '×' + dev.h + ') — ' + err); }
+            else {
+              var e2 = a.errors || 0, w2 = a.warns || 0;
+              if (e2) bad++;
+              onLine((e2 ? '[!] ' : '[ok] ') + dev.n + ' (' + dev.w + '×' + dev.h + ') — дефектов ' +
+                     e2 + ', замечаний ' + w2 +
+                     (e2 ? ': ' + (a.screens || []).filter(function (s) { return s.errors; })
+                              .map(function (s) { return s.screen; }).slice(0, 4).join(', ') : ''));
+            }
+            res();
+          }
+          host.appendChild(fr);
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      try { host.remove(); } catch (e) {}
+      onLine('— итог: размеров ' + total + ', с дефектами ' + bad + ' —');
+    });
+  }
   function buildWin(title) {
     var m = document.createElement('div');
     m.id = 'uidiag-modal';
@@ -1625,6 +1701,8 @@
       '<button class="ud-x" style="border:none;background:transparent;color:var(--dim,#8AA0AB);font-size:1.3rem;cursor:pointer">×</button></div>' +
       '<div class="ud-sum">' + T('working') + '</div><div class="ud-body"></div>' +
       '<div class="ud-ft"><button class="pri" data-a="again">' + T('again') + '</button>' +
+      '<button data-a="shots">' + T('shots') + '</button>' +
+      '<button data-a="matrix">' + T('matrix') + '</button>' +
       '<button data-a="copy">' + T('copy') + '</button>' +
       '<button data-a="save">' + T('save') + '</button>' +
       '<button data-a="close">' + T('close') + '</button></div></div>';
@@ -1653,6 +1731,42 @@
       if (a === 'again') {
         if (isAllWin(m)) { close(); openAll(); return; }
         paintWait(m); run().then(paint); return;
+      }
+      if (a === 'matrix') {
+        var body2 = m.querySelector('.ud-body'), sum2 = m.querySelector('.ud-sum');
+        sum2.textContent = T('matrix_go');
+        body2.innerHTML = '<div class="ud-it"><span class="m">' + T('matrix_hint') + '</span></div>';
+        runMatrix(function (line) {
+          body2.insertAdjacentHTML('beforeend', '<div class="ud-it"><span class="m">' + line + '</span></div>');
+        }).then(function () { sum2.textContent = T('matrix_t'); })
+          .catch(function (e) {
+            body2.insertAdjacentHTML('beforeend',
+              '<div class="ud-it err"><span class="m">' + ((e && e.message) || e) + '</span></div>');
+            sum2.textContent = T('matrix_t');
+          });
+        return;
+      }
+      if (a === 'shots') {
+        if (!window.UIShots) return;
+        var body = m.querySelector('.ud-body'), sum = m.querySelector('.ud-sum');
+        m.style.display = 'none';                       // окно не должно попасть в кадр
+        sum.textContent = T('shots_go');
+        window.UIShots.run(function (label, i, total) {
+          try { sum.textContent = T('shots_go') + ' ' + i + '/' + total + ' · ' + label; } catch (e) {}
+        }).then(function (r) {
+          m.style.display = '';
+          body.innerHTML = '<div class="ud-it"><span class="m">' +
+            (r.withShots ? T('shots_ok').replace('{P}', r.pages).replace('{S}', r.shots)
+                              .replace('{KB}', Math.round(r.bytes / 1024))
+                         : T('shots_nocap')) + '</span></div>';
+          sum.textContent = T('shots');
+        }).catch(function (e) {
+          m.style.display = '';
+          body.innerHTML = '<div class="ud-it"><span class="m">' + T('shots_err') +
+            ((e && e.message) || e) + '</span></div>';
+          sum.textContent = T('shots');
+        });
+        return;
       }
       if (a === 'copy' && (LAST || ALL)) {
         try { navigator.clipboard.writeText(currentText(m)); } catch (e2) {}
