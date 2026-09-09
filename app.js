@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.15';
-const DB_SQL_FILE = 'full-install-1_08_15.sql';   // v1.08.15: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.08.17';
+const DB_SQL_FILE = 'full-install-1_08_17.sql';   // v1.08.17: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -451,6 +451,20 @@ const I18N = {
     db_diag: 'Диагностика БД (все таблицы)', admin_only: 'Доступно только администратору',
     checking_tables: 'Проверяю таблицы…',
     priority: 'Приоритет', move_up: 'Выше', move_down: 'Ниже',
+    mv_other_day: 'Эта карточка показана здесь из-за пикапа, а сама работа стоит другим днём. Порядок меняется в дне самой работы — откройте её дату.',
+    prio_title: 'Важность карточки',
+    prio_red: 'Красный треугольник', prio_yel: 'Жёлтый треугольник', prio_off: 'Без треугольника',
+    prio_red_h: 'Карточка закреплена первой в дне. Порядок стрелками не меняется — так задумано.',
+    prio_yel_h: 'Просто пометка «важное». Карточка остаётся в общем порядке, стрелками двигается свободно.',
+    prio_off_h: 'Обычная карточка.',
+    prio_why_t: 'Зачем это',
+    prio_why: 'Красный треугольник — для того, что должно быть сделано первым и не должно уехать вниз при перестановках: аварии, просроченные пикапы. Жёлтый — когда важно, но порядок дня вы выстраиваете сами. Стрелки ▲▼ двигают карточку только внутри своей группы: красные не смешиваются с обычными.',
+    mv_alone: 'В этом дне одна карточка — двигать нечего.',
+    mv_edge: 'Карточка уже с краю списка.',
+    mv_forbid: 'Порядок чужой работы менять нельзя — только своей. Администратор может двигать любые.',
+    mv_prio: 'Порядок не меняется: {W} Карточки с треугольником всегда идут первыми. Сам треугольник переключается нажатием — снимите его, и карточка встанет в общий порядок.',
+    mv_prio_a: 'у этой карточки стоит приоритет, а у соседней — нет.',
+    mv_prio_b: 'у соседней карточки стоит приоритет, а у этой — нет.',
     tab_board: 'Доска', b_jobs: 'работ', b_pk: 'пикапов', b_empty: 'День свободен',
     b_ext: 'продление', b_over: 'просрочен',
     b_cols: 'Доска', b_cols_lbl: 'Минимум сотрудников на экране без скролла (ПК)', b_cols_auto: 'Авто',
@@ -1037,6 +1051,20 @@ const I18N = {
     db_diag: 'DB diagnostics (all tables)', admin_only: 'Admins only',
     checking_tables: 'Checking tables…',
     priority: 'Priority', move_up: 'Up', move_down: 'Down',
+    mv_other_day: 'This card is shown here because of a pickup; the job itself sits on another day. Reorder it on the job own date.',
+    prio_title: 'Card importance',
+    prio_red: 'Red triangle', prio_yel: 'Yellow triangle', prio_off: 'No triangle',
+    prio_red_h: 'The card is pinned first in the day. Arrows do not change the order — by design.',
+    prio_yel_h: 'Just an «important» mark. The card stays in the common order and moves freely.',
+    prio_off_h: 'A regular card.',
+    prio_why_t: 'What it is for',
+    prio_why: 'Red is for what must be done first and must not slide down when the order changes: emergencies, overdue pickups. Yellow is when it matters but you still arrange the day yourself. Arrows move a card inside its group: red never mixes with regular.',
+    mv_alone: 'Only one card on this day — nothing to move.',
+    mv_edge: 'The card is already at the edge of the list.',
+    mv_forbid: 'You can reorder your own jobs only. An admin can move any.',
+    mv_prio: 'The order does not change: {W} Cards with the triangle always come first. The triangle toggles by tap — remove it and the card joins the common order.',
+    mv_prio_a: 'this card has priority and the neighbour does not.',
+    mv_prio_b: 'the neighbour has priority and this card does not.',
     tab_board: 'Board', b_jobs: 'jobs', b_pk: 'pickups', b_empty: 'Free day',
     b_ext: 'extension', b_over: 'overdue',
     b_cols: 'Board', b_cols_lbl: 'Minimum staff visible without scrolling (desktop)', b_cols_auto: 'Auto',
@@ -2048,6 +2076,7 @@ const DB_NEED_COLS = [
   ['org_settings',  'gd_inv_by_tech'],
   ['org_settings',  'gd_photo_folder'],
   ['org_settings',  'prop_hide_prices'],
+  ['jobs',          'prio_hard'],
   ['jobs',          'archived_at'],
   ['media',         'archived_at'],
   ['org_settings',  'voice_line'],
@@ -2591,8 +2620,11 @@ function visiblePlacements(){
   if (!isManager() || state.filterMine) ps = ps.filter(p => p.technician_id === state.user.id || isPlacementSharedWithMe(p));
   return ps;
 }
+/* v1.08.17: наверх поднимает только КРАСНЫЙ приоритет (prio_hard).
+   Жёлтый — пометка важности, порядок при нём свободный. */
+const prioHard = (j) => !!(j && j.priority && j.prio_hard !== false);
 function jobSortCmp(a, b){
-  return (b.priority?1:0) - (a.priority?1:0)
+  return (prioHard(b)?1:0) - (prioHard(a)?1:0)
       || (a.sort_order||0) - (b.sort_order||0)
       || String(a.created_at||'').localeCompare(String(b.created_at||''));
 }
@@ -3445,9 +3477,11 @@ function triHtml(on, jobId, canEdit, inline){
      (inline=true) — раньше absolute-угол постоянно пересекался с бейджами
      оборудования в правой колонке. Доска (.bjob) осталась на угловом. */
   if (!on && !canEdit) return '';
-  const cls = 'pri ' + (inline ? 'inline' : 'corner') + (on ? ' on' : '');
+  const jj = (state.data.jobs || []).find(x => x.id === jobId) || {};
+  const hard = prioHard(jj);
+  const cls = 'pri ' + (inline ? 'inline' : 'corner') + (on ? ' on' : '') + (on ? (hard ? ' hard' : ' soft') : '');
   return canEdit
-    ? `<button class="${cls}" title="${t('priority')}" onclick="event.stopPropagation();App.togglePriority('${jobId}')"><span class="tri">!</span></button>`
+    ? `<button class="${cls}" title="${on ? (hard ? t('prio_red') : t('prio_yel')) : t('priority')}" onclick="event.stopPropagation();App.prioMenu('${jobId}')"><span class="tri">!</span></button>`
     : `<span class="${cls}"><span class="tri">!</span></span>`;
 }
 function railHtml(j){
@@ -3849,6 +3883,7 @@ function sectionFaqHtml(key){
       <li>Введите адрес → <b>Найти</b>: результаты OpenStreetMap; клик — маркер на карте.</li>
       <li>«${ic('check')} Точка найдена» → <b>Добавить как комплекс</b>: название и адрес заполнены, выберите владельца: существующий контрагент, «＋ Новый…», «⏳ Временный владелец» или «— без привязки —».</li>
       <li>Комплексы без владельца (и с временным) помечаются ${faqTriDemo()} здесь и в Справочнике — назначьте контрагента позже.</li>
+      <li><b>Треугольник важности — двух видов.</b> ${faqTriDemo()} <b>красный</b>: карточка закреплена первой в дне, стрелками ▲▼ её не сдвинуть — для аварий и просроченных пикапов. <b>Жёлтый</b>: просто пометка «важное», карточка остаётся в общем порядке и двигается свободно. Нажатие на треугольник открывает выбор вида и знак вопроса с пояснением. Стрелки двигают карточку внутри своей группы: красные не смешиваются с обычными.</li>
     </ul>`,
   `
     <h4>${ic('map')} Complexes map</h4>
@@ -6527,7 +6562,7 @@ const App = {
   jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
   jrAct(v){ state.jr.act = v; loadJournal(true); },
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
-  togglePriority, moveJob, boardMove, setCarNo, restorePk, pdfPreview, pdfPrint,
+  togglePriority, prioMenu, prioSet, moveJob, boardMove, setCarNo, restorePk, pdfPreview, pdfPrint,
   comboFilter, comboPick, stockSet, wtChecklistModal, wtChecklistSave,
   openProposal, propBack, saveProposal, delProposal, makeProposalPdf, linkProposal, linkJobFromProp,
   propField(k, v){ if (!propDraft) return;
@@ -8791,6 +8826,39 @@ function dayTripJobIds(iso){
     state.data.jobs.find(x=>x.id===a) || {sort_order:999},
     state.data.jobs.find(x=>x.id===b) || {sort_order:999}));
 }
+/* v1.08.17: вместо переключателя «есть / нет» — маленькое меню с выбором
+   вида и знаком вопроса, который объясняет разницу. */
+function prioMenu(id){
+  const j = state.data.jobs.find(x => x.id === id);
+  if (!j || !canPrio(j)) return;
+  const cur = !j.priority ? 'off' : (prioHard(j) ? 'red' : 'yellow');
+  const row = (key, label, hint, cls) => `<button class="rowline map-row prio-pick ${cls} ${cur === key ? 'on' : ''}"
+      style="width:100%;text-align:left" onclick="App.prioSet('${id}','${key}')">
+      <span class="pri inline on ${cls}" style="pointer-events:none"><span class="tri">!</span></span>
+      <div class="grow"><b>${label}</b><div class="tiny">${hint}</div></div>
+      ${cur === key ? ic('check') : ''}</button>`;
+  openModal(`
+    ${modalHead(t('prio_title'), 'warn')}
+    <div class="card">
+      ${row('red', t('prio_red'), t('prio_red_h'), 'hard')}
+      ${row('yellow', t('prio_yel'), t('prio_yel_h'), 'soft')}
+      <button class="rowline map-row ${cur === 'off' ? 'on' : ''}" style="width:100%;text-align:left"
+        onclick="App.prioSet('${id}','off')"><div class="grow"><b>${t('prio_off')}</b>
+        <div class="tiny">${t('prio_off_h')}</div></div>${cur === 'off' ? ic('check') : ''}</button>
+    </div>
+    <button class="btn btn-ghost sm" onclick="App.toastInfo('prio_why')">${ic('help')} ${t('prio_why_t')}</button>
+  `);
+}
+async function prioSet(id, kind){
+  const j = state.data.jobs.find(x => x.id === id); if (!j || !canPrio(j)) return;
+  const patch = kind === 'off' ? { priority: false }
+              : { priority: true, prio_hard: kind === 'red' };
+  try { await saveJobPatch(j, patch); }
+  catch(e){ toast('⛔ ' + rpcFail(e, 'board_job_flags'), 'err'); return; }
+  navigator.vibrate?.(20);
+  dlog('priority:', j.unit_number || id, '→', kind);
+  closeModal(); render();
+}
 async function togglePriority(id){
   const j = state.data.jobs.find(x=>x.id===id); if (!j || !canPrio(j)) return;
   try { await saveJobPatch(j, { priority: !j.priority }); }
@@ -8804,11 +8872,20 @@ async function moveJob(id, dir){
   const order = dayTripJobIds(iso);
   const i = order.indexOf(id);
   const k = i + dir;
-  if (i < 0 || k < 0 || k >= order.length) return;
+  /* v1.08.16: раньше стрелка в этих случаях просто ничего не делала — со
+     стороны это выглядело поломкой. Теперь каждый отказ объясняет себя. */
+  if (i < 0){ toast('ℹ ' + t('mv_other_day'), 'inf'); return; }
+  if (order.length < 2){ toast('ℹ ' + t('mv_alone'), 'inf'); return; }
+  if (k < 0 || k >= order.length){ toast('ℹ ' + t('mv_edge'), 'inf'); return; }
   const a = state.data.jobs.find(x=>x.id===order[i]);
   const b = state.data.jobs.find(x=>x.id===order[k]);
   if (!a || !b) return;
-  if (!canReorder(a)) return;
+  if (!canReorder(a)){ toast('⚠ ' + t('mv_forbid'), 'err'); return; }
+  /* приоритетные карточки всегда идут первыми: обмен с обычной их не сдвинет */
+  if (prioHard(a) !== prioHard(b)){
+    toast('⚠ ' + t('mv_prio').replace('{W}', prioHard(a) ? t('mv_prio_a') : t('mv_prio_b')), 'err');
+    return;
+  }
   // нормализуем порядок дня, затем меняем соседей местами
   const seq = order.map((jid, idx) => ({ jid, so: idx }));
   const t1 = seq[i].so; seq[i].so = seq[k].so; seq[k].so = t1;

@@ -1752,3 +1752,9 @@ select:disabled{opacity:.55;cursor:default}
 }
 .docbar .db-chain:hover{color:var(--blue)}
 @media (max-width:640px){ .chain-arr{flex-direction:row;gap:6px} }
+
+/* v1.08.17: два вида приоритета — красный (закреплён первым) и жёлтый (метка) */
+.pri.on.hard .tri{color:var(--red)}
+.pri.on.soft .tri{color:var(--orange)}
+.pri.on.hard .tri::before, .pri.on.soft .tri::before{border-bottom-color:currentColor}
+.prio-pick.on{border-color:var(--blue)}
