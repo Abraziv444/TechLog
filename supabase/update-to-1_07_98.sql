@@ -25,8 +25,10 @@ alter table public.note_templates enable row level security;
 drop policy if exists nt_sel on public.note_templates;
 create policy nt_sel on public.note_templates for select to authenticated using (true);
 drop policy if exists nt_all on public.note_templates;
+-- права как у остальных справочников: читают все, правит админ.
+-- Роль берём тем же способом, что и все политики схемы — public.my_role().
 create policy nt_all on public.note_templates for all to authenticated
-  using (public.is_admin()) with check (public.is_admin());
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
 
 -- готовые блоки с бланков заказчика
 insert into public.note_templates (id, title, body, sort) values
