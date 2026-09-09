@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.04';
+const APP_VERSION = '1.08.05';
 const DB_SQL_FILE = 'full-install-1_07_98.sql';   // v1.07.98: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -1337,6 +1337,33 @@ function numberingCardHtml(){
     <div class="qty-line" style="margin-top:8px"><span class="name">${t('no_pad_lbl')}</span>
       ${orgStepperHtml('doc_no_pad', docPad(), 1, 9)}</div>
     <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.noReset()">${ic('refresh')} ${t('no_reset')}</button>
+  </div>`;
+}
+/* =====================================================================
+   v1.08.05: НАСТРОЙКИ СКЛАДЫВАЮТСЯ.
+   За последние выпуски экран оброс карточками: по отчёту с рабочей машины
+   его высота — 7310 px в окне 500 px, 672 узла, 26 блоков с тенями. Кадры
+   при прокрутке ровные (медиана 16.7 мс), но браузер раз за прокрутку
+   перерисовывал огромное полотно и вставал на 131 мс. Показываем свёрнутые
+   заголовки, раскрывает пользователь — выбор помнится на устройстве.
+   ===================================================================== */
+const LS_FOLD = 'techlog_fold';
+function foldOpen(k){
+  try{ return (JSON.parse(localStorage.getItem(LS_FOLD)) || {})[k] === 1; }catch(e){ return false; }
+}
+function foldSet(k, v){
+  try{
+    const m = JSON.parse(localStorage.getItem(LS_FOLD)) || {};
+    m[k] = v ? 1 : 0; localStorage.setItem(LS_FOLD, JSON.stringify(m));
+  }catch(e){}
+}
+function fold(key, label, iconName, html){
+  if (!html) return '';
+  const on = foldOpen(key);
+  return `<div class="fold ${on ? 'on' : ''}">
+    <button class="fold-h" onclick="App.foldToggle('${key}')" aria-expanded="${on}">
+      ${ic(iconName)} <span class="grow">${esc(label)}</span> ${ic(on ? 'chev_u' : 'chev_d')}</button>
+    ${on ? `<div class="fold-b">${html}</div>` : ''}
   </div>`;
 }
 function popCardHtml(){
@@ -5569,11 +5596,11 @@ function viewSettings(){
     ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
   </div>
 
-  ${numberingCardHtml()}
-  ${trSettingsCardHtml()}
-  ${popCardHtml()}
-  ${camCardHtml()}
-  ${uiDiagCardHtml()}
+  ${fold('num', t('no_card'), 'receipt', numberingCardHtml())}
+  ${fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml())}
+  ${fold('pop', t('pop_card'), 'bell', popCardHtml())}
+  ${fold('cam', t('cam_card'), 'camera', camCardHtml())}
+  ${fold('uid', t('ui_card'), 'steth', uiDiagCardHtml())}
 
   ${isAdmin() ? `
   <div class="card">
@@ -5623,10 +5650,10 @@ function viewSettings(){
       ${orgStepperHtml('edit_lock_days', org.edit_lock_days ?? 0, 0, 60)}</div>
     <div class="tiny">${t('lock_hint')}</div>
   </div>
-  ${mediaLimitsCardHtml()}
-  ${mediaSettingsCardHtml()}
-  ${backupCardHtml()}
-  ${diagCardHtml()}
+  ${fold('mlim', t('media_lim_card'), 'clip', mediaLimitsCardHtml())}
+  ${fold('gd', t('gd_card'), 'folder', mediaSettingsCardHtml())}
+  ${fold('bkp', t('bk_card'), 'save', backupCardHtml())}
+  ${fold('diag', t('diag_card'), 'steth', diagCardHtml())}
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
     <div class="tiny" style="margin-bottom:8px">${t('invite_hint')}</div>
@@ -6060,6 +6087,7 @@ const App = {
       App.camMode('quick'); toast('✓ ' + t('cam_switched'));
     }
   },
+  foldToggle(k){ foldSet(k, !foldOpen(k)); render(); },
   popPos: setPopPos,
   popDemo(){ toast('🔔 ' + t('pop_demo_txt'), 'inf'); },
   translateEn: translateToEn,
