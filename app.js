@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.93';
-const DB_SQL_FILE = 'full-install-1_07_88.sql';   // v1.07.88: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.07.98';
+const DB_SQL_FILE = 'full-install-1_07_98.sql';   // v1.07.98: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -123,6 +123,7 @@ const I18N = {
     act_password_reset: 'сброс пароля сотрудника', act_job_create: 'создан инвойс', act_job_update: 'изменён инвойс',
     act_doc_translate: 'сформирован перевод заметок',
     act_job_archive: 'инвойс отправлен в архив', act_job_restore: 'инвойс возвращён из архива',
+    act_job_cancel: 'задача отменена (снята отметка «выполнена»)',
     act_proposal_archive: 'пропозал отправлен в архив', act_proposal_restore: 'пропозал возвращён из архива',
     act_job_done: 'работа выполнена', act_job_reopen: 'возврат в черновик', act_job_approve: 'апрув',
     act_job_delete: 'удалён инвойс', act_crew_add: 'бригада: добавлен', act_crew_remove: 'бригада: убран',
@@ -176,7 +177,7 @@ const I18N = {
     map_no_results: 'Ничего не найдено — уточните адрес',
     cx_add_title: 'Новый апарт-комплекс с карты',
     cx_owner: 'Контрагент (владелец)', cx_no_bind: '— без привязки —',
-    cx_new_cp: '＋ Новый контрагент…', cx_temp_cp: '⏳ Временный владелец',
+    cx_new_cp: 'Новый контрагент…', cx_temp_cp: '⏳ Временный владелец',
     cx_new_cp_name: 'Название нового контрагента',
     cx_added: 'Комплекс добавлен', cx_no_owner: 'Владелец не назначен — привяжите контрагента',
     dir_no_owner_grp: 'Без владельца',
@@ -213,7 +214,7 @@ const I18N = {
     vis_hint: 'Отмеченные сотрудники видны этому менеджеру', vis_btn: 'Доступные сотрудники',
     confirm_email: 'Подтвердите email по ссылке из письма, затем войдите',
     req_missing: 'Не заполнено', issue_complex: 'апарт-комплекс', issue_unit: 'номер юнита', issue_tech: 'сотрудник',
-    crew: 'Кто выполнял', add_helper: '＋ добавить сотрудника', all_staff: 'Все',
+    crew: 'Кто выполнял', add_helper: 'добавить сотрудника', all_staff: 'Все',
     shared_chk: 'Общий доступ к документу для коворкера',
     shared_hint: 'Коворкеры из списка «Кто выполнял» увидят эту работу у себя и смогут её редактировать',
     shared_chip: 'Общий',
@@ -404,8 +405,8 @@ const I18N = {
     pdf_preview: 'Просмотр PDF', pdf_print: 'Печать',
     print_hint: 'Откроется системная печать; если нет — PDF откроется в новой вкладке (меню браузера → Печать).',
     tab_proposals: 'Пропозалы', prop_only: 'Пропозалы доступны менеджеру и администратору.',
-    prop_new: '＋ Новый пропозал', prop_items: 'Позиции', prop_desc: 'Описание',
-    prop_add_row: '＋ строка', prop_note: 'Примечание',
+    prop_new: 'Новый пропозал', prop_items: 'Позиции', prop_desc: 'Описание',
+    prop_add_row: 'строка', prop_note: 'Примечание',
     pst_draft: 'Черновик', pst_sent: 'Отправлен', pst_approved: 'Одобрен', pst_declined: 'Отклонён',
     prop_linked: 'Связанные документы', prop_link: 'Связать', prop_unlink: 'Отвязать',
     prop_pick: 'Выбрать пропозал…', prop_pick_none: 'нет подходящих (комплекс/статус)',
@@ -415,6 +416,19 @@ const I18N = {
     nt_prop_pick_any: 'Выбрать из всех свободных…', nt_prop_none: 'Свободных пропозалов нет',
     mq_title: 'Неотправленные фото и видео', mq_check: 'Проверить неотправленные',
     mq_retry: 'Повторить отправку', mq_ping: 'Проверка соединения',
+    mq_clean: 'Убрать зависшие',
+    mq_clean_q: 'Убрать из очереди {N} зависших файл(ов)? Это записи, которые лежат больше недели или сорвались пять раз подряд. Сами снимки останутся в галерее телефона.',
+    mq_clean_none: 'Зависших записей нет',
+    mq_clean_done: 'Убрано записей: {N}',
+    org_voice: 'Телефон (Voice)', org_fax: 'Факс (Fax)',
+    item_code: 'Сокращение (Item)',
+    item_code_h: 'Короткий код позиции в бланке пропозала — колонка Item: clean, TMM, DEH, AIR, RF, RWDSC, RDB, ADC. Пусто — колонка останется пустой.',
+    nt_card: 'Готовые блоки «Note»', nt_pick: 'Вставить блок', nt_none: 'Блоков пока нет',
+    nt_added: 'Блок добавлен в заметку',
+    p_tax: 'Sales Tax', p_freight: 'Freight',
+    org_ship: 'Способ доставки', org_legal: 'Приписка внизу бланка',
+    org_legal_h: 'Печатается мелким шрифтом под итогами пропозала. Пусто — берётся стандартный текст (сроки оплаты, 1,5 % в месяц, судебные расходы). Вставьте сюда точную формулировку своих юристов — код менять не придётся.',
+    org_voice_h: 'Печатаются в правом верхнем углу бланка. Пусто — строка не печатается.',
     mq_docs: 'докум.', mq_photo: 'фото', mq_video: 'видео',
     mq_empty: 'Всё отправлено', mq_later: 'Позже', mq_doc: 'Документ',
     mq_net_on: 'сеть: онлайн', mq_net_off: 'сеть: офлайн', mq_sb_fail: 'сервер недоступен',
@@ -484,6 +498,7 @@ const I18N = {
     media_cam: 'Камера', media_lib: 'Родная камера',
     media_cam_hint: 'Быстрый вызов камеры: один кадр, служебный режим — без HDR и ночной съёмки',
     media_lib_hint: 'Системный выбор: родная камера со всеми режимами (HDR, ночной, зум) или уже снятые кадры — можно несколько сразу',
+    pick_lost: 'Телефон выгрузил приложение, пока работала камера — кадр не доехал. Документ открыт заново; снимите ещё раз или снимите телефоном и передайте кнопкой «Родная камера».',
     cam_native_btn: 'Резкость как у родной камеры',
     cam_native_h: 'Одним нажатием: съёмка — родной камерой, файл уходит на Диск как есть, без уменьшения и пережатия. Байт в байт то, что снял телефон. Весит больше, зато резкость ровно та же.',
     cam_usm: 'Подрезкость после уменьшения',
@@ -646,6 +661,7 @@ const I18N = {
     act_password_reset: 'staff password reset', act_job_create: 'invoice created', act_job_update: 'invoice updated',
     act_doc_translate: 'note translation built',
     act_job_archive: 'invoice archived', act_job_restore: 'invoice restored',
+    act_job_cancel: 'job cancelled (done flag removed)',
     act_proposal_archive: 'proposal archived', act_proposal_restore: 'proposal restored',
     act_job_done: 'job done', act_job_reopen: 'back to draft', act_job_approve: 'approved',
     act_job_delete: 'invoice deleted', act_crew_add: 'crew: added', act_crew_remove: 'crew: removed',
@@ -700,7 +716,7 @@ const I18N = {
     map_no_results: 'Nothing found — refine the address',
     cx_add_title: 'New apartment complex from the map',
     cx_owner: 'Counterparty (owner)', cx_no_bind: '— no binding —',
-    cx_new_cp: '＋ New counterparty…', cx_temp_cp: '⏳ Temporary owner',
+    cx_new_cp: 'New counterparty…', cx_temp_cp: '⏳ Temporary owner',
     cx_new_cp_name: 'New counterparty name',
     cx_added: 'Complex added', cx_no_owner: 'No owner assigned — bind a counterparty',
     dir_no_owner_grp: 'No owner',
@@ -737,7 +753,7 @@ const I18N = {
     vis_hint: 'Checked employees are visible to this manager', vis_btn: 'Available staff',
     confirm_email: 'Confirm your email via the link, then sign in',
     req_missing: 'Missing', issue_complex: 'apartment complex', issue_unit: 'unit number', issue_tech: 'technician',
-    crew: 'Performed by', add_helper: '＋ add employee', all_staff: 'All',
+    crew: 'Performed by', add_helper: 'add employee', all_staff: 'All',
     shared_chk: 'Shared document access for co-worker',
     shared_hint: 'Co-workers from “Performed by” will see this job in their own list and can edit it',
     shared_chip: 'Shared',
@@ -920,8 +936,8 @@ const I18N = {
     pdf_preview: 'Preview PDF', pdf_print: 'Print',
     print_hint: 'System print will open; otherwise the PDF opens in a new tab (browser menu → Print).',
     tab_proposals: 'Proposals', prop_only: 'Proposals are for managers and admins.',
-    prop_new: '＋ New proposal', prop_items: 'Line items', prop_desc: 'Description',
-    prop_add_row: '＋ row', prop_note: 'Notes',
+    prop_new: 'New proposal', prop_items: 'Line items', prop_desc: 'Description',
+    prop_add_row: 'row', prop_note: 'Notes',
     pst_draft: 'Draft', pst_sent: 'Sent', pst_approved: 'Approved', pst_declined: 'Declined',
     prop_linked: 'Linked documents', prop_link: 'Link', prop_unlink: 'Unlink',
     prop_pick: 'Pick a proposal…', prop_pick_none: 'no matching (complex/status)',
@@ -931,6 +947,19 @@ const I18N = {
     nt_prop_pick_any: 'Pick from all free proposals…', nt_prop_none: 'No free proposals',
     mq_title: 'Unsent photos & videos', mq_check: 'Check unsent',
     mq_retry: 'Retry upload', mq_ping: 'Connection check',
+    mq_clean: 'Clear stuck',
+    mq_clean_q: 'Remove {N} stuck file(s) from the queue? These are entries older than a week or failed five times in a row. The shots stay in the phone gallery.',
+    mq_clean_none: 'No stuck entries',
+    mq_clean_done: 'Entries removed: {N}',
+    org_voice: 'Phone (Voice)', org_fax: 'Fax',
+    item_code: 'Item code',
+    item_code_h: 'Short position code for the proposal form — the Item column: clean, TMM, DEH, AIR, RF, RWDSC, RDB, ADC. Empty — the column stays blank.',
+    nt_card: 'Ready-made «Note» blocks', nt_pick: 'Insert a block', nt_none: 'No blocks yet',
+    nt_added: 'Block added to the note',
+    p_tax: 'Sales Tax', p_freight: 'Freight',
+    org_ship: 'Shipping method', org_legal: 'Legal note at the bottom',
+    org_legal_h: 'Printed in small type under the proposal totals. Empty — the standard text is used (payment terms, 1.5% per month, legal expenses). Paste your exact wording here; no code change needed.',
+    org_voice_h: 'Printed in the top-right corner of the form. Empty — the line is not printed.',
     mq_docs: 'docs', mq_photo: 'photo', mq_video: 'video',
     mq_empty: 'Everything uploaded', mq_later: 'Later', mq_doc: 'Document',
     mq_net_on: 'network: online', mq_net_off: 'network: offline', mq_sb_fail: 'server unreachable',
@@ -998,6 +1027,7 @@ const I18N = {
     media_cam: 'Camera', media_lib: 'Native camera',
     media_cam_hint: 'Quick camera call: one frame, capture-intent mode — no HDR or night',
     media_lib_hint: 'System chooser: the phone camera with every mode (HDR, night, zoom) or shots you already took — several at once',
+    pick_lost: 'The phone unloaded the app while the camera was running — the frame did not make it back. The document is open again; take the shot once more, or shoot with the phone and hand it over with «Native camera».',
     cam_native_btn: 'Sharpness like the native camera',
     cam_native_h: 'One tap: shoot with the native camera and send the file to Drive as is — no resize, no recompression. Byte for byte what the phone shot. Heavier, but exactly as sharp.',
     cam_usm: 'Sharpen after downscale',
@@ -1424,7 +1454,28 @@ function seedCatalogs(){
     { id:'pt1', name:'Решётка / Vent grille', default_price:25, sort:1 },
     { id:'pt2', name:'Химия для ковра / Carpet chemicals', default_price:45, sort:2 },
   ];
-  return { aux_equipment: aux, work_types, equipment_types, price_list, org_settings: org, size_types, extra_works, product_types };
+  /* v1.07.98: коды позиций для бланка — с образцов заказчика */
+  const CODES = { 'VETVAG': 'clean', 'DAMAGE WATER': 'clean', 'STEAM CLEAN': 'clean',
+                  'AIR DUCT': 'ADC', 'DEMOLITION': 'RF', 'PROPOSAL': '1' };
+  work_types.forEach(w => { const k = String(w.name || '').toUpperCase();
+    const hit = Object.keys(CODES).find(c => k.startsWith(c));
+    if (hit && !w.code) w.code = CODES[hit]; });
+  const EW_CODES = { 'вырез': 'RWDSC', 'плинтус': 'RDB', 'шкаф': 'RF', 'столешниц': 'RF',
+                     'обработ': 'TMM', 'осушител': 'DEH', 'очистител': 'AIR' };
+  extra_works.forEach(w => { const k = String(w.name || '').toLowerCase();
+    const hit = Object.keys(EW_CODES).find(c => k.includes(c));
+    if (hit && !w.code) w.code = EW_CODES[hit]; });
+  return { aux_equipment: aux, work_types, equipment_types, price_list, org_settings: org, size_types, extra_works, product_types,
+           note_templates: [
+             { id:'nt_out5',  title:'Residents out for 5 hours', sort:1,
+               body:'- Residents have to be out of the apartment for 5 hours' },
+             { id:'nt_cross', title:'Cross-contamination', sort:2,
+               body:'- To prevent cross-contamination, all affected closing must be removed from the apartment before remediation begins and professionally cleaned before being brought back into the unit.' },
+             { id:'nt_stains', title:'Stains may remain', sort:3,
+               body:'- Please be advised that there are instances where stains caused by organic growth may not be completely removable from affected surfaces. In cases where stains remain after the remediation process, it is typically recommended to prime and paint the affected areas.' },
+             { id:'nt_visible', title:'Pricing on visible damage', sort:4,
+               body:'- Pricing is based on visible damage. Any concealed damage or additional demolition required beyond the initial scope will be quoted separately or billed as a change order.' }
+           ] };
 }
 
 function seedDemoData(){
@@ -1599,6 +1650,10 @@ const DB_NEED_COLS = [
   ['org_settings',  'gd_inv_by_tech'],
   ['jobs',          'archived_at'],
   ['media',         'archived_at'],
+  ['org_settings',  'voice_line'],
+  ['org_settings',  'legal_note'],
+  ['work_types',    'code'],
+  ['proposals',     'sales_tax'],
   ['jobs',          'no'],
   ['placements',    'no'],
 ];
@@ -1606,7 +1661,7 @@ const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
                       'admin_set_drive_config'];
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','ext_requests','media'];
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','ext_requests','media','note_templates'];
 
 function emptyData(){
   const d = { org_settings: {
@@ -2723,7 +2778,7 @@ const JR_DOC_ACTIONS = ['job_create','job_update','job_done','job_reopen','job_a
   'pickup_done','pickup_early','pickup_restore','extension_create',
   'ext_request','ext_request_approved','ext_request_rejected',
   'proposal_create','proposal_update','proposal_delete','proposal_link','proposal_unlink',
-  'doc_translate','job_archive','job_restore','proposal_archive','proposal_restore'];
+  'doc_translate','job_archive','job_restore','proposal_archive','proposal_restore','job_cancel'];
 const JR_TECH_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
   'password_change','password_reset','car_no_set','org_toggle','org_set','stock_set',
   'backup_export','backup_restore'];
@@ -3567,7 +3622,7 @@ function addCxModal(i){
         <option value="">${t('cx_no_bind')}</option>
         ${cps.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
         <option value="__temp">${t('cx_temp_cp')}</option>
-        <option value="__new">${t('cx_new_cp')}</option>
+        <option value="__new">${ic('plus')} ${t('cx_new_cp')}</option>
       </select></div>
     <div class="form-row" id="ncx-newcp-row" style="display:none"><span class="lbl">${t('cx_new_cp_name')}</span>
       <input id="ncx-newcp"></div>
@@ -4194,7 +4249,7 @@ function viewJob(){
       ${crewEditable ? `
       <div class="crew-add">
         <select id="crew-sel" onchange="App.crewAdd(this.value)">
-          <option value="">${t('add_helper')}</option>
+          <option value="">${ic('plus')} ${t('add_helper')}</option>
           ${state.data.profiles.filter(p=>!p.blocked && p.id!==j.technician_id && !(j.helper_ids||[]).includes(p.id))
             .map(p=>`<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_'+p.role)})</option>`).join('')}
         </select>
@@ -4524,9 +4579,16 @@ async function saveJob(goHome){
         toast(t('approve_reset_note'), 'inf');
         audit('approve_reset', 'job', j.id, { unit: j.unit_number, old_total: +orig.total, new_total: +j.total });
       } else { j.status = 'approved'; }
-      if (!doneChk.checked) j.status = 'draft';
+      if (!doneChk.checked){
+        j.status = 'draft';
+        /* v1.07.95: снятие отметки «работа выполнена» — это и есть отмена
+           задачи; отдельного статуса в модели нет, а событие в журнале нужно */
+        audit('job_cancel', 'job', j.id, { unit: j.unit_number, date: j.date, was: orig.status });
+      }
     } else {
       j.status = doneChk.checked ? 'done' : 'draft';
+      if (orig.status === 'done' && !doneChk.checked)
+        audit('job_cancel', 'job', j.id, { unit: j.unit_number, date: j.date, was: orig.status });
     }
   }
   j.technician_name = techNamesFor(j);
@@ -5278,6 +5340,10 @@ function editWtModal(id){
   openModal(`
     ${modalHead(t('work_type'))}
     <div class="form-row"><span class="lbl">${t('name')}</span><input id="wt-name" value="${esc(w.name)}"></div>
+    <div class="form-row"><span class="lbl">${t('item_code')}</span>
+      <input id="wt-code" maxlength="10" placeholder="TMM" value="${esc(w.code || '')}"
+        style="width:120px;text-transform:uppercase"></div>
+    <div class="tiny" style="margin:-4px 0 8px">${t('item_code_h')}</div>
     <div class="form-row"><span class="lbl">${t('color')}</span>${colorPicker(w.color,'wt-color')}</div>
     <label class="opt" style="margin-bottom:8px"><input type="checkbox" id="wt-aux" ${w.needs_aux?'checked':''}> ${t('needs_aux')}</label>
     <div class="form-row"><span class="lbl">${t('d_aux')}</span>
@@ -5291,6 +5357,7 @@ function editWtModal(id){
 async function saveWt(id, sort){
   const aux_ids = [...document.querySelectorAll('[data-wtaux]:checked')].map(x=>x.dataset.wtaux);
   const row = { id, name: $('#wt-name').value.trim(), color: $('#wt-color-v').value,
+    code: (($('#wt-code') || {}).value || '').trim().toUpperCase(),   // v1.07.98
     needs_aux: $('#wt-aux').checked, aux_ids, sort };
   if (!row.name) return;
   await dbUpsert('work_types', row); closeModal(); toast('✓ ' + t('saved')); render();
@@ -5450,6 +5517,17 @@ function viewSettings(){
     <div class="grid-3">
       <input id="org-a1" value="${esc(org.addr1)}"><input id="org-a2" value="${esc(org.addr2)}"><input id="org-a3" value="${esc(org.addr3)}">
     </div>
+    <div class="form-row"><span class="lbl">${t('org_voice')}</span>
+      <input id="org-voice" placeholder="404-555-0100" value="${esc(org.voice_line || '')}"></div>
+    <div class="form-row"><span class="lbl">${t('org_fax')}</span>
+      <input id="org-fax" placeholder="404-555-0101" value="${esc(org.fax_line || '')}"></div>
+    <div class="tiny">${t('org_voice_h')}</div>
+    <div class="form-row"><span class="lbl">${t('org_ship')}</span>
+      <input id="org-ship" placeholder="Airborne" value="${esc(org.ship_method || '')}"></div>
+    <div class="form-row"><span class="lbl">${t('org_legal')}</span>
+      <textarea id="org-legal" rows="4" style="width:100%"
+        placeholder="${esc(LEGAL_DEF)}">${esc(org.legal_note || '')}</textarea></div>
+    <div class="tiny">${t('org_legal_h')}</div>
     <button class="btn btn-blue sm" style="margin-top:8px" onclick="App.saveOrg()">${t('save')}</button>
   </div>
   <div class="card">
@@ -5840,7 +5918,14 @@ const App = {
     render();
   },
   batchPdf,
+  mqClean: mediaQClean,
   mapSetCp(v){ state.mapCp = v; render(); },
+  /* v1.07.95: на «Карте» контрагент ищется по буквам, а не листается списком */
+  mapCpInput(v){
+    const q = String(v || '').trim().toLowerCase();
+    const c = (state.data.counterparties || []).find(x => String(x.name).toLowerCase() === q);
+    state.mapCp = c ? c.id : ''; render();
+  },
   mapToggleDay(v){ state.mapDay = v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
   mapSetDate(v){ state.mapDate = v; render(); },
   mapFocus(lat,lng){ if (mapObj){ mapObj.setView([lat,lng], 15); window.scrollTo({top:0,behavior:'smooth'}); } },
@@ -5934,12 +6019,37 @@ const App = {
   togglePriority, moveJob, boardMove, setCarNo, restorePk, pdfPreview, pdfPrint,
   comboFilter, comboPick, stockSet, wtChecklistModal, wtChecklistSave,
   openProposal, propBack, saveProposal, delProposal, makeProposalPdf, linkProposal, linkJobFromProp,
-  propField(k, v){ if (propDraft) propDraft[k] = v; },
+  propField(k, v){ if (!propDraft) return;
+    propDraft[k] = (k === 'sales_tax' || k === 'freight') ? (parseFloat(v) || 0) : v; },
   propFilter(v){ state.propFilter = v; render(); },
   propItem(i, f, v){ if (!propDraft || !propDraft.items[i]) return;
+    /* код из справочника заполняет пустое описание */
+    if (f === 'code'){
+      const hit = propCodeList().find(c => c.code.toLowerCase() === String(v).trim().toLowerCase());
+      if (hit && !String(propDraft.items[i].d || '').trim()){
+        propDraft.items[i].d = hit.name;
+        const box = document.querySelectorAll('.prop-row')[i];
+        const ta = box && box.querySelector('.pd'); if (ta) ta.value = hit.name;
+      }
+    }
     propDraft.items[i][f] = (f === 'a') ? (parseFloat(v) || 0)
       : (f === 'q') ? (parseFloat(v) || 1) : v;
     if (f === 'a') propRecalc(); },
+  /* v1.07.98: готовые блоки «Note» с бланков заказчика */
+  ntPick(){
+    const list = [...(state.data.note_templates || [])].sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    openModal(`${modalHead(t('nt_card'), 'clipboard')}
+      <div class="card">${list.map(x => `<button class="rowline map-row" style="width:100%;text-align:left"
+        onclick="App.ntAdd('${x.id}')"><div class="grow"><b>${esc(x.title)}</b>
+        <div class="tiny">${esc(String(x.body).slice(0, 120))}</div></div>${ic('plus')}</button>`).join('')
+        || `<div class="list-empty">${t('nt_none')}</div>`}</div>`);
+  },
+  ntAdd(id){
+    const x = (state.data.note_templates || []).find(v => v.id === id);
+    if (!x || !propDraft) return;
+    propDraft.note = (String(propDraft.note || '').trim() + '\n' + x.body).trim();
+    closeModal(); toast('✓ ' + t('nt_added')); render();
+  },
   propItemAdd(){ if (!propDraft) return; propDraft.items.push({ q: 1, code: '', d: '', d_en: '', a: 0 });
     const el = $('#prop-rows'); if (el) el.innerHTML = propItemsHtml(); },
   propItemDel(i){ if (!propDraft) return; propDraft.items.splice(i, 1);
@@ -5990,6 +6100,10 @@ const App = {
     const org = { ...state.data.org_settings,
       company_name: $('#org-name').value.trim(), company_short: $('#org-short').value.trim(),
       assoc_line: $('#org-assoc').value.trim(),
+      ship_method: (($('#org-ship')  || {}).value || '').trim(),   // v1.07.97
+      legal_note:  (($('#org-legal') || {}).value || '').trim(),
+      voice_line: (($('#org-voice') || {}).value || '').trim(),   // v1.07.95
+      fax_line:   (($('#org-fax')   || {}).value || '').trim(),
       addr1: $('#org-a1').value.trim(), addr2: $('#org-a2').value.trim(), addr3: $('#org-a3').value.trim() };
     dbSaveOrg(org); toast('✓ ' + t('saved'));
   },
@@ -6191,6 +6305,7 @@ function initBackGuard(){
 (async function start(){
   try {
     applyPopPos();                 // v1.07.83: место всплывашек — до первого тоста
+    setTimeout(() => { try{ pickRestore(); }catch(e){ dlog('⛔ pickRestore:', e); } }, 900);
     initSW();
     initBackGuard();
     initDragSort();
@@ -6429,7 +6544,12 @@ function viewMap(){
   <div class="section-title">${t('map_title')}${helpBtn('map')}</div>
   <div class="card map-controls">
     <div class="form-row"><span class="lbl">${t('counterparty')}</span>
-      <select onchange="App.mapSetCp(this.value)">
+      <input list="map-cp-dl" class="combo-in" placeholder="${t('all_counterparties')}"
+        value="${esc((cpById(state.mapCp) || {}).name || '')}"
+        onchange="App.mapCpInput(this.value)">
+      <datalist id="map-cp-dl">${(state.data.counterparties || [])
+        .map(c => `<option value="${esc(c.name)}">`).join('')}</datalist>
+      <select style="display:none" onchange="App.mapSetCp(this.value)">
         <option value="">${t('all_counterparties')}</option>
         ${cps.map(c=>`<option value="${c.id}" ${state.mapCp===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
       </select></div>
@@ -6664,6 +6784,10 @@ function drawInvoiceVert(doc, j, left, top){
   F('italic',4.9); txt(org.assoc_line||'', L, y+11.2);
   F('bold',12); txt(org.invoice_title||'INVOICE #CC', L + W*0.55, y+4.6, {align:'center'});
   F('bold',6.6); txt(org.header_city||'', L + W*0.55, y+9, {align:'center'});
+  /* v1.07.95: телефон и факс в шапке — как в бланке-образце */
+  { const vf = [org.voice_line ? 'Voice: ' + org.voice_line : '',
+                org.fax_line ? 'Fax: ' + org.fax_line : ''].filter(Boolean).join('   ');
+    if (vf){ F('normal',5.2); txt(vf, L + W, y+4.6, {align:'right'}); } }
   /* v1.07.86: номер документа по шаблону из настроек */
   { const no = docNo('job', j);
     if (no){ F('bold',5.6); txt(no, L + W*0.55, y+12.6, {align:'center'}); } }
@@ -7140,7 +7264,7 @@ function crewRefresh(){
   const box = $('#crew-chips'); if (box && jobDraft) box.innerHTML = crewChipsHtml(jobDraft);
   const sel = $('#crew-sel');
   if (sel && jobDraft){
-    sel.innerHTML = `<option value="">${t('add_helper')}</option>` +
+    sel.innerHTML = `<option value="">${ic('plus')} ${t('add_helper')}</option>` +
       state.data.profiles.filter(p=>!p.blocked && p.id!==jobDraft.technician_id && !(jobDraft.helper_ids||[]).includes(p.id))
         .map(p=>`<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_'+p.role)})</option>`).join('');
   }
@@ -8409,7 +8533,7 @@ function viewProposalList(){
   return `<div class="prop-wrap"><div class="section-title">${t('tab_proposals')}${helpBtn('proposals')}</div>
   <div class="tabs" style="margin:0 12px 8px">${chips}</div>
   <div class="card" style="margin:0 12px">${rows || `<div class="list-empty">${t('no_items')}</div>`}</div>
-  <button class="btn btn-green" style="margin:10px 12px" onclick="App.openProposal()">${t('prop_new')}</button></div>`;
+  <button class="btn btn-green" style="margin:10px 12px" onclick="App.openProposal()">${ic('plus')} ${t('prop_new')}</button></div>`;
 }
 function openProposal(id){
   if (!isManager()) return;
@@ -8432,7 +8556,7 @@ function propKey(p){
   if (!p) return '';
   return JSON.stringify([p.date, p.counterparty_id || '', p.complex_id || '', p.unit_number || '',
     p.po_number || '', p.complete_by || '', p.note || '', p.status,
-    p.note_en || '',
+    p.note_en || '', +p.sales_tax || 0, +p.freight || 0,
     (p.items || []).map(it => [it.q, it.code || '', it.d || '', it.d_en || '', +it.a || 0])]);
 }
 function propDirty(){
@@ -8456,12 +8580,27 @@ function propRecalc(){
   const el = $('#pr-total'); if (el) el.textContent = money(s);
   return s;
 }
+/* v1.07.98: коды позиций admin вводит в справочниках «Виды работ» и
+   «Доп. работы»; здесь они подсказываются в поле Item, а описание
+   подставляется само, если строка ещё пустая. */
+function propCodeList(){
+  const out = [];
+  const add = (c, name) => { c = String(c || '').trim(); if (!c) return;
+    if (!out.some(x => x.code === c)) out.push({ code: c, name: enName(name || '') }); };
+  (state.data.work_types || []).forEach(w => add(w.code, w.name));
+  (state.data.extra_works || []).forEach(w => add(w.code, w.name));
+  return out.sort((a, b) => a.code.localeCompare(b.code));
+}
+function propCodesDatalist(){
+  return `<datalist id="prop-codes">${propCodeList()
+    .map(c => `<option value="${esc(c.code)}">${esc(c.name)}</option>`).join('')}</datalist>`;
+}
 function propItemsHtml(){
-  return (propDraft.items || []).map((it, i) => `
+  return propCodesDatalist() + (propDraft.items || []).map((it, i) => `
     <div class="prop-row">
       <input class="pq" inputmode="decimal" value="${it.q ?? 1}" title="${t('prop_qty')}"
         oninput="App.propItem(${i},'q',this.value)">
-      <input class="pc" value="${esc(it.code || '')}" placeholder="${t('prop_code')}"
+      <input class="pc" list="prop-codes" value="${esc(it.code || '')}" placeholder="${t('prop_code')}"
         oninput="App.propItem(${i},'code',this.value)">
       <textarea class="pd" rows="2" placeholder="${t('prop_desc')}"
         oninput="App.propItem(${i},'d',this.value)">${esc(it.d || '')}</textarea>
@@ -8510,15 +8649,25 @@ function viewProposalForm(){
     <div style="font-weight:900;margin-bottom:6px">${t('prop_items')}</div>
     <div class="prop-head"><span>${t('prop_qty')}</span><span>${t('prop_code')}</span><span>${t('prop_desc')}</span><span style="text-align:right">$</span><span></span></div>
     <div id="prop-rows">${propItemsHtml()}</div>
-    <button class="btn btn-ghost sm" onclick="App.propItemAdd()">${t('prop_add_row')}</button>
+    <button class="btn btn-ghost sm" onclick="App.propItemAdd()">${ic('plus')} ${t('prop_add_row')}</button>
     <div class="total-bar" style="margin-top:8px"><span>${t('total')}</span>
       <span class="sum ok" id="pr-total">${money(+p.total || 0)}</span></div>
   </div>
   <div class="card" style="margin:8px 12px">
-    <div style="font-weight:900;margin-bottom:6px">${t('prop_note')}</div>
+    <div style="font-weight:900;margin-bottom:6px">${t('prop_note')}
+      ${(state.data.note_templates || []).length ? `<button class="btn btn-ghost sm" style="float:right"
+        onclick="App.ntPick()">${ic('clipboard')} ${t('nt_pick')}</button>` : ''}</div>
     <textarea rows="3" style="width:100%" oninput="App.propField('note', this.value)">${esc(p.note || '')}</textarea>
   </div>
   <div style="margin:8px 12px">${trCardHtml('prop', p)}</div>
+  <div class="card" style="margin:8px 12px">
+    <div class="qty-line"><span class="name">${t('p_tax')}</span>
+      <input class="price-input" inputmode="decimal" value="${p.sales_tax || ''}"
+        oninput="App.propField('sales_tax', this.value)"></div>
+    <div class="qty-line"><span class="name">${t('p_freight')}</span>
+      <input class="price-input" inputmode="decimal" value="${p.freight || ''}"
+        oninput="App.propField('freight', this.value)"></div>
+  </div>
   ${propById(p.id) ? `<div class="card" style="margin:8px 12px">
     <div style="font-weight:900;margin-bottom:6px">${ic('link')} ${t('prop_linked')} (${linked.length})</div>
     ${linked.map(j => { const jcx = cxById(j.complex_id) || {};
@@ -8544,7 +8693,7 @@ async function saveProposal(){
   if (!p.counterparty_id || !p.complex_id){ toast('⚠ ' + t('prop_need_cpcx'), 'err'); return; }
   p.items = (p.items || [])
     .filter(it => String(it.d || '').trim() || String(it.code || '').trim() || +it.a)
-    .map(it => ({ q: +it.q || 1, code: String(it.code || ''), d: String(it.d || ''),
+    .map(it => ({ q: +it.q || 1, code: String(it.code || '').toUpperCase(), d: String(it.d || ''),
                   d_en: String(it.d_en || ''), a: +it.a || 0 }));   // v1.07.83: перевод едет вместе со строкой
   if (!p.items.length) p.items = [{ q: 1, code: '', d: '', d_en: '', a: 0 }];
   propRecalc();
@@ -8578,6 +8727,13 @@ async function delProposalHard(id){
   audit('proposal_delete', 'proposal', id, { no: p && p.no, unit: p && p.unit_number });
   propDraft = null; toast('🗑 ' + t('deleted')); render();
 }
+/* v1.07.97: приписка внизу бланка — слово в слово с образца заказчика
+   (Atlanta Painting Contractors), середина фразы восстановлена по смыслу:
+   на присланных снимках она обрезана правым краем. */
+const LEGAL_DEF = 'NOTE: All invoices are due and payable upon receipt. Any balances that remain '
+  + 'outstanding for a period greater than 30 days will be subject to a finance charge at '
+  + "the rate of 1.5% per month. You agree to pay all legal expenses including reasonable attorney's "
+  + 'fees, incurred in collection of any past due balances.';
 function makeProposalPdf(id, _go){
   /* v1.07.33: печатная форма по образцу QuickBooks-пропозала клиента:
      шапка PROPOSAL + Number/Date/Complete By/Page, блоки To/Ship To,
@@ -8604,6 +8760,12 @@ function makeProposalPdf(id, _go){
   let hy = y + 5;
   [org.addr1, org.addr2, org.addr3].forEach(s => {
     if (s){ doc.text(String(s), L, hy); hy += 4; } });
+  /* телефон и факс — отдельным блоком под адресом, как в бланке-образце */
+  if (org.voice_line || org.fax_line){
+    hy += 2;
+    if (org.voice_line){ doc.text('Voice:', L, hy); doc.text(String(org.voice_line), L + 14, hy); hy += 4; }
+    if (org.fax_line){ doc.text('Fax:', L, hy); doc.text(String(org.fax_line), L + 14, hy); hy += 4; }
+  }
 
   doc.setFont('helvetica','bold'); doc.setFontSize(24); doc.setTextColor(160);
   doc.text('PROPOSAL', R, y + 3, { align: 'right' });
@@ -8655,18 +8817,22 @@ function makeProposalPdf(id, _go){
   gridCell(L + half, half, 'PO Number', p.po_number || '');
   y += 11.4;
   gridCell(L, half, 'Customer Contact', '');
-  gridCell(L + half, half, 'Shipping Method', 'Airborne');
+  gridCell(L + half, half, 'Shipping Method', org.ship_method || 'Airborne');
   y += 11.4 + 3;
 
   /* ---------- таблица позиций ---------- */
-  const cQ = L, wQ = 20, cI = cQ + wQ, wI = 24, cD = cI + wI, cA = R - 26, wD = cA - cD;
+  /* v1.07.97: колонок стало пять — как в бланке заказчика:
+     Quantity | Item | Description | Unit Price | Extended Price */
+  const cQ = L, wQ = 20, cI = cQ + wQ, wI = 24, cD = cI + wI,
+        cU = R - 52, cA = R - 26, wD = cU - cD;
   const headRow = () => {
     doc.setFillColor(222); doc.rect(L, y, W, 5.8, 'FD');
     doc.setFont('helvetica','bold'); doc.setFontSize(9);
     doc.text('Quantity', cQ + wQ - 2, y + 4.1, { align: 'right' });
     doc.text('Item', cI + 2, y + 4.1);
     doc.text('Description', cD + 2, y + 4.1);
-    doc.text('Amount', R - 2, y + 4.1, { align: 'right' });
+    doc.text('Unit Price', cU + 24, y + 4.1, { align: 'right' });
+    doc.text('Extended Price', R - 2, y + 4.1, { align: 'right' });
     y += 5.8;
     doc.setFont('helvetica','normal');
   };
@@ -8700,7 +8866,11 @@ function makeProposalPdf(id, _go){
     doc.text((+it.q || 1).toFixed(2), cQ + wQ - 2, y + 3.6, { align: 'right' });
     doc.text(String(it.code).slice(0, 10), cI + 2, y + 3.6);
     doc.text(lines, cD + 2, y + 3.6);
-    if (it.a) doc.text(money2(it.a), R - 2, y + 3.6, { align: 'right' });
+    if (it.a){
+      const q = Math.max(1, +it.q || 1);
+      doc.text(money2(+it.a / q), cU + 24, y + 3.6, { align: 'right' });
+      doc.text(money2(it.a), R - 2, y + 3.6, { align: 'right' });
+    }
     y += h;
   });
   const pNoteEn = enText(p.note, p.note_en);
@@ -8724,17 +8894,17 @@ function makeProposalPdf(id, _go){
     y += 6;
   };
   doc.setFontSize(9);
+  const tax = +p.sales_tax || 0, frt = +p.freight || 0;
   totRow('Subtotal', money2(p.total), false);
-  totRow('Sales Tax', '', false);
-  totRow('Freight', '', false);
-  totRow('TOTAL PROPOSAL AMOUNT', '$' + money2(p.total), true);
+  totRow('Sales Tax', tax ? money2(tax) : '', false);
+  totRow('Freight', frt ? money2(frt) : '', false);
+  totRow('TOTAL PROPOSAL AMOUNT', '$' + money2((+p.total || 0) + tax + frt), true);
 
   /* ---------- юридическая приписка ---------- */
   doc.setFont('helvetica','normal'); doc.setFontSize(7.4);
-  const legal = 'NOTE: All invoices are due and payable upon receipt. Any balances that remain '
-    + 'outstanding for a period greater than thirty (30) days will be subject to a service charge at '
-    + "the rate of 1.5% per month. You agree to pay all legal expenses, including reasonable attorney's "
-    + 'fees, incurred in connection with the collection of past due amounts.';
+  /* v1.07.97: текст с бланка заказчика; правится в «Настройки» → организация,
+     чтобы не переписывать код, когда юристы поменяют формулировку */
+  const legal = String(org.legal_note || '').trim() || LEGAL_DEF;
   doc.text(doc.splitTextToSize(legal, W), L, Math.max(y + 8, 250));
 
   savePdfCompat(doc, 'Proposal_' + (p.no ?? 'x') + '_' + (cx.abbr || '') + '.pdf');
@@ -9042,25 +9212,37 @@ function down(src, sw, sh, tw, th){
    Радиус 1 пиксель, сила 0.6 — так делают камеры и редакторы при ресайзе;
    ореолов на такой силе не видно, а мелкие детали снова читаются. */
 function usm(cv, amount){
-  const w = cv.width, h = cv.height, x = cv.getContext('2d');
-  const src = x.getImageData(0, 0, w, h), d = src.data;
-  const bl = new Uint8ClampedArray(d);          // размытие 3×3 (аппроксимация Гаусса r≈1)
-  const idx = (px, py) => ((py * w) + px) * 4;
-  for (let y = 1; y < h - 1; y++){
-    for (let px = 1; px < w - 1; px++){
-      const i = idx(px, y);
-      for (let c = 0; c < 3; c++){
-        bl[i + c] = (
-          d[i - w * 4 - 4 + c] + 2 * d[i - w * 4 + c] + d[i - w * 4 + 4 + c] +
-          2 * d[i - 4 + c]     + 4 * d[i + c]         + 2 * d[i + 4 + c] +
-          d[i + w * 4 - 4 + c] + 2 * d[i + w * 4 + c] + d[i + w * 4 + 4 + c]) / 16;
+  /* v1.07.94: полосами по 256 строк. Целиком 12-мегапиксельный кадр — это
+     две копии по 50 МБ в памяти сразу после того, как камера уже съела
+     почти всю: телефон убивал вкладку, и снимок пропадал. Полоса берёт
+     3 МБ, и любая осечка не должна стоить кадра — отсюда try. */
+  const w = cv.width, h = cv.height, x = cv.getContext('2d'), BAND = 256;
+  try{
+    for (let y0 = 0; y0 < h; y0 += BAND){
+      const top = Math.max(0, y0 - 1), bot = Math.min(h, y0 + BAND + 1);
+      const bh = bot - top;
+      const part = x.getImageData(0, top, w, bh), d = part.data;
+      const bl = new Uint8ClampedArray(d);
+      for (let y = 1; y < bh - 1; y++){
+        for (let px = 1; px < w - 1; px++){
+          const i = ((y * w) + px) * 4;
+          for (let c = 0; c < 3; c++){
+            bl[i + c] = (
+              d[i - w * 4 - 4 + c] + 2 * d[i - w * 4 + c] + d[i - w * 4 + 4 + c] +
+              2 * d[i - 4 + c]     + 4 * d[i + c]         + 2 * d[i + 4 + c] +
+              d[i + w * 4 - 4 + c] + 2 * d[i + w * 4 + c] + d[i + w * 4 + 4 + c]) / 16;
+          }
+        }
       }
+      for (let y = 1; y < bh - 1; y++){
+        for (let px = 1; px < w - 1; px++){
+          const i = ((y * w) + px) * 4;
+          for (let c = 0; c < 3; c++) d[i + c] = d[i + c] + amount * (d[i + c] - bl[i + c]);
+        }
+      }
+      x.putImageData(part, 0, top, 0, y0 - top, w, Math.min(BAND, h - y0));
     }
-  }
-  for (let i = 0; i < d.length; i += 4){
-    for (let c = 0; c < 3; c++) d[i + c] = d[i + c] + amount * (d[i + c] - bl[i + c]);
-  }
-  x.putImageData(src, 0, 0);
+  }catch(e){}                    // не вышло — отдаём кадр как есть
   return cv;
 }
 function sharpOf(cv){
@@ -9143,22 +9325,31 @@ function mDown2(src, sw, sh, tw, th){
 const mToBlob = (c, q) => new Promise(r => c.toBlob(r, 'image/jpeg', q));
 /* Нерезкое маскирование для запасного пути (тот же расчёт, что в воркере) */
 function mUsm2(cv, amount){
-  const w = cv.width, h = cv.height, x = cv.getContext('2d');
-  const src = x.getImageData(0, 0, w, h), d = src.data, bl = new Uint8ClampedArray(d);
-  for (let y = 1; y < h - 1; y++){
-    for (let px = 1; px < w - 1; px++){
-      const i = ((y * w) + px) * 4;
-      for (let c = 0; c < 3; c++){
-        bl[i + c] = (
-          d[i - w * 4 - 4 + c] + 2 * d[i - w * 4 + c] + d[i - w * 4 + 4 + c] +
-          2 * d[i - 4 + c]     + 4 * d[i + c]         + 2 * d[i + 4 + c] +
-          d[i + w * 4 - 4 + c] + 2 * d[i + w * 4 + c] + d[i + w * 4 + 4 + c]) / 16;
+  const w = cv.width, h = cv.height, x = cv.getContext('2d'), BAND = 256;
+  try{
+    for (let y0 = 0; y0 < h; y0 += BAND){
+      const top = Math.max(0, y0 - 1), bot = Math.min(h, y0 + BAND + 1), bh = bot - top;
+      const part = x.getImageData(0, top, w, bh), d = part.data, bl = new Uint8ClampedArray(d);
+      for (let y = 1; y < bh - 1; y++){
+        for (let px = 1; px < w - 1; px++){
+          const i = ((y * w) + px) * 4;
+          for (let c = 0; c < 3; c++){
+            bl[i + c] = (
+              d[i - w * 4 - 4 + c] + 2 * d[i - w * 4 + c] + d[i - w * 4 + 4 + c] +
+              2 * d[i - 4 + c]     + 4 * d[i + c]         + 2 * d[i + 4 + c] +
+              d[i + w * 4 - 4 + c] + 2 * d[i + w * 4 + c] + d[i + w * 4 + 4 + c]) / 16;
+          }
+        }
       }
+      for (let y = 1; y < bh - 1; y++){
+        for (let px = 1; px < w - 1; px++){
+          const i = ((y * w) + px) * 4;
+          for (let c = 0; c < 3; c++) d[i + c] = d[i + c] + amount * (d[i + c] - bl[i + c]);
+        }
+      }
+      x.putImageData(part, 0, top, 0, y0 - top, w, Math.min(BAND, h - y0));
     }
-  }
-  for (let i = 0; i < d.length; i += 4)
-    for (let c = 0; c < 3; c++) d[i + c] = d[i + c] + amount * (d[i + c] - bl[i + c]);
-  x.putImageData(src, 0, 0);
+  }catch(e){ dlog('⛔ подрезкость:', e); }
   return cv;
 }
 async function mPrepMain(file, o){
@@ -9388,12 +9579,66 @@ function mediaPick(jobId, kind, src){
   if (useCam) inp.setAttribute('capture', 'environment');
   else if (kind === 'photo' && left > 1) inp.multiple = true;
   inp.onchange = () => {
+    pickDone();
     const files = [...(inp.files || [])].slice(0, left);
     if (files.length < (inp.files || []).length)
       toast('⚠ ' + t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video), 'err');
     mediaTakeFiles(jobId, files, kind);
+    setTimeout(() => { try{ inp.remove(); }catch(e){} }, 1000);
   };
+  /* v1.07.94: поле обязано жить В РАЗМЕТКЕ. Пока камера снимает, Android
+     сворачивает страницу, и оторванный от документа <input> сборщик мусора
+     выбрасывает вместе с обработчиком — снимок возвращается уже некуда.
+     Держим поле в документе и ссылку на него до конца съёмки. */
+  inp.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;opacity:0';
+  document.body.appendChild(inp);
+  _pickInp = inp;
+  pickMark(jobId, kind);
   inp.click();
+}
+
+/* --- v1.07.94: съёмка переживает выгрузку страницы -------------------
+   Телефон вправе выгрузить страницу, пока открыта камера: возвращаемся —
+   а приложение загрузилось заново, документ закрыт, снимка нет. Метку о
+   начатой съёмке кладём в localStorage: на старте открываем тот же
+   документ и честно говорим, что кадр не доехал. */
+let _pickInp = null;
+const LS_PICK = 'techlog_pick';
+function pickMark(jobId, kind){
+  try{ localStorage.setItem(LS_PICK, JSON.stringify({ job: jobId, kind, ts: Date.now() })); }catch(e){}
+}
+function pickDone(){ try{ localStorage.removeItem(LS_PICK); }catch(e){} }
+function pickPending(){
+  try{
+    const v = JSON.parse(localStorage.getItem(LS_PICK) || 'null');
+    if (!v || !v.job) return null;
+    if (Date.now() - (+v.ts || 0) > 15 * 60000){ pickDone(); return null; }  // забытая метка
+    return v;
+  }catch(e){ return null; }
+}
+/* Вызывается на старте: вернуть человека в документ и объяснить пропажу */
+function pickRestore(){
+  const v = pickPending(); if (!v) return;
+  pickDone();
+  const j = (state.data.jobs || []).find(x => x.id === v.job);
+  if (!j) return;
+  dlog('съёмка: страница была выгружена во время съёмки, возвращаю документ');
+  openJob(v.job);
+  setTimeout(() => toast('⚠ ' + t('pick_lost'), 'err'), 600);
+}
+/* v1.07.95: зависшие записи очереди — те, что лежат больше недели или
+   сорвались пять раз подряд. Раньше их можно было убрать только по одной. */
+const MQ_STUCK_DAYS = 7, MQ_STUCK_TRIES = 5;
+function mqStuck(){
+  const edge = Date.now() - MQ_STUCK_DAYS * 864e5;
+  return mediaQ.filter(x => (+x.attempts || 0) >= MQ_STUCK_TRIES || (+x.at || Date.now()) < edge);
+}
+async function mediaQClean(){
+  const bad = mqStuck();
+  if (!bad.length){ toast('✓ ' + t('mq_clean_none')); return; }
+  if (!confirm(t('mq_clean_q').replace('{N}', bad.length))) return;
+  for (const x of bad) await mediaQDel(x.qid);
+  toast('🗑 ' + t('mq_clean_done').replace('{N}', bad.length));
 }
 async function mediaQDel(qid){
   const gone = mediaQ.find(x => x.qid === qid);
@@ -10094,6 +10339,8 @@ function mediaQueueModal(){
       <button class="btn btn-ghost" id="mq-btn-ping" onclick="App.mqPing()">${t('mq_ping')}</button>
       <button class="btn btn-green" id="mq-btn-send" ${mediaQ.length ? '' : 'disabled'} onclick="App.mqRetry()">${ic('upload')} ${t('mq_retry')}</button>
     </div>
+    ${mqStuck().length ? `<button class="btn btn-ghost sm" style="margin-top:6px"
+      onclick="App.mqClean()">${ic('trash')} ${t('mq_clean')} · ${mqStuck().length}</button>` : ''}
     <div class="tiny" style="margin:10px 0 4px;color:var(--dim)">${t('mq_log')}</div>
     <div class="mq-log" id="mq-log"></div>`);
   mqLogPaint();
@@ -11625,7 +11872,7 @@ function refreshExtraList(){
 function extraPickerModal(){
   const list = [...(state.data.extra_works||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
   openModal(`
-    ${modalHead('＋ ' + t('template'))}
+    ${modalHead(t('template'), 'plus')}
     ${list.length ? list.map(w => `
       <button class="demo-user" onclick="App.exAdd('${w.id}')">
         <span style="font-size:1.2rem">${w.kind==='purchase'?ic('cart'):ic('toolbox')}</span>
@@ -11703,6 +11950,10 @@ function editEwModal(id){
   openModal(`
     ${modalHead(t('d_extraworks'), 'toolbox')}
     <div class="form-row"><span class="lbl">${t('name')}</span><input id="ew-name" value="${esc(w.name)}" placeholder="Вырезка стен / Wall cutout"></div>
+    <div class="form-row"><span class="lbl">${t('item_code')}</span>
+      <input id="ew-code" maxlength="10" placeholder="RWDSC" value="${esc(w.code || '')}"
+        style="width:120px;text-transform:uppercase"></div>
+    <div class="tiny" style="margin:-4px 0 8px">${t('item_code_h')}</div>
     <div class="form-row"><span class="lbl">&nbsp;</span>
       <div class="tabs">
         <button class="tabbtn ${w.kind!=='purchase'?'active':''}" data-kind="work" onclick="App.pcGate ? (this.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')), this.classList.add('active'), document.getElementById('ew-kind').value='work') : null">${ic('toolbox')} ${t('kind_work')}</button>
@@ -11725,6 +11976,7 @@ async function saveEw(id, sort){
   const name = $('#ew-name').value.trim(); if (!name) return;
   await dbUpsert('extra_works', {
     id, name,
+    code: (($('#ew-code') || {}).value || '').trim().toUpperCase(),   // v1.07.98
     kind: $('#ew-kind').value === 'purchase' ? 'purchase' : 'work',
     needs_size: $('#ew-size').checked,
     size_type_id: $('#ew-szt').value || null,

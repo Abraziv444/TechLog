@@ -158,6 +158,10 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
    нормы зоны нажатия; сенсорные экраны их расширяет правило ниже, но и мышью
    попадать должно быть удобно */
 .rowline input[type="checkbox"]{width:24px;height:24px;flex:none}
+/* v1.07.96: при системном шрифте ×1.6 длинные названия в строках справочников
+   и отчётов уезжали за край на 28…45px. Перенос внутри своей ячейки. */
+.rowline .grow, .rowline .grow b, .rowline .grow .tiny,
+.map-row .grow, .map-row .grow b{ min-width:0; overflow-wrap:anywhere; }
 /* v1.07.84: классы стояли в разметке без единого правила (аудит v1.07.80) */
 .size-presets{flex-wrap:wrap;gap:6px}
 .aux-mk{display:inline-flex;align-items:center;margin-right:4px}
@@ -663,11 +667,20 @@ html.tl-pop-side #toasts{left:auto;right:12px;align-items:flex-end}
   background:var(--panel-2);color:var(--dim);font-size:.6rem;font-weight:900;
   line-height:1;cursor:pointer;padding:0;
 }
+/* v1.07.96: палец шире кнопки. Расширяем зону нажатия прозрачным полем и
+   только НАРУЖУ: вверх у «выше», вниз у «ниже» — иначе две стрелки, стоящие
+   вплотную, перехватывали бы нажатия друг у друга. Вид и высота строки те же. */
+/* Расширять зону стрелок нечем: между ними 4px, а сразу под карточкой стоит
+   такая же стрелка соседней. Любое поле наружу перехватывает нажатия у соседа —
+   «Диагностика» это ловит. Оставляем как есть; норму даст только правка вёрстки
+   карточки (развести стрелки), а это уже изменение дизайна. */
 .rail .mv:active{transform:translateY(1px);color:var(--blue)}
 .pri{
   width:26px;height:24px;border:none;background:none;padding:0;cursor:pointer;
   display:grid;place-items:center;
+  position:relative;
 }
+.pri::after{content:'';position:absolute;inset:-10px}
 .tri{
   display:inline-grid;place-items:center;
   width:22px;height:19px;
@@ -1241,6 +1254,13 @@ html.tl-pop-bottom #toasts{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) 
 .rt-col{display:flex;flex-direction:column;align-items:flex-end;gap:5px;margin-left:auto}
 .topbar .role-tag{align-self:auto;margin-top:0}
 .rt-col .vm-seg{margin:0}
+/* v1.07.95: на узких экранах пилюля режима остаётся в строке с логотипом,
+   а не уезжает под него — правил для <560px не было вовсе */
+@media (max-width:560px){
+  .topbar{flex-wrap:nowrap}
+  .vm-inline{margin-left:auto;flex:none}
+  .vm-seg{transform:scale(.86);transform-origin:right center}
+}
 
 html:not(.tl-desktop) .topbar{
   position:sticky;top:0;z-index:70;background:var(--bg);

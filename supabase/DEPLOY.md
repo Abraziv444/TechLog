@@ -11,7 +11,7 @@ Supabase → **SQL Editor** → вставить файл целиком → **R
 
 | Ситуация | Файл |
 |---|---|
-| Новый проект или база любого возраста | `full-install-1_07_88.sql` — один идемпотентный скрипт, добавляет только недостающее |
+| Новый проект или база любого возраста | `full-install-1_07_98.sql` — один идемпотентный скрипт, добавляет только недостающее |
 | База уже на уровне v1.07.64 | `update-to-1_07_76.sql` — короткая дельта (вид записи `file`) |
 | База уровня v1.07.62 | `update-to-1_07_64.sql`, затем `update-to-1_07_76.sql` |
 
@@ -86,6 +86,9 @@ Edge Functions → **Deploy a new function → Via Editor**, для каждой
 | v1.07.86 | `media-begin` (имя файла по шаблону из настроек). Нужен SQL `update-to-1_07_86.sql`: `jobs.no`, `placements.no` и шаблоны в `org_settings` |
 | v1.07.87 | `media-begin` (папка сотрудника перед месяцем), `media-health` (схема пути). Нужен SQL `update-to-1_07_87.sql`: `org_settings.gd_inv_by_tech` |
 | v1.07.88 | `media-delete` (режимы archive/restore, удаление только из архива), `media-health` (`?audit=1` — сверка). Нужен SQL `update-to-1_07_88.sql` |
+| v1.07.95 | **передеплой не нужен.** Нужен SQL `update-to-1_07_95.sql`: `org_settings.voice_line` и `fax_line` |
+| v1.07.97 | **передеплой не нужен.** Нужен SQL `update-to-1_07_97.sql`: `org_settings.legal_note` и `ship_method` |
+| v1.07.98 | **передеплой не нужен.** Нужен SQL `update-to-1_07_98.sql`: `code` в справочниках, `sales_tax`/`freight`, таблица `note_templates` |
 
 ---
 

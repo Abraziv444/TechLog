@@ -1367,10 +1367,10 @@
       var cls = c.level === 'err' ? 'ud-err' : c.level === 'warn' ? 'ud-warn' : 'ud-ok';
       var rows = c.items.length
         ? c.items.map(function (i, ii) {
-            return '<div class="ud-it"><span class="m">' + (i.level === 'err' ? '⛔ ' : i.level === 'warn' ? '⚠️ ' : '✓ ') +
+            return '<div class="ud-it"><span class="m">' + (i.level === 'err' ? '[!] ' : i.level === 'warn' ? '[~]️ ' : '[ok] ') +
               esc(i.msg) + '</span>' + (i.el ? '<button data-c="' + ci + '" data-i="' + ii + '">' + T('show') + '</button>' : '') + '</div>';
           }).join('')
-        : '<div class="ud-it"><span class="m">✓ ' + T('none') + '</span></div>';
+        : '<div class="ud-it"><span class="m">[ok] ' + T('none') + '</span></div>';
       return '<details class="ud-chk ' + cls + '"' + (c.level === 'ok' ? '' : ' open') + '><summary>' +
         '<span class="ud-dot"></span><span>' + esc(c.title) + '</span>' +
         '<span class="ud-n">' + (c.items.length || '') + '</span></summary>' + rows + '</details>';
@@ -1387,7 +1387,7 @@
   function paintAll(a) {
     var m = document.getElementById('uidiag-modal');
     if (!m) return;
-    m.querySelector('.ud-hd b').textContent = '🩺 ' + T('all_title');
+    m.querySelector('.ud-hd b').textContent = '' + T('all_title');
     m.querySelector('.ud-sum').textContent = 'Итого: ' + nErr(a.errors) + ' · ' + nWarn(a.warns) + '\n' + envLine(a.env);
     m.querySelector('.ud-body').innerHTML = a.screens.map(function (r) {
       var hard = 0;
@@ -1395,13 +1395,13 @@
       var cls = hard ? 'ud-err' : r.warns ? 'ud-warn' : 'ud-ok';
       var rows = r.checks.filter(function (c) { return c.level !== 'ok'; }).map(function (c) {
         return c.items.filter(function (i) { return i.level !== 'ok'; }).map(function (i) {
-          return '<div class="ud-it"><span class="m">' + (i.level === 'err' ? '⛔ ' : '⚠️ ') +
+          return '<div class="ud-it"><span class="m">' + (i.level === 'err' ? '[!] ' : '[~]️ ') +
             esc(c.title) + ': ' + esc(i.msg) + '</span></div>';
         }).join('');
-      }).join('') || '<div class="ud-it"><span class="m">✓ ' + T('none') + '</span></div>';
+      }).join('') || '<div class="ud-it"><span class="m">[ok] ' + T('none') + '</span></div>';
       return '<details class="ud-chk ' + cls + '"' + (hard ? ' open' : '') + '><summary>' +
         '<span class="ud-dot"></span><span>' + esc(String(r.screen).replace('scr-', '')) + '</span>' +
-        '<span class="ud-n">' + (hard ? hard + '⛔ ' : '') + (r.warns ? r.warns + '⚠️' : '') + '</span></summary>' +
+        '<span class="ud-n">' + (hard ? hard + '[!] ' : '') + (r.warns ? r.warns + '[~]️' : '') + '</span></summary>' +
         rows + '</details>';
     }).join('');
   }
@@ -1417,7 +1417,7 @@
       runAll(function (scr, i, total) {
         body.innerHTML = '<div class="ud-it"><span class="m">' + T('walking') + ' ' + i + '/' + total + ' — ' + scr + '</span></div>';
       }).then(function (a) { m.style.display = ''; paintAll(a); })
-        .catch(function (e) { m.style.display = ''; body.innerHTML = '<div class="ud-it"><span class="m">⛔ ' + esc(String(e)) + '</span></div>'; });
+        .catch(function (e) { m.style.display = ''; body.innerHTML = '<div class="ud-it"><span class="m">[!] ' + esc(String(e)) + '</span></div>'; });
     }, 60);
   }
 
@@ -1425,7 +1425,7 @@
     var m = document.createElement('div');
     m.id = 'uidiag-modal';
     m.innerHTML =
-      '<div class="ud-win"><div class="ud-hd"><b>🩺 ' + title + '</b>' +
+      '<div class="ud-win"><div class="ud-hd"><b>' + title + '</b>' +
       '<button class="ud-x" style="border:none;background:transparent;color:var(--dim,#8AA0AB);font-size:1.3rem;cursor:pointer">×</button></div>' +
       '<div class="ud-sum">' + T('working') + '</div><div class="ud-body"></div>' +
       '<div class="ud-ft"><button class="pri" data-a="again">' + T('again') + '</button>' +

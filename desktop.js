@@ -531,7 +531,7 @@
   }
   function setBusy(v, warn) {
     if (!busyEl) return;
-    var txt = warn ? '⚠' : '…';
+    var txt = warn ? '[~]' : '…';
     if (busyEl.textContent !== txt) busyEl.textContent = txt;
     if (busyEl.classList.contains('hid') === !!v) busyEl.classList.toggle('hid', !v);
   }
