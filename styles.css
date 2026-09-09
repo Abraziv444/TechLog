@@ -1741,3 +1741,14 @@ select:disabled{opacity:.55;cursor:default}
   .chain-item{flex:0 0 auto;width:100%}
   .chain-arr{justify-content:center;transform:rotate(90deg)}
 }
+
+/* v1.08.11: цепочка — подпись «вы здесь», дни между документами, кнопка в шапке */
+.chain-item.is-now{box-shadow:0 0 0 3px rgba(90,170,255,.35)}
+.chain-arr{flex-direction:column;gap:2px}
+.chain-gap{font-style:normal;font-size:.6rem;color:var(--dim-2);white-space:nowrap}
+.docbar .db-chain{
+  border:none;background:transparent;color:var(--dim);cursor:pointer;
+  padding:6px;display:grid;place-items:center;flex:none;
+}
+.docbar .db-chain:hover{color:var(--blue)}
+@media (max-width:640px){ .chain-arr{flex-direction:row;gap:6px} }

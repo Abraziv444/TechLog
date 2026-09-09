@@ -1,5 +1,5 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_VER,
-         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf } from "./google.ts";
+         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, dirFor, ymDir } from "./google.ts";
 
 /* v1.07.64: max — это дефолт; действующий лимит на документ админ задаёт
    в настройках (org_settings.media_max_photo / media_max_video). Проверка
@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
 
     // права: если RLS не отдал работу — доступа нет; логику не дублируем
     const { data: job } = await sb.from("jobs")
-      .select("id,date,unit_number,technician_id,complexes(abbr,name),counterparties(abbr,name),work_types(name)")
+      .select("id,date,unit_number,technician_id,counterparty_id,complex_id," +
+              "complexes(abbr,name),counterparties(abbr,name),work_types(name)")
       .eq("id", job_id).maybeSingle();
     if (!job) return jres({ error: "NO_ACCESS" }, 403);
 
@@ -76,7 +77,7 @@ Deno.serve(async (req) => {
     let org: Record<string, unknown> | null = null;
     {
       const q = await s.from("org_settings")
-        .select("media_max_photo,media_max_video,media_max_file,gd_inv_folder,file_name_fmt,gd_inv_by_tech")
+        .select("media_max_photo,media_max_video,media_max_file,gd_inv_folder,file_name_fmt,gd_inv_by_tech,gd_photo_folder,gd_files_folder")
         .eq("id", "org").maybeSingle();
       if (q.error) {
         /* v1.07.85: колонки gd_inv_folder может ещё не быть (SQL не выполнен) —
@@ -158,18 +159,46 @@ Deno.serve(async (req) => {
        вписал в настройках ссылку на другую папку Диска — прямо в неё
        (месяц внутри неё же). Так бухгалтерию можно вынести в отдельную
        расшаренную папку, не трогая архив с фото. */
-    const invRoot = kind === "invoice" ? folderIdOf(String(org?.gd_inv_folder ?? "")) : "";
-    let root = kind === "invoice"
-      ? (invRoot || await monthFolder(t, cfg.gd_folder_id, INVOICES_DIR))
-      : await monthFolder(t, cfg.gd_folder_id, kind === "file" ? FILES_DIR : PHOTOS_DIR);
-    /* v1.07.87: галочка «инвойсы по папкам сотрудников» — между папкой
-       инвойсов и месяцем встаёт папка исполнителя «Ivan P». Месяц внутри неё
-       свой, поэтому у каждого сотрудника каждый месяц своя папка. */
-    if (byTech) {
-      const dir = techFolderName(techName);
-      if (dir) root = await monthFolder(t, root, dir);
+    /* v1.08.12 · РАСКЛАДКА ПО СМЫСЛУ.
+         фото/видео : <корень фото> / контрагент / комплекс / юнит
+         инвойсы    : <корень инвойсов> / Ivan P / 2026_09
+         вложения   : <корень вложений> / Ivan P / 2026_09 / номер документа
+       Папки ищутся по ID сущности через drive_dirs, а не по имени: так
+       переименование в справочнике не плодит копии, и на каждый файл не
+       нужен поиск по Диску. Корни, которые админ не задал, падают на
+       прежние Photos / Files / Invoices внутри архива. */
+    const ymd = ymDir(String(job.date ?? ""));
+    let parent = "";
+    if (kind === "photo" || kind === "video") {
+      const cpName = String(cp?.name ?? cp?.abbr ?? "").trim();
+      const cxName = String(cx?.name ?? cx?.abbr ?? "").trim();
+      const unit = String(job.unit_number ?? "").trim();
+      /* без контрагента или юнита в общую свалку не кладём — приложение
+         покажет такие документы в разделе «Действие» */
+      if (!cpName || !unit) return jres({ error: "NEED_META", need: !cpName ? "counterparty" : "unit" }, 409);
+      const root = folderIdOf(String(org?.gd_photo_folder ?? "")) ||
+                   await monthFolder(t, cfg.gd_folder_id, PHOTOS_DIR);
+      const cpDir = await dirFor(s, t, "cp", String((job as any).counterparty_id ?? cpName), root, cpName);
+      const cxDir = await dirFor(s, t, "cx", String((job as any).complex_id ?? cxName), cpDir, cxName || cpName);
+      parent = await dirFor(s, t, "unit", String((job as any).complex_id ?? "") + "/" + unit, cxDir, unit);
+    } else if (kind === "invoice") {
+      const root = folderIdOf(String(org?.gd_inv_folder ?? "")) ||
+                   await monthFolder(t, cfg.gd_folder_id, INVOICES_DIR);
+      const dir = techFolderName(techName) || "—";
+      const techDir = await dirFor(s, t, "tech", String((job as any).technician_id ?? dir), root, dir);
+      parent = await dirFor(s, t, "ym", techDir + "/" + ymd, techDir, ymd);
+    } else {
+      const root = folderIdOf(String(org?.gd_files_folder ?? "")) ||
+                   await monthFolder(t, cfg.gd_folder_id, FILES_DIR);
+      const dir = techFolderName(techName) || "—";
+      const techDir = await dirFor(s, t, "tech", String((job as any).technician_id ?? dir), root, dir);
+      const ymDirId = await dirFor(s, t, "ym", techDir + "/" + ymd, techDir, ymd);
+      /* имя папки документа фиксируется при первой загрузке и дальше не
+         пересчитывается: сменится шаблон номера — старые файлы не потеряются */
+      const docName = String(job.date ?? "") + "_" + clean(cx?.abbr || cx?.name || "CX") +
+                      "_" + clean(job.unit_number || "0", 10);
+      parent = await dirFor(s, t, "doc", String(job.id), ymDirId, docName);
     }
-    const parent = await monthFolder(t, root, ym);
     /* v1.07.69: сессию открывает сервер, а байты льёт браузер. Google отдаёт
        CORS-заголовки на адрес сессии только если при открытии был передан
        Origin браузера — иначе браузерный PUT отбивается («Failed to fetch»),

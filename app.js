@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.10';
-const DB_SQL_FILE = 'full-install-1_07_98.sql';   // v1.07.98: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.08.13';
+const DB_SQL_FILE = 'full-install-1_08_12.sql';   // v1.08.12: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -394,12 +394,29 @@ const I18N = {
     ch_hint: 'Что за чем шло: пропозал → работа → аренда → продление. Нажатие открывает документ.',
     ch_empty: 'Связанных документов нет',
     ch_closed: 'закрыт продлением',
+    ch_docs: 'документа в цепочке',
+    ch_here: 'вы здесь',
+    ch_part: 'продлена часть — остальное забрали в срок',
     /* v1.07.87: инвойсы по папкам сотрудников */
+    gd_ph_folder: 'Папка для фото и видео', gd_fl_folder: 'Папка для вложений',
+    gd_ph_hint: 'Внутри сами создаются папки: контрагент → комплекс → юнит. Все снимки по юниту лежат вместе. Пусто — «Photos» внутри архива. Имя на Диске:',
+    gd_fl_hint: 'Внутри: сотрудник → месяц (2026_09) → номер документа. Пусто — «Files» внутри архива. Имя на Диске:',
+    doc_name_lock: 'Имя для документов меняет администратор: по нему названа ваша папка на Google Диске, где лежат инвойсы и вложения.',
+    inv_helpers: 'Инвойсы и для коворкеров',
+    inv_helpers_h: 'Снята — PDF кладётся только в папку исполнителя. Поставлена — копия ложится и в папки коворкеров, которые были на работе.',
     gd_inv_tech: 'Инвойсы по папкам сотрудников',
     gd_inv_tech_tip: 'Галочка снята — все инвойсы лежат в общей папке по месяцам: «Invoices / 2026-09». Галочка стоит — сначала папка исполнителя, а месяц уже внутри неё: «Invoices / Ivan P / 2026-09», и так у каждого сотрудника каждый месяц своя папка. Имя папки берётся из профиля: имя и первая буква фамилии латиницей — как подпись исполнителя в документах. Уже загруженные инвойсы остаются там, где лежали.',
     gd_inv_tech_ex: 'Пример пути',
     /* v1.07.88: архив-корзина и сверка с Диском */
-    tab_archive: 'Архив', arch_title: 'Архив документов',
+    tab_archive: 'Архив', tab_action: 'Действие',
+    act_title: 'Требуется действие',
+    act_meta: 'Не выгружается: нет контрагента или юнита',
+    act_meta_h: 'У этих документов есть фото или файлы, но на Диск они не уйдут: путь строится по контрагенту, комплексу и юниту. Заполните — и отправка пойдёт сама.',
+    act_meta_ok: 'Все документы с файлами заполнены',
+    act_need: 'не хватает',
+    act_queue: 'Не отправленные фото и видео',
+    act_queue_h: 'Файлы ждут связи. Отправка возобновится сама, а здесь можно посмотреть очередь и повторить вручную.',
+    arch_title: 'Архив документов',
     arch_hint: 'Сюда попадают документы, помеченные на удаление. Их файлы на Диске переезжают в папку «Архив TechLog», из рабочих папок ничего не пропадает. Насовсем документ и его файлы удаляются только отсюда.',
     arch_to: 'В архив', arch_back: 'Вернуть из архива', arch_purge: 'Удалить навсегда',
     arch_empty: 'Архив пуст',
@@ -951,10 +968,27 @@ const I18N = {
     ch_hint: 'What followed what: proposal → job → rental → extension. Tap to open a document.',
     ch_empty: 'No linked documents',
     ch_closed: 'closed by an extension',
+    ch_docs: 'documents in the chain',
+    ch_here: 'you are here',
+    ch_part: 'partly extended — the rest was picked up on time',
+    gd_ph_folder: 'Photo and video folder', gd_fl_folder: 'Attachments folder',
+    gd_ph_hint: 'Inside it creates: counterparty → complex → unit. All shots of a unit stay together. Empty — «Photos» in the archive. Drive name:',
+    gd_fl_hint: 'Inside: staff → month (2026_09) → document number. Empty — «Files» in the archive. Drive name:',
+    doc_name_lock: 'The document name is changed by an admin: your Google Drive folder with invoices and attachments is named after it.',
+    inv_helpers: 'Invoices for coworkers too',
+    inv_helpers_h: 'Unchecked — the PDF goes only to the assignee folder. Checked — a copy also lands in coworkers folders.',
     gd_inv_tech: 'Invoices in per-staff folders',
     gd_inv_tech_tip: 'Unchecked — every invoice sits in one folder by month: «Invoices / 2026-09». Checked — the staff folder comes first and the month lives inside it: «Invoices / Ivan P / 2026-09», so every person gets a fresh folder each month. The folder name comes from the profile: first name and the first letter of the surname, in Latin — the same signature as in documents. Invoices already uploaded stay where they are.',
     gd_inv_tech_ex: 'Path example',
-    tab_archive: 'Archive', arch_title: 'Archive of documents',
+    tab_archive: 'Archive', tab_action: 'Action',
+    act_title: 'Needs your action',
+    act_meta: 'Not uploading: no counterparty or unit',
+    act_meta_h: 'These documents have photos or files, but nothing goes to Drive: the path is built from counterparty, complex and unit. Fill them in and the upload resumes by itself.',
+    act_meta_ok: 'Every document with files is filled in',
+    act_need: 'missing',
+    act_queue: 'Photos and videos not sent',
+    act_queue_h: 'Files are waiting for a connection. Sending resumes on its own; here you can look at the queue and retry.',
+    arch_title: 'Archive of documents',
     arch_hint: 'Documents marked for deletion land here. Their Drive files move to the «Архив TechLog» folder — nothing disappears from the working folders. A document and its files are deleted for good only from here.',
     arch_to: 'To archive', arch_back: 'Restore', arch_purge: 'Delete for good',
     arch_empty: 'The archive is empty',
@@ -1984,6 +2018,7 @@ const DB_NEED_COLS = [
   ['org_settings',  'gd_inv_folder'],
   ['org_settings',  'doc_no_fmt'],
   ['org_settings',  'gd_inv_by_tech'],
+  ['org_settings',  'gd_photo_folder'],
   ['jobs',          'archived_at'],
   ['media',         'archived_at'],
   ['org_settings',  'voice_line'],
@@ -2616,6 +2651,7 @@ const ICONS = {
   sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><path d="M21 4v5h-5M3 20v-5h5"/></svg>',
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19.5A2.5 2.5 0 0 1 7.5 17H20V3H7.5A2.5 2.5 0 0 0 5 5.5z"/><path d="M5 19.5A2.5 2.5 0 0 0 7.5 22H20v-5"/><path d="M10 7h6"/></svg>',
   board: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5.4" height="16" rx="1.2"/><rect x="9.8" y="4" width="5.4" height="11" rx="1.2"/><rect x="16.6" y="4" width="5.4" height="7" rx="1.2"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6 2.6 20h18.8L12 3.6Z"/><path d="M12 10v4.4"/><path d="M12 17.6h.01"/></svg>',
   archive: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4.5" rx="1.2"/><path d="M5 8.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V8.5"/><path d="M10 12h4"/></svg>',
   prop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.8" width="16" height="18.4" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
   phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>',
@@ -3330,7 +3366,7 @@ function viewTabbar(){
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
     ['dirs', ICONS.dirs, t('tab_dirs')],
-    ...(isManager() ? [['archive', ICONS.archive, t('tab_archive')]] : []),   // v1.07.88
+    ...(isManager() ? [['archive', ICONS.warn || ICONS.archive, t('tab_action')]] : []),   // v1.08.12
     ...(isAdmin() ? [['journal', ICONS.book, t('tab_journal')]] : []),   // v1.07.18
     ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
@@ -4559,7 +4595,8 @@ function viewJob(){
   }).join('');
 
   return `
-  ${docBarHtml({ title: `${docNo('job', j) ? esc(docNo('job', j)) + ' · ' : ''}${esc(cx.abbr || cx.name || '')} · Unit ${esc(j.unit_number || '—')}`,
+  ${docBarHtml({ chain: `App.chain('job','${j.id}')`,
+                 title: `${docNo('job', j) ? esc(docNo('job', j)) + ' · ' : ''}${esc(cx.abbr || cx.name || '')} · Unit ${esc(j.unit_number || '—')}`,
                  save: 'App.saveJob(false)', close: 'App.jobClose()', dirty: jobDirty() })}
   <div class="card" style="border-left:6px solid ${wt.color}">
     <div style="display:flex;gap:10px;align-items:center">
@@ -4754,6 +4791,8 @@ function docBarHtml(o){
   return `<div class="docbar">
     <button type="button" class="db-back" onclick="${o.close}">${ic('arr_l')}<span>${t('back')}</span></button>
     <span class="db-t">${o.dirty ? '<span class="dirty-dot" title="' + t('doc_unsaved_t') + '"></span> ' : ''}${o.title || ''}</span>
+    ${o.chain ? `<button type="button" class="db-chain" title="${t('ch_title')}" aria-label="${t('ch_title')}"
+      onclick="${o.chain}">${ic('link')}</button>` : ''}
     <button type="button" class="db-save" onclick="${o.save}">${ic('save')}<span>${t('save')}</span></button>
     <button type="button" class="db-x" title="${t('doc_close')}" aria-label="${t('doc_close')}" onclick="${o.close}">${ic('close')}</button>
   </div>`;
@@ -5217,11 +5256,44 @@ function archRowHtml(kind, o){
     ${isAdmin() ? `<button class="btn btn-red sm" title="${t('arch_purge')}" onclick="App.purgeDoc('${kind}','${o.id}')">${ic('trash')}</button>` : ''}
   </div>`;
 }
+/* v1.08.12: экран «Действие» — всё, что требует человека: документы, которые
+   нельзя выгрузить без контрагента или юнита, неотправленные фото и архив.
+   Раньше это был просто архив. */
+function needMeta(){
+  return liveJobs().filter(j => {
+    if (!trCanWrite('job', j)) return false;
+    const cp = cpById(j.counterparty_id), unit = String(j.unit_number || '').trim();
+    const hasMedia = (state.data.media || []).some(m => m.job_id === j.id) ||
+                     mediaQ.some(x => x.job_id === j.id);
+    return hasMedia && (!cp || !unit);
+  });
+}
+function actionCountAll(){
+  return needMeta().length + mediaQ.length + archJobs().length + archProps().length;
+}
 function viewArchive(){
   const jobs = archJobs().sort((a, b) => String(b.archived_at).localeCompare(String(a.archived_at)));
   const props = archProps().sort((a, b) => String(b.archived_at).localeCompare(String(a.archived_at)));
   const n = jobs.length + props.length;
-  return `<div class="section-title">${ic('archive')} ${t('arch_title')}${helpBtn('archive')}</div>
+  const nm = needMeta();
+  return `<div class="section-title">${ic('warn')} ${t('act_title')}${helpBtn('archive')}</div>
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('warn')} ${t('act_meta')} <span class="chip ${nm.length ? 'warn' : 'ok'}">${nm.length}</span></div>
+    <div class="tiny" style="margin-bottom:6px">${t('act_meta_h')}</div>
+    ${nm.map(j => { const cx = cxById(j.complex_id) || {};
+      const miss = [!cpById(j.counterparty_id) ? t('counterparty') : '',
+                    !String(j.unit_number || '').trim() ? t('unit') : ''].filter(Boolean).join(', ');
+      return `<div class="rowline"><div class="grow"><b>${esc(docNo('job', j) || (cx.abbr || '—'))}</b>
+        <div class="tiny">${fmtDMY(j.date)} · ${t('act_need')}: ${esc(miss)}</div></div>
+        <button class="btn btn-ghost sm" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button></div>`;
+    }).join('') || `<div class="list-empty">${t('act_meta_ok')}</div>`}
+  </div>
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('upload')} ${t('act_queue')} <span class="chip ${mediaQ.length ? 'warn' : 'ok'}">${mediaQ.length}</span></div>
+    <div class="tiny" style="margin-bottom:6px">${t('act_queue_h')}</div>
+    <button class="btn btn-ghost sm" onclick="App.mediaQueueModal()">${ic('inbox')} ${t('mq_title')}</button>
+  </div>
+  <div class="section-title">${ic('archive')} ${t('arch_title')}</div>
   <div class="card"><div class="tiny">${t('arch_hint')}</div></div>
   ${auditCardHtml()}
   <div class="card">
@@ -5811,8 +5883,12 @@ function viewSettings(){
     </div>
     <div class="settings-row">
       <div class="grow" style="flex:1"><b>${t('doc_name')}</b></div>
-      <input id="set-name" value="${esc(u.display_name)}" style="max-width:200px" onchange="App.saveMyName(this.value)">
+      ${isAdmin()
+        ? `<input id="set-name" value="${esc(u.display_name)}" style="max-width:200px" onchange="App.saveMyName(this.value)">`
+        : `<input id="set-name" value="${esc(u.display_name)}" style="max-width:200px" readonly
+             title="${esc(t('doc_name_lock'))}">`}
     </div>
+    ${isAdmin() ? '' : `<div class="tiny" style="margin:-4px 0 6px">${t('doc_name_lock')}</div>`}
     <div class="settings-row">
       <div class="grow" style="flex:1"><b>${ic('key')} ${t('my_pass_title')}</b>
         ${HAS_SB ? '' : `<div class="d">${t('demo_only_sb')}</div>`}</div>
@@ -6458,6 +6534,9 @@ const App = {
   setLang(l){ state.lang = l; localStorage.setItem('techlog_lang', l); render(); },
   setNavApp(v){ state.navApp = v; localStorage.setItem('techlog_navapp', v); render(); },  // v1.07.21
   saveMyName(v){
+    /* v1.08.13: имя для документов задаёт админ — по нему называется папка
+       сотрудника на Диске, и самовольная правка увела бы файлы в новую. */
+    if (!isAdmin()){ toast('⚠ ' + t('doc_name_lock'), 'err'); render(); return; }
     v = v.trim(); if (!v) return;
     state.user.display_name = v;
     const prof = state.data.profiles.find(p=>p.id===state.user.id);
@@ -8878,7 +8957,20 @@ function chainOf(kind, id){
   });
   return out;
 }
-function chainCard(node, i){
+function chainDays(a, b){
+  try{
+    const d1 = new Date(a), d2 = new Date(b);
+    const n2 = Math.round((d2 - d1) / 864e5);
+    return isFinite(n2) ? n2 : null;
+  }catch(e){ return null; }
+}
+function chainCard(node, i, all, cur){
+  const prev = i ? all[i - 1] : null;
+  const gap = prev ? chainDays(prev.o.due_date || prev.o.date, node.o.date) : null;
+  node.__gap = gap;
+  return chainCardBody(node, i, cur, gap);
+}
+function chainCardBody(node, i, cur, gap){
   const o = node.o, cx = cxById(o.complex_id) || {};
   const et = node.t === 'pick' || node.t === 'ext' ? (etById(o.equipment_type_id) || {}) : null;
   const T2 = { prop: 'PROP', job: 'WORK', pick: 'PICK', ext: 'LONG' }[node.t];
@@ -8894,20 +8986,34 @@ function chainCard(node, i){
   const open = node.t === 'prop' ? `App.openProposal('${o.id}')`
              : node.t === 'job' ? `App.openJob('${o.id}')`
              : `App.openJob('${o.job_id}')`;
-  return `${i ? `<span class="chain-arr" aria-hidden="true">${ic('chev_r')}</span>` : ''}
-    <button class="chain-item t-${node.t}" onclick="App.closeModal();${open}">
-      <span class="chain-tag">${T2}</span>
+  const now = cur && cur.t === node.t && cur.id === o.id;
+  /* частичное продление: родитель не закрыт, но продолжение есть —
+     значит часть оборудования забрали в исходный срок */
+  const part = node.t === 'pick' && !o.superseded &&
+    (state.data.placements || []).some(x => x.ext_of === o.id);
+  return `${i ? `<span class="chain-arr" aria-hidden="true">${ic('chev_r')}${
+      gap != null ? `<i class="chain-gap">${gap > 0 ? '+' + gap + ' дн' : gap === 0 ? 'в тот же день' : gap + ' дн'}</i>` : ''
+    }</span>` : ''}
+    <button class="chain-item t-${node.t} ${now ? 'is-now' : ''}" onclick="App.closeModal();${open}">
+      <span class="chain-tag">${T2}${now ? ` · ${t('ch_here')}` : ''}</span>
       <b>${esc(title)}</b>
       <span class="tiny">${esc(sub)}</span>
+      ${part ? `<span class="tiny chip warn">${t('ch_part')}</span>` : ''}
       ${no && node.t !== 'prop' && node.t !== 'job' ? `<span class="tiny gd-mark">${esc(no)}</span>` : ''}
     </button>`;
 }
 function chainModal(kind, id){
   const list = chainOf(kind, id);
+  const cur = { t: kind === 'pick' ? null : kind, id };
+  const path = list.map(x => ({ prop: 'PROP', job: 'WORK', pick: 'PICK', ext: 'LONG' })[x.t]).join(' → ');
   openModal(`
     ${modalHead(t('ch_title'), 'link')}
-    <div class="tiny" style="margin-bottom:8px">${t('ch_hint')}</div>
-    ${list.length ? `<div class="chain">${list.map(chainCard).join('')}</div>`
+    <div class="card" style="margin-bottom:8px">
+      <div style="font-weight:900">${list.length} ${t('ch_docs')}</div>
+      <div class="tiny">${esc(path || '—')}</div>
+      <div class="tiny" style="margin-top:4px">${t('ch_hint')}</div>
+    </div>
+    ${list.length ? `<div class="chain">${list.map(function (x, i){ return chainCard(x, i, list, cur); }).join('')}</div>`
                   : `<div class="list-empty">${t('ch_empty')}</div>`}
   `);
 }
@@ -9147,7 +9253,8 @@ function viewProposalForm(){
   const stSeg = ['draft','sent','approved','declined'].map(s =>
     `<button class="${p.status===s?'on':''}" onclick="App.setPropStatus('${s}')">${t('pst_'+s)}</button>`).join('');
   return `<div class="prop-wrap">
-  ${docBarHtml({ title: `${docNo('prop', p) || t('tab_proposals') + ' · P-' + (p.no ?? '…')}`,
+  ${docBarHtml({ chain: `App.chain('prop','${p.id}')`,
+                 title: `${docNo('prop', p) || t('tab_proposals') + ' · P-' + (p.no ?? '…')}`,
                  save: 'App.saveProposal()', close: 'App.propClose()', dirty: propDirty() })}
   <div class="card" style="margin:0 12px">
     <div class="form-row"><span class="lbl">${t('date')}</span>
@@ -11017,6 +11124,12 @@ function gdFolderInput(el){
 /* Карточка «куда сохраняются файлы»: отдельно фото и видео, отдельно
    документы — с именем папки и ссылкой, как в Google Диске. */
 /* v1.07.87: как будет выглядеть путь инвойса при нынешних настройках */
+/* v1.08.12: рядом с полем — как эта папка называется на Диске.
+   Имя приходит из «Теста соединения» (его знает только сервер). */
+function gdDirName(kind){
+  const p = (typeof gdFolders !== 'undefined' && gdFolders) ? gdFolders[kind] : null;
+  return p && p.path ? ` <span class="gd-mark">${esc(String(p.path).split('/')[0].trim())}</span>` : '';
+}
 function gdInvPathSample(){
   const o = state.data.org_settings || {};
   const ym = todayISO().slice(0, 7);
@@ -11165,14 +11278,25 @@ function mediaSettingsCardHtml(){
     <label class="opt ${gdTrimOn() ? 'on' : ''}" style="margin:2px 0 6px">
       <input type="checkbox" ${gdTrimOn() ? 'checked' : ''} onchange="App.gdTrimToggle(this.checked)"> ${t('gd_trim')}</label>
     <div class="tiny gd-hint">${gdTrimOn() ? t('gd_trim_hint') : t('gd_folder_hint')}</div>
+    ${row(t('gd_ph_folder'), `<input id="gd-photo" autocomplete="off" placeholder="${t('gd_folder_ph')}"
+      value="${esc(((state.data.org_settings || {}).gd_photo_folder) || '')}"
+      onchange="App.setOrgText('gd_photo_folder', App.gdFolderIdOf(this.value))">`)}
+    <div class="tiny gd-hint">${t('gd_ph_hint')}${gdDirName('photo')}</div>
     ${row(t('gd_inv_folder'), `<input id="gd-inv" autocomplete="off" placeholder="${t('gd_folder_ph')}"
       value="${esc(((state.data.org_settings || {}).gd_inv_folder) || '')}"
       onchange="App.setOrgText('gd_inv_folder', App.gdFolderIdOf(this.value))">`)}
-    <div class="tiny gd-hint">${t('gd_inv_hint')}</div>
+    <div class="tiny gd-hint">${t('gd_inv_hint')}${gdDirName('invoice')}</div>
+    ${row(t('gd_fl_folder'), `<input id="gd-files" autocomplete="off" placeholder="${t('gd_folder_ph')}"
+      value="${esc(((state.data.org_settings || {}).gd_files_folder) || '')}"
+      onchange="App.setOrgText('gd_files_folder', App.gdFolderIdOf(this.value))">`)}
+    <div class="tiny gd-hint">${t('gd_fl_hint')}${gdDirName('file')}</div>
+    <label class="opt ${((state.data.org_settings || {}).gd_inv_helpers) ? 'on' : ''}">
+      <input type="checkbox" ${((state.data.org_settings || {}).gd_inv_helpers) ? 'checked' : ''}
+        onchange="App.setOrgFlag('gd_inv_helpers', this.checked)"> ${t('inv_helpers')}</label>
+    <div class="tiny gd-hint">${t('inv_helpers_h')}</div>
     <label class="opt ${((state.data.org_settings || {}).gd_inv_by_tech) ? 'on' : ''}"
       style="margin:6px 0 2px" title="${esc(t('gd_inv_tech_tip'))}">
-      <input type="checkbox" ${((state.data.org_settings || {}).gd_inv_by_tech) ? 'checked' : ''}
-        onchange="App.setOrgFlag('gd_inv_by_tech', this.checked)"> ${t('gd_inv_tech')}
+      <input type="checkbox" disabled ${((state.data.org_settings || {}).gd_inv_by_tech) ? 'checked' : ''}> ${t('gd_inv_tech')}
       <button type="button" class="pri inline" title="${esc(t('gd_inv_tech_tip'))}"
         onclick="event.preventDefault();event.stopPropagation();App.toastInfo('gd_inv_tech_tip')">${ic('help')}</button>
     </label>
@@ -11263,10 +11387,10 @@ async function mediaOauthExchange(code){
    перепутанный при ручном деплое код, и забытую при обновлении функцию. */
 const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
                    'media-view', 'media-delete', 'media-oauth'];
-const MEDIA_FN_VER = '1.07.88';
+const MEDIA_FN_VER = '1.08.12';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
-const MEDIA_FN_MIN = { 'media-begin': '1.07.87', 'media-health': '1.07.88',
+const MEDIA_FN_MIN = { 'media-begin': '1.08.12', 'media-commit': '1.08.13', 'media-health': '1.07.88',
                        'media-delete': '1.07.88' };
 const MEDIA_FN_MIN_DEF = '1.07.72';
 function mFnVerOk(ver, name){

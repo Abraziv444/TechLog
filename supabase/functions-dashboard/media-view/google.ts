@@ -61,7 +61,7 @@ export async function monthFolder(t: string, rootId: string, ym: string) {
 /* v1.07.72: версия комплекта функций. Диагностика в приложении спрашивает
    каждую функцию «кто ты и какой версии» — так видно и перепутанный код,
    и функцию, которую забыли передеплоить. */
-export const FN_VER = "1.07.88";
+export const FN_VER = "1.08.12";
 
 /* v1.07.81: имена служебных папок внутри архива — одни на все функции.
    Фото и видео лежат в «Photos/ГГГГ-ММ», документы — в «Files/ГГГГ-ММ»:
@@ -104,3 +104,42 @@ export const CORS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS" };
 export const jres = (b: unknown, s = 200) => new Response(JSON.stringify(b),
   { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
+
+/* v1.08.12: папка по СУЩНОСТИ, а не по имени. Ключ — ID контрагента,
+   комплекса, сотрудника или документа; соответствие лежит в drive_dirs.
+   Даёт две вещи: переименование в справочнике не плодит новые папки, и
+   на каждый файл не нужен поиск по Диску — это заметно на мобильной сети. */
+export async function dirFor(
+  s: any, t: string, kind: string, key: string, parentId: string, name: string,
+) {
+  const clean = String(name || "").replace(/[\\/]+/g, "-").trim() || "—";
+  try {
+    const q = await s.from("drive_dirs").select("folder_id,name")
+      .eq("kind", kind).eq("key", key).maybeSingle();
+    const id = q.data?.folder_id;
+    if (id) {
+      /* имя могли поменять в справочнике — подтягиваем на Диске, папка та же */
+      if (q.data?.name !== clean) {
+        await fetch(`https://www.googleapis.com/drive/v3/files/${id}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ name: clean }),
+        }).catch(() => null);
+        await s.from("drive_dirs").update({ name: clean, updated_at: new Date().toISOString() })
+          .eq("kind", kind).eq("key", key);
+      }
+      return id;
+    }
+  } catch (_e) { /* нет таблицы — работаем поиском по имени */ }
+  const fresh = await monthFolder(t, parentId, clean);   // найдёт или создаст по имени
+  try {
+    await s.from("drive_dirs").insert({ kind, key, folder_id: fresh, name: clean });
+  } catch (_e) { /* не страшно: в следующий раз найдём по имени */ }
+  return fresh;
+}
+/* Месяц в виде 2026_09 — так просил заказчик */
+export function ymDir(date: string) {
+  const d = String(date || "").slice(0, 7);       // 2026-09
+  return d.length === 7 ? d.replace("-", "_") : "0000_00";
+}
+/* Имя папки сотрудника: имя и первая буква фамилии латиницей */

@@ -40,7 +40,7 @@ const T = w.__T;
 if (!T) { console.log('⛔ внутренности не экспортировались'); process.exit(1); }
 
 console.log('\n— версия и SQL —');
-t('APP_VERSION = 1.08.10', T.APP_VERSION === '1.08.10', T.APP_VERSION);
+t('APP_VERSION = 1.08.13', T.APP_VERSION === '1.08.13', T.APP_VERSION);
 t('DB_SQL_FILE указывает на существующий файл',
   fs.existsSync(ROOT + '/supabase/' + T.DB_SQL_FILE), T.DB_SQL_FILE);
 t('диагностика БД знает про jobs.note_en',
@@ -208,7 +208,7 @@ console.log('\n— инвойсы на Диск (v1.07.85) —');
     T.DB_NEED_COLS.some(c => c[0] === 'org_settings' && c[1] === 'gd_inv_folder'));
   const g = fs.readFileSync(ROOT + '/supabase/functions/_shared/google.ts', 'utf8');
   t('INVOICES_DIR в общем модуле', /INVOICES_DIR = "Invoices"/.test(g));
-  t('версия функций поднята', /FN_VER = "1\.07\.88"/.test(g));
+  t('версия функций поднята', /FN_VER = "1\.08\.12"/.test(g));
   const mb = fs.readFileSync(ROOT + '/supabase/functions/media-begin/index.ts', 'utf8');
   t('media-begin принимает invoice', /invoice: \{ max: 50/.test(mb) && /kind === "invoice"/.test(mb));
   t('media-begin читает свою папку из настроек', /gd_inv_folder/.test(mb) && /folderIdOf/.test(mb));
@@ -260,7 +260,7 @@ console.log('\n— конструктор нумерации (v1.07.86) —');
 console.log('\n— инвойсы по папкам сотрудников (v1.07.87) —');
 {
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
-  t('галочка в карточке Диска', /setOrgFlag\('gd_inv_by_tech'/.test(src));
+  t('галочка в карточке Диска (нередактируемая с v1.08.12)', /gd_inv_by_tech\) \? 'checked'/.test(src));
   t('тултип у галочки и кнопка ⓘ',
     /title="\$\{esc\(t\('gd_inv_tech_tip'\)\)\}"/.test(src) && /toastInfo\('gd_inv_tech_tip'\)/.test(src));
   t('живой пример пути', /function gdInvPathSample/.test(src));
@@ -268,7 +268,7 @@ console.log('\n— инвойсы по папкам сотрудников (v1.0
     T.DB_NEED_COLS.some(c => c[0] === 'org_settings' && c[1] === 'gd_inv_by_tech'));
   const mb = fs.readFileSync(ROOT + '/supabase/functions/media-begin/index.ts', 'utf8');
   t('media-begin читает галочку', /gd_inv_by_tech/.test(mb) && /const byTech = !!org\?\.gd_inv_by_tech/.test(mb));
-  t('папка сотрудника встаёт перед месяцем', /if \(dir\) root = await monthFolder\(t, root, dir\);/.test(mb));
+  t('папка сотрудника встаёт перед месяцем', /dirFor\(s, t, "tech"/.test(mb));
   t('имя папки — имя и буква фамилии латиницей', /function techFolderName/.test(mb));
   const mh = fs.readFileSync(ROOT + '/supabase/functions/media-health/index.ts', 'utf8');
   t('тест соединения показывает схему пути', /<сотрудник>/.test(mh));
