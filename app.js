@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.13';
-const DB_SQL_FILE = 'full-install-1_08_12.sql';   // v1.08.12: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.08.15';
+const DB_SQL_FILE = 'full-install-1_08_15.sql';   // v1.08.15: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -397,6 +397,11 @@ const I18N = {
     ch_docs: 'документа в цепочке',
     ch_here: 'вы здесь',
     ch_part: 'продлена часть — остальное забрали в срок',
+    ch_mine: 'ваш документ', ch_view: 'только просмотр',
+    prop_mgr: 'Менеджер может создавать пропозалы',
+    prop_mgr_h: 'Снята — пропозалы создаёт только администратор.',
+    prop_hide: 'Скрывать цены пропозала для всех',
+    prop_hide_h: 'Стоит по умолчанию: суммы пропозала видит только администратор, остальные — прочерк. Снять может только администратор.',
     /* v1.07.87: инвойсы по папкам сотрудников */
     gd_ph_folder: 'Папка для фото и видео', gd_fl_folder: 'Папка для вложений',
     gd_ph_hint: 'Внутри сами создаются папки: контрагент → комплекс → юнит. Все снимки по юниту лежат вместе. Пусто — «Photos» внутри архива. Имя на Диске:',
@@ -414,6 +419,15 @@ const I18N = {
     act_meta_h: 'У этих документов есть фото или файлы, но на Диск они не уйдут: путь строится по контрагенту, комплексу и юниту. Заполните — и отправка пойдёт сама.',
     act_meta_ok: 'Все документы с файлами заполнены',
     act_need: 'не хватает',
+    act_pdf: 'Нужно обновить документы PDF',
+    act_pdf_h: 'Документ меняли после того, как бланк уехал на Диск: на Диске лежит старая версия. Нажмите стрелку — приложение перезальёт свежий PDF.',
+    act_pdf_ok: 'Все выгруженные бланки свежие',
+    inv_pdf_on: 'PDF на Диске от',
+    inv_pdf_none: 'PDF этого документа на Диске ещё нет',
+    inv_pdf_show: 'Показать',
+    inv_pdf_fresh: 'актуальный',
+    inv_pdf_old: 'устарел — документ меняли позже',
+    inv_pdf_upd: 'Обновить',
     act_queue: 'Не отправленные фото и видео',
     act_queue_h: 'Файлы ждут связи. Отправка возобновится сама, а здесь можно посмотреть очередь и повторить вручную.',
     arch_title: 'Архив документов',
@@ -971,6 +985,11 @@ const I18N = {
     ch_docs: 'documents in the chain',
     ch_here: 'you are here',
     ch_part: 'partly extended — the rest was picked up on time',
+    ch_mine: 'your document', ch_view: 'view only',
+    prop_mgr: 'Managers may create proposals',
+    prop_mgr_h: 'Unchecked — only an admin creates proposals.',
+    prop_hide: 'Hide proposal prices from everyone',
+    prop_hide_h: 'On by default: proposal amounts are visible to the admin only, everyone else sees a dash. Only an admin can switch it off.',
     gd_ph_folder: 'Photo and video folder', gd_fl_folder: 'Attachments folder',
     gd_ph_hint: 'Inside it creates: counterparty → complex → unit. All shots of a unit stay together. Empty — «Photos» in the archive. Drive name:',
     gd_fl_hint: 'Inside: staff → month (2026_09) → document number. Empty — «Files» in the archive. Drive name:',
@@ -986,6 +1005,15 @@ const I18N = {
     act_meta_h: 'These documents have photos or files, but nothing goes to Drive: the path is built from counterparty, complex and unit. Fill them in and the upload resumes by itself.',
     act_meta_ok: 'Every document with files is filled in',
     act_need: 'missing',
+    act_pdf: 'PDF documents need updating',
+    act_pdf_h: 'The document changed after the form went to Drive: an old version is stored there. Press the arrow and the app re-uploads a fresh PDF.',
+    act_pdf_ok: 'Every uploaded form is up to date',
+    inv_pdf_on: 'PDF on Drive from',
+    inv_pdf_none: 'No PDF of this document on Drive yet',
+    inv_pdf_show: 'Show',
+    inv_pdf_fresh: 'up to date',
+    inv_pdf_old: 'outdated — the document changed later',
+    inv_pdf_upd: 'Update',
     act_queue: 'Photos and videos not sent',
     act_queue_h: 'Files are waiting for a connection. Sending resumes on its own; here you can look at the queue and retry.',
     arch_title: 'Archive of documents',
@@ -2019,6 +2047,7 @@ const DB_NEED_COLS = [
   ['org_settings',  'doc_no_fmt'],
   ['org_settings',  'gd_inv_by_tech'],
   ['org_settings',  'gd_photo_folder'],
+  ['org_settings',  'prop_hide_prices'],
   ['jobs',          'archived_at'],
   ['media',         'archived_at'],
   ['org_settings',  'voice_line'],
@@ -5231,6 +5260,33 @@ function mediaOf(jobId){
   return { pdf: by('invoice'), photo: by('photo'), video: by('video'), file: by('file'),
            total: rows.length, lost: rows.filter(m => m.__lost).length };
 }
+/* v1.08.14: PDF инвойса на Диске — есть ли он и не устарел ли.
+   Устарел = документ меняли после того, как бланк уехал на Диск. */
+function invOnDrive(jobId){
+  const rows = (state.data.media || []).filter(m => m.job_id === jobId && m.kind === 'invoice' && m.status === 'ready');
+  if (!rows.length) return null;
+  rows.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+  const last = rows[0];
+  const j = jobById(jobId) || {};
+  const upAt = String(last.created_at || '');
+  const chAt = String(j.updated_at || '');
+  return { media: last, stale: !!(upAt && chAt && chAt > upAt), at: upAt };
+}
+function invStaleJobs(){
+  return liveJobs().filter(j => trCanWrite('job', j)).map(j => {
+    const v = invOnDrive(j.id); return v && v.stale ? { j, v } : null; }).filter(Boolean);
+}
+function invDriveBoxHtml(j){
+  if (!HAS_SB) return '';
+  const v = invOnDrive(j.id);
+  if (!v) return `<div class="tiny" style="margin-top:6px">${t('inv_pdf_none')}</div>`;
+  return `<div class="rowline" style="margin-top:6px">
+    <div class="grow"><b>${ic('pdf')} ${t('inv_pdf_on')}</b>
+      <div class="tiny">${fmtDMY(String(v.at).slice(0, 10))}${v.stale ? ` · <span class="chip bad">${t('inv_pdf_old')}</span>` : ` · <span class="chip ok">${t('inv_pdf_fresh')}</span>`}</div></div>
+    <button class="btn btn-ghost sm" onclick="App.mediaOpen('${v.media.id}','invoice')">${ic('eye')} ${t('inv_pdf_show')}</button>
+    ${v.stale ? `<button class="btn btn-blue sm" onclick="App.invToDrive('${j.id}')">${ic('upload')} ${t('inv_pdf_upd')}</button>` : ''}
+  </div>`;
+}
 function mediaChips(jobId){
   const m = mediaOf(jobId);
   if (!m.total) return `<span class="chip">${t('aud_none')}</span>`;
@@ -5287,6 +5343,16 @@ function viewArchive(){
         <div class="tiny">${fmtDMY(j.date)} · ${t('act_need')}: ${esc(miss)}</div></div>
         <button class="btn btn-ghost sm" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button></div>`;
     }).join('') || `<div class="list-empty">${t('act_meta_ok')}</div>`}
+  </div>
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('pdf')} ${t('act_pdf')} <span class="chip ${invStaleJobs().length ? 'bad' : 'ok'}">${invStaleJobs().length}</span></div>
+    <div class="tiny" style="margin-bottom:6px">${t('act_pdf_h')}</div>
+    ${invStaleJobs().map(({ j, v }) => { const cx = cxById(j.complex_id) || {};
+      return `<div class="rowline"><div class="grow"><b>${esc(docNo('job', j) || (cx.abbr || '—'))}</b>
+        <div class="tiny">${fmtDMY(j.date)} · ${t('inv_pdf_on')} ${fmtDMY(String(v.at).slice(0, 10))}</div></div>
+        <button class="btn btn-ghost sm" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button>
+        <button class="btn btn-blue sm" onclick="App.invToDrive('${j.id}')">${ic('upload')}</button></div>`;
+    }).join('') || `<div class="list-empty">${t('act_pdf_ok')}</div>`}
   </div>
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('upload')} ${t('act_queue')} <span class="chip ${mediaQ.length ? 'warn' : 'ok'}">${mediaQ.length}</span></div>
@@ -8910,6 +8976,17 @@ async function boardMove(id, dir){
    ===================================================================== */
 let propDraft = null;
 function allowTechProposal(){ return (state.data.org_settings || {}).allow_tech_proposal_flag !== false; }
+/* v1.08.15: цены пропозала видит только администратор, пока он сам не снимет
+   галочку. Менеджер и работники видят прочерк — это требование заказчика. */
+function propMoneyHidden(){
+  const o = (state.data && state.data.org_settings) || {};
+  return (o.prop_hide_prices !== false) && !isAdmin();
+}
+function propMoney(v){ return propMoneyHidden() ? '—' : money(+v || 0); }
+function propCanCreate(){
+  const o = (state.data && state.data.org_settings) || {};
+  return isAdmin() || (o.prop_mgr_create && isManager());
+}
 function propById(id){ return (state.data.proposals || []).find(x => x.id === id); }
 function proposalChipHtml(j, short){
   const p = j && j.proposal_id ? propById(j.proposal_id) : null;
@@ -8935,8 +9012,11 @@ function chainOf(kind, id){
   if (job && job.proposal_id) prop = propById(job.proposal_id);
   if (prop) out.push({ t: 'prop', o: prop });
 
-  const jobs = job ? [job]
-    : (prop ? (state.data.jobs || []).filter(j => j.proposal_id === prop.id) : []);
+  /* v1.08.15: пропозал в цепочке всегда один, а работ по нему может быть
+     несколько — каждый исполнитель заполняет свой инвойс. Показываем все. */
+  const jobs = prop ? (state.data.jobs || []).filter(j => j.proposal_id === prop.id)
+             : (job ? [job] : []);
+  if (job && prop && !jobs.some(x => x.id === job.id)) jobs.push(job);
   jobs.sort((a, b) => String(a.date).localeCompare(String(b.date)));
   jobs.forEach(j => {
     out.push({ t: 'job', o: j });
@@ -8987,6 +9067,12 @@ function chainCardBody(node, i, cur, gap){
              : node.t === 'job' ? `App.openJob('${o.id}')`
              : `App.openJob('${o.job_id}')`;
   const now = cur && cur.t === node.t && cur.id === o.id;
+  /* кто автор и можно ли править: свой документ — да, чужой — только смотреть,
+     администратор правит любые */
+  const mineJob = node.t === 'job' && (isAdmin() || o.technician_id === (state.user || {}).id);
+  const author = node.t === 'job' ? shortName(profName(o.technician_id)) : '';
+  const crew = node.t === 'job'
+    ? (o.helper_ids || []).map(id => shortName(profName(id))).filter(Boolean) : [];
   /* частичное продление: родитель не закрыт, но продолжение есть —
      значит часть оборудования забрали в исходный срок */
   const part = node.t === 'pick' && !o.superseded &&
@@ -8998,6 +9084,9 @@ function chainCardBody(node, i, cur, gap){
       <span class="chain-tag">${T2}${now ? ` · ${t('ch_here')}` : ''}</span>
       <b>${esc(title)}</b>
       <span class="tiny">${esc(sub)}</span>
+      ${node.t === 'job' ? `<span class="tiny">${ic('crew')} ${esc(author || '—')}${
+          crew.length ? ' + ' + esc(crew.join(', ')) : ''}</span>
+        <span class="tiny chip ${mineJob ? 'ok' : ''}">${mineJob ? t('ch_mine') : t('ch_view')}</span>` : ''}
       ${part ? `<span class="tiny chip warn">${t('ch_part')}</span>` : ''}
       ${no && node.t !== 'prop' && node.t !== 'job' ? `<span class="tiny gd-mark">${esc(no)}</span>` : ''}
     </button>`;
@@ -9022,7 +9111,7 @@ function proposalBoxHtml(j){
   if (isManager()){
     let inner;
     if (p){
-      inner = `<span class="chip pr">P-${p.no ?? '·'} · ${money(+p.total || 0)}</span>
+      inner = `<span class="chip pr">P-${p.no ?? '·'} · ${propMoney(p.total)}</span>
         <button class="btn btn-ghost sm" onclick="App.openProposal('${p.id}')">↗</button>
         <button class="btn btn-ghost sm" title="${t('ch_title')}" onclick="App.chain('job','${j.id}')">${ic('link')}</button>
         <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">${ic('close')} ${t('prop_unlink')}</button>`;
@@ -9158,17 +9247,19 @@ function viewProposalList(){
   const rows = list.map(p => {
     const cx = cxById(p.complex_id) || {abbr:'—', name:'—'};
     const linked = state.data.jobs.filter(j => j.proposal_id === p.id).length;
+    const sum = propMoney(p.total);
     return `<button class="rowline map-row" onclick="App.openProposal('${p.id}')">
       <span class="chip pst pst-${p.status}">${t('pst_' + p.status)}</span>
       <div class="grow"><b>P-${p.no ?? '·'}</b> · ${esc(cx.abbr || cx.name)}${p.unit_number ? ` · Unit <b>${esc(p.unit_number)}</b>` : ''}
         <div class="tiny">${fmtDMY(p.date)}${linked ? ` · ${ic('link')} ${linked}` : ''}</div></div>
-      <span class="money">${money(+p.total || 0)}</span>
+      <span class="money">${sum}</span>
     </button>`;
   }).join('');
   return `<div class="prop-wrap"><div class="section-title">${t('tab_proposals')}${helpBtn('proposals')}</div>
   <div class="tabs" style="margin:0 12px 8px">${chips}</div>
   <div class="card" style="margin:0 12px">${rows || `<div class="list-empty">${t('no_items')}</div>`}</div>
-  <button class="btn btn-green" style="margin:10px 12px" onclick="App.openProposal()">${ic('plus')} ${t('prop_new')}</button></div>`;
+  ${propCanCreate() ? `<button class="btn btn-green" style="margin:10px 12px" onclick="App.openProposal()">${ic('plus')} ${t('prop_new')}</button>`
+    : `<div class="tiny" style="margin:10px 12px">${t('prop_mgr_h')}</div>`}</div>`;
 }
 function openProposal(id){
   if (!isManager()) return;
@@ -10583,6 +10674,7 @@ function mediaStripHtml(jobId){
     ${HAS_SB ? `<button type="button" class="btn btn-ghost sm" style="margin-top:6px"
       title="${t('inv_drive_hint')}" onclick="App.invToDrive('${jobId}')">
       ${ic('pdf')} ${t('inv_drive')}${nI ? ` · ${nI}` : ''}</button>` : ''}
+    ${invDriveBoxHtml(jobById(jobId) || { id: jobId })}
   </div>`;
 }
 async function mediaHydrate(){
@@ -11290,6 +11382,14 @@ function mediaSettingsCardHtml(){
       value="${esc(((state.data.org_settings || {}).gd_files_folder) || '')}"
       onchange="App.setOrgText('gd_files_folder', App.gdFolderIdOf(this.value))">`)}
     <div class="tiny gd-hint">${t('gd_fl_hint')}${gdDirName('file')}</div>
+    ${isAdmin() ? `<label class="opt ${((state.data.org_settings || {}).prop_mgr_create) ? 'on' : ''}">
+      <input type="checkbox" ${((state.data.org_settings || {}).prop_mgr_create) ? 'checked' : ''}
+        onchange="App.setOrgFlag('prop_mgr_create', this.checked)"> ${t('prop_mgr')}</label>
+    <div class="tiny gd-hint">${t('prop_mgr_h')}</div>
+    <label class="opt ${((state.data.org_settings || {}).prop_hide_prices !== false) ? 'on' : ''}">
+      <input type="checkbox" ${((state.data.org_settings || {}).prop_hide_prices !== false) ? 'checked' : ''}
+        onchange="App.setOrgFlag('prop_hide_prices', this.checked)"> ${t('prop_hide')}</label>
+    <div class="tiny gd-hint">${t('prop_hide_h')}</div>` : ''}
     <label class="opt ${((state.data.org_settings || {}).gd_inv_helpers) ? 'on' : ''}">
       <input type="checkbox" ${((state.data.org_settings || {}).gd_inv_helpers) ? 'checked' : ''}
         onchange="App.setOrgFlag('gd_inv_helpers', this.checked)"> ${t('inv_helpers')}</label>

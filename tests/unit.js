@@ -40,7 +40,7 @@ const T = w.__T;
 if (!T) { console.log('⛔ внутренности не экспортировались'); process.exit(1); }
 
 console.log('\n— версия и SQL —');
-t('APP_VERSION = 1.08.13', T.APP_VERSION === '1.08.13', T.APP_VERSION);
+t('APP_VERSION = 1.08.15', T.APP_VERSION === '1.08.15', T.APP_VERSION);
 t('DB_SQL_FILE указывает на существующий файл',
   fs.existsSync(ROOT + '/supabase/' + T.DB_SQL_FILE), T.DB_SQL_FILE);
 t('диагностика БД знает про jobs.note_en',
