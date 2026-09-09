@@ -280,6 +280,12 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 }
 .tab svg{width:24px;height:24px}
 .tab.active{color:var(--blue);background:rgba(28,176,246,.1)}
+/* v1.08.23: тесная раскладка таббара (12 вкладок у администратора) */
+.tabbar.tb-tight .tab{padding:6px 2px;min-width:0}
+.tabbar.tb-tight .tab svg{width:22px;height:22px}
+.tabbar.tb-tight .tab span{
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.55rem
+}
 
 /* ---------- Модалки ---------- */
 .overlay{
@@ -1056,6 +1062,12 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .media-card{margin-top:10px}  /* v1.07.46: «Фото и видео» отделён от секции выше */
 .chip.pr{border-color:var(--purple);color:var(--purple)}
 .chip.prq{border:1px dashed var(--purple);color:var(--purple);opacity:.85}
+/* v1.08.23: документ ремонтных работ */
+.chip.rep{border-color:var(--orange);color:var(--orange)}
+.chip.repq{border:1px dashed var(--orange);color:var(--orange);opacity:.85}
+.brep{margin-top:4px;display:flex;justify-content:flex-end}
+.brep .btn{padding:3px 8px}
+.banner.b-yellow{border-color:var(--yellow);background:rgba(255,200,0,.08);color:var(--yellow)}
 .chip.pst{font-size:.6rem;text-transform:uppercase}
 .pst-draft{border-color:var(--dim);color:var(--dim)}
 .pst-sent{border-color:var(--blue);color:var(--blue)}
@@ -1758,3 +1770,9 @@ select:disabled{opacity:.55;cursor:default}
 .pri.on.soft .tri{color:var(--orange)}
 .pri.on.hard .tri::before, .pri.on.soft .tri::before{border-bottom-color:currentColor}
 .prio-pick.on{border-color:var(--blue)}
+
+/* v1.08.19: треугольник важности — значок вместо CSS-обрезки. Размер тот же,
+   что был у .tri, чтобы высота строк и карточек не поехала. */
+.tri-ic{width:22px;height:19px;display:block}
+.pri.inline .tri-ic{width:20px;height:17px}
+.pri.on.hard .tri, .pri.on.soft .tri{background:none}

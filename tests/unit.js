@@ -28,7 +28,9 @@ const expose = `;window.__T = {
   hasCyr, enText, needsTr, trFields, trMiss, trCanWrite, trDocLabel,
   translit, pdfLatinize, enName,
   renderNoFmt, docNo, pickNo, docNoVals, DOC_FMT_DEF, FILE_FMT_DEF, DOC_TOKENS, FILE_TOKENS,
-  popPos, applyPopPos, emptyFormData, mqLogPaint, mqLog, state, trIntervalMs
+  popPos, applyPopPos, emptyFormData, mqLogPaint, mqLog, state, trIntervalMs,
+  needsRepair, repWorks, repMats, repGrand, repCleanItems, repHistAdd, repNew,
+  repMoneyHidden, repCanCreate, wtById, seedDemoData
 };`;
 
 try {
@@ -40,7 +42,7 @@ const T = w.__T;
 if (!T) { console.log('⛔ внутренности не экспортировались'); process.exit(1); }
 
 console.log('\n— версия и SQL —');
-t('APP_VERSION = 1.08.17', T.APP_VERSION === '1.08.17', T.APP_VERSION);
+t('APP_VERSION = 1.08.23', T.APP_VERSION === '1.08.23', T.APP_VERSION);
 t('DB_SQL_FILE указывает на существующий файл',
   fs.existsSync(ROOT + '/supabase/' + T.DB_SQL_FILE), T.DB_SQL_FILE);
 t('диагностика БД знает про jobs.note_en',
@@ -190,10 +192,11 @@ t('enName без слэша — как есть', T.enName('Blower') === 'Blower
   t('нестроки не портятся', seen[2] === 42, String(seen[2]));
   t('повторная обёртка не удваивает', seen[3] === 'Pyos' || seen[3] === 'Pes', String(seen[3]));
 }
-{ // все три бланка латинизируются
+{ // все бланки латинизируются
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
   const n = (src.match(/pdfLatinize\(new jsPDF/g) || []).length;
-  t('pdfLatinize у всех трёх бланков (инвойс, пакет, пропозал)', n === 3, String(n));
+  /* v1.08.23: бланков стало четыре — добавился документ ремонтных работ */
+  t('pdfLatinize у всех четырёх бланков (инвойс, пакет, пропозал, ремонт)', n === 4, String(n));
   t('оборудование печатается английской частью', /const etEn = enName\(et\.name\)/.test(src));
 }
 
@@ -426,6 +429,78 @@ console.log('\n— глубокая проверка базы и матрица 
   t('матрица открывает приложение в рамке', /createElement\('iframe'\)/.test(ud) && /jsonAll\(\{ deep: false \}\)/.test(ud));
   t('в матрице шесть размеров', (ud.match(/\{ n: '/g) || []).length >= 6);
   t('кнопка матрицы в окне диагностики', /data-a="matrix"/.test(ud));
+}
+
+console.log('\n— документ ремонтных работ (v1.08.23) —');
+{
+  /* документ ремонта читает справочники — поднимаем демо-данные */
+  const d = T.seedDemoData();
+  T.state.data = d;
+  T.state.user = d.profiles.find(p => p.role === 'admin');
+  const wtDemo = d.work_types.find(w => /DEMOLITION/i.test(w.name));
+  const wtSteam = d.work_types.find(w => /STEAM/i.test(w.name));
+  const base = { form_data: T.emptyFormData() };
+
+  t('признак ремонта: вид работы DEMOLITION',
+    T.needsRepair({ ...base, work_type_id: wtDemo.id }));
+  t('признак ремонта: обычная работа — нет',
+    !T.needsRepair({ ...base, work_type_id: wtSteam.id }));
+  t('признак ремонта: доп. работа «вырезка стен»',
+    T.needsRepair({ ...base, work_type_id: wtSteam.id,
+      form_data: { ...T.emptyFormData(), extra: [{ name: 'Вырезка стен / Wall cutout' }] } }));
+  t('признак ремонта: строка «сняли наличники»',
+    T.needsRepair({ ...base, work_type_id: wtSteam.id,
+      form_data: { ...T.emptyFormData(), others: [{ desc: 'сняли наличники в спальне', amount: 0 }] } }));
+  t('признак ремонта: ручной флаг',
+    T.needsRepair({ ...base, work_type_id: wtSteam.id, needs_repair: true }));
+
+  const r = { items: [{ q: 1, a: 85 }, { q: 2, a: 320 }], materials: [{ q: 1, a: 42 }],
+              sales_tax: 10, freight: 5 };
+  t('сумма работ', T.repWorks(r) === 405, String(T.repWorks(r)));
+  t('сумма материалов', T.repMats(r) === 42, String(T.repMats(r)));
+  t('итог = работы + материалы + налог + доставка', T.repGrand(r) === 462, String(T.repGrand(r)));
+
+  const cleaned = T.repCleanItems([{ q: '2', code: 'dry', d: 'Гипсокартон', a: '85' },
+                                   { q: 1, code: '', d: '   ', a: 0 }]);
+  t('пустые строки не сохраняются', cleaned.length === 1, String(cleaned.length));
+  t('код приводится к верхнему регистру', cleaned[0].code === 'DRY', cleaned[0].code);
+  t('числа приходят числами', cleaned[0].q === 2 && cleaned[0].a === 85);
+
+  const doc = { note: 'Вырезали стену', note_en: '',
+                items: [{ d: 'Установка гипсокартона', d_en: '' }],
+                materials: [{ d: 'Гипсокартон 4х8', d_en: '' }] };
+  const fs2 = T.trFields('rep', doc);
+  t('перевод видит заметку, работы и материалы', fs2.length === 3, String(fs2.length));
+  fs2[1].set('Drywall installation');
+  t('перевод пишется в строку работ', doc.items[0].d_en === 'Drywall installation');
+  t('ярлык документа ремонта', /^R-/.test(T.trDocLabel('rep', { no: 4, date: '2026-09-09' })),
+    T.trDocLabel('rep', { no: 4, date: '2026-09-09' }));
+
+  const cx = d.complexes[0];
+  const no = T.docNo('rep', { no: 7, date: '2026-09-09', complex_id: cx.id, unit_number: '204' });
+  t('номер документа начинается с REP', /^REP-/.test(no), no);
+
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  t('repairs в списке таблиц', /'proposals','repairs'/.test(src));
+  t('repairs получает сквозной номер', /NUMBERED = \['jobs', 'placements', 'proposals', 'repairs'\]/.test(src));
+  t('repairs в бэкапе', /'proposals','repairs','jobs'/.test(src));
+  t('диагностика БД знает про jobs.needs_repair',
+    T.DB_NEED_COLS.some(c => c[0] === 'jobs' && c[1] === 'needs_repair'));
+  t('ручка смены статуса не затирается фильтром отчётов',
+    /repSetStatus/.test(src) && !/repCatModal, repCatAdd, repCrewAdd, repCrewDel, repStatus,/.test(src));
+  ['tab_repairs','rep_doc','rep_new','rep_items','rep_mats','rep_cat','rep_flag','rep_send',
+   'rep_approve','rep_decline','rep_reset_note','rep_reset_done','rep_to_inv','rep_hide']
+    .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
+
+  const sw = fs.readFileSync(ROOT + '/sw.js', 'utf8');
+  const idx = fs.readFileSync(ROOT + '/index.html', 'utf8');
+  t('подсказки подключены в index.html', /proposal-tips\.js/.test(idx));
+  t('подсказки в кэше service worker', /proposal-tips\.js/.test(sw));
+  t('версия service worker поднята', /VERSION = '1\.08\.23'/.test(sw));
+  const sql = fs.readFileSync(ROOT + '/supabase/update-to-1_08_23.sql', 'utf8');
+  t('в SQL есть таблица repairs', /create table if not exists public\.repairs/.test(sql));
+  t('в SQL есть страж апрува', /create trigger repairs_guard_t/.test(sql));
+  t('в SQL есть позиции справочника ремонта', /Установка гипсокартона/.test(sql));
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);

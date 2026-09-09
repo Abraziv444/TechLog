@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.08.17';
+const VERSION = '1.08.23';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -16,6 +16,7 @@ const ASSETS = [
   './desktop.js',
   './uidiag.js',
   './uishots.js',
+  './proposal-tips.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

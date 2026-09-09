@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.17';
-const DB_SQL_FILE = 'full-install-1_08_17.sql';   // v1.08.17: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.08.23';
+const DB_SQL_FILE = 'full-install-1_08_23.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -180,6 +180,7 @@ const I18N = {
     confirm_del: 'Удалить безвозвратно?',
     days: 'дн.', qty: 'Кол-во',
     tech: 'Техник', no_access: 'Нет доступа', stats_jobs: 'работ', stats_pk: 'пикапов',
+    stats_stops: 'адресов забрать', stats_pk_eq: 'единиц оборудования',
     stats_due: 'на вывоз', stats_over: 'просрочено', day_empty: 'на этот день нет',
     sync_err: 'Ошибка синхронизации', offline_note: 'Оффлайн: показаны сохранённые данные',
     not_selected: 'Не выбрано', aux_take_hint: 'нажмите то, что нужно взять',
@@ -489,6 +490,35 @@ const I18N = {
     pdf_preview: 'Просмотр PDF', pdf_print: 'Печать',
     print_hint: 'Откроется системная печать; если нет — PDF откроется в новой вкладке (меню браузера → Печать).',
     tab_proposals: 'Пропозалы', prop_only: 'Пропозалы доступны менеджеру и администратору.',
+    tab_repairs: 'Ремонт', rep_doc: 'Ремонтные работы', rep_new: 'Новый документ ремонта',
+    rep_open: 'Открыть документ ремонта',
+    rep_items: 'Работы', rep_mats: 'Материалы', rep_cat: 'Справочник',
+    rep_cat_hint: 'Позиции берутся из справочника «Доп. работы». Цены правит админ в Справочниках.',
+    rep_cat_tag: 'ремонт', rep_crew: 'Исполнители',
+    rep_flag: 'Требуется восстановление (отделка/ремонт)',
+    rep_hint_needed: 'Был демонтаж — юнит нужно восстановить. Создайте документ ремонта.',
+    rep_need_chip: 'Требуется ремонт', rep_strip: 'Ремонтные работы дня',
+    rep_works_sum: 'Работы', rep_mats_sum: 'Материалы', rep_grand: 'Всего',
+    rep_send: 'Отправить на апрув', rep_approve: 'Одобрить', rep_decline: 'Отклонить',
+    rep_why: 'Причина отклонения', rep_hist: 'История',
+    rep_h_created: 'создан', rep_h_sent: 'отправлен на апрув', rep_h_approved: 'одобрен',
+    rep_h_declined: 'отклонён', rep_h_reset: 'апрув снят правкой',
+    rep_not_sent: 'Ещё не отправлен на согласование.',
+    rep_decided_by: 'Решение',
+    rep_reset_note: 'Правка сметы, шапки или бригады снимет апрув — документ вернётся в черновик.',
+    rep_reset_done: 'Апрув снят: документ изменён и вернулся в черновик',
+    rep_unsent: 'Документ изменён после отправки — вернулся в черновик',
+    rep_no_rights: 'Апрув ставит администратор (и менеджер, если это разрешено в настройках)',
+    rep_no_create: 'Создание документов ремонта отключено администратором',
+    rep_need_appr: 'Сначала нужен апрув документа',
+    rep_to_inv: 'Перенести суммы в инвойс', rep_moved: 'Сумма ремонта добавлена в инвойс',
+    rep_already_moved: 'Этот документ уже перенесён в инвойс',
+    rep_src_job: 'На основе работы', rep_src_prop: 'На основе пропозала',
+    rep_src_self: 'Самостоятельный документ', rep_pdf: 'PDF ремонта',
+    rep_all_create: 'Документ ремонта может создавать любой сотрудник',
+    rep_all_create_h: 'Выключено — создают только менеджер и админ.',
+    rep_hide: 'Скрыть суммы ремонта от работников',
+    rep_hide_h: 'Работник видит состав работ, но вместо цен — прочерк.',
     prop_new: 'Новый пропозал', prop_items: 'Позиции', prop_desc: 'Описание',
     prop_add_row: 'строка', prop_note: 'Примечание',
     pst_draft: 'Черновик', pst_sent: 'Отправлен', pst_approved: 'Одобрен', pst_declined: 'Отклонён',
@@ -500,6 +530,8 @@ const I18N = {
     nt_prop_pick_any: 'Выбрать из всех свободных…', nt_prop_none: 'Свободных пропозалов нет',
     mq_title: 'Неотправленные фото и видео', mq_check: 'Проверить неотправленные',
     mq_retry: 'Повторить отправку', mq_ping: 'Проверка соединения',
+    mq_quiet: 'Показывать полоску отправки только при ошибке',
+    mq_quiet_h: 'Личная настройка этого устройства. Снята — полоска всплывает после каждой отправки, в том числе когда всё прошло. Поставлена — приложение проверяет отправку молча и покажет полоску, только если что-то не ушло.',
     mq_clean: 'Убрать зависшие',
     mq_clean_q: 'Убрать из очереди {N} зависших файл(ов)? Это записи, которые лежат больше недели или сорвались пять раз подряд. Сами снимки останутся в галерее телефона.',
     mq_clean_none: 'Зависших записей нет',
@@ -788,6 +820,7 @@ const I18N = {
     confirm_del: 'Delete permanently?',
     days: 'd.', qty: 'Qty',
     tech: 'Technician', no_access: 'No access', stats_jobs: 'jobs', stats_pk: 'pickups',
+    stats_stops: 'addresses to visit', stats_pk_eq: 'equipment units',
     stats_due: 'to pick up', stats_over: 'overdue', day_empty: 'none for this day',
     sync_err: 'Sync error', offline_note: 'Offline: showing cached data',
     not_selected: 'Not selected', aux_take_hint: 'tap what you need to take',
@@ -1089,6 +1122,35 @@ const I18N = {
     pdf_preview: 'Preview PDF', pdf_print: 'Print',
     print_hint: 'System print will open; otherwise the PDF opens in a new tab (browser menu → Print).',
     tab_proposals: 'Proposals', prop_only: 'Proposals are for managers and admins.',
+    tab_repairs: 'Repair', rep_doc: 'Repair works', rep_new: 'New repair document',
+    rep_open: 'Open repair document',
+    rep_items: 'Works', rep_mats: 'Materials', rep_cat: 'Catalog',
+    rep_cat_hint: 'Items come from the “Extra works” catalog. Prices are edited by admin.',
+    rep_cat_tag: 'repair', rep_crew: 'Crew',
+    rep_flag: 'Restoration required (repair/finishing)',
+    rep_hint_needed: 'There was demolition — the unit needs restoration. Create a repair document.',
+    rep_need_chip: 'Repair required', rep_strip: 'Repair documents of the day',
+    rep_works_sum: 'Works', rep_mats_sum: 'Materials', rep_grand: 'Total',
+    rep_send: 'Send for approval', rep_approve: 'Approve', rep_decline: 'Decline',
+    rep_why: 'Decline reason', rep_hist: 'History',
+    rep_h_created: 'created', rep_h_sent: 'sent for approval', rep_h_approved: 'approved',
+    rep_h_declined: 'declined', rep_h_reset: 'approval reset by an edit',
+    rep_not_sent: 'Not sent for approval yet.',
+    rep_decided_by: 'Decision',
+    rep_reset_note: 'Editing the estimate, header or crew resets the approval — back to draft.',
+    rep_reset_done: 'Approval reset: the document changed and went back to draft',
+    rep_unsent: 'Document changed after sending — back to draft',
+    rep_no_rights: 'Approval is for admin (and manager, if allowed in settings)',
+    rep_no_create: 'Creating repair documents is disabled by the admin',
+    rep_need_appr: 'The document has to be approved first',
+    rep_to_inv: 'Move amounts to invoice', rep_moved: 'Repair amount added to the invoice',
+    rep_already_moved: 'This document is already in the invoice',
+    rep_src_job: 'Based on work order', rep_src_prop: 'Based on proposal',
+    rep_src_self: 'Standalone document', rep_pdf: 'Repair PDF',
+    rep_all_create: 'Any employee can create a repair document',
+    rep_all_create_h: 'Off — only manager and admin can create.',
+    rep_hide: 'Hide repair amounts from workers',
+    rep_hide_h: 'A worker sees the scope of work but a dash instead of prices.',
     prop_new: 'New proposal', prop_items: 'Line items', prop_desc: 'Description',
     prop_add_row: 'row', prop_note: 'Notes',
     pst_draft: 'Draft', pst_sent: 'Sent', pst_approved: 'Approved', pst_declined: 'Declined',
@@ -1100,6 +1162,8 @@ const I18N = {
     nt_prop_pick_any: 'Pick from all free proposals…', nt_prop_none: 'No free proposals',
     mq_title: 'Unsent photos & videos', mq_check: 'Check unsent',
     mq_retry: 'Retry upload', mq_ping: 'Connection check',
+    mq_quiet: 'Show the upload bar only on errors',
+    mq_quiet_h: 'Personal setting of this device. Unchecked — the bar pops up after every upload, including successful ones. Checked — the app checks quietly and shows the bar only if something failed.',
     mq_clean: 'Clear stuck',
     mq_clean_q: 'Remove {N} stuck file(s) from the queue? These are entries older than a week or failed five times in a row. The shots stay in the phone gallery.',
     mq_clean_none: 'No stuck entries',
@@ -1824,6 +1888,15 @@ function seedCatalogs(){
     { id:'ew1', name:'Вырезка стен / Wall cutout', kind:'work', needs_size:true, size_type_id:'sz2', price:3, sort:1 },
     { id:'ew2', name:'Вырезка потолка / Ceiling cutout', kind:'work', needs_size:true, size_type_id:'sz2', price:4, sort:2 },
     { id:'ew3', name:'Покупка товара / Purchase', kind:'purchase', needs_size:false, size_type_id:null, price:0, sort:3 },
+    /* v1.08.23: позиции для документа ремонтных работ (цены ориентировочные) */
+    { id:'ew11', name:'Установка гипсокартона / Drywall installation', kind:'work', needs_size:false, size_type_id:null, price:85, sort:11, code:'DRY', repair:true },
+    { id:'ew12', name:'Замена деревянных брусков / Wood studs replacement', kind:'work', needs_size:false, size_type_id:null, price:45, sort:12, code:'STD', repair:true },
+    { id:'ew13', name:'Восстановление ванны / Bathtub restoration', kind:'work', needs_size:false, size_type_id:null, price:320, sort:13, code:'TUB', repair:true },
+    { id:'ew14', name:'Восстановление стеновых панелей / Wall panel restoration', kind:'work', needs_size:true, size_type_id:'sz2', price:12, sort:14, code:'PNL', repair:true },
+    { id:'ew15', name:'Установка дверной коробки / Door frame installation', kind:'work', needs_size:false, size_type_id:null, price:190, sort:15, code:'DRF', repair:true },
+    { id:'ew16', name:'Установка наличников / Door casing installation', kind:'work', needs_size:true, size_type_id:'sz1', price:6, sort:16, code:'TRM', repair:true },
+    { id:'ew17', name:'Покраска после ремонта / Paint after repair', kind:'work', needs_size:true, size_type_id:'sz2', price:3, sort:17, code:'PNT', repair:true },
+    { id:'ew18', name:'Покупка материалов / Materials purchase', kind:'purchase', needs_size:false, size_type_id:null, price:0, sort:18, code:'MAT', repair:true },
   ];
   const product_types = [
     { id:'pt1', name:'Решётка / Vent grille', default_price:25, sort:1 },
@@ -1907,7 +1980,7 @@ function seedDemoData(){
       complex_id: complexes[0].id, counterparty_id: cp1.id, unit_number: '916' },
   ];
   const data = {
-    profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], proposals: [], ext_requests: [], media: [], hidden_staff: [], code_requests: [], complex_code_history: [],
+    profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], proposals: [], repairs: [], ext_requests: [], media: [], hidden_staff: [], code_requests: [], complex_code_history: [],
     jobs: [job1, job2], placements, ...cat
   };
   job1.total = calcTotal(job1.form_data, priceResolver(cp1.id, data), data);
@@ -2085,12 +2158,17 @@ const DB_NEED_COLS = [
   ['proposals',     'sales_tax'],
   ['jobs',          'no'],
   ['placements',    'no'],
+  ['repairs',       'status'],          // v1.08.23: документ ремонтных работ
+  ['repairs',       'materials'],
+  ['jobs',          'needs_repair'],
+  ['extra_works',   'repair'],
+  ['org_settings',  'rep_hide_prices'],
 ];
 const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
                       'admin_set_drive_config'];
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','ext_requests','media','note_templates'];
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates'];
 
 function emptyData(){
   const d = { org_settings: {
@@ -2201,7 +2279,7 @@ async function syncNow(silent){
 
 /* Универсальные записи: локально + (если есть) Supabase */
 function tableOf(name){ return state.data[name]; }
-const NUMBERED = ['jobs', 'placements', 'proposals'];
+const NUMBERED = ['jobs', 'placements', 'proposals', 'repairs'];   // v1.08.23
 async function dbUpsert(table, row){
   /* v1.07.86: сквозной номер выдаёт база (identity). Явный null сервер не
      принял бы, а в демо-режиме сервера нет — там считаем сами. */
@@ -3357,6 +3435,7 @@ function render(){
   else if (state.screen === 'archive') body = viewArchive();   // v1.07.88
   else if (state.screen === 'board') body = viewBoard();       // v1.07.25
   else if (state.screen === 'proposals') body = viewProposals(); // v1.07.27
+  else if (state.screen === 'repairs') body = viewRepairs();     // v1.08.23
   perf('отрисовка ' + state.screen, () => { app.innerHTML = viewHeader() + body + viewTabbar(); });
   if (!$('#overlay') && app.inert) modalTrap(false);   // v1.07.83: страховка от «залипшего» inert
   /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
@@ -3371,6 +3450,7 @@ function render(){
     try { document.querySelector('#dir-tabs .tabbtn.active')?.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch(e){}
   }
   if (state.screen === 'job') bindJobForm();
+  if (state.screen === 'repairs') bindRepForm();                 // v1.08.23
   if (state.screen === 'map') initMapView();
   /* v1.07.67: последние отрисовки — их показывает «Плавность прокрутки» */
   const _rt = { screen: state.screen, ms: +(performance.now() - _rt0).toFixed(1), at: Date.now() };
@@ -3423,6 +3503,7 @@ function viewTabbar(){
     ['home', ICONS.home, t('tab_home')],
     ...((isManager() || vmCur() === 'desktop') ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.49: воркеру — недельная доска в ПК-режиме
     ...(isManager() ? [['proposals', ICONS.prop, t('tab_proposals')]] : []),  // v1.07.27
+    ['repairs', ic('toolbox'), t('tab_repairs')],                            // v1.08.23
     ['map', ICONS.map, t('tab_map')],
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
@@ -3432,7 +3513,10 @@ function viewTabbar(){
     ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
   ];
-  return `<nav class="tabbar">` + items.map(([id, ic, label]) => id === 'faq'
+  /* v1.08.23: у админа вкладок стало 12 — на узком экране подписи начинали
+     наезжать на соседние кнопки и перехватывать нажатия. В тесной раскладке
+     подпись обрезается и не выходит за свою кнопку. */
+  return `<nav class="tabbar${items.length > 11 ? ' tb-tight' : ''}">` + items.map(([id, ic, label]) => id === 'faq'
     ? `<button class="tab" onclick="App.faq()">${ic}<span>${label}</span></button>`
     : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" onclick="App.go('${id}')">
       ${ic}<span>${label}</span>
@@ -3481,8 +3565,8 @@ function triHtml(on, jobId, canEdit, inline){
   const hard = prioHard(jj);
   const cls = 'pri ' + (inline ? 'inline' : 'corner') + (on ? ' on' : '') + (on ? (hard ? ' hard' : ' soft') : '');
   return canEdit
-    ? `<button class="${cls}" title="${on ? (hard ? t('prio_red') : t('prio_yel')) : t('priority')}" onclick="event.stopPropagation();App.prioMenu('${jobId}')"><span class="tri">!</span></button>`
-    : `<span class="${cls}"><span class="tri">!</span></span>`;
+    ? `<button class="${cls}" title="${on ? (hard ? t('prio_red') : t('prio_yel')) : t('priority')}" onclick="event.stopPropagation();App.prioMenu('${jobId}')">${triSvg(on ? (hard ? 'hard' : 'soft') : 'off')}</button>`
+    : `<span class="${cls}">${triSvg(on ? (hard ? 'hard' : 'soft') : 'off')}</span>`;
 }
 function railHtml(j){
   const can = canReorder(j);
@@ -3617,14 +3701,17 @@ function viewHome(){
       <div class="info">
         <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(j.unit_number||'—')}${triHtml(!!j.priority, j.id, canPrio(j), true)}</span></div>
         ${addrLineHtml(cx)}
-        <div class="s"><span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}${jobSharedChipHtml(j)}${proposalChipHtml(j)}</div>
+        <div class="s"><span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}${jobSharedChipHtml(j)}${proposalChipHtml(j)}${repChipHtml(j)}</div>
         ${codesLineHtml(cx)}
       </div>
       <div class="right">
         <span class="badge-status st-${j.status}">${jobIssues(j).length ? warnIcon() : ''}${t('status_'+j.status)}</span>
         <div class="money" style="margin-top:6px">${money(total)}</div>
-        <button class="btn btn-ghost sm" style="margin-top:6px" title="${t('navigate')}"
-          onclick="event.stopPropagation();App.navToCx('${j.complex_id}')">${ic('compass')}</button>
+        <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
+          ${repBtnHtml(j)}
+          <button class="btn btn-ghost sm" title="${t('navigate')}"
+            onclick="event.stopPropagation();App.navToCx('${j.complex_id}')">${ic('compass')}</button>
+        </div>
       </div>
       ${railHtml(j)}
     </div>`;
@@ -3783,7 +3870,19 @@ function faqStatusLegend(){
     <span class="demo"><span class="badge-status st-done">${t('status_done')}</span></span>
     <span class="demo"><span class="badge-status st-approved">${t('status_approved')}</span></span>`;
 }
-function faqTriDemo(){ return `<span class="pri inline on" style="pointer-events:none"><span class="tri">!</span></span>`; }
+/* v1.08.19: треугольник важности рисуем как значок, а не CSS-обрезкой.
+   Красный и жёлтый — со скруглёнными углами, чёрным контуром и чёрным
+   восклицательным знаком; серый (важности нет) — тот же силуэт без знака. */
+function triSvg(kind){
+  const fill = kind === 'hard' ? '#E5484D' : kind === 'soft' ? '#F5C531' : '#8AA0AB';
+  const mark = kind === 'off' ? '' :
+    `<path d="M12 9.6v4.4" stroke="#0B0F12" stroke-width="2.3" stroke-linecap="round"/>
+     <circle cx="12" cy="17.4" r="1.25" fill="#0B0F12"/>`;
+  return `<svg class="tri-ic" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M10.28 3.9a2 2 0 0 1 3.44 0l8.1 14.1a2 2 0 0 1-1.72 3H3.9a2 2 0 0 1-1.72-3Z"
+      fill="${fill}" stroke="#0B0F12" stroke-width="1.8" stroke-linejoin="round"/>${mark}</svg>`;
+}
+function faqTriDemo(){ return `<span class="pri inline on" style="pointer-events:none">${triSvg('hard')}</span>`; }
 function faqAuditLegend(){
   const dict = (typeof T === 'object' && T[state.lang]) ? T[state.lang] : {};
   const acts = Object.keys(dict).filter(k => k.startsWith('act_')).slice(0, 24)
@@ -4102,7 +4201,7 @@ async function saveCxFromMapRun(i){
 }
 /* треугольник-предупреждение «нет владельца» (реюз стиля приоритета) */
 function warnTriHtml(){
-  return `<span class="pri inline on" style="pointer-events:none" title="${t('cx_no_owner')}"><span class="tri">!</span></span>`;
+  return `<span class="pri inline on" style="pointer-events:none" title="${t('cx_no_owner')}">${triSvg('soft')}</span>`;
 }
 function cxNoOwner(cx){
   if (!cx.counterparty_id) return true;
@@ -4808,6 +4907,7 @@ function viewJob(){
   ${trCardHtml('job', j)}
   ${mediaStripHtml(j.id)}
   ${proposalBoxHtml(j)}
+  ${repBoxHtml(j)}
   <label class="opt ${j.status!=='draft'?'on':''}" style="margin:4px 0 8px">
     <input type="checkbox" id="jb-done" ${j.status!=='draft'?'checked':''}> ${t('job_done_chk')}
   </label>
@@ -6373,6 +6473,9 @@ const App = {
      App, а его там нет; ветка «вернуться на исходный экран» была мертва. */
   curScreen(){ return state.screen; },
   shiftWeek(n){ state.weekStart = addDaysISO(state.weekStart, n*7); const cand = addDaysISO(state.selDate, n*7); state.selDate = cand; render(); },
+  /* v1.08.18: свайп по ленте недели листает только саму ленту. Выбранный
+     день остаётся прежним — его меняет лишь нажатие по дню. */
+  weekSwipe(n){ state.weekStart = addDaysISO(state.weekStart, n * 7); navigator.vibrate?.(8); render(); },
   /* v1.07.80: свайп влево/вправо по дням. Метод существовал только в вызове
      из initSwipes — сам обработчик никогда не навешивался, а App.swipeDay
      не был объявлен вовсе. Если новый день ушёл за пределы показанной
@@ -6418,6 +6521,12 @@ const App = {
     autosaveDraft();
   },
   openJob, saveJob, approveJob, deleteJob, makePdf, pdfPreviewBlob, pickupGroup,
+  /* v1.08.23: документ ремонтных работ */
+  openRepair, newRepairFromJob, newRepairFromProp, saveRepair, delRepair,
+  repClose, repSaveClose, repDrop, repField, repItem, repItemAdd, repItemDel,
+  repCatModal, repCatAdd, repCrewAdd, repCrewDel, repSetStatus, repLinkJob, repUnlink,
+  repToInvoice, makeRepairPdf, repPrint, setNeedsRepair,
+  repDocFilter(v){ state.repDocFilter = v; render(); },
   setReportDate(v){ state.reportDate = v; render(); }, copyReport,
   repTab(v){ state.repTab = v; render(); },
   jrTab(v){ if (state.jr){ state.jr.tab = v; state.jr.act = ''; loadJournal(true); } },
@@ -6461,6 +6570,7 @@ const App = {
   },
   batchPdf,
   mqClean: mediaQClean,
+  mqQuiet(v){ mqQuietSet(v); if (v) mqMini(false); render(); },
   mapSetCp(v){ state.mapCp = v; render(); },
   /* v1.07.95: на «Карте» контрагент ищется по буквам, а не листается списком */
   mapCpInput(v){
@@ -8295,6 +8405,17 @@ const trSleep = (ms) => new Promise(r => setTimeout(r, ms));
 /* Поля документа, которые печатаются в PDF: где русский и куда класть перевод */
 function trFields(kind, doc){
   const out = [];
+  if (kind === 'rep'){                       /* v1.08.23: документ ремонта */
+    out.push({ id:'note', label:t('tr_f_note'), ru:doc.note || '', en:doc.note_en || '',
+               set:v => { doc.note_en = v; } });
+    (doc.items || []).forEach((it, i) => out.push({
+      id:'it' + i, label:t('rep_items') + ' ' + (i + 1), ru:it.d || '', en:it.d_en || '',
+      set:v => { it.d_en = v; } }));
+    (doc.materials || []).forEach((it, i) => out.push({
+      id:'mt' + i, label:t('rep_mats') + ' ' + (i + 1), ru:it.d || '', en:it.d_en || '',
+      set:v => { it.d_en = v; } }));
+    return out.filter(f => String(f.ru).trim());
+  }
   if (kind === 'prop'){
     out.push({ id:'note', label:t('tr_f_note'), ru:doc.note || '', en:doc.note_en || '',
                set:v => { doc.note_en = v; } });
@@ -8321,6 +8442,7 @@ function trFieldById(kind, doc, id){ return trFields(kind, doc).find(f => f.id =
    менеджер и админ. Иначе счётчик обещал бы перевод, который сервер не примет. */
 function trCanWrite(kind, doc){
   if (!state.user) return false;
+  if (kind === 'rep') return repCanEdit(doc);              /* v1.08.23 */
   if (kind === 'prop') return isManager();
   /* как в политике jobs_upd: свои, общие, админ — и ничейная работа у менеджера */
   return isAdmin() || doc.technician_id === state.user.id || isJobSharedWithMe(doc)
@@ -8352,6 +8474,7 @@ function trPending(){
   return out;
 }
 function trDocLabel(kind, doc){
+  if (kind === 'rep') return 'R-' + (doc.no ?? '…') + ' · ' + fmtDMY(doc.date);
   if (kind === 'prop') return 'P-' + (doc.no ?? '…') + ' · ' + fmtDMY(doc.date);
   const cx = cxById(doc.complex_id) || {};
   return (cx.abbr || cx.name || '—') + ' · ' + (doc.unit_number || '—') + ' · ' + fmtDMY(doc.date);
@@ -8396,8 +8519,8 @@ async function trDoc(kind, doc){
 async function trSaveDoc(kind, doc, fields){
   const row = JSON.parse(JSON.stringify(doc));
   row.updated_at = new Date().toISOString();
-  await dbUpsert(kind === 'prop' ? 'proposals' : 'jobs', row);
-  audit('doc_translate', kind === 'prop' ? 'proposal' : 'job', doc.id,
+  await dbUpsert(kind === 'rep' ? 'repairs' : kind === 'prop' ? 'proposals' : 'jobs', row);
+  audit('doc_translate', kind === 'rep' ? 'repair' : kind === 'prop' ? 'proposal' : 'job', doc.id,
         { doc: trDocLabel(kind, doc), fields });
 }
 
@@ -8459,7 +8582,9 @@ async function translateToEn(taId, target){
   dlog('translate: ru→en,', text.length, 'символов');
   try{
     const en = await trApi(text);
-    if (target === 'draft' && jobDraft){
+    if (target === 'repdraft' && repDraft){          /* v1.08.23 */
+      repDraft.note = ta.value; repDraft.note_en = en; render();
+    } else if (target === 'draft' && jobDraft){
       jobDraft.note = ta.value; jobDraft.note_en = en; autosaveDraft(); render();
     } else {
       const el = document.getElementById(target || (taId + '-en'));
@@ -8557,10 +8682,13 @@ function trPdfGuard(kind, doc, go){
 }
 async function trPdfNow(kind, id){
   closeModal();
-  const doc = kind === 'prop' ? propDraft || propById(id) : jobDraft || state.data.jobs.find(x => x.id === id);
+  const doc = kind === 'rep' ? (repDraft || repById(id))
+            : kind === 'prop' ? (propDraft || propById(id))
+            : (jobDraft || state.data.jobs.find(x => x.id === id));
   if (!doc){ _trGo = null; return; }
   trBusy = true; toast('🌐 ' + t('translating'), 'inf');
-  try{ await trDoc(kind, doc); if (!(kind === 'job' && jobDraft) && !(kind === 'prop' && propDraft)) await trSaveDoc(kind, doc, 0); }
+  try{ await trDoc(kind, doc); if (!(kind === 'job' && jobDraft) && !(kind === 'prop' && propDraft)
+        && !(kind === 'rep' && repDraft)) await trSaveDoc(kind, doc, 0); }
   catch(e){ dlog('⛔ trPdfNow:', e); toast('⛔ ' + t('translate_err'), 'err'); }
   trBusy = false;
   if (kind === 'job' && jobDraft) autosaveDraft();
@@ -8617,7 +8745,12 @@ function initSwipes(){
     const dy = e.changedTouches[0].clientY - swY;
     swX = null;
     if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5){
-      App.swipeDay(dx < 0 ? 1 : -1);
+      /* v1.08.18: свайп по ленте недели листает НЕДЕЛЮ и не трогает
+         выбранный день — день меняется только нажатием. Раньше палец по
+         календарю незаметно переставлял день, и человек оказывался не там,
+         куда смотрел. Свайп по остальной части экрана работает как прежде. */
+      if (e.target.closest('.week')) App.weekSwipe(dx < 0 ? 1 : -1);
+      else App.swipeDay(dx < 0 ? 1 : -1);
     }
   }, { passive: true });
 }
@@ -8834,7 +8967,7 @@ function prioMenu(id){
   const cur = !j.priority ? 'off' : (prioHard(j) ? 'red' : 'yellow');
   const row = (key, label, hint, cls) => `<button class="rowline map-row prio-pick ${cls} ${cur === key ? 'on' : ''}"
       style="width:100%;text-align:left" onclick="App.prioSet('${id}','${key}')">
-      <span class="pri inline on ${cls}" style="pointer-events:none"><span class="tri">!</span></span>
+      <span class="pri inline on ${cls}" style="pointer-events:none">${triSvg(cls === 'hard' ? 'hard' : 'soft')}</span>
       <div class="grow"><b>${label}</b><div class="tiny">${hint}</div></div>
       ${cur === key ? ic('check') : ''}</button>`;
   openModal(`
@@ -8843,11 +8976,21 @@ function prioMenu(id){
       ${row('red', t('prio_red'), t('prio_red_h'), 'hard')}
       ${row('yellow', t('prio_yel'), t('prio_yel_h'), 'soft')}
       <button class="rowline map-row ${cur === 'off' ? 'on' : ''}" style="width:100%;text-align:left"
-        onclick="App.prioSet('${id}','off')"><div class="grow"><b>${t('prio_off')}</b>
+        onclick="App.prioSet('${id}','off')">
+        <span class="pri inline on" style="pointer-events:none">${triSvg('off')}</span>
+        <div class="grow"><b>${t('prio_off')}</b>
         <div class="tiny">${t('prio_off_h')}</div></div>${cur === 'off' ? ic('check') : ''}</button>
     </div>
     <button class="btn btn-ghost sm" onclick="App.toastInfo('prio_why')">${ic('help')} ${t('prio_why_t')}</button>
   `);
+}
+/* v1.08.20: перерисовка бросала страницу наверх — после выбора треугольника
+   человек терял место в списке. Запоминаем прокрутку и возвращаем её сразу
+   после отрисовки, до того как браузер покажет кадр. */
+function renderKeep(){
+  const y = window.scrollY || document.documentElement.scrollTop || 0;
+  render();
+  requestAnimationFrame(() => window.scrollTo(0, y));
 }
 async function prioSet(id, kind){
   const j = state.data.jobs.find(x => x.id === id); if (!j || !canPrio(j)) return;
@@ -8857,7 +9000,7 @@ async function prioSet(id, kind){
   catch(e){ toast('⛔ ' + rpcFail(e, 'board_job_flags'), 'err'); return; }
   navigator.vibrate?.(20);
   dlog('priority:', j.unit_number || id, '→', kind);
-  closeModal(); render();
+  closeModal(); renderKeep();
 }
 async function togglePriority(id){
   const j = state.data.jobs.find(x=>x.id===id); if (!j || !canPrio(j)) return;
@@ -8865,7 +9008,7 @@ async function togglePriority(id){
   catch(e){ toast('⛔ ' + rpcFail(e, 'board_job_flags'), 'err'); return; }
   navigator.vibrate?.(20);
   dlog('priority:', j.unit_number || id, '→', !j.priority);
-  render();
+  renderKeep();
 }
 async function moveJob(id, dir){
   const iso = state.selDate;
@@ -8897,7 +9040,7 @@ async function moveJob(id, dir){
     }
   }
   navigator.vibrate?.(15);
-  render();
+  renderKeep();          // v1.08.20: место в списке сохраняем
 }
 
 /* =====================================================================
@@ -8942,7 +9085,7 @@ function viewBoard(){
       title="${hideEmpty ? t('b_free_off') : t('b_free_on')}"
       onclick="App.boardHideEmpty(${hideEmpty ? 'false' : 'true'})">${ic(hideEmpty ? 'eye_off' : 'eye')}
       <span>${hideEmpty ? t('b_free_off') : t('b_free_on')}</span></button>${helpBtn('board')}</div>`;
-  return viewWeek() + extReqStripHtml() + propStripHtml() + freeJobsStripHtml() + tools
+  return viewWeek() + extReqStripHtml() + propStripHtml() + repStripHtml() + freeJobsStripHtml() + tools
        + `<div class="board"${boardColsStyle(staff.length)}>${cols}</div>`;
 }
 
@@ -9011,8 +9154,9 @@ function boardJobCard(j, idx, canOrd){
     ${rail}
     <span class="bnum">${idx + 1}</span>
     ${triHtml(!!j.priority, j.id, canPrio(j))}
-    <div class="bmain"><b>${esc(j.unit_number || '—')}</b>${proposalChipHtml(j, true)}<span class="tiny"> · ${esc((cx && (cx.abbr || cx.name)) || '—')}</span>
-      <div class="tiny bwt"><span class="dotc" style="background:${col}"></span>${esc((wt && wt.name) || '')}</div></div>
+    <div class="bmain"><b>${esc(j.unit_number || '—')}</b>${proposalChipHtml(j, true)}${repChipHtml(j, true)}<span class="tiny"> · ${esc((cx && (cx.abbr || cx.name)) || '—')}</span>
+      <div class="tiny bwt"><span class="dotc" style="background:${col}"></span>${esc((wt && wt.name) || '')}</div>
+      ${repBtnHtml(j) ? `<div class="brep">${repBtnHtml(j)}</div>` : ''}</div>
     <span class="bst st-${j.status}" title="${t('status_' + j.status)}"></span>
   </div>`;
 }
@@ -9082,6 +9226,12 @@ function chainOf(kind, id){
   const out = [];
   let job = null, prop = null;
   if (kind === 'prop'){ prop = propById(id); }
+  else if (kind === 'rep'){                                      /* v1.08.23 */
+    const rp = repById(id);
+    job = rp && rp.job_id ? (state.data.jobs || []).find(j => j.id === rp.job_id) : null;
+    if (rp && rp.proposal_id) prop = propById(rp.proposal_id);
+    if (!job && !prop) return [{ t: 'rep', o: rp || { id, date: '' } }];
+  }
   else if (kind === 'pick'){
     const pk = (state.data.placements || []).find(x => x.id === id);
     job = pk ? (state.data.jobs || []).find(j => j.id === pk.job_id) : null;
@@ -9097,6 +9247,7 @@ function chainOf(kind, id){
   jobs.sort((a, b) => String(a.date).localeCompare(String(b.date)));
   jobs.forEach(j => {
     out.push({ t: 'job', o: j });
+    repsOfJob(j.id).forEach(r => out.push({ t: 'rep', o: r }));   // v1.08.23
     const all = (state.data.placements || []).filter(p => p.job_id === j.id);
     const roots = all.filter(p => !p.ext_of)
       .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
@@ -9130,17 +9281,20 @@ function chainCard(node, i, all, cur){
 function chainCardBody(node, i, cur, gap){
   const o = node.o, cx = cxById(o.complex_id) || {};
   const et = node.t === 'pick' || node.t === 'ext' ? (etById(o.equipment_type_id) || {}) : null;
-  const T2 = { prop: 'PROP', job: 'WORK', pick: 'PICK', ext: 'LONG' }[node.t];
+  const T2 = { prop: 'PROP', job: 'WORK', pick: 'PICK', ext: 'LONG', rep: 'REP' }[node.t];
   const no = node.t === 'prop' ? docNo('prop', o)
+           : node.t === 'rep' ? docNo('rep', o)
            : node.t === 'job' ? docNo('job', o) : pickNo(o);
   const title = node.t === 'prop' ? (no || 'P-' + (o.no ?? '·'))
+              : node.t === 'rep' ? (no || 'R-' + (o.no ?? '·'))
               : node.t === 'job' ? (no || ((cx.abbr || cx.name || '—') + ' · ' + (o.unit_number || '—')))
               : (et.abbr || et.name || '—') + ' × ' + (+o.qty || 1);
-  const sub = node.t === 'prop' ? fmtDMY(o.date) + ' · ' + t('pst_' + (o.status || 'draft'))
+  const sub = (node.t === 'prop' || node.t === 'rep') ? fmtDMY(o.date) + ' · ' + t('pst_' + (o.status || 'draft'))
             : node.t === 'job' ? fmtDMY(o.date) + ' · ' + t('st_' + (o.status || 'draft'))
             : fmtDMY(o.date) + ' → ' + fmtDMY(o.due_date) +
               (o.superseded ? ' · ' + t('ch_closed') : '');
   const open = node.t === 'prop' ? `App.openProposal('${o.id}')`
+             : node.t === 'rep' ? `App.openRepair('${o.id}')`
              : node.t === 'job' ? `App.openJob('${o.id}')`
              : `App.openJob('${o.job_id}')`;
   const now = cur && cur.t === node.t && cur.id === o.id;
@@ -9465,6 +9619,7 @@ function viewProposalForm(){
     <textarea rows="3" style="width:100%" oninput="App.propField('note', this.value)">${esc(p.note || '')}</textarea>
   </div>
   <div style="margin:8px 12px">${trCardHtml('prop', p)}</div>
+  ${propById(p.id) ? repPropBoxHtml(p) : ''}
   <div class="card" style="margin:8px 12px">
     <div class="qty-line"><span class="name">${t('p_tax')}</span>
       <input class="price-input" inputmode="decimal" value="${p.sales_tax || ''}"
@@ -9731,6 +9886,766 @@ function propStripHtml(){
       <div><b>P-${p.no ?? '·'}</b> · ${esc(cx.abbr)}${p.unit_number ? ' · ' + esc(p.unit_number) : ''}</div>
       <div class="tiny money">${money(+p.total || 0)}</div>
     </div>`; }).join('')}</div>`;
+}
+
+/* =====================================================================
+   v1.08.23 · ДОКУМЕНТ РЕМОНТНЫХ РАБОТ (REP)
+   После демонтажа — вырезали стену, сняли наличники — юнит нужно
+   восстановить. Это отдельный документ: работы из справочника,
+   материалы, бригада, заметка с надиктовкой и переводом, апрув и PDF.
+   Создаётся из инвойса, из пропозала или сам по себе; заводит его
+   любой сотрудник, а апрув ставит тот, кому это разрешено.
+   Правка сметы у одобренного документа снимает апрув — как у инвойса.
+   ===================================================================== */
+let repDraft = null;
+
+function repById(id){ return (state.data.repairs || []).find(x => x.id === id); }
+function repsOfJob(jobId){ return (state.data.repairs || []).filter(r => r.job_id === jobId && !isArch(r)); }
+function repsOfProp(pid){ return (state.data.repairs || []).filter(r => r.proposal_id === pid && !isArch(r)); }
+function repCanCreate(){ return isManager() || ((state.data.org_settings || {}).rep_all_create !== false); }
+/* Суммы видят все — пока админ не закроет их работникам в настройках */
+function repMoneyHidden(){ return !!((state.data.org_settings || {}).rep_hide_prices) && !isManager(); }
+function repMoney(v){ return repMoneyHidden() ? '—' : money(+v || 0); }
+function repCanEdit(r){ return !!r && (isManager() || r.created_by === state.user.id); }
+function repCanDecide(){ return canApprove(); }
+
+/* Признак «после этой работы нужна отделка»: вид работы, доп. работы или
+   строки прочих услуг говорят о демонтаже. Плюс ручной флаг на инвойсе —
+   автоматика угадывает не всё. */
+const REP_RX = /вырез|cutout|демонтаж|demolition|наличник|casing|плинтус|baseboard|снял|снят|remove|removal/i;
+function needsRepair(j){
+  if (!j) return false;
+  if (j.needs_repair) return true;
+  const wt = wtById(j.work_type_id);
+  if (wt && REP_RX.test(String(wt.name || ''))) return true;
+  const fd = j.form_data || {};
+  if ((fd.extra || []).some(it => REP_RX.test(String(it.name || '')))) return true;
+  return (fd.others || []).some(o => REP_RX.test(String(o.desc || '')));
+}
+
+/* ---------- расчёт ---------- */
+function repSum(list){ return (list || []).reduce((n, it) => n + (+it.a || 0), 0); }
+function repWorks(r){ return repSum(r && r.items); }
+function repMats(r){ return repSum(r && r.materials); }
+function repGrand(r){ return repWorks(r) + repMats(r) + (+((r || {}).sales_tax) || 0) + (+((r || {}).freight) || 0); }
+function repRecalc(){
+  if (!repDraft) return 0;
+  repDraft.total = repWorks(repDraft) + repMats(repDraft);
+  const set = (id, v) => { const el = $(id); if (el) el.textContent = repMoney(v); };
+  set('#rp-works', repWorks(repDraft));
+  set('#rp-mats', repMats(repDraft));
+  set('#rp-grand', repGrand(repDraft));
+  return repDraft.total;
+}
+
+/* ---------- история апрува ---------- */
+function repHistAdd(r, act, extra){
+  r.hist = Array.isArray(r.hist) ? r.hist : [];
+  r.hist.unshift(Object.assign({
+    at: new Date().toISOString(), by: state.user.id,
+    by_name: state.user.display_name || '', act
+  }, extra || {}));
+  if (r.hist.length > 40) r.hist.length = 40;
+}
+/* Любая правка сметы или шапки одобренного документа снимает апрув.
+   Полный ререндер тут не годится — он забрал бы фокус из поля, поэтому
+   перерисовываем только статус и карточку апрува. */
+function repTouch(){
+  const r = repDraft;
+  if (!r || (r.status !== 'approved' && r.status !== 'sent')) return;
+  const was = r.status;
+  r.status = 'draft'; r.decided_by = null; r.decided_at = null;
+  repHistAdd(r, 'reset', { from: was });
+  const seg = $('#rep-st'); if (seg) seg.innerHTML = repStSegHtml(r);
+  const box = $('#rep-apr'); if (box) box.innerHTML = repAprInnerHtml(r);
+  toast('⚠ ' + t(was === 'approved' ? 'rep_reset_done' : 'rep_unsent'), 'inf');
+}
+
+/* ---------- открытие / закрытие ---------- */
+function repNew(src){
+  const j = src && src.job ? (state.data.jobs || []).find(x => x.id === src.job) : null;
+  const p = src && src.prop ? propById(src.prop) : null;
+  const base = j || p || {};
+  return {
+    id: uid(), no: null, date: (j || p) ? base.date : state.selDate,
+    counterparty_id: base.counterparty_id || '', complex_id: base.complex_id || '',
+    unit_number: base.unit_number || '',
+    job_id: j ? j.id : null, proposal_id: p ? p.id : (j ? (j.proposal_id || null) : null),
+    helper_ids: j ? [j.technician_id, ...(j.helper_ids || [])].filter(Boolean) : [state.user.id],
+    items: [], materials: [], note: '', note_en: '',
+    po_number: (p && p.po_number) || '', complete_by: (p && p.complete_by) || null,
+    sales_tax: 0, freight: 0, total: 0, status: 'draft', hist: [], decline_reason: '',
+    created_by: state.user.id, decided_by: null, decided_at: null,
+    created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+  };
+}
+function openRepair(id, src){
+  if (id){
+    const r = repById(id);
+    if (!r) return;
+    repDraft = JSON.parse(JSON.stringify(r));
+    repDraft.items = repDraft.items || []; repDraft.materials = repDraft.materials || [];
+    repDraft.helper_ids = repDraft.helper_ids || []; repDraft.hist = repDraft.hist || [];
+  } else {
+    if (!repCanCreate()){ toast('⛔ ' + t('rep_no_create'), 'err'); return; }
+    repDraft = repNew(src);
+    repHistAdd(repDraft, 'created');
+  }
+  state.screen = 'repairs'; render(); window.scrollTo(0, 0);
+}
+function newRepairFromJob(jobId){ openRepair(null, { job: jobId }); }
+function newRepairFromProp(propId){ openRepair(null, { prop: propId }); }
+function repBack(){ repDraft = null; render(); }
+function repKey(r){
+  if (!r) return '';
+  return JSON.stringify([r.date, r.counterparty_id || '', r.complex_id || '', r.unit_number || '',
+    r.po_number || '', r.complete_by || '', r.note || '', r.note_en || '', r.status,
+    (r.helper_ids || []).slice().sort(), +r.sales_tax || 0, +r.freight || 0,
+    (r.items || []).map(it => [it.q, it.code || '', it.d || '', it.d_en || '', +it.a || 0]),
+    (r.materials || []).map(it => [it.q, it.code || '', it.d || '', it.d_en || '', +it.a || 0])]);
+}
+function repDirty(){
+  if (!repDraft) return false;
+  const ta = $('#rep-note'); if (ta) repDraft.note = ta.value;
+  const orig = repById(repDraft.id);
+  return orig ? repKey(repDraft) !== repKey(orig) : true;
+}
+function repClose(){
+  if (!repDirty()) return repBack();
+  docCloseModal('App.repSaveClose()', 'App.repDrop()');
+}
+async function repSaveClose(){ closeModal(); await saveRepair(); repDraft = null; render(); }
+function repDrop(){ closeModal(); repDraft = null; render(); }
+
+/* ---------- строки ---------- */
+function repRowsHtml(kind){
+  const r = repDraft;
+  const list = (kind === 'mat' ? r.materials : r.items) || [];
+  const hide = repMoneyHidden();
+  return propCodesDatalist().replace('id="prop-codes"', 'id="rep-codes-' + kind + '"') +
+    list.map((it, i) => `
+    <div class="prop-row">
+      <input class="pq" inputmode="decimal" value="${it.q ?? 1}" title="${t('prop_qty')}"
+        oninput="App.repItem('${kind}',${i},'q',this.value)">
+      <input class="pc" list="rep-codes-${kind}" value="${esc(it.code || '')}" placeholder="${t('prop_code')}"
+        oninput="App.repItem('${kind}',${i},'code',this.value)">
+      <textarea class="pd" rows="2" placeholder="${t('prop_desc')}"
+        oninput="App.repItem('${kind}',${i},'d',this.value)">${esc(it.d || '')}</textarea>
+      ${hide ? `<span class="pa tiny" style="text-align:right">—</span>`
+             : `<input class="pa" inputmode="decimal" value="${it.a || ''}" placeholder="0"
+                  oninput="App.repItem('${kind}',${i},'a',this.value)">`}
+      <button class="btn btn-ghost sm" title="${t('delete')}" aria-label="${t('delete')}"
+        onclick="App.repItemDel('${kind}',${i})">${ic('close')}</button>
+    </div>`).join('');
+}
+function repItem(kind, i, f, v){
+  const r = repDraft; if (!r) return;
+  const list = kind === 'mat' ? (r.materials = r.materials || []) : (r.items = r.items || []);
+  if (!list[i]) return;
+  list[i][f] = (f === 'q' || f === 'a') ? (parseFloat(String(v).replace(',', '.')) || 0) : v;
+  repRecalc(); repTouch();
+}
+function repItemAdd(kind){
+  const r = repDraft; if (!r) return;
+  const list = kind === 'mat' ? (r.materials = r.materials || []) : (r.items = r.items || []);
+  list.push({ q: 1, code: '', d: '', d_en: '', a: 0 });
+  repTouch(); render();
+}
+function repItemDel(kind, i){
+  const r = repDraft; if (!r) return;
+  const list = kind === 'mat' ? (r.materials || []) : (r.items || []);
+  list.splice(i, 1);
+  repTouch(); render();
+}
+/* Подбор из справочника «Доп. работы»: позиции с флагом «ремонт» — сверху */
+function repCatModal(kind){
+  const list = [...(state.data.extra_works || [])]
+    .filter(w => kind === 'mat' ? w.kind === 'purchase' : w.kind !== 'purchase')
+    .sort((a, b) => (b.repair ? 1 : 0) - (a.repair ? 1 : 0) || (a.sort || 0) - (b.sort || 0));
+  openModal(`${modalHead(t('rep_cat'), 'toolbox')}
+    <div class="tiny" style="margin-bottom:8px">${t('rep_cat_hint')}</div>
+    <div class="card">${list.map(w => `<button class="rowline map-row" onclick="App.repCatAdd('${kind}','${w.id}')">
+      <div class="grow"><b>${esc(w.name)}</b>
+        <div class="tiny">${esc(w.code || '—')}${w.repair ? ` · <span class="chip rep">${t('rep_cat_tag')}</span>` : ''}</div></div>
+      <span class="money">${repMoney(+w.price || 0)}</span></button>`).join('')
+      || `<div class="list-empty">${t('no_items')}</div>`}</div>`);
+}
+function repCatAdd(kind, id){
+  const w = ewById(id); const r = repDraft;
+  if (!w || !r) return;
+  const list = kind === 'mat' ? (r.materials = r.materials || []) : (r.items = r.items || []);
+  list.push({ q: 1, code: String(w.code || '').toUpperCase(), d: String(w.name || ''),
+              d_en: enName(w.name || ''), a: +w.price || 0 });
+  closeModal(); repTouch(); render();
+}
+
+/* ---------- бригада ---------- */
+function repCrewHtml(r){
+  const ids = (r.helper_ids || []).filter(Boolean);
+  const chips = ids.length ? ids.map(id => `<span class="chip-tech">${esc(shortName(profName(id)))}
+      <button class="x" onclick="App.repCrewDel('${id}')" aria-label="remove">${ic('close')}</button></span>`).join('')
+    : `<span class="tiny">—</span>`;
+  const free = (state.data.profiles || []).filter(p => !p.blocked && !ids.includes(p.id));
+  return `<div id="rep-crew" class="crew-box">${chips}</div>
+    ${free.length ? `<select id="rep-crew-sel" style="width:100%;margin-top:6px" onchange="App.repCrewAdd(this.value)">
+      <option value="">${t('add_helper')}…</option>
+      ${free.map(p => `<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_' + p.role)})</option>`).join('')}
+    </select>` : ''}`;
+}
+function repCrewAdd(id){
+  if (!id || !repDraft) return;
+  repDraft.helper_ids = repDraft.helper_ids || [];
+  if (!repDraft.helper_ids.includes(id)) repDraft.helper_ids.push(id);
+  repTouch(); render();
+}
+function repCrewDel(id){
+  if (!repDraft) return;
+  repDraft.helper_ids = (repDraft.helper_ids || []).filter(x => x !== id);
+  repTouch(); render();
+}
+
+/* ---------- статус и апрув ---------- */
+function repStSegHtml(r){
+  const can = repCanDecide();
+  return ['draft', 'sent', 'approved', 'declined'].map(s => {
+    const lock = (s === 'approved' || s === 'declined') && !can;
+    return `<button class="${r.status === s ? 'on' : ''}" ${lock ? 'disabled title="' + t('rep_no_rights') + '"' : ''}
+      onclick="App.repSetStatus('${s}')">${t('pst_' + s)}</button>`;
+  }).join('');
+}
+function repHistHtml(r){
+  const list = (r.hist || []).slice(0, 12);
+  if (!list.length) return '';
+  const label = { created: t('rep_h_created'), sent: t('rep_h_sent'), approved: t('rep_h_approved'),
+                  declined: t('rep_h_declined'), reset: t('rep_h_reset') };
+  return `<div class="tiny" style="margin-top:8px;font-weight:800">${t('rep_hist')}</div>` +
+    list.map(h => `<div class="tiny">· ${esc(label[h.act] || h.act)} — ${esc(h.by_name || profName(h.by) || '—')},
+      ${esc(String(h.at || '').slice(0, 16).replace('T', ' '))}</div>`).join('');
+}
+function repAprInnerHtml(r){
+  const can = repCanDecide();
+  const pill = `<span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span>`;
+  const who = r.decided_at
+    ? `${t('rep_decided_by')}: ${esc(profName(r.decided_by))} · ${String(r.decided_at).slice(0, 16).replace('T', ' ')}`
+    : (r.status === 'sent' ? t('rep_h_sent') : t('rep_not_sent'));
+  return `<div style="font-weight:900;margin-bottom:6px">${ic('star')} ${t('approve')} ${pill}</div>
+    <div class="tiny">${who}</div>
+    ${r.status === 'declined' && r.decline_reason ? `<div class="tiny" style="margin-top:4px">${ic('warn')} ${esc(r.decline_reason)}</div>` : ''}
+    ${r.status === 'approved' ? `<div class="banner b-yellow" style="margin:8px 0">${ic('warn')} ${t('rep_reset_note')}</div>` : ''}
+    ${(r.status === 'draft' || r.status === 'declined') ? `<button class="btn btn-blue" style="margin-top:8px"
+      onclick="App.repSetStatus('sent')">${ic('send')} ${t('rep_send')}</button>` : ''}
+    ${can && r.status !== 'draft' ? `<div class="btn-rowpp" style="margin-top:8px">
+      <button class="btn btn-green" onclick="App.repSetStatus('approved')">${ic('check')} ${t('rep_approve')}</button>
+      <button class="btn btn-red" onclick="App.repSetStatus('declined')">${ic('close')} ${t('rep_decline')}</button>
+      <span></span></div>
+      <input id="rep-why" placeholder="${t('rep_why')}" value="${esc(r.decline_reason || '')}" style="margin-top:8px">` : ''}
+    ${!can ? `<div class="tiny" style="margin-top:6px">${t('rep_no_rights')}</div>` : ''}
+    ${repHistHtml(r)}`;
+}
+async function repSetStatus(s){
+  const r = repDraft; if (!r) return;
+  if ((s === 'approved' || s === 'declined') && !repCanDecide()){ toast('⛔ ' + t('rep_no_rights'), 'err'); return; }
+  if (s === 'declined'){ r.decline_reason = (($('#rep-why') || {}).value || '').trim(); }
+  if (s === 'approved') r.decline_reason = '';
+  r.status = s;
+  if (s === 'approved' || s === 'declined'){ r.decided_by = state.user.id; r.decided_at = new Date().toISOString(); }
+  if (s === 'draft' || s === 'sent'){ r.decided_by = null; r.decided_at = null; }
+  repHistAdd(r, s === 'draft' ? 'reset' : s);
+  await saveRepair(true);
+  render();
+}
+
+/* ---------- список и форма ---------- */
+function viewRepairs(){ return repDraft ? viewRepairForm() : viewRepairList(); }
+function viewRepairList(){
+  const f = state.repDocFilter || 'all';
+  const chips = ['all', 'draft', 'sent', 'approved', 'declined'].map(s =>
+    `<button class="tabbtn ${f === s ? 'active' : ''}" onclick="App.repDocFilter('${s}')">${s === 'all' ? t('all') : t('pst_' + s)}</button>`).join('');
+  const mine = r => isManager() || r.created_by === state.user.id
+    || (r.helper_ids || []).includes(state.user.id);
+  const list = [...(state.data.repairs || [])].filter(r => !isArch(r)).filter(mine)
+    .filter(r => f === 'all' || r.status === f)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.no || 0) - (a.no || 0));
+  const rows = list.map(r => {
+    const cx = cxById(r.complex_id) || { abbr: '—', name: '—' };
+    return `<button class="rowline map-row" onclick="App.openRepair('${r.id}')">
+      <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span>
+      <div class="grow"><b>R-${r.no ?? '·'}</b> · ${esc(cx.abbr || cx.name)}${r.unit_number ? ` · Unit <b>${esc(r.unit_number)}</b>` : ''}
+        <div class="tiny">${fmtDMY(r.date)}${r.job_id ? ` · ${ic('link')} WORK` : ''}</div></div>
+      <span class="money">${repMoney(repGrand(r))}</span>
+    </button>`;
+  }).join('');
+  return `<div class="prop-wrap"><div class="section-title">${t('tab_repairs')}${helpBtn('repairs')}</div>
+  <div class="tabs" style="margin:0 12px 8px">${chips}</div>
+  <div class="card" style="margin:0 12px">${rows || `<div class="list-empty">${t('no_items')}</div>`}</div>
+  ${repCanCreate() ? `<button class="btn btn-green" style="margin:10px 12px" onclick="App.openRepair()">${ic('plus')} ${t('rep_new')}</button>`
+    : `<div class="tiny" style="margin:10px 12px">${t('rep_no_create')}</div>`}</div>`;
+}
+function viewRepairForm(){
+  const r = repDraft;
+  const cp = cpById(r.counterparty_id) || {};
+  const cx = cxById(r.complex_id) || {};
+  const job = r.job_id ? (state.data.jobs || []).find(x => x.id === r.job_id) : null;
+  const prop = r.proposal_id ? propById(r.proposal_id) : null;
+  const src = job ? t('rep_src_job') + ' ' + (docNo('job', job) || 'WORK')
+            : prop ? t('rep_src_prop') + ' ' + (docNo('prop', prop) || ('P-' + (prop.no ?? '·')))
+            : t('rep_src_self');
+  const hide = repMoneyHidden();
+  return `<div class="prop-wrap">
+  ${docBarHtml({ chain: `App.chain('rep','${r.id}')`,
+                 title: `${docNo('rep', r) || t('tab_repairs') + ' · R-' + (r.no ?? '…')}`,
+                 save: 'App.saveRepair()', close: 'App.repClose()', dirty: repDirty() })}
+  <div class="card" style="margin:0 12px">
+    <div class="tiny" style="margin-bottom:8px">${ic('link')} ${esc(src)}</div>
+    <div class="form-row"><span class="lbl">${t('date')}</span>
+      <input type="date" value="${r.date}" onchange="App.repField('date', this.value)"></div>
+    <div class="form-row"><span class="lbl">${t('counterparty')}</span>
+      <div class="combo" id="cb-cp">
+        <input class="combo-in" value="${esc(cp.name || '')}" placeholder="${t('select')}" autocomplete="off"
+          oninput="App.comboFilter('cp', this.value)" onfocus="App.comboFilter('cp', this.value)">
+        <input type="hidden" id="nt-cp" value="${r.counterparty_id || ''}">
+        <div class="combo-list" id="cb-cp-list"></div>
+      </div></div>
+    <div class="form-row"><span class="lbl">${t('complex')}</span>
+      <div class="combo" id="cb-cx">
+        <input class="combo-in" value="${esc(cx.name || '')}" placeholder="${t('select')}" autocomplete="off"
+          oninput="App.comboFilter('cx', this.value)" onfocus="App.comboFilter('cx', this.value)">
+        <input type="hidden" id="nt-cx" value="${r.complex_id || ''}">
+        <div class="combo-list" id="cb-cx-list"></div>
+      </div></div>
+    <div class="form-row"><span class="lbl">${t('unit')}</span>
+      <input value="${esc(r.unit_number || '')}" oninput="App.repField('unit_number', this.value)"></div>
+    <div class="form-row"><span class="lbl">${t('prop_status')}</span>
+      <div class="lang-seg" id="rep-st">${repStSegHtml(r)}</div></div>
+    <div class="form-row"><span class="lbl">PO Number</span>
+      <input value="${esc(r.po_number || '')}" oninput="App.repField('po_number', this.value)"></div>
+    <div class="form-row"><span class="lbl">${t('prop_complete')}</span>
+      <input type="date" value="${r.complete_by || ''}" onchange="App.repField('complete_by', this.value || null)"></div>
+  </div>
+
+  <div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">${ic('crew')} ${t('rep_crew')}</div>
+    ${repCrewHtml(r)}
+  </div>
+
+  <div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">${t('rep_items')}</div>
+    <div class="prop-head"><span>${t('prop_qty')}</span><span>${t('prop_code')}</span><span>${t('prop_desc')}</span><span style="text-align:right">$</span><span></span></div>
+    <div id="rep-rows-work">${repRowsHtml('work')}</div>
+    <div class="btn-rowpp">
+      <button class="btn btn-blue sm" onclick="App.repCatModal('work')">${ic('toolbox')} ${t('rep_cat')}</button>
+      <button class="btn btn-ghost sm" onclick="App.repItemAdd('work')">${ic('plus')} ${t('prop_add_row')}</button>
+      <span></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">${ic('cart')} ${t('rep_mats')}</div>
+    <div class="prop-head"><span>${t('prop_qty')}</span><span>${t('prop_code')}</span><span>${t('prop_desc')}</span><span style="text-align:right">$</span><span></span></div>
+    <div id="rep-rows-mat">${repRowsHtml('mat')}</div>
+    <div class="btn-rowpp">
+      <button class="btn btn-blue sm" onclick="App.repCatModal('mat')">${ic('cart')} ${t('rep_cat')}</button>
+      <button class="btn btn-ghost sm" onclick="App.repItemAdd('mat')">${ic('plus')} ${t('prop_add_row')}</button>
+      <span></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">${t('prop_note')}
+      ${(state.data.note_templates || []).length ? `<button class="btn btn-ghost sm" style="float:right"
+        onclick="App.ntPick()">${ic('clipboard')} ${t('nt_pick')}</button>` : ''}</div>
+    ${dictationHTML('rep-note', r.note || '', 'repdraft')}
+  </div>
+  <div style="margin:8px 12px">${trCardHtml('rep', r)}</div>
+
+  <div class="card" style="margin:8px 12px">
+    <div class="qty-line"><span class="name">${t('rep_works_sum')}</span><span class="money" id="rp-works">${repMoney(repWorks(r))}</span></div>
+    <div class="qty-line"><span class="name">${t('rep_mats_sum')}</span><span class="money" id="rp-mats">${repMoney(repMats(r))}</span></div>
+    ${hide ? '' : `<div class="qty-line"><span class="name">${t('p_tax')}</span>
+      <input class="price-input" inputmode="decimal" value="${r.sales_tax || ''}"
+        oninput="App.repField('sales_tax', this.value)"></div>
+    <div class="qty-line"><span class="name">${t('p_freight')}</span>
+      <input class="price-input" inputmode="decimal" value="${r.freight || ''}"
+        oninput="App.repField('freight', this.value)"></div>`}
+    <div class="total-bar" style="margin-top:8px"><span>${t('rep_grand')}</span>
+      <span class="sum ${r.status === 'approved' ? 'ok' : 'pend'}" id="rp-grand">${repMoney(repGrand(r))}</span></div>
+  </div>
+
+  <div class="card" id="rep-apr" style="margin:8px 12px;border-color:var(--purple)">${repAprInnerHtml(r)}</div>
+
+  <div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">${ic('link')} ${t('prop_linked')}</div>
+    ${job ? `<div class="rowline"><div class="grow">WORK · ${esc((cxById(job.complex_id) || {}).abbr || '')} · Unit <b>${esc(job.unit_number || '—')}</b>
+        <span class="tiny">· ${fmtDMY(job.date)}</span></div>
+      <button class="btn btn-ghost sm" onclick="App.openJob('${job.id}')">${ic('chev_r')}</button>
+      <button class="btn btn-ghost sm" onclick="App.repUnlink('job')">${ic('close')}</button></div>` : ''}
+    ${prop ? `<div class="rowline"><div class="grow">PROPOSAL · P-${prop.no ?? '·'}
+        <span class="tiny">· ${fmtDMY(prop.date)}</span></div>
+      ${isManager() ? `<button class="btn btn-ghost sm" onclick="App.openProposal('${prop.id}')">${ic('chev_r')}</button>` : ''}
+      <button class="btn btn-ghost sm" onclick="App.repUnlink('prop')">${ic('close')}</button></div>` : ''}
+    ${!job && !prop ? `<div class="tiny">—</div>` : ''}
+    ${repJobPickerHtml(r)}
+  </div>
+
+  <div style="margin:10px 12px">
+    <button class="btn btn-green" onclick="App.saveRepair()">${ic('save')} ${t('save')}</button>
+    <div class="btn-rowpp" style="margin-top:8px">
+      <button class="btn btn-blue" onclick="App.makeRepairPdf('${r.id}')">${ic('download')} ${t('rep_pdf')}</button>
+      <button class="btn btn-ghost" onclick="App.repPrint('${r.id}')">${ic('report')} ${t('pdf_print')}</button>
+      <span></span>
+    </div>
+    ${(r.status === 'approved' && r.job_id) ? `<button class="btn btn-ghost" style="margin-top:8px"
+      onclick="App.repToInvoice('${r.id}')">${ic('receipt')} ${t('rep_to_inv')}</button>` : ''}
+    ${(repById(r.id) && (isAdmin() || r.created_by === state.user.id)) ? `<button class="btn btn-red" style="margin-top:8px"
+      onclick="App.delRepair('${r.id}')">${ic('trash')} ${t('delete')}</button>` : ''}
+  </div></div>`;
+}
+/* привязка к работе с самого документа: кандидаты того же комплекса */
+function repJobPickerHtml(r){
+  if (r.job_id) return '';
+  const cand = (state.data.jobs || []).filter(j => !isArch(j))
+    .filter(j => !r.complex_id || j.complex_id === r.complex_id)
+    .filter(j => isManager() || j.technician_id === state.user.id || isJobSharedWithMe(j))
+    .sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 30);
+  if (!cand.length) return `<div class="tiny" style="margin-top:6px">${t('prop_pick_job_none')}</div>`;
+  return `<div style="display:flex;gap:6px;align-items:center;margin-top:8px">
+    <select id="rep-job-sel" style="flex:1;min-width:130px">
+      <option value="">${t('prop_pick_job')}</option>
+      ${cand.map(j => `<option value="${j.id}">Unit ${esc(j.unit_number || '—')} · ${fmtDMY(j.date)}</option>`).join('')}
+    </select>
+    <button class="btn btn-blue sm" onclick="App.repLinkJob()">${t('prop_link')}</button></div>`;
+}
+function repLinkJob(){
+  const v = (($('#rep-job-sel') || {}).value) || '';
+  if (!v || !repDraft){ toast('⚠ ' + t('prop_pick_job'), 'err'); return; }
+  const j = (state.data.jobs || []).find(x => x.id === v);
+  repDraft.job_id = v;
+  if (j){
+    if (!repDraft.counterparty_id) repDraft.counterparty_id = j.counterparty_id;
+    if (!repDraft.complex_id) repDraft.complex_id = j.complex_id;
+    if (!repDraft.unit_number) repDraft.unit_number = j.unit_number;
+    if (!repDraft.proposal_id && j.proposal_id) repDraft.proposal_id = j.proposal_id;
+  }
+  render();
+}
+function repUnlink(what){
+  if (!repDraft) return;
+  if (what === 'job') repDraft.job_id = null; else repDraft.proposal_id = null;
+  render();
+}
+function repField(f, v){
+  const r = repDraft; if (!r) return;
+  r[f] = (f === 'sales_tax' || f === 'freight') ? (parseFloat(String(v).replace(',', '.')) || 0) : v;
+  if (f === 'sales_tax' || f === 'freight') repRecalc();
+  repTouch();
+}
+
+/* ---------- сохранение ---------- */
+function repCleanItems(list){
+  return (list || [])
+    .filter(it => String(it.d || '').trim() || String(it.code || '').trim() || +it.a)
+    .map(it => ({ q: +it.q || 1, code: String(it.code || '').toUpperCase(), d: String(it.d || ''),
+                  d_en: String(it.d_en || ''), a: +it.a || 0 }));
+}
+async function saveRepair(quiet){
+  const r = repDraft; if (!r) return;
+  if (repById(r.id) && !repCanEdit(r)){ toast('⛔ ' + t('rep_no_rights'), 'err'); return; }
+  dictStop();
+  r.counterparty_id = ($('#nt-cp') || {}).value || r.counterparty_id;
+  r.complex_id = ($('#nt-cx') || {}).value || r.complex_id;
+  const ta = $('#rep-note'); if (ta) r.note = ta.value;
+  if (!r.counterparty_id || !r.complex_id){ toast('⚠ ' + t('prop_need_cpcx'), 'err'); return; }
+  r.items = repCleanItems(r.items);
+  r.materials = repCleanItems(r.materials);
+  repRecalc();
+  const isNew = !repById(r.id);
+  if (isNew) r.created_by = r.created_by || state.user.id;
+  r.updated_at = new Date().toISOString();
+  await dbUpsert('repairs', JSON.parse(JSON.stringify(r)));
+  if (r.no == null){
+    if (HAS_SB){
+      try{ const { data } = await state.sb.from('repairs').select('no').eq('id', r.id).single();
+        if (data) r.no = data.no; }catch(e){}
+    } else r.no = (state.data.repairs || []).length;
+    const loc = repById(r.id); if (loc) loc.no = r.no;
+  }
+  audit(isNew ? 'repair_create' : 'repair_update', 'repair', r.id,
+    { no: r.no, unit: r.unit_number, total: repGrand(r), status: r.status });
+  if (!quiet) toast('✓ ' + t('saved'));
+  render();
+}
+async function delRepair(id){
+  const r = repById(id); if (!r) return;
+  if (!(isAdmin() || r.created_by === state.user.id)) return;
+  if (!confirm(t('arch_q'))) return;
+  await dbUpsert('repairs', { ...r, archived_at: new Date().toISOString(), archived_by: state.user.id });
+  audit('repair_archive', 'repair', id, { no: r.no });
+  repDraft = null; toast('🗄 ' + t('arch_to')); render();
+}
+/* Суммы одобренного ремонта уходят строкой в связанный инвойс */
+async function repToInvoice(id){
+  const r = repById(id) || repDraft; if (!r || !r.job_id) return;
+  if (r.status !== 'approved'){ toast('⚠ ' + t('rep_need_appr'), 'err'); return; }
+  const j = (state.data.jobs || []).find(x => x.id === r.job_id);
+  if (!j){ toast('⛔', 'err'); return; }
+  if (!(isAdmin() || isManager() || j.technician_id === state.user.id || isJobSharedWithMe(j))){
+    toast('⛔ ' + t('no_access'), 'err'); return;
+  }
+  const fd = Object.assign(emptyFormData(), JSON.parse(JSON.stringify(j.form_data || {})));
+  fd.others = fd.others || [];
+  const tag = 'REP-' + (r.no ?? '·');
+  if (fd.others.some(o => String(o.desc || '').indexOf(tag) >= 0)){ toast('⚠ ' + t('rep_already_moved'), 'inf'); return; }
+  const line = { desc: tag + ' · ' + t('rep_doc'), desc_en: tag + ' · Repair & restoration', amount: repGrand(r) };
+  const free = fd.others.findIndex(o => !String(o.desc || '').trim() && !(+o.amount));
+  if (free >= 0) fd.others[free] = line; else fd.others.push(line);
+  const total = calcTotal(fd, priceResolver(j.counterparty_id));
+  await dbUpsert('jobs', { ...j, form_data: fd, total, updated_at: new Date().toISOString() });
+  audit('repair_to_invoice', 'repair', r.id, { no: r.no, job: j.id, amount: line.amount });
+  toast('✓ ' + t('rep_moved')); render();
+}
+
+/* ---------- крючки в других экранах ---------- */
+function repChipHtml(j, short){
+  const list = repsOfJob(j.id);
+  if (list.length){
+    const r = list[0];
+    return ` <span class="chip rep" title="REPAIR">${short ? 'R' : 'R-' + (r.no ?? '·')}</span>`;
+  }
+  if (needsRepair(j)) return ` <span class="chip repq" title="${t('rep_need_chip')}">R?</span>`;
+  return '';
+}
+function repBtnHtml(j, cls){
+  if (!repCanCreate()) return '';
+  const list = repsOfJob(j.id);
+  if (list.length) return `<button class="btn btn-ghost ${cls || 'sm'}" title="${t('rep_open')}"
+    onclick="event.stopPropagation();App.openRepair('${list[0].id}')">${ic('toolbox')}</button>`;
+  if (!needsRepair(j)) return '';
+  return `<button class="btn btn-blue ${cls || 'sm'}" title="${t('rep_new')}"
+    onclick="event.stopPropagation();App.newRepairFromJob('${j.id}')">${ic('toolbox')}</button>`;
+}
+/* блок в инвойсе: список документов ремонта, кнопка создания и ручной флаг */
+function repBoxHtml(j){
+  const list = repsOfJob(j.id);
+  const need = needsRepair(j);
+  /* Автору работы блок нужен всегда — он единственный знает, что резал
+     стену, и ставит флаг руками. Чужому коворкеру — только если документ
+     уже есть или демонтаж виден по форме. */
+  const canFlag = isManager() || j.technician_id === state.user.id;
+  if (!list.length && !need && !canFlag) return '';
+  return `<div class="card" style="margin:4px 0 8px;padding:8px 10px">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      ${ic('toolbox')} <b>${t('rep_doc')}</b>
+      ${list.map(r => `<button class="btn btn-ghost sm" onclick="App.openRepair('${r.id}')">
+        <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span> R-${r.no ?? '·'} · ${repMoney(repGrand(r))}</button>`).join('')}
+      ${repCanCreate() ? `<button class="btn btn-blue sm" onclick="App.newRepairFromJob('${j.id}')">${ic('plus')} ${t('rep_new')}</button>` : ''}
+    </div>
+    ${need && !list.length ? `<div class="tiny" style="margin-top:4px">${ic('warn')} ${t('rep_hint_needed')}</div>` : ''}
+    ${canFlag ? `<label class="opt ${j.needs_repair ? 'on' : ''}" style="margin:6px 0 0">
+      <input type="checkbox" ${j.needs_repair ? 'checked' : ''} onchange="App.setNeedsRepair(this.checked)"> ${t('rep_flag')}</label>` : ''}
+  </div>`;
+}
+function setNeedsRepair(v){
+  if (!jobDraft) return;
+  jobDraft.needs_repair = !!v;
+  autosaveDraft(); render();
+}
+/* блок в пропозале */
+function repPropBoxHtml(p){
+  const list = repsOfProp(p.id);
+  return `<div class="card" style="margin:8px 12px">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      ${ic('toolbox')} <b>${t('rep_doc')}</b>
+      ${list.map(r => `<button class="btn btn-ghost sm" onclick="App.openRepair('${r.id}')">
+        <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span> R-${r.no ?? '·'}</button>`).join('')}
+      ${repCanCreate() ? `<button class="btn btn-blue sm" onclick="App.newRepairFromProp('${p.id}')">${ic('plus')} ${t('rep_new')}</button>` : ''}
+    </div></div>`;
+}
+
+/* ---------- PDF ---------- */
+function makeRepairPdf(id, _go){
+  const r = (repDraft && repDraft.id === id) ? repDraft : repById(id);
+  if (!r || !window.jspdf){ toast('⛔ PDF', 'err'); return; }
+  if (!_go){ trPdfGuard('rep', r, () => makeRepairPdf(id, true)); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = pdfLatinize(new jsPDF({ unit: 'mm', format: 'letter' }));
+  const org = state.data.org_settings || {};
+  const cp = cpById(r.counterparty_id) || { name: '' };
+  const cx = cxById(r.complex_id) || { name: '', address: '', abbr: '' };
+  const L = 12, R = 203.9, W = R - L;
+  const money2 = n => (+n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  let y = 16;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+  doc.text(String(org.company_name || ''), L, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+  let hy = y + 5;
+  [org.addr1, org.addr2, org.addr3].forEach(s => { if (s){ doc.text(String(s), L, hy); hy += 4; } });
+  if (org.voice_line || org.fax_line){
+    hy += 2;
+    if (org.voice_line){ doc.text('Voice:', L, hy); doc.text(String(org.voice_line), L + 14, hy); hy += 4; }
+    if (org.fax_line){ doc.text('Fax:', L, hy); doc.text(String(org.fax_line), L + 14, hy); hy += 4; }
+  }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(160);
+  doc.text('REPAIR / RESTORATION', R, y + 3, { align: 'right' });
+  doc.setTextColor(0); doc.setFontSize(9);
+  let ry = y + 11;
+  const pair = (k, v) => {
+    doc.setFont('helvetica', 'normal'); doc.text(k, R - 28, ry, { align: 'right' });
+    doc.setFont('helvetica', 'bold'); doc.text(String(v ?? ''), R, ry, { align: 'right' });
+    ry += 4.6;
+  };
+  pair('Document Number:', docNo('rep', r) || (r.no ?? '—'));
+  pair('Date:', fmtUS(r.date));
+  if (r.complete_by) pair('Complete By:', fmtUS(r.complete_by));
+  pair('Status:', String(r.status || '').toUpperCase());
+  y = Math.max(hy, ry) + 3;
+
+  const addr = String(cx.address || '');
+  const comma = addr.indexOf(',');
+  const street = comma > 0 ? addr.slice(0, comma).trim() : addr;
+  const cityln = comma > 0 ? addr.slice(comma + 1).trim() : '';
+  const boxW = 92, boxH = 24;
+  const infoBox = (x, title, lines) => {
+    doc.setFillColor(222); doc.rect(x, y, boxW, 5.6, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+    doc.text(title, x + 2, y + 4);
+    doc.rect(x, y + 5.6, boxW, boxH);
+    doc.setFont('helvetica', 'normal');
+    let by = y + 10;
+    lines.filter(Boolean).forEach(s => { doc.text(String(s).slice(0, 46), x + 2, by); by += 4.4; });
+  };
+  infoBox(L, 'To:', [cp.name, cx.name !== cp.name ? cx.name : '', street, cityln]);
+  infoBox(R - boxW, 'Ship To:', [cx.name, street, r.unit_number ? String(r.unit_number) : '', cityln]);
+  y += 5.6 + boxH + 4;
+
+  const half = W / 2;
+  const gridCell = (x, w, title, val) => {
+    doc.setFillColor(222); doc.rect(x, y, w, 5.4, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+    doc.text(title, x + w / 2, y + 3.8, { align: 'center' });
+    doc.rect(x, y + 5.4, w, 6);
+    doc.setFont('helvetica', 'normal');
+    if (val) doc.text(String(val).slice(0, 50), x + w / 2, y + 9.5, { align: 'center' });
+  };
+  gridCell(L, half, 'Customer ID', cx.name || cp.name);
+  gridCell(L + half, half, 'PO Number', r.po_number || '');
+  y += 11.4;
+  const crew = (r.helper_ids || []).map(id => translit(shortName(profName(id)))).filter(Boolean).join(', ');
+  gridCell(L, half, 'Crew', crew);
+  gridCell(L + half, half, 'Unit', r.unit_number || '');
+  y += 11.4 + 3;
+
+  const cQ = L, wQ = 20, cI = cQ + wQ, wI = 24, cD = cI + wI, cA = R - 26, wD = cA - cD;
+  const headRow = () => {
+    doc.setFillColor(222); doc.rect(L, y, W, 5.8, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+    doc.text('Quantity', cQ + wQ - 2, y + 4.1, { align: 'right' });
+    doc.text('Item', cI + 2, y + 4.1);
+    doc.text('Description', cD + 2, y + 4.1);
+    doc.text('Amount', R - 2, y + 4.1, { align: 'right' });
+    y += 5.8;
+    doc.setFont('helvetica', 'normal');
+  };
+  headRow();
+  let btop = y;
+  const flushBox = () => {
+    doc.rect(L, btop, W, y - btop);
+    doc.line(cI, btop, cI, y);
+    doc.line(cD, btop, cD, y);
+    doc.line(cA, btop, cA, y);
+  };
+  const LH = 4.3;
+  const ensure = h => {
+    if (y + h > 232){
+      flushBox(); doc.addPage(); y = 14;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+      doc.text('Repair # ' + (r.no ?? ''), R, y, { align: 'right' });
+      y += 4; headRow(); btop = y;
+    }
+  };
+  doc.setFontSize(9);
+  const putRow = it => {
+    const lines = doc.splitTextToSize(String(enText(it.d, it.d_en) || ''), wD - 4);
+    const h = Math.max(LH, lines.length * LH) + 1.8;
+    ensure(h);
+    doc.text((+it.q || 1).toFixed(2), cQ + wQ - 2, y + 3.6, { align: 'right' });
+    doc.text(String(it.code || '').slice(0, 10), cI + 2, y + 3.6);
+    doc.text(lines, cD + 2, y + 3.6);
+    if (it.a) doc.text(money2(it.a), R - 2, y + 3.6, { align: 'right' });
+    y += h;
+  };
+  const sub = title => {
+    ensure(LH + 2);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, cD + 2, y + 3.6);
+    doc.setFont('helvetica', 'normal');
+    y += LH + 1.6;
+  };
+  if ((r.items || []).length){ sub('WORKS'); (r.items || []).forEach(putRow); }
+  if ((r.materials || []).length){ sub('MATERIALS'); (r.materials || []).forEach(putRow); }
+  const nEn = enText(r.note, r.note_en);
+  if (nEn){
+    const nl = doc.splitTextToSize('Note:\n' + nEn, wD - 4);
+    const h = nl.length * LH + 2.4;
+    ensure(h);
+    doc.text(nl, cD + 2, y + 3.6);
+    y += h;
+  }
+  y += 1;
+  flushBox();
+
+  const tx = cD, tw = R - tx;
+  const totRow = (k, v, dark) => {
+    if (dark){ doc.setFillColor(205); doc.rect(tx, y, tw, 6, 'FD'); doc.setFont('helvetica', 'bold'); }
+    else { doc.rect(tx, y, tw, 6); doc.setFont('helvetica', 'normal'); }
+    doc.text(k, tx + 2, y + 4.2);
+    if (v !== '') doc.text(v, R - 2, y + 4.2, { align: 'right' });
+    y += 6;
+  };
+  doc.setFontSize(9);
+  const tax = +r.sales_tax || 0, frt = +r.freight || 0;
+  totRow('Works', money2(repWorks(r)), false);
+  totRow('Materials', money2(repMats(r)), false);
+  totRow('Sales Tax', tax ? money2(tax) : '', false);
+  totRow('Freight', frt ? money2(frt) : '', false);
+  totRow('TOTAL REPAIR AMOUNT', '$' + money2(repGrand(r)), true);
+
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.4);
+  const legal = String(org.legal_note || '').trim() || LEGAL_DEF;
+  doc.text(doc.splitTextToSize(legal, W), L, Math.max(y + 8, 250));
+
+  savePdfCompat(doc, 'Repair_' + (r.no ?? 'x') + '_' + (cx.abbr || '') + '.pdf');
+}
+function repPrint(id){
+  const r = (repDraft && repDraft.id === id) ? repDraft : repById(id);
+  if (!r) return;
+  makeRepairPdf(id);
+}
+/* полоса документов ремонта на доске */
+function repStripHtml(){
+  const list = (state.data.repairs || []).filter(r => !isArch(r) && r.date === state.selDate);
+  if (!list.length) return '';
+  const waiting = list.filter(r => r.status === 'sent').length;
+  const head = `<div class="strip-h">${ic('toolbox')} <span class="ttl">${t('rep_strip')}</span>
+    <span class="chip">${list.length}</span>
+    ${waiting ? `<span class="chip pst pst-sent">${t('pst_sent')}: ${waiting}</span>` : ''}</div>`;
+  return head + `<div class="pstrip">${list.map(r => {
+    const cx = cxById(r.complex_id) || { abbr: '—' };
+    return `<div class="pcard clicky" onclick="App.openRepair('${r.id}')">
+      <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span>
+      <div><b>R-${r.no ?? '·'}</b> · ${esc(cx.abbr)}${r.unit_number ? ' · ' + esc(r.unit_number) : ''}</div>
+      <div class="tiny money">${repMoney(repGrand(r))}</div>
+    </div>`; }).join('')}</div>`;
+}
+/* заметка документа ремонта: правки текста в черновик без ререндера */
+let repFormBound = false;
+function bindRepForm(){
+  if (repFormBound) return;
+  repFormBound = true;
+  $('#app').addEventListener('input', e => {
+    if (state.screen !== 'repairs' || !repDraft) return;
+    if (e.target && e.target.id === 'rep-note') repDraft.note = e.target.value;
+  });
 }
 
 /* =====================================================================
@@ -11018,7 +11933,18 @@ function mqLog(text, cls, id){
 /* v1.07.72: мини-журнал отправки — три последние строки над таббаром.
    Показывается, пока идёт отправка, и гаснет через несколько секунд. */
 let _mqMiniTimer = null;
+/* v1.08.21: полоска отправки всплывала при каждом заходе, даже когда всё
+   давно отправлено. Личная галочка «показывать только при ошибке» гасит её
+   для спокойных строк: проверка идёт как прежде, просто молча. */
+function mqQuiet(){ try{ return localStorage.getItem('techlog_mq_quiet') === '1'; }catch(e){ return false; } }
+function mqQuietSet(v){ try{ localStorage.setItem('techlog_mq_quiet', v ? '1' : '0'); }catch(e){} }
+function mqLastBad(){
+  const last = mqLogLines.slice(-3);
+  return last.some(l => /err|warn/.test(l.cls || '')) || mediaQ.some(x => (+x.attempts || 0) > 0);
+}
 function mqMini(show){
+  /* тихий режим: показываем только когда есть что чинить */
+  if (show && mqQuiet() && !mqLastBad()) return;
   let el = $('#mq-mini');
   if (!show){
     if (el) el.remove();
@@ -11112,6 +12038,9 @@ function mediaQueueCardHtml(){
       ? `<div class="tiny" style="margin-bottom:8px">${t('mq_empty')}</div>`
       : `<div class="tiny" style="margin-bottom:8px">${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')} · ${t('mq_pending')}</div>`}
     <button class="btn ${st.key === 'ok' ? 'btn-ghost' : 'btn-blue'}" onclick="App.mediaQueueModal()">${st.key === 'ok' ? t('mq_open') : t('mq_check')}</button>
+    <label class="opt ${mqQuiet() ? 'on' : ''}" style="margin-top:8px">
+      <input type="checkbox" ${mqQuiet() ? 'checked' : ''} onchange="App.mqQuiet(this.checked)"> ${t('mq_quiet')}</label>
+    <div class="tiny">${t('mq_quiet_h')}</div>
   </div>`;
 }
 function mediaQueueModal(){
@@ -11466,7 +12395,15 @@ function mediaSettingsCardHtml(){
     <label class="opt ${((state.data.org_settings || {}).prop_hide_prices !== false) ? 'on' : ''}">
       <input type="checkbox" ${((state.data.org_settings || {}).prop_hide_prices !== false) ? 'checked' : ''}
         onchange="App.setOrgFlag('prop_hide_prices', this.checked)"> ${t('prop_hide')}</label>
-    <div class="tiny gd-hint">${t('prop_hide_h')}</div>` : ''}
+    <div class="tiny gd-hint">${t('prop_hide_h')}</div>
+    <label class="opt ${((state.data.org_settings || {}).rep_all_create !== false) ? 'on' : ''}">
+      <input type="checkbox" ${((state.data.org_settings || {}).rep_all_create !== false) ? 'checked' : ''}
+        onchange="App.setOrgFlag('rep_all_create', this.checked)"> ${t('rep_all_create')}</label>
+    <div class="tiny gd-hint">${t('rep_all_create_h')}</div>
+    <label class="opt ${((state.data.org_settings || {}).rep_hide_prices) ? 'on' : ''}">
+      <input type="checkbox" ${((state.data.org_settings || {}).rep_hide_prices) ? 'checked' : ''}
+        onchange="App.setOrgFlag('rep_hide_prices', this.checked)"> ${t('rep_hide')}</label>
+    <div class="tiny gd-hint">${t('rep_hide_h')}</div>` : ''}
     <label class="opt ${((state.data.org_settings || {}).gd_inv_helpers) ? 'on' : ''}">
       <input type="checkbox" ${((state.data.org_settings || {}).gd_inv_helpers) ? 'checked' : ''}
         onchange="App.setOrgFlag('gd_inv_helpers', this.checked)"> ${t('inv_helpers')}</label>
@@ -11991,7 +12928,7 @@ initMedia();
 const BK_TABLES = ['profiles','counterparties','complexes','aux_equipment','work_types',
   'equipment_types','size_types','extra_works','product_types','price_list',
   'counterparty_prices','equipment_stock','org_settings','hidden_staff',
-  'code_requests','complex_code_history','proposals','jobs','placements',
+  'code_requests','complex_code_history','proposals','repairs','jobs','placements',
   'ext_requests','media'];
 const BK_EXPORT_ONLY = ['audit_log','tech_log'];
 const BK_PAGE = 1000, BK_CHUNK = 300;
@@ -12594,7 +13531,7 @@ const FILE_FMT_DEF = '{DATE}_{CX}_{UNIT}_{NAME}_{SEQ}';
 const DOC_TOKENS  = ['TYPE','DATE','YEAR','CP','CX','UNIT','TECH','WT','SEQ'];
 const FILE_TOKENS = ['DATE','YEAR','CP','CX','UNIT','TECH','WT','NAME','KIND','SEQ'];
 /* метки типов: работа, пропозал, пикап, продление */
-const DOC_TYPE_TAG = { job: 'WORK', prop: 'PROP', pick: 'PICK', ext: 'LONG' };
+const DOC_TYPE_TAG = { job: 'WORK', prop: 'PROP', pick: 'PICK', ext: 'LONG', rep: 'REP' };
 
 function docFmt(){ return String(((state.data && state.data.org_settings) || {}).doc_no_fmt || DOC_FMT_DEF); }
 function fileFmt(){ return String(((state.data && state.data.org_settings) || {}).file_name_fmt || FILE_FMT_DEF); }
@@ -12870,6 +13807,11 @@ async function savePt(id, sort){
 function dayStatsCardsHtml(jobsByWt, eqByType, over){
   const totalJobs = jobsByWt.reduce((s, x) => s + x.count, 0);
   const totalPk = eqByType.reduce((s, x) => s + x.count, 0);
+  /* v1.08.22: сначала — сколько АДРЕСОВ объехать, и только потом сколько
+     единиц оборудования. Считаем по документам: один юнит — одна остановка,
+     сколько бы приборов там ни стояло. */
+  const pkStops = new Set(pickupsOn(state.selDate || todayISO())
+    .filter(p => !p.picked_up).map(p => p.job_id)).size;
   const wtLines = jobsByWt.map(x => `
       <span class="wt-line"><i class="wt-dot" style="background:${x.color}"></i><span class="wt-nm" style="color:${x.color}" title="${esc(x.name)}">${esc(x.name)}</span><b>${x.count}</b></span>`).join('');
   const eqBadges = eqByType.map(x => `
@@ -12883,7 +13825,8 @@ function dayStatsCardsHtml(jobsByWt, eqByType, over){
       ${jobsByWt.length ? `<div class="wt-lines">${wtLines}</div>` : `<div class="tiny dim-empty">${t('day_empty')}</div>`}
     </div>
     <div class="dcard c-gray">
-      <div class="dcard-head"><span class="n">${totalPk}</span><span class="l">${t('stats_pk')}</span>${over > 0 ? `<span class="chip bad sm-chip">${t('stats_over')}: ${over}</span>` : ''}</div>
+      <div class="dcard-head"><span class="n">${pkStops}</span><span class="l">${t('stats_stops')}</span>${over > 0 ? `<span class="chip bad sm-chip">${t('stats_over')}: ${over}</span>` : ''}</div>
+      <div class="tiny" style="margin:-2px 0 6px">${totalPk} ${t('stats_pk_eq')}</div>
       ${eqByType.length ? `<div class="eq-badges">${eqBadges}</div>` : `<div class="tiny dim-empty">${t('day_empty')}</div>`}
     </div>
   </div>`;

@@ -19,6 +19,8 @@ echo 'window.TECHLOG_CONFIG = {};' > /tmp/tlrun/config.js
 (cd /tmp/tlrun && python3 -m http.server 8099 &) && sleep 2
 
 node tests/ui-check.js 8099            # интерфейс + прокрутка, все экраны
+node tests/repairs.js 8099             # документ ремонтных работ: сквозной сценарий
+node tests/repairs-roles.js 8099       # он же: права работника, менеджера, админа
 node tests/scroll-regress.js 8099      # перенос карточек, доска, режимы
 node tests/ui-matrix.js 8099 --shots   # 24 устройства: телефоны, планшеты, мониторы
 ```

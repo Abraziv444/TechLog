@@ -23,7 +23,7 @@ const PORT = process.argv[2] || process.env.PORT || '8099';
 const EXE = process.env.PW_CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const STRICT = process.env.UI_STRICT === '1';
 
-const SCREENS = ['home', 'board', 'proposals', 'map', 'reports', 'stats', 'dirs', 'journal', 'settings'];
+const SCREENS = ['home', 'board', 'proposals', 'repairs', 'map', 'reports', 'stats', 'dirs', 'journal', 'settings'];
 const MODES = [
   { name: 'телефон', vp: { width: 414, height: 896 }, mode: 'mobile' },
   { name: 'ПК',      vp: { width: 1440, height: 900 }, mode: 'desktop' },
