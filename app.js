@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.07.99';
+const APP_VERSION = '1.08.03';
 const DB_SQL_FILE = 'full-install-1_07_98.sql';   // v1.07.98: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -4885,11 +4885,29 @@ function viewArchive(){
 }
 /* Сверка: что у документов есть на Диске + опрос самого Диска */
 let auditRes = null;
+let _audCache = null, _audKey = '';
 function auditCardHtml(){
-  const live = liveJobs();
-  const withPdf = live.filter(j => mediaOf(j.id).pdf).length;
-  const withPh  = live.filter(j => mediaOf(j.id).photo || mediaOf(j.id).video).length;
-  const arch = archJobs().reduce((a, j) => a + mediaOf(j.id).total, 0);
+  /* v1.08.01: три прохода по всем работам с фильтром по медиа на каждый рендер —
+     держим результат до следующего изменения данных */
+  const key = trDataKey();
+  if (!_audCache || _audKey !== key){
+    const byJob = new Map();
+    (state.data.media || []).forEach(m => {
+      const v = byJob.get(m.job_id) || { pdf:0, photo:0, video:0, file:0, total:0 };
+      if (m.kind === 'invoice') v.pdf++; else if (m.kind === 'video') v.video++;
+      else if (m.kind === 'file') v.file++; else v.photo++;
+      v.total++; byJob.set(m.job_id, v);
+    });
+    const g = (id) => byJob.get(id) || { pdf:0, photo:0, video:0, file:0, total:0 };
+    const lj = liveJobs();
+    _audKey = key;
+    _audCache = { total: lj.length,
+      withPdf: lj.filter(j => g(j.id).pdf).length,
+      withPh:  lj.filter(j => g(j.id).photo || g(j.id).video).length,
+      arch:    archJobs().reduce((a, j) => a + g(j.id).total, 0) };
+  }
+  const live = { length: _audCache.total };
+  const withPdf = _audCache.withPdf, withPh = _audCache.withPh, arch = _audCache.arch;
   return `<div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('steth')} ${t('aud_card')}</div>
     <div class="tiny" style="margin-bottom:6px">${t('aud_hint')}</div>
@@ -5100,7 +5118,7 @@ function dirStock(){
     const avail = (+s.total||0) - (+s.broken||0) - (+s.in_repair||0) - fld;
     return `<div class="rowline" style="flex-wrap:wrap">
       <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>
-      <div class="grow"><b>${esc(et.name)}</b>
+      <div class="grow" style="min-width:min(100%,180px)"><b>${esc(et.name)}</b>
         <div class="tiny">${t('stock_field')}: <b>${fld}</b> · ${t('stock_avail')}: <b style="color:${avail<0?'var(--red)':'var(--green)'}">${avail}</b></div></div>
       <div class="stock-ctl">
         <span class="tiny">${t('stock_total')}</span>${cell(et,'total',+s.total||0)}
@@ -7776,6 +7794,23 @@ function trCanWrite(kind, doc){
   return isAdmin() || doc.technician_id === state.user.id || isJobSharedWithMe(doc)
       || (isManager() && !doc.technician_id);
 }
+/* v1.08.01: на экране «Настройки» карточки переводов и сверки пересчитывали
+   всю базу на КАЖДЫЙ рендер — а рендер случается и по таймеру синхронизации.
+   На машине заказчика это дало блокировку главного потока на 121 мс прямо во
+   время прокрутки. Считаем один раз на версию данных. */
+let _trCache = null, _trCacheKey = '';
+function trDataKey(){
+  const d = state.data || {};
+  return (d.jobs || []).length + '/' + (d.proposals || []).length + '/' +
+         (d.media || []).length + '/' + (state.lastSync || '') + '/' + (state.user && state.user.id || '');
+}
+function trPendingCached(){
+  const k = trDataKey();
+  if (_trCache && _trCacheKey === k) return _trCache;
+  _trCacheKey = k; _trCache = trPending();
+  return _trCache;
+}
+function trCacheDrop(){ _trCache = null; _trCacheKey = ''; _audCache = null; _audKey = ''; }
 function trPending(){
   const d = state.data || {};
   const out = [];
@@ -7854,7 +7889,7 @@ async function trRunPending(silent){
   trBusy = false;
   if (done) toast('✓ ' + t('tr_done_n') + ': ' + done + (list.length > done ? ' / ' + list.length : ''));
   if (err) toast('⛔ ' + t('translate_err'), 'err');
-  saveLocal(); render();
+  trCacheDrop(); saveLocal(); render();
 }
 /* Перевод одного документа по кнопке (карточка документа или список) */
 async function trOneDoc(kind, id){
@@ -7918,6 +7953,7 @@ function trTick(){
     const o = state.data.org_settings || {};
     const remind = o.tr_remind !== false;                 // по умолчанию напоминаем
     if (!remind && !o.tr_auto) return;
+    trCacheDrop();                       // почасовая проверка считает заново
     const last = +localStorage.getItem(TR_LS_LAST) || 0;
     if (Date.now() - last < trIntervalMs()) return;
     const pend = trPending();
@@ -8005,7 +8041,7 @@ function trPdfSkip(){ closeModal(); const go = _trGo; _trGo = null; if (go) go()
 /* ---------- карточка в настройках ---------- */
 function trSettingsCardHtml(){
   const o = (state.data && state.data.org_settings) || {};
-  const n = trPending().length;
+  const n = trPendingCached().length;
   return `<div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('globe')} ${t('tr_set_card')}</div>
     <div class="rowline">
@@ -8606,7 +8642,8 @@ function propItemsHtml(){
         oninput="App.propItem(${i},'d',this.value)">${esc(it.d || '')}</textarea>
       <input class="pa" inputmode="decimal" value="${it.a || ''}" placeholder="0"
         oninput="App.propItem(${i},'a',this.value)">
-      <button class="btn btn-ghost sm" onclick="App.propItemDel(${i})">${ic('close')}</button>
+      <button class="btn btn-ghost sm" title="${t('delete')}" aria-label="${t('delete')}"
+        onclick="App.propItemDel(${i})">${ic('close')}</button>
     </div>`).join('');
 }
 function viewProposalForm(){
@@ -10547,6 +10584,16 @@ function gdFolderId(v){
 async function gdLoadCfg(force){
   if (!HAS_SB || !isAdmin()) return;
   if (gdCfg.loaded && !force) return;
+  /* v1.08.03: если edge-функции ещё не задеплоены, запрос падает, gdCfg.loaded
+     остаётся снятым — и КАЖДЫЙ следующий рендер «Настроек» заводил новый
+     запрос. При обновлении по таймеру это давало поток неудачных обращений и
+     подтормаживание экрана. Держим паузу между попытками. */
+  if (!force){
+    const now = Date.now();
+    if (gdCfg._busy || (gdCfg._try && now - gdCfg._try < 30000)) return;
+    gdCfg._try = now;
+  }
+  gdCfg._busy = true;
   gdCfg.loaded = true;
   try{
     const token = await mediaJwt();
@@ -10555,6 +10602,7 @@ async function gdLoadCfg(force){
     const j = await r.json().catch(() => ({}));
     if (j && j.cfg){ Object.assign(gdCfg, j.cfg); if (state.screen === 'settings') render(); }
   }catch(e){ dlog('gd cfg', e); }     // функции не задеплоены — форма останется на вводе
+  finally { gdCfg._busy = false; }
 }
 async function gdFetchSecrets(){
   try{

@@ -395,6 +395,24 @@
        (overlay z-index 1100 против 45 и 40) — сравнивать их рамки бессмысленно,
        иначе высокое окно каждый раз «уходит под шапку». */
     var inOverlay = function (el) { return !!(el.closest && el.closest('.overlay')); };
+    /* v1.08.02: элемент, укатившийся за край горизонтальной карусели, физически
+       обрезан родителем — он не «под панелью», его вообще не видно. Раньше
+       кнопки справочников, уехавшие влево, попадали в отчёт как недоступные. */
+    var clipped = function (el) {
+      try {
+        var r = el.getBoundingClientRect(), p = el.parentElement;
+        while (p && p !== document.body) {
+          var cs = getComputedStyle(p);
+          if (/auto|scroll|hidden/.test(cs.overflowX + cs.overflowY)) {
+            var pr = p.getBoundingClientRect();
+            if (r.right <= pr.left + 1 || r.left >= pr.right - 1 ||
+                r.bottom <= pr.top + 1 || r.top >= pr.bottom - 1) return true;
+          }
+          p = p.parentElement;
+        }
+      } catch (e) {}
+      return false;
+    };
     /* низ страницы: что осталось под нижней панелью — до того уже не
        доскроллить, значит элемент недоступен навсегда */
     var bar = document.querySelector('.tabbar');
@@ -402,7 +420,7 @@
       window.scrollTo(0, document.documentElement.scrollHeight);
       var br = box(bar);
       hits().forEach(function (el) {
-        if (items.length > 8 || bar.contains(el) || inOverlay(el)) return;
+        if (items.length > 8 || bar.contains(el) || inOverlay(el) || clipped(el)) return;
         var r = box(el);
         if (r.b > br.t + 2 && r.t < br.b - 2 && r.r > br.l && r.l < br.r)
           items.push({ level: 'err', msg: 'недоступно под нижней панелью: ' + pathOf(el), el: el });
@@ -414,7 +432,7 @@
       window.scrollTo(0, 0);
       var tr = box(top);
       hits().forEach(function (el) {
-        if (items.length > 12 || top.contains(el) || inOverlay(el)) return;
+        if (items.length > 12 || top.contains(el) || inOverlay(el) || clipped(el)) return;
         var r = box(el);
         if (r.t < tr.b - 2 && r.b > tr.t + 2 && r.r > tr.l && r.l < tr.r)
           items.push({ level: 'err', msg: 'недоступно под шапкой: ' + pathOf(el), el: el });
@@ -537,6 +555,15 @@
         done(mk('scroll', T('c_scroll'), items));
         return;
       }
+      /* v1.08.00: рядом с числами — из чего страница состоит. По этим строкам
+         видно, отчего рывки: длинный список, много полей ввода, липкие блоки. */
+      try {
+        var nodes = qsa('#app *').length, inputs = qsa('#app input, #app textarea').length;
+        var sticky = qsa('#app *').filter(function (e) {
+          try { return getComputedStyle(e).position === 'sticky'; } catch (er) { return false; } }).length;
+        items.push({ level: 'ok', msg: 'страница: высота ' + document.documentElement.scrollHeight +
+          'px, узлов ' + nodes + ', полей ' + inputs + ', липких блоков ' + sticky, el: null });
+      } catch (e) {}
       var canScroll = document.documentElement.scrollHeight - innerHeight > 120;
       if (!canScroll) { finish(); return; }
       window.scrollTo(0, 0);
@@ -927,8 +954,15 @@
        ['[onchange*="gd_inv_by_tech"]', 'галочка «инвойсы по папкам сотрудников»']
       ].forEach(function (p) {
         var el = document.querySelector(p[0]);
-        items.push({ level: el ? 'ok' : 'warn',
-          msg: p[1] + ': ' + (el ? 'на месте' : 'не показана (нужны права администратора)'), el: el });
+        /* v1.08.01: раньше писали «нужны права администратора» даже админу.
+           Причин две: роль и незагруженная карточка Google Drive. */
+        var why = 'не показана';
+        try {
+          var adm = /админ|admin/i.test((document.querySelector('.role-tag') || {}).textContent || '');
+          why = adm ? 'не показана — карточка Google Drive ещё не загрузилась (нет связи с Supabase?)'
+                    : 'не показана — роль не администратор';
+        } catch (e) {}
+        items.push({ level: el ? 'ok' : 'warn', msg: p[1] + ': ' + (el ? 'на месте' : why), el: el });
       });
     }
 
