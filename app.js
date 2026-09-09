@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.05';
+const APP_VERSION = '1.08.06';
 const DB_SQL_FILE = 'full-install-1_07_98.sql';   // v1.07.98: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -67,6 +67,21 @@ function errStr(e){
   const det = e.details || '';
   const hint = e.hint || '';
   return [code, msg, det, hint].filter(Boolean).join(' · ') || (()=>{ try{ return JSON.stringify(e); }catch(_){ return String(e); } })();
+}
+/* v1.08.06: кольцевой журнал долгих собственных операций. Диагностика берёт
+   из него, что именно наш код делал во время замера прокрутки — раньше в
+   отчёте была только длительность блокировки, без имени виновника. */
+window.TLPERF = { log: [] };
+function perf(name, fn){
+  const t = performance.now();
+  try { return fn(); }
+  finally {
+    const ms = performance.now() - t;
+    if (ms > 8){
+      TLPERF.log.push({ n: name, ms: Math.round(ms), at: Math.round(t) });
+      if (TLPERF.log.length > 40) TLPERF.log.shift();
+    }
+  }
 }
 function dlog(){
   const ts = new Date().toISOString().slice(0,19).replace('T',' ');
@@ -1589,6 +1604,9 @@ try{
   addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveFlush(); });
 }catch(e){}
 function saveLocalNow(){
+  return perf('запись кэша', () => saveLocalNowInner());
+}
+function saveLocalNowInner(){
   _saveDirty = false;
   if (_saveTimer){ clearTimeout(_saveTimer); _saveTimer = null; }
   try { return saveLocalUnsafe(); }
@@ -2990,7 +3008,7 @@ function render(){
   else if (state.screen === 'archive') body = viewArchive();   // v1.07.88
   else if (state.screen === 'board') body = viewBoard();       // v1.07.25
   else if (state.screen === 'proposals') body = viewProposals(); // v1.07.27
-  app.innerHTML = viewHeader() + body + viewTabbar();
+  perf('отрисовка ' + state.screen, () => { app.innerHTML = viewHeader() + body + viewTabbar(); });
   if (!$('#overlay') && app.inert) modalTrap(false);   // v1.07.83: страховка от «залипшего» inert
   /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
   const scls = 'scr-' + state.screen;

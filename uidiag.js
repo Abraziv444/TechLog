@@ -29,6 +29,11 @@
      ------------------------------------------------------------------ */
   var BLOCKING = [];      // блокирующие слушатели прокрутки
   var LONG = [];          // длинные задачи главного потока
+  var SCROLL_WIN = [];    // v1.08.06: окна замеров прокрутки — чтобы понять, куда попала задача
+  /* Глубокий разбор прокрутки (три прохода + контроль) занимает секунды —
+     в обходе всех экранов это растянуло бы прогон на минуты. Кнопка на
+     экране считает подробно, обход — быстро. */
+  var DEEP = true;
 
   try {
     var origAdd = EventTarget.prototype.addEventListener;
@@ -55,7 +60,18 @@
   try {
     new PerformanceObserver(function (l) {
       l.getEntries().forEach(function (e) {
-        LONG.push({ ms: Math.round(e.duration), at: Math.round(e.startTime) });
+        /* v1.08.06: у длинной задачи есть «атрибуция» — чей это счёт: наш
+           документ, соседний фрейм или вообще неизвестно (обычно так видно
+           расширения браузера и сборку мусора). Сохраняем её целиком. */
+        var att = '';
+        try {
+          att = (e.attribution || []).map(function (a) {
+            return [a.name, a.containerType, a.containerName, a.containerSrc]
+              .filter(Boolean).join('/');
+          }).join(' · ');
+        } catch (er) {}
+        LONG.push({ ms: Math.round(e.duration), at: Math.round(e.startTime),
+                    name: e.name || '', att: att });
         if (LONG.length > 60) LONG.shift();
       });
     }).observe({ entryTypes: ['longtask'] });
@@ -564,15 +580,133 @@
         items.push({ level: 'ok', msg: 'страница: высота ' + document.documentElement.scrollHeight +
           'px, узлов ' + nodes + ', полей ' + inputs + ', липких блоков ' + sticky, el: null });
       } catch (e) {}
+      /* v1.08.06 · ИССЛЕДОВАНИЕ РЫВКОВ.
+         Отчёт показывал только «блокировка N мс» — этого мало, чтобы понять,
+         чей это счёт. Теперь на время замера включаем ещё три наблюдателя
+         (события ввода, сеть, переносы вёрстки), запоминаем состояние кучи и
+         снимаем ТРИ прохода: разовая заминка отличается от постоянной. После
+         этого — контрольный проход с СПРЯТАННЫМ содержимым: если и там встаёт,
+         дело не в нашей разметке, а во внешнем (расширения, сборка мусора). */
+      var EV = [], RES = [], SHIFT = 0, obs = [];
+      SCROLL_WIN = [];
+      try {
+        var oEv = new PerformanceObserver(function (l) {
+          l.getEntries().forEach(function (e) {
+            if (e.duration >= 40) EV.push({ n: e.name, d: Math.round(e.duration),
+              proc: Math.round((e.processingEnd || 0) - (e.processingStart || 0)) });
+          });
+        });
+        oEv.observe({ type: 'event', durationThreshold: 40, buffered: false });
+        obs.push(oEv);
+      } catch (e) {}
+      try {
+        var oRes = new PerformanceObserver(function (l) {
+          l.getEntries().forEach(function (e) {
+            RES.push({ n: String(e.name).replace(/^https?:\/\//, '').slice(0, 48), d: Math.round(e.duration) });
+          });
+        });
+        oRes.observe({ type: 'resource', buffered: false });
+        obs.push(oRes);
+      } catch (e) {}
+      try {
+        var oLs = new PerformanceObserver(function (l) {
+          l.getEntries().forEach(function (e) { if (!e.hadRecentInput) SHIFT += e.value; });
+        });
+        oLs.observe({ type: 'layout-shift', buffered: false });
+        obs.push(oLs);
+      } catch (e) {}
+      var heap0 = 0; try { heap0 = (performance.memory || {}).usedJSHeapSize || 0; } catch (e) {}
+      var t0 = performance.now();
+
       var canScroll = document.documentElement.scrollHeight - innerHeight > 120;
       if (!canScroll) { finish(); return; }
-      window.scrollTo(0, 0);
-      requestAnimationFrame(function tick(now) {
-        frames.push(now - last); last = now;
-        window.scrollBy(0, 36);
-        if (++i < 45) requestAnimationFrame(tick);
-        else { window.scrollTo(0, y0); finish(); }
-      });
+
+      var pass = 0, passStats = [];
+      runPass();
+      function runPass() {
+        i = 0; frames = []; last = performance.now();
+        SCROLL_WIN.push({ n: 'проход ' + (pass + 1), a: performance.now(), b: 0 });
+        window.scrollTo(0, 0);
+        requestAnimationFrame(function tick(now) {
+          frames.push(now - last); last = now;
+          window.scrollBy(0, 36);
+          if (++i < 45) requestAnimationFrame(tick);
+          else {
+            window.scrollTo(0, y0);
+            var f = frames.slice(3).sort(function (a, b) { return a - b; });
+            SCROLL_WIN[SCROLL_WIN.length - 1].b = performance.now();
+            passStats.push({ med: f[Math.floor(f.length / 2)] || 0,
+                             p95: f[Math.floor(f.length * 0.95)] || 0,
+                             jank: f.filter(function (x) { return x > 34; }).length });
+            if (DEEP && ++pass < 3) setTimeout(runPass, 120);
+            else if (DEEP) controlPass();
+            else finishDeep();
+          }
+        });
+      }
+      /* контроль: то же самое, но содержимое спрятано и прокручивается
+         пустое полотно той же высоты */
+      function controlPass() {
+        var app = document.getElementById('app');
+        var ghost = document.createElement('div');
+        var wasLong = LONG.length;
+        try {
+          ghost.style.cssText = 'height:' + document.documentElement.scrollHeight + 'px';
+          document.body.appendChild(ghost);
+          if (app) app.style.display = 'none';
+        } catch (e) {}
+        var cf = [], cl = performance.now(), ci = 0;
+        SCROLL_WIN.push({ n: 'контроль', a: performance.now(), b: 0 });
+        window.scrollTo(0, 0);
+        requestAnimationFrame(function tick(now) {
+          cf.push(now - cl); cl = now;
+          window.scrollBy(0, 36);
+          if (++ci < 45) requestAnimationFrame(tick);
+          else {
+            SCROLL_WIN[SCROLL_WIN.length - 1].b = performance.now();
+            try { if (app) app.style.display = ''; ghost.remove(); } catch (e) {}
+            window.scrollTo(0, y0);
+            var s2 = cf.slice(3).sort(function (a, b) { return a - b; });
+            items.push({ level: 'ok', msg: 'контрольный проход (содержимое спрятано): медиана ' +
+              (s2[Math.floor(s2.length / 2)] || 0).toFixed(1) + ' мс, p95 ' +
+              (s2[Math.floor(s2.length * 0.95)] || 0).toFixed(1) + ' мс, блокировок за него ' +
+              (LONG.length - wasLong) + ' — если и здесь встаёт, дело не в нашей разметке', el: null });
+            obs.forEach(function (o) { try { o.disconnect(); } catch (e) {} });
+            finishDeep();
+          }
+        });
+      }
+      function finishDeep() {
+        /* сводка по трём проходам — видно, разовая заминка или постоянная */
+        try {
+          items.push({ level: 'ok', msg: 'три прохода: ' + passStats.map(function (p2, k) {
+            return (k + 1) + ') медиана ' + p2.med.toFixed(1) + ' / p95 ' + p2.p95.toFixed(1) +
+                   ' / просадок ' + p2.jank; }).join(' · '), el: null });
+        } catch (e) {}
+        if (EV.length) items.push({ level: 'warn',
+          msg: 'долгие события ввода: ' + EV.slice(0, 4).map(function (e) {
+            return e.n + ' ' + e.d + ' мс (обработчик ' + e.proc + ' мс)'; }).join(' · ') +
+            ' — если обработчик почти 0, время съела отрисовка, а не наш код', el: null });
+        if (RES.length) items.push({ level: 'warn',
+          msg: 'сеть во время прокрутки: ' + RES.length + ' запрос(ов), дольше всех ' +
+            RES.sort(function (a, b) { return b.d - a.d; })[0].n + ' ' + RES[0].d + ' мс', el: null });
+        if (SHIFT > 0.01) items.push({ level: 'warn',
+          msg: 'вёрстка переезжала во время прокрутки, суммарный сдвиг ' + SHIFT.toFixed(3), el: null });
+        try {
+          var heap1 = (performance.memory || {}).usedJSHeapSize || 0;
+          if (heap0 && heap1) items.push({ level: 'ok',
+            msg: 'куча JS: ' + (heap0 / 1048576).toFixed(1) + ' → ' + (heap1 / 1048576).toFixed(1) +
+                 ' МБ (рост за замер ' + ((heap1 - heap0) / 1048576).toFixed(1) + ' МБ; резкий рост = сборка мусора)', el: null });
+        } catch (e) {}
+        try {
+          var tl = (window.TLPERF && window.TLPERF.log || []).filter(function (x) { return x.at >= t0; });
+          items.push({ level: tl.length ? 'warn' : 'ok',
+            msg: tl.length ? 'наш код во время замера: ' + tl.slice(0, 5).map(function (x) {
+                   return x.n + ' ' + x.ms + ' мс'; }).join(' · ')
+                 : 'наш код во время замера ничего долгого не выполнял (> 8 мс)', el: null });
+        } catch (e) {}
+        finish();
+      }
 
       function finish() {
         if (frames.length > 4) {
@@ -584,14 +718,39 @@
         }
         if (LONG.length) {
           var worst = Math.max.apply(null, LONG.map(function (x) { return x.ms; }));
+          try {
+            var wl = LONG.filter(function (x) { return x.ms === worst; })[0] || {};
+            var win = 'вне замеров';
+            (SCROLL_WIN || []).forEach(function (w) {
+              if (w.b && wl.at >= w.a - 20 && wl.at <= w.b + 20) win = w.n; });
+            items.push({ level: 'ok', msg: 'самая долгая задача: ' + worst + ' мс, ' + win +
+              ', источник «' + (wl.att || wl.name || 'браузер не сообщает') +
+              '» («self» — наш документ; «unknown» — обычно расширение браузера или сборка мусора; ' +
+              'если задача попала в «контроль», наша разметка ни при чём)', el: null });
+          } catch (e) {}
           /* одна случайная задержка бывает от сборки мусора и на выводы не
              тянет; дефект — это либо очень долгая пауза, либо несколько подряд */
-          var bad = worst > 200 || LONG.length > 2;
-          /* v1.07.79: одна пауза короче 120 мс — фон браузера (сборка мусора,
-             декодирование), чинить в приложении нечего: показываем справочно */
-          var calm = LONG.length === 1 && worst <= 120;
-          items.push({ level: bad ? 'err' : (calm ? 'ok' : 'warn'),
-                       msg: 'во время прокрутки главный поток блокировался ' + LONG.length + ' раз, дольше всего на ' + worst + ' мс', el: null });
+          /* v1.08.06: считаем отдельно то, что попало В окна замеров, и то,
+             что случилось между ними. Раньше строка «во время прокрутки
+             блокировался…» показывала и посторонние задачи — из-за этого
+             искали причину в вёрстке, хотя прокрутка была ни при чём. */
+          var inWin = LONG.filter(function (x) {
+            return (SCROLL_WIN || []).some(function (w) {
+              return w.b && x.at >= w.a - 20 && x.at <= w.b + 20; });
+          });
+          var outWin = LONG.length - inWin.length;
+          var wIn = inWin.length ? Math.max.apply(null, inWin.map(function (x) { return x.ms; })) : 0;
+          var bad = wIn > 200 || inWin.length > 2;
+          var calm = inWin.length <= 1 && wIn <= 120;
+          items.push({ level: bad ? 'err' : (inWin.length ? (calm ? 'ok' : 'warn') : 'ok'),
+                       msg: inWin.length
+                         ? ('во время самой прокрутки главный поток блокировался ' + inWin.length +
+                            ' раз, дольше всего на ' + wIn + ' мс')
+                         : ('во время самой прокрутки блокировок не было; ' + outWin +
+                            ' задач(и) случились между замерами — это фон браузера, вкладок или расширений'),
+                       el: null });
+          if (inWin.length && outWin) items.push({ level: 'ok',
+            msg: 'ещё ' + outWin + ' длинн(ая/ых) задач(а) между замерами — к прокрутке отношения не имеет', el: null });
         }
         items.push({ level: 'ok', msg: 'высота страницы ' + h + 'px, узлов ' + nodes, el: null });
         done(mk('scroll', T('c_scroll'), items));
@@ -1154,6 +1313,7 @@
                ((document.getElementById('app') || {}).className || '').replace('scr-', '') || 'home';
     var out = [], done = 0, total = available().length;
 
+    DEEP = false;                    // обход — быстрый замер
     function step(label, enter, leave) {
       return Promise.resolve()
         .then(function () {
@@ -1276,6 +1436,7 @@
     if (deep) chain = chain.then(phaseDirs).then(phaseDocs).then(phaseCalendar);
     return chain
       .then(function () {
+        DEEP = true;                 // кнопка на экране снова считает подробно
         closeAny();
         try { A0.go(back); } catch (e) {}
         ALL = { ts: new Date().toISOString(), env: envInfo(), screens: out,
@@ -1284,6 +1445,7 @@
         return ALL;
       })
       .catch(function (e) {
+        DEEP = true;
         closeAny();
         try { A0.go(back); } catch (e2) {}
         throw e;
