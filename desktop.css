@@ -771,3 +771,9 @@ html.tl-desktop .map-flex{display:grid;grid-template-columns:minmax(0,1fr) 300px
   gap:12px;align-items:start}
 html.tl-desktop .bn-stats{position:sticky;top:10px;margin-top:0}
 html.tl-desktop .map-flex .map-box{height:60vh}
+
+/* ===================== v1.08.33 ===================== */
+.tl-desktop .srch-res{ max-height:52vh }
+.tl-desktop .overlay .modal:has(#srch-q){ width:min(620px,92vw) }
+.tl-desktop .overlay .modal:has(.opt-list){ width:min(640px,92vw) }
+.tl-desktop .opt-list{ max-height:48vh }

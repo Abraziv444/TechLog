@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.08.32';
+const VERSION = '1.08.33';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -104,4 +104,25 @@ self.addEventListener('fetch', (e) => {
       return hit || (await net) || Response.error();
     })());
   }
+});
+
+/* v1.08.33: Web Push. Данные приходят JSON'ом {title, body, url}. */
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_e) { d = { title: 'TechLog', body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'TechLog', {
+    body: d.body || '',
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    data: { url: d.url || './' },
+    tag: 'techlog-' + (d.title || ''),
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ('focus' in c) return c.focus(); }
+    return clients.openWindow(url);
+  }));
 });

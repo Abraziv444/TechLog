@@ -36,7 +36,9 @@ const expose = `;window.__T = {
   emSums, emRow, myCarQty, eqCap, setEqDraft: d => { eqDraft = d; }, viewStock, viewTabbar,
   docBlockers, canArchDoc, archReps, chainBlockModal,
   TABLES, BN, bnMiP, bnDestFor, bnSelSet, bnDotHtml, bnCompute, bnDemoFill,
-  bnVehicles, vehFreeNo, vehApplyLocal, dirVehicles, bnChipsHtml, bnStatsHtml
+  bnVehicles, vehFreeNo, vehApplyLocal, dirVehicles, bnChipsHtml, bnStatsHtml,
+  tplOn, polyDecode, optOrder, optRouteLen, srchRows, bnVisible, bnCanTrack,
+  ttVisits, ttDur, codeRemindOn, codeMonths, vehServiceLine, sessMgrOn
 };`;
 
 try {
@@ -763,6 +765,104 @@ console.log('\n— GPS-трекинг Bouncie и автомобили (v1.08.32)
    'bn_stat_title','bn_stat_total','bn_dot_go','bn_dot_site','bn_left','bn_onsite',
    'bn_route_hint','bn_off_admin','bn_no_cars','act_veh_save','act_veh_del']
     .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
+}
+
+console.log('\n— пуши, время, поиск, оптимизация (v1.08.33) —');
+{
+  // словарь: ключи всех новых функций в обоих языках
+  ['push_card','push_on_dev','push_kinds','push_k_job','push_k_pickup','push_k_approve',
+   'push_k_overdue','push_k_reset','push_k_bn_alert','push_k_bn_service','push_ios_hint',
+   'sec_card','mfa_on','mfa_enable','mfa_code','tt_tab','tt_title','tt_onsite','tt_now',
+   'st_cfg','st_last_seen','st_sessions','st_kill','st_bn_access','st_tt_self',
+   'srch_btn','srch_ph','srch_empty','opt_btn','opt_title','opt_apply','opt_open',
+   'tpl_clone','tpl_move_day','tpl_card','feat_card','abk_card','abk_now','code_remind_lbl',
+   'code_old','veh_service','veh_track','veh_mil','bn_no_access','upd_title','demo_sb_only']
+    .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
+
+  // файлы релиза
+  const upd33 = fs.readFileSync(ROOT + '/supabase/update-to-1_08_33.sql', 'utf8');
+  t('update-to-1_08_33: очередь, время, сессии',
+    /push_enqueue/.test(upd33) && /tt_can_see/.test(upd33) && /admin_kill_sessions/.test(upd33)
+    && /site_visits/.test(upd33) && /vehicle_service_set/.test(upd33));
+  const full33 = fs.readFileSync(ROOT + '/supabase/full-install-1_08_33.sql', 'utf8');
+  t('full-install-1_08_33: дельта внутри и чекер обновлён',
+    /push_queue/.test(full33) && /backup_dump/.test(full33) && /v1\.08\.33 — всё на месте/.test(full33));
+  for (const fn of ['push', 'backup']){
+    t('edge ' + fn + ': канонический файл', fs.existsSync(ROOT + '/supabase/functions/' + fn + '/index.ts'));
+  }
+  for (const fn of ['push', 'backup', 'bouncie']){
+    const p = ROOT + '/supabase/functions-dashboard/' + fn + '/index.ts';
+    const ok33 = fs.existsSync(p) && /["']\.\/google\.ts["']/.test(fs.readFileSync(p, 'utf8'))
+      && fs.existsSync(ROOT + '/supabase/functions-dashboard/' + fn + '/google.ts');
+    t('dashboard-копия ' + fn + ' с локальным google.ts', ok33);
+  }
+  const sw = fs.readFileSync(ROOT + '/sw.js', 'utf8');
+  t('sw.js: VERSION 1.08.33 и обработчик пушей',
+    /VERSION = '1\.08\.33'/.test(sw) && /addEventListener\('push'/.test(sw)
+    && /notificationclick/.test(sw));
+
+  // polyline: энкодер в тесте → polyDecode восстанавливает точки
+  const enc = (pts) => {
+    let out = '', la = 0, ln = 0;
+    const one = (v) => { v = v < 0 ? ~(v << 1) : v << 1; let s = '';
+      while (v >= 0x20){ s += String.fromCharCode((0x20 | (v & 0x1f)) + 63); v >>= 5; }
+      return s + String.fromCharCode(v + 63); };
+    for (const [a, b] of pts){
+      const ia = Math.round(a * 1e5), ib = Math.round(b * 1e5);
+      out += one(ia - la) + one(ib - ln); la = ia; ln = ib;
+    }
+    return out;
+  };
+  const pts = [[33.8823, -84.4620], [33.9260, -84.5170], [33.9700, -84.2210]];
+  const dec = T.polyDecode(enc(pts));
+  t('polyDecode: round-trip 3 точек',
+    dec.length === 3 && dec.every((p, i) =>
+      Math.abs(p[0] - pts[i][0]) < 1e-5 && Math.abs(p[1] - pts[i][1]) < 1e-5),
+    JSON.stringify(dec));
+
+  // оптимизация: перепутанная линия выпрямляется, экономия > 0
+  const line = [
+    { lat: 33.90, lng: -84.30 }, { lat: 33.90, lng: -84.10 },
+    { lat: 33.90, lng: -84.20 }, { lat: 33.90, lng: -84.00 }];
+  const before = T.optRouteLen(null, line);
+  const best = T.optOrder(null, line.slice());
+  const after = T.optRouteLen(null, best);
+  t('optOrder: экономия на перепутанной линии', after < before - 1, before.toFixed(1) + '→' + after.toFixed(1));
+  t('optOrder: все точки сохранены', best.length === 4);
+
+  // журнал времени: длительность и вкладка
+  const t0 = new Date('2026-09-11T08:00:00');
+  const t1 = new Date('2026-09-11T09:30:00');
+  t('ttDur: 1:30', T.ttDur(t0.toISOString(), t1.toISOString()) === '1:30');
+  t('демо-сид кладёт визиты за сегодня', T.ttVisits().length >= 3
+    && T.ttVisits().some(v => v.left_at === null));
+
+  // поиск: демо-данные находятся, короткий запрос — подсказка
+  t('поиск: null на коротком запросе', T.srchRows('x') === null);
+  const r = T.srchRows('magnolia');
+  t('поиск: комплексы Magnolia найдены', r && r.cx.length >= 1);
+
+  // доступы Bouncie: воркер по флагу
+  const savedU = T.state.user;
+  T.state.user = T.state.data.profiles.find(p => p.id === 'demo-tech');
+  t('bnVisible: демо-технику дан доступ', T.bnVisible() === true);
+  T.state.user.bn_access = false;
+  t('bnVisible: снятый флаг закрывает трекер', T.bnVisible() === false);
+  T.state.user.bn_access = true;
+  t('bnCanTrack: технику трек по умолчанию закрыт', T.bnCanTrack() === false);
+  T.state.user = savedU;
+  t('bnCanTrack: админу трек открыт', T.bnCanTrack() === true);
+
+  // шаблоны и ТО
+  const orgSaved = T.state.data.org_settings.tpl_on;
+  t('tplOn: включено по умолчанию (null)', T.tplOn() === true);
+  T.state.data.org_settings.tpl_on = false;
+  t('tplOn: выключается чекбоксом', T.tplOn() === false);
+  T.state.data.org_settings.tpl_on = orgSaved;
+  const vSvc = { service_due_mi: 46000, last_odo: 45700 };
+  t('vehServiceLine: жёлтая «до ТО 300 mi»', /300/.test(T.vehServiceLine(vSvc)));
+  vSvc.last_odo = 46200;
+  t('vehServiceLine: красная просрочка', /200/.test(T.vehServiceLine(vSvc)));
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);

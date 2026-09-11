@@ -16,7 +16,12 @@
 --   «админ не может изменить роль» (клиентский RLS-upsert, v1.08.31);
 --   плюс блок v1.08.32 «автомобили»: vehicle_save с синхронизацией номера
 --   в профиле, перевес водителя, CAR_NO_TAKEN/BAD_CAR_NO/FORBIDDEN/NOT_FOUND
---   и ключи Bouncie в app_secrets через admin_set_bouncie_config.
+--   и ключи Bouncie в app_secrets через admin_set_bouncie_config;
+--   плюс блок v1.08.33: триггеры пуш-очереди (назначение/передача, «не себе»,
+--   личные галочки push_prefs, апрув/снятие, пикап vs продление), матрица
+--   прав журнала времени tt_can_see, RLS site_visits (запись только с
+--   сервера), права admin_sessions/kill и vehicle_service_set (порог ТО,
+--   сброс notified, FORBIDDEN, NOT_FOUND).
 --
 -- БЕЗОПАСЕН ДЛЯ ЛЮБОЙ БАЗЫ: всё выполняется в одной транзакции и в конце
 -- откатывается (ROLLBACK) — в таблицах не остаётся ни строки, включая
@@ -428,6 +433,129 @@ begin
     perform pg_temp.eq('парк разобран: технику вернули №99', n, 1);
   end;
 
+
+  -- ===================================================================
+  -- v1.08.33 · ПУШ-ОЧЕРЕДЬ, ЖУРНАЛ ВРЕМЕНИ, СЕССИИ, ТО
+  -- ===================================================================
+  begin
+    declare
+      PJ uuid := 'aa000000-0000-4000-8000-000000000a01';   -- работа для пушей
+      PS uuid := 'aa000000-0000-4000-8000-000000000a02';   -- работа «самому себе»
+      PL uuid := 'aa000000-0000-4000-8000-000000000a03';   -- пикап
+      PX uuid := 'aa000000-0000-4000-8000-000000000a04';   -- продление
+      VS uuid := 'aa000000-0000-4000-8000-000000000a05';   -- машина для ТО
+    begin
+      perform set_config('request.jwt.claim.sub', A::text, true);
+      delete from public.push_queue;                      -- предыдущие блоки могли насорить триггерами
+
+      -- назначение техника B (админом A) → одна строка kind='job' для B
+      insert into public.jobs (id, date, counterparty_id, complex_id, technician_id, unit_number, status, form_data)
+      values (PJ, current_date, CP, CX, B, '901', 'draft', '{}'::jsonb);
+      select count(*) into n from public.push_queue where user_id = B and kind = 'job';
+      perform pg_temp.eq('пуш: новая задача → технику', n, 1);
+
+      -- работа «на себя» (A → A): автору не шлём
+      insert into public.jobs (id, date, counterparty_id, complex_id, technician_id, unit_number, status, form_data)
+      values (PS, current_date, CP, CX, A, '902', 'draft', '{}'::jsonb);
+      select count(*) into n from public.push_queue where user_id = A;
+      perform pg_temp.eq('пуш: самому себе не ставится', n, 0);
+
+      -- личная галочка: prefs.job=false выключает kind='job'
+      update public.profiles set push_prefs = '{"job":false}'::jsonb where id = B;
+      update public.jobs set technician_id = A where id = PJ;
+      update public.jobs set technician_id = B where id = PJ;   -- передача обратно B
+      select count(*) into n from public.push_queue where user_id = B and kind = 'job';
+      perform pg_temp.eq('пуш: prefs.job=false — передача не шлётся', n, 1);   -- осталась только первая
+      update public.profiles set push_prefs = '{}'::jsonb where id = B;
+
+      -- апрув → kind='approve'; снятие → kind='reset'
+      update public.jobs set status = 'approved', approved_total = 100 where id = PJ;
+      select count(*) into n from public.push_queue where user_id = B and kind = 'approve';
+      perform pg_temp.eq('пуш: апрув инвойса', n, 1);
+      update public.jobs set status = 'draft', approved_total = null where id = PJ;
+      select count(*) into n from public.push_queue where user_id = B and kind = 'reset';
+      perform pg_temp.eq('пуш: снятие апрува', n, 1);
+
+      -- пикап (ext_of is null) → kind='pickup'; продление (ext_of) — тихо
+      insert into public.placements (id, job_id, equipment_type_id, qty, days, due_date, technician_id,
+                                     complex_id, counterparty_id, unit_number)
+      values (PL, PJ, E1, 1, 3, current_date + 3, B, CX, CP, '901');
+      select count(*) into n from public.push_queue where user_id = B and kind = 'pickup';
+      perform pg_temp.eq('пуш: новый пикап', n, 1);
+      insert into public.placements (id, job_id, equipment_type_id, qty, days, due_date, technician_id,
+                                     complex_id, counterparty_id, unit_number, ext_of)
+      values (PX, PJ, E1, 1, 2, current_date + 5, B, CX, CP, '901', PL);
+      select count(*) into n from public.push_queue where user_id = B and kind = 'pickup';
+      perform pg_temp.eq('пуш: продление не дублирует пикап', n, 1);
+
+      -- журнал времени: матрица tt_can_see
+      perform pg_temp.eq('время: админ видит любого',
+        case when public.tt_can_see(A, B) then 1 else 0 end, 1);
+      perform pg_temp.eq('время: свой журнал по умолчанию закрыт',
+        case when public.tt_can_see(B, B) then 1 else 0 end, 0);
+      update public.profiles set tt_self = true where id = B;
+      perform pg_temp.eq('время: tt_self открывает свой журнал',
+        case when public.tt_can_see(B, B) then 1 else 0 end, 1);
+      perform pg_temp.eq('время: чужой без прав закрыт',
+        case when public.tt_can_see(B, A) then 1 else 0 end, 0);
+      update public.profiles set tt_others = 'all' where id = B;
+      perform pg_temp.eq('время: tt_others=all открывает всех',
+        case when public.tt_can_see(B, A) then 1 else 0 end, 1);
+      update public.profiles set tt_others = 'list', tt_list = array[A]::uuid[] where id = B;
+      perform pg_temp.eq('время: список — входящий виден',
+        case when public.tt_can_see(B, A) then 1 else 0 end, 1);
+      update public.profiles set tt_list = array[]::uuid[] where id = B;
+      perform pg_temp.eq('время: список — не входящий закрыт',
+        case when public.tt_can_see(B, A) then 1 else 0 end, 0);
+      update public.profiles set tt_self = null, tt_others = null, tt_list = null where id = B;
+
+      -- сессии: технику FORBIDDEN, админу можно
+      begin
+        perform set_config('request.jwt.claim.sub', B::text, true);
+        perform * from public.admin_sessions(A);
+        raise exception 'ТЕСТ [сессии открылись технику]';
+      exception when others then
+        if SQLERRM <> 'FORBIDDEN' then raise; end if;
+        perform nextval('trt_cnt'); raise notice '  ok сессии: технику FORBIDDEN';
+      end;
+      perform set_config('request.jwt.claim.sub', A::text, true);   -- exception откатил GUC
+      select count(*) into n from public.admin_sessions(B);
+      perform pg_temp.eq('сессии: админ читает (пусто — ок)', n, 0);
+      perform public.admin_kill_sessions(B);
+      perform nextval('trt_cnt'); raise notice '  ok сессии: kill выполняется админом';
+
+      -- ТО: установка порога, сброс notified, права, NOT_FOUND
+      insert into public.vehicles (id, make, service_notified) values (VS, 'SvcTest', true);
+      perform public.vehicle_service_set(VS, 87000);
+      select count(*) into n from public.vehicles
+        where id = VS and service_due_mi = 87000 and service_notified = false;
+      perform pg_temp.eq('ТО: порог сохранён, notified сброшен', n, 1);
+      begin
+        perform set_config('request.jwt.claim.sub', B::text, true);
+        perform public.vehicle_service_set(VS, 90000);
+        raise exception 'ТЕСТ [ТО поставил техник]';
+      exception when others then
+        if SQLERRM <> 'FORBIDDEN' then raise; end if;
+        perform nextval('trt_cnt'); raise notice '  ok ТО: технику FORBIDDEN';
+      end;
+      perform set_config('request.jwt.claim.sub', A::text, true);
+      begin
+        perform public.vehicle_service_set('9e000000-0000-4000-8000-0000000000e8', 500);
+        raise exception 'ТЕСТ [ТО несуществующей машины прошло]';
+      exception when others then
+        if SQLERRM <> 'NOT_FOUND' then raise; end if;
+        perform nextval('trt_cnt'); raise notice '  ok ТО: NOT_FOUND';
+      end;
+      perform set_config('request.jwt.claim.sub', A::text, true);
+
+      -- прибраться: пуш-строки и тестовые документы не мешают хвосту
+      delete from public.placements where id in (PL, PX);
+      delete from public.jobs where id in (PJ, PS);
+      delete from public.vehicles where id = VS;
+      delete from public.push_queue;
+    end;
+  end;
+
   -- хвост под ролью authenticated: живой RLS, как у приложения
   set local role authenticated;
 
@@ -465,6 +593,15 @@ begin
   update public.profiles set display_name = 'Взломано' where id = B;
   select count(*) into n from public.profiles where id = B and display_name = 'Взломано';
   perform pg_temp.eq('RLS: чужая строка сотруднику не пишется', n, 0);
+
+  -- v1.08.33: site_visits пишет только сервер — обычной роли insert закрыт
+  begin
+    insert into public.site_visits (driver_id, complex_id, arrived_at, date)
+    values (B, CX, now(), current_date);
+    raise exception 'ТЕСТ [site_visits вставился под authenticated]';
+  exception when insufficient_privilege or sqlstate '42501' then
+    perform nextval('trt_cnt'); raise notice '  ok журнал времени: запись только с сервера (RLS)';
+  end;
 
   raise notice '';
   raise notice 'СКЛАД-РЕГИСТР: все % проверок пройдены — транзакция откатывается, база не изменена.',

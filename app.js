@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.32';
-const DB_SQL_FILE = 'full-install-1_08_32.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.08.33';
+const DB_SQL_FILE = 'full-install-1_08_33.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -188,6 +188,73 @@ const I18N = {
     sync_err: 'Ошибка синхронизации', offline_note: 'Оффлайн: показаны сохранённые данные',
     not_selected: 'Не выбрано', aux_take_hint: 'нажмите то, что нужно взять',
     back_exit_hint: 'Чтобы выйти из приложения, нажмите «назад» ещё раз',
+    demo_sb_only: 'В демо недоступно — работает только с Supabase',
+    feat_card: 'Функции',
+    /* ---- v1.08.33: пуши, время, безопасность, поиск, шаблоны ---- */
+    push_card: 'Уведомления', push_dev: 'На этом устройстве',
+    push_on_dev: 'Включить на устройстве', push_off_dev: 'Отключить на устройстве',
+    push_state_on: 'уведомления включены', push_state_off: 'выключены',
+    push_denied: 'Запрещены в браузере — разрешите в настройках сайта',
+    push_unsupported: 'Браузер не поддерживает пуш-уведомления',
+    push_ios_hint: 'iPhone/iPad: сначала «Поделиться → На экран Домой», пуши работают только из установленного приложения (iOS 16.4+)',
+    push_kinds: 'Какие уведомления получать', push_k_job: 'Новая задача',
+    push_k_pickup: 'Новый пикап', push_k_approve: 'Апрув документа',
+    push_k_overdue: 'Пикап просрочен', push_k_reset: 'Апрув снят',
+    push_k_bn_alert: 'Ошибки машины (Check Engine, топливо)', push_k_bn_service: 'Пора на ТО',
+    push_tip: 'Галочки — что присылать именно вам. Кнопка включает уведомления на этом телефоне или компьютере; на другом устройстве нажмите её ещё раз.',
+    push_need_deploy: 'Разверните Edge Function push (functions-dashboard/push)',
+    sec_card: 'Безопасность (2FA)', mfa_on: 'Двухфакторная защита включена',
+    mfa_off: 'Вход только по паролю', mfa_enable: 'Включить 2FA', mfa_disable: 'Отключить 2FA',
+    mfa_scan: 'Отсканируйте QR в приложении-аутентификаторе (Google Authenticator, 1Password…) или введите секрет вручную, затем впишите 6-значный код.',
+    mfa_code: 'Код из приложения', mfa_confirm: 'Подтвердить', mfa_bad_code: 'Неверный код',
+    mfa_enter: 'Введите код из приложения-аутентификатора', mfa_secret: 'Секрет',
+    mfa_enabled_ok: '2FA включена', mfa_disabled_ok: '2FA отключена',
+    mfa_tip: 'Опциональная защита: при входе после пароля спросим код из приложения-аутентификатора. Включается лично для себя.',
+    tt_tab: 'Время', tt_title: 'Время на объектах', tt_none: 'За этот день записей нет',
+    tt_total: 'итого', tt_onsite: 'На объекте', tt_now: 'ещё на объекте',
+    tt_src: 'по данным GPS-трекера (прибытие/убытие рядом с комплексом)',
+    tt_tip: 'Журнал строится автоматически из поездок Bouncie: конец поездки рядом с комплексом — прибытие, старт следующей — убытие. Кто что видит — настраивается в Штате.',
+    st_cfg: 'Доступы и сессии', st_last_seen: 'Был(а) в сети', st_never: 'ещё не входил(а)',
+    st_bn_access: 'Доступ к трекеру (машины на карте, пробег)',
+    st_bn_service: 'Пуши о ТО машин', st_bn_track: 'Трек дня (маршрут машины)',
+    st_tt_self: 'Видит свой журнал времени', st_tt_others: 'Видит журнал других',
+    st_tt_none: 'нет', st_tt_all: 'всех', st_tt_list: 'выбранных', st_tt_pick: 'Кого видит:',
+    st_sessions: 'Активные сессии', st_kill: 'Завершить все сессии', st_kill_ok: 'Сессии завершены',
+    st_sess_none: 'активных сессий нет', st_dev_unknown: 'Устройство',
+    st_flags_tip: 'Доступ к трекеру по умолчанию есть у админа и менеджера. Включая доступ или ТО, вы автоматически включаете человеку соответствующие пуши — он может снять их у себя в Настройках.',
+    srch_btn: 'Поиск', srch_ph: 'Юнит, № документа, комплекс…',
+    srch_empty: 'Ничего не найдено', srch_hint: 'Ищет по работам, пикапам, пропозалам, ремонтам и комплексам',
+    srch_jobs: 'Работы', srch_pk: 'Пикапы', srch_props: 'Пропозалы', srch_reps: 'Ремонты', srch_cx: 'Комплексы',
+    srch_locked_tip: 'Чужие документы показываются строкой «дата · номер · сотрудник» — открыть их может менеджер или админ.',
+    opt_btn: 'Оптимизировать', opt_title: 'Оптимизация маршрута',
+    opt_now: 'Сейчас', opt_best: 'Оптимально', opt_save: 'экономия',
+    opt_none: 'Порядок уже оптимальный', opt_apply: 'Применить к работам', opt_applied: 'Порядок обновлён',
+    opt_open: 'Открыть маршрут', opt_start_car: 'от текущей позиции машины', opt_start_first: 'от первой точки',
+    opt_note: 'Красные приоритеты остаются первыми; пикапы в списке навигатора идут по своим правилам.',
+    opt_tip: 'Считает объезд «ближайший сосед» от вашей машины (или первой точки) и показывает, сколько миль экономит новый порядок.',
+    tpl_clone: 'Создать такую же', tpl_clone_title: 'Новая работа по образцу',
+    tpl_date: 'Дата новой работы', tpl_created: 'Создана копия работы',
+    tpl_move_day: 'Перенести день', tpl_move_title: 'Перенос дня',
+    tpl_move_to: 'На дату', tpl_move_jobs: 'работы', tpl_move_pk: 'пикапы (срок)',
+    tpl_moved: 'Перенесено', tpl_nothing: 'Переносить нечего',
+    tpl_card: 'Шаблоны и перенос дня', tpl_on_lbl: 'Кнопки «Создать такую же» и «Перенести день»',
+    tpl_tip: '«Создать такую же» копирует комплекс, юнит, тип и состав работ в новую дату. «Перенести день» двигает все черновики и несобранные пикапы дня разом (дождь, форс-мажор).',
+    code_card: 'Коды доступа', code_remind_lbl: 'Напоминать о старых кодах',
+    code_months: 'Порог, мес', code_old: 'код {n} мес',
+    code_old_sum: 'Кодов старше {m} мес: {n}', code_tip: 'Жёлтая метка у комплекса, если код не менялся дольше порога. Видно админу и менеджеру.',
+    sess_card: 'Сессии сотрудников', sess_mgr_lbl: 'Менеджер видит сессии и «был(а) в сети»',
+    abk_card: 'Автобэкап (SQL → Google Drive)', abk_now: 'Сделать бэкап сейчас',
+    abk_auto_lbl: 'Автоматически при входе админа (раз в 7 дней)',
+    abk_last: 'Последний', abk_never: 'ещё не делался', abk_list: 'Копии в Drive',
+    abk_running: 'Делаю бэкап…', abk_ok: 'Бэкап готов', abk_need_fn: 'Разверните Edge Function backup (functions-dashboard/backup)',
+    abk_need_gd: 'Сначала настройте Google Drive (карточка «Google Drive»)',
+    abk_tip: 'Полный SQL-дамп данных (включая логины и пароли-хэши) в папку «TechLog Backups» вашего Drive. Хранится 8 последних копий. Восстановление: чистая база → full-install → файл бэкапа.',
+    veh_service: 'ТО на одометре, mi', veh_service_left: 'до ТО {n} mi',
+    veh_service_over: 'ТО просрочено на {n} mi', veh_mil: 'Check Engine',
+    veh_fuel_low: 'мало топлива', veh_track: 'Трек дня', veh_track_off: 'Скрыть трек',
+    veh_tip: 'Поле «ТО на одометре»: когда до порога останется 500 mi, придёт пуш тем, кому включены уведомления о ТО.',
+    bn_no_access: 'Трекер недоступен: доступ выдаёт админ в Штате',
+    upd_title: 'Что нового (1.08.27 → 1.08.33)',
     select: '— выбрать —', install_hint: 'Меню браузера → «Установить приложение» / «Добавить на главный экран»',
     tab_map: 'Карта', tab_reports: 'Отчёты',
     map_title: 'Карта апарт-комплексов', all_counterparties: 'Все контрагенты',
@@ -925,6 +992,73 @@ const I18N = {
     back_exit_hint: 'Press back again to exit the app',
     select: '— select —', install_hint: 'Browser menu → "Install app" / "Add to Home screen"',
     tab_map: 'Map', tab_reports: 'Reports',
+    demo_sb_only: 'Not available in the demo — Supabase only',
+    feat_card: 'Features',
+    /* ---- v1.08.33 ---- */
+    push_card: 'Notifications', push_dev: 'On this device',
+    push_on_dev: 'Enable on this device', push_off_dev: 'Disable on this device',
+    push_state_on: 'notifications are on', push_state_off: 'off',
+    push_denied: 'Blocked by the browser — allow them in site settings',
+    push_unsupported: 'This browser does not support push notifications',
+    push_ios_hint: 'iPhone/iPad: first “Share → Add to Home Screen”; push works only from the installed app (iOS 16.4+)',
+    push_kinds: 'What to receive', push_k_job: 'New job',
+    push_k_pickup: 'New pickup', push_k_approve: 'Document approved',
+    push_k_overdue: 'Pickup overdue', push_k_reset: 'Approval reset',
+    push_k_bn_alert: 'Vehicle alerts (Check Engine, fuel)', push_k_bn_service: 'Service due',
+    push_tip: 'Checkboxes choose what YOU receive. The button enables push on this phone or computer; press it again on every other device.',
+    push_need_deploy: 'Deploy the push Edge Function (functions-dashboard/push)',
+    sec_card: 'Security (2FA)', mfa_on: 'Two-factor auth is on',
+    mfa_off: 'Password-only sign-in', mfa_enable: 'Enable 2FA', mfa_disable: 'Disable 2FA',
+    mfa_scan: 'Scan the QR in an authenticator app (Google Authenticator, 1Password…) or enter the secret manually, then type the 6-digit code.',
+    mfa_code: 'Code from the app', mfa_confirm: 'Confirm', mfa_bad_code: 'Wrong code',
+    mfa_enter: 'Enter the code from your authenticator app', mfa_secret: 'Secret',
+    mfa_enabled_ok: '2FA enabled', mfa_disabled_ok: '2FA disabled',
+    mfa_tip: 'Optional protection: after the password we ask for a code from your authenticator app. You enable it for yourself.',
+    tt_tab: 'Time', tt_title: 'Time on site', tt_none: 'No records for this day',
+    tt_total: 'total', tt_onsite: 'On site', tt_now: 'still on site',
+    tt_src: 'from the GPS tracker (arrival/departure near a complex)',
+    tt_tip: 'Built automatically from Bouncie trips: a trip ending near a complex = arrival, the next trip starting there = departure. Who sees what is set in Staff.',
+    st_cfg: 'Access & sessions', st_last_seen: 'Last seen', st_never: 'has not signed in yet',
+    st_bn_access: 'Tracker access (cars on map, mileage)',
+    st_bn_service: 'Service-due pushes', st_bn_track: 'Day track (car route)',
+    st_tt_self: 'Sees own time log', st_tt_others: 'Sees others’ logs',
+    st_tt_none: 'no one', st_tt_all: 'everyone', st_tt_list: 'selected', st_tt_pick: 'Who:',
+    st_sessions: 'Active sessions', st_kill: 'Sign out everywhere', st_kill_ok: 'Sessions terminated',
+    st_sess_none: 'no active sessions', st_dev_unknown: 'Device',
+    st_flags_tip: 'Admins and managers have tracker access by default. Granting access or service pushes also turns the matching notifications on for that person — they can switch them off in Settings.',
+    srch_btn: 'Search', srch_ph: 'Unit, document #, complex…',
+    srch_empty: 'Nothing found', srch_hint: 'Searches jobs, pickups, proposals, repairs and complexes',
+    srch_jobs: 'Jobs', srch_pk: 'Pickups', srch_props: 'Proposals', srch_reps: 'Repairs', srch_cx: 'Complexes',
+    srch_locked_tip: 'Other people’s documents show as “date · number · person”; managers and admins can open them.',
+    opt_btn: 'Optimize', opt_title: 'Route optimization',
+    opt_now: 'Current', opt_best: 'Optimized', opt_save: 'saves',
+    opt_none: 'The order is already optimal', opt_apply: 'Apply to jobs', opt_applied: 'Order updated',
+    opt_open: 'Open route', opt_start_car: 'from the car’s current position', opt_start_first: 'from the first stop',
+    opt_note: 'Red priorities stay first; pickups keep their own ordering rules in the navigator list.',
+    opt_tip: 'Runs a nearest-neighbor pass from your car (or the first stop) and shows how many miles the new order saves.',
+    tpl_clone: 'Create same', tpl_clone_title: 'New job from this one',
+    tpl_date: 'Date of the new job', tpl_created: 'Copy created',
+    tpl_move_day: 'Move day', tpl_move_title: 'Move the whole day',
+    tpl_move_to: 'To date', tpl_move_jobs: 'jobs', tpl_move_pk: 'pickups (due)',
+    tpl_moved: 'Moved', tpl_nothing: 'Nothing to move',
+    tpl_card: 'Templates & day move', tpl_on_lbl: '“Create same” and “Move day” buttons',
+    tpl_tip: '“Create same” copies the complex, unit, type and services to a new date. “Move day” shifts all drafts and pending pickups at once (rain, force-majeure).',
+    code_card: 'Access codes', code_remind_lbl: 'Remind about stale codes',
+    code_months: 'Threshold, mo', code_old: 'code {n} mo',
+    code_old_sum: 'Codes older than {m} mo: {n}', code_tip: 'A yellow chip on a complex whose code has not changed longer than the threshold. Admins and managers only.',
+    sess_card: 'Staff sessions', sess_mgr_lbl: 'Managers see sessions and “last seen”',
+    abk_card: 'Auto-backup (SQL → Google Drive)', abk_now: 'Back up now',
+    abk_auto_lbl: 'Automatically on admin sign-in (every 7 days)',
+    abk_last: 'Last', abk_never: 'never yet', abk_list: 'Copies in Drive',
+    abk_running: 'Backing up…', abk_ok: 'Backup done', abk_need_fn: 'Deploy the backup Edge Function (functions-dashboard/backup)',
+    abk_need_gd: 'Configure Google Drive first (the “Google Drive” card)',
+    abk_tip: 'A full SQL dump of your data (logins and password hashes included) into the “TechLog Backups” folder of your Drive. Keeps the last 8 copies. Restore: clean DB → full-install → the backup file.',
+    veh_service: 'Service at odometer, mi', veh_service_left: '{n} mi to service',
+    veh_service_over: 'service overdue by {n} mi', veh_mil: 'Check Engine',
+    veh_fuel_low: 'low fuel', veh_track: 'Day track', veh_track_off: 'Hide track',
+    veh_tip: 'When the odometer gets within 500 mi of this value, a push goes to everyone with service notifications on.',
+    bn_no_access: 'Tracker unavailable: an admin grants access in Staff',
+    upd_title: 'What’s new (1.08.27 → 1.08.33)',
     map_title: 'Apartment complexes map', all_counterparties: 'All counterparties',
     map_search_ph: 'Search address or place…', map_search_go: 'Search',
     map_found_pt: 'Point found', map_add_cx: 'Add as complex',
@@ -1776,6 +1910,311 @@ function fold(key, label, iconName, html){
     ${on ? `<div class="fold-b">${html}</div>` : ''}
   </div>`;
 }
+/* =====================================================================
+   v1.08.33 · WEB PUSH — клиентская часть.
+   Edge Function push сама создаёт VAPID-ключи; здесь: подписка этого
+   устройства, личные галочки (profiles.push_prefs) и «пинг» ?send=1,
+   который разгребает очередь, пока хоть кто-то онлайн (плюс пинаем её
+   сразу после действий-триггеров: назначение, апрув, пикапы).
+   ===================================================================== */
+const PB = { pub: '', lastPing: 0, sub: null, busy: false };
+function pbSupported(){ return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+function pbPrefs(){ return (state.user && state.user.push_prefs) || {}; }
+function pbPref(k){ const v = pbPrefs()[k]; return v !== false; }
+async function pbFetch(qs, body){
+  const token = await mediaJwt(); if (!token) throw new Error('AUTH');
+  const r = await fetch(mediaFN() + '/push' + qs, {
+    method: body ? 'POST' : 'GET',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+async function pbGetPub(){
+  if (PB.pub) return PB.pub;
+  const j = await pbFetch('?pub=1');
+  if (!j.pub) throw new Error('NO_PUB');
+  PB.pub = j.pub; return j.pub;
+}
+function pbB64ToU8(s){
+  const pad = '='.repeat((4 - s.length % 4) % 4);
+  const b = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  const a = new Uint8Array(b.length);
+  for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i);
+  return a;
+}
+async function pbCurrentSub(){
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    PB.sub = await reg.pushManager.getSubscription();
+  }catch(_e){ PB.sub = null; }
+  return PB.sub;
+}
+async function pbSubscribe(){
+  if (!HAS_SB){ toast(t('demo_sb_only'), 'inf'); return; }
+  if (!pbSupported()){ toast('⚠ ' + t('push_unsupported'), 'err'); return; }
+  if (PB.busy) return; PB.busy = true;
+  try{
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted'){ toast('⚠ ' + t('push_denied'), 'err'); return; }
+    const pub = await pbGetPub();
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pbB64ToU8(pub) });
+    await pbFetch('', { op: 'sub', sub: sub.toJSON(), ua: navigator.userAgent.slice(0, 180) });
+    PB.sub = sub;
+    audit('push_sub', 'push', state.user.id, {});
+    toast('✓ ' + t('push_state_on'));
+  }catch(e){
+    dlog('⛔ pbSubscribe:', e);
+    toast('⚠ ' + (/404|Failed to fetch/.test(String(e)) ? t('push_need_deploy') : errStr(e)), 'err');
+  }finally{ PB.busy = false; render(); }
+}
+async function pbUnsubscribe(){
+  try{
+    const sub = await pbCurrentSub();
+    if (sub){
+      const ep = sub.endpoint;
+      await sub.unsubscribe().catch(()=>{});
+      if (HAS_SB) await pbFetch('', { op: 'unsub', endpoint: ep }).catch(()=>{});
+    }
+    PB.sub = null;
+    toast('✓ ' + t('push_state_off'));
+  }catch(e){ dlog('⛔ pbUnsubscribe:', e); }
+  render();
+}
+/* разгрести очередь на сервере: не чаще раза в 90 секунд, плюс форс после действий */
+function pbPing(force){
+  if (!HAS_SB || !state.user) return;
+  const now = Date.now();
+  if (!force && now - PB.lastPing < 90 * 1000) return;
+  PB.lastPing = now;
+  pbFetch('?send=1').catch(()=>{});
+}
+function pbCardHtml(){
+  const supported = pbSupported();
+  const denied = supported && Notification.permission === 'denied';
+  const on = !!PB.sub;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+  const kinds = [['job'],['pickup'],['approve'],['overdue'],['reset']];
+  if (bnVisible()) kinds.push(['bn_alert']);
+  if (isAdmin() || (state.user && state.user.bn_service === true)) kinds.push(['bn_service']);
+  const rows = kinds.map(([k]) => `
+    <label class="chk-line"><input type="checkbox" ${pbPref(k)?'checked':''}
+      onchange="App.pbPref('${k}', this.checked)"> ${t('push_k_'+k)}</label>`).join('');
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('bell')} ${t('push_card')} ${tipQ('push_tip')}</div>
+    ${!supported ? `<div class="tiny">${t('push_unsupported')}</div>` : `
+    <div class="tiny" style="margin-bottom:6px">${t('push_dev')}: <b>${on ? t('push_state_on') : t('push_state_off')}</b>${denied ? ` · ${t('push_denied')}` : ''}</div>
+    ${on
+      ? `<button class="btn btn-ghost sm" onclick="App.pbUnsub()">${t('push_off_dev')}</button>`
+      : `<button class="btn btn-green sm" ${denied?'disabled':''} onclick="App.pbSub()">${ic('bell')} ${t('push_on_dev')}</button>`}
+    ${isIOS && !standalone ? `<div class="tiny" style="margin-top:6px">${t('push_ios_hint')}</div>` : ''}
+    <div style="font-weight:800;margin:10px 0 4px">${t('push_kinds')}</div>
+    ${rows}`}
+  </div>`;
+}
+async function pbPrefSet(k, v){
+  const me = state.data.profiles.find(p => p.id === state.user.id); if (!me) return;
+  const prefs = { ...(me.push_prefs || {}), [k]: !!v };
+  me.push_prefs = prefs; state.user.push_prefs = prefs;
+  await dbUpsert('profiles', { ...me, push_prefs: prefs });
+  toast('✓ ' + t('saved'));
+}
+
+/* =====================================================================
+   v1.08.33 · 2FA (TOTP) через Supabase MFA. Опционально, каждый включает
+   себе сам: Настройки → «Безопасность». При входе после пароля приложение
+   спросит 6-значный код, если у аккаунта есть подтверждённый фактор.
+   ===================================================================== */
+const MFA = { on: null, factorId: '' };
+async function mfaRefresh(){
+  if (!HAS_SB || !state.user){ MFA.on = false; return; }
+  try{
+    const { data } = await state.sb.auth.mfa.listFactors();
+    const f = (data && (data.totp || [])).find(x => x.status === 'verified');
+    MFA.on = !!f; MFA.factorId = f ? f.id : '';
+  }catch(e){ dlog('⛔ mfa.listFactors:', e); MFA.on = false; }
+}
+function secCardHtml(){
+  if (!HAS_SB) return `<div class="card"><div style="font-weight:900;margin-bottom:6px">${ic('key')} ${t('sec_card')}</div><div class="tiny">${t('demo_sb_only')}</div></div>`;
+  const on = MFA.on === true;
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('key')} ${t('sec_card')} ${tipQ('mfa_tip')}</div>
+    <div class="tiny" style="margin-bottom:8px">${on ? '✅ ' + t('mfa_on') : t('mfa_off')}</div>
+    ${on
+      ? `<button class="btn btn-ghost sm" onclick="App.mfaDisable()">${t('mfa_disable')}</button>`
+      : `<button class="btn btn-green sm" onclick="App.mfaEnroll()">${ic('key')} ${t('mfa_enable')}</button>`}
+  </div>`;
+}
+async function mfaEnroll(){
+  try{
+    /* незавершённые попытки мешают повторному enroll — снимаем их */
+    const { data: lf } = await state.sb.auth.mfa.listFactors();
+    for (const f of (lf && lf.all) || []){
+      if (f.factor_type === 'totp' && f.status !== 'verified')
+        await state.sb.auth.mfa.unenroll({ factorId: f.id }).catch(()=>{});
+    }
+    const { data, error } = await state.sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'TechLog' });
+    if (error) throw error;
+    const qr = data.totp && data.totp.qr_code || '';
+    const secret = data.totp && data.totp.secret || '';
+    openModal(`
+      ${modalHead(t('mfa_enable'), 'key')}
+      <div class="tiny" style="margin-bottom:8px">${t('mfa_scan')}</div>
+      ${qr ? `<div style="text-align:center;margin-bottom:8px"><img src="${qr}" alt="QR" style="width:190px;height:190px;background:#fff;border-radius:12px;padding:6px"></div>` : ''}
+      <div class="tiny" style="word-break:break-all;margin-bottom:8px">${t('mfa_secret')}: <b>${esc(secret)}</b></div>
+      <label>${t('mfa_code')}</label>
+      <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
+        <button class="btn btn-green" onclick="App.mfaVerifyEnroll('${data.id}')">${t('mfa_confirm')}</button>
+      </div>`);
+    setTimeout(()=>{ const i=$('#mfa-code'); if(i) i.focus(); }, 50);
+  }catch(e){ dlog('⛔ mfa.enroll:', e); toast('⚠ ' + errStr(e), 'err'); }
+}
+async function mfaVerifyEnroll(factorId){
+  const code = ($('#mfa-code')?.value || '').trim();
+  if (code.length < 6) return;
+  try{
+    const { data: ch, error: e1 } = await state.sb.auth.mfa.challenge({ factorId });
+    if (e1) throw e1;
+    const { error: e2 } = await state.sb.auth.mfa.verify({ factorId, challengeId: ch.id, code });
+    if (e2) throw e2;
+    closeModal(); await mfaRefresh();
+    audit('mfa_on', 'profile', state.user.id, {});
+    toast('✓ ' + t('mfa_enabled_ok')); render();
+  }catch(e){ dlog('⛔ mfa.verify:', e); toast('⚠ ' + t('mfa_bad_code'), 'err'); }
+}
+async function mfaDisable(){
+  try{
+    let { error } = await state.sb.auth.mfa.unenroll({ factorId: MFA.factorId });
+    if (error && /AAL2|aal2|insufficient/i.test(String(error.message || error))){
+      /* сессия входила без кода — сначала подтверждаем код, затем снимаем */
+      const { data: ch } = await state.sb.auth.mfa.challenge({ factorId: MFA.factorId });
+      const code = prompt(t('mfa_enter')) || '';
+      const { error: ev } = await state.sb.auth.mfa.verify({ factorId: MFA.factorId, challengeId: ch.id, code: code.trim() });
+      if (ev) throw ev;
+      ({ error } = await state.sb.auth.mfa.unenroll({ factorId: MFA.factorId }));
+    }
+    if (error) throw error;
+    await mfaRefresh();
+    audit('mfa_off', 'profile', state.user.id, {});
+    toast('✓ ' + t('mfa_disabled_ok')); render();
+  }catch(e){ dlog('⛔ mfa.unenroll:', e); toast('⚠ ' + errStr(e), 'err'); }
+}
+/* вход: пароль принят, но аккаунту нужен второй фактор */
+function mfaLoginModal(session){
+  openModal(`
+    ${modalHead(t('sec_card'), 'key')}
+    <div class="tiny" style="margin-bottom:8px">${t('mfa_enter')}</div>
+    <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
+      <button class="btn btn-green" onclick="App.mfaLoginVerify()">${t('mfa_confirm')}</button>
+    </div>`);
+  MFA._pending = session;
+  setTimeout(()=>{ const i=$('#mfa-code'); if(i) i.focus(); }, 50);
+}
+async function mfaLoginVerify(){
+  const code = ($('#mfa-code')?.value || '').trim();
+  if (code.length < 6) return;
+  try{
+    const { data: lf } = await state.sb.auth.mfa.listFactors();
+    const f = (lf && (lf.totp || []) ).find(x => x.status === 'verified');
+    if (!f) throw new Error('NO_FACTOR');
+    const { data: ch, error: e1 } = await state.sb.auth.mfa.challenge({ factorId: f.id });
+    if (e1) throw e1;
+    const { error: e2 } = await state.sb.auth.mfa.verify({ factorId: f.id, challengeId: ch.id, code });
+    if (e2) throw e2;
+    closeModal();
+    const { data: s2 } = await state.sb.auth.getSession();
+    try{ await afterSbLogin(s2 && s2.session || MFA._pending); }catch(e){ dlog('⛔ afterSbLogin(mfa):', e); }
+    MFA._pending = null;
+    render(); checkPickupBanner(true);
+  }catch(e){ dlog('⛔ mfa login:', e); toast('⚠ ' + t('mfa_bad_code'), 'err'); }
+}
+
+/* маленький «?» с подсказкой: тот же App.toastInfo, что и у мастеров */
+function tipQ(key){
+  return `<button type="button" class="tipq" aria-label="?" onclick="event.stopPropagation();App.toastInfo('${key}')">?</button>`;
+}
+
+/* v1.08.33: карточка «Функции» — включаемые возможности организации */
+function featCardHtml(){
+  const org = state.data.org_settings || {};
+  const chk = (key, on, label, tip) => `
+    <label class="chk-line"><input type="checkbox" ${on?'checked':''}
+      onchange="App.setOrgFlag('${key}', this.checked)"> ${label} ${tip ? tipQ(tip) : ''}</label>`;
+  return `<div class="card">
+    ${chk('tpl_on', org.tpl_on !== false, t('tpl_on_lbl'), 'tpl_tip')}
+    ${chk('code_remind', org.code_remind === true, t('code_remind_lbl'), 'code_tip')}
+    <div class="form-row" style="margin:2px 0 6px"><span class="lbl">${t('code_months')}</span>
+      ${orgStepperHtml('code_remind_months', codeMonths(), 1, 60, 1)}</div>
+    ${chk('sess_mgr', org.sess_mgr === true, t('sess_mgr_lbl'), 'st_flags_tip')}
+  </div>`;
+}
+/* v1.08.33: автобэкап SQL → Google Drive (Edge Function backup) */
+const ABK = { busy: false, list: null };
+function abkCardHtml(){
+  const org = state.data.org_settings || {};
+  const last = org.backup_last_at
+    ? fmtDMY(String(org.backup_last_at).slice(0,10)) + ' ' + fmtHM(org.backup_last_at)
+    : t('abk_never');
+  return `<div class="card">
+    <div class="tiny" style="margin-bottom:6px">${t('abk_last')}: <b>${last}</b>${org.backup_note ? ` · ${esc(org.backup_note)}` : ''} ${tipQ('abk_tip')}</div>
+    <button class="btn btn-blue sm" ${ABK.busy?'disabled':''} onclick="App.abkRun()">${ic('save')} ${ABK.busy ? t('abk_running') : t('abk_now')}</button>
+    <label class="chk-line" style="margin-top:8px"><input type="checkbox" ${org.backup_auto===true?'checked':''}
+      onchange="App.setOrgFlag('backup_auto', this.checked)"> ${t('abk_auto_lbl')}</label>
+    <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.abkList()">${t('abk_list')}</button>
+    <div class="tiny" id="abk-list"></div>
+  </div>`;
+}
+async function abkRun(silent){
+  if (!HAS_SB){ toast(t('demo_sb_only'), 'inf'); return; }
+  if (ABK.busy) return; ABK.busy = true; if (!silent) render();
+  try{
+    const token = await mediaJwt(); if (!token) throw new Error('AUTH');
+    const r = await fetch(mediaFN() + '/backup?run=1', { headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json().catch(()=>({}));
+    if (!r.ok){
+      const msg = r.status === 404 ? t('abk_need_fn')
+        : /DRIVE/.test(j.error || '') ? t('abk_need_gd') : (j.error || 'HTTP ' + r.status);
+      throw new Error(msg);
+    }
+    const org = { ...state.data.org_settings,
+      backup_last_at: new Date().toISOString(),
+      backup_note: 'ok · ' + (j.name || '') + ' · ' + (j.size || '?') + ' KB' };
+    state.data.org_settings = org; saveLocal();
+    audit('backup_auto', 'org', 'backup', { name: j.name, kb: j.size });
+    if (!silent) toast('✓ ' + t('abk_ok') + ' · ' + (j.size || '?') + ' KB');
+  }catch(e){
+    dlog('⛔ abkRun:', e);
+    if (!silent) toast('⚠ ' + errStr(e), 'err');
+  }finally{ ABK.busy = false; render(); }
+}
+async function abkListLoad(){
+  const el = $('#abk-list'); if (!el || !HAS_SB) return;
+  el.textContent = '…';
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/backup?list=1', { headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json().catch(()=>({}));
+    if (!r.ok) throw new Error(r.status === 404 ? t('abk_need_fn') : (j.error || 'HTTP ' + r.status));
+    el.innerHTML = (j.files || []).map(f => `<div>${esc(f.name)} · ${fmtDMY(String(f.createdTime).slice(0,10))}${f.size ? ' · ' + Math.round(+f.size/1024) + ' KB' : ''}</div>`).join('') || '—';
+  }catch(e){ el.textContent = '⚠ ' + errStr(e); }
+}
+/* автозапуск: вход админа + включён флаг + прошло ≥7 дней */
+function abkAutoMaybe(){
+  if (!HAS_SB || !isAdmin()) return;
+  const org = state.data.org_settings || {};
+  if (org.backup_auto !== true) return;
+  const last = org.backup_last_at ? Date.parse(org.backup_last_at) : 0;
+  if (Date.now() - last < 7 * 86400000) return;
+  abkRun(true);
+}
+
 function popCardHtml(){
   const cur = popPos();
   const seg = (val, lbl) => `<button class="${cur === val ? 'on' : ''}" onclick="App.popPos('${val}')">${lbl}</button>`;
@@ -2123,13 +2562,15 @@ function seedDemoData(){
   const cat = seedCatalogs();
   const profiles = [
     { id: 'demo-admin',   login: 'ivan',   display_name: 'Ivan Petrov',   role: 'admin',   car_no: 3, blocked: false, created_at: '2026-01-12T09:00:00Z' },
-    { id: 'demo-manager', login: 'alexey', display_name: 'Alexey Smirnov', role: 'manager', car_no: 2, blocked: false, created_at: '2026-02-03T10:30:00Z' },
-    { id: 'demo-tech',    login: 'sergey', display_name: 'Sergey Volkov', role: 'tech',    car_no: 1, blocked: false, created_at: '2026-03-18T15:45:00Z' },
+    { id: 'demo-manager', login: 'alexey', display_name: 'Alexey Smirnov', role: 'manager', car_no: 2, blocked: false, created_at: '2026-02-03T10:30:00Z', tt_self: true, tt_others: 'all' },
+    { id: 'demo-tech',    login: 'sergey', display_name: 'Sergey Volkov', role: 'tech',    car_no: 1, blocked: false, created_at: '2026-03-18T15:45:00Z', bn_access: true, tt_self: true },
   ];
   /* v1.08.32: демо-автопарк — карта, доска и панель пробега живут без сервера */
   const vehicles = [
-    { id: uid(), make: 'Ford Transit 2021',      vin: '1FTBW2CM5MKA10001', imei: '350000000000001', car_no: 1, driver_id: 'demo-tech',    created_at: '2026-04-01T09:00:00Z' },
-    { id: uid(), make: 'RAM ProMaster 2020',     vin: '3C6TRVDG8LE100002', imei: '350000000000002', car_no: 2, driver_id: 'demo-manager', created_at: '2026-04-01T09:00:00Z' },
+    { id: uid(), make: 'Ford Transit 2021',      vin: '1FTBW2CM5MKA10001', imei: '350000000000001', car_no: 1, driver_id: 'demo-tech',    created_at: '2026-04-01T09:00:00Z',
+      last_odo: 45678, service_due_mi: 46000 },                                        // v1.08.33: «до ТО 322 mi»
+    { id: uid(), make: 'RAM ProMaster 2020',     vin: '3C6TRVDG8LE100002', imei: '350000000000002', car_no: 2, driver_id: 'demo-manager', created_at: '2026-04-01T09:00:00Z',
+      mil: true },                                                                     // v1.08.33: чип Check Engine
     { id: uid(), make: 'Chevrolet Express 2019', vin: '1GCWGAFG4K1100003', imei: '350000000000003', car_no: 3, driver_id: 'demo-admin',   created_at: '2026-04-01T09:00:00Z' },
   ];
   const cp1 = { id: uid(), name: 'Magnolia Group',  abbr: 'MG', notes: '' };
@@ -2180,7 +2621,17 @@ function seedDemoData(){
   ];
   const data = {
     profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], proposals: [], repairs: [], stock_daily: [], ext_requests: [], media: [], hidden_staff: [], code_requests: [], complex_code_history: [],
-    jobs: [job1, job2], placements, vehicles, ...cat
+    jobs: [job1, job2], placements, vehicles, ...cat,
+    /* v1.08.33: журнал времени — вкладка «Отчёты → Время» живёт в демо */
+    site_visits: (() => {
+      const day = todayISO();
+      const at = (h, m) => { const d = new Date(); d.setHours(h, m, 0, 0); return d.toISOString(); };
+      return [
+        { id: uid(), driver_id: 'demo-tech',  vehicle_imei: '350000000000001', complex_id: complexes[0].id, arrived_at: at(8, 42),  left_at: at(10, 15), date: day },
+        { id: uid(), driver_id: 'demo-tech',  vehicle_imei: '350000000000001', complex_id: complexes[1].id, arrived_at: at(10, 40), left_at: null,       date: day },
+        { id: uid(), driver_id: 'demo-admin', vehicle_imei: '350000000000003', complex_id: complexes[2].id, arrived_at: at(9, 5),   left_at: at(9, 50),  date: day },
+      ];
+    })()
   };
   job1.total = calcTotal(job1.form_data, priceResolver(cp1.id, data), data);
   /* v1.07.86: сквозные номера. На сервере их выдаёт база (identity),
@@ -2330,6 +2781,9 @@ function pendingApplyLocal(data){
    пополняется вместе с каждой миграцией. */
 const DB_NEED_COLS = [
   ['profiles',      'board_cols'],
+  ['profiles',      'push_prefs'],    // v1.08.33
+  ['vehicles',      'service_due_mi'],// v1.08.33
+  ['org_settings',  'tpl_on'],        // v1.08.33
   ['vehicles',      'imei'],          // v1.08.32
   ['org_settings',  'bn_account'],    // v1.08.32
   ['jobs',          'proposal_id'],
@@ -2373,9 +2827,11 @@ const DB_NEED_COLS = [
 const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
                       'admin_set_drive_config', 'equip_op', 'admin_set_role',
-                      'vehicle_save', 'admin_set_bouncie_config'];   // v1.08.32
+                      'vehicle_save', 'admin_set_bouncie_config',    // v1.08.32
+                      'admin_sessions', 'admin_kill_sessions',        // v1.08.33
+                      'admin_last_seen', 'vehicle_service_set'];      // v1.08.33
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles'];   // v1.08.32: справочник машин
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits'];   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)
 
 function emptyData(){
   const d = { org_settings: {
@@ -2774,6 +3230,8 @@ async function afterSbLogin(session){
     await syncNow(true);
   } finally {
     loginInFlight = false;
+    mfaRefresh().catch(()=>{}); pbCurrentSub().catch(()=>{});   // v1.08.33: статусы 2FA и пуш-подписки
+    setTimeout(abkAutoMaybe, 4000);                              // v1.08.33: автобэкап раз в 7 дней
   }
 }
 function demoLogin(id){
@@ -2798,6 +3256,12 @@ async function sbSignIn(login, pass){
     return;
   }
   dlog('auth: вход ок, uid', data.session?.user?.id);
+  try{   // v1.08.33: включённая 2FA требует код до загрузки данных
+    const { data: aal } = await state.sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.currentLevel === 'aal1' && aal.nextLevel === 'aal2'){
+      mfaLoginModal(data.session); return;
+    }
+  }catch(e){ dlog('mfa aal check:', e); }
   try{ await afterSbLogin(data.session); }catch(e){ dlog('⛔ afterSbLogin:', e); }
   render(); checkPickupBanner(true);
 }
@@ -3693,6 +4157,7 @@ function viewHeader(){
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
     <div class="rt-col">
+      <button class="icon-btn hdr-srch" title="${t('srch_btn')}" aria-label="${t('srch_btn')}" onclick="App.searchOpen()">${ic('search')}</button>
       <span class="vm-inline" id="vm-slot" role="group">
         <button class="${vmCur()==='mobile'?'on':''}" onclick="App.setVm('mobile')" aria-label="Телефон" title="Телефон">${ICONS.phone}</button>
         <button class="${vmCur()==='desktop'?'on':''}" onclick="App.setVm('desktop')" aria-label="ПК" title="ПК">${ICONS.monitor}</button>
@@ -3775,7 +4240,8 @@ function viewWeek(){
     <div class="week-days" id="week-days">${days.join('')}</div>
     <button class="wk-arrow" onclick="App.shiftWeek(1)" aria-label="next week">${ic('chev_r')}</button>
   </div>
-  ${state.selDate!==today ? `<button class="today-jump" onclick="App.jumpToday()">⌂ ${t('back_today')}</button>` : ''}`;
+  ${state.selDate!==today ? `<button class="today-jump" onclick="App.jumpToday()">⌂ ${t('back_today')}</button>` : ''}
+  ${isAdmin() && tplOn() ? `<button class="today-jump tpl-move" onclick="App.tplMove()">${ic('compass')} ${t('tpl_move_day')}</button>` : ''}`;
 }
 
 /* =====================================================================
@@ -4244,6 +4710,8 @@ function sectionFaqHtml(key){
       <li>Точки — комплексы, цвет = контрагент; фильтр по контрагенту сверху; клик по строке списка — фокус на точке.</li>
       <li>${ic('key')} в строке — скопировать код доступа; «${ic('warn')} без координат» — у комплекса нет точки (задайте в справочнике или найдите поиском).</li>
       <li>Режим <b>«День»</b>: пронумерованные точки задач выбранной даты и кнопка ${ic('compass')} — маршрут дня в вашем навигаторе (Apple/Google — см. Настройки). Менеджеру и админу карта дня показывает задачи <b>всех</b> сотрудников; открывается она по умолчанию на сегодня.</li>
+      <li><b>${t('opt_btn')}</b> (v1.08.33): считает объезд «ближайший сосед» от вашей машины и показывает «сейчас X mi → оптимально Y mi, экономия Z». «${t('opt_open')}» открывает многоточечный маршрут в Google/Apple Maps; «${t('opt_apply')}» переставляет работы дня (красные приоритеты остаются первыми).</li>
+      <li><b>${t('veh_track')}</b> (v1.08.33): синяя линия реальных поездок машины за день — из попапа машины или из справочника «Автомобили». Право выдаёт админ (Штат → ${ic('gear')}).</li>
       <li>${ic('car')} <b>Машины</b> — живые позиции автопарка с трекеров Bouncie: в кружке номер машины, стрелка — курс, зелёная обводка — едет. Клик по машине: водитель, скорость, топливо, пробег за день и маршрут к ней. Чипы над картой выбирают одну или несколько машин («Все» — весь парк, остальные затемняются). Пунктир — примерный маршрут по прямой к текущей задаче; в подписи — сколько осталось, в процентах. Панель «Пробег за сегодня» — справа на ПК и под картой на телефоне; строка панели центрирует карту на машине.</li>
     </ul>
     <h4>${ic('search')} Поиск места и добавление комплекса</h4>
@@ -4261,7 +4729,9 @@ function sectionFaqHtml(key){
     <h4>${ic('search')} Place search & adding a complex</h4>
     <ul><li>Type an address → <b>Search</b> (OpenStreetMap) → click a result → marker.</li>
     <li>"${ic('check')} Point found" → <b>Add as complex</b>: pick an owner — existing, "＋ New…", "⏳ Temporary owner" or "— no binding —".</li>
-    <li>Ownerless complexes are flagged ${faqTriDemo()} here and in Directory.</li></ul>`);
+    <li>Ownerless complexes are flagged ${faqTriDemo()} here and in Directory.</li>
+    <li><b>${t('opt_btn')}</b> (v1.08.33): nearest-neighbor pass from your car — "now X mi → best Y mi, saves Z"; open the multi-stop route in Google/Apple Maps or apply the order to the day's jobs (red priorities stay first).</li>
+    <li><b>${t('veh_track')}</b> (v1.08.33): a blue line of the car's real trips for the day — from the car popup or the Vehicles directory; access is granted by the admin (Staff → ${ic('gear')}).</li></ul>`);
 
   S.proposals = H(`
     <h4>${ic('note')} Пропозалы</h4>
@@ -4282,15 +4752,17 @@ function sectionFaqHtml(key){
   S.reports = H(`
     <h4>${ic('note')} Отчёты</h4>
     <ul>
-      <li>Вкладки: <b>Инвойсы</b> и <b>Пикапы</b>. Фильтры: период, контрагент, сотрудник, статус.</li>
+      <li>Вкладки: <b>Инвойсы</b>, <b>Пикапы</b> и <b>${t('tt_tab')}</b> (v1.08.33). Фильтры: период, контрагент, сотрудник, статус.</li>
+      <li><b>${t('tt_title')}</b>: строится само из поездок Bouncie — конец поездки рядом с комплексом = прибытие, старт следующей = убытие; открытый визит помечен «${t('tt_now')}». Кто что видит, настраивает админ в Штате (${ic('gear')}): «свой журнал» персонально, менеджеру — всех или список. Та же строка «${t('tt_onsite')}» видна в шапке открытой работы.</li>
       <li>Строка = документ: клик открывает (в т.ч. заблокированные по сроку — на просмотр). Статусы: ${faqStatusLegend()}.</li>
       <li>Итоги по выборке внизу; выгрузка PDF-пакета — по кнопке (альбомный лист, два бланка рядом и линия отреза).</li>
       <li>${faqTriDemo()} в строке — документ с проблемами заполнения.</li>
     </ul>`,
   `
     <h4>${ic('note')} Reports</h4>
-    <ul><li>Tabs: <b>Invoices</b> / <b>Pickups</b>; filters by period, counterparty, employee, status. Statuses: ${faqStatusLegend()}.</li>
-    <li>Click a row to open (locked-by-age docs open read-only). Totals below; PDF batch export available.</li></ul>`);
+    <ul><li>Tabs: <b>Invoices</b> / <b>Pickups</b> / <b>${t('tt_tab')}</b> (v1.08.33); filters by period, counterparty, employee, status. Statuses: ${faqStatusLegend()}.</li>
+    <li>Click a row to open (locked-by-age docs open read-only). Totals below; PDF batch export available.</li>
+    <li><b>${t('tt_title')}</b>: built automatically from Bouncie trips — a trip ending near a complex = arrival, the next trip starting there = departure; an open visit is marked "${t('tt_now')}". Who sees what is set by the admin in Staff (${ic('gear')}); the same "${t('tt_onsite')}" line shows in an open job's header.</li></ul>`);
 
   S.stats = H(`
     <h4>${ic('chart')} Статистика</h4>
@@ -4316,13 +4788,17 @@ function sectionFaqHtml(key){
       <li>Запросы кода от воркеров появляются входящими сверху — подтвердите или обновите код.</li>
       <li>${ic('clipboard')} у вида работы — <b>пред-выездной чек-лист</b>: что взять и проверить перед выездом; сотрудник видит его в работе этого вида.</li>
       <li><b>Склад</b> переехал в отдельную вкладку внизу: наличие по типам и «Моя машина», кнопки «Взять» / «Сдать» / «В ремонт», у админа — «Поступление» и «Списание». Аренда, «забрал» и «вернул на склад» двигают оборудование сами.</li>
+      <li><b>Штат</b> (v1.08.33): ${ic('gear')} у сотрудника — «был(а) в сети», доступы Bouncie (трекер / пуши ТО / трек дня — включение доступа само включает человеку пуши), журнал времени (свой; чей ещё видит: нет / всех / список) и активные <b>сессии</b> с кнопкой «${t('st_kill')}» (сессии видит админ; менеджер — если включено в «Функциях»).</li>
+      <li><b>Автомобили</b> (v1.08.33): чипы ⚠ Check Engine и 🔻 топлива, поле «${t('veh_service')}» — за 500 mi до порога уходит пуш; кнопка ${ic('map')} — трек дня на карте. Жёлтая метка «🟡 код N мес» у комплексов — включается в «Функциях».</li>
     </ul>`,
   `
     <h4>${ic('book')} Directory</h4>
     <ul><li>Tabs for staff, counterparties, complexes, work types, equipment, extra gear, PRICE, extra works, sizes, products.</li>
     <li><b>Stock</b> has its own bottom tab now: totals by type and "My car", Take / Hand in / To repair buttons, admin Intake and Write-off. Rentals, "picked up" and "returned" move equipment automatically.</li>
     <li><b>Complexes</b> grouped by owner; "No owner" and "⏳ Temporary owner" are flagged ${faqTriDemo()} — assign a counterparty.</li>
-    <li>Equipment codes/colors: ${faqEqLegend()} — same badges as on pickup cards.</li></ul>`);
+    <li>Equipment codes/colors: ${faqEqLegend()} — same badges as on pickup cards.</li>
+    <li><b>Staff</b> (v1.08.33): ${ic('gear')} per person — last seen, Bouncie access (tracker / service pushes / day track; granting access also enables the matching pushes), time-log visibility (own; others: no one / everyone / list) and active <b>sessions</b> with "${t('st_kill')}".</li>
+    <li><b>Vehicles</b> (v1.08.33): ⚠ Check Engine and 🔻 fuel chips, "${t('veh_service')}" field (push 500 mi before due), ${ic('map')} day-track button. The yellow "stale code" chip on complexes is enabled under Features.</li></ul>`);
 
   S.archive = H(`
     <h4>${ic('archive')} Действие и архив</h4>
@@ -4382,6 +4858,10 @@ function sectionFaqHtml(key){
   S.settings = H(`
     <h4>${ic('gear')} Настройки</h4>
     <ul>
+      <li><b>${t('push_card')}</b> (v1.08.33): кнопка подписывает ЭТО устройство (нажмите на каждом телефоне/ПК); галочки — что присылать: задача, пикап, апрув, просрочка, снятие апрува, плюс ошибки машин и ТО при доступе. iPhone: сначала «На экран Домой» (iOS 16.4+). Доставка идёт, пока кто-то из фирмы онлайн; после действий уходит сразу.</li>
+      <li><b>${t('sec_card')}</b> (v1.08.33): необязательная 2FA (TOTP) — QR в приложение-аутентификатор, код из 6 цифр; при входе после пароля спросим код. Отключается в любой момент (потребуется код).</li>
+      <li><b>${t('feat_card')}</b> (админ, v1.08.33): шаблоны и перенос дня, напоминание о старых кодах (порог в месяцах), сессии для менеджера.</li>
+      <li><b>${t('abk_card')}</b> (админ, v1.08.33): полный SQL-дамп (включая пользователей и секреты) в папку «TechLog Backups» вашего Drive, 8 копий. «${t('abk_now')}» или автоматически при входе админа раз в 7 дней. Восстановление: чистая база → full-install → файл бэкапа.</li>
       <li><b>Доска</b> — минимум сотрудников на экране (степпер «Авто ↔ 3…12», личная, в профиле).</li>
       <li><b>Профиль</b>: имя в документах, смена пароля, язык RU/EN, навигатор (Авто/Apple/Google).</li>
       <li><b>Оборудование и документы</b> (админ): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старше N дней (0 — выкл; заблокированные документы открываются на просмотр).</li>
@@ -4400,7 +4880,11 @@ function sectionFaqHtml(key){
     <li><b>Equipment & documents</b> (admin): default rent / max extension steppers, permissions, edit-lock N days (locked docs open read-only).</li>
     <li><b>Photo & video limits</b> (admin): steppers for photos (1–50) and videos (0–10) per document, defaults <b>10 and 2</b>, enforced server-side; videos = 0 hides the video button.</li>
     <li>Media → Google Drive: paste the whole folder link — the ID is extracted automatically; saved keys show read-only with masked secrets (${ic('eye')} reveal, ${ic('copy')} copy, ${ic('pencil')} edit). The connection test also reports free Drive space; below 15 % admins and managers get a banner on Home.</li>
-    <li>Invite code; "Check updates" applies the new version immediately; DB diagnostics names the exact SQL file on errors.</li></ul>`);
+    <li>Invite code; "Check updates" applies the new version immediately; DB diagnostics names the exact SQL file on errors.</li>
+    <li><b>${t('push_card')}</b> (v1.08.33): the button subscribes THIS device (press it on every phone/computer); checkboxes pick what you receive — job, pickup, approval, overdue, reset, plus vehicle alerts/service when you have access. iPhone: install to Home Screen first (iOS 16.4+). Delivery runs while anyone from the company is online.</li>
+    <li><b>${t('sec_card')}</b> (v1.08.33): optional TOTP 2FA — scan the QR in an authenticator app, confirm the 6-digit code; sign-in then asks for a code after the password. Disable anytime (a code is required).</li>
+    <li><b>${t('feat_card')}</b> (admin, v1.08.33): templates & day move, stale-code reminder with a month threshold, manager access to sessions.</li>
+    <li><b>${t('abk_card')}</b> (admin, v1.08.33): a full SQL dump (auth users and secrets included) into "TechLog Backups" on your Drive; keeps 8 copies. "${t('abk_now')}" or automatically on admin sign-in every 7 days. Restore: clean DB → full-install → the backup file.</li></ul>`);
 
   return `<div class="faqm">${S[key] || ''}</div>`;
 }
@@ -4865,6 +5349,7 @@ async function extApply(){
   navigator.vibrate?.(30);
   toast('✓ ' + t('ext_done'));
   render();
+  pbPing(true);   // v1.08.33: пуш о продлении не ждёт тикера
 }
 
 /* ---------- История работы: инвойс → пикапы → продления ---------- */
@@ -4996,6 +5481,74 @@ function viewLogin(){
    ===================================================================== */
 let jobDraft = null; // рабочая копия
 
+/* v1.08.33: шаблоны — включаемая функция (Настройки → «Функции») */
+function tplOn(){ return (state.data.org_settings || {}).tpl_on !== false; }
+function jobClone(srcId){
+  const j = state.data.jobs.find(x => x.id === srcId); if (!j) return;
+  const date = addDaysISO(todayISO(), 1);
+  const techId = isManager() ? j.technician_id : state.user.id;
+  const techPr = techId ? state.data.profiles.find(p => p.id === techId) : null;
+  jobDraft = {
+    id: uid(), date,
+    counterparty_id: j.counterparty_id, complex_id: j.complex_id,
+    unit_number: j.unit_number, has_proposal: false, proposal_id: null,
+    work_type_id: j.work_type_id,
+    technician_id: techId, technician_name: techPr ? shortName(techPr.display_name) : '',
+    helper_ids: [], shared_with_helpers: false, priority: false,
+    sort_order: jobsOn(date).length,
+    status: 'draft', note: j.note || '',
+    form_data: Object.assign(emptyFormData(), JSON.parse(JSON.stringify(j.form_data || {}))),
+    total: 0, approved_total: null, approved_by: null, approved_at: null,
+    created_at: new Date().toISOString(), updated_at: new Date().toISOString()
+  };
+  state.screen = 'job'; state.jobId = jobDraft.id;
+  audit('job_clone', 'job', srcId, { unit: j.unit_number });
+  toast('✓ ' + t('tpl_created') + ' — ' + fmtDMY(date), 'inf');
+  render(); window.scrollTo(0, 0);
+}
+/* перенос дня: черновики и несобранные пикапы разом (дождь). Только админ:
+   RLS не даст менеджеру переписывать чужие строки, а частичный перенос
+   только запутает. */
+function tplMoveModal(){
+  const iso = state.selDate;
+  const js = liveJobs().filter(j => j.date === iso && j.status === 'draft');
+  const pk = (state.data.placements || []).filter(p => pkPending(p) && p.due_date === iso);
+  openModal(`
+    ${modalHead(t('tpl_move_title'), 'compass')}
+    <div class="tiny" style="margin-bottom:6px">${fmtDMY(iso)} → ${tipQ('tpl_tip')}</div>
+    <div class="form-row"><span class="lbl">${t('tpl_move_to')}</span>
+      <input id="tplm-date" type="date" value="${addDaysISO(iso, 1)}"></div>
+    <label class="chk-line"><input type="checkbox" id="tplm-jobs" ${js.length?'checked':'disabled'}> ${t('tpl_move_jobs')} · ${js.length}</label>
+    <label class="chk-line"><input type="checkbox" id="tplm-pk" ${pk.length?'checked':'disabled'}> ${t('tpl_move_pk')} · ${pk.length}</label>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
+      <button class="btn btn-green" onclick="App.tplMoveGo()">${t('tpl_move_day')}</button>
+    </div>`);
+}
+async function tplMoveGo(){
+  if (!isAdmin()) return;
+  const iso = state.selDate;
+  const target = ($('#tplm-date') || {}).value;
+  if (!target || target === iso){ closeModal(); return; }
+  const doJobs = ($('#tplm-jobs') || {}).checked;
+  const doPk = ($('#tplm-pk') || {}).checked;
+  let n = 0;
+  if (doJobs){
+    for (const j of liveJobs().filter(x => x.date === iso && x.status === 'draft')){
+      await dbUpsert('jobs', { ...j, date: target, updated_at: new Date().toISOString() }); n++;
+    }
+  }
+  if (doPk){
+    for (const p of (state.data.placements || []).filter(x => pkPending(x) && x.due_date === iso)){
+      await dbUpsert('placements', { ...p, due_date: target }); n++;
+    }
+  }
+  if (!n){ closeModal(); toast('ℹ ' + t('tpl_nothing'), 'inf'); return; }
+  audit('day_move', 'day', iso, { to: target, n });
+  closeModal();
+  state.selDate = target; state.weekStart = mondayOf(target);
+  toast('✓ ' + t('tpl_moved') + ': ' + n); render();
+}
 function openJob(id){
   const j = state.data.jobs.find(x=>x.id===id);
   if (!j) return;
@@ -5089,6 +5642,7 @@ function viewJob(){
         <div class="tiny">${esc(cp.name)} · ${esc(cx.address||'')}
           <button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button></div>
         ${(cx.access_code||cx.callbox_code)?`<div class="tiny">${codeLineHtml(cx, true)}</div>`:''}
+        ${ttJobLine(j)}
         <div class="tiny" style="color:${wt.color};font-weight:800">${esc(wt.name)}</div>
       </div>
       <span class="badge-status st-${j.status}">${t('status_'+j.status)}</span>
@@ -5253,6 +5807,8 @@ function viewJob(){
     <button class="btn btn-ghost" onclick="App.pdfPrint()">${ic('report')} ${t('pdf_print')}</button>
     <span></span>
   </div>
+  ${tplOn() && state.data.jobs.some(x=>x.id===j.id) ? `
+  <button class="btn btn-ghost" style="margin-bottom:8px" onclick="App.jobClone('${j.id}')">${ic('note')} ${t('tpl_clone')} ${tipQ('tpl_tip')}</button>` : ''}
   <div class="btn-row3">
     <button class="btn btn-ghost" onclick="App.go('home')">← ${t('back')}</button>
     <button class="btn btn-blue" onclick="App.makePdf()">${ic('download')} ${t('pdf')}</button>
@@ -5484,6 +6040,7 @@ async function saveJob(goHome){
   }
   saveJob._busy = false;
   mediaFlush();
+  pbPing(true);   // v1.08.33: назначение/апрув/пикапы — разослать сразу
   toast('✓ ' + t('saved'));
   if (goHome !== false){ state.screen = 'home'; state.selDate = j.date; state.weekStart = mondayOf(j.date); }
   render();
@@ -5542,6 +6099,7 @@ async function approveJob(){
       Object.assign(j, { approved_total: at, status: 'approved',
         approved_by: state.user.id, approved_at: new Date().toISOString() });
       const row = state.data.jobs.find(x => x.id === j.id); if (row) Object.assign(row, j);
+      pbPing(true);   // v1.08.33
       toast('✓ ' + t('saved')); render();
     }catch(e){ toast('⛔ ' + rpcFail(e, 'approve_job'), 'err'); }
   }
@@ -5968,6 +6526,22 @@ function dirCounterparties(){
     <button class="btn btn-green" onclick="App.editCpModal()">${ic('plus')} ${t('add')}</button>`;
 }
 
+/* v1.08.33: напоминание о старых кодах (для админа и менеджера) */
+function codeRemindOn(){ return (state.data.org_settings || {}).code_remind === true; }
+function codeMonths(){ const v = +((state.data.org_settings || {}).code_remind_months); return v >= 1 ? v : 12; }
+function codeAgeMonths(cxId){
+  const m = lastCodeMeta(cxId);
+  if (!m || !m.date) return null;
+  const days = (Date.now() - Date.parse(m.date)) / 86400000;
+  return days >= 0 ? days / 30.44 : null;
+}
+function codeOldChip(cx){
+  if (!codeRemindOn() || !isManager()) return '';
+  if (!(cx.access_code || cx.callbox_code)) return '';
+  const age = codeAgeMonths(cx.id);
+  if (age == null || age < codeMonths()) return '';
+  return ` <span class="chip warn" title="${t('code_tip')}">🟡 ${t('code_old').replace('{n}', String(Math.floor(age)))}</span>`;
+}
 function dirComplexes(){
   const canEdit = isManager();
   const inbox = codeRequestsHtml();
@@ -5992,7 +6566,7 @@ function dirComplexes(){
       ${(byCp[cp.id]||[]).map(cx => `
         <div class="rowline">
           <div class="abbr" style="min-width:44px;height:38px">${esc(cx.abbr||'—')}</div>
-          <div class="grow"><b>${esc(cx.name)}</b>
+          <div class="grow"><b>${esc(cx.name)}</b>${codeOldChip(cx)}
             <div class="tiny">${esc(cx.address||'')}</div>
             <div class="tiny">${codeLineHtml(cx, true)}
               ${(()=>{ const m=lastCodeMeta(cx.id); return m?` · <span style="color:var(--dim-2)">${t('last_code_upd')} ${fmtDMY(String(m.date).slice(0,10))}</span>`:''; })()}</div></div>
@@ -6002,7 +6576,14 @@ function dirComplexes(){
             : `<button class="btn btn-ghost sm" title="${t('propose_code')}" onclick="App.proposeCode('${cx.id}')">${ic('key')}</button>`}
         </div>`).join('') || `<div class="tiny">—</div>`}
     </div>`).join('');
-  return inbox + blocks + (canEdit ? `<button class="btn btn-green" onclick="App.editCxModal()">${ic('plus')} ${t('add')}</button>` : '');
+  let oldSum = '';
+  if (codeRemindOn() && isManager()){
+    const n = state.data.complexes.filter(cx => (cx.access_code || cx.callbox_code)
+      && (codeAgeMonths(cx.id) ?? -1) >= codeMonths()).length;
+    if (n) oldSum = `<div class="banner b-red" role="status">${ic('key')}
+      <div>${t('code_old_sum').replace('{m}', String(codeMonths())).replace('{n}', String(n))} ${tipQ('code_tip')}</div></div>`;
+  }
+  return oldSum + inbox + blocks + (canEdit ? `<button class="btn btn-green" onclick="App.editCxModal()">${ic('plus')} ${t('add')}</button>` : '');
 }
 
 function colorPicker(cur, inputId){
@@ -6456,6 +7037,8 @@ function viewSettings(){
 
   ${fold('num', t('no_card'), 'receipt', numberingCardHtml())}
   ${fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml())}
+  ${fold('push', t('push_card'), 'bell', pbCardHtml())}
+  ${fold('sec', t('sec_card'), 'key', secCardHtml())}
   ${fold('pop', t('pop_card'), 'bell', popCardHtml())}
   ${fold('cam', t('cam_card'), 'camera', camCardHtml())}
   ${fold('uid', t('ui_card'), 'steth', uiDiagCardHtml())}
@@ -6511,7 +7094,9 @@ function viewSettings(){
   ${fold('mlim', t('media_lim_card'), 'clip', mediaLimitsCardHtml())}
   ${fold('gd', t('gd_card'), 'folder', mediaSettingsCardHtml())}
   ${fold('bn', t('bn_card'), 'car', bnCardHtml())}
+  ${fold('feat', t('feat_card'), 'gear', featCardHtml())}
   ${fold('bkp', t('bk_card'), 'save', backupCardHtml())}
+  ${fold('abk', t('abk_card'), 'save', abkCardHtml())}
   ${fold('diag', t('diag_card'), 'steth', diagCardHtml())}
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
@@ -7112,7 +7697,7 @@ const App = {
        по «＋» на нетронутой настройке прыгал бы от min, а не от видимого */
     const DEF = { default_rent_days: 3, max_extend_days: 3, edit_lock_days: 0,
                   media_max_photo: 10, media_max_video: 2, media_max_file: 20,
-                  tr_interval_min: 60 };
+                  tr_interval_min: 60, code_remind_months: 12 };   // v1.08.33
     const cur = +((state.data.org_settings || {})[key] ?? (DEF[key] ?? 0));
     App.setOrgNum(key, cur + d * (+step || 1), min, max);
   },
@@ -7134,6 +7719,32 @@ const App = {
     toast('✓ ' + t('saved')); render();
   },
   setProposal(v){ if (jobDraft){ jobDraft.has_proposal = !!v; autosaveDraft(); } },
+  pbSub(){ pbSubscribe(); },                        // v1.08.33: пуши
+  pbUnsub(){ pbUnsubscribe(); },
+  pbPref(k, v){ pbPrefSet(k, v); },
+  mfaEnroll(){ mfaEnroll(); },
+  mfaVerifyEnroll(id){ mfaVerifyEnroll(id); },
+  mfaDisable(){ mfaDisable(); },
+  mfaLoginVerify(){ mfaLoginVerify(); },
+  staffCfg(uid){ staffCfgModal(uid); },
+  setStaffFlag(uid, k, v){ setStaffFlag(uid, k, v); },
+  ttOthersSet(uid, m){ ttOthersSet(uid, m); },
+  ttListToggle(uid, tid){ ttListToggle(uid, tid); },
+  staffKillSessions(uid){ if (confirm(t('st_kill') + '?')) staffKillSessions(uid); },
+  ttDate(v){ state.ttDate = v || todayISO(); render(); },
+  bnTrack(imei){ if (state.screen !== 'map'){ state.screen = 'map'; state.mapDay = true; render(); setTimeout(()=>bnTrackShow(imei), 400); } else bnTrackShow(imei); },
+  vehServiceSet(id, v){ vehServiceSet(id, v); },
+  optRoute(){ optRouteModal(); },
+  optOpen(){ optOpenNav(); },
+  optApply(){ optApplyOrder(); },
+  searchOpen(){ searchOpen(); },
+  searchType(){ srchRender(); },
+  searchGo(kind, id){ searchGo(kind, id); },
+  jobClone(id){ jobClone(id); },
+  tplMove(){ tplMoveModal(); },
+  tplMoveGo(){ tplMoveGo(); },
+  abkRun(){ abkRun(false); },
+  abkList(){ abkListLoad(); },
   toastInfo(k){ toast('ℹ ' + t(k), 'inf'); },
   clToggle(i, v){
     if (!jobDraft) return;
@@ -7488,8 +8099,17 @@ function cpColor(cpId){
 const BN_V_MS = 20000, BN_S_MS = 120000;      // период опроса: позиции / поездки
 const BN = { vs: [], at: 0, stats: null, statsAt: 0, sel: null, off: false,
              err: '', live: {}, markers: {}, routes: {}, layer: null,
-             _layerMap: null, timer: 0 };
+             _layerMap: null, timer: 0, track: { imei: '', layer: null } };   // v1.08.33: слой трека дня
 function bnVehicles(){ return (state.data && state.data.vehicles) || []; }
+/* v1.08.33: «информацию с трекера» видит админ/менеджер по умолчанию и те,
+   кому админ включил bn_access; воркеру без флага панель, чипы и машины
+   на карте не показываются, а сервер и не отдаст (NO_ACCESS). */
+function bnVisible(){
+  const u = state.user; if (!u) return false;
+  if (u.role === 'admin' || u.role === 'manager') return u.bn_access !== false;
+  return u.bn_access === true;
+}
+function bnCanTrack(){ const u = state.user; return !!u && (u.role === 'admin' || u.bn_track === true); }
 function bnByImei(imei){ return (BN.vs || []).find(x => String(x.imei) === String(imei)); }
 /* расстояние по прямой в милях (haversine); точки {lat, lng|lon} */
 function bnMiP(a, b){
@@ -7569,6 +8189,7 @@ function bnDemoFill(){
   BN.at = BN.statsAt = Date.now();
 }
 async function bnPollTick(force){
+  if (!bnVisible()) return;   // v1.08.33: без доступа не опрашиваем
   if (!state.user || !state.data) return;
   if (['map', 'board', 'home'].indexOf(state.screen) < 0) return;
   if (!bnVehicles().some(v => v.imei)){ BN.vs = []; BN.live = {}; return; }
@@ -7591,7 +8212,7 @@ async function bnPollTick(force){
 }
 function bnInit(){
   if (BN.timer) return;
-  BN.timer = setInterval(() => { bnPollTick(false); }, 5000);
+  BN.timer = setInterval(() => { bnPollTick(false); pbPing(false); }, 5000);   // v1.08.33: заодно разгребаем пуш-очередь
   if (_bnOAuth){                                   // вернулись со страницы Bouncie
     const tmr = setInterval(() => {
       if (state.user && isAdmin() && HAS_SB){
@@ -7689,6 +8310,7 @@ function bnPaint(){
 }
 /* ---- чипы выбора машин над картой ---- */
 function bnChipsHtml(){
+  if (!bnVisible()) return '';   // v1.08.33: чипы машин — только с доступом к трекеру
   const vs = bnVehicles().filter(v => v.imei)
     .slice().sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999));
   if (!vs.length)
@@ -7706,6 +8328,7 @@ function bnChipsHtml(){
 }
 /* ---- панель «Пробег за сегодня»: справа на ПК, под картой на телефоне ---- */
 function bnStatsHtml(inner){
+  if (!bnVisible()) return '';   // v1.08.33
   const vs = bnVehicles().filter(v => v.imei)
     .slice().sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999));
   if (!vs.length) return '';
@@ -7746,6 +8369,7 @@ function bnStatsHtml(inner){
 /* ---- слой машин на Leaflet-карте: маркеры двигаются без пересоздания ---- */
 function bnDrawCars(){
   if (!window.L || !mapObj) return;
+  if (!bnVisible()){ if (BN.layer && BN._layerMap === mapObj) BN.layer.clearLayers(); return; }   // v1.08.33
   if (!BN.layer || BN._layerMap !== mapObj){
     BN.markers = {}; BN.routes = {};
     BN.layer = L.layerGroup().addTo(mapObj);
@@ -7797,13 +8421,76 @@ function bnCarPopup(v, bv, x){
     x && x.mode === 'go' && x.dest ? `→ ${esc(x.dest.label)}${x.pctLeft != null
       ? ` · ${t('bn_left')} ~${x.pctLeft}%` : ''}${x.dMi != null ? ` (${x.dMi.toFixed(1)} ${t('bn_mi')})` : ''}` : '',
     x && x.mode === 'site' && x.dest ? `${t('bn_onsite')}: ${esc(x.dest.label)}` : '',
-    st.fuelLevel != null ? `${t('bn_fuel')}: ${Math.round(st.fuelLevel)}%` : '',
+    st.fuelLevel != null ? `${t('bn_fuel')}: ${Math.round(st.fuelLevel)}%${v.fuel_low ? ' · 🔻 ' + t('veh_fuel_low') : ''}` : '',
+    v.mil ? `⚠ <b>${t('veh_mil')}</b>` : '',
+    vehServiceLine(v),
     day && day.mi != null ? `${t('bn_stat_title')}: <b>${day.mi.toFixed(1)} ${t('bn_mi')}</b>` : '',
     upd ? `<span style="color:var(--dim2,#8AA0AB)">${t('bn_upd')} ${
       String(upd.getHours()).padStart(2, '0')}:${String(upd.getMinutes()).padStart(2, '0')}</span>` : '',
     loc.lat != null ? `<a href="${navDirUrl((+loc.lat) + ',' + (+(loc.lon ?? loc.lng)))}"
-      target="_blank" rel="noopener">${t('bn_nav_to_car')} →</a>` : ''
+      target="_blank" rel="noopener">${t('bn_nav_to_car')} →</a>` : '',
+    bnCanTrack() && v.imei ? `<a href="#" onclick="App.bnTrack('${esc(String(v.imei))}');return false">${
+      BN.track.imei === String(v.imei) ? t('veh_track_off') : ic('map') + ' ' + t('veh_track')} </a>` : ''
   ].filter(Boolean).join('<br>');
+}
+/* v1.08.33: метка ТО по одометру */
+function vehServiceLine(v){
+  if (!v || !v.service_due_mi) return '';
+  const odo = v.last_odo != null ? +v.last_odo : null;
+  if (odo == null) return '';
+  const left = Math.round(v.service_due_mi - odo);
+  if (left <= 0) return `<span style="color:var(--red,#e33)">🔧 ${t('veh_service_over').replace('{n}', String(-left))}</span>`;
+  if (left <= 500) return `<span style="color:#B9932F">🔧 ${t('veh_service_left').replace('{n}', String(left))}</span>`;
+  return '';
+}
+/* ---- трек дня: реальный маршрут машины (polyline поездок) ---- */
+function polyDecode(str){
+  const pts = []; let i = 0, lat = 0, lng = 0;
+  while (i < (str || '').length){
+    for (const w of [0, 1]){
+      let shift = 0, result = 0, b = 0x20;
+      while (b >= 0x20){ b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; }
+      const d = (result & 1) ? ~(result >> 1) : (result >> 1);
+      if (w === 0) lat += d; else lng += d;
+    }
+    pts.push([lat / 1e5, lng / 1e5]);
+  }
+  return pts;
+}
+async function bnTrackShow(imei){
+  imei = String(imei || '');
+  if (!window.L || !mapObj) return;
+  if (BN.track.imei === imei){ bnTrackClear(); return; }   // повторный клик — убрать
+  bnTrackClear();
+  let trips = [];
+  if (HAS_SB){
+    const j = await bnFetch('?track=1&imei=' + encodeURIComponent(imei) + '&date=' + todayISO());
+    if (!j){ toast('⚠ ' + (BN.err || t('bn_no_access')), 'err'); return; }
+    trips = j.trips || [];
+  } else {
+    /* демо: синтетический зигзаг от комплекса к текущей позиции машины */
+    const bv = bnByImei(imei); const loc = bv && bv.stats && bv.stats.location;
+    const cx = (state.data.complexes || []).find(c => c.lat != null);
+    if (loc && cx){
+      const a = [+cx.lat, +cx.lng], b = [+loc.lat, +(loc.lon ?? loc.lng)];
+      const mid = [(a[0]+b[0])/2 + 0.004, (a[1]+b[1])/2 - 0.004];
+      trips = [{ gps: null, pts: [a, mid, b] }];
+    }
+  }
+  const lines = [];
+  for (const tr of trips){
+    const pts = tr.pts || polyDecode(tr.gps || '');
+    if (pts.length > 1) lines.push(pts);
+  }
+  if (!lines.length){ toast('ℹ ' + t('tt_none'), 'inf'); return; }
+  BN.track.imei = imei;
+  BN.track.layer = L.layerGroup(lines.map(pts =>
+    L.polyline(pts, { color: '#3B82F6', weight: 4, opacity: .85 }))).addTo(mapObj);
+  try{ mapObj.fitBounds(L.latLngBounds(lines.flat()), { padding: [30, 30] }); }catch(_e){}
+}
+function bnTrackClear(){
+  if (BN.track.layer){ try{ BN.track.layer.remove(); }catch(_e){} }
+  BN.track = { imei: '', layer: null };
 }
 /* ---- карточка «GPS-трекинг Bouncie» в Настройках (админ) ---- */
 let bnCfg = { loaded: false, client_id: '', has_secret: false, has_auth: false, account: '', secret: '' };
@@ -7928,9 +8615,11 @@ function dirVehicles(){
   const rows = vs.map(v => `
     <div class="rowline">
       <span class="dot num" style="background:var(--blue);color:#fff">${v.car_no ?? '·'}</span>
-      <div class="grow"><b>${esc(v.make || '—')}</b>
+      <div class="grow"><b>${esc(v.make || '—')}</b>${v.mil ? ` <span class="chip bad">⚠ ${t('veh_mil')}</span>` : ''}${v.fuel_low ? ` <span class="chip bad">🔻 ${t('veh_fuel_low')}</span>` : ''}
         <div class="tiny">${v.driver_id ? ic('crew') + ' ' + esc(profName(v.driver_id)) : t('veh_no_driver_l')}</div>
-        <div class="tiny">VIN ${esc(v.vin || '—')} · IMEI ${esc(v.imei || '—')}</div></div>
+        <div class="tiny">VIN ${esc(v.vin || '—')} · IMEI ${esc(v.imei || '—')}</div>
+        ${vehServiceLine(v) ? `<div class="tiny">${vehServiceLine(v)}</div>` : ''}</div>
+      ${bnCanTrack() && v.imei ? `<button class="icon-btn" title="${t('veh_track')}" onclick="App.bnTrack('${esc(String(v.imei))}')">${ic('map')}</button>` : ''}
       <button class="btn btn-ghost sm" onclick="App.vehModal('${v.id}')">${t('edit')}</button>
     </div>`).join('');
   return `<div class="tiny" style="margin-bottom:8px">${t('veh_hint')}</div>
@@ -7960,6 +8649,9 @@ function vehModal(id){
         ${staff.map(p => `<option value="${p.id}" ${v.driver_id === p.id ? 'selected' : ''}>${
           esc(p.display_name)}${p.car_no != null ? ' · №' + p.car_no : ''}</option>`).join('')}
       </select></div>
+    ${v.id ? `<div class="form-row"><span class="lbl">${t('veh_service')} ${tipQ('veh_tip')}</span>
+      <input id="veh-svc" inputmode="numeric" placeholder="85000" value="${v.service_due_mi ?? ''}"
+        onchange="App.vehServiceSet('${v.id}', this.value)"></div>` : ''}
     <div class="tiny" style="margin:4px 0 8px">${t('veh_hint')}</div>
     <button class="btn btn-green" onclick="App.vehSave('${v.id || ''}')">${t('save')}</button>
     ${v.id ? `<button class="btn btn-red" style="margin-top:8px" onclick="App.vehDel('${v.id}')">${
@@ -8016,6 +8708,18 @@ async function vehSave(id){
   closeModal(); toast('✓ ' + t('veh_saved'));
   BN.at = BN.statsAt = 0;                          // подтянуть трекинг с новым составом
   render();
+}
+async function vehServiceSet(id, val){
+  if (!isAdmin()) return;
+  const mi = Math.max(0, parseInt(val, 10) || 0);
+  if (HAS_SB){
+    const { error } = await state.sb.rpc('vehicle_service_set', { p_id: id, p_mi: mi });
+    if (error){ toast('⚠ ' + rpcFail(error, 'vehicle_service_set'), 'err'); return; }
+  }
+  const v = bnVehicles().find(x => x.id === id);
+  if (v){ v.service_due_mi = mi || null; v.service_notified = false; saveLocal(); }
+  audit('veh_service', 'vehicle', id, { mi });
+  toast('✓ ' + t('saved'));
 }
 async function vehDel(id){
   if (!isAdmin() || !confirm(t('veh_del_q'))) return;
@@ -8087,7 +8791,7 @@ function mapDayItems(){
       const over = list.some(p => p.due_date < todayISO());
       const eq = list.map(p => `${p.qty}×${(etById(p.equipment_type_id)||{abbr:'?'}).abbr}`).join(' ');
       pts.push({ num: pkNum[jobId], lat:+cx.lat, lng:+cx.lng, color: over ? '#FF4B4B' : '#8AA0AB',
-        label: `${t('pickup')} Unit ${p0.unit_number||'—'} · ${eq}`, cx, kind:'pickup',
+        label: `${t('pickup')} Unit ${p0.unit_number||'—'} · ${eq}`, cx, kind:'pickup', jobId,
         who: shortName(profName(p0.technician_id)) });
     }
   });
@@ -8096,7 +8800,7 @@ function mapDayItems(){
     if (cx && cx.lat != null && cx.lng != null){
       const wt = wtById(j.work_type_id) || {color:'#888', name:''};
       pts.push({ num: jobNum[j.id], lat:+cx.lat, lng:+cx.lng, color: wt.color,
-        label: `Unit ${j.unit_number||'—'} · ${wt.name}`, cx, kind:'job',
+        label: `Unit ${j.unit_number||'—'} · ${wt.name}`, cx, kind:'job', jobId: j.id, prio: !!prioHard(j),
         who: shortName(profName(j.technician_id)) });
     }
   });
@@ -8150,7 +8854,8 @@ function viewMap(){
     ${state.mapDay ? `
       <div class="form-row" style="margin-top:8px"><span class="lbl">${t('map_day_hint')}</span>
         <input type="date" value="${state.mapDate || state.selDate}" onchange="App.mapSetDate(this.value)"></div>
-      ${day.pts.length ? `<button class="btn btn-blue sm" onclick="App.mapRoute()">${ic('compass')} ${t('route_day_in')} ${navName()}</button>` : ''}` : ''}
+      ${day.pts.length ? `<button class="btn btn-blue sm" onclick="App.mapRoute()">${ic('compass')} ${t('route_day_in')} ${navName()}</button>` : ''}
+      ${day.pts.length >= 2 ? `<button class="btn btn-ghost sm" onclick="App.optRoute()">${ic('compass')} ${t('opt_btn')}</button>` : ''}` : ''}
     ${bnChipsHtml()}
   </div>
   <div class="map-flex">
@@ -8218,6 +8923,106 @@ function initMapView(){
   else mapObj.setView([33.79, -84.39], 10); // Атланта
   setTimeout(()=>mapObj && mapObj.invalidateSize(), 120);
 }
+/* =====================================================================
+   v1.08.33 · ОПТИМИЗАЦИЯ МАРШРУТА ДНЯ. «Ближайший сосед» + один проход
+   2-opt от позиции своей машины (Bouncie) или от первой точки. Красные
+   приоритеты остаются первыми и не переставляются.
+   ===================================================================== */
+function optStartPos(){
+  const me = state.user && state.user.id;
+  const v = bnVehicles().find(x => x.driver_id === me && x.imei);
+  if (v && bnVisible()){
+    const bv = bnByImei(String(v.imei));
+    const loc = bv && bv.stats && bv.stats.location;
+    if (loc && loc.lat != null) return { lat: +loc.lat, lng: +(loc.lon ?? loc.lng) };
+  }
+  return null;
+}
+function optRouteLen(start, seq){
+  let d = 0, prev = start || seq[0];
+  for (let i = start ? 0 : 1; i < seq.length; i++){ d += bnMiP(prev, seq[i]); prev = seq[i]; }
+  return d;
+}
+function optOrder(start, pts){
+  const rest = pts.slice();
+  const out = [];
+  let cur = start || rest.shift();
+  if (!start) out.push(cur);
+  while (rest.length){
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < rest.length; i++){ const d = bnMiP(cur, rest[i]); if (d < bd){ bd = d; bi = i; } }
+    cur = rest.splice(bi, 1)[0]; out.push(cur);
+  }
+  /* лёгкий 2-opt: убираем самопересечения */
+  let improved = true;
+  while (improved){
+    improved = false;
+    for (let i = 0; i < out.length - 2; i++){
+      for (let k = i + 1; k < out.length - 1; k++){
+        const a = i === 0 ? (start || out[0]) : out[i - 1];
+        const before = bnMiP(a, out[i]) + bnMiP(out[k], out[k + 1]);
+        const after = bnMiP(a, out[k]) + bnMiP(out[i], out[k + 1]);
+        if (after + 1e-6 < before){
+          const mid = out.slice(i, k + 1).reverse();
+          out.splice(i, mid.length, ...mid);
+          improved = true;
+        }
+      }
+    }
+  }
+  return out;
+}
+let optState = null;
+function optRouteModal(){
+  const { pts } = mapDayItems();
+  if (pts.length < 2){ toast('ℹ ' + t('opt_none'), 'inf'); return; }
+  const fixed = pts.filter(p => p.prio);
+  const rest = pts.filter(p => !p.prio);
+  const start = optStartPos();
+  const tail = optOrder(fixed.length ? fixed[fixed.length - 1] : start, rest);
+  const best = fixed.concat(tail);
+  const dNow = optRouteLen(start, pts);
+  const dBest = optRouteLen(start, best);
+  const save = dNow - dBest;
+  optState = { order: best, start };
+  const list = best.map((p, i) => `<div class="rowline map-row">
+    <span class="dot num" style="background:${p.color};color:${textColorFor(p.color)}">${i + 1}</span>
+    <div class="grow">${p.kind === 'job' ? ic('wrench') : ic('box')} ${esc(p.label)}
+      <div class="tiny">${esc(p.cx.name)}${p.who ? ' · ' + esc(p.who) : ''}</div></div>
+    <span class="tiny">#${p.num}</span></div>`).join('');
+  const myJobs = best.filter(p => p.kind === 'job');
+  const canApply = myJobs.length > 1 && (isManager() || myJobs.every(p => {
+    const j = jobById(p.jobId); return j && canReorder(j);
+  }));
+  openModal(`
+    ${modalHead(t('opt_title'), 'compass')}
+    <div class="tiny" style="margin-bottom:6px">${start ? t('opt_start_car') : t('opt_start_first')} ${tipQ('opt_tip')}</div>
+    <div class="opt-sum">${t('opt_now')}: <b>${dNow.toFixed(1)} ${t('bn_mi')}</b> → ${t('opt_best')}: <b>${dBest.toFixed(1)} ${t('bn_mi')}</b>
+      ${save > 0.05 ? `<span class="chip ok">−${save.toFixed(1)} ${t('bn_mi')} · ${Math.round(save / Math.max(dNow, .1) * 100)}%</span>` : `<span class="chip">${t('opt_none')}</span>`}</div>
+    <div class="opt-list">${list}</div>
+    <div class="tiny" style="margin:6px 0">${t('opt_note')}</div>
+    <div class="modal-actions">
+      ${canApply && save > 0.05 ? `<button class="btn btn-ghost" onclick="App.optApply()">${t('opt_apply')}</button>` : ''}
+      <button class="btn btn-green" onclick="App.optOpen()">${ic('compass')} ${t('opt_open')} ${navName()}</button>
+    </div>`);
+}
+function optOpenNav(){
+  if (!optState) return;
+  const uniq = [];
+  optState.order.forEach(p => { const k = p.lat.toFixed(5) + ',' + p.lng.toFixed(5); if (!uniq.includes(k)) uniq.push(k); });
+  if (uniq.length) window.open(navRouteUrl(uniq), '_blank', 'noopener');
+}
+async function optApplyOrder(){
+  if (!optState) return;
+  const jobsSeq = optState.order.filter(p => p.kind === 'job');
+  let k = 0;
+  for (const p of jobsSeq){
+    const j = jobById(p.jobId); if (!j) continue;
+    try{ await saveJobPatch(j, { sort_order: ++k }); }catch(e){ dlog('⛔ opt apply:', e); }
+  }
+  audit('route_opt', 'day', state.mapDate || state.selDate || todayISO(), { jobs: k });
+  closeModal(); toast('✓ ' + t('opt_applied')); render();
+}
 function mapRoute(){
   const { pts } = mapDayItems();
   const uniq = [];
@@ -8266,11 +9071,155 @@ function repJobs(){
   return js.sort((a,b)=> a.date.localeCompare(b.date) || (a.created_at||'').localeCompare(b.created_at||''));
 }
 function jobGrand(j){ return (j.status==='approved' && j.approved_total != null) ? +j.approved_total : +j.total || 0; }
+/* =====================================================================
+   v1.08.33 · ГЛОБАЛЬНЫЙ ПОИСК: юнит, № документа, комплекс — по работам,
+   пикапам, пропозалам, ремонтам и комплексам. Свои и общие документы
+   открываются; чужие для воркера — неактивная строка «дата · № · Имя Ф.»
+   (менеджер и админ открывают всё, как и всюду).
+   ===================================================================== */
+function srchDocNo(kind, x){
+  if (kind === 'job') return docNo('inv', x);
+  if (kind === 'prop') return 'PROP-' + (x.no ?? '—');
+  if (kind === 'rep') return 'REP-' + (x.no ?? '—');
+  return '';
+}
+function srchCanOpen(kind, x){
+  if (isManager()) return true;
+  const me = state.user.id;
+  if (kind === 'job') return x.technician_id === me || isJobSharedWithMe(x);
+  if (kind === 'pk') return x.technician_id === me || isPlacementSharedWithMe(x);
+  if (kind === 'rep') return x.created_by === me || (Array.isArray(x.helper_ids) ? x.helper_ids.includes(me) : false);
+  if (kind === 'prop') return x.created_by ? x.created_by === me : true;
+  return true;
+}
+function srchRows(q){
+  q = q.trim().toLowerCase();
+  if (q.length < 2) return null;
+  const has = s => String(s || '').toLowerCase().includes(q);
+  const cxN = id => { const c = cxById(id); return c ? (c.abbr || c.name) : ''; };
+  const out = { jobs: [], pk: [], props: [], reps: [], cx: [] };
+  liveJobs().forEach(j => {
+    if (has(j.unit_number) || has(docNo('inv', j)) || has(cxN(j.complex_id)) || has(j.note)) out.jobs.push(j);
+  });
+  (state.data.placements || []).forEach(p => {
+    if (has(p.unit_number) || has(cxN(p.complex_id))) out.pk.push(p);
+  });
+  (state.data.proposals || []).forEach(p => {
+    if (has(p.unit_number) || has('prop-' + (p.no ?? '')) || has(cxN(p.complex_id))) out.props.push(p);
+  });
+  (state.data.repairs || []).forEach(r => {
+    if (has(r.unit_number) || has('rep-' + (r.no ?? '')) || has(cxN(r.complex_id))) out.reps.push(r);
+  });
+  (state.data.complexes || []).forEach(c => { if (has(c.name) || has(c.abbr) || has(c.address)) out.cx.push(c); });
+  const lim = a => a.slice(0, 12);
+  return { jobs: lim(out.jobs.sort((a,b)=>b.date.localeCompare(a.date))),
+           pk: lim(out.pk.sort((a,b)=>String(b.due_date).localeCompare(String(a.due_date)))),
+           props: lim(out.props), reps: lim(out.reps), cx: lim(out.cx) };
+}
+function srchLine(kind, x){
+  const openable = srchCanOpen(kind, x);
+  const date = kind === 'pk' ? x.due_date : x.date;
+  const no = srchDocNo(kind === 'pk' ? 'job' : kind, kind === 'pk' ? (jobById(x.job_id) || {}) : x);
+  const who = x.technician_name || (x.technician_id ? shortName(profName(x.technician_id)) : (x.created_by ? shortName(profName(x.created_by)) : ''));
+  const cx = cxById(x.complex_id); const cxn = cx ? (cx.abbr || cx.name) : '';
+  const icn = kind === 'job' ? 'wrench' : kind === 'pk' ? 'box' : kind === 'prop' ? 'note' : 'toolbox';
+  if (!openable) return `<div class="rowline srch-row locked">
+      <div class="grow tiny">${fmtDMY(date)} · ${esc(no || '—')} · Unit ${esc(x.unit_number || '—')} · ${esc(who)}</div></div>`;
+  const on = kind === 'job' ? `App.searchGo('job','${x.id}')`
+           : kind === 'pk' ? `App.searchGo('pk','${x.id}')`
+           : kind === 'prop' ? `App.searchGo('prop','${x.id}')`
+           : `App.searchGo('rep','${x.id}')`;
+  return `<button class="rowline srch-row" onclick="${on}">
+      ${ic(icn)}<div class="grow"><b>Unit ${esc(x.unit_number || '—')}</b> <span class="tiny">${esc(no)}</span>
+      <div class="tiny">${fmtDMY(date)} · ${esc(cxn)}${who ? ' · ' + esc(who) : ''}</div></div>${ic('chev_r')}</button>`;
+}
+function srchRender(){
+  const box = $('#srch-res'); if (!box) return;
+  const q = ($('#srch-q') || {}).value || '';
+  const r = srchRows(q);
+  if (!r){ box.innerHTML = `<div class="tiny" style="padding:8px 2px">${t('srch_hint')}</div>`; return; }
+  const grp = (title, arr, f) => arr.length ? `<div class="srch-grp">${title} · ${arr.length}</div>` + arr.map(f).join('') : '';
+  const html =
+    grp(t('srch_jobs'), r.jobs, x => srchLine('job', x)) +
+    grp(t('srch_pk'), r.pk, x => srchLine('pk', x)) +
+    grp(t('srch_props'), r.props, x => srchLine('prop', x)) +
+    grp(t('srch_reps'), r.reps, x => srchLine('rep', x)) +
+    grp(t('srch_cx'), r.cx, c => `<button class="rowline srch-row" onclick="App.searchGo('cx','${c.id}')">
+      ${ic('book')}<div class="grow"><b>${esc(c.name)}</b><div class="tiny">${esc(c.address || '')}</div></div>${ic('chev_r')}</button>`);
+  box.innerHTML = html || `<div class="tiny" style="padding:8px 2px">${t('srch_empty')}</div>`;
+}
+function searchOpen(){
+  openModal(`
+    ${modalHead(t('srch_btn'), 'search')}
+    <input id="srch-q" placeholder="${t('srch_ph')}" autocomplete="off" oninput="App.searchType()">
+    <div class="tiny" style="margin:4px 0">${tipQ('srch_locked_tip')} ${t('srch_hint')}</div>
+    <div id="srch-res" class="srch-res"></div>`);
+  setTimeout(()=>{ const i = $('#srch-q'); if (i) i.focus(); }, 60);
+  srchRender();
+}
+function searchGo(kind, id){
+  closeModal();
+  if (kind === 'job'){ openJob(id); return; }
+  if (kind === 'pk'){ const p = state.data.placements.find(x=>x.id===id); if (p) pickupModal(p.job_id, p.due_date); return; }
+  if (kind === 'prop'){ if (typeof openProposal === 'function'){ openProposal(id); return; } }
+  if (kind === 'rep'){ if (typeof openRepair === 'function'){ openRepair(id); return; } }
+  if (kind === 'cx'){ state.screen = 'dirs'; state.dirTab = 'complexes'; render(); return; }
+}
+
+/* v1.08.33: журнал времени (site_visits приходит уже отфильтрованным RLS) */
+function ttVisits(){ return (state.data && state.data.site_visits) || []; }
+function ttTabVisible(){
+  const u = state.user || {};
+  return isAdmin() || u.tt_self === true || u.tt_others === 'all' || u.tt_others === 'list' || (!HAS_SB && ttVisits().length > 0);
+}
+function ttDur(a, b){
+  const ms = (b ? Date.parse(b) : Date.now()) - Date.parse(a);
+  const m = Math.max(0, Math.round(ms / 60000));
+  return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+}
+function ttJobLine(j){
+  if (!j || !j.complex_id || !j.technician_id) return '';
+  const v = ttVisits().filter(x => x.complex_id === j.complex_id && x.driver_id === j.technician_id && x.date === j.date)
+    .sort((a,b)=>a.arrived_at.localeCompare(b.arrived_at));
+  if (!v.length) return '';
+  const seg = v.map(x => fmtHM(x.arrived_at) + '–' + (x.left_at ? fmtHM(x.left_at) : '…')).join(', ');
+  const tot = v.reduce((s,x)=> s + ((x.left_at ? Date.parse(x.left_at) : Date.now()) - Date.parse(x.arrived_at)), 0);
+  const m = Math.max(0, Math.round(tot/60000));
+  return `<div class="tiny tt-line">${ic('map')} ${t('tt_onsite')}: ${seg} · ${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}</div>`;
+}
+function viewTimeReport(){
+  if (!state.ttDate) state.ttDate = todayISO();
+  const day = state.ttDate;
+  const vs = ttVisits().filter(v => v.date === day).sort((a,b)=>a.arrived_at.localeCompare(b.arrived_at));
+  const byDrv = {};
+  vs.forEach(v => (byDrv[v.driver_id] = byDrv[v.driver_id] || []).push(v));
+  const nameOf = id => { const p = state.data.profiles.find(x=>x.id===id); return p ? p.display_name : '—'; };
+  const cxName = id => { const c = cxById(id); return c ? (c.abbr || c.name) : '—'; };
+  const blocks = Object.keys(byDrv).sort((a,b)=>nameOf(a).localeCompare(nameOf(b))).map(drv => {
+    const rows = byDrv[drv];
+    const tot = rows.reduce((s,x)=> s + ((x.left_at ? Date.parse(x.left_at) : Date.now()) - Date.parse(x.arrived_at)), 0);
+    const m = Math.max(0, Math.round(tot/60000));
+    return `<div class="card tt-card">
+      <div style="font-weight:900">${esc(nameOf(drv))} <span class="tiny" style="font-weight:400">· ${t('tt_total')} ${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}</span></div>
+      ${rows.map(v => `<div class="rowline tt-row">
+        <div class="grow"><b>${esc(cxName(v.complex_id))}</b>
+          <div class="tiny">${fmtHM(v.arrived_at)} – ${v.left_at ? fmtHM(v.left_at) : `<span class="chip ok">${t('tt_now')}</span>`}</div></div>
+        <span class="money">${ttDur(v.arrived_at, v.left_at)}</span>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+  return `
+    <div class="filters"><input type="date" value="${day}" onchange="App.ttDate(this.value)">
+      <span class="tiny">${t('tt_src')} ${tipQ('tt_tip')}</span></div>
+    ${blocks || `<div class="card"><div class="tiny">${t('tt_none')}</div></div>`}`;
+}
 function viewReports(){
-  const tabs = [['invoices', t('reports_pdf'), true], ['pickups', t('rep_pickups'), isManager()]].filter(x=>x[2]);
+  const tabs = [['invoices', t('reports_pdf'), true], ['pickups', t('rep_pickups'), isManager()],
+                ['time', t('tt_tab'), ttTabVisible()]].filter(x=>x[2]);   // v1.08.33
   if (!tabs.find(x=>x[0]===state.repTab)) state.repTab = 'invoices';
   const nav = `<div class="tabs">` + tabs.map(([id,l]) =>
     `<button class="tabbtn ${state.repTab===id?'active':''}" onclick="App.repTab('${id}')">${l}</button>`).join('') + `</div>`;
+  if (state.repTab === 'time') return `<div class="section-title">${t('tab_reports')}${helpBtn('reports')}</div>` + nav + viewTimeReport();   // v1.08.33
   if (state.repTab === 'pickups') return `<div class="section-title">${t('tab_reports')}${helpBtn('reports')}</div>` + nav + viewPickupsReport();
   return `<div class="section-title">${t('tab_reports')}${helpBtn('reports')}</div>` + nav + viewInvoicesReport();
 }
@@ -8642,7 +9591,121 @@ function batchPrint(){                                   // v1.07.27: сразу
 /* =====================================================================
    СПРАВОЧНИК: СОТРУДНИКИ (админ) — роли и видимость для менеджеров
    ===================================================================== */
+/* v1.08.33: права на просмотр сессий и «был(а) в сети» */
+function sessMgrOn(){ return !!(state.data.org_settings || {}).sess_mgr; }
+function canSeeSessions(){ return isAdmin() || (state.user && state.user.role === 'manager' && sessMgrOn()); }
+const LS_SEEN = { at: 0, map: {}, busy: false };
+function lastSeenLoad(){
+  if (!HAS_SB || !canSeeSessions() || LS_SEEN.busy || Date.now() - LS_SEEN.at < 60000) return;
+  LS_SEEN.busy = true;
+  state.sb.rpc('admin_last_seen').then(({ data, error }) => {
+    LS_SEEN.busy = false;
+    if (error){ dlog('admin_last_seen:', error); return; }
+    LS_SEEN.at = Date.now();
+    LS_SEEN.map = {};
+    (data || []).forEach(r => { LS_SEEN.map[r.uid] = r.at; });
+    if (state.screen === 'dirs' && state.dirTab === 'staff') render();
+  }).catch(()=>{ LS_SEEN.busy = false; });
+}
+function fmtSeen(ts){
+  if (!ts) return t('st_never');
+  const d = new Date(ts), now = new Date();
+  const hm = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  return (d.toDateString() === now.toDateString() ? '' : fmtDMY(ts.slice(0,10)) + ' ') + hm;
+}
+function fmtHM(ts){ const d = new Date(ts); return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
+/* админский тумблер персонального доступа; включение доступа само
+   включает человеку соответствующие пуши (снять он может сам) */
+async function setStaffFlag(uid_, key, v){
+  if (!isAdmin()) return;
+  const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
+  const patch = { [key]: v };
+  if (v === true && (key === 'bn_access' || key === 'bn_service')){
+    const pk = key === 'bn_access' ? 'bn_alert' : 'bn_service';
+    patch.push_prefs = { ...(u.push_prefs || {}), [pk]: true };
+  }
+  await dbUpsert('profiles', { ...u, ...patch });
+  audit('staff_flag', 'profile', uid_, { name: u.display_name, key, v });
+  toast('✓ ' + t('saved'));
+  staffCfgModal(uid_);
+}
+async function ttOthersSet(uid_, mode){
+  if (!isAdmin()) return;
+  const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
+  await dbUpsert('profiles', { ...u, tt_others: mode === 'none' ? null : mode });
+  audit('staff_flag', 'profile', uid_, { name: u.display_name, key: 'tt_others', v: mode });
+  staffCfgModal(uid_);
+}
+async function ttListToggle(uid_, tid){
+  if (!isAdmin()) return;
+  const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
+  const cur = Array.isArray(u.tt_list) ? [...u.tt_list] : [];
+  const i = cur.indexOf(tid);
+  if (i >= 0) cur.splice(i, 1); else cur.push(tid);
+  await dbUpsert('profiles', { ...u, tt_list: cur });
+  staffCfgModal(uid_);
+}
+async function staffKillSessions(uid_){
+  if (!isAdmin() || !HAS_SB) return;
+  const { error } = await state.sb.rpc('admin_kill_sessions', { target: uid_ });
+  if (error){ toast('⚠ ' + rpcFail(error, 'admin_kill_sessions'), 'err'); return; }
+  const u = state.data.profiles.find(p => p.id === uid_);
+  audit('sess_kill', 'profile', uid_, { name: u ? u.display_name : '' });
+  toast('✓ ' + t('st_kill_ok'));
+  staffCfgModal(uid_);
+}
+function uaShort(ua){
+  ua = String(ua || '');
+  const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android'
+           : /Windows/.test(ua) ? 'Windows' : /Mac OS/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : '';
+  const br = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Chrome\//.test(ua) ? 'Chrome'
+           : /Safari\//.test(ua) && !/Chrome/.test(ua) ? 'Safari' : /Firefox\//.test(ua) ? 'Firefox' : '';
+  return (os || br) ? [os, br].filter(Boolean).join(' · ') : t('st_dev_unknown');
+}
+async function staffCfgModal(uid_){
+  const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
+  const chk = (key, val, label) => `
+    <label class="chk-line"><input type="checkbox" ${val?'checked':''} ${isAdmin()?'':'disabled'}
+      onchange="App.setStaffFlag('${uid_}','${key}', this.checked)"> ${label}</label>`;
+  const effBn = u.bn_access ?? (u.role !== 'tech');
+  const others = u.tt_others || 'none';
+  const seg = (val, lbl) => `<button class="${others === val ? 'on' : ''}" ${isAdmin()?'':'disabled'}
+      onclick="App.ttOthersSet('${uid_}','${val}')">${lbl}</button>`;
+  const staffChips = others === 'list' ? `<div class="tiny" style="margin:4px 0 2px">${t('st_tt_pick')}</div>
+    <div class="chip-wrap">` + state.data.profiles.filter(p => p.id !== uid_).map(p => {
+      const onIt = Array.isArray(u.tt_list) && u.tt_list.includes(p.id);
+      return `<button class="chip ${onIt?'ok':''}" onclick="App.ttListToggle('${uid_}','${p.id}')">${esc(shortName(p.display_name))}</button>`;
+    }).join('') + `</div>` : '';
+  let sessHtml = '';
+  if (HAS_SB && canSeeSessions()){
+    sessHtml = `<div style="font-weight:800;margin:10px 0 4px">${t('st_sessions')}</div><div class="tiny" id="sess-list">…</div>
+      ${isAdmin() ? `<button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.staffKillSessions('${uid_}')">${ic('ban')} ${t('st_kill')}</button>` : ''}`;
+  }
+  openModal(`
+    ${modalHead(esc(u.display_name), 'crew')}
+    <div class="tiny" style="margin-bottom:8px">${t('st_last_seen')}: <b>${fmtSeen(LS_SEEN.map[uid_])}</b></div>
+    <div style="font-weight:800;margin:4px 0">${ic('car')} Bouncie ${tipQ('st_flags_tip')}</div>
+    ${chk('bn_access', effBn, t('st_bn_access'))}
+    ${chk('bn_service', u.bn_service ?? (u.role === 'admin'), t('st_bn_service'))}
+    ${chk('bn_track', u.bn_track ?? (u.role === 'admin'), t('st_bn_track'))}
+    <div style="font-weight:800;margin:10px 0 4px">${ic('map')} ${t('tt_title')} ${tipQ('tt_tip')}</div>
+    ${chk('tt_self', u.tt_self === true, t('st_tt_self'))}
+    <div class="tiny" style="margin:4px 0 2px">${t('st_tt_others')}:</div>
+    <div class="lang-seg cam-seg">${seg('none', t('st_tt_none'))}${seg('all', t('st_tt_all'))}${seg('list', t('st_tt_list'))}</div>
+    ${staffChips}
+    ${sessHtml}`);
+  if (HAS_SB && canSeeSessions()){
+    state.sb.rpc('admin_sessions', { target: uid_ }).then(({ data, error }) => {
+      const el = $('#sess-list'); if (!el) return;
+      if (error){ el.textContent = rpcFail(error, 'admin_sessions'); return; }
+      if (!data || !data.length){ el.textContent = t('st_sess_none'); return; }
+      el.innerHTML = data.map(s => `<div>${esc(uaShort(s.ua))} · ${fmtSeen(s.refreshed_at || s.created_at)}</div>`).join('');
+    }).catch(()=>{});
+  }
+}
+
 function dirStaff(){
+  lastSeenLoad();   // v1.08.33: «был(а) в сети» — лениво, кэш 60 с
   const list = [...state.data.profiles].sort((a,b)=>a.display_name.localeCompare(b.display_name));
   return `<div class="card">` + list.map(u => {
     const me = u.id === state.user.id;
@@ -8653,12 +9716,13 @@ function dirStaff(){
       <div class="grow">
         <b>${esc(u.display_name)}</b>${u.car_no != null ? ` <span class="car-no" title="${t('car_no')}">${u.car_no}</span>` : ''}
         <span class="chip ${u.blocked?'bad':'ok'} chip-st">${u.blocked?t('st_blocked'):t('st_active')}</span>
-        <div class="tiny">@${esc(u.login)} · ${t('registered')} ${reg}</div>
+        <div class="tiny">@${esc(u.login)} · ${t('registered')} ${reg}${canSeeSessions() && HAS_SB ? ` · ${t('st_last_seen')}: ${fmtSeen(LS_SEEN.map[u.id])}` : ''}</div>
       </div>
       <div class="staff-ctl">
         <input class="car-inp" type="number" min="1" max="99" inputmode="numeric" title="${t('car_no')}"
           placeholder="№" value="${u.car_no ?? ''}" onchange="App.setCarNo('${u.id}', this.value)">
         ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
+        ${(isAdmin() || canSeeSessions()) ? `<button class="icon-btn" title="${t('st_cfg')}" aria-label="${t('st_cfg')}" onclick="App.staffCfg('${u.id}')">${ic('gear')}</button>` : ''}
         <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${me?'disabled':''}>
           ${['tech','manager','admin'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
         </select>
@@ -9272,7 +10336,15 @@ function faqHtml(){
     <h4>${ic('mic')} Notes, dictation & translation</h4>
     <p>Every job and pickup has a note. The ${ic('mic')} microphone dictates in RU or EN (Chrome/Android; on iPhone — the 🎤 key on the keyboard, see the iPhone section), text is editable by hand, and the note prints on the PDF as the <b>NOTES</b> line. One tap translates a Russian note to English.</p>
     <h4>${ic('wrench')} Account, settings & service</h4>
-    <p>Sign in with a login (Latin, 3–32 chars) and password; sign-up needs the <b>invite code</b> (set by the admin in Settings, default — APC). You change your own password under Settings → “Change password”; if you’re blocked or forgot it, the admin helps in Staff. Settings: UI language RU/EN (PDF is always EN), your display name, app install, event <b>log</b>, <b>diagnostics</b> (and DB diagnostics for admin). Android back button: closes a modal, saves and exits an open form, double-press exits the app.</p>`;
+    <p>Sign in with a login (Latin, 3–32 chars) and password; sign-up needs the <b>invite code</b> (set by the admin in Settings, default — APC). You change your own password under Settings → “Change password”; if you’re blocked or forgot it, the admin helps in Staff. Settings: UI language RU/EN (PDF is always EN), your display name, app install, event <b>log</b>, <b>diagnostics</b> (and DB diagnostics for admin). Android back button: closes a modal, saves and exits an open form, double-press exits the app.</p>
+    <h4>${ic('bell')} ${t('upd_title')}</h4>
+    <ul>
+      <li><b>1.08.27</b> — stock register: intake/write-off, "My car #N", repair; equipment moves are written automatically (scheme behind "?" on Stock).</li>
+      <li><b>1.08.30</b> — document chains: proposal ↔ job ↔ pickups ↔ repair, chain button in the doc header.</li>
+      <li><b>1.08.31</b> — roles/blocking moved to server rules: instant and admin-only.</li>
+      <li><b>1.08.32</b> — Bouncie GPS: cars on the map, "driving → where, % left", daily mileage; Vehicles directory.</li>
+      <li><b>1.08.33</b> — <b>push notifications</b> (job, pickup, approval, overdue — checkboxes in Settings); <b>time-on-site log</b> (Reports → Time); <b>route optimization</b> on the day map; global ${ic('search')} <b>search</b> in the header; "Create same" and "Move day"; <b>2FA</b>; sessions & last-seen (Staff ${ic('gear')}); SQL auto-backup to Drive; Check Engine/fuel/service and per-car <b>day track</b>. Tracker, service and track access is now granted per person (Staff → ${ic('gear')}); workers have no tracker by default.</li>
+    </ul>`;
   return `
     <h4>${ic('compass')} Как всё устроено</h4>
     <p>Одна работа = один юнит в апарт-комплексе. Жмёте <b>＋</b>, выбираете дату → контрагента → комплекс → юнит → вид работы. Внутри работы отмечаете услуги галочками — цены подставляются сами, итог пересчитывается на лету. Отметили «выполнено» — админ может поставить апрув (с правкой итоговой суммы). Если после апрува не-админ меняет стоимость — апрув снимается. Кнопка <b>PDF</b> собирает инвойс, повторяющий бумажную форму.</p>
@@ -9321,7 +10393,15 @@ function faqHtml(){
     <h4>${ic('mic')} Заметки, диктовка и перевод</h4>
     <p>У каждой работы и пикапа есть заметка. Микрофон ${ic('mic')} диктует на RU или EN (Chrome/Android; на iPhone — кнопкой 🎤 на клавиатуре, см. раздел про iPhone), текст правится руками и печатается в PDF строкой <b>NOTES</b>. Одним нажатием русскую заметку можно перевести на английский.</p>
     <h4>${ic('wrench')} Аккаунт, настройки и сервис</h4>
-    <p>Вход — логин латиницей (3–32 символа) и пароль; для регистрации нужен <b>код приглашения</b> (задаёт админ в «Настройках», стандартный — APC). Свой пароль меняется в «Настройках» → «Смена пароля»; если вас заблокировали или пароль забыт — поможет админ во вкладке «Сотрудники». В «Настройках»: язык интерфейса RU/EN (PDF всегда на английском), ваше имя, установка приложения, <b>журнал</b> событий, <b>диагностика</b> (и БД-диагностика для админа). Кнопка «назад» на Android: закрывает модалку, сохраняет и закрывает открытую форму, двойное нажатие — выход из приложения.</p>`;
+    <p>Вход — логин латиницей (3–32 символа) и пароль; для регистрации нужен <b>код приглашения</b> (задаёт админ в «Настройках», стандартный — APC). Свой пароль меняется в «Настройках» → «Смена пароля»; если вас заблокировали или пароль забыт — поможет админ во вкладке «Сотрудники». В «Настройках»: язык интерфейса RU/EN (PDF всегда на английском), ваше имя, установка приложения, <b>журнал</b> событий, <b>диагностика</b> (и БД-диагностика для админа). Кнопка «назад» на Android: закрывает модалку, сохраняет и закрывает открытую форму, двойное нажатие — выход из приложения.</p>
+    <h4>${ic('bell')} ${t('upd_title')}</h4>
+    <ul>
+      <li><b>1.08.27</b> — регистр склада: приход/списание, «Моя машина №N», ремонт; движения оборудования пишутся автоматически (схема — за «?» на экране Склад).</li>
+      <li><b>1.08.30</b> — связки документов: пропозал ↔ работа ↔ пикапы ↔ ремонт, кнопка-цепочка в шапке документа.</li>
+      <li><b>1.08.31</b> — роли и блокировки наведены на серверные правила: смена роли/блокировка — мгновенно и только у админа.</li>
+      <li><b>1.08.32</b> — GPS-трекинг Bouncie: машины на карте, «едет → куда, осталось %», пробег за день; справочник «Автомобили».</li>
+      <li><b>1.08.33</b> — <b>пуш-уведомления</b> (задача, пикап, апрув, просрочка — галочки в Настройках); <b>журнал времени на объектах</b> (Отчёты → «Время»); <b>оптимизация маршрута</b> на карте дня; <b>глобальный поиск</b> ${ic('search')} в шапке; «Создать такую же» и «Перенос дня»; <b>2FA</b>; сессии и «был(а) в сети» (Штат ${ic('gear')}); автобэкап SQL в Drive; Check Engine/топливо/ТО и <b>трек дня</b> по машинам. Доступ к трекеру, ТО и трекам админ теперь выдаёт персонально (Штат → ${ic('gear')}); воркерам по умолчанию трекер закрыт.</li>
+    </ul>`;
 }
 function faqModal(){
   openModal(`
@@ -11692,6 +12772,7 @@ async function repSetStatus(s){
   repHistAdd(r, s === 'draft' ? 'reset' : s);
   await saveRepair(true);
   render();
+  pbPing(true);   // v1.08.33
 }
 
 /* ---------- список и форма ---------- */

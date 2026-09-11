@@ -1892,3 +1892,36 @@ select:disabled{opacity:.55;cursor:default}
   margin-top:4px;padding-top:8px;font-weight:900}
 .bn-go{color:var(--green);font-weight:800}
 .bn-site{color:var(--blue);font-weight:800}
+
+/* ===================== v1.08.33 ===================== */
+/* маленький «?» с подсказкой возле функции */
+.tipq{ width:17px;height:17px;border-radius:50%;border:1.6px solid var(--dim-2);
+  background:transparent;color:var(--dim-2);font-size:11px;font-weight:900;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;
+  margin-left:4px;padding:0;cursor:pointer }
+.tipq:active{ transform:scale(.92) }
+/* строка-галочка в карточках настроек и модалках */
+.chk-line{ display:flex;align-items:center;gap:8px;padding:6px 0;font-weight:700;font-size:14px;cursor:pointer }
+.chk-line input{ width:18px;height:18px;accent-color:var(--green);flex:0 0 auto }
+.chk-line input:disabled{ opacity:.5 }
+/* поиск в шапке и модалка результатов */
+.hdr-srch{ margin-right:2px }
+.srch-res{ max-height:58vh;overflow:auto;margin-top:4px }
+.srch-grp{ font-size:11px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--dim-2);margin:10px 2px 2px }
+.srch-row{ width:100%;text-align:left }
+.srch-row.locked{ opacity:.55;pointer-events:none }
+/* оптимизация маршрута */
+.opt-sum{ display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:14px;margin-bottom:6px }
+.opt-list{ max-height:44vh;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:2px 6px }
+/* журнал времени */
+.tt-card{ margin-bottom:10px }
+.tt-row .money{ font-variant-numeric:tabular-nums }
+.tt-line{ color:var(--blue);font-weight:700 }
+/* штат: чипы выбора сотрудников, сессии */
+.chip-wrap{ display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px }
+.chip.warn{ background:rgba(255,200,50,.16);color:#B9932F;border-color:#B9932F }
+#sess-list div{ padding:2px 0;border-bottom:1px dashed var(--line) }
+#sess-list div:last-child{ border-bottom:0 }
+/* перенос дня в ленте недели */
+.today-jump.tpl-move{ margin-left:6px }
