@@ -1837,3 +1837,58 @@ select:disabled{opacity:.55;cursor:default}
 .eq-big-s{font-size:10.5px;font-weight:700;opacity:.9}
 .eq-big-n{font-size:10.5px;font-weight:800;margin-top:3px;padding:1px 9px;border-radius:999px;background:rgba(0,0,0,.22)}
 .faq-scheme{width:100%;height:auto;display:block;margin:2px 0}
+
+/* =====================================================================
+   v1.08.32: GPS-ТРЕКИНГ BOUNCIE
+   Зелёная точка статуса в правом верхнем углу карточки: мигает — сотрудник
+   уехал с прошлого места и едет сюда; горит ровно — уже на месте. Машины
+   на карте, чипы выбора и панель «Пробег за сегодня».
+   ===================================================================== */
+.bn-dot{display:none;position:absolute;top:-5px;right:-5px;width:12px;height:12px;
+  border-radius:50%;background:var(--green);border:2px solid var(--bg);
+  box-shadow:0 0 6px rgba(88,204,2,.85);z-index:4}
+.bn-dot.go{display:block;animation:bn-blink 1s ease-in-out infinite}
+.bn-dot.site{display:block}
+@keyframes bn-blink{0%,100%{opacity:1}50%{opacity:.15}}
+.bpk{position:relative}                    /* якорь для точки на карточке пикапа */
+
+/* --- машина на карте (Leaflet divIcon) --- */
+.map-car{position:relative;display:flex;align-items:center;justify-content:center;
+  width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:10px;
+  background:var(--panel);border:2px solid var(--dim);color:#fff;
+  font-weight:900;font-size:.8rem;box-shadow:0 2px 8px rgba(0,0,0,.55)}
+.map-car.run{border-color:var(--green);box-shadow:0 0 10px rgba(88,204,2,.7)}
+.map-car.dim{opacity:.35}
+.map-car-h{position:absolute;inset:-9px;pointer-events:none}
+.map-car-h::before{content:'';position:absolute;top:0;left:50%;margin-left:-5px;
+  width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+  border-bottom:8px solid var(--dim)}
+.map-car.run .map-car-h::before{border-bottom-color:var(--green)}
+
+/* --- чипы выбора машин над картой --- */
+.bn-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.bn-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+  border:2px solid var(--line);background:var(--panel-2);color:var(--dim);
+  font-weight:800;font-size:.78rem;cursor:pointer;font-family:inherit}
+.bn-chip.on{border-color:var(--green);color:var(--text)}
+.bn-chip-no{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
+  padding:0 4px;border-radius:6px;background:var(--blue);color:#fff;font-size:.7rem;font-weight:900}
+
+/* --- панель «Пробег за сегодня» (на телефоне — под картой) --- */
+.bn-stats{background:var(--panel);border:2px solid var(--line);border-radius:16px;
+  padding:10px 12px;margin-top:10px}
+.bn-shead{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.bn-srow{display:flex;gap:10px;align-items:center;width:100%;text-align:left;
+  background:none;border:0;border-top:1px solid var(--line-soft);padding:8px 2px;
+  color:var(--text);cursor:pointer;font:inherit}
+.bn-srow .grow{min-width:0}
+.bn-srow .grow b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bn-sno{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;
+  border-radius:9px;background:var(--panel-2);border:2px solid var(--dim);
+  font-weight:900;flex:0 0 auto}
+.bn-sno.run{border-color:var(--green);box-shadow:0 0 8px rgba(88,204,2,.6)}
+.bn-smi{text-align:right;flex:0 0 auto}
+.bn-stot{display:flex;gap:8px;align-items:center;border-top:2px solid var(--line);
+  margin-top:4px;padding-top:8px;font-weight:900}
+.bn-go{color:var(--green);font-weight:800}
+.bn-site{color:var(--blue);font-weight:800}

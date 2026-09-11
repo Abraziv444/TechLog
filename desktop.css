@@ -765,3 +765,9 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
    карточки работы цепляется теперь за неё. Оформление календаря (#dsk-cal)
    переехало в styles.css —
    он теперь общий для телефона и ПК (см. ui.js). */
+
+/* ===== v1.08.32: карта — панель пробега справа от карты ===== */
+html.tl-desktop .map-flex{display:grid;grid-template-columns:minmax(0,1fr) 300px;
+  gap:12px;align-items:start}
+html.tl-desktop .bn-stats{position:sticky;top:10px;margin-top:0}
+html.tl-desktop .map-flex .map-box{height:60vh}

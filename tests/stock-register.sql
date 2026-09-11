@@ -13,7 +13,10 @@
 --   (каскад движений) → финальный инвариант сохранения журнала;
 --   плюс блок «профили и роли»: создание сотрудника админом, все три
 --   роли по кругу, блокировка/разблокировка, правка профиля и регрессия
---   «админ не может изменить роль» (клиентский RLS-upsert, v1.08.31).
+--   «админ не может изменить роль» (клиентский RLS-upsert, v1.08.31);
+--   плюс блок v1.08.32 «автомобили»: vehicle_save с синхронизацией номера
+--   в профиле, перевес водителя, CAR_NO_TAKEN/BAD_CAR_NO/FORBIDDEN/NOT_FOUND
+--   и ключи Bouncie в app_secrets через admin_set_bouncie_config.
 --
 -- БЕЗОПАСЕН ДЛЯ ЛЮБОЙ БАЗЫ: всё выполняется в одной транзакции и в конце
 -- откатывается (ROLLBACK) — в таблицах не остаётся ни строки, включая
@@ -334,6 +337,96 @@ begin
   update public.profiles set display_name = 'Новый Работник 3' where id = NN;
   select count(*) into n from public.profiles where id = NN and display_name = 'Новый Работник 3';
   perform pg_temp.eq('админ правит имя сотрудника', n, 1);
+
+  -- ================= v1.08.32: автомобили и ключи Bouncie ==============
+  declare
+    V1 uuid; V2 uuid;
+  begin
+    perform set_config('request.jwt.claim.sub', A::text, true);
+
+    -- ключи Bouncie: запись, «пустая строка = не менять», запрет технику
+    perform public.admin_set_bouncie_config('cid-1', 'sec-1');
+    select count(*) into n from public.app_secrets
+     where (key, value) in (('bn_client_id','cid-1'), ('bn_client_secret','sec-1'));
+    perform pg_temp.eq('bouncie: ключи легли в app_secrets', n, 2);
+    perform public.admin_set_bouncie_config('cid-2', '');
+    select count(*) into n from public.app_secrets
+     where (key, value) in (('bn_client_id','cid-2'), ('bn_client_secret','sec-1'));
+    perform pg_temp.eq('bouncie: пустой секрет не затирает старый', n, 2);
+    begin
+      perform set_config('request.jwt.claim.sub', B::text, true);
+      perform public.admin_set_bouncie_config('x', 'y');
+      raise exception 'ТЕСТ [техник записал ключи Bouncie]';
+    exception when others then
+      if SQLERRM <> 'FORBIDDEN' then raise; end if;
+      perform nextval('trt_cnt'); raise notice '  ok bouncie: технику ключи запрещены (FORBIDDEN)';
+    end;
+    perform set_config('request.jwt.claim.sub', A::text, true);   -- exception откатил GUC
+
+    -- vehicle_save: создание + синхронизация номера в профиле водителя
+    select public.vehicle_save(null, 'Ford Transit', 'VIN0001', '35-000 111', 11, NN) into V1;
+    select count(*) into n from public.vehicles
+     where id = V1 and imei = '35000111' and car_no = 11 and driver_id = NN;
+    perform pg_temp.eq('машина создана, IMEI очищен до цифр', n, 1);
+    select count(*) into n from public.profiles where id = NN and car_no = 11;
+    perform pg_temp.eq('номер машины лёг в профиль водителя', n, 1);
+
+    -- негативы: занятый и кривой номер
+    begin
+      perform public.vehicle_save(null, 'Dodge', null, null, 11, null);
+      raise exception 'ТЕСТ [дубль номера машины (vehicles) прошёл]';
+    exception when others then
+      if SQLERRM <> 'CAR_NO_TAKEN' then raise; end if;
+      perform nextval('trt_cnt'); raise notice '  ok номер занят другой машиной (CAR_NO_TAKEN)';
+    end;
+    perform set_config('request.jwt.claim.sub', A::text, true);
+    begin
+      perform public.vehicle_save(null, 'Dodge', null, null, 100, null);
+      raise exception 'ТЕСТ [номер 100 прошёл]';
+    exception when others then
+      if SQLERRM <> 'BAD_CAR_NO' then raise; end if;
+      perform nextval('trt_cnt'); raise notice '  ok номер вне 1–99 отбит (BAD_CAR_NO)';
+    end;
+    perform set_config('request.jwt.claim.sub', A::text, true);
+
+    -- вторая машина и «перевес» водителя: старая машина и старый номер очищаются
+    select public.vehicle_save(null, 'RAM ProMaster', null, '35000222', 12, B) into V2;
+    select count(*) into n from public.profiles where id = B and car_no = 12;
+    perform pg_temp.eq('второй водитель получил №12', n, 1);
+    perform public.vehicle_save(V1, 'Ford Transit', 'VIN0001', '35000111', 11, B);
+    select count(*) into n from public.vehicles where id = V2 and driver_id is null;
+    perform pg_temp.eq('перевес: со старой машины водитель снят', n, 1);
+    select count(*) into n from public.profiles where id = B and car_no = 11;
+    perform pg_temp.eq('перевес: у водителя номер новой машины', n, 1);
+    select count(*) into n from public.profiles where id = NN and car_no is null;
+    perform pg_temp.eq('перевес: у прежнего водителя номер снят', n, 1);
+
+    -- негативы: техник и несуществующая машина
+    begin
+      perform set_config('request.jwt.claim.sub', B::text, true);
+      perform public.vehicle_save(V1, 'Hack', null, null, 11, B);
+      raise exception 'ТЕСТ [техник сохранил машину]';
+    exception when others then
+      if SQLERRM <> 'FORBIDDEN' then raise; end if;
+      perform nextval('trt_cnt'); raise notice '  ok машины технику запрещены (FORBIDDEN)';
+    end;
+    perform set_config('request.jwt.claim.sub', A::text, true);
+    begin
+      perform public.vehicle_save('9e000000-0000-4000-8000-0000000000e9', 'Ghost', null, null, 13, null);
+      raise exception 'ТЕСТ [правка несуществующей машины прошла]';
+    exception when others then
+      if SQLERRM <> 'NOT_FOUND' then raise; end if;
+      perform nextval('trt_cnt'); raise notice '  ok несуществующая машина (NOT_FOUND)';
+    end;
+    perform set_config('request.jwt.claim.sub', A::text, true);
+
+    -- вернуть профили в исходное состояние: хвост ниже рассчитывает,
+    -- что №99 занят техником B (негатив «дубль номера машины»)
+    perform public.vehicle_save(V1, 'Ford Transit', 'VIN0001', '35000111', 11, null);
+    update public.profiles set car_no = 99 where id = B;
+    select count(*) into n from public.profiles where id = B and car_no = 99;
+    perform pg_temp.eq('парк разобран: технику вернули №99', n, 1);
+  end;
 
   -- хвост под ролью authenticated: живой RLS, как у приложения
   set local role authenticated;

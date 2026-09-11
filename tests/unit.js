@@ -24,7 +24,7 @@ const t = (name, cond, extra) => {
 };
 
 const expose = `;window.__T = {
-  DICT: I18N, APP_VERSION, DB_SQL_FILE, DB_NEED_COLS, POP_POS,
+  DICT: I18N, APP_VERSION, DB_SQL_FILE, DB_NEED_COLS, DB_NEED_RPCS, POP_POS,
   hasCyr, enText, needsTr, trFields, trMiss, trCanWrite, trDocLabel,
   translit, pdfLatinize, enName,
   renderNoFmt, docNo, pickNo, docNoVals, DOC_FMT_DEF, FILE_FMT_DEF, DOC_TOKENS, FILE_TOKENS,
@@ -34,7 +34,9 @@ const expose = `;window.__T = {
   repApprovalReset, repPhotos, repsResetList,
   stockRow, stockTotals, plOut, myOnHand, myOnHandQty,
   emSums, emRow, myCarQty, eqCap, setEqDraft: d => { eqDraft = d; }, viewStock, viewTabbar,
-  docBlockers, canArchDoc, archReps, chainBlockModal
+  docBlockers, canArchDoc, archReps, chainBlockModal,
+  TABLES, BN, bnMiP, bnDestFor, bnSelSet, bnDotHtml, bnCompute, bnDemoFill,
+  bnVehicles, vehFreeNo, vehApplyLocal, dirVehicles, bnChipsHtml, bnStatsHtml
 };`;
 
 try {
@@ -542,7 +544,7 @@ console.log('\n— связанные документы: блок удален�
   t('архив умеет удалять ремонт навсегда', /dbDelete\('repairs', id\)/.test(src));
   t('журнал знает repair-события', /'repair_archive','repair_restore','repair_delete'/.test(src));
   t('смена роли идёт через RPC (v1.08.31)', /rpc\('admin_set_role'/.test(src)
-    && /'admin_set_role'\]/.test(src));
+    && T.DB_NEED_RPCS.includes('admin_set_role'));
   t('справка архива добавлена', /S\.archive = H\(/.test(src));
 }
 
@@ -693,6 +695,73 @@ console.log('\n— снятый апрув и фото ремонта (v1.08.24)
   t('в PDF печатается число фото', /Photos: ' \+ phc\.before\.length/.test(src24));
   ['act_rep_reset','act_rep_reset_h','rep_reset_chip','rep_photos','rep_ph_before','rep_ph_after',
    'rep_photos_h','rep_photos_nojob']
+    .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
+}
+
+console.log('\n— GPS-трекинг Bouncie и автомобили (v1.08.32) —');
+{
+  t('таблица vehicles синхронизируется', T.TABLES.includes('vehicles'));
+  t('диагностика БД знает про vehicles.imei',
+    T.DB_NEED_COLS.some(c => c[0] === 'vehicles' && c[1] === 'imei'));
+  t('диагностика БД знает про org_settings.bn_account',
+    T.DB_NEED_COLS.some(c => c[0] === 'org_settings' && c[1] === 'bn_account'));
+
+  const sql32 = fs.readFileSync(ROOT + '/supabase/update-to-1_08_32.sql', 'utf8');
+  t('SQL создаёт таблицу vehicles', /create table if not exists public\.vehicles/.test(sql32));
+  t('SQL содержит vehicle_save', /create or replace function public\.vehicle_save/.test(sql32));
+  t('SQL содержит admin_set_bouncie_config', /admin_set_bouncie_config/.test(sql32));
+  const full32 = fs.readFileSync(ROOT + '/supabase/full-install-1_08_32.sql', 'utf8');
+  t('полный скрипт включает vehicle_save и чекер 1.08.32',
+    /vehicle_save/.test(full32) && /схема соответствует v1\.08\.32/.test(full32));
+  t('Edge Function bouncie на месте (functions + dashboard-копия)',
+    fs.existsSync(ROOT + '/supabase/functions/bouncie/index.ts') &&
+    fs.existsSync(ROOT + '/supabase/functions-dashboard/bouncie/index.ts') &&
+    fs.existsSync(ROOT + '/supabase/functions-dashboard/bouncie/google.ts'));
+  t('dashboard-копия импортирует ./google.ts',
+    /from ["']\.\/google\.ts["']/.test(fs.readFileSync(ROOT + '/supabase/functions-dashboard/bouncie/index.ts', 'utf8')));
+  t('новые RPC в списке диагностики',
+    T.DB_NEED_RPCS.includes('vehicle_save') && T.DB_NEED_RPCS.includes('admin_set_bouncie_config'));
+
+  const dMi = T.bnMiP({ lat: 33.749, lng: -84.388 }, { lat: 33.749, lng: -83.388 });
+  t('haversine: 1° долготы на широте Атланты ≈ 57.5 mi', dMi > 56 && dMi < 59, dMi && dMi.toFixed(2));
+  t('haversine принимает lon как синоним lng',
+    T.bnMiP({ lat: 1, lng: 2 }, { lat: 1, lon: 2 }) === 0);
+
+  T.state.data = T.seedDemoData();
+  T.state.user = T.state.data.profiles.find(p => p.id === 'demo-admin');
+  t('в демо-данных три машины с водителями',
+    T.bnVehicles().length === 3 && T.bnVehicles().every(v => v.driver_id && v.imei));
+  t('свободный номер после 1–3 — четвёртый', T.vehFreeNo(null) === 4);
+
+  const dAdm = T.bnDestFor('demo-admin');
+  t('цель админа — просроченный пикап (pk:…)', !!dAdm && dAdm.kind === 'pk' && /^pk:/.test(dAdm.key), dAdm && dAdm.key);
+  const dTech = T.bnDestFor('demo-tech');
+  t('цель воркера — сегодняшняя работа (job:…)', !!dTech && dTech.kind === 'job' && /^job:/.test(dTech.key));
+  t('у целей есть координаты комплекса', !!(dAdm && dAdm.pt) && !!(dTech && dTech.pt));
+
+  T.bnDemoFill();
+  T.bnCompute();
+  t('демо-телеметрия по всем машинам', T.BN.vs.length === 3 && !!T.BN.stats);
+  const lT = T.BN.live['demo-tech'], lA = T.BN.live['demo-admin'];
+  t('воркер «едет» к работе (мигающая точка)', !!lT && lT.mode === 'go');
+  t('процент оставшегося пути осмысленный', !!lT && lT.pctLeft > 30 && lT.pctLeft < 80, lT && (lT.pctLeft + '%'));
+  t('админ «на месте» пикапа (сплошная точка)', !!lA && lA.mode === 'site');
+
+  t('точка рисуется с ключом карточки', /data-bnd="job:x1"/.test(T.bnDotHtml('job:x1')));
+  t('справочник рисует демо-парк', /Ford Transit/.test(T.dirVehicles()) && /IMEI/.test(T.dirVehicles()));
+  t('чипы: режим «все» по умолчанию', T.BN.sel === null && /bn-chip on/.test(T.bnChipsHtml()));
+  t('панель пробега считает итог', /bn-stot/.test(T.bnStatsHtml(false)) && /bn-srow/.test(T.bnStatsHtml(false)));
+
+  const v1 = T.bnVehicles().find(v => v.car_no === 1);
+  T.vehApplyLocal({ id: v1.id, make: v1.make, vin: v1.vin, imei: v1.imei, car_no: 7, driver_id: 'demo-tech',
+    created_at: v1.created_at }, 'demo-tech');
+  t('vehApplyLocal синхронизирует номер в профиле',
+    T.state.data.profiles.find(p => p.id === 'demo-tech').car_no === 7);
+
+  ['d_vehicles','veh_make','veh_vin','veh_imei','veh_no','veh_driver','veh_import','veh_hint',
+   'veh_no_taken','veh_bad_no','map_cars','map_cars_all','bn_card','bn_intro','bn_connect',
+   'bn_stat_title','bn_stat_total','bn_dot_go','bn_dot_site','bn_left','bn_onsite',
+   'bn_route_hint','bn_off_admin','bn_no_cars','act_veh_save','act_veh_del']
     .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
 }
 

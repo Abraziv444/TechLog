@@ -4,16 +4,19 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.31';
-const DB_SQL_FILE = 'full-install-1_08_31.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.08.32';
+const DB_SQL_FILE = 'full-install-1_08_32.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
-let _driveOAuth = null;
+let _driveOAuth = null, _bnOAuth = null;   // v1.08.32: возврат и с Google, и с Bouncie
 try{
   const _q = new URLSearchParams(location.search);
   if (_q.get('state') === 'tl_drive' && _q.get('code')){
     _driveOAuth = _q.get('code');
+    history.replaceState(null, '', location.pathname);
+  } else if (_q.get('state') === 'tl_bn' && _q.get('code')){
+    _bnOAuth = _q.get('code');
     history.replaceState(null, '', location.pathname);
   }
 }catch(e){}
@@ -312,6 +315,34 @@ const I18N = {
     footer_rights: '© Никакие права не защищены', footer_city: 'Альфаретта',
     faq: 'Как это работает (FAQ)',
     map_mode_all: 'Общая карта', map_mode_day: 'Карта дня', map_of_day: 'Карта этого дня',
+    /* v1.08.32: GPS-трекинг Bouncie + справочник «Автомобили» */
+    d_vehicles: 'Автомобили',
+    veh_make: 'Марка', veh_vin: 'VIN', veh_imei: 'IMEI трекера', veh_no: 'Порядковый №',
+    veh_driver: 'Водитель', veh_no_driver: '— без водителя —',
+    veh_new: 'Новый автомобиль', veh_edit: 'Автомобиль',
+    veh_import: 'Импорт из Bouncie', veh_added: 'добавлено', veh_upd: 'обновлено',
+    veh_saved: 'Автомобиль сохранён', veh_deleted: 'Автомобиль удалён',
+    veh_del_q: 'Удалить автомобиль из справочника? Трекинг Bouncie это не затронет.',
+    veh_no_taken: 'Номер уже занят другой машиной', veh_bad_no: 'Номер должен быть от 1 до 99',
+    veh_hint: 'VIN и IMEI вводятся один раз — вручную или кнопкой импорта — хранятся в базе и дальше просто отображаются. Порядковый номер синхронизируется с профилем водителя: это тот же номер, что в регистре техники «Моя машина №N».',
+    veh_no_driver_l: 'без водителя',
+    map_cars: 'Машины', map_cars_all: 'Все',
+    bn_off_admin: 'Bouncie не настроен — Настройки → GPS-трекинг Bouncie',
+    bn_no_cars: 'Справочник «Автомобили» пуст — заполните его или нажмите «Импорт из Bouncie» (Справочники → Автомобили)',
+    bn_stat_title: 'Пробег за сегодня', bn_stat_total: 'Итого',
+    bn_upd: 'обновлено', bn_route_hint: 'пунктир — примерный маршрут по прямой',
+    bn_left: 'осталось', bn_onsite: 'на месте', bn_parked: 'стоит', bn_moving: 'в движении',
+    bn_speed: 'скорость', bn_fuel: 'топливо', bn_mph: 'миль/ч', bn_mi: 'mi',
+    bn_dot_go: 'Сотрудник едет сюда', bn_dot_site: 'Сотрудник на месте',
+    bn_trips: 'поездок', bn_nav_to_car: 'Маршрут к машине',
+    bn_card: 'GPS-трекинг Bouncie',
+    bn_intro: 'Ключи создаются на портале Bouncie для разработчиков (bouncie.dev). Введите Client ID и Client Secret, нажмите «Подключить Bouncie» и разрешите доступ на странице самого Bouncie — токены сервер получит и сохранит сам. Секреты лежат только в базе (app_secrets, закрыт для клиентов) и в приложение не попадают.',
+    bn_cid: 'Client ID', bn_secret: 'Client Secret',
+    bn_save: 'Сохранить ключи', bn_connect: 'Подключить Bouncie', bn_test: 'Проверка связи',
+    bn_connected: 'Подключено', bn_not_conn: 'Не подключено',
+    bn_saved: 'Ключи сохранены', bn_need_cid: 'Сначала введите Client ID',
+    bn_ok: 'Связь с Bouncie есть', bn_veh_n: 'машин в аккаунте', bn_conn_done: 'Bouncie подключён',
+    act_veh_save: 'изменён автомобиль', act_veh_del: 'удалён автомобиль',
     translate_en: 'Перевести на EN', translating: 'Перевожу…', translate_err: 'Перевод не удался (сеть или дневной лимит)',
     /* v1.07.83: двуязычные заметки — русская живёт в приложении, английская печатается в PDF */
     tr_pdf_card: 'Перевод для PDF (EN)',
@@ -1018,6 +1049,34 @@ const I18N = {
     footer_rights: '© No rights reserved', footer_city: 'Alpharetta',
     faq: 'How it works (FAQ)',
     map_mode_all: 'All complexes', map_mode_day: 'Day map', map_of_day: 'Map of this day',
+    /* v1.08.32: Bouncie GPS tracking + Vehicles directory */
+    d_vehicles: 'Vehicles',
+    veh_make: 'Make', veh_vin: 'VIN', veh_imei: 'Tracker IMEI', veh_no: 'Car #',
+    veh_driver: 'Driver', veh_no_driver: '— no driver —',
+    veh_new: 'New vehicle', veh_edit: 'Vehicle',
+    veh_import: 'Import from Bouncie', veh_added: 'added', veh_upd: 'updated',
+    veh_saved: 'Vehicle saved', veh_deleted: 'Vehicle deleted',
+    veh_del_q: 'Remove the vehicle from the directory? Bouncie tracking is not affected.',
+    veh_no_taken: 'This number is taken by another vehicle', veh_bad_no: 'Number must be 1 to 99',
+    veh_hint: 'VIN and IMEI are entered once — by hand or via import — stored in the database and simply displayed after that. The car number syncs with the driver profile: it is the same number as in the equipment register "My car #N".',
+    veh_no_driver_l: 'no driver',
+    map_cars: 'Cars', map_cars_all: 'All',
+    bn_off_admin: 'Bouncie is not configured — Settings → Bouncie GPS tracking',
+    bn_no_cars: 'The Vehicles directory is empty — fill it in or tap "Import from Bouncie" (Directories → Vehicles)',
+    bn_stat_title: 'Driven today', bn_stat_total: 'Total',
+    bn_upd: 'updated', bn_route_hint: 'dashed line — approximate straight-line route',
+    bn_left: 'left', bn_onsite: 'on site', bn_parked: 'parked', bn_moving: 'moving',
+    bn_speed: 'speed', bn_fuel: 'fuel', bn_mph: 'mph', bn_mi: 'mi',
+    bn_dot_go: 'The employee is heading here', bn_dot_site: 'The employee is on site',
+    bn_trips: 'trips', bn_nav_to_car: 'Route to the car',
+    bn_card: 'Bouncie GPS tracking',
+    bn_intro: 'Keys are created on the Bouncie developer portal (bouncie.dev). Enter the Client ID and Client Secret, tap "Connect Bouncie" and grant access on the Bouncie page itself — the server obtains and stores the tokens on its own. Secrets live only in the database (app_secrets, closed to clients) and never reach the app.',
+    bn_cid: 'Client ID', bn_secret: 'Client Secret',
+    bn_save: 'Save keys', bn_connect: 'Connect Bouncie', bn_test: 'Connection test',
+    bn_connected: 'Connected', bn_not_conn: 'Not connected',
+    bn_saved: 'Keys saved', bn_need_cid: 'Enter the Client ID first',
+    bn_ok: 'Bouncie connection OK', bn_veh_n: 'vehicles in the account', bn_conn_done: 'Bouncie connected',
+    act_veh_save: 'vehicle changed', act_veh_del: 'vehicle deleted',
     translate_en: 'Translate to EN', translating: 'Translating…', translate_err: 'Translation failed (network or daily limit)',
     tr_pdf_card: 'Translation for PDF (EN)',
     tr_pdf_hint: 'Only English is printed in the PDF. The Russian text stays in the app.',
@@ -1542,7 +1601,7 @@ const state = {
   repTab: 'invoices',
   repFrom: null, repTo: null, repStatus: 'all', repCp: '',
   statFrom: null, statTo: null, statMine: true,
-  mapCp: '', mapDay: false, mapDate: null,
+  mapCp: '', mapDay: true, mapDate: null,   // v1.08.32: по умолчанию — карта дня (сегодня)
   dictLang: localStorage.getItem('techlog_dictlang') || 'ru-RU',
   navApp: localStorage.getItem('techlog_navapp') || 'auto',   // v1.07.21: auto | apple | google
   jobId: null,
@@ -2063,9 +2122,15 @@ function seedCatalogs(){
 function seedDemoData(){
   const cat = seedCatalogs();
   const profiles = [
-    { id: 'demo-admin',   login: 'ivan',   display_name: 'Ivan Petrov',   role: 'admin',   blocked: false, created_at: '2026-01-12T09:00:00Z' },
-    { id: 'demo-manager', login: 'alexey', display_name: 'Alexey Smirnov', role: 'manager', blocked: false, created_at: '2026-02-03T10:30:00Z' },
-    { id: 'demo-tech',    login: 'sergey', display_name: 'Sergey Volkov', role: 'tech',    blocked: false, created_at: '2026-03-18T15:45:00Z' },
+    { id: 'demo-admin',   login: 'ivan',   display_name: 'Ivan Petrov',   role: 'admin',   car_no: 3, blocked: false, created_at: '2026-01-12T09:00:00Z' },
+    { id: 'demo-manager', login: 'alexey', display_name: 'Alexey Smirnov', role: 'manager', car_no: 2, blocked: false, created_at: '2026-02-03T10:30:00Z' },
+    { id: 'demo-tech',    login: 'sergey', display_name: 'Sergey Volkov', role: 'tech',    car_no: 1, blocked: false, created_at: '2026-03-18T15:45:00Z' },
+  ];
+  /* v1.08.32: демо-автопарк — карта, доска и панель пробега живут без сервера */
+  const vehicles = [
+    { id: uid(), make: 'Ford Transit 2021',      vin: '1FTBW2CM5MKA10001', imei: '350000000000001', car_no: 1, driver_id: 'demo-tech',    created_at: '2026-04-01T09:00:00Z' },
+    { id: uid(), make: 'RAM ProMaster 2020',     vin: '3C6TRVDG8LE100002', imei: '350000000000002', car_no: 2, driver_id: 'demo-manager', created_at: '2026-04-01T09:00:00Z' },
+    { id: uid(), make: 'Chevrolet Express 2019', vin: '1GCWGAFG4K1100003', imei: '350000000000003', car_no: 3, driver_id: 'demo-admin',   created_at: '2026-04-01T09:00:00Z' },
   ];
   const cp1 = { id: uid(), name: 'Magnolia Group',  abbr: 'MG', notes: '' };
   const cp2 = { id: uid(), name: 'Cascade Living',  abbr: 'CL', notes: '' };
@@ -2115,7 +2180,7 @@ function seedDemoData(){
   ];
   const data = {
     profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], proposals: [], repairs: [], stock_daily: [], ext_requests: [], media: [], hidden_staff: [], code_requests: [], complex_code_history: [],
-    jobs: [job1, job2], placements, ...cat
+    jobs: [job1, job2], placements, vehicles, ...cat
   };
   job1.total = calcTotal(job1.form_data, priceResolver(cp1.id, data), data);
   /* v1.07.86: сквозные номера. На сервере их выдаёт база (identity),
@@ -2265,6 +2330,8 @@ function pendingApplyLocal(data){
    пополняется вместе с каждой миграцией. */
 const DB_NEED_COLS = [
   ['profiles',      'board_cols'],
+  ['vehicles',      'imei'],          // v1.08.32
+  ['org_settings',  'bn_account'],    // v1.08.32
   ['jobs',          'proposal_id'],
   ['jobs',          'has_proposal'],
   ['jobs',          'shared_with_helpers'],
@@ -2305,9 +2372,10 @@ const DB_NEED_COLS = [
 ];
 const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
-                      'admin_set_drive_config', 'equip_op', 'admin_set_role'];   // v1.08.31
+                      'admin_set_drive_config', 'equip_op', 'admin_set_role',
+                      'vehicle_save', 'admin_set_bouncie_config'];   // v1.08.32
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves'];
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles'];   // v1.08.32: справочник машин
 
 function emptyData(){
   const d = { org_settings: {
@@ -3451,7 +3519,8 @@ const JR_DOC_ACTIONS = ['job_create','job_update','job_done','job_reopen','job_a
 const JR_TECH_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
   'password_change','password_reset','car_no_set','org_toggle','org_set','stock_set',
   'equip_take','equip_return','equip_repair','equip_repair_back','equip_intake','equip_writeoff',   // v1.08.27
-  'backup_export','backup_restore'];
+  'backup_export','backup_restore',
+  'veh_save','veh_del'];   // v1.08.32
 const JR_TECH_SET = new Set(JR_TECH_ACTIONS);
 
 async function loadJournal(reset){
@@ -3602,6 +3671,11 @@ function render(){
   if (state.screen === 'job') bindJobForm();
   if (state.screen === 'repairs') bindRepForm();                 // v1.08.23
   if (state.screen === 'map') initMapView();
+  /* v1.08.32: статусы трекинга на карточках + фоновый опрос Bouncie */
+  if (state.screen === 'map' || state.screen === 'home' || state.screen === 'board'){
+    bnApplyDots();
+    setTimeout(() => { bnPollTick(false); }, 30);
+  }
   /* v1.07.67: последние отрисовки — их показывает «Плавность прокрутки» */
   const _rt = { screen: state.screen, ms: +(performance.now() - _rt0).toFixed(1), at: Date.now() };
   (window.__tlRender = window.__tlRender || []).push(_rt);
@@ -3809,7 +3883,7 @@ function viewHome(){
     const pkJob = state.data.jobs.find(x=>x.id===jobId) || { id: jobId, priority:false, technician_id: p0.technician_id, sort_order: 999 };
     return `
     <div class="item clicky${canReorder(pkJob)?' has-rail':''}" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}" onclick="App.pickupModal('${jobId}','${iso}',event)">
-      ${rowNumHtml(num.pkNum[jobId])}
+      ${rowNumHtml(num.pkNum[jobId])}${bnDotHtml('pk:' + jobId)}
       <div class="info">
         <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(p0.unit_number||'')}${triHtml(!!pkJob.priority, jobId, canPrio(pkJob), true)}</span></div>
         ${addrLineHtml(cx)}
@@ -3852,7 +3926,7 @@ function viewHome(){
     const total = (j.status==='approved' && j.approved_total != null) ? j.approved_total : j.total;
     return `
     <div class="item clicky${canReorder(j)?' has-rail':''}" data-drag-id="${j.id}" data-can="${canReorder(j)?1:0}" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
-      ${rowNumHtml(num.jobNum[j.id])}
+      ${rowNumHtml(num.jobNum[j.id])}${bnDotHtml('job:' + j.id)}
       <div class="info">
         <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(j.unit_number||'—')}${triHtml(!!j.priority, j.id, canPrio(j), true)}</span></div>
         ${addrLineHtml(cx)}
@@ -4140,6 +4214,7 @@ function sectionFaqHtml(key){
       <li><b>«Скрыть свободных»</b> — убирает пустые колонки.</li>
       <li>${faqMvDemo()} на карточке — перенос задачи между сотрудниками/позициями; клик — открыть документ.</li>
       <li>${faqTriDemo()} — приоритет; жёлтый «!» на дне недели — есть просроченные пикапы.</li>
+      <li><span class="bn-dot go" style="position:static;display:inline-block;vertical-align:middle"></span> — мигающая зелёная точка в углу карточки: по трекеру Bouncie сотрудник уехал с прошлого места и едет к этой задаче или пикапу; сплошная зелёная — уже на месте. Наведите курсор — покажется, сколько осталось. Точка появляется на следующей задаче сама, как только машина уехала с предыдущего объекта.</li>
     </ul>
     <h4>${ic('mouse')} Жесты (ПК)</h4>
     <ul>
@@ -4154,7 +4229,8 @@ function sectionFaqHtml(key){
     <li>У воркера в ПК-режиме доска недельная: колонка = день, только свои задачи; клик по шапке дня выбирает его в календаре.</li></ul>`,
   `
     <h4>${ic('board')} Board — the day by staff</h4>
-    <ul><li>Column = employee with their day's cards; "Day is free" = empty; <b>"Hide free"</b> removes empty columns.</li>
+    <ul><li><span class="bn-dot go" style="position:static;display:inline-block;vertical-align:middle"></span> — a blinking green dot in the card corner: per the Bouncie tracker the employee has left the previous site and is heading to this task or pickup; solid green — already on site.</li>
+    <li>Column = employee with their day's cards; "Day is free" = empty; <b>"Hide free"</b> removes empty columns.</li>
     <li>${faqMvDemo()} moves a task between employees/positions; click opens the document; ${faqTriDemo()} — priority.</li></ul>
     <h4>${ic('mouse')} Gestures (desktop)</h4>
     <ul><li>Mouse wheel scrolls horizontally with inertia (edges pass to the page); grab-and-drag pans; touch is native.</li></ul>
@@ -4167,7 +4243,8 @@ function sectionFaqHtml(key){
     <ul>
       <li>Точки — комплексы, цвет = контрагент; фильтр по контрагенту сверху; клик по строке списка — фокус на точке.</li>
       <li>${ic('key')} в строке — скопировать код доступа; «${ic('warn')} без координат» — у комплекса нет точки (задайте в справочнике или найдите поиском).</li>
-      <li>Режим <b>«День»</b>: пронумерованные точки задач выбранной даты и кнопка ${ic('compass')} — маршрут дня в вашем навигаторе (Apple/Google — см. Настройки).</li>
+      <li>Режим <b>«День»</b>: пронумерованные точки задач выбранной даты и кнопка ${ic('compass')} — маршрут дня в вашем навигаторе (Apple/Google — см. Настройки). Менеджеру и админу карта дня показывает задачи <b>всех</b> сотрудников; открывается она по умолчанию на сегодня.</li>
+      <li>${ic('car')} <b>Машины</b> — живые позиции автопарка с трекеров Bouncie: в кружке номер машины, стрелка — курс, зелёная обводка — едет. Клик по машине: водитель, скорость, топливо, пробег за день и маршрут к ней. Чипы над картой выбирают одну или несколько машин («Все» — весь парк, остальные затемняются). Пунктир — примерный маршрут по прямой к текущей задаче; в подписи — сколько осталось, в процентах. Панель «Пробег за сегодня» — справа на ПК и под картой на телефоне; строка панели центрирует карту на машине.</li>
     </ul>
     <h4>${ic('search')} Поиск места и добавление комплекса</h4>
     <ul>
@@ -4179,7 +4256,8 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('map')} Complexes map</h4>
     <ul><li>Dots = complexes, color = counterparty; filter on top; list row click focuses the point; ${ic('key')} copies the access code.</li>
-    <li><b>"Day"</b> mode: numbered task points and ${ic('compass')} — the day's route in your navigator.</li></ul>
+    <li><b>"Day"</b> mode: numbered task points and ${ic('compass')} — the day's route in your navigator. Managers and admins see <b>all</b> staff tasks; the map opens on today by default.</li>
+    <li>${ic('car')} <b>Cars</b> — live Bouncie fleet positions: car number in the circle, arrow = heading, green ring = driving. Tap a car for the driver, speed, fuel, today's mileage and a route to it. Chips above the map pick one or several cars ("All" = whole fleet). The dashed line is an approximate straight-line route to the current task with the percent left. The "Driven today" panel sits on the right on desktop and below the map on the phone.</li></ul>
     <h4>${ic('search')} Place search & adding a complex</h4>
     <ul><li>Type an address → <b>Search</b> (OpenStreetMap) → click a result → marker.</li>
     <li>"${ic('check')} Point found" → <b>Add as complex</b>: pick an owner — existing, "＋ New…", "⏳ Temporary owner" or "— no binding —".</li>
@@ -5851,6 +5929,7 @@ function viewDirs(){
   const tabs = [
     ['price', t('d_price'), true],
     ['staff', t('d_staff'), isAdmin()],
+    ['vehicles', t('d_vehicles'), isAdmin()],   // v1.08.32
     ['counterparties', t('d_counterparties'), isAdmin()],
     ['complexes', t('d_complexes'), true],
     ['worktypes', t('d_worktypes'), isAdmin()],
@@ -5867,7 +5946,7 @@ function viewDirs(){
     `<button class="tabbtn ${state.dirTab===id?'active':''}" onclick="App.dirTab('${id}')">${l}</button>`).join('') + `</div>
     <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="next">${ic('chev_r')}</button>
   </div>`;
-  const body = { staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
+  const body = { staff: dirStaff, vehicles: dirVehicles, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
                  equipment: dirEquipment, aux: dirAux, price: dirPrice,
                  extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts }[state.dirTab]();
   /* v1.07.78: карусель кнопок уезжает вбок, и после выбора было не видно,
@@ -6431,6 +6510,7 @@ function viewSettings(){
   </div>
   ${fold('mlim', t('media_lim_card'), 'clip', mediaLimitsCardHtml())}
   ${fold('gd', t('gd_card'), 'folder', mediaSettingsCardHtml())}
+  ${fold('bn', t('bn_card'), 'car', bnCardHtml())}
   ${fold('bkp', t('bk_card'), 'save', backupCardHtml())}
   ${fold('diag', t('diag_card'), 'steth', diagCardHtml())}
   <div class="card">
@@ -6909,6 +6989,9 @@ const App = {
   trPdfSkip: trPdfSkip,
   openDayMap(){ state.mapDay = true; state.mapDate = state.selDate; App.go('map'); },
   mapMode(v){ state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
+  /* v1.08.32: машины Bouncie и справочник «Автомобили» */
+  bnToggleCar, bnCarsAll, bnFocusCar, bnSaveKeys, bnConnect, bnTest, bnReveal, bnToggleEdit,
+  vehModal, vehSave, vehDel, vehImport,
   showLog: showLogModal, copyLog, clearLog,
   jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
   jrAct(v){ state.jr.act = v; loadJournal(true); },
@@ -7394,26 +7477,627 @@ function cpColor(cpId){
   const i = state.data.counterparties.findIndex(c=>c.id===cpId);
   return PALETTE[(i>=0?i:0) % PALETTE.length];
 }
+/* =====================================================================
+   v1.08.32: GPS-ТРЕКИНГ BOUNCIE
+   Приложение НЕ ходит в api.bouncie.dev напрямую: все запросы идут через
+   Edge Function `bouncie` (см. supabase/functions/bouncie). Секреты и
+   токены лежат в app_secrets и в браузер не попадают; здесь — только
+   опрос позиций, суточная сводка поездок и вычисление статусов
+   «едет / на месте» для карточек доски и главной.
+   ===================================================================== */
+const BN_V_MS = 20000, BN_S_MS = 120000;      // период опроса: позиции / поездки
+const BN = { vs: [], at: 0, stats: null, statsAt: 0, sel: null, off: false,
+             err: '', live: {}, markers: {}, routes: {}, layer: null,
+             _layerMap: null, timer: 0 };
+function bnVehicles(){ return (state.data && state.data.vehicles) || []; }
+function bnByImei(imei){ return (BN.vs || []).find(x => String(x.imei) === String(imei)); }
+/* расстояние по прямой в милях (haversine); точки {lat, lng|lon} */
+function bnMiP(a, b){
+  if (!a || !b || a.lat == null || b.lat == null) return null;
+  const R = 3958.8, r = Math.PI / 180;
+  const la1 = (+a.lat) * r, la2 = (+b.lat) * r;
+  const dla = la2 - la1, dlo = ((+(b.lng ?? b.lon)) - (+(a.lng ?? a.lon))) * r;
+  const s = Math.sin(dla / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dlo / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+function bnSelSet(){
+  if (BN.sel) return BN.sel;
+  return new Set(bnVehicles().filter(v => v.imei).map(v => String(v.imei)));
+}
+/* стандартный выбор: из «все» клик оставляет одну; дальше — переключение;
+   пустой или полный набор возвращает режим «все» */
+function bnToggleCar(imei){
+  const all = bnVehicles().filter(v => v.imei).map(v => String(v.imei));
+  if (!BN.sel) BN.sel = new Set([imei]);
+  else if (BN.sel.has(imei)){ BN.sel.delete(imei); if (!BN.sel.size) BN.sel = null; }
+  else { BN.sel.add(imei); if (BN.sel.size >= all.length) BN.sel = null; }
+  render();
+}
+function bnCarsAll(){ BN.sel = null; render(); }
+function bnFocusCar(imei){
+  const x = bnByImei(imei); const l = x && x.stats && x.stats.location;
+  if (!l || l.lat == null) return;
+  if (state.screen !== 'map'){ state.screen = 'map'; render(); }
+  setTimeout(() => window.App && App.mapFocus(+l.lat, +(l.lon ?? l.lng)), 200);
+}
+async function bnFetch(qs, opts){
+  if (!HAS_SB) return null;
+  try{
+    const token = await mediaJwt(); if (!token) return null;
+    const r = await fetch(mediaFN() + '/bouncie' + qs, Object.assign(
+      { headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token } }, opts || {}));
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok){
+      BN.err = j.error || ('HTTP ' + r.status);
+      if (r.status === 409 || r.status === 404 || /BN_NOT_/.test(BN.err)) BN.off = true;  // не настроено/не задеплоено — не долбим
+      dlog('⛔ bouncie ' + qs.slice(0, 20) + ':', BN.err);
+      return null;
+    }
+    BN.err = '';
+    return j;
+  }catch(e){ dlog('⛔ bouncie fetch:', e); return null; }
+}
+function bnDayWindow(){
+  const d = new Date();
+  const s = new Date(d.getFullYear(), d.getMonth(), d.getDate());   // локальная полночь
+  return { from: s.toISOString(), to: d.toISOString() };
+}
+/* ---- демо-режим: синтетика, чтобы карта и точки жили без сервера ---- */
+function bnDemoFill(){
+  const vs = bnVehicles().filter(v => v.imei);
+  const cxs = (state.data.complexes || []).filter(c => c.lat != null && c.lng != null);
+  if (!vs.length || !cxs.length){ BN.vs = []; BN.stats = null; return; }
+  const iso = todayISO(), at = new Date().toISOString(), cars = {};
+  BN.vs = vs.map((v, i) => {
+    const dest = v.driver_id ? bnDestFor(v.driver_id, iso) : null;
+    let org = cxs[(i + 2) % cxs.length];
+    if (dest && dest.pt && Math.abs(+org.lat - dest.pt.lat) + Math.abs(+org.lng - dest.pt.lng) < 1e-6)
+      org = cxs[(i + 3) % cxs.length];             // старт не должен совпадать с целью
+    const o = { lat: +org.lat, lng: +org.lng };
+    let pos = o, run = false, spd = 0;
+    if (dest && dest.pt && i === 0){          // первая машина «едет» к своей задаче
+      pos = { lat: o.lat + (dest.pt.lat - o.lat) * 0.45, lng: o.lng + (dest.pt.lng - o.lng) * 0.45 };
+      run = true; spd = 34;
+    } else if (dest && dest.pt) pos = dest.pt;   // остальные с задачами — «на месте»
+    cars[v.imei] = { mi: Math.round((12.4 + i * 7.3) * 10) / 10, min: 62 + i * 21, n: 3 + i, lastEnd: o, lastAt: at };
+    return { imei: String(v.imei), vin: v.vin || '', nickName: '',
+      model: { make: (v.make || 'Car').split(' ')[0], name: '', year: 2022 },
+      stats: { isRunning: run, speed: spd, fuelLevel: 62 - i * 9, odometer: 45678 + i * 1200,
+        lastUpdated: at, location: { lat: pos.lat, lon: pos.lng, heading: 135, address: '' } } };
+  });
+  BN.stats = { at, cars };
+  BN.at = BN.statsAt = Date.now();
+}
+async function bnPollTick(force){
+  if (!state.user || !state.data) return;
+  if (['map', 'board', 'home'].indexOf(state.screen) < 0) return;
+  if (!bnVehicles().some(v => v.imei)){ BN.vs = []; BN.live = {}; return; }
+  if (!HAS_SB){ bnDemoFill(); bnCompute(); bnPaint(); return; }
+  if (BN.off) return;
+  const now = Date.now();
+  let dirty = false;
+  if (force || now - BN.at > BN_V_MS){
+    BN.at = now;                                   // до запроса — защита от параллельных тиков
+    const j = await bnFetch('?vehicles=1');
+    if (j && j.vehicles){ BN.vs = j.vehicles; dirty = true; }
+  }
+  if (force || now - BN.statsAt > BN_S_MS){
+    BN.statsAt = now;
+    const w = bnDayWindow();
+    const j = await bnFetch('?stats=1&from=' + encodeURIComponent(w.from) + '&to=' + encodeURIComponent(w.to));
+    if (j && j.cars){ BN.stats = j; dirty = true; }
+  }
+  if (dirty){ bnCompute(); bnPaint(); }
+}
+function bnInit(){
+  if (BN.timer) return;
+  BN.timer = setInterval(() => { bnPollTick(false); }, 5000);
+  if (_bnOAuth){                                   // вернулись со страницы Bouncie
+    const tmr = setInterval(() => {
+      if (state.user && isAdmin() && HAS_SB){
+        clearInterval(tmr);
+        const code = _bnOAuth; _bnOAuth = null;
+        bnOauthExchange(code);
+      }
+    }, 700);
+    setTimeout(() => clearInterval(tmr), 90000);
+  }
+}
+/* ---- текущая цель сотрудника: порядок дня как на главной —
+        сначала пикапы (по порядку доски), затем невыполненные работы ---- */
+function bnDestFor(techId, iso){
+  iso = iso || todayISO();
+  const today = todayISO();
+  const dead = new Set(archJobs().map(j => j.id));
+  const pks = (state.data.placements || []).filter(p => !dead.has(p.job_id)
+    && pkPending(p) && p.due_date <= iso && p.technician_id === techId);
+  const byJob = {};
+  pks.forEach(p => { (byJob[p.job_id] = byJob[p.job_id] || []).push(p); });
+  const groups = Object.entries(byJob).sort((a, b) => jobSortCmp(
+    jobById(a[0]) || { sort_order: 999 }, jobById(b[0]) || { sort_order: 999 }));
+  let kind, key, label, cxId;
+  if (groups.length){
+    const [jid, list] = groups[0];
+    kind = 'pk'; key = 'pk:' + jid; cxId = list[0].complex_id;
+    label = t('pickup') + ' Unit ' + (list[0].unit_number || '—');
+  } else {
+    const js = liveJobs().filter(j => j.date === iso && j.technician_id === techId
+      && j.status === 'draft').sort(jobSortCmp);
+    if (!js.length) return null;
+    const j0 = js[0];
+    const wt = wtById(j0.work_type_id) || { name: '' };
+    kind = 'job'; key = 'job:' + j0.id; cxId = j0.complex_id;
+    label = 'Unit ' + (j0.unit_number || '—') + (wt.name ? ' · ' + wt.name : '');
+  }
+  const cx = cxById(cxId);
+  const pt = (cx && cx.lat != null && cx.lng != null) ? { lat: +cx.lat, lng: +cx.lng } : null;
+  return { kind, key, label, cx: cx || null, pt };
+}
+function bnCompute(){
+  BN.live = {};
+  const iso = todayISO();
+  for (const v of bnVehicles()){
+    if (!v.driver_id || !v.imei) continue;
+    const bv = bnByImei(v.imei); if (!bv) continue;
+    const st = bv.stats || {};
+    const loc = st.location; if (!loc || loc.lat == null) continue;
+    const pos = { lat: +loc.lat, lng: +(loc.lon ?? loc.lng) };
+    const dest = bnDestFor(v.driver_id, iso);
+    const day = (BN.stats && BN.stats.cars && BN.stats.cars[v.imei]) || null;
+    const origin = (day && day.lastEnd) || null;                 // где закончилась последняя поездка
+    const spd = +st.speed || 0;
+    const run = !!st.isRunning || spd > 2;
+    const departed = run || (origin && bnMiP(pos, origin) > 0.25);   // уехал с прошлого места
+    let mode = null, dMi = null, pctLeft = null;
+    if (dest && dest.pt){
+      dMi = bnMiP(pos, dest.pt);
+      if (dMi <= 0.12) mode = 'site';                            // ~200 м — считаем «на месте»
+      else if (departed) mode = 'go';
+      if (mode === 'go' && origin){
+        const tot = bnMiP(origin, dest.pt);                      // прямая от точки старта до цели
+        if (tot > 0.15) pctLeft = Math.min(99, Math.max(1, Math.round(100 * dMi / Math.max(tot, dMi))));
+      }
+    }
+    BN.live[v.driver_id] = { veh: v, imei: String(v.imei), pos, dest, mode, dMi, pctLeft, run, spd };
+  }
+}
+/* ---- зелёная точка на карточках (доска и главная) ---- */
+function bnDotHtml(key){ return `<span class="bn-dot" data-bnd="${key}"></span>`; }
+function bnApplyDots(){
+  try{
+    const map = {};
+    Object.values(BN.live).forEach(x => { if (x.dest && x.mode) map[x.dest.key] = x; });
+    document.querySelectorAll('.bn-dot[data-bnd]').forEach(el => {
+      const x = map[el.getAttribute('data-bnd')];
+      const cls = 'bn-dot' + (x ? (x.mode === 'go' ? ' go' : ' site') : '');
+      if (el.className !== cls) el.className = cls;
+      const tt = x ? (x.mode === 'go'
+        ? t('bn_dot_go') + ' · ' + profName(x.veh.driver_id)
+          + (x.pctLeft != null ? ' · ' + t('bn_left') + ' ~' + x.pctLeft + '%' : '')
+        : t('bn_dot_site') + ' · ' + profName(x.veh.driver_id)) : '';
+      if (el.title !== tt) el.title = tt;
+    });
+  }catch(e){}
+}
+function bnPaint(){
+  bnApplyDots();
+  if (state.screen === 'map'){
+    bnDrawCars();
+    const el = document.getElementById('bn-stats');
+    if (el) el.innerHTML = bnStatsHtml(true);
+  }
+}
+/* ---- чипы выбора машин над картой ---- */
+function bnChipsHtml(){
+  const vs = bnVehicles().filter(v => v.imei)
+    .slice().sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999));
+  if (!vs.length)
+    return isAdmin() ? `<div class="tiny" style="margin-top:8px">${ic('car')} ${t('bn_no_cars')}</div>` : '';
+  const sel = bnSelSet(), all = !BN.sel;
+  return `<div class="bn-chips">
+    <span class="tiny" style="font-weight:900;white-space:nowrap">${ic('car')} ${t('map_cars')}:</span>
+    <button type="button" class="bn-chip ${all ? 'on' : ''}" onclick="App.bnCarsAll()">${t('map_cars_all')}</button>
+    ${vs.map(v => `<button type="button" class="bn-chip ${sel.has(String(v.imei)) ? 'on' : ''}"
+      onclick="App.bnToggleCar('${esc(String(v.imei))}')"><span class="bn-chip-no">${v.car_no ?? '·'}</span>${
+        esc(shortName(v.driver_id ? profName(v.driver_id) : (v.make || '—')))}</button>`).join('')}
+  </div>
+  ${BN.off && isAdmin() ? `<div class="tiny" style="margin-top:6px">${ic('warn')} ${t('bn_off_admin')}</div>` : ''}
+  <div class="tiny" style="margin-top:6px;color:var(--dim)">${t('bn_route_hint')}</div>`;
+}
+/* ---- панель «Пробег за сегодня»: справа на ПК, под картой на телефоне ---- */
+function bnStatsHtml(inner){
+  const vs = bnVehicles().filter(v => v.imei)
+    .slice().sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999));
+  if (!vs.length) return '';
+  const sel = bnSelSet();
+  const cars = (BN.stats && BN.stats.cars) || {};
+  const fmtH = m => m == null ? '—' : (Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'));
+  let totMi = 0, totMin = 0, has = false;
+  const rows = vs.filter(v => sel.has(String(v.imei))).map(v => {
+    const d = cars[v.imei] || null;
+    const x = v.driver_id && BN.live[v.driver_id];
+    if (d && d.mi != null){ totMi += d.mi; totMin += d.min || 0; has = true; }
+    let st = '';
+    if (x){
+      if (x.mode === 'go' && x.dest)
+        st = `<span class="bn-go">→ ${esc(x.dest.label)}${x.pctLeft != null
+          ? ` · ${t('bn_left')} ~${x.pctLeft}%` : (x.dMi != null ? ` · ${x.dMi.toFixed(1)} ${t('bn_mi')}` : '')}</span>`;
+      else if (x.mode === 'site' && x.dest)
+        st = `<span class="bn-site">${t('bn_onsite')}: ${esc((x.dest.cx || {}).abbr || (x.dest.cx || {}).name || '')}</span>`;
+      else st = x.run ? t('bn_moving') : t('bn_parked');
+    }
+    return `<button type="button" class="bn-srow" onclick="App.bnFocusCar('${esc(String(v.imei))}')">
+      <span class="bn-sno${x && x.run ? ' run' : ''}">${v.car_no ?? '·'}</span>
+      <div class="grow"><b>${esc(shortName(v.driver_id ? profName(v.driver_id) : (v.make || '—')))}</b>
+        <div class="tiny">${st || (d && d.err ? '⚠ ' + esc(d.err) : '—')}</div></div>
+      <div class="bn-smi"><b>${d && d.mi != null ? d.mi.toFixed(1) : '—'}</b> <span class="tiny">${t('bn_mi')}</span>
+        <div class="tiny">${d && d.mi != null ? fmtH(d.min) : '—'}${d && d.n ? ' · ' + d.n + ' ' + t('bn_trips') : ''}</div></div>
+    </button>`;
+  }).join('');
+  const at = BN.stats && BN.stats.at ? new Date(BN.stats.at) : null;
+  const html = `<div class="bn-shead">${ic('car')} <b>${t('bn_stat_title')}</b></div>
+    ${rows || `<div class="tiny">—</div>`}
+    <div class="bn-stot"><span class="grow">${t('bn_stat_total')}</span>
+      <b>${has ? totMi.toFixed(1) : '—'} ${t('bn_mi')}</b><span class="tiny"> · ${fmtH(has ? totMin : null)}</span></div>
+    ${at ? `<div class="tiny" style="text-align:right;color:var(--dim)">${t('bn_upd')}: ${
+      String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}</div>` : ''}`;
+  return inner ? html : `<aside class="bn-stats" id="bn-stats">${html}</aside>`;
+}
+/* ---- слой машин на Leaflet-карте: маркеры двигаются без пересоздания ---- */
+function bnDrawCars(){
+  if (!window.L || !mapObj) return;
+  if (!BN.layer || BN._layerMap !== mapObj){
+    BN.markers = {}; BN.routes = {};
+    BN.layer = L.layerGroup().addTo(mapObj);
+    BN._layerMap = mapObj;
+  }
+  const sel = bnSelSet(), seen = new Set();
+  const byImei = {};
+  Object.values(BN.live).forEach(x => { byImei[x.imei] = x; });
+  for (const v of bnVehicles()){
+    if (!v.imei) continue;
+    const imei = String(v.imei);
+    const bv = bnByImei(imei); const st = bv && bv.stats;
+    const loc = st && st.location; if (!loc || loc.lat == null) continue;
+    seen.add(imei);
+    const pos = [+loc.lat, +(loc.lon ?? loc.lng)];
+    const x = byImei[imei];
+    const run = x ? x.run : (!!st.isRunning || (+st.speed || 0) > 2);
+    const dim = !sel.has(imei);
+    const icon = L.divIcon({ className: '', iconSize: null,
+      html: `<div class="map-car${run ? ' run' : ''}${dim ? ' dim' : ''}">
+        <span class="map-car-h" style="transform:rotate(${+loc.heading || 0}deg)"></span>${v.car_no ?? '·'}</div>` });
+    let m = BN.markers[imei];
+    if (!m){ m = L.marker(pos, { icon, zIndexOffset: 500 }).addTo(BN.layer); BN.markers[imei] = m; }
+    else { m.setLatLng(pos); m.setIcon(icon); }
+    m.unbindPopup(); m.bindPopup(bnCarPopup(v, bv, x));
+    const r = BN.routes[imei];
+    if (!dim && x && x.mode === 'go' && x.dest && x.dest.pt){
+      const pts = [pos, [x.dest.pt.lat, x.dest.pt.lng]];
+      if (r) r.setLatLngs(pts);
+      else BN.routes[imei] = L.polyline(pts,
+        { dashArray: '6 8', color: '#58CC02', weight: 3, opacity: .8 }).addTo(BN.layer);
+    } else if (r){ BN.layer.removeLayer(r); delete BN.routes[imei]; }
+  }
+  for (const imei of Object.keys(BN.markers)) if (!seen.has(imei)){
+    BN.layer.removeLayer(BN.markers[imei]); delete BN.markers[imei];
+    if (BN.routes[imei]){ BN.layer.removeLayer(BN.routes[imei]); delete BN.routes[imei]; }
+  }
+}
+function bnCarPopup(v, bv, x){
+  const st = (bv && bv.stats) || {};
+  const loc = st.location || {};
+  const day = BN.stats && BN.stats.cars && BN.stats.cars[v.imei];
+  const upd = st.lastUpdated ? new Date(st.lastUpdated) : null;
+  return [
+    `<b>№${v.car_no ?? '·'} · ${esc(v.driver_id ? profName(v.driver_id) : t('veh_no_driver_l'))}</b>`,
+    esc(v.make || ''),
+    (st.isRunning || (+st.speed || 0) > 2)
+      ? `${t('bn_moving')} · ${Math.round(+st.speed || 0)} ${t('bn_mph')}` : t('bn_parked'),
+    x && x.mode === 'go' && x.dest ? `→ ${esc(x.dest.label)}${x.pctLeft != null
+      ? ` · ${t('bn_left')} ~${x.pctLeft}%` : ''}${x.dMi != null ? ` (${x.dMi.toFixed(1)} ${t('bn_mi')})` : ''}` : '',
+    x && x.mode === 'site' && x.dest ? `${t('bn_onsite')}: ${esc(x.dest.label)}` : '',
+    st.fuelLevel != null ? `${t('bn_fuel')}: ${Math.round(st.fuelLevel)}%` : '',
+    day && day.mi != null ? `${t('bn_stat_title')}: <b>${day.mi.toFixed(1)} ${t('bn_mi')}</b>` : '',
+    upd ? `<span style="color:var(--dim2,#8AA0AB)">${t('bn_upd')} ${
+      String(upd.getHours()).padStart(2, '0')}:${String(upd.getMinutes()).padStart(2, '0')}</span>` : '',
+    loc.lat != null ? `<a href="${navDirUrl((+loc.lat) + ',' + (+(loc.lon ?? loc.lng)))}"
+      target="_blank" rel="noopener">${t('bn_nav_to_car')} →</a>` : ''
+  ].filter(Boolean).join('<br>');
+}
+/* ---- карточка «GPS-трекинг Bouncie» в Настройках (админ) ---- */
+let bnCfg = { loaded: false, client_id: '', has_secret: false, has_auth: false, account: '', secret: '' };
+let bnShow = { sec: false }, bnEdit = null;
+function bnHasKeys(){ return !!(bnCfg.client_id || bnCfg.has_secret); }
+function bnEditMode(){ return bnEdit === null ? !bnHasKeys() : bnEdit; }
+function bnToggleEdit(){ bnEdit = !bnEditMode(); bnShow.sec = false; render(); }
+async function bnLoadCfg(){
+  if (bnCfg.loaded || !isAdmin() || !HAS_SB) return;
+  bnCfg.loaded = true;
+  const j = await bnFetch('?cfg=1');
+  if (j && j.cfg){ Object.assign(bnCfg, j.cfg); render(); }
+}
+function bnCardHtml(){
+  if (!isAdmin()) return '';
+  if (HAS_SB && !bnCfg.loaded) setTimeout(bnLoadCfg, 0);
+  const redirect = location.origin + location.pathname;
+  const edit = bnEditMode();
+  const row = (lbl, inner) => `<div class="form-row"><span class="lbl">${lbl}</span><div class="gd-val">${inner}</div></div>`;
+  const ro = v => `<input readonly value="${esc(v || '')}" placeholder="${t('gd_none')}" onclick="this.select()">`;
+  const status = `<div class="tiny gd-status">
+    ${bnCfg.has_auth ? ic('dot', 'color:var(--green)') + ' ' + t('bn_connected')
+                     : ic('dot', 'color:var(--yellow)') + ' ' + t('bn_not_conn')}${
+    bnCfg.account ? ' · ' + esc(bnCfg.account) : ''}</div>`;
+  const body = edit ? `
+    <div class="tiny" style="margin-bottom:8px">${t('bn_intro')}</div>
+    ${row(t('bn_cid'), `<input id="bn-cid" autocomplete="off" value="${esc(bnCfg.client_id || '')}">`)}
+    ${row(t('bn_secret'), `<input id="bn-sec" type="password" autocomplete="new-password">`)}
+    ${row(t('gd_redirect'), ro(redirect))}
+    <div class="btn-rowpp" style="margin:8px 0 0">
+      <button class="btn btn-ghost" onclick="App.bnSaveKeys()">${t('bn_save')}</button>
+      <button class="btn btn-blue" onclick="App.bnConnect()">${ic('link')} ${t('bn_connect')}</button>
+    </div>` : `
+    ${row(t('bn_cid'), ro(bnCfg.client_id))}
+    ${row(t('bn_secret'), ro(bnShow.sec ? bnCfg.secret : (bnCfg.has_secret ? '••••••••••••' : ''))
+      + `<button class="icon-btn sm" title="${bnShow.sec ? t('gd_hide') : t('gd_show')}"
+           onclick="App.bnReveal()">${ic(bnShow.sec ? 'eye_off' : 'eye')}</button>`)}
+    ${row(t('gd_redirect'), ro(redirect))}
+    <button class="btn btn-blue" style="margin-top:8px" onclick="App.bnConnect()">${ic('link')} ${t('bn_connect')}</button>`;
+  return `<div class="card" id="bn-card">
+    <div class="gd-head">
+      <div style="font-weight:900;flex:1">${ic('car')} ${t('bn_card')}</div>
+      ${bnHasKeys() ? `<button class="icon-btn sm" title="${edit ? t('gd_edit_off') : t('gd_edit')}"
+        onclick="App.bnToggleEdit()">${ic(edit ? 'close' : 'pencil')}</button>` : ''}
+    </div>
+    ${status}${body}
+    <button class="btn btn-green" style="margin-top:8px" onclick="App.bnTest()">${ic('flask')} ${t('bn_test')}</button>
+    <div id="bn-health" class="tiny" style="margin-top:8px"></div>
+    <details style="margin-top:8px"><summary class="tiny">${t('gd_help')}</summary>
+      <div class="tiny" style="margin-top:6px;line-height:1.5">
+        1. bouncie.dev → Developer Portal → создайте приложение (Application).<br>
+        2. В Redirect URIs вставьте адрес из поля выше — точно, символ в символ.<br>
+        3. Скопируйте Client ID и Client Secret в поля → «${t('bn_save')}».<br>
+        4. «${t('bn_connect')}» → войдите под аккаунтом Bouncie фирмы и разрешите доступ — токены сервер сохранит сам.<br>
+        5. Разверните Edge Function <b>bouncie</b> (supabase/functions-dashboard/bouncie: index.ts + google.ts).<br>
+        6. Машины: Справочники → «${t('d_vehicles')}» → «${t('veh_import')}»; назначьте водителей — и они появятся на карте.
+      </div>
+    </details>
+  </div>`;
+}
+async function bnSaveKeys(){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  if (!bnEditMode()) return;
+  const cid = (($('#bn-cid') || {}).value || '').trim(),
+        sec = (($('#bn-sec') || {}).value || '').trim();
+  const { error } = await state.sb.rpc('admin_set_bouncie_config',
+    { p_client_id: cid, p_client_secret: sec });
+  if (error){ toast('⛔ ' + rpcFail(error, 'admin_set_bouncie_config'), 'err'); return; }
+  if (cid) bnCfg.client_id = cid;
+  if (sec){ bnCfg.has_secret = true; bnCfg.secret = sec; }
+  BN.off = false;
+  toast('✓ ' + t('bn_saved'));
+}
+async function bnConnect(){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  const cid = ((($('#bn-cid') || {}).value || bnCfg.client_id) || '').trim();
+  if (!cid){ toast('⚠ ' + t('bn_need_cid'), 'err'); return; }
+  await bnSaveKeys();                              // в режиме просмотра пропустится
+  location.href = 'https://auth.bouncie.com/dialog/authorize'
+    + '?client_id=' + encodeURIComponent(cid)
+    + '&redirect_uri=' + encodeURIComponent(location.origin + location.pathname)
+    + '&response_type=code&state=tl_bn';
+}
+async function bnOauthExchange(code){
+  const j = await bnFetch('', { method: 'POST',
+    body: JSON.stringify({ op: 'exchange', code, redirect_uri: location.origin + location.pathname }) });
+  if (j && j.ok){
+    bnCfg.has_auth = true; bnCfg.account = j.account || '';
+    BN.off = false; BN.at = BN.statsAt = 0;
+    toast('✓ ' + t('bn_conn_done') + (j.account ? ' · ' + j.account : '')
+      + (j.vehicles ? ' · ' + j.vehicles + ' ' + t('bn_veh_n') : ''));
+    render();
+  } else toast('⛔ Bouncie: ' + (BN.err || 'exchange'), 'err');
+}
+async function bnTest(){
+  const el = $('#bn-health'); if (el) el.textContent = '…';
+  BN.off = false;
+  const cfg = await bnFetch('?cfg=1');
+  if (!cfg){ if (el) el.textContent = '⛔ bouncie: ' + (BN.err || 'нет ответа функции'); return; }
+  Object.assign(bnCfg, cfg.cfg || {});
+  const j = await bnFetch('?vehicles=1');
+  if (j && j.vehicles){
+    BN.vs = j.vehicles; BN.at = Date.now();
+    if (el) el.innerHTML = '✅ ' + t('bn_ok') + ' · ' + j.vehicles.length + ' ' + t('bn_veh_n');
+  } else if (el) el.textContent = '⛔ ' + (BN.err || '?');
+}
+async function bnReveal(){
+  if (!bnShow.sec && !bnCfg.secret){
+    const j = await bnFetch('?reveal=1');
+    if (j && j.secrets) bnCfg.secret = j.secrets.client_secret || '';
+  }
+  bnShow.sec = !bnShow.sec; render();
+}
+/* ---- справочник «Автомобили» (админ) ---- */
+function vehFreeNo(exceptId){
+  const used = new Set(bnVehicles().filter(v => v.id !== exceptId && v.car_no != null).map(v => +v.car_no));
+  for (let n = 1; n <= 99; n++) if (!used.has(n)) return n;
+  return null;
+}
+function dirVehicles(){
+  const vs = bnVehicles().slice().sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999));
+  const rows = vs.map(v => `
+    <div class="rowline">
+      <span class="dot num" style="background:var(--blue);color:#fff">${v.car_no ?? '·'}</span>
+      <div class="grow"><b>${esc(v.make || '—')}</b>
+        <div class="tiny">${v.driver_id ? ic('crew') + ' ' + esc(profName(v.driver_id)) : t('veh_no_driver_l')}</div>
+        <div class="tiny">VIN ${esc(v.vin || '—')} · IMEI ${esc(v.imei || '—')}</div></div>
+      <button class="btn btn-ghost sm" onclick="App.vehModal('${v.id}')">${t('edit')}</button>
+    </div>`).join('');
+  return `<div class="tiny" style="margin-bottom:8px">${t('veh_hint')}</div>
+    <div class="card">${rows || `<div class="list-empty">—</div>`}</div>
+    <button class="btn btn-green" onclick="App.vehModal()">${ic('plus')} ${t('add')}</button>
+    ${HAS_SB ? `<button class="btn btn-blue" style="margin-top:8px" onclick="App.vehImport()">${
+      ic('download')} ${t('veh_import')}</button>` : ''}`;
+}
+function vehModal(id){
+  const v = bnVehicles().find(x => x.id === id)
+    || { id: null, make: '', vin: '', imei: '', car_no: vehFreeNo(null), driver_id: null };
+  const staff = state.data.profiles.filter(p => !p.blocked)
+    .slice().sort((a, b) => a.display_name.localeCompare(b.display_name));
+  openModal(`
+    ${modalHead(v.id ? t('veh_edit') : t('veh_new'), 'car')}
+    <div class="form-row"><span class="lbl">${t('veh_make')}</span>
+      <input id="veh-make" autocomplete="off" placeholder="Ford Transit 2021" value="${esc(v.make || '')}"></div>
+    <div class="form-row"><span class="lbl">${t('veh_no')} (1–99)</span>
+      <input id="veh-no" inputmode="numeric" value="${v.car_no ?? ''}"></div>
+    <div class="form-row"><span class="lbl">${t('veh_vin')}</span>
+      <input id="veh-vin" autocomplete="off" maxlength="17" placeholder="1FTBW2CM…" value="${esc(v.vin || '')}"></div>
+    <div class="form-row"><span class="lbl">${t('veh_imei')}</span>
+      <input id="veh-imei" inputmode="numeric" maxlength="15" placeholder="123456789012345" value="${esc(v.imei || '')}"></div>
+    <div class="form-row"><span class="lbl">${t('veh_driver')}</span>
+      <select id="veh-driver">
+        <option value="">${t('veh_no_driver')}</option>
+        ${staff.map(p => `<option value="${p.id}" ${v.driver_id === p.id ? 'selected' : ''}>${
+          esc(p.display_name)}${p.car_no != null ? ' · №' + p.car_no : ''}</option>`).join('')}
+      </select></div>
+    <div class="tiny" style="margin:4px 0 8px">${t('veh_hint')}</div>
+    <button class="btn btn-green" onclick="App.vehSave('${v.id || ''}')">${t('save')}</button>
+    ${v.id ? `<button class="btn btn-red" style="margin-top:8px" onclick="App.vehDel('${v.id}')">${
+      ic('trash')} ${t('delete')}</button>` : ''}
+  `);
+}
+/* локальное зеркало vehicle_save: строка + синхронизация car_no в профилях
+   (в Supabase то же самое делает сама RPC; здесь — мгновенный кэш и демо) */
+function vehApplyLocal(row, oldDriver){
+  const arr = state.data.vehicles || (state.data.vehicles = []);
+  const i = arr.findIndex(x => x.id === row.id);
+  if (i >= 0) arr[i] = row; else arr.push(row);
+  arr.forEach(v => { if (v.id !== row.id && row.driver_id && v.driver_id === row.driver_id) v.driver_id = null; });
+  (state.data.profiles || []).forEach(p => {
+    if (oldDriver && p.id === oldDriver && p.id !== row.driver_id) p.car_no = null;
+    if (row.driver_id){
+      if (p.id !== row.driver_id && row.car_no != null && p.car_no === row.car_no) p.car_no = null;
+      if (p.id === row.driver_id) p.car_no = row.car_no;
+    }
+  });
+  saveLocal();
+}
+async function vehSave(id){
+  if (!isAdmin()) return;
+  id = id || null;
+  const make = (($('#veh-make') || {}).value || '').trim();
+  const noS = (($('#veh-no') || {}).value || '').trim();
+  const car_no = noS === '' ? null : +noS;
+  const vin = (($('#veh-vin') || {}).value || '').trim();
+  const imei = (($('#veh-imei') || {}).value || '').replace(/\D/g, '');
+  const driver = ($('#veh-driver') || {}).value || null;
+  if (car_no != null && (!Number.isInteger(car_no) || car_no < 1 || car_no > 99)){
+    toast('⚠ ' + t('veh_bad_no'), 'err'); return;
+  }
+  if (car_no != null && bnVehicles().some(v => v.id !== id && +v.car_no === car_no)){
+    toast('⚠ ' + t('veh_no_taken'), 'err'); return;
+  }
+  const prev = bnVehicles().find(v => v.id === id);
+  let vid = id || uid();
+  if (HAS_SB){
+    const { data, error } = await state.sb.rpc('vehicle_save', {
+      p_id: id, p_make: make, p_vin: vin, p_imei: imei, p_car_no: car_no, p_driver: driver });
+    if (error){
+      const s = errStr(error);
+      const nice = /CAR_NO_TAKEN/.test(s) ? t('veh_no_taken')
+                 : /BAD_CAR_NO/.test(s) ? t('veh_bad_no') : rpcFail(error, 'vehicle_save');
+      toast('⛔ ' + nice, 'err'); return;
+    }
+    if (data) vid = data;
+  }
+  vehApplyLocal({ id: vid, make, vin: vin || null, imei: imei || null, car_no, driver_id: driver,
+    created_at: (prev && prev.created_at) || new Date().toISOString() }, prev && prev.driver_id);
+  audit('veh_save', 'vehicle', vid, { make, car_no, driver: driver ? profName(driver) : '' });
+  closeModal(); toast('✓ ' + t('veh_saved'));
+  BN.at = BN.statsAt = 0;                          // подтянуть трекинг с новым составом
+  render();
+}
+async function vehDel(id){
+  if (!isAdmin() || !confirm(t('veh_del_q'))) return;
+  const v = bnVehicles().find(x => x.id === id);
+  await dbDelete('vehicles', id);
+  audit('veh_del', 'vehicle', id, { make: v && v.make });
+  closeModal(); toast('✓ ' + t('veh_deleted'));
+  render();
+}
+async function vehImport(){
+  if (!isAdmin()) return;
+  BN.off = false;
+  const j = await bnFetch('?vehicles=1');
+  if (!j || !j.vehicles){ toast('⛔ Bouncie: ' + (BN.err || '—'), 'err'); return; }
+  let added = 0, upd = 0;
+  for (const bv of j.vehicles){
+    const imei = String(bv.imei || '').replace(/\D/g, ''); if (!imei) continue;
+    const mk = [bv.model && bv.model.make, bv.model && bv.model.name, bv.model && bv.model.year]
+      .filter(Boolean).join(' ') || bv.nickName || 'Car';
+    const ex = bnVehicles().find(v => String(v.imei) === imei);
+    const row = ex
+      ? { id: ex.id, make: ex.make || mk, vin: bv.vin || ex.vin || '', car_no: ex.car_no ?? vehFreeNo(ex.id), driver: ex.driver_id || null }
+      : { id: null, make: mk, vin: bv.vin || '', car_no: vehFreeNo(null), driver: null };
+    const { data, error } = await state.sb.rpc('vehicle_save', {
+      p_id: row.id, p_make: row.make, p_vin: row.vin, p_imei: imei,
+      p_car_no: row.car_no, p_driver: row.driver });
+    if (error){ toast('⛔ ' + rpcFail(error, 'vehicle_save'), 'err'); return; }
+    vehApplyLocal({ id: data || row.id || uid(), make: row.make, vin: row.vin || null, imei,
+      car_no: row.car_no, driver_id: row.driver,
+      created_at: (ex && ex.created_at) || new Date().toISOString() }, ex && ex.driver_id);
+    ex ? upd++ : added++;
+  }
+  audit('veh_save', 'vehicle', 'import', { added, updated: upd });
+  toast(`✓ ${t('veh_import')}: ${t('veh_added')} ${added} · ${t('veh_upd')} ${upd}`);
+  BN.at = BN.statsAt = 0;
+  render();
+}
+
 function mapDayItems(){
   const iso = state.mapDate || state.selDate || todayISO();
-  const num = dayNumbering(iso);   // те же номера, что в строках на главном экране
+  /* v1.08.32: на карте менеджер и админ видят задачи ВСЕХ сотрудников
+     (как на доске), независимо от фильтра «Мои»; скрытые админом для
+     менеджера не показываются. Работник — как раньше: своё и общее. */
+  const wide = isManager();
+  const hid = state.user && state.user.role === 'manager' ? hiddenSetFor(state.user.id) : new Set();
+  const today = todayISO();
+  const jobs = (wide
+    ? liveJobs().filter(j => j.date === iso && !hid.has(j.technician_id))
+    : jobsOn(iso)).slice().sort(jobSortCmp);
+  const dead = new Set(archJobs().map(j => j.id));
+  const pkOpen = (wide
+    ? state.data.placements.filter(p => !dead.has(p.job_id) && !hid.has(p.technician_id)
+        && pkPending(p) && (p.due_date === iso || (iso === today && p.due_date < today)))
+    : pickupsOn(iso).filter(p => !p.picked_up));
+  const groups = {};
+  pkOpen.forEach(p => { (groups[p.job_id] = groups[p.job_id] || []).push(p); });
+  const pkGroups = Object.entries(groups).sort((a,b) => jobSortCmp(
+    state.data.jobs.find(x=>x.id===a[0]) || {sort_order:999},
+    state.data.jobs.find(x=>x.id===b[0]) || {sort_order:999}));
+  let n = 0;
+  const pkNum = {}, jobNum = {};
+  pkGroups.forEach(([jobId]) => { pkNum[jobId] = ++n; });
+  jobs.forEach(j => { jobNum[j.id] = ++n; });
   const pts = [];
-  num.pkGroups.forEach(([jobId, list]) => {
+  pkGroups.forEach(([jobId, list]) => {
     const p0 = list[0];
     const cx = cxById(p0.complex_id);
     if (cx && cx.lat != null && cx.lng != null){
       const over = list.some(p => p.due_date < todayISO());
       const eq = list.map(p => `${p.qty}×${(etById(p.equipment_type_id)||{abbr:'?'}).abbr}`).join(' ');
-      pts.push({ num: num.pkNum[jobId], lat:+cx.lat, lng:+cx.lng, color: over ? '#FF4B4B' : '#8AA0AB',
-        label: `${t('pickup')} Unit ${p0.unit_number||'—'} · ${eq}`, cx, kind:'pickup' });
+      pts.push({ num: pkNum[jobId], lat:+cx.lat, lng:+cx.lng, color: over ? '#FF4B4B' : '#8AA0AB',
+        label: `${t('pickup')} Unit ${p0.unit_number||'—'} · ${eq}`, cx, kind:'pickup',
+        who: shortName(profName(p0.technician_id)) });
     }
   });
-  num.jobs.forEach(j => {
+  jobs.forEach(j => {
     const cx = cxById(j.complex_id);
     if (cx && cx.lat != null && cx.lng != null){
       const wt = wtById(j.work_type_id) || {color:'#888', name:''};
-      pts.push({ num: num.jobNum[j.id], lat:+cx.lat, lng:+cx.lng, color: wt.color,
-        label: `Unit ${j.unit_number||'—'} · ${wt.name}`, cx, kind:'job' });
+      pts.push({ num: jobNum[j.id], lat:+cx.lat, lng:+cx.lng, color: wt.color,
+        label: `Unit ${j.unit_number||'—'} · ${wt.name}`, cx, kind:'job',
+        who: shortName(profName(j.technician_id)) });
     }
   });
   pts.sort((a,b)=>a.num-b.num);
@@ -7429,7 +8113,7 @@ function viewMap(){
     ? (day.pts.length
         ? day.pts.map(p=>`<button class="rowline map-row" onclick="App.mapFocus(${p.lat},${p.lng})">
             <span class="dot num" style="background:${p.color};color:${textColorFor(p.color)}">${p.num}</span>
-            <div class="grow">${p.kind==='job'?ic('wrench'):ic('box')} ${esc(p.label)}<div class="tiny">${esc(p.cx.name)}</div></div></button>`).join('')
+            <div class="grow">${p.kind==='job'?ic('wrench'):ic('box')} ${esc(p.label)}<div class="tiny">${esc(p.cx.name)}${p.who ? ' · ' + esc(p.who) : ''}</div></div></button>`).join('')
         : `<div class="list-empty">${t('no_items')}</div>`)
     : list.map(cx=>{
         const has = cx.lat != null && cx.lng != null;
@@ -7467,10 +8151,16 @@ function viewMap(){
       <div class="form-row" style="margin-top:8px"><span class="lbl">${t('map_day_hint')}</span>
         <input type="date" value="${state.mapDate || state.selDate}" onchange="App.mapSetDate(this.value)"></div>
       ${day.pts.length ? `<button class="btn btn-blue sm" onclick="App.mapRoute()">${ic('compass')} ${t('route_day_in')} ${navName()}</button>` : ''}` : ''}
+    ${bnChipsHtml()}
   </div>
-  <div id="map" class="map-box"></div>
-  ${legend}
-  ${!state.mapDay && noCoords.length ? `<div class="tiny" style="margin-top:6px">${ic('warn')} ${noCoords.length} · ${t('map_no_coords')}</div>` : ''}`;
+  <div class="map-flex">
+    <div class="map-main">
+      <div id="map" class="map-box"></div>
+      ${legend}
+      ${!state.mapDay && noCoords.length ? `<div class="tiny" style="margin-top:6px">${ic('warn')} ${noCoords.length} · ${t('map_no_coords')}</div>` : ''}
+    </div>
+    ${bnStatsHtml()}
+  </div>`;
 }
 function initMapView(){
   if (!window.L) { setTimeout(initMapView, 150); return; }
@@ -7502,7 +8192,7 @@ function initMapView(){
       g.items.sort((a,b)=>(a.num||0)-(b.num||0));
       const cx = g.cx;
       const html = `<b>${esc(cx.name)}</b><br>${esc(cx.address||'')}${cx.access_code?'<br>'+ic('key')+' '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?ic('gate')+' ':ic('callbox')+' ')+esc(cx.callbox_code):''}<hr style="margin:4px 0">` +
-        g.items.map(i=>`<b>#${i.num}</b> <span style="color:${i.color}">${i.kind==='job'?ic('wrench'):ic('box')}</span> ${esc(i.label)}`).join('<br>') + `<br>${gm(cx)}`;
+        g.items.map(i=>`<b>#${i.num}</b> <span style="color:${i.color}">${i.kind==='job'?ic('wrench'):ic('box')}</span> ${esc(i.label)}${i.who ? ' · <span style="color:#8AA0AB">' + esc(i.who) + '</span>' : ''}`).join('<br>') + `<br>${gm(cx)}`;
       const numTxt = g.items.map(i=>i.num).join('·');
       mk(+cx.lat, +cx.lng, g.items.find(i=>i.kind==='job')?.color || g.items[0].color, html, numTxt);
     });
@@ -7515,6 +8205,15 @@ function initMapView(){
           `<b>${esc(cx.name)}</b> (${esc(cx.abbr||'')})<br>${esc(cp.name)}<br>${esc(cx.address||'')}${cx.access_code?'<br>'+ic('key')+' '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?ic('gate')+' ':ic('callbox')+' ')+esc(cx.callbox_code):''}<br>${gm(cx)}`);
       });
   }
+  /* v1.08.32: машины Bouncie — свой слой поверх задач; выбранные машины
+     участвуют в подборе границ карты */
+  BN.layer = null; BN.markers = {}; BN.routes = {};
+  bnDrawCars();
+  const selBN = bnSelSet();
+  (BN.vs || []).forEach(x => {
+    const l = x.stats && x.stats.location;
+    if (l && l.lat != null && selBN.has(String(x.imei))) marks.push([+l.lat, +(l.lon ?? l.lng)]);
+  });
   if (marks.length) mapObj.fitBounds(marks, { padding: [30,30], maxZoom: 14 });
   else mapObj.setView([33.79, -84.39], 10); // Атланта
   setTimeout(()=>mapObj && mapObj.invalidateSize(), 120);
@@ -9407,6 +10106,7 @@ function boardJobCard(j, idx, canOrd){
     </div>` : '';
   return `<div class="bjob clicky${rail ? ' has-brail' : ''}" style="border-left-color:${col}" onclick="App.openJob('${j.id}')">
     ${rail}
+    ${bnDotHtml('job:' + j.id)}
     <span class="bnum">${idx + 1}</span>
     ${triHtml(!!j.priority, j.id, canPrio(j))}
     <div class="bmain"><b>${esc(j.unit_number || '—')}</b>${proposalChipHtml(j, true)}${repChipHtml(j, true)}<span class="tiny"> · ${esc((cx && (cx.abbr || cx.name)) || '—')}</span>
@@ -9424,6 +10124,7 @@ function boardPkCard(jobId, arr, iso){
   arr.forEach(p => { const e = etById(p.equipment_type_id); const k = e ? e.abbr : '?'; agg[k] = (agg[k] || 0) + (+p.qty || 1); });
   const eq = Object.entries(agg).map(([k, q]) => `${k}×${q}`).join(' ');
   return `<div class="bpk clicky ${over ? 'over' : ''}" onclick="App.pickupModal('${jobId}','${iso}',event)">
+    ${bnDotHtml('pk:' + jobId)}
     <b>PU</b> ${esc(eq)}${ext ? ` <span class="bext" title="${t('b_ext')}">⟳</span>` : ''}
     <span class="tiny">${over ? `${t('b_over')} · ` : ''}${fmtDMY(due)}</span>
   </div>`;
@@ -13803,6 +14504,7 @@ function updateFadeClips(){
   kick();
 })();
 initMedia();
+bnInit();   // v1.08.32: фоновый опрос GPS-трекинга Bouncie
 
 /* =====================================================================
    v1.07.32: БЭКАП ДАННЫХ — интегрирован в приложение (Настройки, админ).
