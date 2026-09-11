@@ -1,5 +1,5 @@
 import { svc, userClient, driveToken, monthFolder, CORS, jres, FN_VER,
-         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf } from "../_shared/google.ts";
+         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, ymDir } from "../_shared/google.ts";
 
 /* v1.07.64 · три режима:
    ?cfg=1     — только конфиг без секретов (быстро, для отрисовки карточки);
@@ -297,33 +297,60 @@ Deno.serve(async (req) => {
        симметричными: «архив / Photos / ГГГГ-ММ» и «архив / Files / ГГГГ-ММ».
        Папки те же самые, что использует настоящая отправка (monthFolder),
        поэтому проверка заодно создаёт их заранее. */
+    /* v1.08.25 · КОРЕНЬ И «КУДА ПИШЕТСЯ» — ОТДЕЛЬНО.
+       Раньше проверка отдавала одну строку вида «архив / Photos / 2026-09»,
+       и в настройках месяц выглядел корнем. Хуже того — сама же и заводила
+       эти пустые Photos/2026-09: настоящая съёмка туда не пишет с v1.08.12.
+       Теперь отдаём корень (имя, id, своя это папка админа или папка внутри
+       архива) и схему записи токенами — ровно ту, по которой раскладывает
+       media-begin:
+         фото     : корень / контрагент / комплекс / юнит
+         вложения : корень / сотрудник / ГГГГ_ММ / документ
+         инвойсы  : корень / [сотрудник] / ГГГГ_ММ
+       Токены расшифровывает приложение, поэтому подпись не зависит от языка. */
     if (folder) {
       try {
-        const ym = new Date().toISOString().slice(0, 7);
-        const photoRoot = await monthFolder(t, folder, PHOTOS_DIR);
-        const photoMonth = photoRoot ? await monthFolder(t, photoRoot, ym) : "";
-        const filesRoot = await monthFolder(t, folder, FILES_DIR);
-        const fileMonth = filesRoot ? await monthFolder(t, filesRoot, ym) : "";
-        /* v1.07.85: третья строка — инвойсы. Если админ указал в настройках
-           чужую папку Диска, показываем её же, а не «архив / Invoices». */
-        let invName = "", byTech = false;
+        let org: Record<string, unknown> | null = null;
         try {
           const q = await svc().from("org_settings")
-            .select("gd_inv_folder,gd_inv_by_tech").eq("id", "org").maybeSingle();
-          invName = folderIdOf(String(q.data?.gd_inv_folder ?? ""));
-          byTech = !!q.data?.gd_inv_by_tech;
-        } catch (_e) { invName = ""; }
-        const invRoot = invName || await monthFolder(t, folder, INVOICES_DIR);
-        /* v1.07.87: с галочкой «по сотрудникам» месяц лежит внутри папки
-           исполнителя, поэтому показываем сам корень инвойсов и схему пути —
-           заранее создавать папки под каждого сотрудника незачем. */
-        const invMonth = byTech ? invRoot : (invRoot ? await monthFolder(t, invRoot, ym) : "");
+            .select("gd_photo_folder,gd_files_folder,gd_inv_folder,gd_inv_by_tech")
+            .eq("id", "org").maybeSingle();
+          org = (q.data ?? null) as Record<string, unknown> | null;
+        } catch (_e) { org = null; }
+        const byTech = !!org?.gd_inv_by_tech;
+        const ym = ymDir(new Date().toISOString().slice(0, 10));      // 2026_09 — как в media-begin
+        const nameOf = async (id: string, fallback: string) => {
+          if (!id) return fallback;
+          try {
+            const q = await (await fetch(
+              `https://www.googleapis.com/drive/v3/files/${id}?fields=name&supportsAllDrives=true`,
+              { headers: { Authorization: `Bearer ${t}` } })).json();
+            return String(q?.name ?? "") || fallback;
+          } catch (_e) { return fallback; }
+        };
+        /* Корень: своя папка админа — как есть; иначе подпапка архива. */
+        const rootOf = async (custom: unknown, dir: string) => {
+          const own = folderIdOf(String(custom ?? ""));
+          if (own) return { id: own, name: await nameOf(own, dir), own: true, in: "" };
+          const id = await monthFolder(t, folder, dir);
+          return { id, name: dir, own: false, in: rootName || "" };
+        };
+        const photoRoot = await rootOf(org?.gd_photo_folder, PHOTOS_DIR);
+        const fileRoot  = await rootOf(org?.gd_files_folder, FILES_DIR);
+        const invRoot   = await rootOf(org?.gd_inv_folder,   INVOICES_DIR);
+        const line = (r: { name: string; own: boolean; in: string }, tail: string[]) =>
+          (r.own ? r.name : `${r.in || "—"} / ${r.name}`) + (tail.length ? " / " + tail.join(" / ") : "");
+        const pack = (r: { id: string; name: string; own: boolean; in: string },
+                      scheme: string[], tail: string[]) => ({
+          id: r.id, name: r.name,                 // старым сборкам — корень одной строкой
+          root: r, scheme, ym,
+          path: line(r, tail),                    // читаемая схема для старых сборок
+        });
         r.paths = {
-          photo: { id: photoMonth, name: ym, path: `${rootName || "—"} / ${PHOTOS_DIR} / ${ym}` },
-          file: { id: fileMonth, name: ym, path: `${rootName || "—"} / ${FILES_DIR} / ${ym}` },
-          invoice: { id: invMonth, name: byTech ? "…" : ym,
-            path: (invName ? `(${INVOICES_DIR})` : `${rootName || "—"} / ${INVOICES_DIR}`) +
-                  (byTech ? ` / <сотрудник> / ${ym}` : ` / ${ym}`) },
+          photo:   pack(photoRoot, ["cp", "cx", "unit"], ["<контрагент>", "<комплекс>", "<юнит>"]),
+          file:    pack(fileRoot,  ["tech", "ym", "doc"], ["<сотрудник>", ym, "<документ>"]),
+          invoice: pack(invRoot, byTech ? ["tech", "ym"] : ["ym"],
+                        byTech ? ["<сотрудник>", ym] : [ym]),
         };
       } catch (_e) { /* не критично: тест продолжается */ }
     }

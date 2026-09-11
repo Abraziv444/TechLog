@@ -124,8 +124,10 @@ Deno.serve(async (req) => {
        раскладка инвойсов по папкам сотрудников — читаем один раз */
     const byTech = !!org?.gd_inv_by_tech && kind === "invoice";
     let techName = "";
+    /* v1.08.25: вложения всегда лежат в папке сотрудника, поэтому имя нужно
+       и для них — без него папка называлась «—». */
     if (((job as any).technician_id) &&
-        (byTech || String(org?.file_name_fmt ?? "").includes("{TECH}"))) {
+        (byTech || kind === "file" || String(org?.file_name_fmt ?? "").includes("{TECH}"))) {
       const pr = await s.from("profiles").select("display_name")
         .eq("id", (job as any).technician_id).maybeSingle();
       techName = String(pr.data?.display_name ?? "");
@@ -184,9 +186,15 @@ Deno.serve(async (req) => {
     } else if (kind === "invoice") {
       const root = folderIdOf(String(org?.gd_inv_folder ?? "")) ||
                    await monthFolder(t, cfg.gd_folder_id, INVOICES_DIR);
-      const dir = techFolderName(techName) || "—";
-      const techDir = await dirFor(s, t, "tech", String((job as any).technician_id ?? dir), root, dir);
-      parent = await dirFor(s, t, "ym", techDir + "/" + ymd, techDir, ymd);
+      /* v1.08.25: без галочки «по сотрудникам» месяц лежит прямо в корне
+         инвойсов. Раньше папка сотрудника заводилась всегда и при снятой
+         галочке называлась «—». */
+      let base = root;
+      if (byTech) {
+        const dir = techFolderName(techName) || "—";
+        base = await dirFor(s, t, "tech", String((job as any).technician_id ?? dir), root, dir);
+      }
+      parent = await dirFor(s, t, "ym", base + "/" + ymd, base, ymd);
     } else {
       const root = folderIdOf(String(org?.gd_files_folder ?? "")) ||
                    await monthFolder(t, cfg.gd_folder_id, FILES_DIR);

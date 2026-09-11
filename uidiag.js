@@ -1271,7 +1271,7 @@
      Обход всех экранов одной кнопкой. Ради этого всё и затевалось: на
      чужом айфоне человек жмёт один раз и присылает готовый .txt.
      ------------------------------------------------------------------ */
-  var SCREENS = ['home', 'board', 'proposals', 'map', 'reports', 'stats', 'dirs',
+  var SCREENS = ['home', 'board', 'proposals', 'stock', 'map', 'reports', 'stats', 'dirs',
                  'archive', 'journal', 'settings'];   // v1.07.88: архив-корзина
   var ALL = null;
 

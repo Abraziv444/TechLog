@@ -183,8 +183,80 @@ function check(name, cond, extra) {
   await p.waitForTimeout(600);
   const chainTags = await p.locator('.chain-tag').allTextContents();
   check('REP в цепочке документов', chainTags.some(x => /REP/.test(x)), chainTags.join(' → '));
-  await p.locator('#overlay .modal-x, #overlay button').last().click().catch(() => {});
+  await p.evaluate(() => { if (window.App && App.closeModal) App.closeModal(); });
+  await p.waitForTimeout(400);
+
+  // -------------------------------------------------- 10. внимание менеджера
+  console.log('\n== снятый апрув на виду ==');
+  await p.evaluate(() => { if (window.App && App.closeModal) App.closeModal(); });
+  await p.waitForTimeout(400);
+  await p.locator('.tabbar .tab:has-text("Действие")').click();
+  await p.waitForTimeout(700);
+  const attn = p.locator('.card', { hasText: 'Ремонт: слетел апрув' }).first();
+  check('карточка «слетел апрув» на экране «Действие»', await attn.count() > 0);
+  check('в карточке есть документ', /R-\d/.test(await attn.textContent()),
+        (await attn.textContent()).replace(/\s+/g, ' ').slice(0, 110));
+  check('счётчик карточки не нулевой', (await attn.locator('.chip').first().textContent()).trim() !== '0',
+        (await attn.locator('.chip').first().textContent()).trim());
+  await p.locator('.tabbar .tab:has-text("Доска")').click();
+  await p.waitForTimeout(700);
+  check('пометка «слетел апрув» на доске', await p.locator('.chip:has-text("слетел апрув")').count() > 0);
+  check('запись в журнале', await p.evaluate(() =>
+    (state.data.audit_log || JSON.parse(localStorage.getItem('techlog_audit_v1') || '[]'))
+      .some(a => a.action === 'repair_approve_reset')));
+
+  // -------------------------------------------------- 11. фото «до/после»
+  console.log('\n== фото до и после ==');
+  await p.locator('.tabbar .tab:has-text("Ремонт")').click();
+  await p.waitForTimeout(600);
+  if (!(await p.locator('#rep-apr').count())) {      // экран мог остаться на открытом документе
+    await p.locator('.rowline:has-text("R-")').first().click();
+    await p.waitForTimeout(600);
+  }
+  check('без фото показана подсказка', /нет фото|Привяжите работу/.test(
+    await p.locator('.card:has-text("Фото до и после")').first().textContent()));
+  // подкладываем снимки в инвойс
+  await p.evaluate(() => {
+    const jid = repDraft.job_id;
+    state.data.media = [1, 2, 3].map(i => ({ id: 'm' + i, job_id: jid, owner_id: state.user.id,
+      kind: 'photo', seq: i, file_name: 'IMG_' + i + '.jpg', status: 'ready', thumb_path: '' }));
+    render();
+  });
+  await p.waitForTimeout(500);
+  check('плитки фото появились', await p.locator('.rep-ph').count() === 3,
+        String(await p.locator('.rep-ph').count()));
+  await p.locator('.rep-ph').nth(0).locator('button:has-text("до")').click();
   await p.waitForTimeout(300);
+  await p.locator('.rep-ph').nth(1).locator('button:has-text("после")').click();
+  await p.waitForTimeout(300);
+  let ph = await p.evaluate(() => repDraft.photos);
+  check('пометки «до» и «после» сохранились в документе',
+        ph.before.length === 1 && ph.after.length === 1, JSON.stringify(ph));
+  check('счётчик в заголовке обновился',
+        /до 1 · после 1/.test(await p.locator('.card:has-text("Фото до и после")').first().textContent()));
+  // тот же снимок переносим в другую колонку — дублей быть не должно
+  await p.locator('.rep-ph').nth(1).locator('button:has-text("до")').click();
+  await p.waitForTimeout(300);
+  ph = await p.evaluate(() => repDraft.photos);
+  check('снимок переехал, а не задвоился', ph.before.length === 2 && ph.after.length === 0,
+        JSON.stringify(ph));
+  // пометки не должны ронять апрув
+  await p.locator('.prop-wrap button:has-text("Сохранить")').last().click();
+  await p.waitForTimeout(600);
+  await p.locator('#rep-apr button:has-text("Отправить на апрув")').click();
+  await p.waitForTimeout(500);
+  await p.locator('#rep-apr button:has-text("Одобрить")').click();
+  await p.waitForTimeout(600);
+  await p.locator('.rep-ph').nth(2).locator('button:has-text("после")').click();
+  await p.waitForTimeout(500);
+  check('пометка фото апрув не снимает',
+        (await p.locator('#rep-apr .chip.pst').textContent()).trim() === 'Одобрен',
+        (await p.locator('#rep-apr .chip.pst').textContent()).trim());
+  check('а правка суммы — снимает', await (async () => {
+    await p.locator('#rep-rows-work .prop-row .pa').first().fill('99');
+    await p.waitForTimeout(500);
+    return (await p.locator('#rep-apr .chip.pst').textContent()).trim() === 'Черновик';
+  })());
 
   console.log('\n== ошибки страницы ==');
   console.log(errs.length ? errs.slice(0, 6).join('\n') : '  нет');

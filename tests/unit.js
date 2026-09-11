@@ -30,7 +30,11 @@ const expose = `;window.__T = {
   renderNoFmt, docNo, pickNo, docNoVals, DOC_FMT_DEF, FILE_FMT_DEF, DOC_TOKENS, FILE_TOKENS,
   popPos, applyPopPos, emptyFormData, mqLogPaint, mqLog, state, trIntervalMs,
   needsRepair, repWorks, repMats, repGrand, repCleanItems, repHistAdd, repNew,
-  repMoneyHidden, repCanCreate, wtById, seedDemoData
+  repMoneyHidden, repCanCreate, wtById, seedDemoData,
+  repApprovalReset, repPhotos, repsResetList,
+  stockRow, stockTotals, plOut, myOnHand, myOnHandQty,
+  emSums, emRow, myCarQty, eqCap, setEqDraft: d => { eqDraft = d; }, viewStock, viewTabbar,
+  docBlockers, canArchDoc, archReps, chainBlockModal
 };`;
 
 try {
@@ -42,7 +46,8 @@ const T = w.__T;
 if (!T) { console.log('⛔ внутренности не экспортировались'); process.exit(1); }
 
 console.log('\n— версия и SQL —');
-t('APP_VERSION = 1.08.23', T.APP_VERSION === '1.08.23', T.APP_VERSION);
+const VJ = JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version;
+t('APP_VERSION совпадает с version.json (' + VJ + ')', T.APP_VERSION === VJ, T.APP_VERSION);
 t('DB_SQL_FILE указывает на существующий файл',
   fs.existsSync(ROOT + '/supabase/' + T.DB_SQL_FILE), T.DB_SQL_FILE);
 t('диагностика БД знает про jobs.note_en',
@@ -211,12 +216,12 @@ console.log('\n— инвойсы на Диск (v1.07.85) —');
     T.DB_NEED_COLS.some(c => c[0] === 'org_settings' && c[1] === 'gd_inv_folder'));
   const g = fs.readFileSync(ROOT + '/supabase/functions/_shared/google.ts', 'utf8');
   t('INVOICES_DIR в общем модуле', /INVOICES_DIR = "Invoices"/.test(g));
-  t('версия функций поднята', /FN_VER = "1\.08\.12"/.test(g));
+  t('версия функций поднята', /FN_VER = "1\.08\.25"/.test(g));
   const mb = fs.readFileSync(ROOT + '/supabase/functions/media-begin/index.ts', 'utf8');
   t('media-begin принимает invoice', /invoice: \{ max: 50/.test(mb) && /kind === "invoice"/.test(mb));
   t('media-begin читает свою папку из настроек', /gd_inv_folder/.test(mb) && /folderIdOf/.test(mb));
   const mh = fs.readFileSync(ROOT + '/supabase/functions/media-health/index.ts', 'utf8');
-  t('media-health показывает путь инвойсов', /invoice: \{ id: invMonth/.test(mh));
+  t('media-health показывает путь инвойсов', /invoice: pack\(invRoot/.test(mh));
   const sql = fs.readFileSync(ROOT + '/supabase/update-to-1_07_85.sql', 'utf8');
   t('SQL добавляет вид invoice', /'photo','video','file','invoice'/.test(sql));
   t('SQL добавляет колонку папки', /gd_inv_folder text not null default/.test(sql));
@@ -496,11 +501,199 @@ console.log('\n— документ ремонтных работ (v1.08.23) —
   const idx = fs.readFileSync(ROOT + '/index.html', 'utf8');
   t('подсказки подключены в index.html', /proposal-tips\.js/.test(idx));
   t('подсказки в кэше service worker', /proposal-tips\.js/.test(sw));
-  t('версия service worker поднята', /VERSION = '1\.08\.23'/.test(sw));
+  t('версия service worker совпадает с приложением', sw.includes("VERSION = '" + T.APP_VERSION + "'"));
   const sql = fs.readFileSync(ROOT + '/supabase/update-to-1_08_23.sql', 'utf8');
   t('в SQL есть таблица repairs', /create table if not exists public\.repairs/.test(sql));
   t('в SQL есть страж апрува', /create trigger repairs_guard_t/.test(sql));
   t('в SQL есть позиции справочника ремонта', /Установка гипсокартона/.test(sql));
+}
+
+console.log('\n— связанные документы: блок удаления (v1.08.30) —');
+{
+  const d = T.state.data;
+  const me = T.state.user.id;
+  d.proposals = [{ id: 'pp1', no: 7, date: '2026-09-01', status: 'approved', items: [], total: 100 }];
+  d.jobs = d.jobs || [];
+  const j1 = { id: 'jj1', date: '2026-09-05', proposal_id: 'pp1', technician_id: me, unit_number: '12', form_data: {} };
+  d.jobs.push(j1);
+  d.repairs = [
+    { id: 'rr1', no: 1, date: '2026-09-06', job_id: 'jj1', created_by: me, status: 'draft', items: [], materials: [], hist: [] },
+    { id: 'rr2', no: 2, date: '2026-09-06', proposal_id: 'pp1', created_by: me, status: 'draft', items: [], materials: [], hist: [] },
+  ];
+  t('пропозал блокируют работа и оба ремонта', T.docBlockers('prop', 'pp1').length === 3,
+    JSON.stringify(T.docBlockers('prop', 'pp1').map(b => b.t)));
+  t('работу блокирует её ремонт', T.docBlockers('job', 'jj1').length === 1
+    && T.docBlockers('job', 'jj1')[0].o.id === 'rr1');
+  t('ремонт ничем не блокируется', T.docBlockers('rep', 'rr1').length === 0);
+  t('админ/автор может архивировать блокеры', T.docBlockers('prop', 'pp1').every(T.canArchDoc));
+
+  d.repairs[0].archived_at = '2026-09-07T00:00:00Z';
+  t('архивный ремонт больше не блокирует работу', T.docBlockers('job', 'jj1').length === 0);
+  t('архивный ремонт виден в списке архива', T.archReps().length === 1);
+  j1.archived_at = '2026-09-07T00:00:00Z';
+  t('после архива работы пропозал держит только второй ремонт',
+    T.docBlockers('prop', 'pp1').length === 1 && T.docBlockers('prop', 'pp1')[0].o.id === 'rr2');
+  delete j1.archived_at; delete d.repairs[0].archived_at;
+
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  t('deleteJob проверяет блокеров', /docBlockers\('job', jobDraft\.id\)/.test(src));
+  t('delProposal проверяет блокеров', /docBlockers\('prop', id\)/.test(src));
+  t('кнопка «в архив с цепочкой» есть', /ch_block_btn/.test(src) && /App\.chainArchive/.test(src));
+  t('архив умеет удалять ремонт навсегда', /dbDelete\('repairs', id\)/.test(src));
+  t('журнал знает repair-события', /'repair_archive','repair_restore','repair_delete'/.test(src));
+  t('смена роли идёт через RPC (v1.08.31)', /rpc\('admin_set_role'/.test(src)
+    && /'admin_set_role'\]/.test(src));
+  t('справка архива добавлена', /S\.archive = H\(/.test(src));
+}
+
+console.log('\n— склад: регистр оборудования (v1.08.27) —');
+{
+  const d = T.state.data = T.state.data || T.seedDemoData();
+  T.state.user = T.state.user || d.profiles.find(p => p.role === 'admin');
+  const et = d.equipment_types[0];
+  const soon = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
+  const past = new Date(Date.now() - 3 * 864e5).toISOString().slice(0, 10);
+  const me = T.state.user.id;
+  /* аренда и вывоз — по-прежнему из placements */
+  d.placements = [
+    { id: 'p1', equipment_type_id: et.id, qty: 4, due_date: soon, picked_up: false, superseded: false, technician_id: me },
+    { id: 'p2', equipment_type_id: et.id, qty: 3, due_date: past, picked_up: false, superseded: false, technician_id: me },
+    { id: 'p3', equipment_type_id: et.id, qty: 2, due_date: past, picked_up: true, picked_up_by: me, superseded: false, technician_id: me },
+    { id: 'p5', equipment_type_id: et.id, qty: 9, due_date: past, picked_up: false, superseded: true, technician_id: me },
+  ];
+  /* склад, машины и ремонт — сумма журнала движений */
+  d.equip_moves = [
+    { id: 'm1', kind: 'init', equipment_type_id: et.id, qty: 12, from_loc: 'ext', to_loc: 'stock' },
+    { id: 'm2', kind: 'init', equipment_type_id: et.id, qty: 1, from_loc: 'ext', to_loc: 'repair' },
+    { id: 'm3', kind: 'take', equipment_type_id: et.id, qty: 2, from_loc: 'stock', to_loc: 'car', tech_id: me },
+    { id: 'm4', kind: 'to_repair', equipment_type_id: et.id, qty: 1, from_loc: 'stock', to_loc: 'repair' },
+    { id: 'm5', kind: 'take', equipment_type_id: et.id, qty: 3, from_loc: 'stock', to_loc: 'car', tech_id: 'other' },
+  ];
+  const r = T.stockRow(et.id);
+  t('в аренде — срок не вышел', r.rented === 4, String(r.rented));
+  t('ожидают вывоза — срок вышел', r.pending === 3, String(r.pending));
+  t('закрытый продлением пикап не считается', r.rented + r.pending === 7, String(r.rented + r.pending));
+  t('на складе — сумма журнала', r.free === 12 - 2 - 1 - 3, String(r.free));
+  t('в машинах — сумма журнала по всем машинам', r.with_tech === 5, String(r.with_tech));
+  t('в ремонте — из журнала, «сломано» упразднено', r.in_repair === 2 && r.broken === 0,
+    r.in_repair + '/' + r.broken);
+  t('«всего» — производное, а не счётчик', r.total === r.free + r.rented + r.pending + r.with_tech + r.in_repair,
+    String(r.total));
+
+  const em = T.emRow(et.id);
+  t('emRow: склад/машины/ремонт', em.stock === 6 && em.car === 5 && em.repair === 2,
+    JSON.stringify({ s: em.stock, c: em.car, r: em.repair }));
+  t('myCarQty — только моя машина', T.myCarQty(et.id) === 2, String(T.myCarQty(et.id)));
+  t('кэш пересчитывается при замене массива', (() => {
+    d.equip_moves = [...d.equip_moves,
+      { id: 'm6', kind: 'return', equipment_type_id: et.id, qty: 1, from_loc: 'car', to_loc: 'stock', tech_id: me }];
+    return T.emRow(et.id).stock === 7 && T.myCarQty(et.id) === 1;
+  })(), JSON.stringify(T.emRow(et.id)));
+
+  const tot = T.stockTotals();
+  t('итоги суммируются по типам', tot.free === T.stockRow(et.id).free && tot.total === T.stockRow(et.id).total,
+    tot.total + '/' + tot.free);
+
+  t('на руках только незакрытое (по документам)', T.myOnHandQty() === 2, String(T.myOnHandQty()));
+  t('признак «у сотрудника»', T.plOut(d.placements[2]));
+
+  /* лимиты окна операций */
+  T.setEqDraft({ kind: 'take', et: et.id, qty: 1, src: 'stock', note: '' });
+  t('лимит «взять» = складу', T.eqCap() === 7, String(T.eqCap()));
+  T.setEqDraft({ kind: 'give', et: et.id, qty: 1, src: 'stock', note: '' });
+  t('лимит «сдать» = моей машине', T.eqCap() === 1, String(T.eqCap()));
+  T.setEqDraft({ kind: 'unrepair', et: et.id, qty: 1, src: 'stock', note: '' });
+  t('лимит «из ремонта» = ремонту', T.eqCap() === 2, String(T.eqCap()));
+
+  /* экран и таббар */
+  T.state.screen = 'stock';
+  const html = T.viewStock();
+  t('экран «Склад»: большие кнопки с минивеном', html.includes('eq-bigrow') && html.includes('eq-van'));
+  t('экран «Склад»: счётчики на кнопках', /на складе: 7/.test(html) && /в машине: 1/.test(html));
+  t('вкладка «Склад» в таббаре', /App\.go\('stock'\)/.test(T.viewTabbar()));
+
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  t('возврат сбрасывается при восстановлении пикапа', /returned_at: null, returned_by: null/.test(src));
+  t('кнопка «вернуть всё» есть', /returnAllMine/.test(src));
+  t('приложение подстраховывает cron', /stock_snapshot_due/.test(src));
+  t('журнал движений в списке таблиц', /'stock_daily','equip_moves'/.test(src));
+  t('журнал движений в бэкапе', /'ext_requests','media','equip_moves'/.test(src));
+  t('диагностика знает про возврат',
+    T.DB_NEED_COLS.some(c => c[0] === 'placements' && c[1] === 'returned_at'));
+
+  const sql = fs.readFileSync(ROOT + '/supabase/update-to-1_08_26.sql', 'utf8');
+  t('в SQL есть история остатков', /create table if not exists public\.stock_daily/.test(sql));
+  t('в SQL есть подсчёт остатков', /function public\.stock_counts\(\)/.test(sql));
+  t('снимок идемпотентен', /on conflict \(date, equipment_type_id\) do update/.test(sql));
+  t('час снимка берётся из настроек', /snapshot_hour/.test(sql));
+  t('расписание переживает переход на летнее время', /'7 \* \* \* \*'/.test(sql));
+  t('без pg_cron скрипт не падает', /pg_cron включить не удалось/.test(sql));
+  t('история подрезается', /delete from public\.stock_daily where date </.test(sql));
+  ['sb_total','sb_free','sb_rented','sb_pending','sb_with_tech','sb_broken','sb_hist',
+   'sb_return','sb_return_all','sb_on_hand','sb_all_q']
+    .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
+}
+
+console.log('\n— корень и конечная папка на Диске (v1.08.25) —');
+{
+  const mh = fs.readFileSync(ROOT + '/supabase/functions/media-health/index.ts', 'utf8');
+  const mb = fs.readFileSync(ROOT + '/supabase/functions/media-begin/index.ts', 'utf8');
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+
+  t('media-health отдаёт корень отдельно от схемы', /root: r, scheme/.test(mh));
+  t('схема съёмки — контрагент, комплекс, юнит',
+    /photo:\s+pack\(photoRoot, \["cp", "cx", "unit"\]/.test(mh));
+  t('схема вложений — сотрудник, месяц, документ',
+    /file:\s+pack\(fileRoot,\s+\["tech", "ym", "doc"\]/.test(mh));
+  t('месяц у инвойсов зависит от галочки', /byTech \? \["tech", "ym"\] : \["ym"\]/.test(mh));
+  t('проверка больше не заводит пустой месяц в Photos', !/monthFolder\(t, photoRoot/.test(mh));
+  t('месяц берётся тем же помощником, что и в записи', /ymDir\(new Date\(\)/.test(mh));
+
+  t('инвойсы без галочки — прямо в корень', /let base = root;\s+if \(byTech\) \{/.test(mb));
+  t('вложениям тоже нужно имя исполнителя',
+    /byTech \|\| kind === "file" \|\| String\(org\?\.file_name_fmt/.test(mb));
+
+  t('клиент разбирает корень и схему', /function gdPathParts/.test(src));
+  t('клиент понимает токены схемы', /GD_SEG_KEY = \{ cp:/.test(src));
+  t('старый ответ функции тоже разбирается', /legacy: true/.test(src));
+  t('карточка предупреждает про старую функцию', /gd_paths_old/.test(src));
+  t('пример пути инвойса — с подчёркиванием', /slice\(0, 7\)\.replace\('-', '_'\)/.test(src));
+  t('минимальные версии функций подняты',
+    /'media-begin': '1\.08\.25'/.test(src) && /'media-health': '1\.08\.25'/.test(src));
+  ['gd_root','gd_into','gd_into_root','gd_seg_cp','gd_seg_cx','gd_seg_unit','gd_seg_tech',
+   'gd_seg_doc','gd_photo_note','gd_paths_old']
+    .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
+}
+
+console.log('\n— снятый апрув и фото ремонта (v1.08.24) —');
+{
+  const reset = { status: 'draft', hist: [{ act: 'reset' }, { act: 'approved' }] };
+  t('черновик после снятия апрува заметен', T.repApprovalReset(reset));
+  t('одобренный документ в список внимания не идёт',
+    !T.repApprovalReset({ status: 'approved', hist: [{ act: 'approved' }] }));
+  t('обычный черновик в список внимания не идёт',
+    !T.repApprovalReset({ status: 'draft', hist: [{ act: 'created' }] }));
+  t('документ без истории не ломает проверку', !T.repApprovalReset({ status: 'draft' }));
+
+  t('пометки фото приводятся к двум спискам',
+    JSON.stringify(T.repPhotos({ photos: { before: ['m1'] } })) === '{"before":["m1"],"after":[]}',
+    JSON.stringify(T.repPhotos({ photos: { before: ['m1'] } })));
+  t('мусор в пометках не роняет форму',
+    JSON.stringify(T.repPhotos({ photos: 'нет' })) === '{"before":[],"after":[]}');
+  t('пустой документ — пустые пометки',
+    JSON.stringify(T.repPhotos({})) === '{"before":[],"after":[]}');
+
+  t('диагностика БД знает про repairs.photos',
+    T.DB_NEED_COLS.some(c => c[0] === 'repairs' && c[1] === 'photos'));
+  const sql24 = fs.readFileSync(ROOT + '/supabase/update-to-1_08_24.sql', 'utf8');
+  t('в SQL есть колонка пометок', /add column if not exists photos jsonb/.test(sql24));
+  const src24 = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  t('снятие апрува пишется в журнал', /repair_approve_reset/.test(src24));
+  t('пометки фото входят в проверку изменений', /repPhotos\(r\)\]\);/.test(src24));
+  t('в PDF печатается число фото', /Photos: ' \+ phc\.before\.length/.test(src24));
+  ['act_rep_reset','act_rep_reset_h','rep_reset_chip','rep_photos','rep_ph_before','rep_ph_after',
+   'rep_photos_h','rep_photos_nojob']
+    .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);

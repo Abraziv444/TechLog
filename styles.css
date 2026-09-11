@@ -1068,6 +1068,13 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .brep{margin-top:4px;display:flex;justify-content:flex-end}
 .brep .btn{padding:3px 8px}
 .banner.b-yellow{border-color:var(--yellow);background:rgba(255,200,0,.08);color:var(--yellow)}
+/* v1.08.24: пометки «до/после» под миниатюрами фото в документе ремонта */
+.rep-phs{display:flex;flex-wrap:wrap;gap:10px}
+.rep-ph{display:flex;flex-direction:column;align-items:center;gap:4px}
+.rep-ph-b{display:flex;gap:4px}
+.rep-ph-b .chip{cursor:pointer;padding:3px 9px;font-size:.62rem;border:1px solid var(--line);
+  background:var(--panel-2);color:var(--dim)}
+.rep-ph-b .chip.on{border-color:var(--green);color:var(--green);background:rgba(88,204,2,.14)}
 .chip.pst{font-size:.6rem;text-transform:uppercase}
 .pst-draft{border-color:var(--dim);color:var(--dim)}
 .pst-sent{border-color:var(--blue);color:var(--blue)}
@@ -1645,6 +1652,38 @@ select:disabled{opacity:.55;cursor:default}
 .gd-fold .gf-b{flex:1;min-width:0}
 .gd-fold .gf-n{font-weight:900;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gd-fold .gf-p{font-size:.7rem;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* v1.08.25: вторая строка карточки — схема записи, ей нужно переноситься */
+.gd-fold .gf-p2{font-size:.7rem;color:var(--dim);margin-top:2px;display:flex;flex-wrap:wrap;
+  align-items:center;gap:4px;overflow-wrap:anywhere}
+.gd-fold .gf-p2 b{color:var(--dim)}
+.gd-fold .gf-p2 i{color:var(--line);font-style:normal}
+.gd-seg{border:1px solid var(--line);border-radius:6px;padding:0 5px;color:var(--text);
+  background:var(--panel-2);font-size:.68rem;font-weight:800}
+.gd-fold .gf-n.wrap{white-space:normal}
+/* v1.08.26: склад — карточки остатков, история и возврат */
+.sb-total{display:flex;justify-content:space-between;align-items:center;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin-bottom:8px;font-weight:900}
+.sb-total b{font-size:1.4rem}
+.sb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-bottom:8px}
+.sb-card{background:var(--panel);border:1px solid var(--line);border-left-width:4px;
+  border-radius:var(--r-sm);padding:8px 10px;min-width:0}
+.sb-card .sb-n{font-size:1.35rem;font-weight:900;line-height:1.1}
+.sb-card .sb-l{font-size:.68rem;color:var(--dim);font-weight:800;text-transform:uppercase;
+  letter-spacing:.3px;overflow-wrap:anywhere}
+.sb-free{border-left-color:var(--green)}   .sb-free .sb-n{color:var(--green)}
+.sb-rented{border-left-color:var(--blue)}  .sb-rented .sb-n{color:var(--blue)}
+.sb-pending{border-left-color:var(--orange)} .sb-pending .sb-n{color:var(--orange)}
+.sb-with_tech{border-left-color:var(--purple)} .sb-with_tech .sb-n{color:var(--purple)}
+.sb-broken{border-left-color:var(--red)}   .sb-broken .sb-n{color:var(--red)}
+.sb-btn{margin-bottom:8px}
+.sb-chart{width:100%;height:110px;display:block}
+.sb-ax{display:flex;justify-content:space-between;color:var(--dim-2);margin-top:2px}
+.sb-lgs{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.sb-lg{display:inline-flex;align-items:center;gap:4px;font-size:.68rem;color:var(--dim);font-weight:800}
+.sb-lg i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.sb-onhand{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;margin:8px 12px;font-weight:800}
+.sb-onhand .ic{width:18px;height:18px;color:var(--purple)}
 .gd-fold a{color:var(--blue);text-decoration:none;font-weight:800;font-size:.72rem;flex:0 0 auto}
 .gd-folder-chip{
   display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:4px 10px;
@@ -1776,3 +1815,25 @@ select:disabled{opacity:.55;cursor:default}
 .tri-ic{width:22px;height:19px;display:block}
 .pri.inline .tri-ic{width:20px;height:17px}
 .pri.on.hard .tri, .pri.on.soft .tri{background:none}
+
+/* ============ v1.08.27: экран «Склад» — регистр оборудования ============ */
+.eq-cols{display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:flex-end;text-align:right}
+.eq-cols span{white-space:nowrap}
+.eq-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.eq-btns .btn{width:100%;justify-content:center}
+.eq-danger{color:var(--red)}
+.eq-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.eq-chips .chip{border:1px solid var(--line)}
+.eq-ets{display:flex;flex-wrap:wrap;gap:6px}
+.eq-et{min-width:46px;height:38px;padding:0 10px;border-radius:10px;border:2px solid var(--line);
+  background:transparent;color:var(--text);font-weight:900;font-size:14px;cursor:pointer}
+.eq-on{border-color:var(--blue);color:var(--blue)}
+
+/* v1.08.28: большие кнопки «Взять/Сдать» и схема в справке */
+.eq-bigrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 6px}
+.eq-big{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px 10px;border-radius:16px;min-height:106px}
+.eq-van{width:92px;height:42px;flex:none}
+.eq-big-l{font-size:18px;font-weight:900;line-height:1.15}
+.eq-big-s{font-size:10.5px;font-weight:700;opacity:.9}
+.eq-big-n{font-size:10.5px;font-weight:800;margin-top:3px;padding:1px 9px;border-radius:999px;background:rgba(0,0,0,.22)}
+.faq-scheme{width:100%;height:auto;display:block;margin:2px 0}

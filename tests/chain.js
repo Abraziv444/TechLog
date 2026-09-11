@@ -69,6 +69,40 @@ let ok=0,bad=0; const T=(n,c,x)=>{ if(c){ok++;console.log('  ✓ '+n);} else {ba
     const dir = await p.evaluate(()=>getComputedStyle(document.querySelector('.chain')).flexDirection);
     T(W+'px → ' + exp, dir===exp, dir);
   }
+  console.log('\n— удаление с цепочкой (v1.08.30) —');
+  await p.evaluate(() => {   // ремонт, привязанный к работе — второй блокер пропозала
+    const j = state.data.jobs.find(x => x.proposal_id === 'pp1');
+    state.data.repairs = [{ id: 'rr1', no: 3, date: '2026-09-06', job_id: j.id,
+      created_by: state.user.id, status: 'draft', items: [], materials: [], hist: [] }];
+    saveLocal(); render();
+  });
+  const m1 = await p.evaluate(() => { App.delProposal('pp1');
+    return new Promise(r => setTimeout(() => {
+      const ov = document.querySelector('#overlay');
+      r({ открыт: !!ov, заголовок: /связанные документы/i.test(ov ? ov.innerText : ''),
+          строк: ov ? ov.querySelectorAll('.rowline').length : 0,
+          кнопка: !!(ov && [...ov.querySelectorAll('button')].find(b => /архив вместе с цепочкой/i.test(b.textContent))) });
+    }, 400)); });
+  T('удаление блокируется окном цепочки', m1.открыт && m1.заголовок, JSON.stringify(m1));
+  T('в окне работа и ремонт', m1.строк === 2, String(m1.строк));
+  T('кнопка «в архив вместе с цепочкой»', m1.кнопка);
+  const m2 = await p.evaluate(() => {
+    const btn = [...document.querySelectorAll('#overlay button')].find(b => /архив вместе с цепочкой/i.test(b.textContent));
+    btn.click();
+    return new Promise(r => setTimeout(() => {
+      const arch = o => !!(o && o.archived_at);
+      r({ prop: arch(state.data.proposals.find(x => x.id === 'pp1')),
+          job: arch(state.data.jobs.find(x => x.proposal_id === 'pp1')),
+          rep: arch(state.data.repairs[0]) });
+    }, 600)); });
+  T('вся цепочка ушла в архив', m2.prop && m2.job && m2.rep, JSON.stringify(m2));
+  const m3 = await p.evaluate(() => { App.go('archive');
+    return new Promise(r => setTimeout(() => {
+      const tx = document.body.innerText;
+      r({ p: /(?:PROP-\d{8}.*00007|P-7)/.test(tx), r: /(?:REP-\d{8}-00003|R-3)/.test(tx) });
+    }, 500)); });
+  T('архив показывает пропозал и ремонт', m3.p && m3.r, JSON.stringify(m3));
+
   console.log(`\nИтого: пройдено ${ok}, провалено ${bad}`);
   await b.close(); process.exit(bad?1:0);
 })().catch(e=>{console.error(e);process.exit(1)});

@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.23';
-const DB_SQL_FILE = 'full-install-1_08_23.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.08.31';
+const DB_SQL_FILE = 'full-install-1_08_31.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -517,6 +517,13 @@ const I18N = {
     rep_src_self: 'Самостоятельный документ', rep_pdf: 'PDF ремонта',
     rep_all_create: 'Документ ремонта может создавать любой сотрудник',
     rep_all_create_h: 'Выключено — создают только менеджер и админ.',
+    act_rep_reset: 'Ремонт: слетел апрув', act_rep_reset_ok: 'Таких документов нет',
+    act_rep_reset_h: 'Документ изменили после одобрения — он вернулся в черновик и ждёт повторного согласования.',
+    rep_reset_chip: 'слетел апрув',
+    rep_photos: 'Фото до и после', rep_ph_before: 'до', rep_ph_after: 'после',
+    rep_photos_h: 'Отметьте, что снято до работ, а что — после. Сами снимки лежат в инвойсе, здесь только пометки.',
+    rep_photos_none: 'В инвойсе пока нет фото — снимите их кнопками ниже.',
+    rep_photos_nojob: 'Фото хранятся в инвойсе. Привяжите работу — снимки появятся здесь.',
     rep_hide: 'Скрыть суммы ремонта от работников',
     rep_hide_h: 'Работник видит состав работ, но вместо цен — прочерк.',
     prop_new: 'Новый пропозал', prop_items: 'Позиции', prop_desc: 'Описание',
@@ -593,6 +600,66 @@ const I18N = {
     gd_move_done: 'Перенесено папок: {N}', gd_move_none: 'Переносить нечего — фото уже в папке Photos',
     gd_p_photo: 'Съёмка → папка Photos',
     gd_folder_unknown: 'папка появится после первой загрузки',
+    sb_total: 'Всего оборудования', sb_free: 'На хранении', sb_rented: 'В аренде',
+    sb_pending: 'Ожидают вывоза', sb_with_tech: 'На руках', sb_broken: 'Поломано',
+    sb_hist: 'История остатков', sb_hist_h: 'Строка пишется раз в сутки в 10:00 по местному времени.',
+    sb_hist_none: 'Пока пусто: первая строка появится в 10:00.',
+    sb_neg: 'Свободный остаток ушёл в минус — проверьте общее количество и незакрытые пикапы.',
+    sb_return: 'Вернул на склад', sb_return_all: 'Вернуть всё на склад',
+    sb_returned: 'Оборудование на складе', sb_on_hand: 'У вас на руках',
+    sb_none_mine: 'Забранного оборудования за вами не числится',
+    sb_all_q: 'Вернуть на склад {N} ед. оборудования по {U} документам?',
+    sb_ret_at: 'сдано на склад', sb_out: 'у сотрудника',
+    /* v1.08.27: регистр оборудования */
+    tab_stock: 'Склад', sb_repair: 'в ремонте',
+    eq_mycar: 'Моя машина', eq_nocar: 'номер не назначен', eq_car_empty: 'в машине пусто',
+    eq_bycars: 'По машинам', eq_bycars_none: 'в машинах ничего нет',
+    eq_take: 'Взять оборудование', eq_give: 'Сдать оборудование',
+    eq_repair: 'В ремонт', eq_unrepair: 'Из ремонта',
+    eq_intake: 'Поступление', eq_writeoff: 'Списание',
+    eq_qty: 'Количество', eq_note: 'Комментарий (необязательно)', eq_src: 'Откуда',
+    eq_src_stock: 'со склада', eq_src_car: 'из моей машины',
+    eq_avail: 'доступно', eq_short: 'Не хватает: доступно {N}',
+    eq_done_take: 'Взято в машину', eq_done_give: 'Сдано на склад',
+    eq_done_repair: 'Отправлено в ремонт', eq_done_unrepair: 'Возвращено из ремонта',
+    eq_done_intake: 'Оприходовано на склад', eq_done_writeoff: 'Списано со склада',
+    eq_col_stock: 'на складе', eq_col_rented: 'в аренде', eq_col_pending: 'ждут вывоза',
+    eq_col_cars: 'в машинах', eq_col_repair: 'в ремонте', eq_col_total: 'всего',
+    eq_hint: 'Склад → машина → объект → машина → склад. Аренда, «забрал» и «вернул на склад» двигают оборудование сами; здесь — взять/сдать, ремонт и приход-списание.',
+    eq_stock_closed: 'Остатки склада видны менеджеру и администратору',
+    act_equip_take: 'взял со склада', act_equip_return: 'сдал на склад',
+    act_equip_repair: 'в ремонт', act_equip_repair_back: 'из ремонта',
+    act_equip_intake: 'поступление', act_equip_writeoff: 'списание',
+    /* v1.08.28: большие кнопки, «всё» и справка-схема */
+    eq_take_b: 'Взять', eq_give_b: 'Сдать',
+    eq_take_s: 'со склада → в машину', eq_give_s: 'из машины → на склад',
+    eq_in_mycar: 'в машине', eq_all: 'всё',
+    eq_empty_admin: 'Склад пока пуст — начните с кнопки «Поступление»: оприходуйте оборудование, и оно появится в остатках.',
+    eq_empty_tech: 'Склад пока пуст.',
+    eq_arr_rent: 'аренда', eq_arr_pick: 'забрал', eq_arr_ret: 'вернул',
+    eq_arr_intake: 'поступление', eq_arr_off: 'списание', eq_auto_note: 'само при аренде',
+    /* v1.08.30: удаление с цепочкой связанных документов */
+    ch_block_title: 'Есть связанные документы',
+    ch_block_hint: 'Документ связан цепочкой. Удалить его можно только вместе с зависимыми документами: одной кнопкой всё уходит в архив, а из архива навсегда удаляет администратор.',
+    ch_block_btn: 'В архив вместе с цепочкой',
+    ch_block_admin_only: 'Отправить цепочку в архив может администратор.',
+    ch_block_locked: 'заблокирована к правке — цепочку может архивировать менеджер или админ',
+    ch_block_pk: 'Активных пикапов и продлений: {N} — они уйдут в архив вместе с работой, оборудование числится на объекте до вывоза.',
+    ch_block_prop_keep: 'Связь с пропозалом сохранится и будет видна в архиве.',
+    ch_block_show: 'Показать цепочку',
+    ch_arch_done: 'Цепочка в архиве',
+    act_repair_create: 'создан документ ремонта', act_repair_update: 'изменён документ ремонта',
+    act_repair_archive: 'ремонт отправлен в архив', act_repair_restore: 'ремонт возвращён из архива',
+    act_repair_delete: 'удалён документ ремонта', act_repair_approve_reset: 'снят апрув ремонта',
+    act_repair_to_invoice: 'суммы ремонта перенесены в инвойс',
+    eq_sch_title: 'Как ходит оборудование',
+    eq_sch_car: 'Машина', eq_sch_site: 'Объект', eq_sch_repair: 'Ремонт',
+    eq_sch_foot: 'В ремонт можно и со склада, и из своей машины; «Из ремонта» возвращает на склад. Поступление и списание — только администратор.',
+    gd_root: 'Корень', gd_into: 'Пишется в', gd_into_root: 'прямо в корень',
+    gd_seg_cp: 'контрагент', gd_seg_cx: 'комплекс', gd_seg_unit: 'юнит',
+    gd_seg_tech: 'сотрудник', gd_seg_doc: 'документ',
+    gd_photo_note: 'Съёмка раскладывается по контрагенту, комплексу и юниту — месяца в этом пути нет.',
+    gd_paths_old: 'Схема показана по старой media-health. Передеплойте функцию — карточка покажет фактическую раскладку.',
     media_title: 'Фото и видео', media_photo: 'Фото', media_video: 'Видео',
     media_sb_only: 'Фото и видео работают только с подключённым Supabase',
     media_vlong: 'Видео длиннее 90 сек — снимите короче',
@@ -1149,6 +1216,13 @@ const I18N = {
     rep_src_self: 'Standalone document', rep_pdf: 'Repair PDF',
     rep_all_create: 'Any employee can create a repair document',
     rep_all_create_h: 'Off — only manager and admin can create.',
+    act_rep_reset: 'Repair: approval reset', act_rep_reset_ok: 'No such documents',
+    act_rep_reset_h: 'The document changed after approval — it went back to draft and waits for approval again.',
+    rep_reset_chip: 'approval reset',
+    rep_photos: 'Before and after photos', rep_ph_before: 'before', rep_ph_after: 'after',
+    rep_photos_h: 'Mark what was shot before the work and what after. The photos live in the invoice; these are just labels.',
+    rep_photos_none: 'No photos in the invoice yet — take them with the buttons below.',
+    rep_photos_nojob: 'Photos live in the invoice. Link a work order and they show up here.',
     rep_hide: 'Hide repair amounts from workers',
     rep_hide_h: 'A worker sees the scope of work but a dash instead of prices.',
     prop_new: 'New proposal', prop_items: 'Line items', prop_desc: 'Description',
@@ -1225,6 +1299,66 @@ const I18N = {
     gd_move_done: 'Folders moved: {N}', gd_move_none: 'Nothing to move — photos are already in the Photos folder',
     gd_p_photo: 'Camera shots → Photos folder',
     gd_folder_unknown: 'the folder appears after the first upload',
+    sb_total: 'Equipment total', sb_free: 'In storage', sb_rented: 'On rent',
+    sb_pending: 'Pending pickup', sb_with_tech: 'On hand', sb_broken: 'Broken',
+    sb_hist: 'Stock history', sb_hist_h: 'A row is written once a day at 10:00 local time.',
+    sb_hist_none: 'Empty so far: the first row appears at 10:00.',
+    sb_neg: 'Free stock went negative — check the total and the open pickups.',
+    sb_return: 'Returned to warehouse', sb_return_all: 'Return everything',
+    sb_returned: 'Equipment is back in the warehouse', sb_on_hand: 'You are holding',
+    sb_none_mine: 'Nothing picked up is on you',
+    sb_all_q: 'Return {N} units from {U} documents to the warehouse?',
+    sb_ret_at: 'returned to warehouse', sb_out: 'with the employee',
+    /* v1.08.27: equipment register */
+    tab_stock: 'Stock', sb_repair: 'in repair',
+    eq_mycar: 'My car', eq_nocar: 'no number assigned', eq_car_empty: 'car is empty',
+    eq_bycars: 'By cars', eq_bycars_none: 'nothing in the cars',
+    eq_take: 'Take equipment', eq_give: 'Hand in equipment',
+    eq_repair: 'To repair', eq_unrepair: 'Back from repair',
+    eq_intake: 'Intake', eq_writeoff: 'Write-off',
+    eq_qty: 'Quantity', eq_note: 'Note (optional)', eq_src: 'From',
+    eq_src_stock: 'from stock', eq_src_car: 'from my car',
+    eq_avail: 'available', eq_short: 'Not enough: {N} available',
+    eq_done_take: 'Loaded into the car', eq_done_give: 'Handed in to the warehouse',
+    eq_done_repair: 'Sent to repair', eq_done_unrepair: 'Back from repair',
+    eq_done_intake: 'Added to stock', eq_done_writeoff: 'Written off',
+    eq_col_stock: 'in stock', eq_col_rented: 'rented', eq_col_pending: 'pending pickup',
+    eq_col_cars: 'in cars', eq_col_repair: 'in repair', eq_col_total: 'total',
+    eq_hint: 'Stock → car → site → car → stock. Rentals, "picked up" and "returned" move equipment automatically; here you take/hand in, repair and intake/write-off.',
+    eq_stock_closed: 'Stock levels are visible to managers and admins',
+    act_equip_take: 'took from stock', act_equip_return: 'handed in to stock',
+    act_equip_repair: 'to repair', act_equip_repair_back: 'back from repair',
+    act_equip_intake: 'intake', act_equip_writeoff: 'write-off',
+    /* v1.08.28 */
+    eq_take_b: 'Take', eq_give_b: 'Hand in',
+    eq_take_s: 'stock → car', eq_give_s: 'car → stock',
+    eq_in_mycar: 'in the car', eq_all: 'all',
+    eq_empty_admin: 'Stock is empty — start with "Intake": add equipment and it will show up in the totals.',
+    eq_empty_tech: 'Stock is empty for now.',
+    eq_arr_rent: 'rental', eq_arr_pick: 'picked up', eq_arr_ret: 'returned',
+    eq_arr_intake: 'intake', eq_arr_off: 'write-off', eq_auto_note: 'auto on rental',
+    /* v1.08.30 */
+    ch_block_title: 'Linked documents found',
+    ch_block_hint: 'This document is part of a chain. It can only be deleted together with its dependent documents: one button sends the whole chain to the archive, and only an admin purges the archive.',
+    ch_block_btn: 'Archive with the chain',
+    ch_block_admin_only: 'Only an administrator can archive this chain.',
+    ch_block_locked: 'is edit-locked — a manager or admin can archive the chain',
+    ch_block_pk: 'Active pickups and extensions: {N} — they go to the archive with the job; the equipment stays assigned to the site until collected.',
+    ch_block_prop_keep: 'The proposal link is kept and remains visible in the archive.',
+    ch_block_show: 'Show the chain',
+    ch_arch_done: 'Chain archived',
+    act_repair_create: 'repair document created', act_repair_update: 'repair document updated',
+    act_repair_archive: 'repair archived', act_repair_restore: 'repair restored from archive',
+    act_repair_delete: 'repair document deleted', act_repair_approve_reset: 'repair approval reset',
+    act_repair_to_invoice: 'repair totals moved to the invoice',
+    eq_sch_title: 'How equipment moves',
+    eq_sch_car: 'Car', eq_sch_site: 'Site', eq_sch_repair: 'Repair',
+    eq_sch_foot: 'Repair takes items from stock or from your own car; "Back from repair" returns them to stock. Intake and write-off are admin-only.',
+    gd_root: 'Root', gd_into: 'Writes into', gd_into_root: 'straight into the root',
+    gd_seg_cp: 'counterparty', gd_seg_cx: 'complex', gd_seg_unit: 'unit',
+    gd_seg_tech: 'employee', gd_seg_doc: 'document',
+    gd_photo_note: 'Photos and videos are filed by counterparty, complex and unit — there is no month in that path.',
+    gd_paths_old: 'The scheme comes from an older media-health. Redeploy the function to see the actual layout.',
     media_title: 'Photos & video', media_photo: 'Photo', media_video: 'Video',
     media_sb_only: 'Media requires Supabase connection',
     media_vlong: 'Video longer than 90s — please retake',
@@ -1980,7 +2114,7 @@ function seedDemoData(){
       complex_id: complexes[0].id, counterparty_id: cp1.id, unit_number: '916' },
   ];
   const data = {
-    profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], proposals: [], repairs: [], ext_requests: [], media: [], hidden_staff: [], code_requests: [], complex_code_history: [],
+    profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], proposals: [], repairs: [], stock_daily: [], ext_requests: [], media: [], hidden_staff: [], code_requests: [], complex_code_history: [],
     jobs: [job1, job2], placements, ...cat
   };
   job1.total = calcTotal(job1.form_data, priceResolver(cp1.id, data), data);
@@ -2160,15 +2294,20 @@ const DB_NEED_COLS = [
   ['placements',    'no'],
   ['repairs',       'status'],          // v1.08.23: документ ремонтных работ
   ['repairs',       'materials'],
+  ['repairs',       'photos'],           // v1.08.24: пометки «до/после»
+  ['placements',    'returned_at'],      // v1.08.26: возврат на склад
+  ['stock_daily',   'free'],
+  ['org_settings',  'snapshot_hour'],
   ['jobs',          'needs_repair'],
   ['extra_works',   'repair'],
   ['org_settings',  'rep_hide_prices'],
+  ['equip_moves',   'kind'],            // v1.08.27: регистр оборудования
 ];
 const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
-                      'admin_set_drive_config'];
+                      'admin_set_drive_config', 'equip_op', 'admin_set_role'];   // v1.08.31
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates'];
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves'];
 
 function emptyData(){
   const d = { org_settings: {
@@ -2290,7 +2429,9 @@ async function dbUpsert(table, row){
   }
   const arr = tableOf(table);
   const i = arr.findIndex(r => r.id === row.id);
+  const _plPrev = (table === 'placements' && i >= 0) ? arr[i] : null;   // v1.08.29: для демо-зеркала
   if (i >= 0) arr[i] = row; else arr.push(row);
+  if (table === 'placements') demoPlMoves(_plPrev ? 'update' : 'insert', row, _plPrev);
   saveLocal();
   if (HAS_SB) {
     pendingAdd('upsert', table, row);              // v1.07.21: в очередь до подтверждения сервера
@@ -2327,12 +2468,15 @@ async function dbUpsert(table, row){
       dlog('⛔ upsert exception', table + ':', e);
       toast(t('write_err') + ' (' + table + ')', 'err');
     }
+    if (table === 'placements') refreshMovesSoon();   // v1.08.27: движения пишет сервер — перечитываем журнал
   }
 }
 async function dbDelete(table, id){
   const arr = tableOf(table);
   const i = arr.findIndex(r => r.id === id);
+  const _plPrev = (table === 'placements' && i >= 0) ? arr[i] : null;   // v1.08.29: для демо-зеркала
   if (i >= 0) arr.splice(i, 1);
+  if (_plPrev) demoPlMoves('delete', _plPrev, null);
   saveLocal();
   if (HAS_SB) {
     pendingAdd('delete', table, id);               // v1.07.21: в очередь до подтверждения сервера
@@ -2349,6 +2493,7 @@ async function dbDelete(table, id){
       dlog('⛔ delete exception', table + ':', e);
       toast(t('write_err') + ' (' + table + ')', 'err');
     }
+    if (table === 'placements') refreshMovesSoon();   // v1.08.27
   }
 }
 async function dbSaveOrg(org){
@@ -2678,6 +2823,7 @@ function scopeFilter(list, techKey){
 const isArch = (x) => !!(x && x.archived_at);
 function archJobs(){ return (state.data.jobs || []).filter(isArch); }
 function archProps(){ return (state.data.proposals || []).filter(isArch); }
+function archReps(){ return (state.data.repairs || []).filter(isArch); }   // v1.08.30
 function liveJobs(){ return (state.data.jobs || []).filter(j => !isArch(j)); }
 function jobById(id){ return (state.data.jobs || []).find(x => x.id === id); }
 function visibleJobs(){
@@ -3299,9 +3445,12 @@ const JR_DOC_ACTIONS = ['job_create','job_update','job_done','job_reopen','job_a
   'pickup_done','pickup_early','pickup_restore','extension_create',
   'ext_request','ext_request_approved','ext_request_rejected',
   'proposal_create','proposal_update','proposal_delete','proposal_link','proposal_unlink',
-  'doc_translate','job_archive','job_restore','proposal_archive','proposal_restore','job_cancel'];
+  'doc_translate','job_archive','job_restore','proposal_archive','proposal_restore','job_cancel',
+  'repair_create','repair_update','repair_archive','repair_restore','repair_delete',   // v1.08.30
+  'repair_approve_reset','repair_to_invoice'];
 const JR_TECH_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
   'password_change','password_reset','car_no_set','org_toggle','org_set','stock_set',
+  'equip_take','equip_return','equip_repair','equip_repair_back','equip_intake','equip_writeoff',   // v1.08.27
   'backup_export','backup_restore'];
 const JR_TECH_SET = new Set(JR_TECH_ACTIONS);
 
@@ -3436,6 +3585,7 @@ function render(){
   else if (state.screen === 'board') body = viewBoard();       // v1.07.25
   else if (state.screen === 'proposals') body = viewProposals(); // v1.07.27
   else if (state.screen === 'repairs') body = viewRepairs();     // v1.08.23
+  else if (state.screen === 'stock') body = viewStock();         // v1.08.27
   perf('отрисовка ' + state.screen, () => { app.innerHTML = viewHeader() + body + viewTabbar(); });
   if (!$('#overlay') && app.inert) modalTrap(false);   // v1.07.83: страховка от «залипшего» inert
   /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
@@ -3504,6 +3654,7 @@ function viewTabbar(){
     ...((isManager() || vmCur() === 'desktop') ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.49: воркеру — недельная доска в ПК-режиме
     ...(isManager() ? [['proposals', ICONS.prop, t('tab_proposals')]] : []),  // v1.07.27
     ['repairs', ic('toolbox'), t('tab_repairs')],                            // v1.08.23
+    ['stock', ic('box'), t('tab_stock')],                                    // v1.08.27
     ['map', ICONS.map, t('tab_map')],
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
@@ -3685,8 +3836,12 @@ function viewHome(){
       return `<div class="item clicky" style="border-left-color:#3a4a52;opacity:.6" onclick="App.openJob('${p0.job_id}')">
         ${rowNumHtml(num.count + di + 1)}
         <div class="info"><div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
-        <div class="s">${ic('check')} ${t('picked')}</div></div>
-        <div class="eq-dots">${eqDotsFor(list)}</div>
+        <div class="s">${ic('check')} ${t('picked')}${list.some(plOut) ? ` · <span class="chip info">${t('sb_out')}</span>` : ''}</div></div>
+        <div class="right">
+          <div class="eq-dots">${eqDotsFor(list)}</div>
+          ${list.some(p => plOut(p) && canTouchPk(p)) ? `<button class="btn btn-blue sm" style="margin-top:6px"
+            onclick="event.stopPropagation();App.returnJob('${p0.job_id}')">${ic('box')} ${t('sb_return')}</button>` : ''}
+        </div>
       </div>`;
     }).join('');
   })() : '';
@@ -3731,6 +3886,8 @@ function viewHome(){
     + filter
     + `<div id="search-area" style="${q?'':'display:none'}">${q ? searchAreaHtml() : ''}</div>`
     + `<div id="day-list" style="${q?'display:none':''}">`
+    + (myOnHandQty() ? `<div class="sb-onhand">${ic('box')} ${t('sb_on_hand')}: <b>${myOnHandQty()}</b>
+        ${onHandBtnHtml('sm')}</div>` : '')
     + (pkGroups.length ? `<div class="section-title">${t('pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
     + (jobs.length ? `<div class="section-title">${t('jobs')}</div>` + jobsHtml : '')
     + pkDoneHtml + empty
@@ -3856,6 +4013,41 @@ async function checkVerClick(){
    ===================================================================== */
 function helpBtn(key){
   return `<button class="icon-btn faq-i" title="${t('faq_btn')}" onclick="App.sectionFaq('${key}')">?</button>`;
+}
+/* v1.08.28: наглядная схема «как ходит оборудование» для справки склада.
+   Иконки — из общего набора IC (box/car/building/wrench), подписи через t(). */
+function faqStockScheme(){
+  const node = (x, y, w, col, icon, label) => `
+    <rect x="${x}" y="${y}" width="${w}" height="40" rx="10" fill="var(--panel)" stroke="${col}" stroke-width="2.4"/>
+    <g transform="translate(${x + 9},${y + 8}) scale(1)" fill="none" stroke="${col}" stroke-width="2.2"
+       stroke-linecap="round" stroke-linejoin="round">${IC[icon]}</g>
+    <text x="${x + 38}" y="${y + 25}" font-size="12.5" font-weight="800" fill="var(--text)">${label}</text>`;
+  const ar = (x1, y1, x2, y2, col) => {
+    const a = Math.atan2(y2 - y1, x2 - x1), h = 7;
+    const p = (ang) => `${(x2 - h * Math.cos(a - ang)).toFixed(1)} ${(y2 - h * Math.sin(a - ang)).toFixed(1)}`;
+    return `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${col}" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M${p(0.5)} L${x2} ${y2} L${p(-0.5)}" fill="none" stroke="${col}" stroke-width="2.6"
+        stroke-linecap="round" stroke-linejoin="round"/>`;
+  };
+  const lbl = (x, y, txt, col, anchor) => `<text x="${x}" y="${y}" font-size="9.5" font-weight="700"
+      fill="${col || 'var(--dim)'}" text-anchor="${anchor || 'middle'}">${txt}</text>`;
+  const G = 'var(--green)', B = 'var(--blue)', P = 'var(--purple)', R = 'var(--red)', D = 'var(--dim)';
+  return `<svg class="faq-scheme" viewBox="0 0 352 192" role="img" aria-label="${esc(t('eq_sch_title'))}">
+    ${node(6, 52, 104, G, 'box', t('tab_stock'))}
+    ${node(128, 52, 104, P, 'car', t('eq_sch_car'))}
+    ${node(250, 52, 96, B, 'building', t('eq_sch_site'))}
+    ${ar(112, 62, 126, 62, G)}${lbl(119, 40, t('eq_take_b').toLowerCase(), G)}
+    ${lbl(119, 49, '(' + t('eq_auto_note') + ')', D)}
+    ${ar(126, 82, 112, 82, B)}${lbl(119, 100, t('eq_give_b').toLowerCase() + ' / ' + t('eq_arr_ret'), B)}
+    ${ar(234, 62, 248, 62, P)}${lbl(241, 46, t('eq_arr_rent'), P)}
+    ${ar(248, 82, 234, 82, B)}${lbl(241, 100, t('eq_arr_pick'), B)}
+    ${ar(58, 14, 58, 48, G)}${lbl(66, 26, '+ ' + t('eq_arr_intake'), G, 'start')}
+    ${ar(58, 96, 58, 130, R)}${lbl(66, 116, '- ' + t('eq_arr_off'), R, 'start')}
+    ${ar(150, 96, 150, 136, R)}${ar(170, 136, 170, 96, G)}
+    ${lbl(178, 112, t('eq_repair').toLowerCase(), R, 'start')}
+    ${lbl(178, 126, t('eq_unrepair').toLowerCase(), G, 'start')}
+    ${node(112, 140, 104, R, 'wrench', t('eq_sch_repair'))}
+  </svg>`;
 }
 function faqEqLegend(){
   return (state.data.equipment_types||[]).slice().sort((a,b)=>(a.sort||0)-(b.sort||0)).map(et =>
@@ -3999,14 +4191,14 @@ function sectionFaqHtml(key){
       <li>Список предложений с номером P-N, статусом и суммой; клик — открыть.</li>
       <li>Внутри: позиции с ценами (степперы количества), фото-вложения, экспорт в PDF, отправка статуса.</li>
       <li>Чип «нужен пропозал» на работе ставит воркер (если разрешено в Настройках) — менеджер видит полосу-напоминание над Доской.</li>
-      <li><b>${ic('link')} Связь с работой — двусторонняя.</b> Блок «Связанные документы» есть и в пропозале, и в инвойсе: привязать и отвязать можно с любой стороны, вторая сторона обновляется сразу. Удалили пропозал — связь у работы исчезает.</li>
+      <li><b>${ic('link')} Связь с работой — двусторонняя.</b> Блок «Связанные документы» есть и в пропозале, и в инвойсе: привязать и отвязать можно с любой стороны, вторая сторона обновляется сразу. Удалить пропозал с живой работой нельзя: приложение покажет цепочку и предложит отправить её в архив одной кнопкой; из архива навсегда удаляет админ.</li>
       <li>Привязать можно и в момент создания работы: в форме «Добавить задание» подходящие пропозалы предлагаются сами (по комплексу, а если совпал и номер юнита — отдельной подсказкой), плюс есть список всех непривязанных.</li>
     </ul>`,
   `
     <h4>${ic('note')} Proposals</h4>
     <ul><li>P-N list with status and totals; open to edit items (qty steppers), photos, export PDF.</li>
     <li>The "needs proposal" flag set by a worker shows managers a reminder strip above the Board.</li>
-    <li><b>${ic('link')} Two-way link with a job</b>: the "Linked documents" block works from both sides — link or unlink anywhere, the other side updates instantly; deleting a proposal clears the link.</li>
+    <li><b>${ic('link')} Two-way link with a job</b>: the "Linked documents" block works from both sides — link or unlink anywhere, the other side updates instantly; a proposal with a live job can’t be deleted — the app shows the chain and offers to archive it in one tap; the admin purges the archive.</li>
     <li>The "Add job" form suggests matching proposals (same complex, and a separate hint when the unit number matches) and lists all unlinked ones.</li></ul>`);
 
   S.reports = H(`
@@ -4039,19 +4231,62 @@ function sectionFaqHtml(key){
   S.dirs = H(`
     <h4>${ic('book')} Справочник</h4>
     <ul>
-      <li>Вкладки: Остатки склада, Сотрудники (админ), Контрагенты, Комплексы, Виды работ, Оборудование, Доп. снаряжение, PRICE, Доп. работы, Размеры, Продукты.</li>
+      <li>Вкладки: Сотрудники (админ), Контрагенты, Комплексы, Виды работ, Оборудование, Доп. снаряжение, PRICE, Доп. работы, Размеры, Продукты.</li>
       <li><b>Комплексы</b> сгруппированы по владельцам; группа «Без владельца» и «⏳ Временный владелец» помечены ${faqTriDemo()} — таким нужно назначить контрагента.</li>
       <li>${ic('book')} у комплекса — история кодов доступа; ${ic('pencil')} — редактирование (менеджер+).</li>
       <li>Оборудование: ${faqEqLegend()} — эти же коды и цвета на бейджах пикапов.</li>
       <li>Запросы кода от воркеров появляются входящими сверху — подтвердите или обновите код.</li>
       <li>${ic('clipboard')} у вида работы — <b>пред-выездной чек-лист</b>: что взять и проверить перед выездом; сотрудник видит его в работе этого вида.</li>
-      <li><b>Остатки склада</b>: сколько единиц каждого типа свободно с учётом выданного; видимость для всех включается в Настройках.</li>
+      <li><b>Склад</b> переехал в отдельную вкладку внизу: наличие по типам и «Моя машина», кнопки «Взять» / «Сдать» / «В ремонт», у админа — «Поступление» и «Списание». Аренда, «забрал» и «вернул на склад» двигают оборудование сами.</li>
     </ul>`,
   `
     <h4>${ic('book')} Directory</h4>
-    <ul><li>Tabs for stock, staff, counterparties, complexes, work types, equipment, extra gear, PRICE, extra works, sizes, products.</li>
+    <ul><li>Tabs for staff, counterparties, complexes, work types, equipment, extra gear, PRICE, extra works, sizes, products.</li>
+    <li><b>Stock</b> has its own bottom tab now: totals by type and "My car", Take / Hand in / To repair buttons, admin Intake and Write-off. Rentals, "picked up" and "returned" move equipment automatically.</li>
     <li><b>Complexes</b> grouped by owner; "No owner" and "⏳ Temporary owner" are flagged ${faqTriDemo()} — assign a counterparty.</li>
     <li>Equipment codes/colors: ${faqEqLegend()} — same badges as on pickup cards.</li></ul>`);
+
+  S.archive = H(`
+    <h4>${ic('archive')} Действие и архив</h4>
+    <ul>
+      <li><b>Требуют внимания</b>: документы с медиа, но без контрагента/юнита; устаревшие PDF на Диске; ремонты со снятым апрувом; очередь неотправленных файлов.</li>
+      <li><b>Архив-корзина</b>: «удалённые» инвойсы, пропозалы и документы ремонта попадают сюда. ${ic('refresh')} возвращает документ в работу, ${ic('trash')} — удаляет навсегда (только админ; у инвойса при этом удаляются его пикапы и движения склада, файлы уезжают в корзину Диска).</li>
+      <li><b>Цепочки</b>: документ со связанными (пропозал ↔ работы ↔ ремонты) в одиночку не удалить — приложение покажет цепочку и предложит отправить её в архив одной кнопкой.</li>
+      <li>Пикапы и продления — часть работы: отдельной строки в архиве у них нет, они скрываются и возвращаются вместе с работой.</li>
+    </ul>`,
+  `
+    <h4>${ic('archive')} Action & archive</h4>
+    <ul>
+      <li><b>Needs attention</b>: documents with media but no counterparty/unit; stale PDFs on Drive; repairs with approval reset; unsent-files queue.</li>
+      <li><b>Archive bin</b>: "deleted" invoices, proposals and repair documents land here. ${ic('refresh')} restores, ${ic('trash')} purges forever (admin only; purging an invoice also removes its pickups and stock moves, files go to the Drive bin).</li>
+      <li><b>Chains</b>: a document with linked ones (proposal ↔ jobs ↔ repairs) can't be deleted alone — the app shows the chain and offers to archive it in one tap.</li>
+      <li>Pickups and extensions belong to the job: they hide and return together with it.</li>
+    </ul>`);
+
+  S.stock = H(`
+    <h4>${ic('box')} ${t('eq_sch_title')}</h4>
+    <div class="faq-example">${faqStockScheme()}</div>
+    <ul>
+      <li><b>Круг жизни</b>: Склад → ${t('eq_take_b')} → Машина → аренда (создание работы) → Объект → «Забрал» → Машина → «Вернул на склад» → Склад.</li>
+      <li><b>Аренда двигает сама</b>: создали работу с оборудованием — оно ушло из вашей машины на объект; не хватало в машине — недостающее само списалось со склада. «Забрал» кладёт в машину забравшего, «Вернул на склад» — на склад. Отмена шага возвращает всё как было.</li>
+      <li><b>Продление аренды</b> — бумажная операция: физически ничего не едет.</li>
+      <li><b>${t('eq_repair')}</b> — со склада или из своей машины; <b>${t('eq_unrepair')}</b> возвращает на склад.</li>
+      <li><b>${t('eq_intake')}</b> и <b>${t('eq_writeoff')}</b> — только администратор; это единственный способ изменить «всего».</li>
+      <li><b>${t('eq_mycar')}</b> — что числится за вами; номер машины (1–99) назначает админ в «Сотрудниках». Кнопка «${t('sb_return_all')}» сдаёт всё забранное по документам разом.</li>
+      <li>Каждое движение попадает в журнал (админ видит «кто и когда»), остатки пишутся в историю раз в сутки.</li>
+    </ul>`,
+  `
+    <h4>${ic('box')} ${t('eq_sch_title')}</h4>
+    <div class="faq-example">${faqStockScheme()}</div>
+    <ul>
+      <li><b>The cycle</b>: Stock → Take → Car → rental (creating a job) → Site → "Picked up" → Car → "Returned" → Stock.</li>
+      <li><b>Rentals move equipment automatically</b>: create a job with equipment and it leaves your car for the site; whatever the car was short of is taken from stock for you. "Picked up" puts it into the picker's car, "Returned" — back to stock. Undoing a step rolls it back.</li>
+      <li><b>Extensions</b> are paper moves — nothing physically travels.</li>
+      <li><b>To repair</b> — from stock or from your own car; <b>Back from repair</b> returns to stock.</li>
+      <li><b>Intake</b> and <b>Write-off</b> are admin-only — the only way the grand total changes.</li>
+      <li><b>My car</b> shows what is on you; the car number (1–99) is assigned by the admin. "${t('sb_return_all')}" hands in everything you picked up in one tap.</li>
+      <li>Every move lands in the journal; stock history is written once a day.</li>
+    </ul>`);
 
   S.journal = H(`
     <h4>${ic('book')} Журнал</h4>
@@ -4460,6 +4695,8 @@ function pickupModal(jobId, dateISO, ev){
     ${mediaStripHtml(jobId)}
     <button class="btn btn-blue" style="margin-bottom:8px" onclick="App.extendModal('${jobId}','${dateISO}')">${ic('calendar')} ${t('extend_rent')}</button>
     <button class="btn btn-green" onclick="App.pickupGroup('${jobId}','${dateISO}')">${ic('chk_on')} ${t('pick_all_btn')}</button>
+    ${(state.data.placements || []).some(p => p.job_id === jobId && plOut(p) && canTouchPk(p))
+      ? `<button class="btn btn-blue" style="margin-top:8px" onclick="App.returnJob('${jobId}')">${ic('box')} ${t('sb_return')}</button>` : ''}
     <div class="btn-row3" style="grid-template-columns:1fr 1fr">
       <button class="btn btn-ghost" onclick="App.closeModal();App.openJob('${jobId}')">${ic('receipt')} ${t('open_invoice')}</button>
       <button class="btn btn-ghost" onclick="App.jobHistory('${jobId}')">${ic('clock')} ${t('job_history')}</button>
@@ -4576,6 +4813,8 @@ function jobHistory(jobId){
       <div style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${stateHtml}
         ${(pkPending(p) && canTouchPk(p)) ? `<button class="btn btn-green sm" onclick="App.pickupOne('${p.id}','${j.id}')">${t('pick_now')}</button>` : ''}
         ${(p.picked_up && canTouchPk(p)) ? `<button class="btn btn-ghost sm" onclick="App.restorePk('${p.id}','${j.id}')">↩ ${t('restore_pk')}</button>` : ''}
+        ${(plOut(p) && canTouchPk(p)) ? `<button class="btn btn-blue sm" onclick="App.returnPk('${p.id}','${j.id}')">${ic('box')} ${t('sb_return')}</button>` : ''}
+        ${p.returned_at ? `<span class="chip ok">${ic('box')} ${t('sb_ret_at')}: ${fmtTs(p.returned_at)}</span>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -4608,7 +4847,8 @@ async function pickupOne(pid, jobId){
 async function restorePk(pid, jobId){
   const p = state.data.placements.find(x => x.id === pid); if (!p || !p.picked_up) return;
   if (!confirm(t('restore_pk') + '?')) return;
-  await dbUpsert('placements', { ...p, picked_up: false, picked_up_at: null, picked_up_by: null });
+  await dbUpsert('placements', { ...p, picked_up: false, picked_up_at: null, picked_up_by: null,
+    returned_at: null, returned_by: null });        // v1.08.26: и со склада снимаем
   audit('pickup_restore', 'placement', pid, { unit: p.unit_number,
     eq: (etById(p.equipment_type_id) || {}).abbr || '?', qty: +p.qty || 1 });
   navigator.vibrate?.(20);
@@ -5234,18 +5474,22 @@ async function approveJob(){
    стирается только из Архива, кнопкой «Удалить навсегда». */
 async function deleteJob(){
   if (editLocked(jobDraft)){ toast('🔒 ' + t('lock_note').replace('{N}', editLockDays()), 'err'); return; }
+  if (docBlockers('job', jobDraft.id).length){ chainBlockModal('job', jobDraft.id); return; }   // v1.08.30
   if (!confirm(t('arch_q'))) return;
   localStorage.removeItem('techlog_draft');
   await archiveDoc('job', jobDraft.id);
   state.screen = 'home'; render();
 }
-/* Пометить документ на удаление (работа или пропозал) */
+/* Пометить документ на удаление (работа, пропозал или ремонт) */
 async function archiveDoc(kind, id){
-  const row = kind === 'prop' ? propById(id) : jobById(id);
+  const row = kind === 'prop' ? propById(id) : kind === 'rep' ? repById(id) : jobById(id);
   if (!row || isArch(row)) return;
   const patch = { archived_at: new Date().toISOString(), archived_by: state.user.id };
-  await dbUpsert(kind === 'prop' ? 'proposals' : 'jobs', { ...row, ...patch });
-  if (kind === 'job'){
+  await dbUpsert(kind === 'prop' ? 'proposals' : kind === 'rep' ? 'repairs' : 'jobs', { ...row, ...patch });
+  if (kind === 'rep'){                                            // v1.08.30
+    audit('repair_archive', 'repair', id, { no: row.no });
+    toast('🗄 ' + t('arch_to'));
+  } else if (kind === 'job'){
     let moved = 0;
     try{ const r = await mediaMoveJob(id, 'archive'); moved = (r && r.moved) || 0; }
     catch(e){ dlog('⛔ архив файлов:', e); }
@@ -5260,10 +5504,14 @@ async function archiveDoc(kind, id){
 }
 /* Вернуть документ из архива: файлы едут обратно в рабочие папки */
 async function unarchiveDoc(kind, id){
-  const row = kind === 'prop' ? propById(id) : jobById(id);
+  const row = kind === 'prop' ? propById(id) : kind === 'rep' ? repById(id) : jobById(id);
   if (!row) return;
-  await dbUpsert(kind === 'prop' ? 'proposals' : 'jobs',
+  await dbUpsert(kind === 'prop' ? 'proposals' : kind === 'rep' ? 'repairs' : 'jobs',
     { ...row, archived_at: null, archived_by: null });
+  if (kind === 'rep'){                                            // v1.08.30
+    audit('repair_restore', 'repair', id, {});
+    toast('✓ ' + t('arch_restored')); saveLocal(); render(); return;
+  }
   if (kind === 'job'){
     try{ await mediaMoveJob(id, 'restore'); }catch(e){ dlog('⛔ возврат файлов:', e); }
     (state.data.media || []).forEach(m => { if (m.job_id === id) m.archived_at = null; });
@@ -5274,10 +5522,13 @@ async function unarchiveDoc(kind, id){
 /* Удалить навсегда — только из архива и только админ */
 async function purgeDoc(kind, id){
   if (!isAdmin()){ toast('⚠ ' + t('arch_only_admin'), 'err'); return; }
-  const row = kind === 'prop' ? propById(id) : jobById(id);
+  const row = kind === 'prop' ? propById(id) : kind === 'rep' ? repById(id) : jobById(id);
   if (!row || !isArch(row)){ toast('⚠ ' + t('arch_title'), 'err'); return; }
   if (!confirm(t('arch_purge_q'))) return;
-  if (kind === 'prop'){
+  if (kind === 'rep'){                                            // v1.08.30
+    await dbDelete('repairs', id);
+    audit('repair_delete', 'repair', id, { no: row.no });
+  } else if (kind === 'prop'){
     await dbDelete('proposals', id);
     audit('proposal_delete', 'proposal', id, { no: row.no });
   } else {
@@ -5438,6 +5689,8 @@ function archRowHtml(kind, o){
   const who = profName(o.archived_by);
   const title = kind === 'prop'
     ? (docNo('prop', o) || 'P-' + (o.no ?? '—'))
+    : kind === 'rep'
+    ? (docNo('rep', o) || 'R-' + (o.no ?? '—'))
     : (docNo('job', o) || ((cx.abbr || cx.name || '—') + ' · ' + (o.unit_number || '—')));
   return `<div class="rowline">
     <div class="grow"><b>${esc(title)}</b>
@@ -5460,12 +5713,13 @@ function needMeta(){
   });
 }
 function actionCountAll(){
-  return needMeta().length + mediaQ.length + archJobs().length + archProps().length;
+  return needMeta().length + mediaQ.length + archJobs().length + archProps().length + archReps().length;
 }
 function viewArchive(){
   const jobs = archJobs().sort((a, b) => String(b.archived_at).localeCompare(String(a.archived_at)));
   const props = archProps().sort((a, b) => String(b.archived_at).localeCompare(String(a.archived_at)));
-  const n = jobs.length + props.length;
+  const reps = archReps().sort((a, b) => String(b.archived_at).localeCompare(String(a.archived_at)));   // v1.08.30
+  const n = jobs.length + props.length + reps.length;
   const nm = needMeta();
   return `<div class="section-title">${ic('warn')} ${t('act_title')}${helpBtn('archive')}</div>
   <div class="card">
@@ -5489,6 +5743,19 @@ function viewArchive(){
         <button class="btn btn-blue sm" onclick="App.invToDrive('${j.id}')">${ic('upload')}</button></div>`;
     }).join('') || `<div class="list-empty">${t('act_pdf_ok')}</div>`}
   </div>
+  ${(() => { const rl = repsResetList(); return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('act_rep_reset')}
+      <span class="chip ${rl.length ? 'warn' : 'ok'}">${rl.length}</span></div>
+    <div class="tiny" style="margin-bottom:6px">${t('act_rep_reset_h')}</div>
+    ${rl.map(r => { const h = (r.hist || [])[0] || {}; const cx = cxById(r.complex_id) || {};
+      return `<div class="rowline"><div class="grow"><b>R-${r.no ?? '·'}</b> · ${esc(cx.abbr || cx.name || '—')}${
+        r.unit_number ? ` · Unit <b>${esc(r.unit_number)}</b>` : ''}
+        <div class="tiny">${t('rep_h_reset')} — ${esc(h.by_name || profName(h.by) || '—')}, ${
+          esc(String(h.at || '').slice(0, 16).replace('T', ' '))}</div></div>
+        <span class="money">${repMoney(repGrand(r))}</span>
+        <button class="btn btn-ghost sm" onclick="App.openRepair('${r.id}')">${ic('chev_r')}</button></div>`;
+    }).join('') || `<div class="list-empty">${t('act_rep_reset_ok')}</div>`}
+  </div>`; })()}
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('upload')} ${t('act_queue')} <span class="chip ${mediaQ.length ? 'warn' : 'ok'}">${mediaQ.length}</span></div>
     <div class="tiny" style="margin-bottom:6px">${t('act_queue_h')}</div>
@@ -5500,6 +5767,7 @@ function viewArchive(){
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${t('arch_title')} <span class="chip">${n}</span></div>
     ${n ? jobs.map(j => archRowHtml('job', j)).join('') + props.map(p => archRowHtml('prop', p)).join('')
+          + reps.map(r => archRowHtml('rep', r)).join('')
         : `<div class="list-empty"><div class="big">${ic('archive')}</div>${t('arch_empty')}</div>`}
   </div>`;
 }
@@ -5582,7 +5850,6 @@ async function auditRun(){
 function viewDirs(){
   const tabs = [
     ['price', t('d_price'), true],
-    ['stock', t('d_stock'), isAdmin() || stockVisibleAll()],
     ['staff', t('d_staff'), isAdmin()],
     ['counterparties', t('d_counterparties'), isAdmin()],
     ['complexes', t('d_complexes'), true],
@@ -5600,7 +5867,7 @@ function viewDirs(){
     `<button class="tabbtn ${state.dirTab===id?'active':''}" onclick="App.dirTab('${id}')">${l}</button>`).join('') + `</div>
     <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="next">${ic('chev_r')}</button>
   </div>`;
-  const body = { stock: dirStock, staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
+  const body = { staff: dirStaff, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
                  equipment: dirEquipment, aux: dirAux, price: dirPrice,
                  extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts }[state.dirTab]();
   /* v1.07.78: карусель кнопок уезжает вбок, и после выбора было не видно,
@@ -5721,43 +5988,7 @@ function dirEquipment(){
     <button class="btn btn-green" onclick="App.editEtModal()">${ic('plus')} ${t('add')}</button>`;
 }
 
-/* v1.07.26: СКЛАД — остатки оборудования (правит админ, видят по галочке) */
-function dirStock(){
-  const canEdit = isAdmin();
-  const list = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0));
-  const stock = (etId) => (state.data.equipment_stock || []).find(s => s.equipment_type_id === etId)
-    || { total: 0, broken: 0, in_repair: 0 };
-  const inField = (etId) => state.data.placements
-    .filter(p => p.equipment_type_id === etId && pkPending(p))
-    .reduce((s, p) => s + (+p.qty || 0), 0);
-  const cell = (et, key, val) => canEdit
-    ? `<input class="car-inp" inputmode="numeric" value="${val}" onchange="App.stockSet('${et.id}','${key}',this.value)">`
-    : `<b>${val}</b>`;
-  return `<div class="card">` + list.map(et => {
-    const s = stock(et.id), fld = inField(et.id);
-    const avail = (+s.total||0) - (+s.broken||0) - (+s.in_repair||0) - fld;
-    return `<div class="rowline" style="flex-wrap:wrap">
-      <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>
-      <div class="grow" style="min-width:min(100%,180px)"><b>${esc(et.name)}</b>
-        <div class="tiny">${t('stock_field')}: <b>${fld}</b> · ${t('stock_avail')}: <b style="color:${avail<0?'var(--red)':'var(--green)'}">${avail}</b></div></div>
-      <div class="stock-ctl">
-        <span class="tiny">${t('stock_total')}</span>${cell(et,'total',+s.total||0)}
-        <span class="tiny">${t('stock_broken')}</span>${cell(et,'broken',+s.broken||0)}
-        <span class="tiny">${t('stock_repair')}</span>${cell(et,'in_repair',+s.in_repair||0)}
-      </div>
-    </div>`;
-  }).join('') + `</div><div class="tiny" style="margin:6px 2px">${t('stock_hint')}</div>`;
-}
-async function stockSet(etId, key, v){
-  if (!isAdmin()) return;
-  const n = Math.max(0, parseInt(v, 10) || 0);
-  const cur = (state.data.equipment_stock || []).find(s => s.equipment_type_id === etId);
-  const row = { id: cur ? cur.id : uid(), equipment_type_id: etId,
-    total: 0, broken: 0, in_repair: 0, ...(cur || {}), [key]: n };
-  await dbUpsert('equipment_stock', row);
-  audit('stock_set', 'stock', etId, { key, v: n, eq: (etById(etId) || {}).abbr || '?' });
-  toast('✓ ' + t('saved')); render();
-}
+/* v1.08.27: вкладка «Остатки склада» переехала в отдельный экран «Склад» (viewStock) */
 
 function dirAux(){
   return `<div class="card">` + state.data.aux_equipment.map(a => `
@@ -6520,12 +6751,22 @@ const App = {
     e.hours_start = isNaN(n) ? null : n;
     autosaveDraft();
   },
-  openJob, saveJob, approveJob, deleteJob, makePdf, pdfPreviewBlob, pickupGroup,
+  openJob, saveJob, approveJob, deleteJob, chainArchive, makePdf, pdfPreviewBlob, pickupGroup,
   /* v1.08.23: документ ремонтных работ */
   openRepair, newRepairFromJob, newRepairFromProp, saveRepair, delRepair,
   repClose, repSaveClose, repDrop, repField, repItem, repItemAdd, repItemDel,
   repCatModal, repCatAdd, repCrewAdd, repCrewDel, repSetStatus, repLinkJob, repUnlink,
-  repToInvoice, makeRepairPdf, repPrint, setNeedsRepair,
+  repToInvoice, makeRepairPdf, repPrint, setNeedsRepair, repPhoto,
+  /* v1.08.26: возврат оборудования на склад */
+  returnPk, returnJob, returnAllMine,
+  /* v1.08.27: регистр оборудования */
+  eqOpen(kind){ const list = [...(state.data.equipment_types || [])].sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    eqDraft = { kind, et: (list[0] || {}).id || null, qty: 1, src: 'stock', note: '' }; eqModal(); },
+  eqEt(id){ if (eqDraft){ eqKeepNote(); eqDraft.et = id; eqModal(); } },
+  eqAdj(dv){ if (eqDraft){ eqKeepNote(); eqDraft.qty = Math.max(1, Math.min(999, eqDraft.qty + dv)); eqModal(); } },
+  eqSrc(v){ if (eqDraft){ eqKeepNote(); eqDraft.src = v; eqModal(); } },
+  eqAll(){ if (eqDraft){ eqKeepNote(); eqDraft.qty = Math.max(1, eqCap()); eqModal(); } },
+  eqDo: equipDo,
   repDocFilter(v){ state.repDocFilter = v; render(); },
   setReportDate(v){ state.reportDate = v; render(); }, copyReport,
   repTab(v){ state.repTab = v; render(); },
@@ -6673,7 +6914,7 @@ const App = {
   jrAct(v){ state.jr.act = v; loadJournal(true); },
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
   togglePriority, prioMenu, prioSet, moveJob, boardMove, setCarNo, restorePk, pdfPreview, pdfPrint,
-  comboFilter, comboPick, stockSet, wtChecklistModal, wtChecklistSave,
+  comboFilter, comboPick, wtChecklistModal, wtChecklistSave,
   openProposal, propBack, saveProposal, delProposal, makeProposalPdf, linkProposal, linkJobFromProp,
   propField(k, v){ if (!propDraft) return;
     propDraft[k] = (k === 'sales_tax' || k === 'freight') ? (parseFloat(v) || 0) : v; },
@@ -7716,7 +7957,7 @@ function dirStaff(){
         <div class="tiny">@${esc(u.login)} · ${t('registered')} ${reg}</div>
       </div>
       <div class="staff-ctl">
-        <input class="car-inp" type="number" min="0" max="999" inputmode="numeric" title="${t('car_no')}"
+        <input class="car-inp" type="number" min="1" max="99" inputmode="numeric" title="${t('car_no')}"
           placeholder="№" value="${u.car_no ?? ''}" onchange="App.setCarNo('${u.id}', this.value)">
         ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
         <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${me?'disabled':''}>
@@ -7729,7 +7970,17 @@ function dirStaff(){
     <button class="btn btn-green" onclick="App.staffAddModal()">${ic('plus')} ${t('add_staff')}</button>`;
 }
 async function setRole(uid_, role){
+  /* v1.08.31: раньше роль писалась dbUpsert'ом, а INSERT-политика profiles
+     резала админский upsert чужой строки ещё до разрешения конфликта —
+     смена роли молча не доходила до базы. Теперь явная RPC (как блокировка),
+     локальное зеркало — после подтверждения сервера. */
+  if (!isAdmin()) return;
   const u = state.data.profiles.find(p=>p.id===uid_); if (!u) return;
+  if (u.id === state.user.id && role !== 'admin'){ toast('⛔ ' + t('cant_self'), 'err'); render(); return; }
+  if (HAS_SB){
+    const { error } = await state.sb.rpc('admin_set_role', { target: uid_, p_role: role });
+    if (error){ dlog('⛔ admin_set_role:', error); toast('⚠ ' + rpcFail(error, 'admin_set_role'), 'err'); render(); return; }
+  }
   await dbUpsert('profiles', { ...u, role });
   audit('role_change', 'profile', uid_, { name: u.display_name, role });   // v1.07.18
   toast('✓ ' + t('saved')); render();
@@ -7737,7 +7988,7 @@ async function setRole(uid_, role){
 async function setCarNo(uid_, v){
   if (!isAdmin()) return;
   const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
-  const n = String(v).trim() === '' ? null : Math.max(0, Math.min(999, parseInt(v, 10) || 0));
+  const n = String(v).trim() === '' ? null : Math.max(1, Math.min(99, parseInt(v, 10) || 1));   // v1.08.27: номер машины 1–99
   await dbUpsert('profiles', { ...u, car_no: n });
   audit('car_no_set', 'profile', uid_, { name: u.display_name, car_no: n });   // v1.07.25
   toast('✓ ' + t('saved'));
@@ -8291,10 +8542,12 @@ function faqHtml(){
     <p>In the Note block, <b>＋ Template</b> inserts items from the “Extra works” directory: a work flagged with a size shows an input in the right units (${ic('ruler')} “Sizes”: ft, sq ft, lb, pcs), while “${ic('cart')} Purchase” opens the “Products” list with quantity and a <b>price</b> that flows into the total and prints as its own PDF line. All three directories are admin-managed.</p>
     <h4>${ic('box')} Automatic pickups</h4>
     <p>Fill <b>Equipment Rental</b> (qty × days) and save — the app creates pickups due on <i>job date + days</i> (72 h by default). On the due day they appear on Home with colored equipment dots and a banner; overdue ones turn red. <b>Tap a pickup card</b> to open the details: what to collect and how much, where from (address, codes, route), plus buttons “Open invoice”, “Job history”, “Pick up all” and <b>“Extend rental”</b> — all units or selected ones, with a day stepper (1 by default); the extension appears on the new day as a separate pickup with an “extension” chip. <b>Job history</b> (the button is also inside the invoice) shows the whole chain: the invoice with its dates, pickups and extensions with statuses; any pending line can be <b>collected early</b> via “Pick up now” — that’s how both a pickup and an extension are cancelled ahead of time. Everything can be shown on the <b>day map</b> with a route in your navigation app (Apple Maps or Google Maps — see Settings).</p>
+    <h4>${ic('box')} Stock — equipment accounting</h4>
+    <p>The bottom <b>Stock</b> tab holds all equipment accounting: totals per type (in stock · rented · pending pickup · in cars · in repair), the <b>"My car #N"</b> block and the big <b>Take</b> / <b>Hand in</b> buttons — stock to car and back; repair next to them, intake and write-off for the admin. Rentals, "picked up" and "returned" move equipment <b>automatically</b>: if a tech forgot to press Take, the shortfall is taken from stock into his car when the job is created. The visual chain diagram is behind the <b>?</b> button on the Stock screen.</p>
     <h4>${ic('board')} Board — the day by staff</h4>
     <p>A manager/admin tab where each column is an employee with their jobs and pickups for the selected day. Cards drag between employees, clicking opens the document, "Hide free" removes empty columns. Column width auto-fits: when there are more people than fit, columns shrink to 128 px, headers go vertical and the side menu slides off the left edge (an edge tab brings it back). The minimum number of staff to keep on screen is a personal setting. On desktop a worker gets a weekly board instead: column = weekday, own tasks only.</p>
     <h4>${ic('note')} Proposals and their link to a job</h4>
-    <p>A proposal is a QuickBooks-style document: number <b>P-N</b>, a Quantity / Item / Description / Amount table, PO Number, Complete By and a PDF matching the client's sample. The link with an invoice is <b>two-way</b>: the "Linked documents" block appears in both, linking and unlinking work from either side, and deleting a proposal clears the link. When creating a job, matching proposals are suggested automatically — by complex, with a separate hint when the unit number matches — or picked manually from the unlinked list.</p>
+    <p>A proposal is a QuickBooks-style document: number <b>P-N</b>, a Quantity / Item / Description / Amount table, PO Number, Complete By and a PDF matching the client's sample. The link with an invoice is <b>two-way</b>: the "Linked documents" block appears in both, linking and unlinking work from either side, and a proposal with a live job can’t be deleted — the app shows the chain and offers to archive it in one tap; the admin purges the archive. When creating a job, matching proposals are suggested automatically — by complex, with a separate hint when the unit number matches — or picked manually from the unlinked list.</p>
     <h4>${ic('save')} Backup, restore & diagnostics</h4>
     <p>Settings → "Data backup" (admin): one JSON with every table, accounts (passwords as bcrypt hashes) and, optionally, secrets — keep that file safe. Restore goes row by row in dependency order, duplicates are rejected by the database itself, and the on-screen log saves to .txt. Logs are exported but not restored by the button. Next to it, <b>Diagnostics</b> checks internet, database, session, thumbnail storage, edge functions and Google Drive; admins also get a per-table and per-function DB check that names the SQL file to run.</p>
     <h4>${ic('eye')} Roles & access</h4>
@@ -8338,10 +8591,12 @@ function faqHtml(){
     <p>В блоке «Заметка» кнопка <b>＋ Шаблон</b> подставляет позиции из справочника «Доп. работы»: у работы с флагом размера появляется поле в нужных единицах (${ic('ruler')} «Размеры»: футы, sq ft, паунды, штуки), а «${ic('cart')} Покупка товара» открывает выбор из справочника «Товары», количество и <b>цену</b> — она попадает в итог и печатается в PDF отдельной строкой. Все три справочника редактирует администратор.</p>
     <h4>${ic('box')} Пикапы формируются сами</h4>
     <p>Заполните <b>Equipment Rental</b> (кол-во × дни) и сохраните — приложение создаст пикапы со сроком <i>дата работы + дни</i> (по умолчанию 72 часа). В день срока они появятся на «Главной» с цветными кружками оборудования и баннером; просроченные подсвечиваются красным. <b>Тап по карточке пикапа</b> открывает подробности: что и сколько вывозить, откуда (адрес, коды, маршрут), кнопки «Открыть инвойс», «История работы», «Забрать всё» и <b>«Продлить аренду»</b> — целиком или выборочно, степпером выбираете количество дней (по умолчанию 1), и задача-продление появляется в новый день как отдельный пикап с чипом «продление». В <b>истории работы</b> (кнопка есть и в инвойсе) видна вся цепочка: инвойс с датами, пикапы и продления со статусами; любую ожидающую строку можно <b>забрать досрочно</b> кнопкой «Забрать сейчас» — так аннулируются и пикап, и продление. Всё это выводится на <b>карту дня</b> с маршрутом в навигаторе (Apple Maps или Google Maps — см. Настройки). У осушителей (DHM) есть <b>моточасы</b>: показание на старте пишется в разделе Equipment Rental формы работы, а при проверке и вывозе — в модалке пикапа; продление наследует показания.</p>
+    <h4>${ic('box')} Склад — учёт оборудования</h4>
+    <p>Нижняя вкладка <b>«Склад»</b> — весь учёт техники: наличие по типам (на складе · в аренде · ждут вывоза · в машинах · в ремонте), блок <b>«Моя машина №N»</b> и большие кнопки <b>«Взять»</b> и <b>«Сдать»</b> — со склада в машину и обратно; рядом ремонт, у администратора — поступление и списание. Аренда, «забрал» и «вернул на склад» двигают оборудование <b>сами</b>: если техник не нажал «Взять», недостающее само спишется со склада в его машину при создании работы. Номер машины (1–99) назначает админ в «Сотрудниках». Наглядная схема всей цепочки — по кнопке <b>?</b> на экране «Склад».</p>
     <h4>${ic('board')} Доска — день по сотрудникам</h4>
     <p>Отдельная вкладка для менеджера и админа: колонка = сотрудник, внутри — его работы и пикапы выбранного дня, сверху счётчик «N работ · N пикапов». Карточки <b>переносятся между сотрудниками</b> перетаскиванием (или стрелками ${faqMvDemo()}), клик открывает документ. «Скрыть свободных» убирает пустые колонки. Ширина подстраивается сама: если сотрудников больше, чем помещается, колонки сужаются до 128 px и шапка становится вертикальной, а боковое меню уезжает за левый край (язычок у края возвращает его). Сколько человек держать на экране минимум — личная настройка «Доска» в Настройках. У воркера на ПК доска недельная: колонка = день, только свои задачи.</p>
     <h4>${ic('note')} Пропозалы и связь с работой</h4>
-    <p>Пропозал — предложение по образцу QuickBooks: номер <b>P-N</b>, таблица «Quantity / Item / Description / Amount», PO Number, Complete By и PDF по образцу клиента. Связь с инвойсом <b>двусторонняя</b>: блок «Связанные документы» есть в обоих документах, привязать и отвязать можно с любой стороны, вторая сторона обновляется сразу, удаление пропозала снимает связь. При создании работы подходящие пропозалы предлагаются сами — по комплексу, а при совпадении номера юнита отдельной подсказкой; можно выбрать и вручную из списка непривязанных. Чип «нужен пропозал» ставит воркер (если разрешено админом) — менеджер видит напоминание над Доской.</p>
+    <p>Пропозал — предложение по образцу QuickBooks: номер <b>P-N</b>, таблица «Quantity / Item / Description / Amount», PO Number, Complete By и PDF по образцу клиента. Связь с инвойсом <b>двусторонняя</b>: блок «Связанные документы» есть в обоих документах, привязать и отвязать можно с любой стороны, вторая сторона обновляется сразу; пропозал с живой работой не удалить — сначала в архив уходит вся цепочка (одной кнопкой), архив чистит админ. При создании работы подходящие пропозалы предлагаются сами — по комплексу, а при совпадении номера юнита отдельной подсказкой; можно выбрать и вручную из списка непривязанных. Чип «нужен пропозал» ставит воркер (если разрешено админом) — менеджер видит напоминание над Доской.</p>
     <h4>${ic('save')} Бэкап, восстановление и диагностика</h4>
     <p>Настройки → «Бэкап данных» (админ): один JSON со всеми таблицами, учётками (пароли — bcrypt-хэшами) и, по галочке, секретами — файл с секретами храните бережно. Загрузка идёт построчно в порядке зависимостей, дубли отсекает сама база, всё видно в экранном логе, который сохраняется в .txt. Журналы выгружаются, но кнопкой обратно не заливаются. Рядом — <b>Диагностика</b>: интернет, база, сессия, хранилище миниатюр, edge-функции и Google Drive; у админа ещё и проверка всех таблиц и функций БД с указанием нужного SQL-файла, если чего-то не хватает.</p>
     <h4>${ic('eye')} Роли и доступ</h4>
@@ -9265,6 +9520,78 @@ function chainOf(kind, id){
   });
   return out;
 }
+/* =====================================================================
+   v1.08.30: УДАЛЕНИЕ С ЦЕПОЧКОЙ. Документ с зависимыми документами нельзя
+   отправить в архив по одному: показываем цепочку и предлагаем одну кнопку
+   «В архив вместе с цепочкой». Зависимые: у пропозала — живые работы по
+   нему и живые ремонты; у работы — живые ремонты. Пикапы и продления —
+   принадлежности работы, они уходят в архив вместе с ней и не блокируют.
+   ===================================================================== */
+function docBlockers(kind, id){
+  const out = [];
+  if (kind === 'prop'){
+    (state.data.jobs || []).filter(j => j.proposal_id === id && !isArch(j))
+      .forEach(j => out.push({ t: 'job', o: j }));
+    const seen = new Set(out.filter(b => b.t === 'job').map(b => b.o.id));
+    (state.data.repairs || []).filter(r => !isArch(r) &&
+        (r.proposal_id === id || (r.job_id && seen.has(r.job_id))))
+      .forEach(r => out.push({ t: 'rep', o: r }));
+  } else if (kind === 'job'){
+    repsOfJob(id).forEach(r => out.push({ t: 'rep', o: r }));
+  }
+  return out;
+}
+function canArchDoc(b){
+  if (b.t === 'rep') return isAdmin() || b.o.created_by === state.user.id;
+  return (isAdmin() || b.o.technician_id === state.user.id) && !editLocked(b.o);
+}
+function chainBlockModal(kind, id){
+  const bl = docBlockers(kind, id);
+  const canAll = bl.every(canArchDoc);
+  const row = b => {
+    const o = b.o;
+    const label = b.t === 'rep' ? (docNo('rep', o) || ('R-' + (o.no ?? '—')))
+      : (docNo('job', o) || ((cxById(o.complex_id) || {}).abbr || '—') + ' · ' + (o.unit_number || '—'));
+    const open = b.t === 'rep' ? `App.closeModal();App.openRepair('${o.id}')`
+                               : `App.closeModal();App.openJob('${o.id}')`;
+    const lock = b.t === 'job' && editLocked(o) ? ` <span class="tiny">🔒 ${t('ch_block_locked')}</span>` : '';
+    return `<div class="rowline"><div class="grow"><b>${esc(label)}</b>
+        <span class="tiny">· ${fmtDMY(o.date)}</span>${lock}</div>
+      <button class="btn btn-ghost sm" onclick="${open}">${ic('chev_r')}</button></div>`;
+  };
+  const extra = [];
+  if (kind === 'job'){
+    const j = jobById(id);
+    const pk = (state.data.placements || []).filter(p => p.job_id === id && !p.superseded && !p.returned_at).length;
+    if (pk) extra.push(`${ic('box')} ${t('ch_block_pk').replace('{N}', pk)}`);
+    if (j && j.proposal_id && propById(j.proposal_id)) extra.push(`${ic('link')} ${t('ch_block_prop_keep')}`);
+  }
+  openModal(`
+    ${modalHead(t('ch_block_title'), 'link')}
+    <div class="card"><div class="tiny" style="margin-bottom:8px">${t('ch_block_hint')}</div>
+      ${bl.map(row).join('')}
+      ${extra.map(x => `<div class="tiny" style="margin-top:8px">${x}</div>`).join('')}
+    </div>
+    <button class="btn btn-ghost" onclick="App.closeModal();App.chain('${kind === 'prop' ? 'prop' : 'job'}','${id}')">${ic('link')} ${t('ch_block_show')}</button>
+    ${canAll
+      ? `<button class="btn btn-red" style="margin-top:8px" onclick="App.chainArchive('${kind}','${id}')">${ic('archive')} ${t('ch_block_btn')}</button>`
+      : `<div class="tiny" style="margin-top:10px">${ic('warn')} ${t('ch_block_admin_only')}</div>`}
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('cancel')}</button>`);
+}
+async function chainArchive(kind, id){
+  const bl = docBlockers(kind, id);
+  if (!bl.every(canArchDoc)){ toast('⚠ ' + t('ch_block_admin_only'), 'err'); return; }
+  closeModal();
+  for (const b of bl.filter(x => x.t === 'rep')) await archiveDoc('rep', b.o.id);
+  for (const b of bl.filter(x => x.t === 'job')) await archiveDoc('job', b.o.id);
+  await archiveDoc(kind === 'prop' ? 'prop' : 'job', id);
+  if (kind === 'prop') propDraft = null;
+  else { localStorage.removeItem('techlog_draft'); jobDraft = null; state.screen = 'home'; }
+  repDraft = null;
+  toast('🗄 ' + t('ch_arch_done'));
+  render();
+}
+
 function chainDays(a, b){
   try{
     const d1 = new Date(a), d2 = new Date(b);
@@ -9673,6 +10000,7 @@ async function saveProposal(){
 }
 async function delProposal(id){
   if (!isAdmin()) return;
+  if (docBlockers('prop', id).length){ chainBlockModal('prop', id); return; }   // v1.08.30
   if (!confirm(t('arch_q'))) return;                 // v1.07.88: в архив, а не в никуда
   await archiveDoc('prop', id);
   propDraft = null; render();
@@ -9889,6 +10217,450 @@ function propStripHtml(){
 }
 
 /* =====================================================================
+   v1.08.26 · СКЛАД: ВОЗВРАТ ОБОРУДОВАНИЯ И СТАТИСТИКА
+   Забрал с объекта — оборудование ещё не на складе, оно у сотрудника
+   в машине. Поэтому у пикапа два шага: «забрал» и «вернул на склад».
+   Остатки считаются от документов, регистра накопления нет: сколько
+   стоит на объектах и сколько на руках — видно из placements, общее
+   количество и брак — из equipment_stock.
+   ===================================================================== */
+const SB_KEYS = ['free', 'rented', 'pending', 'with_tech', 'repair'];   // v1.08.27: «сломано» больше нет — есть «в ремонте»
+const SB_COLOR = { free: 'var(--green)', rented: 'var(--blue)', pending: 'var(--orange)',
+                   with_tech: 'var(--purple)', repair: 'var(--red)' };
+
+function plOut(p){ return p.picked_up && !p.superseded && !p.returned_at; }   // на руках
+/* Остатки одного типа оборудования */
+function stockRow(etId){
+  /* v1.08.27: склад, машины и ремонт — сумма журнала equip_moves;
+     «в аренде» и «ждут вывоза» — из placements, как раньше.
+     «Всего» теперь производное, «сломано» не существует (всегда 0). */
+  const today = todayISO();
+  let rented = 0, pending = 0;
+  (state.data.placements || []).forEach(p => {
+    if (p.equipment_type_id !== etId || p.superseded) return;
+    const q = +p.qty || 0;
+    if (!p.picked_up){ if (p.due_date <= today) pending += q; else rented += q; }
+  });
+  const em = emRow(etId);
+  return { total: em.stock + em.car + em.repair + rented + pending,
+           rented, pending, with_tech: em.car, broken: 0, in_repair: em.repair,
+           free: em.stock };
+}
+function stockTotals(){
+  const out = { total: 0, free: 0, rented: 0, pending: 0, with_tech: 0, broken: 0, in_repair: 0 };
+  (state.data.equipment_types || []).forEach(et => {
+    const r = stockRow(et.id);
+    Object.keys(out).forEach(k => out[k] += r[k]);
+  });
+  return out;
+}
+/* Что забрал лично я и ещё не сдал */
+function myOnHand(){
+  return (state.data.placements || []).filter(p => plOut(p)
+    && (p.picked_up_by === state.user.id || (!p.picked_up_by && p.technician_id === state.user.id)));
+}
+function myOnHandQty(){ return myOnHand().reduce((n, p) => n + (+p.qty || 0), 0); }
+
+/* ---------- карточки и график ---------- */
+function stockCardsHtml(){
+  const s = stockTotals();
+  const card = (key, val, val2) => `<div class="sb-card sb-${key}">
+    <div class="sb-n">${val}</div>
+    <div class="sb-l">${t('sb_' + key)}${val2 ? ` <span class="tiny">${val2}</span>` : ''}</div></div>`;
+  return `<div class="sb-total"><span>${t('sb_total')}</span><b>${s.total}</b></div>
+    <div class="sb-grid">
+      ${card('free', s.free)}
+      ${card('rented', s.rented)}
+      ${card('pending', s.pending)}
+      ${card('with_tech', s.with_tech)}
+      ${card('repair', s.in_repair)}
+    </div>
+    ${s.free < 0 ? `<div class="tiny gd-hint">${ic('warn')} ${t('sb_neg')}</div>` : ''}`;
+}
+/* История: по строке на день, столбик — состав остатка */
+function stockChartHtml(){
+  const by = {};
+  (state.data.stock_daily || []).forEach(r => {
+    const d = String(r.date || '').slice(0, 10); if (!d) return;
+    const a = by[d] || (by[d] = { free: 0, rented: 0, pending: 0, with_tech: 0, repair: 0, total: 0 });
+    a.free += +r.free || 0; a.rented += +r.rented || 0; a.pending += +r.pending || 0;
+    a.with_tech += +r.with_tech || 0;
+    a.repair += (+r.broken || 0) + (+r.in_repair || 0);   // v1.08.27: старые «сломано» показываем в той же полосе
+    a.total += +r.total || 0;
+  });
+  const days = Object.keys(by).sort().slice(-30);
+  const legend = SB_KEYS.map(k => `<span class="sb-lg"><i style="background:${SB_COLOR[k]}"></i>${t('sb_' + k)}</span>`).join('');
+  if (!days.length){
+    return `<div class="card"><div style="font-weight:900;margin-bottom:6px">${ic('stats')} ${t('sb_hist')}</div>
+      <div class="tiny">${t('sb_hist_none')}</div></div>`;
+  }
+  const W = 300, H = 110, bw = W / days.length, max = Math.max(1, ...days.map(d => by[d].total || 0));
+  const bars = days.map((d, i) => {
+    const a = by[d]; let y = H;
+    const parts = SB_KEYS.map(k => {
+      const h = (Math.max(0, a[k]) / max) * (H - 2);
+      if (h <= 0) return '';
+      y -= h;
+      return `<rect x="${(i * bw + 0.6).toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(1, bw - 1.2).toFixed(1)}"
+        height="${h.toFixed(1)}" fill="${SB_COLOR[k]}" opacity=".9"><title>${esc(fmtDMY(d))} · ${t('sb_' + k)}: ${a[k]}</title></rect>`;
+    }).join('');
+    return parts;
+  }).join('');
+  const first = fmtDMY(days[0]), last = fmtDMY(days[days.length - 1]);
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('stats')} ${t('sb_hist')}
+      <span class="tiny"> · ${days.length} ${t('days')}</span></div>
+    <svg class="sb-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+      aria-label="${esc(t('sb_hist'))}">${bars}</svg>
+    <div class="tiny sb-ax"><span>${esc(first)}</span><span>${esc(last)}</span></div>
+    <div class="sb-lgs">${legend}</div>
+    <div class="tiny gd-hint" style="margin-top:8px">${t('sb_hist_h')}</div>
+  </div>`;
+}
+/* Приложение подстраховывает cron: если снимок за сегодня не записан,
+   а назначенный час уже прошёл — просим сервер записать. Раз за сессию. */
+let _sbAsked = false;
+async function stockSnapshotPing(){
+  if (_sbAsked || !HAS_SB || !isManager()) return;
+  _sbAsked = true;
+  try{
+    const { data } = await state.sb.rpc('stock_snapshot_due');
+    if (data === true) dlog('склад: снимок за сегодня записан приложением');
+  }catch(e){ dlog('склад: снимок не записан —', e && e.message); }
+}
+
+/* ---------- возврат на склад ---------- */
+async function returnPk(pid, jobId){
+  const p = (state.data.placements || []).find(x => x.id === pid);
+  if (!p || !plOut(p) || !canTouchPk(p)) return;
+  await dbUpsert('placements', { ...p, returned_at: new Date().toISOString(), returned_by: state.user.id });
+  audit('stock_return', 'placement', pid, { unit: p.unit_number,
+    eq: (etById(p.equipment_type_id) || {}).abbr || '?', qty: +p.qty || 1 });
+  navigator.vibrate?.(20);
+  toast('✓ ' + t('sb_returned'));
+  render();
+  if (jobId) jobHistory(jobId);
+}
+async function returnJob(jobId){
+  const list = (state.data.placements || []).filter(p => p.job_id === jobId && plOut(p) && canTouchPk(p));
+  if (!list.length) return;
+  const now = new Date().toISOString();
+  for (const p of list) await dbUpsert('placements', { ...p, returned_at: now, returned_by: state.user.id });
+  audit('stock_return', 'job', jobId, { unit: list[0].unit_number,
+    items: list.map(p => ({ eq: (etById(p.equipment_type_id) || {}).abbr || '?', qty: +p.qty || 1 })) });
+  navigator.vibrate?.([20, 30, 20]);
+  toast('✓ ' + t('sb_returned'));
+  render();
+}
+/* «Вернуть всё на склад»: всё, что я забрал и ещё не сдал */
+async function returnAllMine(){
+  const list = myOnHand();
+  if (!list.length){ toast(t('sb_none_mine'), 'inf'); return; }
+  const qty = list.reduce((n, p) => n + (+p.qty || 0), 0);
+  if (!confirm(t('sb_all_q').replace('{N}', qty).replace('{U}', new Set(list.map(p => p.job_id)).size))) return;
+  const now = new Date().toISOString();
+  for (const p of list) await dbUpsert('placements', { ...p, returned_at: now, returned_by: state.user.id });
+  audit('stock_return_all', 'stock', state.user.id, { qty, docs: new Set(list.map(p => p.job_id)).size,
+    items: list.map(p => ({ eq: (etById(p.equipment_type_id) || {}).abbr || '?', qty: +p.qty || 1 })) });
+  navigator.vibrate?.([30, 40, 30]);
+  toast('✓ ' + t('sb_returned') + ' · ' + qty);
+  render();
+}
+/* Кнопка «на руках N» — видна, только когда есть что сдавать */
+function onHandBtnHtml(cls){
+  const q = myOnHandQty();
+  if (!q) return '';
+  return `<button class="btn btn-blue ${cls || ''}" onclick="App.returnAllMine()">
+    ${ic('box')} ${t('sb_return_all')} · ${q}</button>`;
+}
+
+/* =====================================================================
+   v1.08.27 · РЕГИСТР ОБОРУДОВАНИЯ (экран «Склад»)
+   Один журнал движений equip_moves (пишет сервер: RPC equip_op и
+   триггер на placements). Места: склад · машина сотрудника · объект ·
+   ремонт. Склад/машины/ремонт — сумма журнала; «на объектах»
+   по-прежнему считается из placements (stockRow выше). Здесь — чтение
+   журнала, сам экран и шесть ручных операций.
+   ===================================================================== */
+let _emCacheSrc = null, _emCache = null;
+function emSums(){
+  const src = state.data.equip_moves || [];
+  if (src === _emCacheSrc) return _emCache;
+  const m = {};
+  const g = et => m[et] || (m[et] = { stock: 0, repair: 0, car: 0, cars: {} });
+  src.forEach(r => {
+    const q = +r.qty || 0, a = g(r.equipment_type_id);
+    const add = (loc, sgn) => {
+      if (loc === 'stock') a.stock += sgn;
+      else if (loc === 'repair') a.repair += sgn;
+      else if (loc === 'car'){ const tid = r.tech_id || '?'; a.cars[tid] = (a.cars[tid] || 0) + sgn; a.car += sgn; }
+    };
+    add(r.to_loc, q); add(r.from_loc, -q);
+  });
+  _emCacheSrc = src; _emCache = m;
+  return m;
+}
+function emRow(etId){ return emSums()[etId] || { stock: 0, repair: 0, car: 0, cars: {} }; }
+function myCarQty(etId){ return emRow(etId).cars[state.user.id] || 0; }
+
+/* v1.08.29: демо-режим — сервера с триггером нет, зеркалим его логику
+   локально, иначе в эмуляторе аренда не двигала бы остатки. Один в один
+   ветки equip_pl_sync(): создание (с авто-добором), «забрал»/отмена,
+   «вернул»/отмена, правка количества, удаление строки аренды. */
+function demoPlMoves(op, row, prev){
+  if (HAS_SB || !row || !state.user) return;
+  let next = [...(state.data.equip_moves || [])];
+  const bal = (loc, tech) => next.reduce((n, m) => m.equipment_type_id !== row.equipment_type_id ? n
+    : n + (m.to_loc === loc && (loc !== 'car' || m.tech_id === tech) ? +m.qty || 0 : 0)
+        - (m.from_loc === loc && (loc !== 'car' || m.tech_id === tech) ? +m.qty || 0 : 0), 0);
+  const push = (kind, from, to, qty, tech, note) => next.push({ id: uid(), kind,
+    equipment_type_id: row.equipment_type_id, qty: Math.max(1, +qty || 1), from_loc: from, to_loc: to,
+    tech_id: tech || null, placement_id: row.id, actor: state.user.id, note: note || '',
+    created_at: new Date().toISOString() });
+  const drop = (kind, undoFrom, undoTo, qty, tech) => {
+    const i = next.findIndex(m => m.placement_id === row.id && m.kind === kind);
+    if (i >= 0) next.splice(i, 1); else push('undo', undoFrom, undoTo, qty, tech);
+  };
+  const place = (qty, tech) => {
+    const short = qty - bal('car', tech);
+    if (short > 0) push('take', 'stock', 'car', short, tech, 'auto');
+    push('place', 'car', 'site', qty, tech);
+  };
+  if (op === 'insert'){
+    if (!row.ext_of) place(Math.max(1, +row.qty || 1), row.technician_id);
+  } else if (op === 'delete'){
+    next = next.filter(m => m.placement_id !== row.id);
+  } else if (prev){
+    const tech = row.picked_up_by || prev.picked_up_by || row.technician_id;
+    if (!!prev.picked_up !== !!row.picked_up){
+      if (row.picked_up) push('pickup', 'site', 'car', row.qty, tech);
+      else drop('pickup', 'car', 'site', prev.qty, tech);
+    }
+    if ((prev.returned_at == null) !== (row.returned_at == null)){
+      if (row.returned_at != null) push('return', 'car', 'stock', row.qty, tech);
+      else drop('return', 'stock', 'car', prev.qty, tech);
+    }
+    if ((+prev.qty || 0) !== (+row.qty || 0) && !row.ext_of
+        && !(state.data.placements || []).some(x => x.ext_of === row.id)){
+      const dd = (+row.qty || 0) - (+prev.qty || 0);
+      if (dd !== 0){
+        if (row.returned_at != null) push('undo', dd > 0 ? 'ext' : 'stock', dd > 0 ? 'stock' : 'ext', Math.abs(dd), null);
+        else if (row.picked_up) push('undo', dd > 0 ? 'site' : 'car', dd > 0 ? 'car' : 'site', Math.abs(dd), row.picked_up_by || row.technician_id);
+        else if (dd > 0) place(dd, row.technician_id);
+        else push('undo', 'site', 'car', -dd, row.technician_id);
+      }
+    }
+  }
+  state.data.equip_moves = next;
+}
+
+/* Аренда двигает оборудование сама (триггер в БД): после каждой записи
+   placements перечитываем журнал одним запросом — с задержкой, чтобы
+   серия сохранений (возврат всего, пересборка формы) слилась в одну. */
+let _emT = null;
+function refreshMovesSoon(){
+  if (!HAS_SB || !state.sb) return;
+  clearTimeout(_emT);
+  _emT = setTimeout(async () => {
+    try{
+      const { data } = await state.sb.from('equip_moves').select('*');
+      if (data){ state.data.equip_moves = data; saveLocal(); render(); }
+    }catch(e){ dlog('регистр: журнал не перечитан —', e && e.message); }
+  }, 400);
+}
+
+/* ---------- экран «Склад» ---------- */
+function viewStock(){
+  stockSnapshotPing();
+  const showAll = isManager() || stockVisibleAll();
+  const list = [...(state.data.equipment_types || [])].sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  const me = state.user;
+  const repairTotal = list.reduce((n, et) => n + emRow(et.id).repair, 0);
+
+  const table = !showAll ? '' : `<div class="card">` + list.map(et => {
+    const r = stockRow(et.id), em = emRow(et.id);
+    return `<div class="rowline" style="flex-wrap:wrap">
+      <span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>
+      <div class="grow" style="min-width:min(100%,150px)"><b>${esc(et.name)}</b>
+        <div class="tiny">${t('eq_col_total')}: <b>${r.total}</b></div></div>
+      <div class="eq-cols tiny">
+        <span>${t('eq_col_stock')} <b style="color:var(--green)">${em.stock}</b></span>
+        <span>${t('eq_col_rented')} <b style="color:var(--blue)">${r.rented}</b></span>
+        <span>${t('eq_col_pending')} <b style="color:var(--orange)">${r.pending}</b></span>
+        <span>${t('eq_col_cars')} <b style="color:var(--purple)">${em.car}</b></span>
+        <span>${t('eq_col_repair')} <b style="color:var(--red)">${em.repair}</b></span>
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
+
+  const mine = list.map(et => ({ et, q: myCarQty(et.id) })).filter(x => x.q > 0);
+  const myCar = `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('car')} ${t('eq_mycar')}
+      ${me.car_no != null ? `<span class="car-no" style="margin-left:6px">${me.car_no}</span>` : `<span class="tiny"> · ${t('eq_nocar')}</span>`}</div>
+    ${mine.length ? `<div class="eq-chips">` + mine.map(x =>
+      `<span class="chip" style="border-color:${x.et.color}">${esc(x.et.abbr)} × ${x.q}</span>`).join('') + `</div>`
+      : `<div class="tiny">${t('eq_car_empty')}</div>`}
+  </div>`;
+
+  let carsBlock = '';
+  if (isManager()){
+    const perTech = {};
+    list.forEach(et => {
+      const c = emRow(et.id).cars;
+      Object.keys(c).forEach(tid => { if (c[tid] > 0) (perTech[tid] = perTech[tid] || []).push({ et, q: c[tid] }); });
+    });
+    const tids = Object.keys(perTech).sort((a, b) => profName(a).localeCompare(profName(b)));
+    carsBlock = `<div class="card"><div style="font-weight:900;margin-bottom:6px">${ic('crew')} ${t('eq_bycars')}</div>` +
+      (tids.length ? tids.map(tid => {
+        const u = (state.data.profiles || []).find(x => x.id === tid) || {};
+        return `<div class="rowline" style="flex-wrap:wrap"><div class="grow"><b>${esc(profName(tid))}</b>${u.car_no != null ? ` <span class="car-no">${u.car_no}</span>` : ''}</div>
+          <div class="eq-chips">${perTech[tid].map(x => `<span class="chip">${esc(x.et.abbr)} × ${x.q}</span>`).join('')}</div></div>`;
+      }).join('') : `<div class="tiny">${t('eq_bycars_none')}</div>`) + `</div>`;
+  }
+
+  const totals = stockTotals();
+  const myTotal = list.reduce((n, et) => n + myCarQty(et.id), 0);
+  const big = (kind, into, lbl, sub, cnt, cls) => `<button class="btn ${cls} eq-big" onclick="App.eqOpen('${kind}')">
+      ${eqVanSvg(into)}
+      <span class="eq-big-l">${t(lbl)}</span>
+      <span class="eq-big-s">${t(sub)}</span>
+      <span class="eq-big-n">${cnt}</span>
+    </button>`;
+  const bigrow = `<div class="eq-bigrow">
+    ${big('take', true, 'eq_take_b', 'eq_take_s', t('eq_col_stock') + ': ' + totals.free, 'btn-green')}
+    ${big('give', false, 'eq_give_b', 'eq_give_s', t('eq_in_mycar') + ': ' + myTotal, 'btn-blue')}
+  </div>`;
+  const emptyHint = totals.total === 0
+    ? `<div class="tiny gd-hint" style="margin:6px 2px">${ic('warn')} ${isAdmin() ? t('eq_empty_admin') : t('eq_empty_tech')}</div>` : '';
+  const btn = (kind, icn, lbl, cls) => `<button class="btn ${cls}" onclick="App.eqOpen('${kind}')">${ic(icn)} ${t(lbl)}</button>`;
+  const btns = `<div class="eq-btns">
+    ${btn('repair', 'wrench', 'eq_repair', 'btn-ghost')}
+    ${repairTotal > 0 ? btn('unrepair', 'sync', 'eq_unrepair', 'btn-ghost') : ''}
+    ${isAdmin() ? btn('intake', 'plus', 'eq_intake', 'btn-ghost') : ''}
+    ${isAdmin() ? btn('writeoff', 'trash', 'eq_writeoff', 'btn-ghost eq-danger') : ''}
+  </div>`;
+
+  return `<div class="section-title">${ic('box')} ${t('tab_stock')}${helpBtn('stock')}</div>
+    ${myCar}
+    ${onHandBtnHtml('sb-btn')}
+    ${bigrow}
+    ${emptyHint}
+    ${btns}
+    ${showAll ? stockCardsHtml() : `<div class="tiny" style="margin:4px 2px">${t('eq_stock_closed')}</div>`}
+    ${showAll ? table : ''}
+    ${carsBlock}
+    ${showAll ? stockChartHtml() : ''}
+    <div class="tiny gd-hint" style="margin:8px 2px">${t('eq_hint')}</div>`;
+}
+
+/* v1.08.28: большие кнопки «Взять»/«Сдать» — минивен со стрелкой.
+   Взять: коробка-склад, стрелка В минивен. Сдать: стрелка ИЗ минивена. */
+function eqVanSvg(intoVan){
+  const van = `<path d="M42 33 V21 q0-2 1.8-3.2 l8.4-6.4 Q54 10 57 10 h27 q6 0 6 6 v17"/>
+    <path d="M42 33 H90"/>
+    <path d="M46 20 L53 14 H61 V20 Z"/>
+    <rect x="64" y="14" width="13" height="6" rx="1.2"/>
+    <path d="M64 22 V31"/>
+    <circle cx="54" cy="33" r="4.6"/><circle cx="80" cy="33" r="4.6"/>`;
+  const box = `<rect x="6" y="22" width="13" height="11" rx="1.5"/><path d="M6 26 H19 M12.5 22 V26"/>`;
+  const arrow = intoVan
+    ? `<path d="M23 27 H35" stroke-width="3"/><path d="M31 21 L38 27 L31 33" stroke-width="3"/>`
+    : `<path d="M38 27 H26" stroke-width="3"/><path d="M30 21 L23 27 L30 33" stroke-width="3"/>`;
+  return `<svg class="eq-van" viewBox="0 0 96 44" fill="none" stroke="currentColor" stroke-width="2.4"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${box}${arrow}${van}</svg>`;
+}
+
+/* ---------- операции регистра ---------- */
+let eqDraft = null;
+const EQ_RPC = { take: 'take', give: 'return', unrepair: 'from_repair', intake: 'intake', writeoff: 'writeoff' };
+
+function eqCap(){
+  const d = eqDraft; if (!d || !d.et) return 0;
+  const em = emRow(d.et);
+  if (d.kind === 'take') return em.stock;
+  if (d.kind === 'give') return myCarQty(d.et);
+  if (d.kind === 'repair') return d.src === 'car' ? myCarQty(d.et) : em.stock;
+  if (d.kind === 'unrepair') return em.repair;
+  if (d.kind === 'writeoff') return em.stock;
+  return 999;                                              // intake
+}
+function eqKeepNote(){
+  const el = document.getElementById('eq-note');
+  if (el && eqDraft) eqDraft.note = el.value;
+}
+function eqModal(){
+  const d = eqDraft; if (!d) return;
+  const list = [...(state.data.equipment_types || [])].sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  const cap = eqCap();
+  if (cap > 0 && d.qty > cap) d.qty = cap;
+  const chips = list.map(et => {
+    const on = d.et === et.id;
+    return `<button type="button" class="eq-et${on ? ' on' : ''}"
+      style="border-color:${et.color};${on ? `background:${et.color};color:${textColorFor(et.color)}` : ''}"
+      onclick="App.eqEt('${et.id}')">${esc(et.abbr)}</button>`;
+  }).join('');
+  const src = d.kind === 'repair' ? `<div class="rowline" style="margin-top:8px">
+      <div class="grow tiny">${t('eq_src')}</div>
+      <button class="btn btn-ghost sm ${d.src !== 'car' ? 'eq-on' : ''}" onclick="App.eqSrc('stock')">${t('eq_src_stock')}</button>
+      <button class="btn btn-ghost sm ${d.src === 'car' ? 'eq-on' : ''}" onclick="App.eqSrc('car')">${t('eq_src_car')}</button>
+    </div>` : '';
+  const note = (d.kind === 'intake' || d.kind === 'writeoff')
+    ? `<input id="eq-note" placeholder="${t('eq_note')}" value="${esc(d.note || '')}" style="margin-top:8px;width:100%">` : '';
+  openModal(`
+    <h3 style="margin:0 0 8px">${t('eq_' + d.kind)}</h3>
+    <div class="eq-ets">${chips}</div>
+    ${src}
+    <div class="rowline" style="margin-top:10px">
+      <div class="grow">${t('eq_qty')}<div class="tiny">${t('eq_avail')}: <b>${cap === 999 ? '—' : cap}</b></div></div>
+      <span class="stepper"><button type="button" aria-label="−" onclick="App.eqAdj(-1)">${ic('minus')}</button><span class="val">${d.qty}</span><button type="button" aria-label="+" onclick="App.eqAdj(1)">${ic('plus')}</button></span>
+      ${cap > 1 && cap < 999 ? `<button class="btn btn-ghost sm" onclick="App.eqAll()">${t('eq_all')} · ${cap}</button>` : ''}
+    </div>
+    ${note}
+    <div class="btn-row3" style="grid-template-columns:1fr 1fr;margin-top:12px">
+      <button class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
+      <button class="btn btn-green" ${cap === 0 ? 'disabled' : ''} onclick="App.eqDo()">${t('save')}</button>
+    </div>`);
+}
+async function equipDo(){
+  const d = eqDraft; if (!d || !d.et) return;
+  eqKeepNote();
+  const cap = eqCap();
+  if (d.qty < 1) return;
+  if (d.qty > cap){ toast(t('eq_short').replace('{N}', cap), 'err'); return; }
+  const p_kind = d.kind === 'repair' ? (d.src === 'car' ? 'repair_car' : 'repair_stock') : EQ_RPC[d.kind];
+  if (HAS_SB){
+    try{
+      const { data, error } = await state.sb.rpc('equip_op',
+        { p_kind, p_type: d.et, p_qty: d.qty, p_note: d.note || '' });
+      if (error){
+        const m = /NOT_ENOUGH:(\d+)/.exec(error.message || '');
+        toast(m ? t('eq_short').replace('{N}', m[1]) : rpcFail(error, 'equip_op'), 'err');
+        return;
+      }
+      if (data) state.data.equip_moves = [...(state.data.equip_moves || []), data];   // v1.08.29: новый массив — кэш emSums пересчитается
+    }catch(e){ toast(t('write_err') + ': ' + (e && e.message || ''), 'err'); return; }
+  } else {
+    /* демо без сервера: движение пишется локально, чтобы экран жил */
+    const map = { take: ['stock', 'car'], return: ['car', 'stock'], repair_stock: ['stock', 'repair'],
+      repair_car: ['car', 'repair'], from_repair: ['repair', 'stock'], intake: ['ext', 'stock'], writeoff: ['stock', 'ext'] };
+    const [f, to] = map[p_kind];
+    state.data.equip_moves = [...(state.data.equip_moves || []), {
+      id: uid(), kind: p_kind.startsWith('repair_') ? 'to_repair' : p_kind,
+      equipment_type_id: d.et, qty: d.qty, from_loc: f, to_loc: to,
+      tech_id: (f === 'car' || to === 'car') ? state.user.id : null,
+      actor: state.user.id, note: d.note || '', created_at: new Date().toISOString() }];
+    const act = { take: 'equip_take', give: 'equip_return', repair: 'equip_repair',
+      unrepair: 'equip_repair_back', intake: 'equip_intake', writeoff: 'equip_writeoff' }[d.kind];
+    audit(act, 'equip', d.et, { eq: (etById(d.et) || {}).abbr || '?', qty: d.qty });
+  }
+  saveLocal();
+  eqDraft = null; closeModal();
+  navigator.vibrate?.(20);
+  toast('✓ ' + t('eq_done_' + d.kind));
+  render();
+}
+
+/* =====================================================================
    v1.08.23 · ДОКУМЕНТ РЕМОНТНЫХ РАБОТ (REP)
    После демонтажа — вырезали стену, сняли наличники — юнит нужно
    восстановить. Это отдельный документ: работы из справочника,
@@ -9939,6 +10711,17 @@ function repRecalc(){
 }
 
 /* ---------- история апрува ---------- */
+/* v1.08.24: «апрув слетел» — состояние, а не отдельное поле: черновик,
+   в истории которого последней стоит запись о снятии. Само себя гасит,
+   как только документ снова отправят на согласование. */
+function repApprovalReset(r){
+  return !!r && r.status === 'draft' && (((r.hist || [])[0] || {}).act === 'reset');
+}
+function repsResetList(){
+  return (state.data.repairs || []).filter(r => !isArch(r) && repApprovalReset(r))
+    .sort((a, b) => String(((b.hist || [])[0] || {}).at || '')
+      .localeCompare(String(((a.hist || [])[0] || {}).at || '')));
+}
 function repHistAdd(r, act, extra){
   r.hist = Array.isArray(r.hist) ? r.hist : [];
   r.hist.unshift(Object.assign({
@@ -9954,14 +10737,67 @@ function repTouch(){
   const r = repDraft;
   if (!r || (r.status !== 'approved' && r.status !== 'sent')) return;
   const was = r.status;
+  const whoApproved = r.decided_by;
   r.status = 'draft'; r.decided_by = null; r.decided_at = null;
-  repHistAdd(r, 'reset', { from: was });
+  repHistAdd(r, 'reset', { from: was, to: whoApproved || null });
+  if (was === 'approved'){
+    /* менеджеру это видно в «Действии», на доске и в журнале */
+    audit('repair_approve_reset', 'repair', r.id,
+      { no: r.no, unit: r.unit_number, approved_by: profName(whoApproved) || '' });
+  }
   const seg = $('#rep-st'); if (seg) seg.innerHTML = repStSegHtml(r);
   const box = $('#rep-apr'); if (box) box.innerHTML = repAprInnerHtml(r);
   toast('⚠ ' + t(was === 'approved' ? 'rep_reset_done' : 'rep_unsent'), 'inf');
 }
 
 /* ---------- открытие / закрытие ---------- */
+/* Фото документа ремонта — это фото связанного инвойса: снимаются тем же
+   модулем и уезжают на Диск по обычному маршруту. В документе хранятся
+   только пометки, какой снимок «до», а какой «после». */
+function repPhotos(r){
+  const p = (r && r.photos) || {};
+  return { before: Array.isArray(p.before) ? p.before.slice() : [],
+           after:  Array.isArray(p.after)  ? p.after.slice()  : [] };
+}
+function repPhoto(id, slot){
+  const r = repDraft; if (!r) return;
+  const ph = repPhotos(r);
+  const other = slot === 'before' ? 'after' : 'before';
+  ph[other] = ph[other].filter(x => x !== id);
+  ph[slot] = ph[slot].includes(id) ? ph[slot].filter(x => x !== id) : ph[slot].concat(id);
+  r.photos = ph;               /* пометки апрув не снимают — это не смета */
+  render();
+}
+function repPhotoCardHtml(r){
+  const job = r.job_id ? (state.data.jobs || []).find(x => x.id === r.job_id) : null;
+  if (!job) return `<div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('rep_photos')}</div>
+    <div class="tiny">${t('rep_photos_nojob')}</div></div>`;
+  const ph = repPhotos(r);
+  const rows = (state.data.media || [])
+    .filter(m => m.job_id === job.id && (m.kind === 'photo' || m.kind === 'video'))
+    .sort((a, b) => (a.seq || 0) - (b.seq || 0));
+  const tile = m => {
+    const bef = ph.before.includes(m.id), aft = ph.after.includes(m.id);
+    return `<div class="rep-ph">
+      <div class="mth clicky" onclick="App.mediaOpen('${m.id}','${m.kind}')">
+        <img data-thumb="${m.thumb_path || ''}" width="72" height="72" alt="">
+        ${m.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
+        ${m.status !== 'ready' ? `<span class="mst">${ic('clock')}</span>` : ''}</div>
+      <div class="rep-ph-b">
+        <button type="button" class="chip ${bef ? 'on' : ''}" onclick="App.repPhoto('${m.id}','before')">${t('rep_ph_before')}</button>
+        <button type="button" class="chip ${aft ? 'on' : ''}" onclick="App.repPhoto('${m.id}','after')">${t('rep_ph_after')}</button>
+      </div></div>`;
+  };
+  return `<div class="card" style="margin:8px 12px">
+    <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('rep_photos')}
+      <span class="tiny"> · ${t('rep_ph_before')} ${ph.before.length} · ${t('rep_ph_after')} ${ph.after.length}</span></div>
+    <div class="tiny" style="margin-bottom:6px">${t('rep_photos_h')}</div>
+    ${rows.length ? `<div class="rep-phs">${rows.map(tile).join('')}</div>`
+                  : `<div class="tiny">${t('rep_photos_none')}</div>`}
+  </div>
+  <div style="margin:0 12px">${mediaStripHtml(job.id)}</div>`;
+}
 function repNew(src){
   const j = src && src.job ? (state.data.jobs || []).find(x => x.id === src.job) : null;
   const p = src && src.prop ? propById(src.prop) : null;
@@ -9972,7 +10808,7 @@ function repNew(src){
     unit_number: base.unit_number || '',
     job_id: j ? j.id : null, proposal_id: p ? p.id : (j ? (j.proposal_id || null) : null),
     helper_ids: j ? [j.technician_id, ...(j.helper_ids || [])].filter(Boolean) : [state.user.id],
-    items: [], materials: [], note: '', note_en: '',
+    items: [], materials: [], note: '', note_en: '', photos: { before: [], after: [] },
     po_number: (p && p.po_number) || '', complete_by: (p && p.complete_by) || null,
     sales_tax: 0, freight: 0, total: 0, status: 'draft', hist: [], decline_reason: '',
     created_by: state.user.id, decided_by: null, decided_at: null,
@@ -9986,6 +10822,7 @@ function openRepair(id, src){
     repDraft = JSON.parse(JSON.stringify(r));
     repDraft.items = repDraft.items || []; repDraft.materials = repDraft.materials || [];
     repDraft.helper_ids = repDraft.helper_ids || []; repDraft.hist = repDraft.hist || [];
+    repDraft.photos = repPhotos(repDraft);
   } else {
     if (!repCanCreate()){ toast('⛔ ' + t('rep_no_create'), 'err'); return; }
     repDraft = repNew(src);
@@ -10002,7 +10839,8 @@ function repKey(r){
     r.po_number || '', r.complete_by || '', r.note || '', r.note_en || '', r.status,
     (r.helper_ids || []).slice().sort(), +r.sales_tax || 0, +r.freight || 0,
     (r.items || []).map(it => [it.q, it.code || '', it.d || '', it.d_en || '', +it.a || 0]),
-    (r.materials || []).map(it => [it.q, it.code || '', it.d || '', it.d_en || '', +it.a || 0])]);
+    (r.materials || []).map(it => [it.q, it.code || '', it.d || '', it.d_en || '', +it.a || 0]),
+    repPhotos(r)]);
 }
 function repDirty(){
   if (!repDraft) return false;
@@ -10257,6 +11095,7 @@ function viewRepairForm(){
     ${dictationHTML('rep-note', r.note || '', 'repdraft')}
   </div>
   <div style="margin:8px 12px">${trCardHtml('rep', r)}</div>
+  ${repPhotoCardHtml(r)}
 
   <div class="card" style="margin:8px 12px">
     <div class="qty-line"><span class="name">${t('rep_works_sum')}</span><span class="money" id="rp-works">${repMoney(repWorks(r))}</span></div>
@@ -10378,9 +11217,8 @@ async function delRepair(id){
   const r = repById(id); if (!r) return;
   if (!(isAdmin() || r.created_by === state.user.id)) return;
   if (!confirm(t('arch_q'))) return;
-  await dbUpsert('repairs', { ...r, archived_at: new Date().toISOString(), archived_by: state.user.id });
-  audit('repair_archive', 'repair', id, { no: r.no });
-  repDraft = null; toast('🗄 ' + t('arch_to')); render();
+  await archiveDoc('rep', id);                                    // v1.08.30: общий путь
+  repDraft = null; render();
 }
 /* Суммы одобренного ремонта уходят строкой в связанный инвойс */
 async function repToInvoice(id){
@@ -10583,6 +11421,12 @@ function makeRepairPdf(id, _go){
   };
   if ((r.items || []).length){ sub('WORKS'); (r.items || []).forEach(putRow); }
   if ((r.materials || []).length){ sub('MATERIALS'); (r.materials || []).forEach(putRow); }
+  const phc = repPhotos(r);
+  if (phc.before.length || phc.after.length){
+    ensure(LH + 2);
+    doc.text('Photos: ' + phc.before.length + ' before / ' + phc.after.length + ' after', cD + 2, y + 3.6);
+    y += LH + 1.6;
+  }
   const nEn = enText(r.note, r.note_en);
   if (nEn){
     const nl = doc.splitTextToSize('Note:\n' + nEn, wD - 4);
@@ -10626,13 +11470,16 @@ function repStripHtml(){
   const list = (state.data.repairs || []).filter(r => !isArch(r) && r.date === state.selDate);
   if (!list.length) return '';
   const waiting = list.filter(r => r.status === 'sent').length;
+  const lost = list.filter(repApprovalReset).length;          /* v1.08.24 */
   const head = `<div class="strip-h">${ic('toolbox')} <span class="ttl">${t('rep_strip')}</span>
     <span class="chip">${list.length}</span>
-    ${waiting ? `<span class="chip pst pst-sent">${t('pst_sent')}: ${waiting}</span>` : ''}</div>`;
+    ${waiting ? `<span class="chip pst pst-sent">${t('pst_sent')}: ${waiting}</span>` : ''}
+    ${lost ? `<span class="chip pst pst-declined">${t('rep_reset_chip')}: ${lost}</span>` : ''}</div>`;
   return head + `<div class="pstrip">${list.map(r => {
     const cx = cxById(r.complex_id) || { abbr: '—' };
     return `<div class="pcard clicky" onclick="App.openRepair('${r.id}')">
-      <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span>
+      <span class="chip pst pst-${repApprovalReset(r) ? 'declined' : r.status}">${
+        repApprovalReset(r) ? t('rep_reset_chip') : t('pst_' + r.status)}</span>
       <div><b>R-${r.no ?? '·'}</b> · ${esc(cx.abbr)}${r.unit_number ? ' · ' + esc(r.unit_number) : ''}</div>
       <div class="tiny money">${repMoney(repGrand(r))}</div>
     </div>`; }).join('')}</div>`;
@@ -12226,31 +13073,71 @@ function gdFolderInput(el){
    Имя приходит из «Теста соединения» (его знает только сервер). */
 function gdDirName(kind){
   const p = (typeof gdFolders !== 'undefined' && gdFolders) ? gdFolders[kind] : null;
-  return p && p.path ? ` <span class="gd-mark">${esc(String(p.path).split('/')[0].trim())}</span>` : '';
+  if (!p) return '';
+  /* v1.08.25: имя именно корня. Раньше брался первый кусок пути — у своей
+     папки админа это было её имя, а у папки внутри архива — имя архива. */
+  const nm = (p.root && p.root.name) || String(p.path || '').split('/')[0].trim();
+  return nm ? ` <span class="gd-mark">${esc(nm)}</span>` : '';
 }
 function gdInvPathSample(){
   const o = state.data.org_settings || {};
-  const ym = todayISO().slice(0, 7);
+  const ym = todayISO().slice(0, 7).replace('-', '_');    // v1.08.25: на Диске 2026_09
   const root = String(o.gd_inv_folder || '').trim() ? '(своя папка)' : 'архив / Invoices';
   const me = translit(shortName((state.user && state.user.display_name) || 'Ivan Petrov')).replace(/\.$/, '');
   return o.gd_inv_by_tech ? `${root} / ${me} / ${ym}` : `${root} / ${ym}`;
 }
+/* v1.08.25: корень и конечная папка — разные вещи, и в карточке они теперь
+   разведены. media-health присылает корень (имя, id, лежит ли он в архиве) и
+   схему записи токенами; токены расшифровываются здесь, поэтому подписи идут
+   на языке интерфейса. У съёмки схема своя — контрагент / комплекс / юнит. */
+const GD_SEG_KEY = { cp: 'gd_seg_cp', cx: 'gd_seg_cx', unit: 'gd_seg_unit',
+                     tech: 'gd_seg_tech', doc: 'gd_seg_doc' };
+function gdSegText(seg, ym){
+  if (seg === 'ym') return ym || todayISO().slice(0, 7).replace('-', '_');
+  return GD_SEG_KEY[seg] ? '<' + t(GD_SEG_KEY[seg]) + '>' : String(seg);
+}
+function gdPathParts(kind){
+  const p = gdFolders ? gdFolders[kind] : null;
+  if (!p) return null;
+  if (p.root && (p.root.name || p.root.id)){
+    const r = p.root;
+    return { id: r.id || p.id || '',
+             root: (r.own || !r.in) ? (r.name || '—') : `${r.in} / ${r.name}`,
+             segs: (p.scheme || []).map(x => gdSegText(x, p.ym)), legacy: false };
+  }
+  /* старая версия функции отдавала один путь строкой — разбираем как есть */
+  const segs = String(p.path || '').split('/').map(x => x.trim()).filter(Boolean);
+  return { id: p.id || '',
+           root: segs.slice(0, Math.max(1, segs.length - 1)).join(' / ') || (p.name || '—'),
+           segs: segs.length > 1 ? [segs[segs.length - 1]] : [], legacy: true };
+}
 function gdFoldersHtml(){
   if (!gdFolders || !gdFolders.root) return '';
-  const row = (lbl, f) => {
-    if (!f || !f.id) return `<div class="gd-fold">${ic('folder')}
+  let old = false;
+  const row = (lbl, kind, note) => {
+    const p = gdPathParts(kind);
+    if (!p || !p.id) return `<div class="gd-fold">${ic('folder')}
       <div class="gf-b"><div class="gf-n">${esc(lbl)}</div>
         <div class="gf-p">${t('gd_folder_unknown')}</div></div></div>`;
+    if (p.legacy) old = true;
     return `<div class="gd-fold">${ic('folder')}
-      <div class="gf-b"><div class="gf-n">${esc(lbl)}: ${esc(f.name || '—')}</div>
-        <div class="gf-p">${esc(f.path || '')}</div></div>
-      <a href="https://drive.google.com/drive/folders/${encodeURIComponent(f.id)}" target="_blank" rel="noopener">${t('gd_open_drive')}</a></div>`;
+      <div class="gf-b">
+        <div class="gf-n wrap">${esc(lbl)}</div>
+        <div class="gf-p2"><b>${t('gd_root')}:</b> ${esc(p.root)}</div>
+        <div class="gf-p2"><b>${t('gd_into')}:</b> ${p.segs.length
+          ? p.segs.map(x => `<span class="gd-seg">${esc(x)}</span>`).join('<i>/</i>')
+          : `<span class="dim">${t('gd_into_root')}</span>`}</div>
+        ${note ? `<div class="gf-p2 dim">${esc(note)}</div>` : ''}
+      </div>
+      <a href="https://drive.google.com/drive/folders/${encodeURIComponent(p.id)}" target="_blank" rel="noopener">${t('gd_open_drive')}</a></div>`;
   };
+  const rows = row(t('gd_where_photo'), 'photo', t('gd_photo_note'))
+             + row(t('gd_where_files'), 'file')
+             + row(t('gd_where_inv'), 'invoice');
   return `<div style="margin-top:8px">
     <div class="tiny" style="font-weight:900;margin-bottom:4px">${t('gd_where')}</div>
-    ${row(t('gd_where_photo'), gdFolders.photo || gdFolders.root)}
-    ${row(t('gd_where_files'), gdFolders.file)}
-    ${row(t('gd_where_inv'), gdFolders.invoice)}
+    ${rows}
+    ${old ? `<div class="tiny gd-hint">${ic('warn')} ${t('gd_paths_old')}</div>` : ''}
     <button class="btn btn-blue" style="margin-top:6px" onclick="App.gdCycle()">${ic('sync')} ${t('gd_cyc')}</button>
     <div class="tiny gd-hint">${t('gd_cyc_hint')}</div>
     <div id="gd-cycle" style="margin:4px 0"></div>
@@ -12504,7 +13391,7 @@ const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
 const MEDIA_FN_VER = '1.08.12';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
-const MEDIA_FN_MIN = { 'media-begin': '1.08.12', 'media-commit': '1.08.13', 'media-health': '1.07.88',
+const MEDIA_FN_MIN = { 'media-begin': '1.08.25', 'media-commit': '1.08.13', 'media-health': '1.08.25',
                        'media-delete': '1.07.88' };
 const MEDIA_FN_MIN_DEF = '1.07.72';
 function mFnVerOk(ver, name){
@@ -12929,7 +13816,7 @@ const BK_TABLES = ['profiles','counterparties','complexes','aux_equipment','work
   'equipment_types','size_types','extra_works','product_types','price_list',
   'counterparty_prices','equipment_stock','org_settings','hidden_staff',
   'code_requests','complex_code_history','proposals','repairs','jobs','placements',
-  'ext_requests','media'];
+  'ext_requests','media','equip_moves'];   // v1.08.27: журнал после placements — при восстановлении FK уже на месте
 const BK_EXPORT_ONLY = ['audit_log','tech_log'];
 const BK_PAGE = 1000, BK_CHUNK = 300;
 let bkLogLines = null;
