@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.08.42';
+const VERSION = '1.08.44';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -51,9 +51,11 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // version.json — всегда из сети (проверка обновлений)
+  // version.json — только из сети. Фолбэк в кэш был мёртвым (файл не
+  // прекэшится, а ?ts= всё равно не совпал бы) и прятал настоящую ошибку;
+  // v1.08.43: честный провал — приложение называет причину само.
   if (url.pathname.endsWith('/version.json')) {
-    e.respondWith(fetch(req, { cache: 'no-store' }).catch(() => caches.match(req)));
+    e.respondWith(fetch(req, { cache: 'no-store' }));
     return;
   }
 

@@ -4,8 +4,11 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.42';
-const DB_SQL_FILE = 'full-install-1_08_39.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.08.44';
+const DB_SQL_FILE = 'full-install-1_08_39.sql';
+/* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
+   только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
+const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -344,6 +347,9 @@ const I18N = {
     upd_checking: 'Проверяю версию…', upd_latest: 'У вас актуальная версия',
     upd_applying: 'Обновляю приложение…', upd_hard: 'Очищаю кэш и перезагружаю…',
     upd_found: 'Найдена новая версия', upd_fail: 'Не удалось проверить версию — проверьте интернет',
+    upd_fail_http: 'version.json: HTTP {n} — хостинг отдаёт ошибку. Проверьте, что архив опубликован на GitHub Pages целиком',
+    upd_fail_json: 'version.json пришёл, но это не JSON — вместо файла хостинг отдал страницу ошибки',
+    upd_fail_host: 'Интернет работает (сервер отвечает за {ms}), но сайт приложения не отдаёт version.json — проверьте публикацию на GitHub Pages',
     login: 'Логин', login_hint: 'Латиница/цифры, 3–32 символа. Вход по логину и паролю.',
     invite_code: 'Код приглашения', invite_bad: 'Неверный код приглашения',
     login_taken_or_err: 'Логин занят или ошибка регистрации',
@@ -1268,6 +1274,9 @@ const I18N = {
     search_more: 'Showing first',
     upd_checking: 'Checking version…', upd_latest: 'You are on the latest version',
     upd_found: 'New version found', upd_fail: 'Version check failed — check your connection',
+    upd_fail_http: 'version.json: HTTP {n} — the hosting returns an error. Make sure the archive is fully published on GitHub Pages',
+    upd_fail_json: 'version.json arrived but is not JSON — the hosting served an error page instead of the file',
+    upd_fail_host: 'Internet is fine (server responds in {ms}), but the app site does not serve version.json — check the GitHub Pages deployment',
     login: 'Login', login_hint: 'Latin/digits, 3–32 chars. Sign in with login & password.',
     invite_code: 'Invite code', invite_bad: 'Invalid invite code',
     login_taken_or_err: 'Login is taken or sign-up failed',
@@ -5130,7 +5139,22 @@ async function checkVerClick(){
   const okNet = await checkForUpdate('клик по названию', true);
   if (state.updAvail){ toast('⬆ ' + t('upd_found') + ': v' + state.updAvail, 'inf'); await applyUpdateNow(); return; }
   else if (okNet) toast('✓ ' + t('upd_latest') + ' · v' + APP_VERSION);
-  else toast('⚠ ' + t('upd_fail'), 'err');
+  else {
+    /* v1.08.43: называем настоящую причину. Приложение умеет жить целиком
+       из кэша SW — сайт может лежать при живой сети, и прежний текст про
+       интернет только путал. */
+    let msg = t('upd_fail');
+    if (updFailWhy && updFailWhy.startsWith('http:'))
+      msg = t('upd_fail_http').replace('{n}', updFailWhy.slice(5));
+    else if (updFailWhy === 'json') msg = t('upd_fail_json');
+    else {
+      try{ await netPing(); }catch(_e){}
+      if (netState() === 'on')
+        msg = t('upd_fail_host').replace('{ms}',
+          NET.ping != null ? NET.ping + ' ' + t('net_ms') : 'ok');
+    }
+    toast('⚠ ' + msg, 'err');
+  }
 }
 
 /* =====================================================================
@@ -8045,13 +8069,29 @@ function maybeApplyPendingUpdate(){
    старт приложения · каждое переключение вкладки · открытие настроек · таймер раз в 10 минут.
    Во время заполнения инвойса/модалок/диктовки проверки молчат, обновление откладывается. */
 let updLastCheck = 0;
+let updFailWhy = null;   // v1.08.43: причина последнего провала проверки версии
 async function checkForUpdate(reason, force){
   if (!force && Date.now() - updLastCheck < 15000) return;      // защита от спама при быстрых кликах
   if (!force && editingBusy()) return;                          // не мешаем заполнению документов
   updLastCheck = Date.now();
   try{
     const r = await fetch('./version.json?ts=' + Date.now(), { cache: 'no-store' });
-    const v = await r.json();
+    /* v1.08.43: не валим всё в один «проверьте интернет» — запоминаем,
+       ЧТО именно случилось: сеть, HTTP-ошибка хостинга или не-JSON тело
+       (страница ошибки вместо файла). Показывает причину checkVerClick. */
+    if (!r.ok){
+      updFailWhy = 'http:' + r.status;
+      dlog('update: version.json HTTP ' + r.status + ' (' + reason + ')');
+      return false;
+    }
+    let v;
+    try{ v = await r.json(); }
+    catch(_e){
+      updFailWhy = 'json';
+      dlog('update: version.json не разбирается как JSON (' + reason + ')');
+      return false;
+    }
+    updFailWhy = null;
     state.lastUpdCheck = new Date().toTimeString().slice(0,5);
     if (v.version && v.version !== APP_VERSION){
       state.updAvail = v.version;
@@ -8068,7 +8108,7 @@ async function checkForUpdate(reason, force){
       dlog('update: версия актуальна · причина: ' + reason);
     }
     return true;
-  }catch(e){ dlog('update: проверка не удалась (' + reason + '):', e); return false; }
+  }catch(e){ updFailWhy = 'net'; dlog('update: проверка не удалась (' + reason + '):', e); return false; }
 }
 /* v1.07.50: активное применение обновления по клику пользователя.
    1) reg.update() (sw.js — с сети, см. updateViaCache) и ожидание установки
@@ -8722,8 +8762,28 @@ function initBackGuard(){
   });
 }
 
+/* v1.08.44 · ПЕРЕЕЗД НА СВОЙ ДОМЕН. После привязки techlog.pro GitHub
+   отвечает 301 со старого github.io-адреса, но у уже установленной PWA
+   fetch() после такого редиректа становится кросс-доменным и падает без
+   CORS: проверка версии и установка нового service worker со старого
+   адреса мертвы навсегда. Поэтому со старого хоста уводим сами: онлайн —
+   мгновенный переход на тот же путь без префикса /TechLog (сессия и
+   настройки устройства привязаны к домену — один раз попросит войти);
+   офлайн — работаем из кэша как есть, переезд случится при первом онлайне. */
+function canonUrl(loc){
+  if (!CANON_HOST) return null;
+  const h = String((loc && loc.hostname) || '');
+  if (!h || h === CANON_HOST) return null;
+  if (h === '127.0.0.1' || h === 'localhost' || h.endsWith('.local')) return null;
+  if (!/\.github\.io$/.test(h)) return null;          // чужие хосты не трогаем
+  const path = String((loc && loc.pathname) || '/').replace(/^\/TechLog(?=\/|$)/, '') || '/';
+  return 'https://' + CANON_HOST + path + ((loc && loc.search) || '') + ((loc && loc.hash) || '');
+}
+
 (async function start(){
   try {
+    const canon = (typeof navigator === 'undefined' || navigator.onLine) ? canonUrl(location) : null;
+    if (canon){ location.replace(canon); return; }   // v1.08.44: старый адрес → домен
     applyPopPos();                 // v1.07.83: место всплывашек — до первого тоста
     setTimeout(() => { try{ pickRestore(); }catch(e){ dlog('⛔ pickRestore:', e); } }, 900);
     setTimeout(() => { try{ metricsBoot(); }catch(e){} }, 1500);   // v1.08.09

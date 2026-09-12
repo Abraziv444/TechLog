@@ -29,6 +29,7 @@ const expose = `;window.__T = {
   translit, pdfLatinize, enName,
   renderNoFmt, docNo, pickNo, docNoVals, DOC_FMT_DEF, FILE_FMT_DEF, DOC_TOKENS, FILE_TOKENS,
   gdNamesFrom, gdCfg, mediaSettingsCardHtml, gdRootsRowsHtml,
+  checkForUpdate, getUpdFailWhy: () => updFailWhy, canonUrl, CANON_HOST,
   popPos, applyPopPos, emptyFormData, mqLogPaint, mqLog, state, trIntervalMs,
   needsRepair, repWorks, repMats, repGrand, repCleanItems, repHistAdd, repNew,
   repMoneyHidden, repCanCreate, wtById, seedDemoData,
@@ -1186,7 +1187,7 @@ console.log('\n— офлайн-запись в режиме Supabase (v1.08.38)
     run().catch(e => t('SB-сценарий выполнился без исключений', false, e && e.stack || e)).then(finish);
   } else finish();
 }
-function finish(){
+async function finish(){
   console.log('\n— каталоги Диска видны в обоих режимах карточки (v1.08.42) —');
 {
   const d = T.seedDemoData();
@@ -1208,6 +1209,51 @@ function finish(){
   t('редактирование: это точно форма ключей', /id="gd-sec"/.test(ed));
   t('блок каталогов один и тот же (без дублей id в разметке)',
     (ro.match(/id="gd-photo"/g) || []).length === 1 && (ed.match(/id="gd-photo"/g) || []).length === 1);
+}
+
+console.log('\n— причины провала проверки версии (v1.08.43) —');
+{
+  const w = dom.window, origFetch = w.fetch;
+  const run = async (fetchImpl) => {
+    w.fetch = fetchImpl;
+    const ok = await T.checkForUpdate('тест', true);
+    return { ok, why: T.getUpdFailWhy() };
+  };
+  let r = await run(async () => ({ ok: false, status: 404 }));
+  t('HTTP 404 → провал с причиной http:404', r.ok === false && r.why === 'http:404', JSON.stringify(r));
+  r = await run(async () => ({ ok: true, status: 200, json: async () => { throw new SyntaxError('bad'); } }));
+  t('тело не-JSON → провал с причиной json', r.ok === false && r.why === 'json', JSON.stringify(r));
+  r = await run(async () => { throw new TypeError('Failed to fetch'); });
+  t('сеть упала → провал с причиной net', r.ok === false && r.why === 'net', JSON.stringify(r));
+  r = await run(async () => ({ ok: true, status: 200, json: async () => ({ version: T.APP_VERSION }) }));
+  t('успех: версия совпала, причина сброшена', r.ok === true && r.why === null, JSON.stringify(r));
+  w.fetch = origFetch;
+}
+
+console.log('\n— переезд на домен (v1.08.44) —');
+{
+  const U = T.canonUrl;
+  t('CANON_HOST задан', T.CANON_HOST === 'techlog.pro', T.CANON_HOST);
+  t('github.io/TechLog/ → корень домена',
+    U({ hostname: 'abraziv444.github.io', pathname: '/TechLog/', search: '', hash: '' })
+      === 'https://techlog.pro/');
+  t('путь, запрос и якорь сохраняются',
+    U({ hostname: 'abraziv444.github.io', pathname: '/TechLog/index.html', search: '?x=1', hash: '#h' })
+      === 'https://techlog.pro/index.html?x=1#h');
+  t('на самом домене не дёргаемся',
+    U({ hostname: 'techlog.pro', pathname: '/', search: '', hash: '' }) === null);
+  t('127.0.0.1 и localhost не трогаем',
+    U({ hostname: '127.0.0.1', pathname: '/index.html' }) === null
+    && U({ hostname: 'localhost', pathname: '/' }) === null);
+  t('чужой хост не трогаем',
+    U({ hostname: 'example.com', pathname: '/TechLog/' }) === null);
+  const fs2 = require('fs');
+  const cn = fs2.readFileSync(ROOT + '/CNAME', 'utf8').trim();
+  t('CNAME в корне архива и содержит домен', cn === 'techlog.pro', cn);
+  t('.nojekyll на месте', fs2.existsSync(ROOT + '/.nojekyll'));
+  const man = JSON.parse(fs2.readFileSync(ROOT + '/manifest.webmanifest', 'utf8'));
+  t('манифест относительный: работает и на домене, и на github.io',
+    man.id === './' && man.scope === './' && String(man.start_url).startsWith('./'));
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
