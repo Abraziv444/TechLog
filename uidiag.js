@@ -1272,7 +1272,7 @@
      чужом айфоне человек жмёт один раз и присылает готовый .txt.
      ------------------------------------------------------------------ */
   var SCREENS = ['home', 'board', 'proposals', 'stock', 'map', 'reports', 'stats', 'dirs',
-                 'archive', 'journal', 'settings'];   // v1.07.88: архив-корзина
+                 'archive', 'journal', 'acc', 'settings'];   // v1.07.88: архив-корзина; v1.08.39: бухгалтерия
   var ALL = null;
 
   function available() {

@@ -49,11 +49,17 @@
   }
   function fontApply(pct) {
     try {
-      html.style.fontSize = (16 * pct / 100).toFixed(2) + 'px';
+      /* v1.08.35: «компактно» на ПК меняет БАЗУ масштаба 16 → 14px, личный
+         процент пользователя сохраняется и умножается на неё. Inline-стиль
+         на <html> перебивает любой CSS, поэтому база живёт здесь. */
+      var base = html.classList.contains('tl-compact') ? 14 : 16;
+      html.style.fontSize = (base * pct / 100).toFixed(2) + 'px';
       html.setAttribute('data-fs', String(pct));
       html.classList.toggle('tl-fs-big', pct >= 122);
     } catch (e) {}
   }
+  /* desktop.js шлёт это событие после переключения плотности */
+  try { window.addEventListener('tl-density', function () { fontApply(fontPct()); }); } catch (e) {}
   function fontSet(pct) {
     var v = Number(pct) || 100;
     /* приводим к ближайшему шагу — чтобы «＋/−» и прямая установка совпадали */

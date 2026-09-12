@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.33';
-const DB_SQL_FILE = 'full-install-1_08_33.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
+const APP_VERSION = '1.08.40';
+const DB_SQL_FILE = 'full-install-1_08_39.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
 /* v1.07.31: возврат с OAuth-страницы Google (Подключить Google в настройках) */
@@ -129,6 +129,7 @@ const I18N = {
     today: 'Сегодня', pickups_today: 'Мои пикапы', jobs: 'Работы', pickup: 'Пикап',
     add_task: 'Добавить задание', no_items: 'На этот день пусто', tap_add: 'Нажмите «Добавить задание»',
     date: 'Дата', counterparty: 'Контрагент', complex: 'Апарт-комплекс', unit: 'Юнит №',
+    unit_kb_hint: 'Переключить клавиатуру: цифры или буквы',
     work_type: 'Вид работы', create: 'Создать', cancel: 'Отмена', save: 'Сохранить',
     delete: 'Удалить', edit: 'Изменить', close: 'Закрыть', back: 'Назад', add: 'Добавить',
     tab_home: 'Главная', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Настройки', tab_faq: 'FAQ', tab_stats: 'Статистика',
@@ -173,19 +174,30 @@ const I18N = {
     org_short: 'Короткое имя (APC)', org_assoc: 'Ассоциация (шапка)',
     logout: 'Выйти', version: 'Версия приложения', updated_to: 'Приложение обновлено до версии',
     update_after_form: 'Есть обновление — применю после закрытия формы',
-    upd_check: 'Проверить обновления', upd_latest: 'Версия актуальна',
-    upd_found: 'Доступно обновление', upd_last: 'проверено',
+    upd_check: 'Проверить обновления', upd_last: 'проверено',
     login_title: 'Вход в TechLog', demo_note: 'Демо-режим: Supabase не настроен (config.js). Данные хранятся локально.',
     email: 'Email', password: 'Пароль', sign_in: 'Войти', sign_up: 'Регистрация',
     display_name: 'Имя (для документов)', have_acc: 'Уже есть аккаунт? Войти', no_acc: 'Нет аккаунта? Регистрация',
     role_admin: 'Админ', role_manager: 'Менеджер', role_tech: 'Сотрудник',
     saved: 'Сохранено', deleted: 'Удалено', created: 'Создано',
     confirm_del: 'Удалить безвозвратно?',
-    days: 'дн.', qty: 'Кол-во',
+    days: 'дн.',
     tech: 'Техник', no_access: 'Нет доступа', stats_jobs: 'работ', stats_pk: 'пикапов',
     stats_stops: 'адресов забрать', stats_pk_eq: 'единиц оборудования',
     stats_due: 'на вывоз', stats_over: 'просрочено', day_empty: 'на этот день нет',
     sync_err: 'Ошибка синхронизации', offline_note: 'Оффлайн: показаны сохранённые данные',
+    /* ---- v1.08.38: офлайн-режим и спойлеры инвойса ---- */
+    net_on: 'онлайн', net_off: 'офлайн', net_srv: 'нет сервера', net_ms: 'мс', net_check: 'проверяю связь…',
+    net_pill_t: 'Связь с сервером и пинг', net_check_btn: 'Проверить связь',
+    net_off_hint: 'Нет связи — эта функция станет доступна, когда появится сеть',
+    net_saved_off: 'Сохранено на устройстве — отправится, когда появится связь',
+    net_went_off: 'Связь пропала: записи копятся на устройстве, серверные функции временно недоступны',
+    net_went_on: 'Связь восстановлена',
+    net_login_off: 'Нет связи — вход возможен только при подключении к интернету',
+    net_queue: 'в очереди', net_q_rows: 'зап.', net_q_media: 'файл.',
+    net_jr_local: 'офлайн — показаны записи только с этого устройства',
+    inv_sec_open_all: 'Развернуть все', inv_sec_fold_empty: 'Свернуть пустые',
+    inv_sec_folded: 'свёрнуто пустых: {N}', inv_sec_hint: 'пустые разделы свёрнуты — нажмите на заголовок',
     not_selected: 'Не выбрано', aux_take_hint: 'нажмите то, что нужно взять',
     back_exit_hint: 'Чтобы выйти из приложения, нажмите «назад» ещё раз',
     demo_sb_only: 'В демо недоступно — работает только с Supabase',
@@ -225,6 +237,7 @@ const I18N = {
     srch_btn: 'Поиск', srch_ph: 'Юнит, № документа, комплекс…',
     srch_empty: 'Ничего не найдено', srch_hint: 'Ищет по работам, пикапам, пропозалам, ремонтам и комплексам',
     srch_jobs: 'Работы', srch_pk: 'Пикапы', srch_props: 'Пропозалы', srch_reps: 'Ремонты', srch_cx: 'Комплексы',
+    srch_f_all: 'Всё', srch_f_unit: 'Юнит',
     srch_locked_tip: 'Чужие документы показываются строкой «дата · номер · сотрудник» — открыть их может менеджер или админ.',
     opt_btn: 'Оптимизировать', opt_title: 'Оптимизация маршрута',
     opt_now: 'Сейчас', opt_best: 'Оптимально', opt_save: 'экономия',
@@ -403,6 +416,52 @@ const I18N = {
     bn_dot_go: 'Сотрудник едет сюда', bn_dot_site: 'Сотрудник на месте',
     bn_trips: 'поездок', bn_nav_to_car: 'Маршрут к машине',
     bn_card: 'GPS-трекинг Bouncie',
+    /* v1.08.37: режим телевизора */
+    tv_btn: 'Режим телевизора',
+    tv_wait_t: 'Код авторизации',
+    tv_wait_hint: 'В приложении: Настройки → «ТВ-экраны» → сверьте код и нажмите «Авторизовать ТВ».',
+    tv_wait_wait: 'Ожидание подтверждения…',
+    tv_wait_nocode: 'Сессия ждёт подтверждения. Код показан при первом запросе; если он утерян — получите новый.',
+    tv_newcode: 'Получить новый код', tv_cancel: 'Отмена',
+    tv_revoked: 'Доступ отозван администратором',
+    tv_head_sub: 'режим телевизора', tv_today: 'сегодня',
+    tv_fs: 'На весь экран', tv_exit: 'Выход из полноэкранного режима',
+    tv_workers: 'Сотрудники', tv_w_sub: 'работы · пробег',
+    tv_compact: 'сжатый вид', tv_full: 'подробно', tv_of: 'из',
+    tv_done_day: 'сегодня', tv_plan: 'план',
+    tv_go: 'едет', tv_onsite: 'на объекте', tv_idle: 'свободен', tv_park: 'стоит',
+    tv_pickup_w: 'пикап', tv_tot_mi: 'Итого пробег', tv_upd: 'обновлено',
+    tv_legend_job: 'работа', tv_legend_pk: 'пикап', tv_legend_done: 'выполнено',
+    tv_legend_car: 'машина',
+    tv_ch_day: 'Работы за день', tv_ch_week: 'Работы за неделю', tv_ch_mi: 'Мили за день',
+    tv_jobs_l: 'работ', tv_stops_l: 'адресов забрать', tv_eq_l: 'единиц оборудования',
+    tv_over_l: 'просрочено', tv_more: 'ещё',
+    tvs_card: 'ТВ-экраны',
+    tvs_none: 'Подключённых телевизоров нет. На телевизоре откройте сайт и нажмите «Режим телевизора» — здесь появится код.',
+    tvs_pending: 'ожидает', tvs_ok: 'подключён', tvs_rev: 'отозван',
+    tvs_online: 'онлайн', tvs_seen: 'был в сети', tvs_created: 'создан',
+    tvs_approve: 'Авторизовать ТВ', tvs_deny: 'Отклонить', tvs_revoke: 'Отозвать',
+    tvs_refresh: 'Обновить', tvs_hint: 'Сверьте код на экране телевизора с кодом в строке — и авторизуйте.',
+    tvc_card: 'Режим телевизора',
+    tvc_show: 'Что показывать',
+    tvc_map: 'Карта дня',
+    tvc_cjobs: 'Карточка «сколько всего работ»',
+    tvc_cpk: 'Карточка «пикапы и оборудование»',
+    tvc_workers: 'Сотрудники и их работы',
+    tvc_chday: 'График: работы за день',
+    tvc_chweek: 'График: работы за неделю',
+    tvc_chmi: 'График: мили за день',
+    tvc_wmode: 'Вид списка', tvc_auto: 'Авто', tvc_full2: 'Подробно', tvc_compact2: 'Сжато',
+    tvc_total: 'Показывать всего', tvc_screen: 'Подробно единовременно',
+    tvc_rule_on: 'включён сжатый вид (плитки в 2 колонки)',
+    tvc_rule_off: 'показывается подробный список',
+    tvc_rule_manual: 'Режим выбран вручную — правило «не помещаются → сжатый вид» работает в «Авто».',
+    tvc_now: 'Сейчас',
+    tvc_layout: 'Конструктор раскладки',
+    tvc_layout_hint: 'Стрелки ▲▼ — порядок, кнопка ⇄ — перенос между зонами; блоки можно и перетаскивать.',
+    tvc_zone_rail: 'Правая колонка', tvc_zone_bottom: 'Под картой',
+    tvc_cards_w: 'Карточки дня', tvc_reset: 'Сбросить',
+    tvc_note: 'Раскладка доедет до телевизоров при следующем обновлении экрана (до 30 секунд).',
     bn_intro: 'Ключи создаются на портале Bouncie для разработчиков (bouncie.dev). Введите Client ID и Client Secret, нажмите «Подключить Bouncie» и разрешите доступ на странице самого Bouncie — токены сервер получит и сохранит сам. Секреты лежат только в базе (app_secrets, закрыт для клиентов) и в приложение не попадают.',
     bn_cid: 'Client ID', bn_secret: 'Client Secret',
     bn_save: 'Сохранить ключи', bn_connect: 'Подключить Bouncie', bn_test: 'Проверка связи',
@@ -464,10 +523,18 @@ const I18N = {
     no_reset: 'Вернуть по умолчанию',
     no_hint: 'Соберите номер из кусочков. Не нужны инициалы сотрудника — уберите {TECH}, и их не будет. Пустой кусочек выпадает вместе с лишним разделителем. Разделитель — любой символ между кусочками.',
     no_file_hint: 'Так называются фото, видео и вложения на Google Диске. {NAME} — вид работы у съёмки и исходное имя у вложения. Применяет сервер, поэтому после правки передеплойте media-begin.',
-    no_t_TYPE: 'тип (WORK/PROP/PICK/LONG)', no_t_DATE: 'дата', no_t_YEAR: 'год',
+    no_t_TYPE: 'тип (WORK/PROP/PICK/LONG/REP)', no_t_DATE: 'дата', no_t_YEAR: 'год',
     no_t_CP: 'контрагент', no_t_CX: 'комплекс', no_t_UNIT: 'юнит',
     no_t_TECH: 'инициалы сотрудника', no_t_WT: 'вид работы', no_t_SEQ: 'порядковый номер',
     no_t_NAME: 'название', no_t_KIND: 'вид файла',
+    no_help_t: 'Нумерация — справка',
+    no_help_doc: 'Кусочки номера документа и их значения сейчас',
+    no_help_file: 'Кусочки имени файла и их значения сейчас',
+    no_help_ex: 'Пример',
+    no_help_rule: 'Шаблон правится руками, кусочки вставляются кнопками в место курсора. Пустой кусочек выпадает вместе со своим разделителем: нет вида работы — «-{WT}» просто исчезает из номера. {SEQ} добивается нулями до числа знаков из настройки внизу карточки.',
+    no_help_apply: 'Шаблон номера применяется ко всем документам: работа WORK, пропозал PROP, пикап PICK, продление LONG, ремонт REP. Шаблон имени файла — к фото, видео и вложениям при отправке на Google Диск (применяет сервер: после правки передеплойте media-begin). PDF-инвойс называется «номер документа + INVOICE».',
+    no_help_roots_t: 'Корневые папки на Диске — их три',
+    no_help_roots: 'Задаются в карточке «Google Диск»: <b>фото и видео</b> — внутри контрагент → комплекс → юнит; <b>инвойсы (PDF)</b> — внутри [сотрудник →] месяц; <b>вложения-скрепки</b> — внутри сотрудник → месяц → документ. Папка не указана — используется архивная: архив/Photos, архив/Invoices, архив/Files.',
     doc_no: 'Номер',
     db_more: 'Подробнее',
     gd_cyc: 'Проверить цикл с обрывом',
@@ -503,6 +570,7 @@ const I18N = {
     prop_hide_h: 'Стоит по умолчанию: суммы пропозала видит только администратор, остальные — прочерк. Снять может только администратор.',
     /* v1.07.87: инвойсы по папкам сотрудников */
     gd_ph_folder: 'Папка для фото и видео', gd_fl_folder: 'Папка для вложений',
+    gd_nm_bad: 'папка недоступна', gd_nm_wait: 'имя папки…',
     gd_ph_hint: 'Внутри сами создаются папки: контрагент → комплекс → юнит. Все снимки по юниту лежат вместе. Пусто — «Photos» внутри архива. Имя на Диске:',
     gd_fl_hint: 'Внутри: сотрудник → месяц (2026_09) → номер документа. Пусто — «Files» внутри архива. Имя на Диске:',
     doc_name_lock: 'Имя для документов меняет администратор: по нему названа ваша папка на Google Диске, где лежат инвойсы и вложения.',
@@ -883,6 +951,9 @@ const I18N = {
     diag_card: 'Диагностика', diag_run: 'Запустить все тесты',
     diag_net: 'Интернет', diag_db: 'База данных', diag_auth: 'Сессия входа',
     diag_store: 'Хранилище миниатюр', diag_fn: 'Серверные функции',
+    diag_osm: 'Карта: тайлы OSM', diag_geo: 'Карта: геокодер (Nominatim)',
+    diag_ext_err: 'нет ответа / сеть', diag_bn_fn: 'Bouncie: функция',
+    diag_bn_api: 'Bouncie: связь с API', diag_bn_off: 'не подключён', diag_veh: 'машин',
     diag_skip: 'пропущено (демо-режим)', diag_fn_admin: 'доступно, детали — админу',
     diag_no_sess: 'нет сессии', diag_sql31: `выполните supabase/${DB_SQL_FILE}`,
     diag_deploy: 'функции не задеплоены',
@@ -922,6 +993,56 @@ const I18N = {
     st_purchases: 'Покупок на', chart_earn: 'Заработок по дням',
     sync_partial: 'Синхронизация частичная — ошибки в таблицах', sync_dur: 'за',
     write_err: 'Ошибка записи', tables_failed: 'таблиц с ошибкой',
+    /* v1.08.39: бухгалтерия */
+    role_accountant: 'Бухгалтер', tab_acc: 'Бухгалтерия',
+    acc_reg: 'Реестр', acc_rates: 'Проценты', acc_staff: 'Сотрудники',
+    acc_cat_clean: 'Клининг', acc_cat_rep: 'Ремонт', acc_cat_rent: 'Аренда', acc_cat_mat: 'Материалы',
+    acc_payout: 'К выплате', acc_billed: 'Выставлено', acc_total: 'Итого', acc_docs: 'Документов',
+    acc_where: 'Комплекс · юнит · исполнители', acc_crew: 'Исполнители',
+    acc_ast_none: 'не проверен', acc_ast_checked: 'проверен', acc_ast_issue: 'вопрос', acc_ast_paid: 'оплачен',
+    acc_f_status: 'Статус документа', acc_st_all: 'все, включая черновики', acc_st_done: 'выполненные и апрув', acc_st_appr: 'только апрув',
+    acc_f_ast: 'Учёт', acc_f_notes: 'только с заметками', acc_f_arch: 'показать архив', acc_f_tech: 'Исполнитель',
+    acc_f_kind: 'Тип', acc_kind_job: 'инвойсы', acc_kind_rep: 'ремонты', acc_arch_chip: 'архив',
+    acc_search: 'Поиск: юнит, №, комплекс, текст заметки', acc_period_month: 'этот месяц', acc_period_prev: 'прошлый месяц',
+    acc_note_tech: 'Заметка техника', acc_note_notr: 'английского перевода нет — в PDF заметка будет пустой',
+    acc_no_note: 'заметок нет', acc_note_acc: 'Заметка бухгалтера', acc_note_ph: 'например: оплачено чеком 12.09, уточнить аренду…',
+    acc_note_save: 'Сохранить заметку', acc_marked: 'Отмечено', acc_nothing: 'Нечего отмечать',
+    acc_mark_all_checked: 'Все на экране — проверены', acc_mark_all_paid: 'Все на экране — оплачены',
+    acc_mark_q: 'Отметить {N} документов как «{S}»?',
+    acc_note_cnt: 'с заметками', acc_open: 'Открыть', acc_detail: 'Разбивка по секциям',
+    acc_csv: 'CSV для Excel', acc_pdf_batch: 'PDF-пакет инвойсов', acc_none: 'За период документов нет',
+    acc_no_pct: 'проценты не заданы — заполните на вкладке «Проценты»',
+    acc_rates_title: 'Проценты по видам работ',
+    acc_rates_hint: 'Процент применяется к сумме каждой категории документа. Результат — колонка «{L}» в реестре, итог за период и сводка по сотрудникам. Аренда: общий процент либо свой на каждый тип техники (пусто — берётся общий). Одна форма — одна кнопка сохранения.',
+    acc_rent_all: 'Аренда — общий процент', acc_rent_type_hint: 'пусто = общий процент аренды',
+    acc_label_lbl: 'Название колонки результата', acc_split_lbl: 'Сводка по сотрудникам',
+    acc_split_equal: 'сумма делится поровну на бригаду', acc_split_main: 'вся сумма — основному исполнителю',
+    acc_save: 'Сохранить проценты', acc_saved: 'Проценты сохранены', acc_bad_pct: 'Процент должен быть от 0 до 100',
+    acc_changed: 'изменено', acc_never: 'проценты ещё не задавались', acc_changed_chip: 'изменено',
+    acc_map_title: 'Секции инвойса → категория',
+    acc_map_hint: 'Так суммы инвойса раскладываются по категориям. Рекомендованная карта: клининг — Steam, Removals, Dye, Fog/GOC, Treatments, Wet Vac, Air Duct, Other; ремонт — Repairs, Pad Installation, доп. работы; аренда — Equipment Rental (по каждому типу техники отдельно).',
+    acc_map_fixed: 'Фиксировано: покупка товара в доп. работах — всегда «Материалы»; работа с флагом «ремонт» в справочнике — «Ремонт»; документ REP: работы — «Ремонт», материалы — «Материалы»; налог и доставка REP в базу процента не входят.',
+    acc_map_reset: 'Сбросить к рекомендованному', acc_no_lines: 'в документе нет заполненных секций',
+    acc_tax_freight: 'налог и доставка (вне базы процента)',
+    acc_approved_note: 'сумма документа отличается от расчёта по текущему прайсу (апрув или изменение цен) — категории пересчитаны пропорционально',
+    acc_example: 'Пример на последнем документе', acc_by_staff_hint: 'Сумма документа: {S}. Правило меняется на вкладке «Проценты».',
+    acc_inv_line: 'Бухгалтерия', act_acc_mark: 'отметка бухгалтера', act_acc_rates: 'проценты бухгалтерии', act_acc_map: 'категории бухгалтерии',
+    /* v1.08.40: действия журнала, у которых не было подписи (показывался код) */
+    act_push_sub: 'подписка на пуши', act_mfa_on: '2FA включена', act_mfa_off: '2FA выключена',
+    act_backup_auto: 'автобэкап SQL', act_cx_add_map: 'комплекс добавлен с карты', act_job_clone: 'создана копия работы',
+    act_day_move: 'перенос дня', act_tv_decide: 'решение по ТВ-сессии', act_veh_service: 'ТО автомобиля',
+    act_route_opt: 'оптимизация маршрута', act_staff_flag: 'доступы сотрудника', act_sess_kill: 'сессии завершены',
+    act_stock_return: 'возврат на склад', act_stock_return_all: 'возврат всего на склад', act_job_assign: 'работа назначена',
+    /* v1.08.40: строки, которые раньше были зашиты по-русски */
+    vm_phone: 'Телефон', vm_pc: 'ПК', login_sb_hint: 'Supabase: см. config.js и README',
+    min_short: 'мин', chain_same_day: 'в тот же день',
+    stat_7d: '7д', stat_30d: '30д', stat_90d: '90д',
+    price_size_note: 'если включён размер', gd_own_folder: '(своя папка)', gd_arch_inv: 'архив / Invoices',
+    bn_no_resp: 'нет ответа функции',
+    err_sbjs: 'supabase-js не загрузился (CDN). Проверьте интернет и обновите страницу.',
+    err_sync_all: 'sync: все таблицы недоступны — ', m_no_worker: 'нет воркера', m_timeout: 'таймаут',
+    bk_log_export: '# TechLog — выгрузка бэкапа —', bk_log_import: '# TechLog — загрузка из бэкапа —',
+    bk_no_table: 'таблицы нет — пропущена',
     week_days: ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'],
     months: ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'],
   },
@@ -930,6 +1051,7 @@ const I18N = {
     today: 'Today', pickups_today: 'My pickups', jobs: 'Jobs', pickup: 'Pickup',
     add_task: 'Add task', no_items: 'Nothing for this day', tap_add: 'Tap "Add task"',
     date: 'Date', counterparty: 'Counterparty', complex: 'Apartment complex', unit: 'Unit #',
+    unit_kb_hint: 'Switch keyboard: digits or letters',
     work_type: 'Work type', create: 'Create', cancel: 'Cancel', save: 'Save',
     delete: 'Delete', edit: 'Edit', close: 'Close', back: 'Back', add: 'Add',
     tab_home: 'Home', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'Settings', tab_faq: 'FAQ', tab_stats: 'Stats',
@@ -974,20 +1096,32 @@ const I18N = {
     org_short: 'Short name (APC)', org_assoc: 'Association (header)',
     logout: 'Log out', version: 'App version', updated_to: 'App updated to version',
     update_after_form: 'Update ready — will apply after you close the form',
-    upd_check: 'Check for updates', upd_latest: 'You are up to date',
+    upd_check: 'Check for updates',
     upd_applying: 'Updating the app…', upd_hard: 'Clearing cache and reloading…',
-    upd_found: 'Update available', upd_last: 'checked',
+    upd_last: 'checked',
     login_title: 'Sign in to TechLog', demo_note: 'Demo mode: Supabase is not configured (config.js). Data is stored locally.',
     email: 'Email', password: 'Password', sign_in: 'Sign in', sign_up: 'Sign up',
     display_name: 'Name (for documents)', have_acc: 'Have an account? Sign in', no_acc: 'No account? Sign up',
     role_admin: 'Admin', role_manager: 'Manager', role_tech: 'Technician',
     saved: 'Saved', deleted: 'Deleted', created: 'Created',
     confirm_del: 'Delete permanently?',
-    days: 'd.', qty: 'Qty',
+    days: 'd.',
     tech: 'Technician', no_access: 'No access', stats_jobs: 'jobs', stats_pk: 'pickups',
     stats_stops: 'addresses to visit', stats_pk_eq: 'equipment units',
     stats_due: 'to pick up', stats_over: 'overdue', day_empty: 'none for this day',
     sync_err: 'Sync error', offline_note: 'Offline: showing cached data',
+    /* ---- v1.08.38: offline mode & invoice spoilers ---- */
+    net_on: 'online', net_off: 'offline', net_srv: 'no server', net_ms: 'ms', net_check: 'checking connection…',
+    net_pill_t: 'Server connection and ping', net_check_btn: 'Check connection',
+    net_off_hint: 'No connection — this function becomes available when the network is back',
+    net_saved_off: 'Saved on this device — will be sent when the connection is back',
+    net_went_off: 'Connection lost: writes are queued on the device, server functions are paused',
+    net_went_on: 'Connection restored',
+    net_login_off: 'No connection — signing in needs the internet',
+    net_queue: 'queued', net_q_rows: 'rows', net_q_media: 'files',
+    net_jr_local: 'offline — showing entries from this device only',
+    inv_sec_open_all: 'Expand all', inv_sec_fold_empty: 'Collapse empty',
+    inv_sec_folded: 'empty sections folded: {N}', inv_sec_hint: 'empty sections are folded — tap a header',
     not_selected: 'Not selected', aux_take_hint: 'tap what you need to take',
     back_exit_hint: 'Press back again to exit the app',
     select: '— select —', install_hint: 'Browser menu → "Install app" / "Add to Home screen"',
@@ -1029,6 +1163,7 @@ const I18N = {
     srch_btn: 'Search', srch_ph: 'Unit, document #, complex…',
     srch_empty: 'Nothing found', srch_hint: 'Searches jobs, pickups, proposals, repairs and complexes',
     srch_jobs: 'Jobs', srch_pk: 'Pickups', srch_props: 'Proposals', srch_reps: 'Repairs', srch_cx: 'Complexes',
+    srch_f_all: 'All', srch_f_unit: 'Unit',
     srch_locked_tip: 'Other people’s documents show as “date · number · person”; managers and admins can open them.',
     opt_btn: 'Optimize', opt_title: 'Route optimization',
     opt_now: 'Current', opt_best: 'Optimized', opt_save: 'saves',
@@ -1204,6 +1339,52 @@ const I18N = {
     bn_dot_go: 'The employee is heading here', bn_dot_site: 'The employee is on site',
     bn_trips: 'trips', bn_nav_to_car: 'Route to the car',
     bn_card: 'Bouncie GPS tracking',
+    /* v1.08.37: TV mode */
+    tv_btn: 'TV mode',
+    tv_wait_t: 'Authorization code',
+    tv_wait_hint: 'In the app: Settings → “TV screens” → check the code and tap “Authorize TV”.',
+    tv_wait_wait: 'Waiting for approval…',
+    tv_wait_nocode: 'The session is waiting for approval. The code was shown on first request; if lost — get a new one.',
+    tv_newcode: 'Get a new code', tv_cancel: 'Cancel',
+    tv_revoked: 'Access revoked by the administrator',
+    tv_head_sub: 'TV mode', tv_today: 'today',
+    tv_fs: 'Fullscreen', tv_exit: 'Exit fullscreen',
+    tv_workers: 'Staff', tv_w_sub: 'jobs · mileage',
+    tv_compact: 'compact', tv_full: 'detailed', tv_of: 'of',
+    tv_done_day: 'today', tv_plan: 'plan',
+    tv_go: 'driving', tv_onsite: 'on site', tv_idle: 'free', tv_park: 'parked',
+    tv_pickup_w: 'pickup', tv_tot_mi: 'Total mileage', tv_upd: 'updated',
+    tv_legend_job: 'job', tv_legend_pk: 'pickup', tv_legend_done: 'done',
+    tv_legend_car: 'vehicle',
+    tv_ch_day: 'Jobs today', tv_ch_week: 'Jobs this week', tv_ch_mi: 'Miles today',
+    tv_jobs_l: 'jobs', tv_stops_l: 'pickup stops', tv_eq_l: 'equipment units',
+    tv_over_l: 'overdue', tv_more: 'more',
+    tvs_card: 'TV screens',
+    tvs_none: 'No TVs connected. Open the site on a TV and tap “TV mode” — the code will appear here.',
+    tvs_pending: 'pending', tvs_ok: 'connected', tvs_rev: 'revoked',
+    tvs_online: 'online', tvs_seen: 'last seen', tvs_created: 'created',
+    tvs_approve: 'Authorize TV', tvs_deny: 'Deny', tvs_revoke: 'Revoke',
+    tvs_refresh: 'Refresh', tvs_hint: 'Match the code on the TV screen with the row — then authorize.',
+    tvc_card: 'TV mode',
+    tvc_show: 'What to show',
+    tvc_map: 'Day map',
+    tvc_cjobs: '“Total jobs” card',
+    tvc_cpk: '“Pickups & equipment” card',
+    tvc_workers: 'Staff and their jobs',
+    tvc_chday: 'Chart: jobs per day',
+    tvc_chweek: 'Chart: jobs per week',
+    tvc_chmi: 'Chart: miles per day',
+    tvc_wmode: 'List view', tvc_auto: 'Auto', tvc_full2: 'Detailed', tvc_compact2: 'Compact',
+    tvc_total: 'Show total', tvc_screen: 'Detailed at once',
+    tvc_rule_on: 'compact view is on (tiles in 2 columns)',
+    tvc_rule_off: 'the detailed list is shown',
+    tvc_rule_manual: 'Mode set manually — the “doesn’t fit → compact” rule works in “Auto”.',
+    tvc_now: 'Now',
+    tvc_layout: 'Layout builder',
+    tvc_layout_hint: 'Arrows ▲▼ — order, ⇄ — move between zones; blocks can also be dragged.',
+    tvc_zone_rail: 'Right column', tvc_zone_bottom: 'Below the map',
+    tvc_cards_w: 'Day cards', tvc_reset: 'Reset',
+    tvc_note: 'The layout reaches TVs on the next screen refresh (up to 30 seconds).',
     bn_intro: 'Keys are created on the Bouncie developer portal (bouncie.dev). Enter the Client ID and Client Secret, tap "Connect Bouncie" and grant access on the Bouncie page itself — the server obtains and stores the tokens on its own. Secrets live only in the database (app_secrets, closed to clients) and never reach the app.',
     bn_cid: 'Client ID', bn_secret: 'Client Secret',
     bn_save: 'Save keys', bn_connect: 'Connect Bouncie', bn_test: 'Connection test',
@@ -1260,10 +1441,18 @@ const I18N = {
     no_reset: 'Reset to default',
     no_hint: 'Build the number from pieces. Don\'t want staff initials — remove {TECH} and they are gone. An empty piece drops together with its separator. The separator is any character between pieces.',
     no_file_hint: 'This is how photos, videos and attachments are named on Google Drive. {NAME} is the work type for captures and the original file name for attachments. Applied by the server, so redeploy media-begin after changing it.',
-    no_t_TYPE: 'type (WORK/PROP/PICK/LONG)', no_t_DATE: 'date', no_t_YEAR: 'year',
+    no_t_TYPE: 'type (WORK/PROP/PICK/LONG/REP)', no_t_DATE: 'date', no_t_YEAR: 'year',
     no_t_CP: 'counterparty', no_t_CX: 'complex', no_t_UNIT: 'unit',
     no_t_TECH: 'staff initials', no_t_WT: 'work type', no_t_SEQ: 'sequential number',
     no_t_NAME: 'name', no_t_KIND: 'file kind',
+    no_help_t: 'Numbering — help',
+    no_help_doc: 'Document number pieces and their current values',
+    no_help_file: 'File name pieces and their current values',
+    no_help_ex: 'Example',
+    no_help_rule: 'Edit the template by hand; buttons insert pieces at the cursor. An empty piece drops together with its separator: no work type — "-{WT}" simply disappears from the number. {SEQ} is zero-padded to the digit count set at the bottom of the card.',
+    no_help_apply: 'The number template applies to every document: job WORK, proposal PROP, pickup PICK, extension LONG, repair REP. The file name template applies to photos, videos and attachments sent to Google Drive (server-side: redeploy media-begin after changes). The invoice PDF is named "document number + INVOICE".',
+    no_help_roots_t: 'Drive root folders — there are three',
+    no_help_roots: 'Set in the "Google Drive" card: <b>photos and videos</b> — inside: counterparty → complex → unit; <b>invoices (PDF)</b> — inside: [tech →] month; <b>paperclip attachments</b> — inside: tech → month → document. Folder not set — the archive one is used: archive/Photos, archive/Invoices, archive/Files.',
     doc_no: 'Number',
     db_more: 'Details',
     gd_cyc: 'Test the cycle with a drop',
@@ -1298,6 +1487,7 @@ const I18N = {
     prop_hide: 'Hide proposal prices from everyone',
     prop_hide_h: 'On by default: proposal amounts are visible to the admin only, everyone else sees a dash. Only an admin can switch it off.',
     gd_ph_folder: 'Photo and video folder', gd_fl_folder: 'Attachments folder',
+    gd_nm_bad: 'folder unreachable', gd_nm_wait: 'folder name…',
     gd_ph_hint: 'Inside it creates: counterparty → complex → unit. All shots of a unit stay together. Empty — «Photos» in the archive. Drive name:',
     gd_fl_hint: 'Inside: staff → month (2026_09) → document number. Empty — «Files» in the archive. Drive name:',
     doc_name_lock: 'The document name is changed by an admin: your Google Drive folder with invoices and attachments is named after it.',
@@ -1675,6 +1865,9 @@ const I18N = {
     diag_card: 'Diagnostics', diag_run: 'Run all tests',
     diag_net: 'Internet', diag_db: 'Database', diag_auth: 'Auth session',
     diag_store: 'Thumbs storage', diag_fn: 'Edge functions',
+    diag_osm: 'Map: OSM tiles', diag_geo: 'Map: geocoder (Nominatim)',
+    diag_ext_err: 'no response / network', diag_bn_fn: 'Bouncie: function',
+    diag_bn_api: 'Bouncie: API link', diag_bn_off: 'not connected', diag_veh: 'vehicles',
     diag_skip: 'skipped (demo)', diag_fn_admin: 'reachable, details for admin',
     diag_no_sess: 'no session', diag_sql31: `run supabase/${DB_SQL_FILE}`,
     diag_deploy: 'functions not deployed',
@@ -1714,6 +1907,56 @@ const I18N = {
     st_purchases: 'Purchases', chart_earn: 'Earnings by day',
     sync_partial: 'Partial sync — table errors', sync_dur: 'in',
     write_err: 'Write error', tables_failed: 'tables failed',
+    /* v1.08.39: accounting */
+    role_accountant: 'Accountant', tab_acc: 'Accounting',
+    acc_reg: 'Register', acc_rates: 'Percentages', acc_staff: 'Staff',
+    acc_cat_clean: 'Cleaning', acc_cat_rep: 'Repairs', acc_cat_rent: 'Rental', acc_cat_mat: 'Materials',
+    acc_payout: 'Payout', acc_billed: 'Billed', acc_total: 'Total', acc_docs: 'Documents',
+    acc_where: 'Complex · unit · crew', acc_crew: 'Crew',
+    acc_ast_none: 'unchecked', acc_ast_checked: 'checked', acc_ast_issue: 'question', acc_ast_paid: 'paid',
+    acc_f_status: 'Document status', acc_st_all: 'all, drafts included', acc_st_done: 'done and approved', acc_st_appr: 'approved only',
+    acc_f_ast: 'Accounting', acc_f_notes: 'with notes only', acc_f_arch: 'show archive', acc_f_tech: 'Assignee',
+    acc_f_kind: 'Type', acc_kind_job: 'invoices', acc_kind_rep: 'repairs', acc_arch_chip: 'archive',
+    acc_search: 'Search: unit, No., complex, note text', acc_period_month: 'this month', acc_period_prev: 'last month',
+    acc_note_tech: 'Technician note', acc_note_notr: 'no English translation — the PDF note will be empty',
+    acc_no_note: 'no notes', acc_note_acc: 'Accountant note', acc_note_ph: 'e.g. paid by check 09/12, clarify rental…',
+    acc_note_save: 'Save note', acc_marked: 'Marked', acc_nothing: 'Nothing to mark',
+    acc_mark_all_checked: 'All on screen — checked', acc_mark_all_paid: 'All on screen — paid',
+    acc_mark_q: 'Mark {N} documents as "{S}"?',
+    acc_note_cnt: 'with notes', acc_open: 'Open', acc_detail: 'Breakdown by section',
+    acc_csv: 'CSV for Excel', acc_pdf_batch: 'Invoice PDF batch', acc_none: 'No documents for the period',
+    acc_no_pct: 'percentages not set — fill them in on the "Percentages" tab',
+    acc_rates_title: 'Percentages by work type',
+    acc_rates_hint: 'The percentage applies to each category amount of a document. The result is the "{L}" column in the register, the period total and the staff summary. Rental: one overall percentage or a separate one per equipment type (empty = overall). One form — one save button.',
+    acc_rent_all: 'Rental — overall percentage', acc_rent_type_hint: 'empty = overall rental percentage',
+    acc_label_lbl: 'Result column name', acc_split_lbl: 'Staff summary',
+    acc_split_equal: 'amount split equally across the crew', acc_split_main: 'whole amount to the main assignee',
+    acc_save: 'Save percentages', acc_saved: 'Percentages saved', acc_bad_pct: 'A percentage must be between 0 and 100',
+    acc_changed: 'changed', acc_never: 'percentages not set yet', acc_changed_chip: 'changed',
+    acc_map_title: 'Invoice sections → category',
+    acc_map_hint: 'This is how invoice amounts are split into categories. Recommended map: cleaning — Steam, Removals, Dye, Fog/GOC, Treatments, Wet Vac, Air Duct, Other; repairs — Repairs, Pad Installation, extra works; rental — Equipment Rental (per equipment type).',
+    acc_map_fixed: 'Fixed: a product purchase in extra works is always "Materials"; a work flagged "repair" in the catalog is "Repairs"; a REP document: works — "Repairs", materials — "Materials"; REP tax and freight are outside the percentage base.',
+    acc_map_reset: 'Reset to recommended', acc_no_lines: 'no filled sections in this document',
+    acc_tax_freight: 'tax and freight (outside the percentage base)',
+    acc_approved_note: 'the document amount differs from the current price-list calculation (approval or price change) — categories are rescaled proportionally',
+    acc_example: 'Example on the latest document', acc_by_staff_hint: 'Document amount: {S}. The rule is set on the "Percentages" tab.',
+    acc_inv_line: 'Accounting', act_acc_mark: 'accountant mark', act_acc_rates: 'accounting percentages', act_acc_map: 'accounting categories',
+    /* v1.08.40: journal actions that had no caption (the raw code was shown) */
+    act_push_sub: 'push subscription', act_mfa_on: '2FA enabled', act_mfa_off: '2FA disabled',
+    act_backup_auto: 'SQL auto-backup', act_cx_add_map: 'complex added from the map', act_job_clone: 'job cloned',
+    act_day_move: 'day moved', act_tv_decide: 'TV session decision', act_veh_service: 'vehicle service mark',
+    act_route_opt: 'route optimized', act_staff_flag: 'staff access flags', act_sess_kill: 'sessions terminated',
+    act_stock_return: 'returned to stock', act_stock_return_all: 'everything returned to stock', act_job_assign: 'job assigned',
+    /* v1.08.40: strings that used to be hardcoded in Russian */
+    vm_phone: 'Phone', vm_pc: 'PC', login_sb_hint: 'Supabase: see config.js and README',
+    min_short: 'min', chain_same_day: 'same day',
+    stat_7d: '7d', stat_30d: '30d', stat_90d: '90d',
+    price_size_note: 'when size is enabled', gd_own_folder: '(own folder)', gd_arch_inv: 'archive / Invoices',
+    bn_no_resp: 'no response from the function',
+    err_sbjs: 'supabase-js did not load (CDN). Check the connection and reload the page.',
+    err_sync_all: 'sync: all tables unavailable — ', m_no_worker: 'no worker', m_timeout: 'timeout',
+    bk_log_export: '# TechLog — backup export —', bk_log_import: '# TechLog — restore from backup —',
+    bk_no_table: 'table missing — skipped',
     week_days: ['MO','TU','WE','TH','FR','SA','SU'],
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   }
@@ -1860,7 +2103,8 @@ function numberingCardHtml(){
   const v = docNoVals('job', { ...smp, no: smp.no || 1 });
   const prevFile = renderNoFmt(fileFmt(), { ...v, NAME: v.WT || 'WORK', KIND: 'PHOTO', SEQ: '01' }) + '.jpg';
   return `<div class="card">
-    <div style="font-weight:900;margin-bottom:6px">${ic('receipt')} ${t('no_card')}</div>
+    <div style="font-weight:900;margin-bottom:6px">${ic('receipt')} ${t('no_card')}
+      <button type="button" class="tipq" aria-label="?" title="${t('no_help_t')}" onclick="App.noHelp()">?</button></div>
     <div class="tiny" style="margin-bottom:6px">${t('no_hint')}</div>
 
     <div class="form-row"><span class="lbl">${t('no_doc_lbl')}</span>
@@ -1883,6 +2127,31 @@ function numberingCardHtml(){
     <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.noReset()">${ic('refresh')} ${t('no_reset')}</button>
   </div>`;
 }
+/* v1.08.35: справка конструктора — что за кусочки, живые значения на
+   первом документе базы, пример шаблон→результат, куда применяется и
+   три корневые папки Диска (фото · инвойсы-PDF · вложения). */
+function noHelpHtml(){
+  const smp = noSampleJob();
+  const v = docNoVals('job', { ...smp, no: smp.no || 1 });
+  const fv = { ...v, NAME: v.WT || 'WORK', KIND: 'PHOTO', SEQ: '01' };
+  const rowT = (k, val) => `<div class="rowline"><b class="gd-mark" style="flex:0 0 auto;min-width:60px;white-space:nowrap">{${k}}</b>
+      <div class="grow tiny">${t('no_t_' + k)}</div>
+      <span class="tiny"><b>${esc(String(val ?? '') || '—')}</b></span></div>`;
+  const ex = (fmt, vals, tail) => `<div class="tiny" style="margin:6px 0 10px"><b>${t('no_help_ex')}:</b>
+      <span class="gd-mark">${esc(fmt)}</span> → <b>${esc(renderNoFmt(fmt, vals))}${tail || ''}</b></div>`;
+  return `
+    <div class="tiny" style="margin-bottom:8px">${t('no_help_rule')}</div>
+    <div class="srch-grp">${t('no_help_doc')}</div>
+    ${DOC_TOKENS.map(k => rowT(k, v[k])).join('')}
+    ${ex(docFmt(), v)}
+    <div class="srch-grp">${t('no_help_file')}</div>
+    ${FILE_TOKENS.map(k => rowT(k, fv[k])).join('')}
+    ${ex(fileFmt(), fv, '.jpg')}
+    <div class="tiny" style="margin-bottom:8px">${t('no_help_apply')}</div>
+    <div class="srch-grp">${t('no_help_roots_t')}</div>
+    <div class="tiny">${t('no_help_roots')}</div>`;
+}
+
 /* =====================================================================
    v1.08.05: НАСТРОЙКИ СКЛАДЫВАЮТСЯ.
    За последние выпуски экран оброс карточками: по отчёту с рабочей машины
@@ -2564,6 +2833,7 @@ function seedDemoData(){
     { id: 'demo-admin',   login: 'ivan',   display_name: 'Ivan Petrov',   role: 'admin',   car_no: 3, blocked: false, created_at: '2026-01-12T09:00:00Z' },
     { id: 'demo-manager', login: 'alexey', display_name: 'Alexey Smirnov', role: 'manager', car_no: 2, blocked: false, created_at: '2026-02-03T10:30:00Z', tt_self: true, tt_others: 'all' },
     { id: 'demo-tech',    login: 'sergey', display_name: 'Sergey Volkov', role: 'tech',    car_no: 1, blocked: false, created_at: '2026-03-18T15:45:00Z', bn_access: true, tt_self: true },
+    { id: 'demo-acc',     login: 'elena',  display_name: 'Elena Sokolova', role: 'accountant', car_no: null, blocked: false, created_at: '2026-05-05T09:00:00Z' },   // v1.08.39
   ];
   /* v1.08.32: демо-автопарк — карта, доска и панель пробега живут без сервера */
   const vehicles = [
@@ -2621,6 +2891,7 @@ function seedDemoData(){
   ];
   const data = {
     profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], proposals: [], repairs: [], stock_daily: [], ext_requests: [], media: [], hidden_staff: [], code_requests: [], complex_code_history: [],
+    acc_settings: [],   // v1.08.39
     jobs: [job1, job2], placements, vehicles, ...cat,
     /* v1.08.33: журнал времени — вкладка «Отчёты → Время» живёт в демо */
     site_visits: (() => {
@@ -2721,13 +2992,16 @@ function pendingSave(q){
   try{ localStorage.setItem(LS_PENDING, JSON.stringify(q)); }catch(e){ dlog('⛔ pendingSave:', e); }
 }
 function pendingKey(op, table, id){ return op + ':' + table + ':' + id; }
-function pendingAdd(op, table, payload){          // payload: строка (upsert) или id (delete)
-  const id = op === 'upsert' ? payload.id : payload;
+/* payload: строка (upsert/insert) или id (delete). keyId — ключ очереди для
+   insert-строк без серверного id (журнал: v1.08.38). */
+function pendingAdd(op, table, payload, keyId){
+  const id = op === 'delete' ? payload : (keyId != null ? keyId : payload.id);
   const q = pendingLoad();
   const key = pendingKey(op, table, id);
-  const item = { key, op, table, payload, ts: Date.now() };
+  const item = { key, op, table, payload, id, ts: Date.now() };
   const i = q.findIndex(x => x.key === key);
   if (i >= 0) q[i] = item; else q.push(item);
+  if (op === 'insert'){ pendingSave(q); return; }
   /* upsert и delete одной строки взаимоисключающи — оставляем последнее действие */
   const other = pendingKey(op === 'upsert' ? 'delete' : 'upsert', table, id);
   pendingSave(q.filter(x => x.key !== other));
@@ -2740,39 +3014,279 @@ function pendingDone(op, table, id){
 }
 let pendingBusy = false;
 async function pendingFlush(){
-  if (pendingBusy || !HAS_SB || !state.sb) return;
+  if (pendingBusy || !HAS_SB || !state.sb) return 0;
   const q = pendingLoad();
-  if (!q.length) return;
+  if (!q.length) return 0;
+  if (!navigator.onLine){ dlog('sync: очередь ждёт сети (' + q.length + ')'); return 0; }   // v1.08.38
   pendingBusy = true;
   dlog('sync: досылаю недоставленные записи:', q.length);
-  let sent = 0;
+  let sent = 0, netFail = false;
   try{
     for (const it of q){
+      if (netFail) break;                                   // v1.08.38: сети нет — остальное не дёргаем
       try{
-        const r = it.op === 'upsert'
-          ? await state.sb.from(it.table).upsert(it.payload)
-          : await state.sb.from(it.table).delete().eq('id', it.payload);
-        if (!r.error){ pendingDone(it.op, it.table, it.op === 'upsert' ? it.payload.id : it.payload); sent++; }
-        else dlog('⛔ pending', it.op, it.table + ':', r.error);
-      }catch(e){ dlog('⛔ pending exception', it.table + ':', e); }
+        const r = it.op === 'upsert' ? await state.sb.from(it.table).upsert(it.payload)
+                : it.op === 'insert' ? await state.sb.from(it.table).insert(it.payload)
+                : await state.sb.from(it.table).delete().eq('id', it.payload);
+        if (!r.error){
+          pendingDone(it.op, it.table, it.id != null ? it.id : (it.op === 'delete' ? it.payload : it.payload.id));
+          sent++;
+        } else {
+          dlog('⛔ pending', it.op, it.table + ':', r.error);
+          if (isNetErr(r.error)) netFail = true;
+        }
+      }catch(e){ dlog('⛔ pending exception', it.table + ':', e); if (isNetErr(e)) netFail = true; }
     }
   } finally { pendingBusy = false; }
-  if (sent){ dlog('sync: доставлено из очереди:', sent); toast('✓ ' + t('pending_sent') + ': ' + sent); }
+  if (netFail) netSet(false);
+  if (sent){ netSet(true); dlog('sync: доставлено из очереди:', sent); toast('✓ ' + t('pending_sent') + ': ' + sent); }
+  return sent;
 }
 /* Накатываем ещё не доставленные записи поверх серверного снимка,
    чтобы полный синк не «терял» их до досылки. */
 function pendingApplyLocal(data){
   for (const it of pendingLoad()){
+    if (it.op === 'insert') continue;                       // v1.08.38: журнал — только досыл
+    if (it.table === 'org_settings'){                       // v1.08.38: настройки, сохранённые в офлайне
+      if (it.op === 'upsert' && it.payload) data.org_settings = it.payload;
+      continue;
+    }
     const arr = data[it.table];
     if (!Array.isArray(arr)) continue;
     if (it.op === 'upsert'){
       const i = arr.findIndex(r => r.id === it.payload.id);
       if (i >= 0) arr[i] = it.payload; else arr.push(it.payload);
-    } else {
+    } else if (it.op === 'delete'){
       const i = arr.findIndex(r => r.id === it.payload);
       if (i >= 0) arr.splice(i, 1);
     }
   }
+}
+
+/* =====================================================================
+   v1.08.38 · ОФЛАЙН-РЕЖИМ
+   Связь на объектах рвётся, а приложение до этого только ругалось красными
+   «Ошибка записи», хотя строка уже лежала в очереди. Теперь:
+   · в шапке — пилюля состояния: зелёная «NN мс» (пинг до сервера раз в
+     30 с), красная «офлайн» (браузер без сети), жёлтая «нет сервера»
+     (сеть есть, Supabase не ответил два пинга подряд). Тап — проверка
+     и сводка очередей;
+   · записи в офлайне на сервер не ходят вовсе: сразу в очередь
+     (techlog_pending), тихий тост «сохранено на устройстве». При возврате
+     связи очередь досылается, затем тихий синк подтягивает номера
+     документов, движения регистра и чужие правки;
+   · кнопкам, которым нужен живой сервер (RPC, Диск, пуши, ТВ, вход…),
+     ставится класс .net-need; под html.tl-offline они блёкнут, а нажатие
+     перехватывается подсказкой. Инвойс, задача, фото/видео, пикап,
+     пропозал, ремонт — работают как обычно.
+   ===================================================================== */
+const NET = { srv: true, ping: null, fails: 0, at: 0, busy: false, timer: null, toastAt: 0, saveToastAt: 0, offAt: 0 };
+const NET_PING_MS = 30000, NET_RETRY_MS = 8000, NET_TIMEOUT_MS = 8000;
+/* «связи нет» = браузер офлайн ИЛИ сервер молчит (два пинга подряд) */
+function netOff(){ return !navigator.onLine || !NET.srv; }
+function netState(){ return !navigator.onLine ? 'off' : (NET.srv ? 'on' : 'warn'); }
+function isNetErr(e){
+  const m = String((e && e.message) || e || '');
+  return /failed to fetch|networkerror|network request failed|load failed|internet connection|err_internet|err_network|aborted|abort/i.test(m);
+}
+function netPingUrl(){
+  if (HAS_SB) return String(CFG.SUPABASE_URL || '').replace(/\/$/, '') + '/auth/v1/health?apikey=' + encodeURIComponent(CFG.SUPABASE_ANON_KEY || '');
+  /* демо: свой хостинг — version.json service worker отдаёт только из сети */
+  return './version.json?ping=' + Date.now();
+}
+/* Любой HTTP-ответ (даже 401/404) — сервер достижим; провал — только
+   сетевой сбой или таймаут. Пинг возвращает true/false. */
+async function netPing(){
+  if (NET.busy) return NET.srv;
+  clearTimeout(NET.timer); NET.timer = null;
+  if (!navigator.onLine){ netSet(false); netSchedule(); return false; }
+  NET.busy = true; netPillDraw();
+  const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+  const tm = setTimeout(() => { try{ ctl && ctl.abort(); }catch(e){} }, NET_TIMEOUT_MS);
+  const t0 = performance.now();
+  let ok = false;
+  try{
+    await fetch(netPingUrl(), { method: 'GET', cache: 'no-store', credentials: 'omit', signal: ctl ? ctl.signal : undefined });
+    ok = true;
+    netSet(true, Math.max(1, Math.round(performance.now() - t0)));
+  }catch(e){ netSet(false); }
+  finally{ clearTimeout(tm); NET.busy = false; netSchedule(); netPillDraw(); }
+  return ok;
+}
+function netSchedule(){
+  clearTimeout(NET.timer);
+  if (document.visibilityState === 'hidden') return;
+  NET.timer = setTimeout(netPing, (navigator.onLine && NET.srv) ? NET_PING_MS : NET_RETRY_MS);
+}
+/* ok=true — сервер ответил (ms — пинг, undefined — не трогать);
+   ok=false — сбой: второй подряд (или браузер офлайн) гасит srv. */
+function netSet(ok, ms){
+  const before = netOff();
+  if (ok){ NET.srv = true; NET.fails = 0; if (ms != null) NET.ping = ms; NET.at = Date.now(); }
+  else {
+    NET.fails++;
+    if (!navigator.onLine || NET.fails >= 2){ NET.srv = false; NET.ping = null; }
+    /* первый сбой (обычно — запись упала на ходу): быстрый контрольный пинг */
+    else if (!NET.busy){ clearTimeout(NET.timer); NET.timer = setTimeout(netPing, 2000); }
+  }
+  netApply();
+  const after = netOff();
+  if (before !== after) netChanged(after);
+}
+function netChanged(off){
+  if (off){
+    NET.offAt = Date.now();
+    dlog('📴 связь: офлайн — записи копятся в очереди, серверные кнопки блёклые');
+    if (state.user) toast('📴 ' + t('net_went_off'), 'inf');
+    return;
+  }
+  dlog('📶 связь: онлайн' + (NET.ping != null ? ' · пинг ' + NET.ping + ' мс' : ''));
+  if (state.user) toast('📶 ' + t('net_went_on'));
+  netBack();
+}
+/* Вернулась связь: досылаем очередь; если что-то досылали или сидели без
+   сети дольше минуты — тихий синк (номера документов, регистр, чужие
+   правки); затем — очередь фото/видео. */
+async function netBack(){
+  if (!HAS_SB || !state.sb || !state.user) return;
+  let sent = 0;
+  try{ sent = await pendingFlush(); }catch(e){ dlog('⛔ netBack flush:', e); }
+  if (sent || (NET.offAt && Date.now() - NET.offAt > 60000)){
+    try{ await syncNow(true); }catch(e){ dlog('⛔ netBack sync:', e); }
+  }
+  NET.offAt = 0;
+  try{ if (typeof mediaQ !== 'undefined' && mediaQ.length) mediaFlush(); }catch(e){}
+}
+/* Тост «сохранено на устройстве» — не чаще раза в 6 с (одно сохранение
+   работы — это несколько строк: jobs + placements). */
+function netSavedOffline(table){
+  dlog('📴 офлайн: ' + table + ' → очередь (' + pendingLoad().length + ')');
+  const now = Date.now();
+  if (now - NET.saveToastAt < 6000) return;
+  NET.saveToastAt = now;
+  toast('📴 ' + t('net_saved_off'), 'inf');
+}
+function netBlocked(){
+  const now = Date.now();
+  if (now - NET.toastAt < 1500) return;
+  NET.toastAt = now;
+  toast('📴 ' + t('net_off_hint'), 'err');
+}
+/* Обработчики App.*, которым нужен живой сервер. Всё остальное
+   (dbUpsert/dbDelete, фото в IndexedDB, PDF в браузере) работает офлайн. */
+const NET_ONLY = new Set([
+  /* обмен, обновление, сессия */
+  'sync', 'updCheck', 'logout', 'signIn', 'signUp', 'mfaLoginVerify',
+  /* RPC: на сервере триггеры и права — локально не повторить */
+  'extReqDecide', 'linkProposal', 'linkJobFromProp', 'eqOpen', 'eqDo',
+  'setRole', 'staffBlock', 'staffSetPass', 'staffPassModal', 'staffCreate', 'staffAddModal', 'inviteSave',
+  'ownPassSave', 'ownPassModal', 'staffKillSessions',
+  /* Google Диск, бэкапы, отправка и просмотр файлов */
+  'mediaSaveKeys', 'mediaConnect', 'mediaHealth', 'gdCycle', 'gdNamesRefresh', 'auditRun',
+  'bkExport', 'bkImportPick', 'abkRun', 'abkList', 'mqRetry', 'mqPing', 'mediaFlush', 'mediaOpen', 'mvDownload',
+  /* пуши, 2FA, ТВ, Bouncie, перевод, карты */
+  'pbSub', 'pbUnsub', 'mfaEnroll', 'mfaDisable', 'mfaVerifyEnroll',
+  'tvStart', 'tvNewCode', 'tvListRefresh', 'tvApprove', 'tvDeny', 'tvRevoke',
+  'bnConnect', 'bnTest', 'bnSaveKeys', 'bnTrack', 'vehSave', 'vehDel', 'vehImport', 'vehServiceSet',
+  'translateEn', 'trRun', 'trOneDoc', 'trFill', 'trPdfNow',
+  'geocodeCx', 'mapSearch', 'mapRoute', 'optRoute',
+]);
+const NET_RE = /App\.([A-Za-z0-9_]+)\s*\(/g;
+/* Пометка серверных кнопок: по обработчику в onclick/onchange/oninput
+   или явно data-net="1" (data-net="0" — не трогать). Пишем только то, что
+   изменилось: netMark вызывается и из MutationObserver, лишние мутации
+   зациклили бы его. */
+function netMark(root){
+  const scope = root || document;
+  const list = scope.querySelectorAll ? scope.querySelectorAll('[onclick],[onchange],[oninput],[data-net="1"]') : [];
+  for (const el of list){
+    if (el.classList.contains('net-need')) continue;
+    const dn = el.getAttribute('data-net');
+    if (dn === '0') continue;
+    let need = dn === '1';
+    if (!need){
+      const s = (el.getAttribute('onclick') || '') + '\n' + (el.getAttribute('onchange') || '') + '\n' + (el.getAttribute('oninput') || '');
+      NET_RE.lastIndex = 0; let m;
+      while ((m = NET_RE.exec(s))){ if (NET_ONLY.has(m[1])){ need = true; break; } }
+    }
+    if (need) el.classList.add('net-need');
+  }
+  netApply();
+}
+function netApply(){
+  const off = netOff();
+  const root = document.documentElement;
+  if (root.classList.contains('tl-offline') !== off) root.classList.toggle('tl-offline', off);
+  document.querySelectorAll('.net-need').forEach(el => {
+    if (el.matches('input,select,textarea')){
+      if (off){ if (!el.disabled){ el.disabled = true; el.dataset.netdis = '1'; } }
+      else if (el.dataset.netdis){ el.disabled = false; delete el.dataset.netdis; }
+    }
+    const want = off ? 'true' : 'false';
+    if (el.getAttribute('aria-disabled') !== want) el.setAttribute('aria-disabled', want);
+  });
+  netPillDraw();
+}
+function netPillText(){
+  const s = netState();
+  if (NET.busy && s !== 'on') return '…';
+  if (s === 'off') return t('net_off');
+  if (s === 'warn') return t('net_srv');
+  return NET.ping != null ? NET.ping + ' ' + t('net_ms') : t('net_on');
+}
+/* Пилюля — пассивный индикатор (не кнопка: 16px под логотипом пальцем не
+   взять, а расширенная зона нажатия накрывала бы сам логотип). Ручная
+   проверка — кнопка «Проверить связь» в карточке синхронизации. */
+function netPillHtml(){
+  return `<span class="net-pill ${netState()}" title="${t('net_pill_t')}" aria-label="${t('net_pill_t')}" role="status">${netPillText()}</span>`;
+}
+function netPillDraw(){
+  const cls = 'net-pill ' + netState(), txt = netPillText();
+  document.querySelectorAll('.net-pill').forEach(el => {
+    if (el.className !== cls) el.className = cls;
+    if (el.textContent !== txt) el.textContent = txt;
+  });
+}
+async function netCheck(){
+  await netPing();
+  const s = netState();
+  const q = pendingLoad().length, m = (typeof mediaQ !== 'undefined' && mediaQ) ? mediaQ.length : 0;
+  const head = s === 'off' ? t('net_off') : s === 'warn' ? t('net_srv')
+    : t('net_on') + (NET.ping != null ? ' · ' + NET.ping + ' ' + t('net_ms') : '');
+  const parts = []; if (q) parts.push(q + ' ' + t('net_q_rows')); if (m) parts.push(m + ' ' + t('net_q_media'));
+  const tail = parts.length ? ' · ' + t('net_queue') + ': ' + parts.join(', ') : '';
+  toast((s === 'on' ? '🟢 ' : '🔴 ') + head + tail, s === 'on' ? (parts.length ? 'inf' : undefined) : 'err');
+}
+let _netMo = null, _netMoT = null;
+function netInit(){
+  /* перехват в фазе захвата: inline-onclick цели не сработает */
+  document.addEventListener('click', (e) => {
+    if (!netOff()) return;
+    const el = e.target && e.target.closest ? e.target.closest('.net-need') : null;
+    if (!el) return;
+    e.preventDefault(); e.stopPropagation();
+    netBlocked();
+  }, true);
+  window.addEventListener('online',  () => { netApply(); netPing(); });
+  window.addEventListener('offline', () => { netSet(false); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') netPing(); else clearTimeout(NET.timer);
+  });
+  /* страховка для разметки, которую вставляют мимо render()/openModal():
+     списки ТВ-сессий, журнал отправки, бары desktop.js. Fire-and-wait:
+     свой таймер не сбрасываем, а netMark/netApply пишут в DOM только
+     реальные изменения — цикла нет. */
+  try{
+    if (typeof MutationObserver === 'function' && document.body){
+      _netMo = new MutationObserver(() => {
+        if (_netMoT) return;
+        _netMoT = setTimeout(() => { _netMoT = null; try{ netMark(document); }catch(e){} }, 150);
+      });
+      _netMo.observe(document.body, { childList: true, subtree: true });
+    }
+  }catch(e){}
+  netApply();
+  setTimeout(netPing, 1200);
 }
 
 /* v1.07.80: БД-диагностика проверяла только наличие таблиц и трёх функций
@@ -2823,15 +3337,22 @@ const DB_NEED_COLS = [
   ['extra_works',   'repair'],
   ['org_settings',  'rep_hide_prices'],
   ['equip_moves',   'kind'],            // v1.08.27: регистр оборудования
+  ['org_settings',  'tv'],              // v1.08.37: раскладка ТВ-режима
+  ['tv_sessions',   'device_key'],      // v1.08.37: сессии телевизоров
+  ['jobs',          'acc_status'],      // v1.08.39: бухгалтерия
+  ['repairs',       'acc_status'],
+  ['acc_settings',  'pct'],
 ];
 const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
                       'admin_set_drive_config', 'equip_op', 'admin_set_role',
                       'vehicle_save', 'admin_set_bouncie_config',    // v1.08.32
                       'admin_sessions', 'admin_kill_sessions',        // v1.08.33
-                      'admin_last_seen', 'vehicle_service_set'];      // v1.08.33
+                      'admin_last_seen', 'vehicle_service_set',
+  'tv_list', 'tv_decide',       // v1.08.33
+  'acc_doc_mark'];              // v1.08.39
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits'];   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings'];   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)
 
 function emptyData(){
   const d = { org_settings: {
@@ -2881,7 +3402,7 @@ async function sbLoadAll(){
   out._syncFail = SYNC_ERRORS.length;
   if (SYNC_ERRORS.length && SYNC_ERRORS.length === names.length){
     // упало вообще всё — считаем фатальной ошибкой (сеть/авторизация)
-    throw new Error('sync: все таблицы недоступны — ' + SYNC_ERRORS[0].err);
+    throw new Error(t('err_sync_all') + SYNC_ERRORS[0].err);
   }
   return out;
 }
@@ -2892,13 +3413,19 @@ async function syncNow(silent){
   dlog('sync: старт', HAS_SB ? 'Supabase' : 'demo');
   if (!HAS_SB){ state.lastSync = nowStamp(); localStorage.setItem('techlog_lastsync', state.lastSync); if(!silent) toast('✓ ' + t('synced') + ': ' + state.lastSync); render(); return; }
   if (state.syncing) return;
+  if (!navigator.onLine){                      // v1.08.38: браузер офлайн — не дёргаем сервер
+    dlog('sync: пропуск — браузер офлайн');
+    if (!state.data) state.data = loadLocal() || emptyData();
+    if (!silent) toast('📴 ' + t('net_off_hint'), 'err');
+    render(); return;
+  }
   state.syncing = true;
   try {
     if (!state.data) state.data = loadLocal() || emptyData();
     render();
-    if (!navigator.onLine) dlog('⚠ sync: navigator.onLine = false (возможен офлайн)');
     await pendingFlush();                 // v1.07.21: сперва досылаем очередь — снимок включит эти записи
     state.data = await sbLoadAll();
+    netSet(true);                         // v1.08.38: снимок пришёл — сервер точно на связи
     pendingApplyLocal(state.data);        // v1.07.21: что не доставилось — не теряем, накатываем поверх снимка
     saveLocal();
     const ms = state.data._syncMs, failN = state.data._syncFail || 0;
@@ -2933,6 +3460,7 @@ async function syncNow(silent){
     if (!silent) toast('✓ ' + t('synced') + ': ' + state.lastSync);
   } catch (e) {
     dlog('⛔ sync: ошибка:', e);
+    if (isNetErr(e)) netSet(false);       // v1.08.38: сеть пропала — пилюля покажет
     toast(t('sync_err') + ' — ' + t('offline_note'), 'err');
     if (!state.data) state.data = loadLocal() || emptyData();
   } finally {
@@ -2959,9 +3487,11 @@ async function dbUpsert(table, row){
   saveLocal();
   if (HAS_SB) {
     pendingAdd('upsert', table, row);              // v1.07.21: в очередь до подтверждения сервера
+    if (netOff()){ netSavedOffline(table); return; }   // v1.08.38: без сети сервер не дёргаем — очередь дошлёт
     const ts = Date.now();
     try {
       let { error } = await state.sb.from(table).upsert(row);
+      if (error && isNetErr(error)){ netSet(false); netSavedOffline(table); return; }   // v1.08.38: сеть пропала на ходу
       if (error) {
         // v1.07.10+: БД без новых колонок — убираем их по одной и повторяем (данные не теряются)
         let clean = row, guard = 0, stripped = false;
@@ -2986,8 +3516,9 @@ async function dbUpsert(table, row){
       } else if (Date.now() - ts > 1500) {
         dlog('🐢 upsert', table, 'медленно: ' + (Date.now()-ts) + ' мс');
       }
-      if (!error) pendingDone('upsert', table, row.id);   // v1.07.21: доставлено — из очереди долой
+      if (!error){ pendingDone('upsert', table, row.id); netSet(true); }   // v1.07.21: доставлено — из очереди долой
     } catch(e){
+      if (isNetErr(e)){ netSet(false); netSavedOffline(table); return; }   // v1.08.38
       noteWriteError('upsert', table, row.id, e);
       dlog('⛔ upsert exception', table + ':', e);
       toast(t('write_err') + ' (' + table + ')', 'err');
@@ -3004,15 +3535,18 @@ async function dbDelete(table, id){
   saveLocal();
   if (HAS_SB) {
     pendingAdd('delete', table, id);               // v1.07.21: в очередь до подтверждения сервера
+    if (netOff()){ netSavedOffline(table); return; }   // v1.08.38
     const ts = Date.now();
     try {
       const { error } = await state.sb.from(table).delete().eq('id', id);
+      if (error && isNetErr(error)){ netSet(false); netSavedOffline(table); return; }   // v1.08.38
       if (error) {
         noteWriteError('delete', table, id, error);
         dlog('⛔ delete', table, 'id=' + String(id||'').slice(0,8) + ':', error, '· ' + (Date.now()-ts) + ' мс');
         toast(t('write_err') + ' (' + table + '): ' + error.message, 'err');
-      } else pendingDone('delete', table, id);     // v1.07.21: доставлено
+      } else { pendingDone('delete', table, id); netSet(true); }     // v1.07.21: доставлено
     } catch(e){
+      if (isNetErr(e)){ netSet(false); netSavedOffline(table); return; }   // v1.08.38
       noteWriteError('delete', table, id, e);
       dlog('⛔ delete exception', table + ':', e);
       toast(t('write_err') + ' (' + table + ')', 'err');
@@ -3023,7 +3557,10 @@ async function dbDelete(table, id){
 async function dbSaveOrg(org){
   state.data.org_settings = org; saveLocal();
   if (HAS_SB) {
+    /* v1.08.38: настройки тоже через очередь — в офлайне не теряются */
+    if (netOff()){ pendingAdd('upsert', 'org_settings', org); netSavedOffline('org_settings'); return; }
     const { error } = await state.sb.from('org_settings').upsert(org);
+    if (error && isNetErr(error)){ pendingAdd('upsert', 'org_settings', org); netSet(false); netSavedOffline('org_settings'); return; }
     if (error){
       // v1.07.10: БД без новой колонки — сохраняем остальное и подсказываем выполнить апдейт
       const miss = missingColumnOf(error);
@@ -3040,6 +3577,8 @@ async function dbSaveOrg(org){
 /* ---------------- Роли ---------------- */
 const isAdmin = () => state.user?.role === 'admin';
 const isManager = () => state.user?.role === 'manager' || isAdmin();
+const isAcc = () => state.user?.role === 'accountant';          // v1.08.39: бухгалтер
+const isAccP = (p) => !!p && p.role === 'accountant';
 
 /* ---------------- v1.07.10: общий доступ к документам для коворкеров ---------------- */
 /* Глобальный выключатель функции (галочка админа в «Настройках», org_settings.allow_shared_jobs). */
@@ -3113,6 +3652,7 @@ async function fetchDocNo(table, row){
   if (row.no != null) return row.no;
   const loc = tableOf(table).find(x => x.id === row.id);
   if (!HAS_SB){ row.no = loc ? loc.no : null; return row.no; }
+  if (netOff()) return row.no;             // v1.08.38: номер приедет с тихим синком после досыла очереди
   try{
     const { data } = await state.sb.from(table).select('no').eq('id', row.id).single();
     if (data && data.no != null){ row.no = data.no; if (loc) loc.no = data.no; saveLocal(); }
@@ -3177,7 +3717,7 @@ function calcTotal(fd, p, data){
    ===================================================================== */
 async function initAuth(){
   dlog('start:', HAS_SB ? 'режим Supabase, ' + (CFG.SUPABASE_URL||'').replace('https://','') : 'демо-режим (localStorage)');
-  if (HAS_SB && !window.supabase) throw new Error('supabase-js не загрузился (CDN). Проверьте интернет и обновите страницу.');
+  if (HAS_SB && !window.supabase) throw new Error(t('err_sbjs'));
   if (!HAS_SB){
     const saved = localStorage.getItem(LS_SESSION);
     state.data = loadLocal() || seedDemoData(); saveLocal();
@@ -3246,6 +3786,7 @@ const LOGIN_RE = /^[a-z0-9_.-]{3,32}$/;
 const AUTH_DOMAIN = (CFG.AUTH_EMAIL_DOMAIN || 'techlog.example.com').replace(/^@/,'');
 function loginToEmail(login){ return login + '@' + AUTH_DOMAIN; }
 async function sbSignIn(login, pass){
+  if (netOff()){ netBlocked(); return; }                   // v1.08.38
   login = String(login||'').trim().toLowerCase();
   if (!LOGIN_RE.test(login)){ toast(t('login_hint'), 'err'); return; }
   dlog('auth: вход', login, '→', loginToEmail(login));
@@ -3266,6 +3807,7 @@ async function sbSignIn(login, pass){
   render(); checkPickupBanner(true);
 }
 async function sbSignUp(login, pass, name, invite){
+  if (netOff()){ netBlocked(); return; }                   // v1.08.38
   login = String(login||'').trim().toLowerCase();
   if (!LOGIN_RE.test(login)){ toast(t('login_hint'), 'err'); return; }
   if (!name || !pass){ toast(t('login_taken_or_err'), 'err'); return; }
@@ -3344,6 +3886,7 @@ function hiddenSetFor(uid){
 function scopeFilter(list, techKey){
   // tech: только свои; manager: все, кроме скрытых админом; admin: все
   if (state.user.role === 'tech') return list.filter(x => x[techKey] === state.user.id);
+  if (state.user.role === 'accountant') return list;              // v1.08.39: бухгалтер видит всё
   if (state.user.role === 'manager'){
     const hid = hiddenSetFor(state.user.id);
     return list.filter(x => x[techKey] === state.user.id || !hid.has(x[techKey]));
@@ -3484,6 +4027,8 @@ const IC = {
      выглядели одинаково в обоих режимах и не зависели от шрифта ОС */
   plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
+  tv: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+  fs: '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/>',
   chev_u: '<path d="M5 15l7-7 7 7"/>',
   chev_d: '<path d="M5 9l7 7 7-7"/>',
   arr_l: '<path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/>',
@@ -3580,6 +4125,7 @@ const IC = {
 const MARK_IC = { '✓': 'check', '✔': 'check', '✅': 'check', '⛔': 'ban', '✗': 'close',
   '✕': 'close', '⚠': 'warn', '⏳': 'clock', '🗑': 'trash', '⬆': 'upload', '⬇': 'download',
   'ℹ': 'help', '🌐': 'wifi', '🔴': 'wifi', '🟢': 'dot', '🧪': 'flask', '🔗': 'link',
+  '📴': 'wifi', '📶': 'wifi',
   '💾': 'save', '📥': 'download', '📷': 'camera', '🎥': 'video', '🔄': 'refresh',
   '🩺': 'steth', '👋': 'hand', '🎉': 'star', '🔔': 'bell', '🔒': 'lock', '📨': 'send',
   '↩': 'refresh', '♻': 'refresh', '🧹': 'trash', '🗄': 'archive', '🔍': 'search',
@@ -3841,7 +4387,8 @@ const SECTION_HELP = {
   "title": "Equipment Rental",
   "items": [
    {
-    "t": "Формула / Formula",
+    "t": "Формула",
+     "te": "Formula",
     "r": "Аренда сушильного оборудования: количество × дни × цена в сутки.",
     "e": "Drying equipment rental: quantity × days × price per day."
    },
@@ -3892,31 +4439,37 @@ const SECTION_HELP = {
   "items": [
    {
     "t": "Описание + $",
+     "te": "Description + $",
     "r": "Свободные строки: любая услуга словами и её сумма — попадают в инвойс как есть.",
     "e": "Free-form lines: any service in words plus its amount — go to the invoice as-is."
    }
   ]
  },
  "note": {
-  "title": "Заметка · Доп. работы и покупки / Note",
+  "title": "Заметка · Доп. работы и покупки",
+   "title_en": "Note · Extra works & purchases",
   "items": [
    {
-    "t": "Заметка / Note",
+    "t": "Заметка",
+     "te": "Note",
     "r": "Текст попадает в PDF-инвойс (строка NOTES).",
     "e": "The text goes into the PDF invoice (NOTES line)."
    },
    {
-    "t": "＋ Шаблон / Template",
+    "t": "＋ Шаблон",
+     "te": "＋ Template",
     "r": "Подставляет позиции из справочника «Доп. работы и покупки»: у работ с размером появляется поле размера, цена считается автоматически и попадает в раздел Extra.",
     "e": "Inserts items from the “Extra works & purchases” directory: sized works get a size input, the price is calculated automatically into the Extra section."
    },
    {
-    "t": "Микрофон / Mic",
+    "t": "Микрофон",
+     "te": "Mic",
     "r": "Голосовая диктовка заметки (RU/EN).",
     "e": "Voice dictation of the note (RU/EN)."
    },
    {
-    "t": "Перевести на EN / Translate",
+    "t": "Перевести на EN",
+     "te": "Translate to EN",
     "r": "Переводит текст заметки на английский для инвойса.",
     "e": "Translates the note into English for the invoice."
    }
@@ -3926,10 +4479,11 @@ const SECTION_HELP = {
 function sectionHelpModal(key){
   const s = SECTION_HELP[key]; if (!s) return;
   const L = state.lang === 'ru' ? 'r' : 'e';
+  const cap = it => (L === 'e' && it.te) ? it.te : it.t;   // v1.08.40: подпись по языку
   const rows = s.items.map(it => it.r === '?????'
-    ? `<div class="help-row"><b>${esc(it.t)}</b><div class="tiny">?????</div><div style="height:2.4em"></div></div>`
-    : `<div class="help-row"><b>${esc(it.t)}</b><div class="tiny">${esc(it[L])}</div></div>`).join('');
-  openModal(`${modalHead(s.title, 'help')}<div class="card" style="padding:4px 12px">${rows}</div>`);
+    ? `<div class="help-row"><b>${esc(cap(it))}</b><div class="tiny">?????</div><div style="height:2.4em"></div></div>`
+    : `<div class="help-row"><b>${esc(cap(it))}</b><div class="tiny">${esc(it[L])}</div></div>`).join('');
+  openModal(`${modalHead((L === 'e' && s.title_en) ? s.title_en : s.title, 'help')}<div class="card" style="padding:4px 12px">${rows}</div>`);
 }
 
 
@@ -3955,11 +4509,14 @@ function audit(action, entity, entityId, details){
     if (state.data.audit_log.length > 2000) state.data.audit_log.length = 2000;
     saveLocal();
     if (HAS_SB && state.sb){
-      Promise.resolve(state.sb.from(row.src === 'tech' ? 'tech_log' : 'audit_log').insert({
-        at: row.at, actor: row.actor, actor_name: row.actor_name,
-        action, entity: row.entity, entity_id: row.entity_id, details: row.details
-      })).then(({ error } = {}) => {
+      const tbl = row.src === 'tech' ? 'tech_log' : 'audit_log';
+      const payload = { at: row.at, actor: row.actor, actor_name: row.actor_name,
+        action, entity: row.entity, entity_id: row.entity_id, details: row.details };
+      /* v1.08.38: без сети строка журнала ждёт в очереди (op insert) */
+      if (netOff()){ pendingAdd('insert', tbl, payload, row.id); return; }
+      Promise.resolve(state.sb.from(tbl).insert(payload)).then(({ error } = {}) => {
         if (error){
+          if (isNetErr(error)){ pendingAdd('insert', tbl, payload, row.id); netSet(false); return; }
           dlog('⛔ audit insert:', error);
           if (!auditDbMissing && /audit_log|42P01|schema cache/i.test(errStr(error))){
             auditDbMissing = true; toast('⚠ ' + t('jr_need_db'), 'err');
@@ -3996,7 +4553,8 @@ async function loadJournal(reset){
   if (reset) jr.rows = null;
   render();
   try{
-    if (!HAS_SB){
+    jr.local = HAS_SB && netOff();         // v1.08.38: без сети — журнал этого устройства
+    if (!HAS_SB || jr.local){
       let rows = (state.data.audit_log || []).slice();
       rows = rows.filter(r => (r.src || 'doc') === (jr.tab === 'tech' ? 'tech' : 'doc'));
       if (jr.act)   rows = rows.filter(r => r.action === jr.act);
@@ -4078,6 +4636,7 @@ function viewJournal(){
   return `
   <div class="section-title">${t('jr_title')}${helpBtn('journal')} <span class="hint">${HAS_SB ? (auditDbMissing ? '' : 'Supabase') : t('jr_local')}</span></div>
   ${auditDbMissing ? `<div class="note-red" style="margin-bottom:10px">${t('jr_need_db')}</div>` : ''}
+  ${jr.local ? `<div class="note-red" style="margin-bottom:10px">${ic('wifi')} ${t('net_jr_local')}</div>` : ''}
   <div class="lang-seg" style="margin-bottom:8px">
     <button class="${(jr.tab||'doc')==='doc'?'on':''}" onclick="App.jrTab('doc')">${t('jr_tab_doc')}</button>
     <button class="${jr.tab==='tech'?'on':''}" onclick="App.jrTab('tech')">${t('jr_tab_tech')}</button>
@@ -4100,8 +4659,17 @@ function viewJournal(){
 function render(){
   const _rt0 = performance.now();                       // v1.07.67: замер для диагностики
   if (state && state.user && state.screen === 'board' && !isManager() && vmCur() !== 'desktop') state.screen = 'home';
+  /* v1.08.39: бухгалтеру вместо главной — «Бухгалтерия»; экранов с правкой документов у роли нет */
+  if (state && state.user && isAcc()){ if (ACC_HIDE.has(state.screen)) state.screen = 'acc'; state.statMine = false; }
   const app = $('#app');
-  if (!state.user){ app.innerHTML = viewLogin(); return; }
+  /* v1.08.37: экраны телевизора живут без входа в аккаунт */
+  if (!state.user && TV.screen){
+    app.innerHTML = TV.screen === 'on' ? viewTv() : viewTvWait();
+    if (app.className !== 'scr-tv') app.className = 'scr-tv';
+    tvAfterRender();
+    return;
+  }
+  if (!state.user){ tvBodyClass(false); app.innerHTML = viewLogin(); netMark(app); return; }
   if (!state.data) state.data = loadLocal() || (HAS_SB ? emptyData() : seedDemoData());
   if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
   let body = '';
@@ -4119,6 +4687,7 @@ function render(){
   else if (state.screen === 'proposals') body = viewProposals(); // v1.07.27
   else if (state.screen === 'repairs') body = viewRepairs();     // v1.08.23
   else if (state.screen === 'stock') body = viewStock();         // v1.08.27
+  else if (state.screen === 'acc') body = viewAcc();             // v1.08.39
   perf('отрисовка ' + state.screen, () => { app.innerHTML = viewHeader() + body + viewTabbar(); });
   if (!$('#overlay') && app.inert) modalTrap(false);   // v1.07.83: страховка от «залипшего» inert
   /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
@@ -4135,11 +4704,13 @@ function render(){
   if (state.screen === 'job') bindJobForm();
   if (state.screen === 'repairs') bindRepForm();                 // v1.08.23
   if (state.screen === 'map') initMapView();
+  if (state.screen === 'settings') tvSettingsAfter();   // v1.08.37: список ТВ-сессий
   /* v1.08.32: статусы трекинга на карточках + фоновый опрос Bouncie */
   if (state.screen === 'map' || state.screen === 'home' || state.screen === 'board'){
     bnApplyDots();
     setTimeout(() => { bnPollTick(false); }, 30);
   }
+  netMark(app);                                          // v1.08.38: серверные кнопки — блеклые в офлайне
   /* v1.07.67: последние отрисовки — их показывает «Плавность прокрутки» */
   const _rt = { screen: state.screen, ms: +(performance.now() - _rt0).toFixed(1), at: Date.now() };
   (window.__tlRender = window.__tlRender || []).push(_rt);
@@ -4151,17 +4722,22 @@ function viewHeader(){
   const org = (state.data && state.data.org_settings) || {};
   return `
   <div class="topbar">
-    <div class="logo clicky" role="button" tabindex="0" title="${t('tab_home')}" onclick="App.logoHome()"><span>TL</span></div>
+    <div class="logo-wrap">
+      <div class="logo clicky" role="button" tabindex="0" title="${t('tab_home')}" onclick="App.logoHome()"><span>TL</span></div>
+      ${netPillHtml()}
+    </div>
     <div class="brand clicky" role="button" tabindex="0" title="${t('upd_checking')}" onclick="App.checkVerClick()">
       <div class="name">Tech<b>Log</b><span class="name-tag">${t('app_tag')}</span></div>
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
     <div class="rt-col">
+      <div class="rt-row">
       <button class="icon-btn hdr-srch" title="${t('srch_btn')}" aria-label="${t('srch_btn')}" onclick="App.searchOpen()">${ic('search')}</button>
       <span class="vm-inline" id="vm-slot" role="group">
-        <button class="${vmCur()==='mobile'?'on':''}" onclick="App.setVm('mobile')" aria-label="Телефон" title="Телефон">${ICONS.phone}</button>
-        <button class="${vmCur()==='desktop'?'on':''}" onclick="App.setVm('desktop')" aria-label="ПК" title="ПК">${ICONS.monitor}</button>
+        <button class="${vmCur()==='mobile'?'on':''}" onclick="App.setVm('mobile')" aria-label="${t('vm_phone')}" title="${t('vm_phone')}">${ICONS.phone}</button>
+        <button class="${vmCur()==='desktop'?'on':''}" onclick="App.setVm('desktop')" aria-label="${t('vm_pc')}" title="${t('vm_pc')}">${ICONS.monitor}</button>
       </span>
+      </div>
       <div class="role-tag rt-${u.role}" title="${t('role_' + u.role)}">${t('role_' + u.role)}</div>
     </div>
     <div class="avatar-wrap">
@@ -4188,7 +4764,15 @@ function viewFooter(){
 }
 
 function viewTabbar(){
-  const items = [
+  /* v1.08.39: у бухгалтера свой набор вкладок — без экранов правки документов */
+  const items = isAcc() ? [
+    ['acc', ic('receipt'), t('tab_acc')],
+    ['reports', ICONS.pdf, t('tab_reports')],
+    ['stats', ICONS.stats, t('tab_stats')],
+    ['dirs', ICONS.dirs, t('tab_dirs')],
+    ['faq', ICONS.q, t('tab_faq')],
+    ['settings', ICONS.gear, t('tab_settings')],
+  ] : [
     ['home', ICONS.home, t('tab_home')],
     ...((isManager() || vmCur() === 'desktop') ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.49: воркеру — недельная доска в ПК-режиме
     ...(isManager() ? [['proposals', ICONS.prop, t('tab_proposals')]] : []),  // v1.07.27
@@ -4200,6 +4784,7 @@ function viewTabbar(){
     ['dirs', ICONS.dirs, t('tab_dirs')],
     ...(isManager() ? [['archive', ICONS.warn || ICONS.archive, t('tab_action')]] : []),   // v1.08.12
     ...(isAdmin() ? [['journal', ICONS.book, t('tab_journal')]] : []),   // v1.07.18
+    ...(isAdmin() ? [['acc', ic('receipt'), t('tab_acc')]] : []),        // v1.08.39: бухгалтерия
     ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
   ];
@@ -4616,7 +5201,7 @@ function triSvg(kind){
 }
 function faqTriDemo(){ return `<span class="pri inline on" style="pointer-events:none">${triSvg('hard')}</span>`; }
 function faqAuditLegend(){
-  const dict = (typeof T === 'object' && T[state.lang]) ? T[state.lang] : {};
+  const dict = I18N[state.lang] || I18N.ru;   // v1.08.40: раньше читал несуществующий T и всегда давал «—»
   const acts = Object.keys(dict).filter(k => k.startsWith('act_')).slice(0, 24)
     .map(k => esc(dict[k])).filter(Boolean);
   return acts.length ? acts.join(' · ') : '—';
@@ -4657,18 +5242,28 @@ function sectionFaqHtml(key){
     <div class="tiny" style="margin-top:4px">Оборудование: ${faqEqLegend()}</div>`,
   `
     <h4>${ic('home')} Home — the day and its tasks</h4>
-    <ul><li><b>Week strip</b>: dots = jobs/pickups; click a day, ‹ › to flip weeks, "Today" to return.</li>
-    <li><b>Day counters</b> and "Map of this day" (route across the day's points).</li>
-    <li><b>Mine / All</b> filter; search by unit, complex, address.</li></ul>
+    <ul>
+      <li><b>Week strip</b> on top: dots under a date — there are jobs/pickups; click to pick a day, the ‹ › arrows flip weeks, "${t('today')}" brings you back.</li>
+      <li><b>Day counters</b>: "N JOBS" and "N PICKUPS" with a breakdown by type; "${t('map_of_day')}" builds a route across the day's points.</li>
+      <li><b>${t('mine')} / ${t('all')}</b> — task filter; <b>${t('srch_btn')}</b> looks through unit, complex and address.</li>
+      <li><b>${ic('note')} ＋ ${t('add_task')}</b>: date → counterparty → complex → unit → work type. If this complex has an unlinked proposal, a green hint line and proposal cards with a "link" checkbox appear under the unit field — the job is created already linked.</li>
+      <li>In desktop mode a click anywhere on the date field opens the built-in dark calendar; on the phone — the system date picker.</li>
+    </ul>
     <h4>${ic('wrench')} Job card</h4>
-    <ul><li>Top-left — <b>order number</b>; ${faqMvDemo()} at the bottom reorders (or drag the card).</li>
-    <li>${faqTriDemo()} after the name — <b>priority</b> (click to toggle if allowed).</li>
-    <li>Status: ${faqStatusLegend()}; amount and ${ic('compass')} (navigate) below.</li>
-    <li>${ic('clipboard')} copies the address; ${ic('key')} — access/callbox codes. Click opens the invoice.</li></ul>
-    <h4>${ic('box')} Pickup card</h4>
-    <ul><li>Colored badges — units to collect per type: ${faqEqLegend()}.</li>
-    <li>Red badge — overdue items; "extension" chip — rent was extended.</li>
-    <li>${ic('compass')} navigate; ${ic('note')} document; <b>Pick up</b> marks the whole unit; a dimmed "${ic('check')} picked" card opens the linked document.</li></ul>
+    <ul>
+      <li>Top-left — the <b>order number</b> within the day; ${faqMvDemo()} at the bottom reorders (or drag the whole card).</li>
+      <li>${faqTriDemo()} after the name — <b>priority</b>; the manager/author toggles it with a click.</li>
+      <li>Status on the right: ${faqStatusLegend()}; below it the amount and ${ic('compass')} — open the route in your navigator.</li>
+      <li>${ic('clipboard')} next to the address — copy the address; the codes line: ${ic('key')} access code, callbox.</li>
+      <li>Click the card — open the document (invoice).</li>
+      <li>Inside the document, the <b>${ic('camera')} Photos & video</b> block: shooting from the app, a "how many of the limit" counter (limits are set by the admin, default 10 photos and 2 videos). Anything shot offline waits in the queue and is sent by itself; on launch the app reminds you with a popover, and the queue details are in Settings. The "Photo" button opens the phone's regular camera app with all its modes, so you can shoot a series and hand over all frames at once; how the camera opens and at what quality files are saved is set in Settings, "Camera" card (personal, on your own phone).</li>
+    </ul>
+    <h4>${ic('box')} Pickup card (equipment rental)</h4>
+    <ul>
+      <li>Colored badges on the right — <b>how many units of which type</b> to collect: ${faqEqLegend()}.</li>
+      <li>A red number badge — overdue items; the "extension" chip — the rent was extended.</li>
+      <li>${ic('compass')} — route; ${ic('note')} — document; <b>${t('pickup')}</b> — mark the whole unit as collected; a dimmed "${ic('check')} ${t('picked').toLowerCase()}" card opens the linked document.</li>
+    </ul>
     <h4>${ic('font')} Abbreviations</h4>
     <div class="tiny">Complexes: ${faqCxLegend()}</div>
     <div class="tiny" style="margin-top:4px">Equipment: ${faqEqLegend()}</div>`);
@@ -4695,14 +5290,24 @@ function sectionFaqHtml(key){
     <li>У воркера в ПК-режиме доска недельная: колонка = день, только свои задачи; клик по шапке дня выбирает его в календаре.</li></ul>`,
   `
     <h4>${ic('board')} Board — the day by staff</h4>
-    <ul><li><span class="bn-dot go" style="position:static;display:inline-block;vertical-align:middle"></span> — a blinking green dot in the card corner: per the Bouncie tracker the employee has left the previous site and is heading to this task or pickup; solid green — already on site.</li>
-    <li>Column = employee with their day's cards; "Day is free" = empty; <b>"Hide free"</b> removes empty columns.</li>
-    <li>${faqMvDemo()} moves a task between employees/positions; click opens the document; ${faqTriDemo()} — priority.</li></ul>
+    <ul>
+      <li>Column = employee: avatar, "N jobs · N pickups", the cards of their tasks for the selected day; "${t('b_empty')}" — nothing planned.</li>
+      <li><b>"Hide free"</b> — removes the empty columns.</li>
+      <li>${faqMvDemo()} on a card — move the task between employees/positions; click — open the document.</li>
+      <li>${faqTriDemo()} — priority; a yellow "!" on a weekday — there are overdue pickups.</li>
+      <li><span class="bn-dot go" style="position:static;display:inline-block;vertical-align:middle"></span> — a blinking green dot in the card corner: per the Bouncie tracker the employee has left the previous site and is heading to this task or pickup; solid green — already on site. Hover to see how much is left. The dot moves to the next task by itself as soon as the car leaves the previous site.</li>
+    </ul>
     <h4>${ic('mouse')} Gestures (desktop)</h4>
-    <ul><li>Mouse wheel scrolls horizontally with inertia (edges pass to the page); grab-and-drag pans; touch is native.</li></ul>
+    <ul>
+      <li><b>Mouse wheel</b> scrolls the board horizontally with inertia; at the edges the scroll is handed to the page.</li>
+      <li><b>Grab-and-drag</b> with the mouse anywhere — panning with inertia; a plain click on a card works as before.</li>
+      <li>Touch — native gestures.</li>
+    </ul>
     <h4>${ic('gear')} Width</h4>
-    <ul><li>Settings → "Board": <b>minimum staff visible</b> — cards shrink automatically when needed.</li>
-    <li>Worker on desktop gets a weekly board (column = weekday, own tasks only).</li></ul>`);
+    <ul><li>Settings → "Board": <b>minimum staff visible</b> — when that many do not fit, the cards narrow automatically (counter captions collapse to bare numbers).</li>
+    <li><b>Auto-fit</b>: when the columns stop fitting (say, 12 employees on Full HD), the width is picked so that everyone fits — no horizontal scroll, down to 128 px; in a narrow column the header goes vertical (avatar on top, name below).</li>
+    <li>In that mode the <b>side menu slides off the left edge</b>: hover the tab at the edge — it peeks out, click — pins it; after you open a section it hides again. Once there is room again, everything comes back by itself.</li>
+    <li>A worker in desktop mode gets a weekly board: column = weekday, own tasks only; clicking a day header selects it in the calendar.</li></ul>`);
 
   S.map = H(`
     <h4>${ic('map')} Карта апарт-комплексов</h4>
@@ -4723,15 +5328,21 @@ function sectionFaqHtml(key){
     </ul>`,
   `
     <h4>${ic('map')} Complexes map</h4>
-    <ul><li>Dots = complexes, color = counterparty; filter on top; list row click focuses the point; ${ic('key')} copies the access code.</li>
-    <li><b>"Day"</b> mode: numbered task points and ${ic('compass')} — the day's route in your navigator. Managers and admins see <b>all</b> staff tasks; the map opens on today by default.</li>
-    <li>${ic('car')} <b>Cars</b> — live Bouncie fleet positions: car number in the circle, arrow = heading, green ring = driving. Tap a car for the driver, speed, fuel, today's mileage and a route to it. Chips above the map pick one or several cars ("All" = whole fleet). The dashed line is an approximate straight-line route to the current task with the percent left. The "Driven today" panel sits on the right on desktop and below the map on the phone.</li></ul>
-    <h4>${ic('search')} Place search & adding a complex</h4>
-    <ul><li>Type an address → <b>Search</b> (OpenStreetMap) → click a result → marker.</li>
-    <li>"${ic('check')} Point found" → <b>Add as complex</b>: pick an owner — existing, "＋ New…", "⏳ Temporary owner" or "— no binding —".</li>
-    <li>Ownerless complexes are flagged ${faqTriDemo()} here and in Directory.</li>
-    <li><b>${t('opt_btn')}</b> (v1.08.33): nearest-neighbor pass from your car — "now X mi → best Y mi, saves Z"; open the multi-stop route in Google/Apple Maps or apply the order to the day's jobs (red priorities stay first).</li>
-    <li><b>${t('veh_track')}</b> (v1.08.33): a blue line of the car's real trips for the day — from the car popup or the Vehicles directory; access is granted by the admin (Staff → ${ic('gear')}).</li></ul>`);
+    <ul>
+      <li>Dots — complexes, color = counterparty; counterparty filter on top; click a list row — focus on the point.</li>
+      <li>${ic('key')} in a row — copy the access code; "${ic('warn')} no coordinates" — the complex has no point (set it in the Directory or find it with the search).</li>
+      <li><b>"Day"</b> mode: numbered points of the selected date's tasks and the ${ic('compass')} button — the day's route in your navigator (Apple/Google — see Settings). For managers and admins the day map shows the tasks of <b>all</b> staff; it opens on today by default.</li>
+      <li><b>${t('opt_btn')}</b> (v1.08.33): runs a nearest-neighbour pass from your car and shows "now X mi → optimal Y mi, saves Z". "${t('opt_open')}" opens a multi-stop route in Google/Apple Maps; "${t('opt_apply')}" reorders the day's jobs (red priorities stay first).</li>
+      <li><b>${t('veh_track')}</b> (v1.08.33): a blue line of the car's real trips for the day — from the car popup or from the "${t('d_vehicles')}" directory. Access is granted by the admin (Staff → ${ic('gear')}).</li>
+      <li>${ic('car')} <b>Cars</b> — live fleet positions from the Bouncie trackers: the car number in the circle, the arrow — heading, a green ring — driving. Click a car: driver, speed, fuel, today's mileage and a route to it. The chips above the map pick one or several cars ("${t('all')}" — the whole fleet, the rest are dimmed). The dashed line — an approximate straight-line route to the current task; the caption shows how much is left, in percent. The "Driven today" panel — on the right on desktop and under the map on the phone; a panel row centres the map on the car.</li>
+    </ul>
+    <h4>${ic('search')} Place search and adding a complex</h4>
+    <ul>
+      <li>Type an address → <b>${t('map_search_go')}</b>: OpenStreetMap results; click — a marker on the map.</li>
+      <li>"${ic('check')} ${t('map_found_pt')}" → <b>${t('map_add_cx')}</b>: the name and address are filled in, pick the owner: an existing counterparty, "＋ New…", "⏳ Temporary owner" or "— no binding —".</li>
+      <li>Complexes without an owner (and with the temporary one) are flagged ${faqTriDemo()} here and in the Directory — assign a counterparty later.</li>
+      <li><b>The priority triangle comes in two kinds.</b> ${faqTriDemo()} <b>Red</b>: the card is pinned first in the day and the ▲▼ arrows cannot move it — for emergencies and overdue pickups. <b>Yellow</b>: just an "important" mark, the card stays in the common order and moves freely. Tapping the triangle opens the kind picker and a question mark with an explanation. The arrows move a card within its own group: red ones do not mix with regular ones.</li>
+    </ul>`);
 
   S.proposals = H(`
     <h4>${ic('note')} Пропозалы</h4>
@@ -4744,10 +5355,13 @@ function sectionFaqHtml(key){
     </ul>`,
   `
     <h4>${ic('note')} Proposals</h4>
-    <ul><li>P-N list with status and totals; open to edit items (qty steppers), photos, export PDF.</li>
-    <li>The "needs proposal" flag set by a worker shows managers a reminder strip above the Board.</li>
-    <li><b>${ic('link')} Two-way link with a job</b>: the "Linked documents" block works from both sides — link or unlink anywhere, the other side updates instantly; a proposal with a live job can’t be deleted — the app shows the chain and offers to archive it in one tap; the admin purges the archive.</li>
-    <li>The "Add job" form suggests matching proposals (same complex, and a separate hint when the unit number matches) and lists all unlinked ones.</li></ul>`);
+    <ul>
+      <li>The list of proposals with the P-N number, status and amount; click — open.</li>
+      <li>Inside: line items with prices (quantity steppers), photo attachments, PDF export, status change.</li>
+      <li>The "needs a proposal" chip on a job is set by the worker (when allowed in Settings) — the manager sees a reminder strip above the Board.</li>
+      <li><b>${ic('link')} The link with a job is two-way.</b> The "Linked documents" block exists both in the proposal and in the invoice: link or unlink from either side, the other side updates at once. A proposal with a live job cannot be deleted: the app shows the chain and offers to archive it in one tap; the admin purges it from the archive for good.</li>
+      <li>You can also link at the moment a job is created: the "${t('add_task')}" form suggests matching proposals by itself (by complex, and with a separate hint when the unit number matches too), plus there is a list of all unlinked ones.</li>
+    </ul>`);
 
   S.reports = H(`
     <h4>${ic('note')} Отчёты</h4>
@@ -4760,9 +5374,13 @@ function sectionFaqHtml(key){
     </ul>`,
   `
     <h4>${ic('note')} Reports</h4>
-    <ul><li>Tabs: <b>Invoices</b> / <b>Pickups</b> / <b>${t('tt_tab')}</b> (v1.08.33); filters by period, counterparty, employee, status. Statuses: ${faqStatusLegend()}.</li>
-    <li>Click a row to open (locked-by-age docs open read-only). Totals below; PDF batch export available.</li>
-    <li><b>${t('tt_title')}</b>: built automatically from Bouncie trips — a trip ending near a complex = arrival, the next trip starting there = departure; an open visit is marked "${t('tt_now')}". Who sees what is set by the admin in Staff (${ic('gear')}); the same "${t('tt_onsite')}" line shows in an open job's header.</li></ul>`);
+    <ul>
+      <li>Tabs: <b>Invoices</b>, <b>Pickups</b> and <b>${t('tt_tab')}</b> (v1.08.33). Filters: period, counterparty, employee, status.</li>
+      <li><b>${t('tt_title')}</b>: built automatically from Bouncie trips — a trip ending near a complex = arrival, the next trip starting there = departure; an open visit is marked "${t('tt_now')}". Who sees what is set by the admin in Staff (${ic('gear')}): "own log" personally, for a manager — everyone or a list. The same "${t('tt_onsite')}" line shows in the header of an open job.</li>
+      <li>Row = document: click opens it (including documents locked by age — read-only). Statuses: ${faqStatusLegend()}.</li>
+      <li>Totals for the selection at the bottom; the PDF batch export — by the button (landscape sheet, two forms side by side and a cut line).</li>
+      <li>${faqTriDemo()} in a row — a document with filling problems.</li>
+    </ul>`);
 
   S.stats = H(`
     <h4>${ic('chart')} Статистика</h4>
@@ -4776,7 +5394,14 @@ function sectionFaqHtml(key){
     </ul>`,
   `
     <h4>${ic('chart')} Statistics</h4>
-    <ul><li>Period plus breakdowns by staff, work types, counterparties; approved totals win over drafts. Click a row for details.</li></ul>`);
+    <ul>
+      <li><b>Period</b> — quick-range buttons and custom dates; everything below is recalculated for the selection.</li>
+      <li><b>Breakdowns</b>: by staff, by work types, by counterparties — amounts, number of documents and the share in % of the selection total.</li>
+      <li><b>Which amount is used</b>: if the document is approved — the approved one (${faqStatusLegend()} — the purple approval wins), otherwise the one calculated from the line items.</li>
+      <li>Pickups in the statistics — by the actual collection; overdue ones do not add to the amounts but are visible in the reports.</li>
+      <li>Click a breakdown row — the detailed composition; the bar charts scale from the selection maximum.</li>
+      <li>Work-type colors — the same as the stripes on the Home and Board cards.</li>
+    </ul>`);
 
   S.dirs = H(`
     <h4>${ic('book')} Справочник</h4>
@@ -4793,12 +5418,17 @@ function sectionFaqHtml(key){
     </ul>`,
   `
     <h4>${ic('book')} Directory</h4>
-    <ul><li>Tabs for staff, counterparties, complexes, work types, equipment, extra gear, PRICE, extra works, sizes, products.</li>
-    <li><b>Stock</b> has its own bottom tab now: totals by type and "My car", Take / Hand in / To repair buttons, admin Intake and Write-off. Rentals, "picked up" and "returned" move equipment automatically.</li>
-    <li><b>Complexes</b> grouped by owner; "No owner" and "⏳ Temporary owner" are flagged ${faqTriDemo()} — assign a counterparty.</li>
-    <li>Equipment codes/colors: ${faqEqLegend()} — same badges as on pickup cards.</li>
-    <li><b>Staff</b> (v1.08.33): ${ic('gear')} per person — last seen, Bouncie access (tracker / service pushes / day track; granting access also enables the matching pushes), time-log visibility (own; others: no one / everyone / list) and active <b>sessions</b> with "${t('st_kill')}".</li>
-    <li><b>Vehicles</b> (v1.08.33): ⚠ Check Engine and 🔻 fuel chips, "${t('veh_service')}" field (push 500 mi before due), ${ic('map')} day-track button. The yellow "stale code" chip on complexes is enabled under Features.</li></ul>`);
+    <ul>
+      <li>Tabs: Staff (admin), Counterparties, Complexes, Work types, Equipment, Extra gear, PRICE, Extra works, Sizes, Products.</li>
+      <li><b>Complexes</b> are grouped by owner; the "No owner" group and "⏳ Temporary owner" are flagged ${faqTriDemo()} — those need a counterparty assigned.</li>
+      <li>${ic('book')} on a complex — the access-code history; ${ic('pencil')} — editing (manager+).</li>
+      <li>Equipment: ${faqEqLegend()} — the same codes and colors as on the pickup badges.</li>
+      <li>Code requests from workers appear as incoming items on top — confirm or update the code.</li>
+      <li>${ic('clipboard')} on a work type — the <b>pre-departure checklist</b>: what to take and check before leaving; the employee sees it in a job of that type.</li>
+      <li><b>${t('tab_stock')}</b> moved to its own bottom tab: totals by type and "My car", the "Take" / "Hand in" / "To repair" buttons, for the admin — "Intake" and "Write-off". Rentals, "picked up" and "returned to stock" move the equipment by themselves.</li>
+      <li><b>Staff</b> (v1.08.33): ${ic('gear')} on an employee — "last seen", Bouncie access (tracker / service pushes / day track — granting access also turns on that person's pushes), the time log (own; who else sees it: no one / everyone / list) and active <b>sessions</b> with the "${t('st_kill')}" button (the admin sees sessions; a manager — if enabled under "Features").</li>
+      <li><b>${t('d_vehicles')}</b> (v1.08.33): the ⚠ Check Engine and 🔻 fuel chips, the "${t('veh_service')}" field — a push goes out 500 mi before the threshold; the ${ic('map')} button — the day track on the map. The yellow "🟡 code N mo" chip on complexes is enabled under "Features".</li>
+    </ul>`);
 
   S.archive = H(`
     <h4>${ic('archive')} Действие и архив</h4>
@@ -4853,7 +5483,13 @@ function sectionFaqHtml(key){
     </ul>`,
   `
     <h4>${ic('book')} Journal</h4>
-    <ul><li>Audit trail: who changed what and when; filter by event type.</li></ul>`);
+    <ul>
+      <li>The audit of actions across the whole organisation: <b>who</b>, <b>when</b>, <b>what</b> and with which object (job, pickup, complex, employee, setting…).</li>
+      <li>The source is the audit table in Supabase; in demo mode it is written locally (up to 2000 records). Records are never edited.</li>
+      <li>Filter by event type on top; a row expands the change details (old → new value, amounts, dates).</li>
+      <li><b>Recorded events</b>: ${faqAuditLegend()}.</li>
+      <li>If the journal is empty with a note about the table — run the SQL migration named in the diagnostics hint.</li>
+    </ul>`);
 
   S.settings = H(`
     <h4>${ic('gear')} Настройки</h4>
@@ -4876,15 +5512,44 @@ function sectionFaqHtml(key){
     </ul>`,
   `
     <h4>${ic('gear')} Settings</h4>
-    <ul><li><b>Board</b> — minimum staff visible (stepper, personal). Profile: display name, password, language, navigator.</li>
-    <li><b>Equipment & documents</b> (admin): default rent / max extension steppers, permissions, edit-lock N days (locked docs open read-only).</li>
-    <li><b>Photo & video limits</b> (admin): steppers for photos (1–50) and videos (0–10) per document, defaults <b>10 and 2</b>, enforced server-side; videos = 0 hides the video button.</li>
-    <li>Media → Google Drive: paste the whole folder link — the ID is extracted automatically; saved keys show read-only with masked secrets (${ic('eye')} reveal, ${ic('copy')} copy, ${ic('pencil')} edit). The connection test also reports free Drive space; below 15 % admins and managers get a banner on Home.</li>
-    <li>Invite code; "Check updates" applies the new version immediately; DB diagnostics names the exact SQL file on errors.</li>
-    <li><b>${t('push_card')}</b> (v1.08.33): the button subscribes THIS device (press it on every phone/computer); checkboxes pick what you receive — job, pickup, approval, overdue, reset, plus vehicle alerts/service when you have access. iPhone: install to Home Screen first (iOS 16.4+). Delivery runs while anyone from the company is online.</li>
-    <li><b>${t('sec_card')}</b> (v1.08.33): optional TOTP 2FA — scan the QR in an authenticator app, confirm the 6-digit code; sign-in then asks for a code after the password. Disable anytime (a code is required).</li>
-    <li><b>${t('feat_card')}</b> (admin, v1.08.33): templates & day move, stale-code reminder with a month threshold, manager access to sessions.</li>
-    <li><b>${t('abk_card')}</b> (admin, v1.08.33): a full SQL dump (auth users and secrets included) into "TechLog Backups" on your Drive; keeps 8 copies. "${t('abk_now')}" or automatically on admin sign-in every 7 days. Restore: clean DB → full-install → the backup file.</li></ul>`);
+    <ul>
+      <li><b>${t('push_card')}</b> (v1.08.33): the button subscribes THIS device (press it on every phone/PC); the checkboxes pick what to send: task, pickup, approval, overdue, approval reset, plus vehicle alerts and service when you have access. iPhone: "Add to Home Screen" first (iOS 16.4+). Delivery runs while someone from the company is online; after an action it goes out at once.</li>
+      <li><b>${t('sec_card')}</b> (v1.08.33): optional 2FA (TOTP) — a QR code for an authenticator app, a 6-digit code; at sign-in we ask for the code after the password. Can be turned off at any time (a code is required).</li>
+      <li><b>${t('feat_card')}</b> (admin, v1.08.33): templates and day move, the stale-code reminder (threshold in months), sessions for the manager.</li>
+      <li><b>${t('abk_card')}</b> (admin, v1.08.33): a full SQL dump (users and secrets included) into the "TechLog Backups" folder of your Drive, 8 copies. "${t('abk_now')}" or automatically on admin sign-in every 7 days. Restore: clean database → full-install → the backup file.</li>
+      <li><b>Board</b> — minimum staff visible (the "Auto ↔ 3…12" stepper, personal, in the profile).</li>
+      <li><b>Profile</b>: the name on documents, password change, RU/EN language, navigator (Auto/Apple/Google).</li>
+      <li><b>Equipment and documents</b> (admin): default rental and maximum extension (steppers 1–30), the manager/worker permission checkboxes, the edit lock for documents older than N days (0 — off; locked documents open read-only).</li>
+      <li><b>Photo and video limits per document</b> (admin): the "Photos per document" (1–50) and "Videos per document" (0–10) steppers, defaults <b>10 and 2</b>. The limit is the same for every document and is checked by the server on upload — it cannot be bypassed from the browser. Files already uploaded above a new limit stay, but no more can be added; "videos 0" removes the video button from the job card.</li>
+      <li><b>Photos and video → Google Drive</b>: the OAuth keys of the archive account. You can paste the <b>whole link</b> into the "Folder ID" field — the app extracts the ID itself. Saved keys are shown in view mode: the Client ID and folder — in the open, the secret and token — as asterisks; ${ic('eye')} reveals the value (requested from the server separately), ${ic('copy')} copies, ${ic('pencil')} enables editing. "${t('gd_test')}" checks access, the account, the <b>free space</b> and writing into the folder.</li>
+      <li><b>Drive space</b>: when less than 15 % is free, the admin and managers see a red banner on Home. The value is taken during the connection test and refreshes by itself on file uploads (no more than once every 6 hours).</li>
+      <li><b>Invite</b> (admin): the staff registration code.</li>
+      <li><b>${t('upd_check')}</b> — applies the new version at once; a click on the TechLog name in the header does the same.</li>
+      <li><b>${ic('save')} Data backup</b> (admin): exports every table, the accounts (bcrypt hashes) and — with the checkbox — the secrets into one JSON; the import goes row by row, duplicates are rejected by the database, errors are visible in the on-screen log with a .txt export. Journals are exported but are not loaded back by the button.</li>
+      <li><b>Diagnostics</b>: a self-report and a check of the DB tables/functions — on an error it names the SQL file to run.</li>
+      <li><b>${ic('upload')} Unsent photos and video</b>: a summary by document, a five-line send log and the "Retry sending" / "Connection check" buttons — while one runs, the other is disabled.</li>
+    </ul>`);
+
+  S.acc = H(`
+    <h4>${ic('receipt')} Бухгалтерия</h4>
+    <ul>
+      <li><b>Реестр</b> — все инвойсы и документы ремонта за период (по умолчанию текущий месяц; выполненные и апрувленные). Суммы разложены по категориям: <b>Клининг · Ремонт · Аренда · Материалы</b>; аренда — с разбивкой по типам техники. Колонка «${esc(accLabel())}» = сумма категории × её процент. Фильтры: контрагент, исполнитель, статус документа, отметка учёта, «только с заметками», «показать архив», тип документа и поиск по юниту, номеру, комплексу и тексту заметок.</li>
+      <li><b>Заметки</b> — в строке видно превью; нажатие раскрывает заметку техника (русский и английский для PDF) и поле заметки бухгалтера. Отметки <b>проверен · вопрос · оплачен</b> ставятся по одному документу или сразу для всех на экране; они видны только админу и бухгалтеру и в PDF не попадают.</li>
+      <li><b>Открыть</b> — карточка документа только для чтения: разбивка по секциям и категориям, проценты, бригада, PDF. Кнопки «CSV для Excel» и «PDF-пакет инвойсов» — по текущему фильтру.</li>
+      <li><b>Проценты</b> — одна форма и одна кнопка: клининг, ремонт, аренда общая и по каждому типу техники, материалы; название колонки результата; правило сводки по сотрудникам (поровну на бригаду или всё основному). Ниже — карта «секция инвойса → категория» с рекомендованным вариантом и кнопкой сброса.</li>
+      <li><b>Сотрудники</b> — сумма и результат по каждому исполнителю за период; строка раскрывается в список документов.</li>
+      <li>Если апрувленная сумма инвойса отличается от расчётной по прайсу, категории пересчитываются пропорционально — итог всегда равен сумме документа. Налог и доставка документов REP в базу процента не входят.</li>
+    </ul>`,
+  `
+    <h4>${ic('receipt')} Accounting</h4>
+    <ul>
+      <li><b>Register</b> — every invoice and repair document for the period (current month by default; done and approved). Amounts are split into <b>Cleaning · Repairs · Rental · Materials</b>; rental is broken down per equipment type. The "${esc(accLabel())}" column = category amount × its percentage. Filters: counterparty, assignee, document status, accounting mark, "with notes only", "show archive", document type and search by unit, number, complex and note text.</li>
+      <li><b>Notes</b> — a preview sits in the row; tapping opens the technician note (Russian and the English used in the PDF) and the accountant note. Marks <b>checked · question · paid</b> are set per document or for everything on screen at once; only the admin and the accountant see them and they never reach the PDF.</li>
+      <li><b>Open</b> — a read-only document card: breakdown by section and category, percentages, crew, PDF. "CSV for Excel" and "Invoice PDF batch" follow the current filter.</li>
+      <li><b>Percentages</b> — one form, one button: cleaning, repairs, rental overall and per equipment type, materials; the result column name; the staff-summary rule (split equally across the crew or all to the main assignee). Below it — the "invoice section → category" map with the recommended default and a reset button.</li>
+      <li><b>Staff</b> — amount and result per assignee for the period; a row expands into its documents.</li>
+      <li>When an approved invoice amount differs from the price-list calculation, categories are rescaled proportionally — the total always equals the document amount. REP tax and freight stay outside the percentage base.</li>
+    </ul>`);
 
   return `<div class="faqm">${S[key] || ''}</div>`;
 }
@@ -5017,6 +5682,7 @@ function openModal(html){
   ov.addEventListener('click', e => { if (e.target === ov) closeModal(); });
   document.body.appendChild(ov);
   modalTrap(true);
+  netMark(ov);                                           // v1.08.38
 }
 /* v1.07.83: пока окно открыто, страница под ним выключается (inert). Раньше
    Tab уводил фокус под модалку — «Диагностика интерфейса» нашла это на всех
@@ -5035,6 +5701,14 @@ function closeModal(){ $('#overlay')?.remove(); modalTrap(false); maybeApplyPend
 function modalHead(title, iconName){ return `<h3><button class="back-x" aria-label="${t('back')}" onclick="App.closeModal()">${ic('arr_l')}</button> ${iconName?ic(iconName)+' ':''}${esc(title)}</h3>`; }
 
 /* ---------- Добавить задание ---------- */
+/* v1.08.34: номер юнита бывает буквенно-цифровым (12B, A7 и т.п.).
+   Кнопка у поля переключает клавиатуру телефона: цифровая ⇄ обычная;
+   выбор запоминается на устройстве (localStorage). Ограничения «только
+   цифры» в логике нет и не было — буквы принимаются во всех местах,
+   где юнит вводится (задание, инвойс, пропозал, ремонт). */
+function unitKb(){ return localStorage.getItem('tl_unit_kb') === 'abc' ? 'text' : 'numeric'; }
+function unitKbLabel(){ return unitKb() === 'numeric' ? 'ABC' : '123'; }
+
 function addTaskModal(){
   const wts = [...state.data.work_types].filter(w => !/proposal/i.test(w.name)).sort((a,b)=>(a.sort||0)-(b.sort||0));
   openModal(`
@@ -5054,12 +5728,16 @@ function addTaskModal(){
         <input type="hidden" id="nt-cx"><div class="combo-list" id="cb-cx-list"></div>
       </div></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
-      <input id="nt-unit" inputmode="numeric" placeholder="916" oninput="App.ntPropRefresh()"></div>
+      <div class="unit-wrap">
+        <input id="nt-unit" inputmode="${unitKb()}" placeholder="916" oninput="App.ntPropRefresh()">
+        <button type="button" class="kb-toggle" id="nt-unit-kb" title="${t('unit_kb_hint')}"
+          onclick="App.unitKbToggle()">${unitKbLabel()}</button>
+      </div></div>
     ${isManager() ? `<div class="form-row"><span class="lbl">${t('nt_tech')}</span>
       <select id="nt-tech">
         <option value="${state.user.id}">${t('nt_tech_me')} · ${esc(shortName(state.user.display_name))}</option>
         <option value="">${t('nt_tech_none')}</option>
-        ${[...state.data.profiles].filter(p => !p.blocked && p.id !== state.user.id)
+        ${[...state.data.profiles].filter(p => !p.blocked && !isAccP(p) && p.id !== state.user.id)
           .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name))
           .map(p => `<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_' + p.role)})</option>`).join('')}
       </select></div>` : ''}
@@ -5441,8 +6119,9 @@ function viewLogin(){
           </span>
           <span class="role-tag rt-${u.role}">${t('role_'+u.role)}</span>
         </button>`).join('')}
-      <div class="tiny" style="margin-top:14px">Supabase: см. config.js и README</div>
-      <button class="btn btn-ghost" style="margin-top:14px" onclick="App.diag()">${ic('steth')} ${t('diag')}</button>
+      <div class="tiny" style="margin-top:14px">${t('login_sb_hint')}</div>
+      <button class="btn btn-ghost" style="margin-top:10px" onclick="App.tvStart()">${ic('tv')} ${t('tv_btn')}</button>
+      <button class="btn btn-ghost" style="margin-top:8px" onclick="App.diag()">${ic('steth')} ${t('diag')}</button>
     </div>`;
   }
   return `<div class="login-wrap">
@@ -5450,6 +6129,7 @@ function viewLogin(){
     <div class="hello">${t('login_title')}</div>
     <div class="tiny">${t('app_sub')} ${APP_VERSION}</div>
     <hr class="sep">
+    <div class="net-login-note" id="net-login-note">${ic('wifi')} ${t('net_login_off')}</div>
     <div id="auth-signin">
       <div class="form-row"><input id="li-login" placeholder="${t('login')}" autocomplete="username" autocapitalize="none"
           autofocus enterkeyhint="go" onkeydown="App.enterKey(event,'in')"></div>
@@ -5457,6 +6137,7 @@ function viewLogin(){
           enterkeyhint="go" onkeydown="App.enterKey(event,'in')"></div>
       <button class="btn btn-green" onclick="App.signIn()">${t('sign_in')}</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="App.authMode(true)">${t('no_acc')}</button>
+      <button class="btn btn-ghost" style="margin-top:8px" onclick="App.tvStart()">${ic('tv')} ${t('tv_btn')}</button>
     </div>
     <div id="auth-signup" style="display:none">
       <div class="form-row"><input id="su-name" placeholder="${t('display_name')}"
@@ -5552,6 +6233,7 @@ async function tplMoveGo(){
 function openJob(id){
   const j = state.data.jobs.find(x=>x.id===id);
   if (!j) return;
+  if (isAcc()){ accDoc('job', id); return; }                       // v1.08.39: бухгалтер — только чтение
   if (!isManager() && j.technician_id !== state.user.id && !isJobSharedWithMe(j)){ toast(t('no_access'), 'err'); return; }
   jobDraft = JSON.parse(JSON.stringify(j));
   try{
@@ -5566,6 +6248,96 @@ function openJob(id){
   jobDraft.shared_with_helpers = !!jobDraft.shared_with_helpers;   // v1.07.10
   state.screen = 'job'; state.jobId = id; render();
   window.scrollTo(0,0);
+}
+
+/* =====================================================================
+   v1.08.38 · СПОЙЛЕРЫ ИНВОЙСА
+   Форма работы — тринадцать секций подряд, и на телефоне до заметки и
+   кнопок приходилось долго листать. Пустая секция (ни одного чекбокса,
+   нулевые количества, пустые строки, сумма «—») теперь рендерится
+   свёрнутой: только заголовок с суммой и стрелкой. Заполненная — открыта.
+   Тап по заголовку раскрывает/сворачивает (кнопка «?» внутри заголовка
+   не считается). Ручной выбор живёт в invSecUser на время работы с этим
+   документом — перерисовка формы его не сбрасывает; новый документ —
+   чистый лист. В шапке документа — «Развернуть все (N)» / «Свернуть пустые».
+   ===================================================================== */
+const INV_SECS = ['steam', 'removals', 'repairs', 'dye', 'other', 'fog', 'treatments',
+                  'wetvac', 'airduct', 'equipment', 'pad', 'others', 'note'];
+let invSecUser = { _id: null };
+function invSecFilled(id, fd, sec, note){
+  if (!fd) return true;
+  if (sec && +sec[id === 'note' ? 'extra' : id] > 0) return true;
+  const any = (o, keys) => !!o && keys.some(k => !!o[k]);
+  switch (id){
+    case 'steam':      return any(fd.steam, ['deep_scrub', 'rotovac']);
+    case 'removals':   return any(fd.removals, ['red_stain', 'wax', 'rust', 'ink', 'gum', 'paint']);
+    case 'repairs':    return any(fd.repairs, ['threshold', 'stretch', 'seam', 'patch']);
+    case 'dye':        return any(fd.dye, ['spot', 'full']);
+    case 'other':      return any(fd.other, ['trash_out', 'pad_removal', 'all_unit']);
+    case 'fog':        return any(fd.fog, ['fog', 'goc', 'pet', 'smoke', 'deodorizer']);
+    case 'treatments': return any(fd.treatments, ['sealant', 'mold', 'degreaser']);
+    case 'wetvac':     return any(fd.wetvac, ['wet_vac', 'flood', 'sewer', 'fresh'])
+                           || any((fd.wetvac || {}).areas, ['ktc', 'lr', 'dr', 'hall', 'brs', 'all']);
+    case 'airduct':    return any(fd.airduct, ['air_duct', 'dryer_vent']) || !!String((fd.airduct || {}).note || '').trim();
+    case 'equipment':  return Object.values(fd.equipment || {}).some(e => e && (+e.qty > 0 || (e.hours_start != null && e.hours_start !== '')));
+    case 'pad':        return !!(fd.pad && (fd.pad.size || fd.pad.all_unit || +fd.pad.rooms > 0));
+    case 'others':     return (fd.others || []).some(o => o && (String(o.desc || '').trim() || +o.amount > 0));
+    case 'note':       return !!String(note || '').trim() || (fd.extra || []).length > 0;
+  }
+  return true;
+}
+function invSecReset(){ if (!jobDraft || invSecUser._id !== jobDraft.id) invSecUser = { _id: jobDraft ? jobDraft.id : null }; }
+/* открыта ли секция при отрисовке: ручной выбор → иначе «есть ли что-то внутри» */
+function invSecOpen(id, sec){
+  if (!jobDraft) return true;
+  invSecReset();
+  if (Object.prototype.hasOwnProperty.call(invSecUser, id)) return !!invSecUser[id];
+  return invSecFilled(id, jobDraft.form_data, sec, jobDraft.note);
+}
+function invSecCls(id, sec){ return invSecOpen(id, sec) ? '' : ' sec-closed'; }
+function invSecHead(id, sec){
+  return `role="button" tabindex="0" aria-expanded="${invSecOpen(id, sec) ? 'true' : 'false'}"><span class="sec-chev">${ic('chev_d')}</span>`;
+}
+function invSecToggle(id, force){
+  if (!jobDraft) return;
+  invSecReset();
+  const el = document.querySelector('.inv-sec[data-sec="' + id + '"]'); if (!el) return;
+  const open = force != null ? !!force : el.classList.contains('sec-closed');
+  el.classList.toggle('sec-closed', !open);
+  const h = el.querySelector('.inv-head'); if (h) h.setAttribute('aria-expanded', open ? 'true' : 'false');
+  invSecUser[id] = open;
+  invSecToolsDraw();
+}
+/* одна кнопка: есть свёрнутые → «Развернуть все (N)», иначе → «Свернуть пустые» */
+function invSecAll(){
+  if (!jobDraft) return;
+  const closed = document.querySelectorAll('.inv-sec.sec-closed[data-sec]').length;
+  if (closed){
+    document.querySelectorAll('.inv-sec[data-sec]').forEach(el => invSecToggle(el.dataset.sec, true));
+    return;
+  }
+  invSecUser = { _id: jobDraft.id };                    // ручные пометки — долой, считаем заново
+  const sec = calcSections(jobDraft.form_data, priceResolver(jobDraft.counterparty_id));
+  document.querySelectorAll('.inv-sec[data-sec]').forEach(el => {
+    const open = invSecFilled(el.dataset.sec, jobDraft.form_data, sec, jobDraft.note);
+    el.classList.toggle('sec-closed', !open);
+    const h = el.querySelector('.inv-head'); if (h) h.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  invSecToolsDraw();
+}
+function invSecToolsHtml(sec){
+  const closed = INV_SECS.filter(id => !invSecOpen(id, sec)).length;
+  return `<div class="inv-tools" id="inv-tools">
+    <span class="tiny">${t('inv_sec_hint')}</span>
+    <button type="button" class="btn btn-ghost sm" id="inv-tools-btn" data-mode="${closed ? 'open' : 'fold'}" onclick="App.invSecAll()">${closed ? t('inv_sec_open_all') + ' (' + closed + ')' : t('inv_sec_fold_empty')}</button>
+  </div>`;
+}
+function invSecToolsDraw(){
+  const btn = $('#inv-tools-btn'); if (!btn) return;
+  const closed = document.querySelectorAll('.inv-sec.sec-closed[data-sec]').length;
+  const txt = closed ? t('inv_sec_open_all') + ' (' + closed + ')' : t('inv_sec_fold_empty');
+  if (btn.textContent !== txt) btn.textContent = txt;
+  btn.dataset.mode = closed ? 'open' : 'fold';
 }
 
 function chk(section, key, label, extra){
@@ -5606,6 +6378,10 @@ function viewJob(){
     </div>` : '';
 
   const amt = (v) => v > 0 ? `<span class="amt">${money(v)}</span>` : '<span class="amt" style="color:var(--dim-2)">—</span>';
+  /* v1.08.39: отметка бухгалтера — только админу, в PDF не идёт */
+  const accLine = (isAdmin() && (j.acc_status || String(j.acc_note || '').trim()))
+    ? `<div class="note-green acc-inv-line" style="display:block">${ic('receipt')} <b>${t('acc_inv_line')}:</b> ${accStBadge(j.acc_status || '')}${String(j.acc_note || '').trim() ? ' · ' + esc(j.acc_note) : ''}${j.acc_at ? ` <span class="tiny">· ${fmtDMY(String(j.acc_at).slice(0, 10))}${j.acc_by ? ' · ' + esc(shortName(profName(j.acc_by))) : ''}</span>` : ''}</div>`
+    : '';
 
   const eqRows = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0)).map(et => {
     const e = fd.equipment[et.id] || { qty:0, days: defRentDays() };
@@ -5661,7 +6437,7 @@ function viewJob(){
       ${(!j.technician_id && isManager()) ? `<div class="crew-add">
         <select id="jb-tech" onchange="App.setJobTech(this.value)">
           <option value="">${t('b_assign')}</option>
-          ${[...state.data.profiles].filter(p => !p.blocked)
+          ${[...state.data.profiles].filter(p => !p.blocked && !isAccP(p))
             .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name))
             .map(p => `<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_' + p.role)})</option>`).join('')}
         </select></div>` : ''}
@@ -5669,7 +6445,7 @@ function viewJob(){
       <div class="crew-add">
         <select id="crew-sel" onchange="App.crewAdd(this.value)">
           <option value="">${ic('plus')} ${t('add_helper')}</option>
-          ${state.data.profiles.filter(p=>!p.blocked && p.id!==j.technician_id && !(j.helper_ids||[]).includes(p.id))
+          ${state.data.profiles.filter(p=>!p.blocked && !isAccP(p) && p.id!==j.technician_id && !(j.helper_ids||[]).includes(p.id))
             .map(p=>`<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_'+p.role)})</option>`).join('')}
         </select>
         <button class="btn btn-ghost sm" onclick="App.crewAll()">${t('all_staff')}</button>
@@ -5677,50 +6453,52 @@ function viewJob(){
       ${sharedAccessBoxHtml(j)}
     </div>
     ${aux}
+    ${accLine}
+    ${invSecToolsHtml(sec)}
   </div>
   ${checklistCardHtml(j)}
 
-  <div class="inv-sec"><div class="inv-head">${ic('steam')} Steam Clean ${helpBtn('steam')} ${amtWrap('steam',sec.steam)}</div>
+  <div class="inv-sec${invSecCls('steam', sec)}" data-sec="steam"><div class="inv-head" ${invSecHead('steam', sec)}${ic('steam')} Steam Clean ${helpBtn('steam')} ${amtWrap('steam',sec.steam)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('steam','deep_scrub','Deep Scrub')} ${chk('steam','rotovac','Rotovac')}
       <span class="qty-line"><span class="tiny">Rooms</span>${stepperHtml('steam-rooms', fd.steam.rooms||1)}</span>
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('sponge')} Removals ${helpBtn('removals')} ${amtWrap('removals',sec.removals)}</div>
+  <div class="inv-sec${invSecCls('removals', sec)}" data-sec="removals"><div class="inv-head" ${invSecHead('removals', sec)}${ic('sponge')} Removals ${helpBtn('removals')} ${amtWrap('removals',sec.removals)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('removals','red_stain','Red Stain')} ${chk('removals','wax','Wax')} ${chk('removals','rust','Rust')}
       ${chk('removals','ink','Ink')} ${chk('removals','gum','Gum')} ${chk('removals','paint','Paint Removal')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('wrench')} Repairs ${helpBtn('repairs')} ${amtWrap('repairs',sec.repairs)}</div>
+  <div class="inv-sec${invSecCls('repairs', sec)}" data-sec="repairs"><div class="inv-head" ${invSecHead('repairs', sec)}${ic('wrench')} Repairs ${helpBtn('repairs')} ${amtWrap('repairs',sec.repairs)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('repairs','threshold','Threshold')} ${chk('repairs','stretch','Stretch')}
       ${chk('repairs','seam','Seam')} ${chk('repairs','patch','Patch')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('palette')} Dye ${helpBtn('dye')} ${amtWrap('dye',sec.dye)}</div>
+  <div class="inv-sec${invSecCls('dye', sec)}" data-sec="dye"><div class="inv-head" ${invSecHead('dye', sec)}${ic('palette')} Dye ${helpBtn('dye')} ${amtWrap('dye',sec.dye)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('dye','spot','Spot Dye')} ${chk('dye','full','Full Dye')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('box')} Other ${helpBtn('other')} ${amtWrap('other',sec.other)}</div>
+  <div class="inv-sec${invSecCls('other', sec)}" data-sec="other"><div class="inv-head" ${invSecHead('other', sec)}${ic('box')} Other ${helpBtn('other')} ${amtWrap('other',sec.other)}</div>
     <div class="inv-body">
       <div class="opt-grid">${chk('other','trash_out','Trash Out')} ${chk('other','pad_removal','Pad Removal')} ${chk('other','all_unit','All Unit')}</div>
       <div class="qty-line"><span class="tiny">Rooms</span>${stepperHtml('other-rooms', fd.other.rooms||1)}</div>
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('fog')} Fog / GOC ${helpBtn('fog')} ${amtWrap('fog',sec.fog)}</div>
+  <div class="inv-sec${invSecCls('fog', sec)}" data-sec="fog"><div class="inv-head" ${invSecHead('fog', sec)}${ic('fog')} Fog / GOC ${helpBtn('fog')} ${amtWrap('fog',sec.fog)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('fog','fog','Fog')} ${chk('fog','goc','GOC')} ${chk('fog','pet','Pet')}
       ${chk('fog','smoke','Smoke')} ${chk('fog','deodorizer','Deodorizer')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('flask')} Treatments ${helpBtn('treatments')} ${amtWrap('treatments',sec.treatments)}</div>
+  <div class="inv-sec${invSecCls('treatments', sec)}" data-sec="treatments"><div class="inv-head" ${invSecHead('treatments', sec)}${ic('flask')} Treatments ${helpBtn('treatments')} ${amtWrap('treatments',sec.treatments)}</div>
     <div class="inv-body"><div class="opt-grid">
       ${chk('treatments','sealant','Sealant')} ${chk('treatments','mold','Mold & Mildew')} ${chk('treatments','degreaser','Degreaser')}
     </div></div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('drop')} Wet Vac / Flood ${helpBtn('wetvac')} ${amtWrap('wetvac',sec.wetvac)}</div>
+  <div class="inv-sec${invSecCls('wetvac', sec)}" data-sec="wetvac"><div class="inv-head" ${invSecHead('wetvac', sec)}${ic('drop')} Wet Vac / Flood ${helpBtn('wetvac')} ${amtWrap('wetvac',sec.wetvac)}</div>
     <div class="inv-body">
       <div class="opt-grid">${chk('wetvac','wet_vac','Wet Vac')} ${chk('wetvac','flood','Flood')}
         ${chk('wetvac','sewer','Sewer')} ${chk('wetvac','fresh','Fresh Water')}</div>
@@ -5733,20 +6511,20 @@ function viewJob(){
       </div>
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('vent')} Air Duct / Dryer Vent ${helpBtn('airduct')} ${amtWrap('airduct',sec.airduct)}</div>
+  <div class="inv-sec${invSecCls('airduct', sec)}" data-sec="airduct"><div class="inv-head" ${invSecHead('airduct', sec)}${ic('vent')} Air Duct / Dryer Vent ${helpBtn('airduct')} ${amtWrap('airduct',sec.airduct)}</div>
     <div class="inv-body">
       <div class="opt-grid">${chk('airduct','air_duct','Air Duct Cleaning')} ${chk('airduct','dryer_vent','Dryer Vent Cleaning')}</div>
       <div class="qty-line"><span class="tiny">Bedrooms</span>${stepperHtml('ad-bedrooms', fd.airduct.bedrooms||1)}
         <input id="jb-adnote" placeholder="note…" value="${esc(fd.airduct.note||'')}" style="flex:1"></div>
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('fan')} Equipment Rental ${helpBtn('equipment')} ${amtWrap('equipment',sec.equipment)}</div>
+  <div class="inv-sec${invSecCls('equipment', sec)}" data-sec="equipment"><div class="inv-head" ${invSecHead('equipment', sec)}${ic('fan')} Equipment Rental ${helpBtn('equipment')} ${amtWrap('equipment',sec.equipment)}</div>
     <div class="inv-body">
       <div class="tiny">${t('equipment')}</div>
       ${eqRows}
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('layers')} Pad Installation ${helpBtn('pad')} ${amtWrap('pad',sec.pad)}</div>
+  <div class="inv-sec${invSecCls('pad', sec)}" data-sec="pad"><div class="inv-head" ${invSecHead('pad', sec)}${ic('layers')} Pad Installation ${helpBtn('pad')} ${amtWrap('pad',sec.pad)}</div>
     <div class="inv-body">
       <div class="opt-grid">
         ${['q14','q12','q34','roll'].map(s=>{
@@ -5759,7 +6537,7 @@ function viewJob(){
       <div class="qty-line"><span class="tiny">Rooms</span>${stepperHtml('pad-rooms', fd.pad.rooms||0)}</div>
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('pen')} Other services ${helpBtn('others')} ${amtWrap('others',sec.others)}</div>
+  <div class="inv-sec${invSecCls('others', sec)}" data-sec="others"><div class="inv-head" ${invSecHead('others', sec)}${ic('pen')} Other services ${helpBtn('others')} ${amtWrap('others',sec.others)}</div>
     <div class="inv-body">
       ${fd.others.map((o,i)=>`
         <div class="qty-line">
@@ -5768,7 +6546,7 @@ function viewJob(){
         </div>`).join('')}
     </div></div>
 
-  <div class="inv-sec"><div class="inv-head">${ic('note')} ${t('note')} · ${t('extra_section')} ${helpBtn('note')} ${amtWrap('extra',sec.extra)}</div>
+  <div class="inv-sec${invSecCls('note', sec)}" data-sec="note"><div class="inv-head" ${invSecHead('note', sec)}${ic('note')} ${t('note')} · ${t('extra_section')} ${helpBtn('note')} ${amtWrap('extra',sec.extra)}</div>
     <div class="inv-body">
       ${dictationHTML('jb-note', j.note || '', 'draft')}
       <div class="tiny">${t('note_hint')}</div>
@@ -5790,7 +6568,7 @@ function viewJob(){
     <div class="qty-line">
       <span class="name">${t('approved_total')}</span>
       <input id="jb-approved" class="price-input" inputmode="decimal" value="${j.approved_total ?? total}">
-      <button class="btn btn-blue sm" onclick="App.approveJob()">${ic(isApproved ? 'refresh' : 'check')} ${t('approve')}</button>
+      <button class="btn btn-blue sm" data-net="${(!isAdmin() && j.technician_id !== state.user.id) ? '1' : '0'}" onclick="App.approveJob()">${ic(isApproved ? 'refresh' : 'check')} ${t('approve')}</button>
     </div>
     ${isApproved ? `<div class="tiny">${ic('check')} ${t('approved_by')}: ${esc(profName(j.approved_by))} · ${j.approved_at ? j.approved_at.slice(0,16).replace('T',' ') : ''}</div>` : ''}
     <div class="tiny" style="margin-top:6px">${t('approve_reset_note')}</div>
@@ -5916,6 +6694,7 @@ function bindJobForm(){
     autosaveDraft();
   });
 
+  root.addEventListener('keydown', invSecKey);                 // v1.08.38
   root.addEventListener('input', (e) => {
     if (state.screen !== 'job' || !jobDraft) return;
     if (e.target.id === 'jb-note') jobDraft.note = e.target.value;
@@ -5928,6 +6707,12 @@ function bindJobForm(){
 
   root.addEventListener('click', (e) => {
     if (state.screen !== 'job' || !jobDraft) return;
+    /* v1.08.38: тап по заголовку секции — спойлер (кнопка «?» внутри — не в счёт) */
+    const hd = e.target.closest('.inv-head');
+    if (hd && !e.target.closest('button,a,input,select,label')){
+      const s = hd.closest('.inv-sec[data-sec]');
+      if (s){ invSecToggle(s.dataset.sec); return; }
+    }
     const b = e.target.closest('.stepper button');
     if (!b) return;
     const st = b.closest('.stepper'); const id = st.dataset.st;
@@ -5961,6 +6746,15 @@ function bindJobForm(){
   });
 }
 
+/* v1.08.38: Enter/пробел на заголовке секции — как тап */
+function invSecKey(e){
+  if (state.screen !== 'job' || !jobDraft) return;
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const hd = e.target && e.target.classList && e.target.classList.contains('inv-head') ? e.target : null;
+  if (!hd) return;
+  const s = hd.closest('.inv-sec[data-sec]'); if (!s) return;
+  e.preventDefault(); invSecToggle(s.dataset.sec);
+}
 function recalcJob(){
   const p = priceResolver(jobDraft.counterparty_id);
   const sec = calcSections(jobDraft.form_data, p);
@@ -7030,6 +7824,7 @@ function viewSettings(){
       </div>
       <button class="btn btn-green sm" onclick="App.sync()">${t('sync')}</button>
     </div>
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.netCheck()">${ic('wifi')} ${t('net_check_btn')} · ${netPillHtml()}</button>
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.diag()">${ic('steth')} ${t('diag')}</button>
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.showLog()">${ic('receipt')} ${t('log_title')}</button>
     ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
@@ -7094,6 +7889,8 @@ function viewSettings(){
   ${fold('mlim', t('media_lim_card'), 'clip', mediaLimitsCardHtml())}
   ${fold('gd', t('gd_card'), 'folder', mediaSettingsCardHtml())}
   ${fold('bn', t('bn_card'), 'car', bnCardHtml())}
+  ${fold('tvs', t('tvs_card'), 'tv', tvSessionsCardHtml())}
+  ${fold('tvc', t('tvc_card'), 'tv', tvCfgCardHtml())}
   ${fold('feat', t('feat_card'), 'gear', featCardHtml())}
   ${fold('bkp', t('bk_card'), 'save', backupCardHtml())}
   ${fold('abk', t('abk_card'), 'save', abkCardHtml())}
@@ -7357,6 +8154,20 @@ function initSW(){
    ПУБЛИЧНЫЕ ОБРАБОТЧИКИ + СТАРТ
    ===================================================================== */
 const App = {
+  /* v1.08.39: бухгалтерия */
+  accTab(v){ accF().tab = v; render(); },
+  accSet(k, v){ const f = accF(); f[k] = v; render(); },
+  accRange(a, b){ const f = accF(); f.from = a; f.to = b; render(); },
+  accOpen(id){ const f = accF(); f.open[id] = !f.open[id]; render(); },
+  accStaffOpen(id){ const f = accF(); f.staffOpen[id] = !f.staffOpen[id]; render(); },
+  accType, accMark, accMarkAll, accSaveRates, accMapSet, accMapReset, accDoc, accPdf, accPdfBatch, accCsv,
+  /* v1.08.38: офлайн-режим и спойлеры инвойса */
+  netCheck, netOff, netState: () => netState(), invSecAll, invSecToggle,
+  /* v1.08.37: режим телевизора */
+  tvStart, tvCancel, tvNewCode, tvFsGo, tvFsExit,
+  tvListRefresh, tvApprove, tvDeny, tvRevoke,
+  tvcFlag, tvcMode, tvcStep, tvcMove, tvcSwap, tvcReset,
+  tvcDragStart, tvcOver, tvcLeave, tvcDrop,
   go(s){
     dictStop();
     if (state.screen==='job' && s!=='job') { state.jobId=null; localStorage.removeItem('techlog_draft'); }
@@ -7369,24 +8180,17 @@ const App = {
      App, а его там нет; ветка «вернуться на исходный экран» была мертва. */
   curScreen(){ return state.screen; },
   shiftWeek(n){ state.weekStart = addDaysISO(state.weekStart, n*7); const cand = addDaysISO(state.selDate, n*7); state.selDate = cand; render(); },
-  /* v1.08.18: свайп по ленте недели листает только саму ленту. Выбранный
-     день остаётся прежним — его меняет лишь нажатие по дню. */
-  weekSwipe(n){ state.weekStart = addDaysISO(state.weekStart, n * 7); navigator.vibrate?.(8); render(); },
-  /* v1.07.80: свайп влево/вправо по дням. Метод существовал только в вызове
-     из initSwipes — сам обработчик никогда не навешивался, а App.swipeDay
-     не был объявлен вовсе. Если новый день ушёл за пределы показанной
-     недели — лента недели переезжает следом. */
-  swipeDay(n){
-    const next = shiftWorkday(state.selDate, n);
-    state.selDate = next;
-    if (next < state.weekStart || next > addDaysISO(state.weekStart, 6))
-      state.weekStart = mondayOf(next);
-    navigator.vibrate?.(10);
-    render();
-  },
+  /* v1.08.34: weekSwipe и swipeDay удалены — жест по календарю ничего
+     не переключает (см. initSwipes); неделя листается только кнопками ‹ ›. */
   setMine(v){ state.filterMine = v; render(); },
   sync(){ syncNow(false); checkForUpdate('кнопка синхронизации', true); },
   addTaskModal, ntCpChange, ntPickWt, createTask, closeModal, ntPropRefresh, ntPropPick,
+  unitKbToggle(){
+    localStorage.setItem('tl_unit_kb', unitKb() === 'numeric' ? 'abc' : 'num');
+    const inp = $('#nt-unit'), btn = $('#nt-unit-kb');
+    if (btn) btn.textContent = unitKbLabel();
+    if (inp){ inp.blur(); inp.setAttribute('inputmode', unitKb()); inp.focus(); }
+  },
   mediaQueueModal, mqPing, mqRetry, plHours,
   /* v1.07.67: диагностика интерфейса (движок — uidiag.js) */
   uiDiagRun(){
@@ -7529,6 +8333,7 @@ const App = {
     dbSaveOrg(org); audit('org_set', 'org', 'doc_no_fmt', { v: DOC_FMT_DEF });
     toast('✓ ' + t('saved')); render();
   },
+  noHelp(){ openModal(modalHead(t('no_help_t'), 'receipt') + noHelpHtml()); },
   /* v1.07.88: архив-корзина и сверка */
   archive(kind, id){ if (confirm(t('arch_q'))) archiveDoc(kind, id); },
   unarchive: unarchiveDoc,
@@ -7707,6 +8512,18 @@ const App = {
                        : (cur <= 3 ? 0 : cur - 1);
     if (next !== cur) App.setBoardCols(next);
   },
+  /* v1.08.36: сохранить ссылку на корневую папку и сразу зарезолвить её имя.
+     Свежий ID уходит параметром — не ждём, пока org_settings доедет до базы. */
+  gdRootSet(kind, el){
+    const key = kind === 'photo' ? 'gd_photo_folder'
+              : kind === 'invoice' ? 'gd_inv_folder' : 'gd_files_folder';
+    const id = App.gdFolderIdOf(el.value);
+    App.setOrgText(key, id);
+    gdNamesRefresh('&photo=' + encodeURIComponent(kind === 'photo' ? id : String((state.data.org_settings || {}).gd_photo_folder || ''))
+      + '&inv=' + encodeURIComponent(kind === 'invoice' ? id : String((state.data.org_settings || {}).gd_inv_folder || ''))
+      + '&files=' + encodeURIComponent(kind === 'file' ? id : String((state.data.org_settings || {}).gd_files_folder || '')));
+  },
+  gdNamesApply, gdNamesRefresh,
   setOrgText(key, v){                              /* v1.07.83: строковая настройка (e-mail переводчика) */
     const org = { ...state.data.org_settings, [key]: String(v || '').trim() };
     dbSaveOrg(org); audit('org_set', 'org', key, { v: String(v || '').trim().slice(0, 60) });
@@ -7739,6 +8556,13 @@ const App = {
   optApply(){ optApplyOrder(); },
   searchOpen(){ searchOpen(); },
   searchType(){ srchRender(); },
+  /* v1.08.35: чип «что ищем» — классы меняем на месте, фокус из поля не уходит */
+  srchChip(k){
+    srchKind = k;
+    document.querySelectorAll('.srch-chips .chip-preset')
+      .forEach(b => b.classList.toggle('on', b.dataset.sk === k));
+    srchRender();
+  },
   searchGo(kind, id){ searchGo(kind, id); },
   jobClone(id){ jobClone(id); },
   tplMove(){ tplMoveModal(); },
@@ -7911,7 +8735,7 @@ function initBackGuard(){
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') pendingFlush();
     });
-    window.addEventListener('online', () => pendingFlush());
+    netInit();             // v1.08.38: online/offline, пинг, перехват серверных кнопок (досыл очереди — в netBack)
     if (HAS_SB){
       try{
         const cached = loadLocal();
@@ -7920,6 +8744,7 @@ function initBackGuard(){
     }
     await initAuth();
     if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
+    if (!state.user) await tvResume();     // v1.08.37: телевизор переживает перезагрузку страницы
     render();
     if (state.user) checkPickupBanner(true);
     setInterval(() => checkForUpdate('таймер 10 мин'), 10 * 60 * 1000);
@@ -7930,9 +8755,734 @@ function initBackGuard(){
   } catch (e) {
     console.error('TechLog start failed:', e);
     window.__tlErr = e && (e.message || String(e));
-    if (window.__tlPanic) window.__tlPanic('Ошибка запуска приложения'); 
+    if (window.__tlPanic) window.__tlPanic(localStorage.getItem('techlog_lang') === 'en' ? 'Application failed to start' : 'Ошибка запуска приложения'); 
   }
 })();
+
+/* =====================================================================
+   v1.08.37 · РЕЖИМ ТЕЛЕВИЗОРА
+   ---------------------------------------------------------------------
+   Экран для офисного телевизора: карта дня + карточки + сотрудники +
+   графики. Телевизор НЕ входит в аккаунт: кнопка «Режим телевизора» на
+   экране входа создаёт сессию (RPC tv_request) и показывает 4-значный
+   код; админ в Настройках → «ТВ-экраны» жмёт «Авторизовать ТВ»
+   (tv_decide), после чего телевизор раз в TV_FEED_MS получает готовый
+   набор данных одним RPC tv_feed и раз в TV_BN_MS — машины через
+   Edge Function bouncie (?tv=1 + заголовок x-tv-key; ответ без IMEI).
+   Раскладку задаёт админ в карточке «Режим телевизора» — она лежит в
+   org_settings.tv (JSON) и приезжает на ТВ внутри tv_feed.
+   В демо-режиме кнопка открывает экран сразу, на демо-данных.
+   ===================================================================== */
+const TV_LS_KEY = 'tl_tv_key';
+const TV_POLL_MS = 4000, TV_FEED_MS = 25000, TV_BN_MS = 20000;
+const TV = { screen: null, key: '', code: '', feed: null, bn: null, bnOff: false,
+             map: null, pins: {}, cars: {}, routes: {}, fit: false,
+             tm: {}, fsBound: false };
+const TV_WIDGETS = ['cards', 'workers', 'chDay', 'chWeek', 'chMi'];
+const TVDEF = { map: 1, cardJobs: 1, cardPk: 1, workers: 1, chDay: 1, chWeek: 0, chMi: 1,
+  wMode: 'auto', wTotal: 10, wScreen: 6,
+  zones: { rail: ['cards', 'workers'], bottom: ['chDay', 'chWeek', 'chMi'] } };
+
+function tvBodyClass(on){
+  try{
+    document.documentElement.classList.toggle('tl-tv', !!on);
+    document.body.classList.toggle('tl-tvmode', !!on);
+    if (!on) document.body.classList.remove('tl-tvfs');
+  }catch(e){}
+}
+/* Раскладка: org_settings.tv в приложении, feed.tv на телевизоре */
+function tvCfgParse(src){
+  let c = {};
+  try{ c = JSON.parse(src || '') || {}; }catch(e){ c = {}; }
+  const out = { ...TVDEF, ...c };
+  const z = { rail: [], bottom: [] };
+  const seen = new Set();
+  for (const zone of ['rail', 'bottom'])
+    for (const id of ((c.zones || {})[zone] || []))
+      if (TV_WIDGETS.includes(id) && !seen.has(id)){ z[zone].push(id); seen.add(id); }
+  for (const zone of ['rail', 'bottom'])
+    for (const id of TVDEF.zones[zone])
+      if (!seen.has(id)){ z[zone].push(id); seen.add(id); }
+  out.zones = z;
+  out.wTotal = Math.max(1, Math.min(20, +out.wTotal || TVDEF.wTotal));
+  out.wScreen = Math.max(1, Math.min(10, +out.wScreen || TVDEF.wScreen));
+  if (!['auto', 'full', 'compact'].includes(out.wMode)) out.wMode = 'auto';
+  return out;
+}
+function tvCfg(){
+  return tvCfgParse(TV.screen && TV.feed ? TV.feed.tv
+    : ((state.data || {}).org_settings || {}).tv);
+}
+
+/* ---------------- запуск, ожидание, восстановление ---------------- */
+async function tvStart(){
+  if (!HAS_SB){                                   /* демо: сразу на экран */
+    if (!state.data) state.data = loadLocal() || seedDemoData();
+    TV.key = 'demo'; TV.feed = tvDemoFeed(); TV.bn = tvDemoBn();
+    TV.screen = 'on'; render(); tvTimersOn(); return;
+  }
+  TV.screen = 'wait'; TV.code = ''; render();
+  try{
+    const { data, error } = await state.sb.rpc('tv_request',
+      { p_agent: String(navigator.userAgent || '').slice(0, 110) });
+    if (error) throw error;
+    TV.key = data.key; TV.code = data.code;
+    try{ localStorage.setItem(TV_LS_KEY, TV.key); }catch(e){}
+    render();
+    TV.tm.poll = setInterval(tvPollOnce, TV_POLL_MS);
+  }catch(e){
+    toast('⛔ ' + errStr(e), 'err'); tvStop(false);
+  }
+}
+async function tvResume(){
+  let k = '';
+  try{ k = localStorage.getItem(TV_LS_KEY) || ''; }catch(e){}
+  if (!k || !HAS_SB) return;
+  TV.key = k;
+  try{
+    const { data } = await state.sb.rpc('tv_poll', { p_key: k });
+    const st = data && data.status;
+    if (st === 'approved'){ tvGoOn(); return; }
+    if (st === 'pending'){ TV.screen = 'wait'; TV.code = ''; TV.tm.poll = setInterval(tvPollOnce, TV_POLL_MS); return; }
+  }catch(e){}
+  try{ localStorage.removeItem(TV_LS_KEY); }catch(e){}
+  TV.key = '';
+}
+async function tvPollOnce(){
+  if (!TV.key || TV.screen !== 'wait') return;
+  try{
+    const { data, error } = await state.sb.rpc('tv_poll', { p_key: TV.key });
+    if (error) return;
+    const st = data && data.status;
+    if (st === 'approved') tvGoOn();
+    else if (st === 'revoked' || st === 'unknown'){
+      toast('⛔ ' + t('tv_revoked'), 'err'); tvStop(true);
+    }
+  }catch(e){}
+}
+function tvGoOn(){
+  if (TV.tm.poll){ clearInterval(TV.tm.poll); TV.tm.poll = 0; }
+  TV.screen = 'on'; TV.fit = false; render();
+  tvFeedTick(true); tvBnTick(true); tvTimersOn();
+}
+function tvTimersOn(){
+  if (!TV.tm.clk) TV.tm.clk = setInterval(tvClockTick, 5000);
+  if (HAS_SB){
+    if (!TV.tm.feed) TV.tm.feed = setInterval(() => tvFeedTick(false), TV_FEED_MS);
+    if (!TV.tm.bn) TV.tm.bn = setInterval(() => tvBnTick(false), TV_BN_MS);
+  } else if (!TV.tm.demo) TV.tm.demo = setInterval(tvDemoStep, 3000);
+}
+function tvStop(toLogin){
+  for (const k of Object.keys(TV.tm)){ if (TV.tm[k]){ clearInterval(TV.tm[k]); TV.tm[k] = 0; } }
+  if (TV.map){ try{ TV.map.remove(); }catch(e){} }
+  Object.assign(TV, { screen: null, key: '', code: '', feed: null, bn: null, bnOff: false,
+    map: null, pins: {}, cars: {}, routes: {}, fit: false });
+  tvBodyClass(false);
+  if (toLogin !== false){ state.screen = 'login'; render(); }
+}
+function tvCancel(){
+  try{ localStorage.removeItem(TV_LS_KEY); }catch(e){}
+  tvStop(true);
+}
+function tvNewCode(){
+  try{ localStorage.removeItem(TV_LS_KEY); }catch(e){}
+  if (TV.tm.poll){ clearInterval(TV.tm.poll); TV.tm.poll = 0; }
+  TV.key = ''; tvStart();
+}
+
+/* ---------------- данные ---------------- */
+async function tvFeedTick(force){
+  if (TV.screen !== 'on' || !HAS_SB) return;
+  try{
+    const { data, error } = await state.sb.rpc('tv_feed',
+      { p_key: TV.key, p_date: todayISO() });
+    if (error){
+      if (/TV_FORBIDDEN/.test(errStr(error))){
+        toast('⛔ ' + t('tv_revoked'), 'err');
+        try{ localStorage.removeItem(TV_LS_KEY); }catch(e){}
+        tvStop(true);
+      }
+      return;
+    }
+    TV.feed = data; tvRepaint();
+  }catch(e){ dlog('⛔ tv_feed:', e); }
+}
+async function tvBnTick(force){
+  if (TV.screen !== 'on' || TV.bnOff || !HAS_SB) return;
+  try{
+    const w = bnDayWindow();
+    const r = await fetch(mediaFN() + '/bouncie?tv=1&from=' + encodeURIComponent(w.from)
+      + '&to=' + encodeURIComponent(w.to), { headers: { 'x-tv-key': TV.key } });
+    if (!r.ok){
+      if (r.status === 404 || r.status === 409) TV.bnOff = true;   /* не настроено — не долбим */
+      return;
+    }
+    const j = await r.json().catch(() => null);
+    if (j && j.cars){ TV.bn = j.cars; tvRepaint(); }
+  }catch(e){ dlog('⛔ bouncie tv:', e); }
+}
+
+/* ---------------- вычисления над фидом ---------------- */
+function tvBy(list, key){ const m = {}; (list || []).forEach(x => { m[x[key || 'id']] = x; }); return m; }
+function tvWorkersAll(){
+  const f = TV.feed || {};
+  const act = new Set();
+  (f.jobs || []).forEach(j => act.add(j.technician_id));
+  (f.pickups || []).forEach(p => act.add(p.technician_id));
+  (f.stat_day || []).forEach(x => { if (x.n) act.add(x.id); });
+  return (f.profiles || []).filter(p => p.role === 'tech' || act.has(p.id));
+}
+function tvCarOf(pid){ return (TV.bn || []).find(c => c.driver_id === pid) || null; }
+function tvOpenOf(pid){
+  const f = TV.feed || {};
+  const js = (f.jobs || []).filter(j => j.technician_id === pid && !j.done);
+  const pk = (f.pickups || []).filter(p => p.technician_id === pid);
+  return { js, pk };
+}
+/* статус строки сотрудника: едет → на объекте → план → свободен */
+function tvWorkerStatus(p){
+  const f = TV.feed || {};
+  const cxs = tvBy(f.complexes); const wts = tvBy(f.work_types);
+  const car = tvCarOf(p.id);
+  const { js, pk } = tvOpenOf(p.id);
+  const first = js[0] || null;
+  const firstPk = pk[0] || null;
+  const lbl = first
+    ? 'Unit ' + esc(first.unit || '—') + ' · ' + esc((wts[first.work_type_id] || {}).name || '')
+    : (firstPk ? t('tv_pickup_w') + ' · Unit ' + esc(firstPk.unit || '—') : '');
+  if (car && car.run)
+    return { cls: 'bn-go', html: '→ ' + (lbl || t('tv_go')), run: true };
+  const near = (cxid) => {
+    const cx = cxs[cxid];
+    if (!car || car.lat == null || !cx || cx.lat == null) return false;
+    const d = bnMiP({ lat: car.lat, lng: car.lng }, { lat: +cx.lat, lng: +cx.lng });
+    return d != null && d <= 0.15;
+  };
+  const at = [...js, ...pk].find(x => near(x.complex_id));
+  if (at) return { cls: 'bn-site',
+    html: t('tv_onsite') + ': ' + esc((cxs[at.complex_id] || {}).abbr || (cxs[at.complex_id] || {}).name || ''), run: false };
+  const sv = ((f.site_now) || []).find(x => x.driver_id === p.id);
+  if (sv && cxs[sv.complex_id]) return { cls: 'bn-site',
+    html: t('tv_onsite') + ': ' + esc(cxs[sv.complex_id].abbr || cxs[sv.complex_id].name || ''), run: false };
+  if (lbl) return { cls: 'bn-idle', html: t('tv_plan') + ': ' + lbl, run: false };
+  return { cls: 'bn-idle', html: car ? t('tv_park') : t('tv_idle'), run: false };
+}
+/* нумерация точек дня: приоритеты, затем машины по номерам; пикапы после работ */
+function tvDayItems(){
+  const f = TV.feed || {};
+  const profs = tvBy(f.profiles); const wts = tvBy(f.work_types); const cxs = tvBy(f.complexes);
+  const carNo = (id) => (profs[id] || {}).car_no ?? 999;
+  const jobs = (f.jobs || []).filter(j => !j.done)
+    .slice().sort((a, b) => (b.priority === true) - (a.priority === true)
+      || carNo(a.technician_id) - carNo(b.technician_id)
+      || (a.sort_order || 0) - (b.sort_order || 0));
+  const byJob = {};
+  (f.pickups || []).forEach(p => { (byJob[p.job_id] = byJob[p.job_id] || []).push(p); });
+  let n = 0; const pts = [];
+  jobs.forEach(j => { const cx = cxs[j.complex_id]; if (!cx || cx.lat == null) return;
+    pts.push({ num: ++n, kind: 'job', cx, color: (wts[j.work_type_id] || {}).color || '#8AA0AB' }); });
+  Object.values(byJob).forEach(list => { const cx = cxs[list[0].complex_id]; if (!cx || cx.lat == null) return;
+    pts.push({ num: ++n, kind: 'pk', cx, color: '#8AA0AB' }); });
+  /* выполненное сегодня — серым */
+  const doneCx = new Set();
+  (f.jobs || []).filter(j => j.done).forEach(j => doneCx.add(j.complex_id));
+  ((f.picked_today) || []).forEach(p => doneCx.add(p.complex_id));
+  const activeCx = new Set(pts.map(p => p.cx.id));
+  const done = [...doneCx].filter(id => !activeCx.has(id) && cxs[id] && cxs[id].lat != null)
+    .map(id => ({ kind: 'done', cx: cxs[id] }));
+  return { pts, done };
+}
+
+/* ---------------- виджеты ---------------- */
+function tvCardsHtml(cfg){
+  if (!cfg.cardJobs && !cfg.cardPk) return '';
+  const f = TV.feed || {};
+  const wts = tvBy(f.work_types); const ets = tvBy(f.equipment_types);
+  const jobs = f.jobs || []; const doneN = jobs.filter(j => j.done).length;
+  const byWt = {};
+  jobs.forEach(j => { byWt[j.work_type_id] = (byWt[j.work_type_id] || 0) + 1; });
+  const wtRows = Object.entries(byWt)
+    .map(([id, count]) => ({ ...(wts[id] || { name: '?', color: '#8B9AA3' }), count }))
+    .sort((a, b) => b.count - a.count || String(a.name).localeCompare(String(b.name)));
+  const pks = f.pickups || [];
+  const stops = new Set(pks.map(p => p.job_id)).size;
+  let units = 0, over = 0; const byEq = {};
+  pks.forEach(p => { units += (+p.qty || 1);
+    byEq[p.equipment_type_id] = (byEq[p.equipment_type_id] || 0) + (+p.qty || 1);
+    if (p.overdue) over++; });
+  const eqRows = Object.entries(byEq)
+    .map(([id, count]) => ({ ...(ets[id] || { abbr: '?', color: '#8B9AA3', name: '?' }), count }))
+    .sort((a, b) => b.count - a.count || String(a.abbr).localeCompare(String(b.abbr)));
+  const cj = cfg.cardJobs ? `
+    <div class="dcard c-blue">
+      <div class="dcard-head"><span class="n">${jobs.length}</span><span class="l">${t('tv_jobs_l')}</span>${doneN ? `<span class="chip ok">✓ ${doneN}</span>` : ''}</div>
+      ${wtRows.length ? `<div class="wt-lines">${wtRows.map(x => `
+        <span class="wt-line"><i class="wt-dot" style="background:${x.color}"></i><span class="wt-nm" style="color:${x.color}" title="${esc(x.name)}">${esc(x.name)}</span><b>${x.count}</b></span>`).join('')}</div>`
+        : `<div class="tiny" style="margin-top:6px">${t('day_empty')}</div>`}
+    </div>` : '';
+  const cp = cfg.cardPk ? `
+    <div class="dcard c-gray">
+      <div class="dcard-head"><span class="n">${stops}</span><span class="l">${t('tv_stops_l')}</span>${over ? `<span class="chip bad">${t('tv_over_l')}: ${over}</span>` : ''}</div>
+      <div class="tiny" style="margin-top:2px">${units} ${t('tv_eq_l')}</div>
+      ${eqRows.length ? `<div class="eq-badges">${eqRows.map(x => `
+        <span class="eq-badge" title="${esc(x.name)}"><span class="icon-circle" style="background:${x.color};color:${textColorFor(x.color)}">${esc(x.abbr)}</span><b>${x.count}</b></span>`).join('')}</div>`
+        : `<div class="tiny" style="margin-top:6px">${t('day_empty')}</div>`}
+    </div>` : '';
+  return `<div class="tv-stats stats-day${(cfg.cardJobs && cfg.cardPk) ? '' : ' one'}">${cj}${cp}</div>`;
+}
+function tvWorkersHtml(cfg){
+  if (!cfg.workers) return '';
+  const all = tvWorkersAll();
+  const list = all.slice(0, cfg.wTotal);
+  const compact = cfg.wMode === 'compact' || (cfg.wMode === 'auto' && list.length > cfg.wScreen);
+  const dayN = {}; (TV.feed && TV.feed.stat_day || []).forEach(x => { dayN[x.id] = x.n; });
+  let totMi = 0, hasMi = false;
+  (TV.bn || []).forEach(c => { if (c.mi != null){ totMi += c.mi; hasMi = true; } });
+  const rows = compact
+    ? `<div class="twtiles">${list.map(p => { const st = tvWorkerStatus(p); return `
+        <div class="twtile"><span class="bn-sno${st.run ? ' run' : ''}">${p.car_no ?? '·'}</span>
+          <span class="nm"><b>${esc(shortName(p.name))}</b><span class="st-line ${st.cls}">${st.html}</span></span>
+          <span class="ck">✓${dayN[p.id] || 0}</span></div>`; }).join('')}</div>`
+    : `<div class="tv-rows">${list.slice(0, cfg.wScreen).map(p => {
+        const st = tvWorkerStatus(p); const car = tvCarOf(p.id);
+        return `
+        <div class="bn-srow tvw"><span class="bn-sno${st.run ? ' run' : ''}">${p.car_no ?? '·'}</span>
+          <div class="grow"><b>${esc(shortName(p.name))}</b><div class="st-line ${st.cls}">${st.html}</div>
+            <div class="tv-done">${t('tv_done_day')}: <b>✓ ${dayN[p.id] || 0}</b></div></div>
+          <div class="bn-smi"><b>${car && car.mi != null ? car.mi.toFixed(1) : '—'}</b> <span class="tiny">${t('bn_mi')}</span>
+            <div class="tiny">${car && car.min != null ? Math.floor(car.min / 60) + ':' + String(car.min % 60).padStart(2, '0') : '&nbsp;'}</div></div>
+        </div>`; }).join('')}
+      ${list.length > cfg.wScreen ? `<div class="tiny" style="margin-top:6px">+ ${list.length - cfg.wScreen} ${t('tv_more')}</div>` : ''}</div>`;
+  return `<div class="twg twg-workers">
+    <div class="twg-h">${ic('crew')} ${t('tv_workers')} <span class="tiny">${compact ? t('tv_compact') : t('tv_full')} · ${list.length} ${t('tv_of')} ${all.length}</span></div>
+    ${rows}
+    ${hasMi ? `<div class="tv-stot"><span class="grow">${t('tv_tot_mi')}</span><b>${totMi.toFixed(1)} ${t('bn_mi')}</b></div>` : ''}
+    <div class="tv-upd"><span class="dotlive"></span><span class="tv-updt">${t('tv_upd')}: ${tvHM()}</span></div>
+  </div>`;
+}
+function tvChartHtml(cfg, key){
+  if (!cfg[key]) return '';
+  const conf = {
+    chDay: { t: t('tv_ch_day'), c: 'var(--green)', v: p => (TV.feed && TV.feed.stat_day || []).find(x => x.id === p.id)?.n || 0, f: v => v },
+    chWeek: { t: t('tv_ch_week'), c: 'var(--blue)', v: p => (TV.feed && TV.feed.stat_week || []).find(x => x.id === p.id)?.n || 0, f: v => v },
+    chMi: { t: t('tv_ch_mi'), c: 'var(--orange)', v: p => { const c = tvCarOf(p.id); return c && c.mi != null ? c.mi : null; }, f: v => v.toFixed(1) }
+  }[key];
+  const rows = tvWorkersAll().slice(0, tvCfg().wTotal)
+    .map(p => ({ n: shortName(p.name), v: conf.v(p) }))
+    .filter(r => r.v != null).sort((a, b) => b.v - a.v).slice(0, 8);
+  if (!rows.length) return `<div class="twg"><div class="twg-h">${ic('chart')} ${conf.t}</div><div class="tiny">${t('day_empty')}</div></div>`;
+  const max = Math.max(1, ...rows.map(r => r.v));
+  return `<div class="twg"><div class="twg-h">${ic('chart')} ${conf.t}</div>
+    <div class="tvch">${rows.map(r => `
+      <div class="tvch-row"><span class="tvch-nm" title="${esc(r.n)}">${esc(r.n)}</span>
+        <div class="tvch-bar"><i style="width:${Math.round(r.v / max * 100)}%;background:${conf.c}"></i></div>
+        <b>${conf.f(r.v)}</b></div>`).join('')}</div></div>`;
+}
+function tvWidgetHtml(cfg, id){
+  if (id === 'cards') return tvCardsHtml(cfg);
+  if (id === 'workers') return tvWorkersHtml(cfg);
+  return tvChartHtml(cfg, id);
+}
+function tvHM(){ const d = new Date(), p = n => String(n).padStart(2, '0'); return p(d.getHours()) + ':' + p(d.getMinutes()); }
+
+/* ---------------- экраны ---------------- */
+function viewTvWait(){
+  return `<div class="login-wrap tvwait">
+    <div class="logo"><span>TL</span></div>
+    <div class="hello">${t('tv_btn')}</div>
+    ${TV.code
+      ? `<div class="tiny" style="margin-top:10px">${t('tv_wait_t')}</div>
+         <div class="tvw-code">${esc(TV.code)}</div>`
+      : `<div class="tiny" style="margin-top:14px;max-width:340px">${t('tv_wait_nocode')}</div>
+         <button class="btn btn-blue" style="margin-top:12px" onclick="App.tvNewCode()">${t('tv_newcode')}</button>`}
+    <div class="tvw-hint">${t('tv_wait_hint')}</div>
+    <div class="tvw-spin"><span class="dotlive"></span> ${t('tv_wait_wait')}</div>
+    <button class="btn btn-ghost" style="margin-top:16px" onclick="App.tvCancel()">${t('tv_cancel')}</button>
+  </div>`;
+}
+function viewTv(){
+  const cfg = tvCfg();
+  const d = new Date();
+  return `<div class="tvwrap${cfg.map ? '' : ' nomap'}">
+    <div class="tv-left">
+      <div class="tv-mapbox">
+        <div id="tv-map"></div>
+        <div class="tv-legend">
+          <span><span class="sw" style="background:#FF9600"></span>${t('tv_legend_job')}</span>
+          <span><span class="sw" style="background:#8AA0AB"></span>${t('tv_legend_pk')}</span>
+          <span><span class="sw sw-done"></span>${t('tv_legend_done')}</span>
+          <span><span class="car-sw"></span>${t('tv_legend_car')}</span>
+        </div>
+        <button class="tv-fsbtn" onclick="App.tvFsGo()">${ic('fs')} ${t('tv_fs')}</button>
+      </div>
+      <div class="tv-bottom" id="tv-zbot"></div>
+    </div>
+    <div class="tv-rail">
+      <div class="tv-head">
+        <div class="logo"><span>TL</span></div>
+        <div class="who"><b>${esc(((state.data || {}).org_settings || {}).company_short || 'APC')} · ${t('tv_today')}</b>
+          <div class="tiny">TechLog · ${t('tv_head_sub')}</div></div>
+        <div class="tv-clock"><div class="hm" id="tv-clk">${tvHM()}</div>
+          <div class="dt" id="tv-dte">${t('week_days')[(d.getDay() + 6) % 7]}, ${d.getDate()} ${t('months')[d.getMonth()]}</div></div>
+      </div>
+      <div id="tv-zrail"></div>
+    </div>
+    <button class="tv-x" onclick="App.tvFsExit()" aria-label="${t('tv_exit')}">${ic('close')}</button>
+  </div>`;
+}
+function tvAfterRender(){
+  tvBodyClass(true);
+  if (TV.screen !== 'on') return;
+  tvRepaint();
+  if (!TV.fsBound){
+    TV.fsBound = true;
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) document.body.classList.remove('tl-tvfs');
+    });
+  }
+}
+function tvRepaint(){
+  if (TV.screen !== 'on') return;
+  const cfg = tvCfg();
+  const zr = document.getElementById('tv-zrail');
+  const zb = document.getElementById('tv-zbot');
+  if (!zr || !zb) return;
+  zr.innerHTML = cfg.zones.rail.map(id => tvWidgetHtml(cfg, id)).join('');
+  zb.innerHTML = cfg.zones.bottom.map(id => tvWidgetHtml(cfg, id)).join('');
+  const wrap = document.querySelector('.tvwrap');
+  if (wrap) wrap.classList.toggle('nomap', !cfg.map);
+  tvClockTick();
+  if (cfg.map) tvMapSync(); else if (TV.map){ try{ TV.map.remove(); }catch(e){} TV.map = null; }
+}
+function tvClockTick(){
+  const el = document.getElementById('tv-clk'); if (el) el.textContent = tvHM();
+  const d = new Date(); const de = document.getElementById('tv-dte');
+  if (de) de.textContent = t('week_days')[(d.getDay() + 6) % 7] + ', ' + d.getDate() + ' ' + t('months')[d.getMonth()];
+  document.querySelectorAll('.tv-updt').forEach(x => { x.textContent = t('tv_upd') + ': ' + tvHM(); });
+}
+/* ---------------- карта ---------------- */
+function tvMapSync(){
+  if (!window.L){ setTimeout(tvMapSync, 200); return; }
+  const el = document.getElementById('tv-map'); if (!el) return;
+  if (!TV.map){
+    TV.map = L.map('tv-map', { zoomControl: false, attributionControl: true,
+      dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false });
+    TV.map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(TV.map);
+    TV.pins = {}; TV.cars = {}; TV.routes = {}; TV.fit = false;
+    TV.pinLayer = L.layerGroup().addTo(TV.map);
+    TV.carLayer = L.layerGroup().addTo(TV.map);
+  }
+  const { pts, done } = tvDayItems();
+  TV.pinLayer.clearLayers();
+  const marks = [];
+  pts.forEach(p => {
+    L.marker([+p.cx.lat, +p.cx.lng], { icon: L.divIcon({ className: '', iconSize: null,
+      html: `<div class="map-pin tvpin" style="background:${p.color};color:${textColorFor(p.color)}">${p.num}</div>` }) })
+      .addTo(TV.pinLayer);
+    marks.push([+p.cx.lat, +p.cx.lng]);
+  });
+  done.forEach(p => {
+    L.marker([+p.cx.lat, +p.cx.lng], { icon: L.divIcon({ className: '', iconSize: null,
+      html: `<div class="map-pin tvpin tvdone">✓</div>` }) }).addTo(TV.pinLayer);
+  });
+  /* машины */
+  const cxs = tvBy((TV.feed || {}).complexes);
+  const seen = new Set();
+  (TV.bn || []).forEach(c => {
+    if (c.lat == null) return;
+    const id = String(c.car_no ?? '') + '|' + String(c.driver_id ?? '');
+    seen.add(id);
+    const icon = L.divIcon({ className: '', iconSize: null,
+      html: `<div class="map-car tvcar${c.run ? ' run' : ''}"><span class="map-car-h" style="transform:rotate(${+c.heading || 0}deg)"></span>${c.car_no ?? '·'}</div>` });
+    let m = TV.cars[id];
+    if (!m){ m = L.marker([c.lat, c.lng], { icon, zIndexOffset: 500 }).addTo(TV.carLayer); TV.cars[id] = m; }
+    else { m.setLatLng([c.lat, c.lng]); m.setIcon(icon); }
+    marks.push([c.lat, c.lng]);
+    /* пунктир к первой открытой точке водителя */
+    const open = c.driver_id ? tvOpenOf(c.driver_id) : { js: [], pk: [] };
+    const dest = (open.js[0] || open.pk[0]) ? cxs[(open.js[0] || open.pk[0]).complex_id] : null;
+    const r = TV.routes[id];
+    if (c.run && dest && dest.lat != null){
+      const pts2 = [[c.lat, c.lng], [+dest.lat, +dest.lng]];
+      if (r) r.setLatLngs(pts2);
+      else TV.routes[id] = L.polyline(pts2, { dashArray: '6 8', color: '#58CC02', weight: 3, opacity: .8 }).addTo(TV.carLayer);
+    } else if (r){ TV.carLayer.removeLayer(r); delete TV.routes[id]; }
+  });
+  for (const id of Object.keys(TV.cars)) if (!seen.has(id)){
+    TV.carLayer.removeLayer(TV.cars[id]); delete TV.cars[id];
+    if (TV.routes[id]){ TV.carLayer.removeLayer(TV.routes[id]); delete TV.routes[id]; }
+  }
+  if (!TV.fit){
+    if (marks.length) TV.map.fitBounds(marks, { padding: [46, 46], maxZoom: 13 });
+    else TV.map.setView([33.79, -84.39], 10);          /* Атланта */
+    TV.fit = true;
+    setTimeout(() => TV.map && TV.map.invalidateSize(), 150);
+  }
+}
+/* ---------------- полный экран ---------------- */
+function tvFsGo(){
+  const el = document.documentElement;
+  const f = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (f){ try{ const p = f.call(el); if (p && p.catch) p.catch(() => {}); }catch(e){} }
+  document.body.classList.add('tl-tvfs');            /* киоск-вид даже без Fullscreen API */
+  setTimeout(() => TV.map && TV.map.invalidateSize(), 250);
+}
+function tvFsExit(){
+  if (document.fullscreenElement && document.exitFullscreen){
+    try{ const p = document.exitFullscreen(); if (p && p.catch) p.catch(() => {}); }catch(e){}
+  }
+  document.body.classList.remove('tl-tvfs');
+  setTimeout(() => TV.map && TV.map.invalidateSize(), 250);
+}
+
+/* ---------------- демо-режим (без Supabase) ---------------- */
+function tvDemoFeed(){
+  const d = state.data; const iso = todayISO(); const wk = addDaysISO(iso, -6);
+  const inWk = (x) => x >= wk && x <= iso;
+  const doneSt = (j) => j.status === 'done' || j.status === 'approved';
+  const day = {}, week = {};
+  (d.jobs || []).forEach(j => {
+    if (!doneSt(j)) return;
+    if (j.date === iso) day[j.technician_id] = (day[j.technician_id] || 0) + 1;
+    if (inWk(j.date)) week[j.technician_id] = (week[j.technician_id] || 0) + 1;
+  });
+  return {
+    date: iso,
+    tv: (d.org_settings || {}).tv || null,
+    work_types: (d.work_types || []).map(w => ({ id: w.id, name: w.name, color: w.color })),
+    equipment_types: (d.equipment_types || []).map(e => ({ id: e.id, abbr: e.abbr, name: e.name, color: e.color })),
+    complexes: (d.complexes || []).map(c => ({ id: c.id, name: c.name, abbr: c.abbr, lat: c.lat, lng: c.lng })),
+    profiles: (d.profiles || []).filter(p => !p.blocked)
+      .map(p => ({ id: p.id, name: p.display_name, car_no: p.car_no, role: p.role }))
+      .sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999)),
+    jobs: (d.jobs || []).filter(j => j.date === iso && !j.archived_at)
+      .map(j => ({ id: j.id, unit: j.unit_number, complex_id: j.complex_id, work_type_id: j.work_type_id,
+        technician_id: j.technician_id, status: j.status, priority: !!j.priority,
+        sort_order: j.sort_order || 0, done: doneSt(j) })),
+    pickups: (d.placements || []).filter(p => pkPending(p) && p.due_date <= iso)
+      .map(p => ({ job_id: p.job_id, complex_id: p.complex_id, unit: p.unit_number,
+        technician_id: p.technician_id, equipment_type_id: p.equipment_type_id,
+        qty: p.qty, due_date: p.due_date, overdue: p.due_date < iso })),
+    picked_today: [],
+    site_now: (d.site_visits || []).filter(v => v.date === iso && !v.left_at)
+      .map(v => ({ driver_id: v.driver_id, complex_id: v.complex_id })),
+    stat_day: Object.entries(day).map(([id, n]) => ({ id, n })),
+    stat_week: Object.entries(week).map(([id, n]) => ({ id, n }))
+  };
+}
+function tvDemoBn(){
+  const d = state.data;
+  const cxs = (d.complexes || []).filter(c => c.lat != null);
+  if (!cxs.length) return [];
+  return (d.vehicles || []).filter(v => v.imei).map((v, i) => {
+    const open = v.driver_id ? tvOpenOf(v.driver_id) : { js: [], pk: [] };
+    /* цель водителя из фида посчитаем позже; для демо просто расставим */
+    const org = cxs[(i + 2) % cxs.length];
+    const run = i === 0;
+    return { car_no: v.car_no ?? null, driver_id: v.driver_id ?? null, run,
+      lat: +org.lat + (run ? 0.05 : 0.012), lng: +org.lng - (run ? 0.05 : 0.012),
+      heading: 120 + i * 60, mi: [12.4, 19.7, 27.0][i] ?? 8.2, min: [62, 83, 104][i] ?? 37, n: 3 + i };
+  });
+}
+function tvDemoStep(){
+  if (TV.screen !== 'on' || !TV.bn || !TV.bn.length) return;
+  const c = TV.bn.find(x => x.run); if (!c || !c.driver_id) return;
+  const cxs = tvBy((TV.feed || {}).complexes);
+  const open = tvOpenOf(c.driver_id);
+  const dest = (open.js[0] || open.pk[0]) ? cxs[(open.js[0] || open.pk[0]).complex_id] : null;
+  if (!dest || dest.lat == null) return;
+  c.lat += (+dest.lat - c.lat) * 0.06;
+  c.lng += (+dest.lng - c.lng) * 0.06;
+  tvMapSync();
+}
+
+/* ---------------- админка: карточка «ТВ-экраны» ---------------- */
+const TVS = { list: null, at: 0, busy: false };
+function tvAgo(ts){
+  if (!ts) return '—';
+  const s = Math.max(0, (Date.now() - Date.parse(ts)) / 1000);
+  if (s < 90) return t('tvs_online');
+  const m = Math.round(s / 60);
+  if (m < 60) return t('tvs_seen') + ' ' + m + ' ' + t('min_short');
+  return t('tvs_seen') + ' ' + fmtDMY(String(ts).slice(0, 10)) + ' ' + String(ts).slice(11, 16);
+}
+function tvsRowsHtml(){
+  const L = TVS.list;
+  if (!L) return `<div class="tiny">…</div>`;
+  if (!L.length) return `<div class="tiny">${t('tvs_none')}</div>`;
+  return L.map(x => {
+    const st = x.status === 'pending' ? `<span class="chip warn">${t('tvs_pending')}</span>`
+      : x.status === 'approved' ? `<span class="chip ok">${t('tvs_ok')}</span>`
+      : `<span class="chip bad">${t('tvs_rev')}</span>`;
+    const online = x.last_seen_at && (Date.now() - Date.parse(x.last_seen_at)) < 90000;
+    const btns = x.status === 'pending'
+      ? `<button class="btn btn-green sm" onclick="App.tvApprove('${x.id}')">${t('tvs_approve')}</button>
+         <button class="btn btn-ghost sm" onclick="App.tvDeny('${x.id}')">${t('tvs_deny')}</button>`
+      : x.status === 'approved'
+        ? `<button class="btn btn-ghost sm" onclick="App.tvRevoke('${x.id}')">${t('tvs_revoke')}</button>` : '';
+    return `<div class="tvs-row">
+      <span class="tvs-code">${esc(x.code || '')}</span>
+      <div class="grow"><div>${st} ${online ? `<span class="tvs-live"></span>` : ''}</div>
+        <div class="tiny">${t('tvs_created')}: ${fmtDMY(String(x.created_at || '').slice(0, 10))} ${String(x.created_at || '').slice(11, 16)} · ${tvAgo(x.last_seen_at)}</div>
+        ${x.agent ? `<div class="tiny" style="opacity:.75">${esc(String(x.agent).slice(0, 64))}</div>` : ''}</div>
+      <div class="tvs-btns">${btns}</div>
+    </div>`;
+  }).join('');
+}
+function tvSessionsCardHtml(){
+  if (!HAS_SB) return `<div class="tiny">${t('demo_sb_only')}</div>`;
+  return `<div class="tiny" style="margin-bottom:8px">${t('tvs_hint')}</div>
+    <div id="tvs-list">${tvsRowsHtml()}</div>
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.tvListRefresh()">${ic('refresh')} ${t('tvs_refresh')}</button>`;
+}
+function tvSettingsAfter(){
+  if (!HAS_SB || !isAdmin() || !foldOpen('tvs')) return;
+  if (Date.now() - TVS.at < 10000) return;
+  tvListRefresh(true);
+}
+async function tvListRefresh(silent){
+  if (!HAS_SB || TVS.busy) return;
+  TVS.busy = true; TVS.at = Date.now();
+  try{
+    const { data, error } = await state.sb.rpc('tv_list');
+    if (error) throw error;
+    TVS.list = data || [];
+    const el = document.getElementById('tvs-list');
+    if (el) el.innerHTML = tvsRowsHtml();
+  }catch(e){ if (!silent) toast('⛔ ' + errStr(e), 'err'); }
+  finally{ TVS.busy = false; }
+}
+async function tvDecideDo(id, approve){
+  try{
+    const { error } = await state.sb.rpc('tv_decide', { p_id: id, p_approve: approve });
+    if (error) throw error;
+    toast('✓ ' + t('saved'));
+    audit('tv_decide', 'tv', id, { approve });
+    TVS.at = 0; tvListRefresh(true);
+  }catch(e){ toast('⛔ ' + errStr(e), 'err'); }
+}
+function tvApprove(id){ tvDecideDo(id, true); }
+function tvDeny(id){ tvDecideDo(id, false); }
+function tvRevoke(id){ tvDecideDo(id, false); }
+
+/* ---------------- админка: карточка «Режим телевизора» ---------------- */
+function tvcWidgetName(id){
+  return { cards: t('tvc_cards_w'), workers: t('tvc_workers'),
+    chDay: t('tvc_chday'), chWeek: t('tvc_chweek'), chMi: t('tvc_chmi') }[id] || id;
+}
+function tvcItemHtml(id, zone, i, len){
+  const cfg = tvCfg();
+  const en = id === 'cards' ? (cfg.cardJobs || cfg.cardPk) : !!cfg[id];
+  return `<div class="tvz-item${en ? '' : ' off'}" draggable="true"
+      ondragstart="App.tvcDragStart(event,'${id}')">
+    <span class="hnd">≡</span>
+    ${id === 'cards' ? '<span style="width:19px;flex:0 0 auto"></span>'
+      : `<input type="checkbox" ${en ? 'checked' : ''} onchange="App.tvcFlag('${id}', this.checked)">`}
+    <span class="nm">${tvcWidgetName(id)}</span>
+    <button type="button" class="zi-b" ${i <= 0 ? 'disabled' : ''} onclick="App.tvcMove('${zone}',${i},-1)">${ic('chev_u')}</button>
+    <button type="button" class="zi-b" ${i >= len - 1 ? 'disabled' : ''} onclick="App.tvcMove('${zone}',${i},1)">${ic('chev_d')}</button>
+    <button type="button" class="zi-b" title="⇄" onclick="App.tvcSwap('${id}')">⇄</button>
+  </div>`;
+}
+function tvCfgCardHtml(){
+  const cfg = tvCfg();
+  const autoCompact = cfg.wTotal > cfg.wScreen;
+  const rule = cfg.wMode === 'auto'
+    ? `${t('tvc_now')}: ${cfg.wTotal} ${autoCompact ? '&gt;' : '≤'} ${cfg.wScreen} — <b style="color:var(--orange)">${autoCompact ? t('tvc_rule_on') : t('tvc_rule_off')}</b>.`
+    : t('tvc_rule_manual');
+  const chk = (key, label) => `<label class="chk-line"><input type="checkbox" ${cfg[key] ? 'checked' : ''}
+      onchange="App.tvcFlag('${key}', this.checked)"> ${label}</label>`;
+  return `
+  <div style="font-weight:900;margin-bottom:4px">${t('tvc_show')}</div>
+  ${chk('map', t('tvc_map'))}
+  ${chk('cardJobs', t('tvc_cjobs'))}
+  ${chk('cardPk', t('tvc_cpk'))}
+  ${chk('workers', t('tvc_workers'))}
+  ${chk('chDay', t('tvc_chday'))}
+  ${chk('chWeek', t('tvc_chweek'))}
+  ${chk('chMi', t('tvc_chmi'))}
+  <hr class="sep">
+  <div style="font-weight:900;margin-bottom:4px">${t('tv_workers')}</div>
+  <div class="qty-line"><span class="name">${t('tvc_wmode')}</span>
+    <div class="lang-seg">
+      <button class="${cfg.wMode === 'auto' ? 'on' : ''}" onclick="App.tvcMode('auto')">${t('tvc_auto')}</button>
+      <button class="${cfg.wMode === 'full' ? 'on' : ''}" onclick="App.tvcMode('full')">${t('tvc_full2')}</button>
+      <button class="${cfg.wMode === 'compact' ? 'on' : ''}" onclick="App.tvcMode('compact')">${t('tvc_compact2')}</button>
+    </div></div>
+  <div class="qty-line"><span class="name">${t('tvc_total')}</span>
+    <span class="stepper set-step">
+      <button type="button" aria-label="−" onclick="App.tvcStep('wTotal',-1)">${ic('minus')}</button>
+      <input class="price-input" inputmode="numeric" value="${cfg.wTotal}" onchange="App.tvcStep('wTotal', 0, this.value)">
+      <button type="button" aria-label="+" onclick="App.tvcStep('wTotal',1)">${ic('plus')}</button>
+    </span></div>
+  <div class="qty-line"><span class="name">${t('tvc_screen')}</span>
+    <span class="stepper set-step">
+      <button type="button" aria-label="−" onclick="App.tvcStep('wScreen',-1)">${ic('minus')}</button>
+      <input class="price-input" inputmode="numeric" value="${cfg.wScreen}" onchange="App.tvcStep('wScreen', 0, this.value)">
+      <button type="button" aria-label="+" onclick="App.tvcStep('wScreen',1)">${ic('plus')}</button>
+    </span></div>
+  <div class="tiny" style="margin:4px 0 10px">${rule}</div>
+  <hr class="sep">
+  <div style="font-weight:900">${t('tvc_layout')}</div>
+  <div class="tiny">${t('tvc_layout_hint')}</div>
+  <div class="tvz-t">${t('tvc_zone_rail')}</div>
+  <div class="tvz-zone" ondragover="App.tvcOver(event)" ondragleave="App.tvcLeave(event)" ondrop="App.tvcDrop(event,'rail')">
+    ${cfg.zones.rail.map((id, i) => tvcItemHtml(id, 'rail', i, cfg.zones.rail.length)).join('') || `<div class="tiny">—</div>`}</div>
+  <div class="tvz-t">${t('tvc_zone_bottom')}</div>
+  <div class="tvz-zone" ondragover="App.tvcOver(event)" ondragleave="App.tvcLeave(event)" ondrop="App.tvcDrop(event,'bottom')">
+    ${cfg.zones.bottom.map((id, i) => tvcItemHtml(id, 'bottom', i, cfg.zones.bottom.length)).join('') || `<div class="tiny">—</div>`}</div>
+  <div class="tiny" style="margin-top:8px">${t('tvc_note')}</div>
+  <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.tvcReset()">${t('tvc_reset')}</button>`;
+}
+let tvDragId = null;
+function tvcSave(cfg){
+  const org = { ...state.data.org_settings, tv: JSON.stringify(cfg) };
+  dbSaveOrg(org);
+  audit('org_set', 'org', 'tv', {});
+  render();
+}
+function tvcFlag(key, on){
+  const cfg = tvCfg(); cfg[key] = on ? 1 : 0; tvcSave(cfg);
+}
+function tvcMode(m){ const cfg = tvCfg(); cfg.wMode = m; tvcSave(cfg); }
+function tvcStep(key, d, raw){
+  const cfg = tvCfg();
+  const lim = { wTotal: [1, 20], wScreen: [1, 10] }[key];
+  const base = raw != null ? (+raw || lim[0]) : cfg[key];
+  cfg[key] = Math.max(lim[0], Math.min(lim[1], base + (d || 0)));
+  tvcSave(cfg);
+}
+function tvcMove(zone, i, d){
+  const cfg = tvCfg(); const a = cfg.zones[zone]; const k = i + d;
+  if (k < 0 || k >= a.length) return;
+  [a[i], a[k]] = [a[k], a[i]]; tvcSave(cfg);
+}
+function tvcSwap(id){
+  const cfg = tvCfg();
+  for (const z of ['rail', 'bottom']){
+    const i = cfg.zones[z].indexOf(id);
+    if (i >= 0){ cfg.zones[z].splice(i, 1); cfg.zones[z === 'rail' ? 'bottom' : 'rail'].push(id); break; }
+  }
+  tvcSave(cfg);
+}
+function tvcReset(){ tvcSave({ ...TVDEF, zones: { rail: [...TVDEF.zones.rail], bottom: [...TVDEF.zones.bottom] } }); }
+function tvcDragStart(e, id){ tvDragId = id; try{ e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; }catch(x){} }
+function tvcOver(e){ e.preventDefault(); e.currentTarget.classList.add('hot'); }
+function tvcLeave(e){ e.currentTarget.classList.remove('hot'); }
+function tvcDrop(e, zone){
+  e.preventDefault(); e.currentTarget.classList.remove('hot');
+  let id = tvDragId;
+  try{ id = e.dataTransfer.getData('text/plain') || id; }catch(x){}
+  if (!id || !TV_WIDGETS.includes(id)) return;
+  const cfg = tvCfg();
+  for (const z of ['rail', 'bottom']){
+    const i = cfg.zones[z].indexOf(id);
+    if (i >= 0) cfg.zones[z].splice(i, 1);
+  }
+  cfg.zones[zone].push(id); tvDragId = null; tvcSave(cfg);
+}
 
 /* =====================================================================
    ГОЛОСОВАЯ ДИКТОВКА ЗАМЕТОК (Web Speech API, ru-RU / en-US)
@@ -8540,13 +10090,19 @@ function bnCardHtml(){
     <button class="btn btn-green" style="margin-top:8px" onclick="App.bnTest()">${ic('flask')} ${t('bn_test')}</button>
     <div id="bn-health" class="tiny" style="margin-top:8px"></div>
     <details style="margin-top:8px"><summary class="tiny">${t('gd_help')}</summary>
-      <div class="tiny" style="margin-top:6px;line-height:1.5">
+      <div class="tiny" style="margin-top:6px;line-height:1.5">${(state.lang || 'ru') !== 'en' ? `
         1. bouncie.dev → Developer Portal → создайте приложение (Application).<br>
         2. В Redirect URIs вставьте адрес из поля выше — точно, символ в символ.<br>
         3. Скопируйте Client ID и Client Secret в поля → «${t('bn_save')}».<br>
         4. «${t('bn_connect')}» → войдите под аккаунтом Bouncie фирмы и разрешите доступ — токены сервер сохранит сам.<br>
         5. Разверните Edge Function <b>bouncie</b> (supabase/functions-dashboard/bouncie: index.ts + google.ts).<br>
-        6. Машины: Справочники → «${t('d_vehicles')}» → «${t('veh_import')}»; назначьте водителей — и они появятся на карте.
+        6. Машины: Справочники → «${t('d_vehicles')}» → «${t('veh_import')}»; назначьте водителей — и они появятся на карте.` : `
+        1. bouncie.dev → Developer Portal → create an application (Application).<br>
+        2. Paste the address from the field above into Redirect URIs — exactly, character for character.<br>
+        3. Copy the Client ID and Client Secret into the fields → "${t('bn_save')}".<br>
+        4. "${t('bn_connect')}" → sign in with the company's Bouncie account and allow access — the server stores the tokens itself.<br>
+        5. Deploy the Edge Function <b>bouncie</b> (supabase/functions-dashboard/bouncie: index.ts + google.ts).<br>
+        6. Vehicles: Directory → "${t('d_vehicles')}" → "${t('veh_import')}"; assign drivers — and they appear on the map.`}
       </div>
     </details>
   </div>`;
@@ -8589,7 +10145,7 @@ async function bnTest(){
   const el = $('#bn-health'); if (el) el.textContent = '…';
   BN.off = false;
   const cfg = await bnFetch('?cfg=1');
-  if (!cfg){ if (el) el.textContent = '⛔ bouncie: ' + (BN.err || 'нет ответа функции'); return; }
+  if (!cfg){ if (el) el.textContent = '⛔ bouncie: ' + (BN.err || t('bn_no_resp')); return; }
   Object.assign(bnCfg, cfg.cfg || {});
   const j = await bnFetch('?vehicles=1');
   if (j && j.vehicles){
@@ -8631,7 +10187,7 @@ function dirVehicles(){
 function vehModal(id){
   const v = bnVehicles().find(x => x.id === id)
     || { id: null, make: '', vin: '', imei: '', car_no: vehFreeNo(null), driver_id: null };
-  const staff = state.data.profiles.filter(p => !p.blocked)
+  const staff = state.data.profiles.filter(p => !p.blocked && !isAccP(p))
     .slice().sort((a, b) => a.display_name.localeCompare(b.display_name));
   openModal(`
     ${modalHead(v.id ? t('veh_edit') : t('veh_new'), 'car')}
@@ -9077,6 +10633,7 @@ function jobGrand(j){ return (j.status==='approved' && j.approved_total != null)
    открываются; чужие для воркера — неактивная строка «дата · № · Имя Ф.»
    (менеджер и админ открывают всё, как и всюду).
    ===================================================================== */
+let srchKind = 'all';   // v1.08.35: чип-фильтр «что ищем»
 function srchDocNo(kind, x){
   if (kind === 'job') return docNo('inv', x);
   if (kind === 'prop') return 'PROP-' + (x.no ?? '—');
@@ -9084,7 +10641,7 @@ function srchDocNo(kind, x){
   return '';
 }
 function srchCanOpen(kind, x){
-  if (isManager()) return true;
+  if (isManager() || isAcc()) return true;
   const me = state.user.id;
   if (kind === 'job') return x.technician_id === me || isJobSharedWithMe(x);
   if (kind === 'pk') return x.technician_id === me || isPlacementSharedWithMe(x);
@@ -9096,21 +10653,32 @@ function srchRows(q){
   q = q.trim().toLowerCase();
   if (q.length < 2) return null;
   const has = s => String(s || '').toLowerCase().includes(q);
-  const cxN = id => { const c = cxById(id); return c ? (c.abbr || c.name) : ''; };
+  /* v1.08.35: документ находится и по аббревиатуре, и по полному имени
+     комплекса — раньше cxN отдавал только abbr, и «magnolia» не находила
+     работ в Magnolia Vinings (MGV). */
+  const cxN = id => { const c = cxById(id); return c ? ((c.abbr || '') + ' ' + (c.name || '')) : ''; };
   const out = { jobs: [], pk: [], props: [], reps: [], cx: [] };
-  liveJobs().forEach(j => {
-    if (has(j.unit_number) || has(docNo('inv', j)) || has(cxN(j.complex_id)) || has(j.note)) out.jobs.push(j);
+  /* v1.08.35: чипы «что ищем». 'unit' — совпадение только по номеру юнита
+     во всех видах документов; остальные чипы оставляют один вид. */
+  const K = srchKind || 'all', U = K === 'unit';
+  if (K === 'all' || K === 'job' || U) liveJobs().forEach(j => {
+    if (U ? has(j.unit_number)
+          : (has(j.unit_number) || has(docNo('inv', j)) || has(cxN(j.complex_id)) || has(j.note))) out.jobs.push(j);
   });
-  (state.data.placements || []).forEach(p => {
-    if (has(p.unit_number) || has(cxN(p.complex_id))) out.pk.push(p);
+  if (K === 'all' || K === 'pk' || U) (state.data.placements || []).forEach(p => {
+    if (U ? has(p.unit_number) : (has(p.unit_number) || has(cxN(p.complex_id)))) out.pk.push(p);
   });
-  (state.data.proposals || []).forEach(p => {
-    if (has(p.unit_number) || has('prop-' + (p.no ?? '')) || has(cxN(p.complex_id))) out.props.push(p);
+  if (K === 'all' || K === 'prop' || U) (state.data.proposals || []).forEach(p => {
+    if (U ? has(p.unit_number)
+          : (has(p.unit_number) || has('prop-' + (p.no ?? '')) || has(cxN(p.complex_id)))) out.props.push(p);
   });
-  (state.data.repairs || []).forEach(r => {
-    if (has(r.unit_number) || has('rep-' + (r.no ?? '')) || has(cxN(r.complex_id))) out.reps.push(r);
+  if (K === 'all' || K === 'rep' || U) (state.data.repairs || []).forEach(r => {
+    if (U ? has(r.unit_number)
+          : (has(r.unit_number) || has('rep-' + (r.no ?? '')) || has(cxN(r.complex_id)))) out.reps.push(r);
   });
-  (state.data.complexes || []).forEach(c => { if (has(c.name) || has(c.abbr) || has(c.address)) out.cx.push(c); });
+  if (K === 'all' || K === 'cx') (state.data.complexes || []).forEach(c => {
+    if (has(c.name) || has(c.abbr) || has(c.address)) out.cx.push(c);
+  });
   const lim = a => a.slice(0, 12);
   return { jobs: lim(out.jobs.sort((a,b)=>b.date.localeCompare(a.date))),
            pk: lim(out.pk.sort((a,b)=>String(b.due_date).localeCompare(String(a.due_date)))),
@@ -9149,9 +10717,15 @@ function srchRender(){
   box.innerHTML = html || `<div class="tiny" style="padding:8px 2px">${t('srch_empty')}</div>`;
 }
 function searchOpen(){
+  srchKind = 'all';
+  const chips = [['all', t('srch_f_all')], ['unit', t('srch_f_unit')], ['job', t('srch_jobs')],
+    ['pk', t('srch_pk')], ['prop', t('srch_props')], ['rep', t('srch_reps')], ['cx', t('srch_cx')]]
+    .map(([k, l]) => `<button type="button" class="chip-preset ${srchKind === k ? 'on' : ''}"
+      data-sk="${k}" onclick="App.srchChip('${k}')">${l}</button>`).join('');
   openModal(`
     ${modalHead(t('srch_btn'), 'search')}
     <input id="srch-q" placeholder="${t('srch_ph')}" autocomplete="off" oninput="App.searchType()">
+    <div class="srch-chips">${chips}</div>
     <div class="tiny" style="margin:4px 0">${tipQ('srch_locked_tip')} ${t('srch_hint')}</div>
     <div id="srch-res" class="srch-res"></div>`);
   setTimeout(()=>{ const i = $('#srch-q'); if (i) i.focus(); }, 60);
@@ -9161,8 +10735,8 @@ function searchGo(kind, id){
   closeModal();
   if (kind === 'job'){ openJob(id); return; }
   if (kind === 'pk'){ const p = state.data.placements.find(x=>x.id===id); if (p) pickupModal(p.job_id, p.due_date); return; }
-  if (kind === 'prop'){ if (typeof openProposal === 'function'){ openProposal(id); return; } }
-  if (kind === 'rep'){ if (typeof openRepair === 'function'){ openRepair(id); return; } }
+  if (kind === 'prop'){ if (isAcc()){ toast(t('no_access'), 'err'); return; } if (typeof openProposal === 'function'){ openProposal(id); return; } }
+  if (kind === 'rep'){ if (isAcc()){ accDoc('rep', id); return; } if (typeof openRepair === 'function'){ openRepair(id); return; } }
   if (kind === 'cx'){ state.screen = 'dirs'; state.dirTab = 'complexes'; render(); return; }
 }
 
@@ -9214,7 +10788,7 @@ function viewTimeReport(){
     ${blocks || `<div class="card"><div class="tiny">${t('tt_none')}</div></div>`}`;
 }
 function viewReports(){
-  const tabs = [['invoices', t('reports_pdf'), true], ['pickups', t('rep_pickups'), isManager()],
+  const tabs = [['invoices', t('reports_pdf'), true], ['pickups', t('rep_pickups'), isManager() || isAcc()],
                 ['time', t('tt_tab'), ttTabVisible()]].filter(x=>x[2]);   // v1.08.33
   if (!tabs.find(x=>x[0]===state.repTab)) state.repTab = 'invoices';
   const nav = `<div class="tabs">` + tabs.map(([id,l]) =>
@@ -9724,7 +11298,7 @@ function dirStaff(){
         ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
         ${(isAdmin() || canSeeSessions()) ? `<button class="icon-btn" title="${t('st_cfg')}" aria-label="${t('st_cfg')}" onclick="App.staffCfg('${u.id}')">${ic('gear')}</button>` : ''}
         <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${me?'disabled':''}>
-          ${['tech','manager','admin'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
+          ${['tech','manager','admin','accountant'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
         </select>
         ${me ? '' : `<button class="icon-btn key-btn" title="${t('set_pass')}" aria-label="${t('set_pass')}" onclick="App.staffPassModal('${u.id}')">${ic('key')}</button>
         <button class="icon-btn ban-btn ${u.blocked?'off':''}" title="${u.blocked?t('unblock'):t('block')}" aria-label="${u.blocked?t('unblock'):t('block')}" onclick="App.staffBlock('${u.id}')">${ic('ban')}</button>`}
@@ -9810,7 +11384,7 @@ function staffAddModal(){
     ${HAS_SB ? '' : `<div class="tiny" style="margin:-4px 0 8px">${t('demo_only_sb')}</div>`}
     <div class="form-row"><span class="lbl">${t('role_tech')} / ${t('role_manager')} / ${t('role_admin')}</span>
       <select id="ns-role">
-        ${['tech','manager','admin'].map(r=>`<option value="${r}">${t('role_'+r)}</option>`).join('')}
+        ${['tech','manager','admin','accountant'].map(r=>`<option value="${r}">${t('role_'+r)}</option>`).join('')}
       </select></div>
     <button class="btn btn-green" onclick="App.staffCreate()">${t('save')}</button>
   `);
@@ -9939,7 +11513,7 @@ function crewRefresh(){
   const sel = $('#crew-sel');
   if (sel && jobDraft){
     sel.innerHTML = `<option value="">${ic('plus')} ${t('add_helper')}</option>` +
-      state.data.profiles.filter(p=>!p.blocked && p.id!==jobDraft.technician_id && !(jobDraft.helper_ids||[]).includes(p.id))
+      state.data.profiles.filter(p=>!p.blocked && !isAccP(p) && p.id!==jobDraft.technician_id && !(jobDraft.helper_ids||[]).includes(p.id))
         .map(p=>`<option value="${p.id}">${esc(shortName(p.display_name))} (${t('role_'+p.role)})</option>`).join('');
   }
   const w = document.querySelector('.crew-box .tiny .warn');
@@ -9953,7 +11527,7 @@ function crewAdd(id){
 }
 function crewAll(){
   if (!jobDraft) return;
-  jobDraft.helper_ids = state.data.profiles.filter(p=>!p.blocked).map(p=>p.id).filter(id => id !== jobDraft.technician_id);
+  jobDraft.helper_ids = state.data.profiles.filter(p=>!p.blocked && !isAccP(p)).map(p=>p.id).filter(id => id !== jobDraft.technician_id);
   crewRefresh();
 }
 function crewRemove(id){
@@ -10324,7 +11898,7 @@ function faqHtml(){
     <div class="faq-example">${faqDayCardsExample()}</div>
     <p>Reading the sample: <b>7 jobs</b> are planned — Steam Clean 4, Air Duct 2, Vetvag 1. <b>8 equipment units</b> to collect — 5 blowers (BLW), 2 dehumidifiers (DHM) and 1 air scrubber (SCR) — and one pickup is already overdue. The numbers come from the same lists shown below on the screen: flip the strip to another day and the cards recalculate; for managers they respect the Mine/All filter.</p>
     <h4>${ic('refresh')} Sync, offline & updates</h4>
-    <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android and iPhone (see the iPhone section below), works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode.</p>
+    <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android and iPhone (see the iPhone section below), works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode. <b>Offline mode (v1.08.38):</b> the pill under the TL logo shows the connection — green “NN ms” is the server ping, red “offline” means no network, yellow “no server” means the network is up but Supabase is not answering; tap it to re-check. Invoices, tasks, photos and videos, pickups, proposals and repairs keep working without a connection: every write is queued on the device and sent automatically when the network returns, followed by a silent sync. Buttons that need a live server (sync, sign-in, approvals via RPC, stock operations, staff, Drive, backups, push, 2FA, TV, Bouncie, translation, routes) turn faded and show a hint instead of acting.</p>
     <h4>${ic('phone')} iPhone & iPad (iOS)</h4>
     <p><b>Install:</b> in Safari tap <b>Share → “Add to Home Screen”</b> — unlike Android there is no automatic prompt, so the app shows its own banner with step-by-step instructions on the Home screen (and a button in Settings). Sign in again after installing: the Home-Screen app has <b>its own storage</b>, separate from the Safari tab. Installing is worth it: Safari wipes a site’s local data (session, offline cache, an unsaved draft) after <b>7 days</b> of using the browser without visiting the site, while the installed app keeps them for as long as you use it; don’t work in Private Browsing — nothing there survives closing the tab. <b>Routes</b> open in <b>Apple Maps</b>: the multi-stop “Day route” needs iOS 18.4+, older systems open only the final stop — a limitation of Apple’s URL scheme; if you prefer Google Maps, switch in Settings → “Navigation app”. <b>PDF invoices</b> (single and batch) go through the system <b>Share sheet</b> — “Save to Files”, AirDrop or mail; inside an installed web-app this is the only reliable way. <b>Dictation:</b> the in-app mic button is hidden on iOS — use the <b>🎤 key on the keyboard</b>, it types RU and EN into any field; the “Translate to EN” button works as usual. <b>Minimizing is safe:</b> iOS freezes background apps aggressively, so every save goes into a queue and is re-sent automatically when you return to the app, the network comes back or a sync runs — the queue counter shows in Settings and Diagnostics. There is no vibration feedback — iOS doesn’t allow it for web apps.</p>
     <h4>${ic('map')} Map</h4>
@@ -10383,7 +11957,7 @@ function faqHtml(){
     <h4>${ic('camera')} Фото и видео работ</h4>
     <p>В карточке работы есть блок <b>«Фото и видео»</b>: съёмка идёт прямо из приложения, фото сжимается до 1920 px, видео принимается длиной до 90 секунд. Рядом с заголовком счётчик — сколько уже прикреплено из лимита. <b>Лимиты задаёт администратор</b>: «Настройки» → «Лимиты фото и видео на документ», два степпера (по умолчанию <b>10 фото и 2 видео</b>; фото 1–50, видео 0–10). Лимит общий для всех документов, его проверяет сервер — из браузера обойти нельзя; при значении «видео 0» кнопка съёмки видео пропадает, а уже загруженные файлы сверх нового лимита остаются на месте. Файлы уходят в архив на <b>Google Диске</b> фирмы (миниатюры — в базе), раскладываются по папкам вида <i>2026-09</i>. Без сети всё копится в очереди на телефоне и уходит само при появлении связи: «Настройки» → «Неотправленные фото и видео» — там сводка по документам, журнал отправки построчно и кнопки «Повторить отправку» / «Проверка соединения». Когда на Диске остаётся <b>менее 15 % свободного места</b>, админ и менеджер видят красный баннер на главной; тот же показатель считается при «Тесте соединения» в настройках Диска и обновляется сам при загрузке файлов.</p>
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
-    <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим.</p>
+    <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим. <b>Офлайн-режим (v1.08.38):</b> пилюля под логотипом TL показывает связь — зелёная «NN мс» — пинг до сервера, красная «офлайн» — нет сети, жёлтая «нет сервера» — сеть есть, а Supabase не отвечает; нажмите, чтобы проверить заново. Инвойсы, задачи, фото и видео, пикапы, пропозалы и ремонты работают без связи: каждая запись ложится в очередь на устройстве и уходит сама, когда сеть вернётся, следом идёт тихий синк. Кнопки, которым нужен живой сервер (синхронизация, вход, апрувы через RPC, склад, штат, Диск, бэкапы, пуши, 2FA, ТВ, Bouncie, перевод, маршруты), становятся блеклыми и вместо действия показывают подсказку.</p>
     <h4>${ic('phone')} iPhone и iPad (iOS)</h4>
     <p><b>Установка:</b> в Safari «Поделиться» → <b>«На экран “Домой”»</b> — автоматической подсказки, как на Android, здесь нет, поэтому приложение само показывает баннер с пошаговой инструкцией на главном экране (и кнопку в Настройках). После установки войдите заново: у приложения на «Домой» <b>своё хранилище</b>, отдельное от вкладки Safari. Ставить стоит: вкладка Safari стирает локальные данные сайта (сессию, офлайн-кеш, несохранённый черновик) после <b>7 дней</b> пользования браузером без захода в TechLog, а установленное приложение хранит их, пока вы им пользуетесь; в приватном режиме не работайте — там ничего не переживает закрытия вкладки. <b>Маршруты</b> открываются в <b>Картах Apple</b>: мультиточечный «Маршрут дня» — с iOS 18.4, более старые системы откроют только конечную точку — это ограничение URL-схемы Apple; привычнее Google Maps — переключите в Настройках → «Навигатор». <b>PDF-инвойсы</b> (одиночные и пакетные) уходят через системное окно <b>«Поделиться»</b> — «Сохранить в Файлы», AirDrop, почта; в установленном веб-приложении это единственный надёжный путь. <b>Диктовка:</b> своя кнопка микрофона на iOS скрыта — используйте <b>🎤 на клавиатуре</b> iPhone, она печатает RU и EN в любое поле; кнопка «Перевести на EN» работает как обычно. <b>Сворачивать не страшно:</b> iOS жёстко замораживает фоновые приложения, поэтому каждое сохранение попадает в очередь и досылается само при возврате в приложение, появлении сети или синхронизации — счётчик очереди виден в Настройках и Диагностике. Вибрации нет — iOS не даёт её веб-приложениям.</p>
     <h4>${ic('map')} Карта</h4>
@@ -10761,32 +12335,34 @@ function trSettingsCardHtml(){
   </div>`;
 }
 
-/* ---------- Свайпы по дням недели (влево/вправо, будни) ---------- */
-function shiftWorkday(iso, dir){
-  return addDaysISO(iso, dir); // показаны все 7 дней — листаем без пропусков
-}
-let swX = null, swY = null;
+/* ---------- Жесты по календарю ----------
+   v1.08.34: свайп по ленте недели и по шапке дня больше НИЧЕГО не
+   переключает — палец даёт только естественную прокрутку ленты.
+   Синтетический click, который браузер шлёт после жеста со сдвигом
+   (особенно когда лента упёрлась в край и прокрутки не случилось),
+   гасится в capture-фазе и не доходит до кнопок дней. Неделя
+   переписывается ТОЛЬКО кнопками ‹ › (App.shiftWeek), день —
+   только осознанным нажатием без сдвига. */
+let swX = null, swY = null, swKill = 0;
 function initSwipes(){
   const root = $('#app');
   root.addEventListener('touchstart', (e) => {
-    if (state.screen !== 'home') { swX = null; return; }
-    if (!e.target.closest('.week, .day-bar')) { swX = null; return; }
+    swKill = 0; swX = null;                      // новое касание = чистый лист
+    if (state.screen !== 'home') return;
+    if (!e.target.closest('.week, .day-bar')) return;
     swX = e.touches[0].clientX; swY = e.touches[0].clientY;
   }, { passive: true });
-  root.addEventListener('touchend', (e) => {
+  root.addEventListener('touchmove', (e) => {
     if (swX == null) return;
-    const dx = e.changedTouches[0].clientX - swX;
-    const dy = e.changedTouches[0].clientY - swY;
-    swX = null;
-    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5){
-      /* v1.08.18: свайп по ленте недели листает НЕДЕЛЮ и не трогает
-         выбранный день — день меняется только нажатием. Раньше палец по
-         календарю незаметно переставлял день, и человек оказывался не там,
-         куда смотрел. Свайп по остальной части экрана работает как прежде. */
-      if (e.target.closest('.week')) App.weekSwipe(dx < 0 ? 1 : -1);
-      else App.swipeDay(dx < 0 ? 1 : -1);
-    }
+    const dx = e.touches[0].clientX - swX, dy = e.touches[0].clientY - swY;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) swKill = Date.now();
   }, { passive: true });
+  /* capture=true: гасим раньше, чем сработает inline-onclick на .day-cell */
+  root.addEventListener('click', (e) => {
+    if (swKill && Date.now() - swKill < 700){
+      swKill = 0; e.preventDefault(); e.stopPropagation();
+    }
+  }, true);
 }
 
 /* ---------- Журнал событий ---------- */
@@ -11090,7 +12666,7 @@ function viewBoard(){
   const hideEmpty = localStorage.getItem('tl_board_hide_empty') === '1';   // v1.07.30
   const staff = [...state.data.profiles]
     .filter(p => {
-      if (p.blocked || hid.has(p.id)) return false;
+      if (p.blocked || hid.has(p.id) || isAccP(p)) return false;   // v1.08.39: бухгалтер на доске не нужен
       const busy = dayJobs.some(j => j.technician_id === p.id) || dayPk.some(x => x.technician_id === p.id);
       return busy || (p.role === 'tech' && !hideEmpty);
     })
@@ -11417,7 +12993,7 @@ function chainCardBody(node, i, cur, gap){
   const part = node.t === 'pick' && !o.superseded &&
     (state.data.placements || []).some(x => x.ext_of === o.id);
   return `${i ? `<span class="chain-arr" aria-hidden="true">${ic('chev_r')}${
-      gap != null ? `<i class="chain-gap">${gap > 0 ? '+' + gap + ' дн' : gap === 0 ? 'в тот же день' : gap + ' дн'}</i>` : ''
+      gap != null ? `<i class="chain-gap">${gap > 0 ? '+' + gap + ' ' + t('days') : gap === 0 ? t('chain_same_day') : gap + ' ' + t('days')}</i>` : ''
     }</span>` : ''}
     <button class="chain-item t-${node.t} ${now ? 'is-now' : ''}" onclick="App.closeModal();${open}">
       <span class="chain-tag">${T2}${now ? ` · ${t('ch_here')}` : ''}</span>
@@ -12240,7 +13816,7 @@ function demoPlMoves(op, row, prev){
    серия сохранений (возврат всего, пересборка формы) слилась в одну. */
 let _emT = null;
 function refreshMovesSoon(){
-  if (!HAS_SB || !state.sb) return;
+  if (!HAS_SB || !state.sb || netOff()) return;   // v1.08.38: журнал приедет с синком после досыла очереди
   clearTimeout(_emT);
   _emT = setTimeout(async () => {
     try{
@@ -12704,7 +14280,7 @@ function repCrewHtml(r){
   const chips = ids.length ? ids.map(id => `<span class="chip-tech">${esc(shortName(profName(id)))}
       <button class="x" onclick="App.repCrewDel('${id}')" aria-label="remove">${ic('close')}</button></span>`).join('')
     : `<span class="tiny">—</span>`;
-  const free = (state.data.profiles || []).filter(p => !p.blocked && !ids.includes(p.id));
+  const free = (state.data.profiles || []).filter(p => !p.blocked && !isAccP(p) && !ids.includes(p.id));
   return `<div id="rep-crew" class="crew-box">${chips}</div>
     ${free.length ? `<select id="rep-crew-sel" style="width:100%;margin-top:6px" onchange="App.repCrewAdd(this.value)">
       <option value="">${t('add_helper')}…</option>
@@ -13325,7 +14901,7 @@ function freeJobsStripHtml(){
   freePk.forEach(p => { (pkByJob[p.job_id] = pkByJob[p.job_id] || []).push(p); });
   const pkJobs = Object.keys(pkByJob);
   if (!list.length && !pkJobs.length) return '';
-  const staff = [...state.data.profiles].filter(p => !p.blocked)
+  const staff = [...state.data.profiles].filter(p => !p.blocked && !isAccP(p))
     .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name));
   const pickSel = (jobId) => isManager() ? `<div class="pc-assign"><select onchange="App.assignJob('${jobId}', this.value)">
         <option value="">${t('b_assign')}</option>
@@ -13642,13 +15218,13 @@ function mWorker(){
 }
 function mPrepWorker(file, o){
   const w = mWorker();
-  if (!w) return Promise.reject(new Error('нет воркера'));
+  if (!w) return Promise.reject(new Error(t('m_no_worker')));
   return new Promise((res, rej) => {
     const rid = 'p' + Math.random().toString(36).slice(2);
     const off = () => { clearTimeout(tmr); w.removeEventListener('message', on); };
     const on = e => { if (!e.data || e.data.rid !== rid) return; off();
       e.data.ok ? res(e.data) : rej(new Error(e.data.err || 'worker')); };
-    const tmr = setTimeout(() => { off(); rej(new Error('таймаут')); }, 60000);
+    const tmr = setTimeout(() => { off(); rej(new Error(t('m_timeout'))); }, 60000);
     w.addEventListener('message', on);
     try{ w.postMessage(Object.assign({ rid, file }, o)); }
     catch(err){ off(); rej(err); }
@@ -14070,7 +15646,7 @@ async function mediaFlush(verbose){
   const res = { photo: 0, video: 0, fail: 0, stopped: false };
   if (_mediaBusy){ lg('⏳ ' + t('mq_l_busy'), 'warn'); mediaBadge(); return res; }
   if (!HAS_SB || !state.user){ lg('⛔ ' + t('mq_l_nosb'), 'err'); mediaBadge(); return res; }
-  if (!navigator.onLine){ lg('🔴 ' + t('mq_l_off'), 'err'); mediaBadge(); return res; }
+  if (netOff()){ lg('🔴 ' + t('mq_l_off'), 'err'); mediaBadge(); return res; }   // v1.08.38: и «нет сервера» тоже
   _mediaBusy = true;
   try{
     const list = [...mediaQ].sort((a, b) => a.at - b.at);
@@ -14824,6 +16400,74 @@ let gdEdit = false;
 /* v1.07.78: где на Диске лежат файлы — заполняется «Тестом соединения»
    (media-health возвращает имена и адреса папок) и рисуется карточкой. */
 let gdFolders = null;
+/* =====================================================================
+   v1.08.36 · ИМЕНА ТРЁХ КОРНЕВЫХ ПАПОК — НАПРОТИВ ПОЛЕЙ ВВОДА.
+   Источник истины — сам Диск: media-health?names=1 резолвит имена по ID
+   (лёгкая ветка, без квоты и write-теста). Старая сборка функции ветки
+   не знает и вернёт полную проверку — имена берём из её r.paths.
+   Кэш в localStorage: подписи видны сразу, обновляются тихо в фоне.
+   ===================================================================== */
+let gdNames = null;
+try { gdNames = JSON.parse(localStorage.getItem('tl_gd_names') || 'null'); } catch(e){}
+function gdNamesFrom(j){
+  if (j && j.names) return j.names;
+  if (j && j.paths){
+    const g = k => { const p = j.paths[k];
+      return p && p.root ? { id: p.root.id || '', name: p.root.name || '', own: !!p.root.own } : null; };
+    return { root: j.folder ? { id: j.folder.id, name: j.folder.name || '' } : null,
+             photo: g('photo'), invoice: g('invoice'), file: g('file') };
+  }
+  return null;
+}
+function gdNmBad(kind){
+  const n = gdNames && gdNames[kind];
+  return n && n.own && !n.name ? ' bad' : '';
+}
+function gdNmHtml(kind){
+  const n = (gdNames && gdNames[kind]) ||
+    (gdFolders && gdFolders[kind] && gdFolders[kind].root
+      ? { name: gdFolders[kind].root.name, own: true } : null);
+  if (!n) return HAS_SB && isAdmin() && gdHasKeys() ? `<span class="tiny">${t('gd_nm_wait')}</span>` : '';
+  if (n.own && !n.name) return `⚠ ${t('gd_nm_bad')}`;
+  return n.name ? `${ic('folder')} ${esc(n.name)}` : '';
+}
+function gdNamesApply(n){
+  if (!n) return;
+  gdNames = n;
+  try { localStorage.setItem('tl_gd_names', JSON.stringify(n)); } catch(e){}
+  [['photo', 'gd-nm-photo'], ['invoice', 'gd-nm-inv'], ['file', 'gd-nm-files']]
+    .forEach(([k, id]) => { const el = document.getElementById(id);
+      if (el) { el.innerHTML = gdNmHtml(k); el.title = (n[k] && n[k].name) || '';
+        el.classList.toggle('bad', !!(n[k] && n[k].own && !n[k].name)); } });
+}
+let gdNamesAt = 0, gdFnFresh = null;   // null — версия функции ещё не выяснена
+async function gdNamesRefresh(extra){
+  if (!HAS_SB || !isAdmin() || !gdHasKeys()) return;
+  const now = Date.now();
+  if (!extra && now - gdNamesAt < 15000) return;      // фон — не чаще раза в 15с
+  gdNamesAt = now;
+  try{
+    /* Старая сборка media-health ветки ?names=1 не знает и провалилась бы в
+       ПОЛНУЮ проверку (write-тест на Диске) при каждом открытии карточки.
+       Поэтому сперва дешёвый ping: функция моложе 1.08.36 — фоновых запросов
+       не делаем, подписи придут из кэша или из кнопки «Тест соединения». */
+    if (gdFnFresh === null){
+      try{
+        const pj = await (await fetch(mediaFN() + '/media-health?ping=1')).json();
+        const v = String((pj && pj.ver) || '').split('.').map(Number);
+        gdFnFresh = v.length === 3 && v.every(isFinite)
+          && (v[0] * 1e6 + v[1] * 1e3 + v[2]) >= 1e6 + 8e3 + 36;
+      }catch(e){ gdFnFresh = false; }
+    }
+    if (!gdFnFresh) return;
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-health?names=1' + (extra || ''),
+      { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) return;
+    const j = await r.json().catch(() => null);
+    gdNamesApply(gdNamesFrom(j));
+  }catch(e){ /* тихо: подпись просто не обновится в этот раз */ }
+}
 function gdTrimOn(){ try{ return localStorage.getItem('techlog_gd_trim') !== '0'; }catch(e){ return true; } }
 function gdTrimToggle(on){
   try{ localStorage.setItem('techlog_gd_trim', on ? '1' : '0'); }catch(e){}
@@ -14864,7 +16508,7 @@ function gdDirName(kind){
 function gdInvPathSample(){
   const o = state.data.org_settings || {};
   const ym = todayISO().slice(0, 7).replace('-', '_');    // v1.08.25: на Диске 2026_09
-  const root = String(o.gd_inv_folder || '').trim() ? '(своя папка)' : 'архив / Invoices';
+  const root = String(o.gd_inv_folder || '').trim() ? t('gd_own_folder') : t('gd_arch_inv');
   const me = translit(shortName((state.user && state.user.display_name) || 'Ivan Petrov')).replace(/\.$/, '');
   return o.gd_inv_by_tech ? `${root} / ${me} / ${ym}` : `${root} / ${ym}`;
 }
@@ -15025,6 +16669,7 @@ function gdToggleEdit(){ gdEdit = !gdEdit; gdShow.sec = gdShow.ref = false; rend
 function mediaSettingsCardHtml(){
   if (!isAdmin()) return '';
   if (HAS_SB && !gdCfg.loaded) setTimeout(gdLoadCfg, 0);
+  if (HAS_SB && gdCfg.has_refresh) setTimeout(() => gdNamesRefresh(), 0);   // v1.08.36: имена папок
   const redirect = location.origin + location.pathname;
   const edit = gdEditMode(), pct = gdFreePct();
   const copyB = w => `<button class="icon-btn sm" title="${t('gd_copy')}" onclick="App.gdCopy('${w}')">${ic('copy')}</button>`;
@@ -15047,15 +16692,15 @@ function mediaSettingsCardHtml(){
     <div class="tiny gd-hint">${gdTrimOn() ? t('gd_trim_hint') : t('gd_folder_hint')}</div>
     ${row(t('gd_ph_folder'), `<input id="gd-photo" autocomplete="off" placeholder="${t('gd_folder_ph')}"
       value="${esc(((state.data.org_settings || {}).gd_photo_folder) || '')}"
-      onchange="App.setOrgText('gd_photo_folder', App.gdFolderIdOf(this.value))">`)}
+      onchange="App.gdRootSet('photo', this)"><span class="gd-fname${gdNmBad('photo')}" id="gd-nm-photo">${gdNmHtml('photo')}</span>`)}
     <div class="tiny gd-hint">${t('gd_ph_hint')}${gdDirName('photo')}</div>
     ${row(t('gd_inv_folder'), `<input id="gd-inv" autocomplete="off" placeholder="${t('gd_folder_ph')}"
       value="${esc(((state.data.org_settings || {}).gd_inv_folder) || '')}"
-      onchange="App.setOrgText('gd_inv_folder', App.gdFolderIdOf(this.value))">`)}
+      onchange="App.gdRootSet('invoice', this)"><span class="gd-fname${gdNmBad('invoice')}" id="gd-nm-inv">${gdNmHtml('invoice')}</span>`)}
     <div class="tiny gd-hint">${t('gd_inv_hint')}${gdDirName('invoice')}</div>
     ${row(t('gd_fl_folder'), `<input id="gd-files" autocomplete="off" placeholder="${t('gd_folder_ph')}"
       value="${esc(((state.data.org_settings || {}).gd_files_folder) || '')}"
-      onchange="App.setOrgText('gd_files_folder', App.gdFolderIdOf(this.value))">`)}
+      onchange="App.gdRootSet('file', this)"><span class="gd-fname${gdNmBad('file')}" id="gd-nm-files">${gdNmHtml('file')}</span>`)}
     <div class="tiny gd-hint">${t('gd_fl_hint')}${gdDirName('file')}</div>
     ${isAdmin() ? `<label class="opt ${((state.data.org_settings || {}).prop_mgr_create) ? 'on' : ''}">
       <input type="checkbox" ${((state.data.org_settings || {}).prop_mgr_create) ? 'checked' : ''}
@@ -15113,14 +16758,21 @@ function mediaSettingsCardHtml(){
     <div id="gd-folders">${gdFoldersHtml()}</div>
     <div id="gd-health" class="tiny" style="margin-top:8px"></div>
     <details style="margin-top:8px"><summary class="tiny">${t('gd_help')}</summary>
-      <div class="tiny" style="margin-top:6px;line-height:1.5">
+      <div class="tiny" style="margin-top:6px;line-height:1.5">${(state.lang || 'ru') !== 'en' ? `
         1. console.cloud.google.com → создайте проект → APIs &amp; Services → Library → включите <b>Google Drive API</b>.<br>
         2. OAuth consent screen → External → заполните название и почту, а в Branding — ссылки
         <a href="./privacy.html" target="_blank" rel="noopener">privacy.html</a> и
         <a href="./terms.html" target="_blank" rel="noopener">terms.html</a> (лежат рядом с приложением) → <b>Publish app</b> (иначе токен умрёт через 7 дней; скоуп drive.file верификации не требует).<br>
         3. Credentials → Create OAuth client ID → <b>Web application</b> → в Authorized redirect URIs вставьте адрес из поля выше.<br>
         4. Скопируйте Client ID и Client Secret в поля, укажите ID папки архива на Диске (создайте папку, ID — в адресной строке после /folders/).<br>
-        5. «${t('gd_save')}» → «${t('gd_connect')}» → войдите под <b>архивным</b> Google-аккаунтом фирмы и разрешите доступ → «${t('gd_test')}».
+        5. «${t('gd_save')}» → «${t('gd_connect')}» → войдите под <b>архивным</b> Google-аккаунтом фирмы и разрешите доступ → «${t('gd_test')}».` : `
+        1. console.cloud.google.com → create a project → APIs &amp; Services → Library → enable the <b>Google Drive API</b>.<br>
+        2. OAuth consent screen → External → fill in the name and e-mail, and under Branding add the links
+        <a href="./privacy.html" target="_blank" rel="noopener">privacy.html</a> and
+        <a href="./terms.html" target="_blank" rel="noopener">terms.html</a> (they sit next to the app) → <b>Publish app</b> (otherwise the token dies after 7 days; the drive.file scope needs no verification).<br>
+        3. Credentials → Create OAuth client ID → <b>Web application</b> → paste the address from the field above into Authorized redirect URIs.<br>
+        4. Copy the Client ID and Client Secret into the fields and enter the archive folder ID on Drive (create the folder; the ID is in the address bar after /folders/).<br>
+        5. "${t('gd_save')}" → "${t('gd_connect')}" → sign in with the company's <b>archive</b> Google account and allow access → "${t('gd_test')}".`}
       </div>
     </details>
   </div>`;
@@ -15391,6 +17043,7 @@ async function mediaHealth(){
                     photo: (j.paths && j.paths.photo) || null,
                     file:  (j.paths && j.paths.file)  || null,
                     invoice: (j.paths && j.paths.invoice) || null };   // v1.07.85
+      gdNamesApply(gdNamesFrom(j));   // v1.08.36: подписи у полей — из того же ответа
       const fb = $('#gd-folders'); if (fb) fb.innerHTML = gdFoldersHtml();
       const chip = $('#gd-folder-chip');
       if (chip && j.folder.name){ chip.style.display = 'inline-flex';
@@ -15504,6 +17157,24 @@ async function runDiag(){
     await fetch('version.json?d=' + Date.now(), { cache: 'no-store' });
     row(t('diag_net'), true, (Date.now() - t0) + ' ms');
   }catch(e){ row(t('diag_net'), false, e.message || e); }
+  /* 1б. внешние сервисы карт: тайлы OSM (<img> — без CORS) и геокодер
+     Nominatim — оба нужны экрану «Карта» и подстановке адресов. */
+  await new Promise(res => {
+    const t0 = Date.now(); const im = new Image(); let done = false;
+    const fin = ok => { if (done) return; done = true;
+      row(t('diag_osm'), ok, ok ? (Date.now() - t0) + ' ms' : t('diag_ext_err')); res(); };
+    im.onload = () => fin(true); im.onerror = () => fin(false);
+    setTimeout(() => fin(false), 8000);
+    im.src = 'https://tile.openstreetmap.org/3/2/3.png?d=' + Date.now();
+  });
+  try{
+    const t0 = Date.now();
+    const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=Atlanta',
+      { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    await r.json();
+    row(t('diag_geo'), true, (Date.now() - t0) + ' ms');
+  }catch(e){ row(t('diag_geo'), false, e.message || e); }
   if (!HAS_SB){
     [t('diag_db'), t('diag_auth'), t('diag_store'), t('diag_fn')]
       .forEach(n => row(n, null, t('diag_skip')));
@@ -15528,6 +17199,27 @@ async function runDiag(){
     if (error) throw error;
     row(t('diag_store'), true, '');
   }catch(e){ row(t('diag_store'), false, (e.message || e) + ' · ' + t('diag_sql31')); }
+  /* 4б. Bouncie GPS — через одноимённую edge-функцию: ping отвечает без
+     прав, живой список машин — менеджеру и админу (реальный поход в API). */
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/bouncie?ping=1',
+      { headers: { Authorization: 'Bearer ' + token } });
+    if (r.status === 404) throw new Error(t('diag_deploy'));
+    const j = await r.json().catch(() => ({}));
+    row(t('diag_bn_fn'), j.fn === 'bouncie', j.ver ? 'v' + j.ver : '');
+    if (isManager()){
+      const t0 = Date.now();
+      const v = await bnFetch('?vehicles=1');
+      if (v && Array.isArray(v.vehicles))
+        row(t('diag_bn_api'), true, v.vehicles.length + ' ' + t('diag_veh') + ' · ' + (Date.now() - t0) + ' ms');
+      else
+        row(t('diag_bn_api'), false, String((v && (v.error || v.err)) || BN.err || t('diag_bn_off')).slice(0, 60));
+    }
+  }catch(e){
+    const noFn = (e && (e.name === 'TypeError' || /Failed to fetch|NetworkError/i.test(e.message || '')));
+    row(t('diag_bn_fn'), false, noFn ? t('diag_deploy') : (e.message || e));
+  }
   /* 5. функции + Google Drive */
   try{
     const token = await mediaJwt();
@@ -15599,7 +17291,7 @@ const BK_TABLES = ['profiles','counterparties','complexes','aux_equipment','work
   'equipment_types','size_types','extra_works','product_types','price_list',
   'counterparty_prices','equipment_stock','org_settings','hidden_staff',
   'code_requests','complex_code_history','proposals','repairs','jobs','placements',
-  'ext_requests','media','equip_moves'];   // v1.08.27: журнал после placements — при восстановлении FK уже на месте
+  'ext_requests','media','equip_moves','acc_settings'];   // v1.08.27: журнал после placements — при восстановлении FK уже на месте; v1.08.39: + acc_settings
 const BK_EXPORT_ONLY = ['audit_log','tech_log'];
 const BK_PAGE = 1000, BK_CHUNK = 300;
 let bkLogLines = null;
@@ -15654,7 +17346,7 @@ async function bkFetchAll(tb){
 }
 async function bkExport(){
   const withSec = !!(($('#bk-sec') || {}).checked);
-  bkLogLines = [`# TechLog — выгрузка бэкапа — ${new Date().toLocaleString()}`];
+  bkLogLines = [`${t('bk_log_export')} ${new Date().toLocaleString()}`];
   const pre = $('#bk-log'); if (pre){ pre.style.display = 'block'; pre.textContent = ''; }
   bkBusy(true);
   try{
@@ -15665,7 +17357,7 @@ async function bkExport(){
     for (const tb of [...BK_TABLES, ...BK_EXPORT_ONLY]){
       try{
         const rows = await bkFetchAll(tb);
-        if (rows === null){ bkLog('·', tb + ': таблицы нет — пропущена'); continue; }
+        if (rows === null){ bkLog('·', tb + ': ' + t('bk_no_table')); continue; }
         parts.push((first ? '' : ',') + JSON.stringify(tb) + ':' + JSON.stringify(rows));
         first = false; counts[tb] = rows.length;
         bkLog('✔', `${tb}: ${rows.length}`);
@@ -15708,7 +17400,7 @@ function bkImportPick(){
   inp.click();
 }
 async function bkImportFile(file){
-  bkLogLines = [`# TechLog — загрузка из бэкапа — ${new Date().toLocaleString()}`];
+  bkLogLines = [`${t('bk_log_import')} ${new Date().toLocaleString()}`];
   const pre = $('#bk-log'); if (pre){ pre.style.display = 'block'; pre.textContent = ''; }
   const withSec = !!(($('#bk-sec') || {}).checked);
   bkBusy(true);
@@ -15790,12 +17482,17 @@ function backupCardHtml(){
     <pre id="bk-log" style="display:none;max-height:260px;overflow:auto;background:#17232A;border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12px;white-space:pre-wrap;margin-top:8px"></pre>
     <button id="bk-save" class="btn btn-ghost sm" style="display:none;margin-top:6px" onclick="App.bkSaveLog()">${ic('download')} ${t('bk_savelog')}</button>
     <details style="margin-top:8px"><summary class="tiny">${t('bk_new_proj')}</summary>
-      <div class="tiny" style="margin-top:6px;line-height:1.5">
-        1. В новом проекте выполните ОДИН файл supabase/full-install-1_07_35.sql — это вся схема и все обновления разом.<br>
+      <div class="tiny" style="margin-top:6px;line-height:1.5">${(state.lang || 'ru') !== 'en' ? `
+        1. В новом проекте выполните ОДИН файл supabase/${DB_SQL_FILE} — это вся схема и все обновления разом.<br>
         2. Зарегистрируйтесь под <b>временным</b> логином (не совпадающим ни с одним старым) и назначьте себе admin через SQL-редактор.<br>
         3. Загрузите бэкап с галочкой секретов: учётки встанут первыми — сотрудники войдут <b>старыми паролями</b>.<br>
         4. Войдите под прежним логином, временного удалите или заблокируйте.<br>
-        Журналы кнопкой не восстанавливаются (сниппет — в update-to-1_07_32.sql). Миниатюры фото в новый проект не переносятся; полноразмеры в Google Drive остаются доступны.
+        Журналы кнопкой не восстанавливаются (сниппет — в update-to-1_07_32.sql). Миниатюры фото в новый проект не переносятся; полноразмеры в Google Drive остаются доступны.` : `
+        1. In the new project run ONE file, supabase/${DB_SQL_FILE} — the whole schema and every update at once.<br>
+        2. Register with a <b>temporary</b> login (matching none of the old ones) and grant yourself admin in the SQL editor.<br>
+        3. Load the backup with the secrets checkbox on: accounts are restored first — staff sign in with their <b>old passwords</b>.<br>
+        4. Sign in with your previous login, then delete or block the temporary one.<br>
+        Journals are not restored by the button (the snippet is in update-to-1_07_32.sql). Photo thumbnails do not move to the new project; full-size files on Google Drive stay available.`}
       </div>
     </details>
   </div>`;
@@ -16420,7 +18117,7 @@ function editEwModal(id){
         <button class="tabbtn ${w.kind==='purchase'?'active':''}" data-kind="purchase" onclick="(this.parentElement.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')), this.classList.add('active'), document.getElementById('ew-kind').value='purchase')">${ic('cart')} ${t('kind_purchase')}</button>
       </div>
       <input type="hidden" id="ew-kind" value="${w.kind}"></div>
-    <div class="form-row"><span class="lbl">${t('price_lbl')} <span class="tiny">(${t('price_per_size')} — если включён размер)</span></span>
+    <div class="form-row"><span class="lbl">${t('price_lbl')} <span class="tiny">(${t('price_per_size')} — ${t('price_size_note')})</span></span>
       <input id="ew-price" class="price-input" inputmode="decimal" value="${w.price||''}" style="width:120px"></div>
     <label class="opt ${w.needs_size?'on':''}" style="margin-bottom:8px"><input type="checkbox" id="ew-size" ${w.needs_size?'checked':''} onchange="this.closest('.opt').classList.toggle('on', this.checked)"> ${ic('ruler')} ${t('needs_size')}</label>
     <div class="form-row"><span class="lbl">${t('size_type')}</span>
@@ -16627,9 +18324,9 @@ function viewStats(){
   const d = statData();
   const today = todayISO();
   const chips = [
-    ['7д', addDaysISO(today,-6), today],
-    ['30д', addDaysISO(today,-29), today],
-    ['90д', addDaysISO(today,-89), today],
+    [t('stat_7d'), addDaysISO(today,-6), today],
+    [t('stat_30d'), addDaysISO(today,-29), today],
+    [t('stat_90d'), addDaysISO(today,-89), today],
     [t('period_all'), '', today],
   ].map(([l,f,to]) => `<button class="tabbtn ${state.statFrom===f&&state.statTo===to?'active':''}" onclick="App.statRange('${f}','${to}')">${l}</button>`).join('');
   const maxBar = Math.max(1, ...d.chart.map(([,v])=>v));
@@ -16648,7 +18345,7 @@ function viewStats(){
       <div class="form-row"><span class="lbl">${t('to')}</span>
         <input type="date" value="${state.statTo}" onchange="App.statTo(this.value)"></div>
     </div>
-    ${isManager() ? `<div class="tabs">
+    ${isManager() && !isAcc() ? `<div class="tabs">
       <button class="tabbtn ${state.statMine?'active':''}" onclick="App.statMine(true)">${t('mine')}</button>
       <button class="tabbtn ${!state.statMine?'active':''}" onclick="App.statMine(false)">${t('all')}</button>
     </div>` : ''}
@@ -16674,4 +18371,679 @@ function viewStats(){
     <div style="font-weight:900;margin-bottom:8px">${ic('chart')} ${t('chart_earn')}</div>
     <div class="bar-chart">${bars}</div>
   </div>` : ''}`;
+}
+
+/* =====================================================================
+   v1.08.39 · БУХГАЛТЕРИЯ
+   ---------------------------------------------------------------------
+   Роль accountant («Бухгалтер») видит все инвойсы, пикапы, пропозалы и
+   ремонты, но не правит их содержимое. Свой экран — «Бухгалтерия»
+   (админ тоже видит): реестр документов за период с раскладкой сумм по
+   категориям, проценты по видам работ и сводка по сотрудникам.
+
+   Категории учёта: clean (клининг) · rep (ремонт) · rent (аренда, с
+   процентом на каждый тип техники) · mat (материалы и покупки).
+   Секция инвойса → категория: рекомендованная карта ACC_SEC_DEF,
+   бухгалтер может переназначить (строки map:<секция> в acc_settings).
+   Доп. работы: покупка товара → mat, работа с флагом «ремонт» в
+   справочнике → rep, остальные — по строке «extra». Документ ремонта
+   REP: работы → rep, материалы → mat, налог и доставка в базу % не входят.
+
+   Настройки лежат в таблице acc_settings (строка = ключ): rate:<кат>,
+   rate:rent:<тип техники>, map:<секция>, opt:label, opt:split — читают
+   и пишут только админ и бухгалтер (RLS), синхронизируется как обычная
+   таблица, сохраняется офлайн через очередь.
+   Отметки бухгалтера (acc_status / acc_note) у jobs и repairs пишет RPC
+   acc_doc_mark; триггер acc_guard не даёт затереть их чужим upsert'ом.
+   ===================================================================== */
+const ACC_CATS = ['clean', 'rep', 'rent', 'mat'];
+const ACC_SECS = ['steam', 'removals', 'repairs', 'dye', 'other', 'fog', 'treatments',
+                  'wetvac', 'airduct', 'equipment', 'pad', 'others', 'extra'];
+const ACC_SEC_DEF = { steam: 'clean', removals: 'clean', dye: 'clean', fog: 'clean', treatments: 'clean',
+  wetvac: 'clean', airduct: 'clean', other: 'clean', repairs: 'rep', pad: 'rep', equipment: 'rent',
+  others: 'clean', extra: 'rep' };
+const ACC_SEC_LBL = { steam: 'Steam Clean', removals: 'Removals', repairs: 'Repairs', dye: 'Dye',
+  other: 'Other (trash-out, pad removal)', fog: 'Fog / GOC', treatments: 'Treatments',
+  wetvac: 'Wet Vac / Flood', airduct: 'Air Duct / Dryer Vent', equipment: 'Equipment Rental',
+  pad: 'Pad Installation', others: 'Other services', extra: 'Extra works' };
+const ACC_ST = ['', 'checked', 'issue', 'paid'];
+const ACC_HIDE = new Set(['home', 'job', 'board', 'map', 'stock', 'journal', 'archive', 'proposals', 'repairs']);
+NET_ONLY.add('accMark'); NET_ONLY.add('accMarkAll');
+
+function accRows(){ return (state.data && state.data.acc_settings) || []; }
+function accRow(id){ return accRows().find(r => r.id === id); }
+/* процент по ключу; null = не задан */
+function accPct(key){
+  const r = accRow('rate:' + key);
+  return (r && r.pct != null && r.pct !== '') ? +r.pct : null;
+}
+/* действующий процент: свой тип техники → общий «аренда» → 0 */
+function accPctEff(key){
+  const v = accPct(key);
+  if (v != null) return v;
+  if (key.indexOf('rent:') === 0){ const g = accPct('rent'); return g != null ? g : 0; }
+  return 0;
+}
+function accVal(id, def){ const r = accRow(id); return (r && r.val != null && r.val !== '') ? r.val : def; }
+function accSecCat(sec){
+  const v = accVal('map:' + sec, null);
+  return ACC_CATS.indexOf(v) >= 0 ? v : (ACC_SEC_DEF[sec] || 'clean');
+}
+function accLabel(){ return accVal('opt:label', t('acc_payout')); }
+function accSplitMode(){ return accVal('opt:split', 'equal') === 'main' ? 'main' : 'equal'; }
+function accRatesSet(){ return accRows().some(r => r.id.indexOf('rate:') === 0 && r.pct != null && r.pct !== ''); }
+function accCatName(c){ return t('acc_cat_' + c); }
+function accStName(s){ return t('acc_ast_' + (s || 'none')); }
+function accRentTypes(){ return [...(state.data.equipment_types || [])].sort((a, b) => (a.sort || 0) - (b.sort || 0)); }
+function accExtraCat(it){
+  if (!it) return accSecCat('extra');
+  if (it.kind === 'purchase') return 'mat';
+  const w = it.ew_id ? ewById(it.ew_id) : null;
+  if ((w && w.repair) || it.repair) return 'rep';
+  return accSecCat('extra');
+}
+const accR2 = (v) => Math.round((+v || 0) * 100) / 100;
+
+/* ---------- раскладка документа по категориям ---------- */
+/* Инвойс: секции считаем текущим прайсом (как PDF), затем масштабируем к
+   jobGrand() — апрувленная сумма может отличаться от расчётной; тогда
+   категории пересчитываются пропорционально (флаг scaled). */
+function accSplitJob(j){
+  const fd = Object.assign(emptyFormData(), j.form_data || {});
+  const p = priceResolver(j.counterparty_id);
+  const sec = calcSections(fd, p);
+  const out = { clean: 0, rep: 0, rent: 0, mat: 0, rentBy: {}, secs: [], scaled: false };
+  const add = (cat, v) => { out[cat] = (out[cat] || 0) + v; };
+  ACC_SECS.forEach(id => {
+    if (id === 'equipment'){
+      let tot = 0;
+      (state.data.equipment_types || []).forEach(et => {
+        const e = fd.equipment[et.id];
+        if (!e || !(+e.qty > 0)) return;
+        const v = (+e.qty) * Math.max(1, +e.days || 1) * eqDayPrice(et, p);
+        if (!v) return;
+        out.rentBy[et.id] = (out.rentBy[et.id] || 0) + v; add('rent', v); tot += v;
+      });
+      if (tot) out.secs.push({ id, cat: 'rent', v: tot });
+      return;
+    }
+    if (id === 'extra'){
+      (fd.extra || []).forEach(it => {
+        const v = extraLineTotal(it); if (!v) return;
+        const cat = accExtraCat(it); add(cat, v);
+        out.secs.push({ id, cat, v, name: it.kind === 'purchase' ? (it.product_name || it.name) : it.name });
+      });
+      return;
+    }
+    const v = +sec[id] || 0;
+    if (v){ const cat = accSecCat(id); add(cat, v); out.secs.push({ id, cat, v }); }
+  });
+  const calc = accR2(ACC_CATS.reduce((a, c) => a + out[c], 0));
+  const grand = accR2(jobGrand(j));
+  if (calc > 0 && Math.abs(grand - calc) > 0.005){
+    const k = grand / calc;
+    ACC_CATS.forEach(c => { out[c] = accR2(out[c] * k); });
+    Object.keys(out.rentBy).forEach(id => { out.rentBy[id] = accR2(out.rentBy[id] * k); });
+    out.secs.forEach(s => { s.v = accR2(s.v * k); });
+    out.scaled = true;
+  } else if (calc === 0 && grand > 0){
+    out.clean = grand; out.secs.push({ id: 'others', cat: 'clean', v: grand }); out.scaled = true;
+  }
+  out.total = accR2(ACC_CATS.reduce((a, c) => a + out[c], 0));
+  return out;
+}
+function accSplitRep(r){
+  const out = { clean: 0, rep: accR2(repWorks(r)), rent: 0, mat: accR2(repMats(r)), rentBy: {}, secs: [], scaled: false };
+  if (out.rep) out.secs.push({ id: 'rep_works', cat: 'rep', v: out.rep });
+  if (out.mat) out.secs.push({ id: 'rep_mats', cat: 'mat', v: out.mat });
+  out.extra = accR2((+r.sales_tax || 0) + (+r.freight || 0));   // налог и доставка — вне базы %
+  out.total = accR2(out.rep + out.mat);
+  return out;
+}
+/* сумма «по проценту» для раскладки */
+function accPay(sp){
+  let s = sp.clean * accPctEff('clean') + sp.rep * accPctEff('rep') + sp.mat * accPctEff('mat');
+  Object.keys(sp.rentBy || {}).forEach(id => { s += sp.rentBy[id] * accPctEff('rent:' + id); });
+  const rentUnsplit = (sp.rent || 0) - Object.values(sp.rentBy || {}).reduce((a, b) => a + b, 0);
+  if (rentUnsplit > 0.005) s += rentUnsplit * accPctEff('rent');
+  return accR2(s / 100);
+}
+
+/* ---------- фильтры и реестр ---------- */
+function accF(){
+  if (!state.acc){
+    const today = todayISO();
+    state.acc = { tab: 'reg', from: today.slice(0, 8) + '01', to: today, cp: '', tech: '', st: 'done',
+                  ast: 'all', notes: false, arch: false, kind: 'all', q: '', open: {}, staffOpen: {} };
+  }
+  return state.acc;
+}
+function accCrewOf(kind, d){
+  const ids = kind === 'job' ? [d.technician_id].concat(d.helper_ids || []) : [d.created_by].concat(d.helper_ids || []);
+  const seen = new Set(); const out = [];
+  ids.forEach(id => { if (id && !seen.has(id)){ seen.add(id); out.push(id); } });
+  return out;
+}
+function accCrewNames(ids){ return ids.map(id => shortName(profName(id))).join(', ') || '—'; }
+function accDocRow(kind, d){
+  const sp = kind === 'job' ? accSplitJob(d) : accSplitRep(d);
+  return { kind, id: d.id, doc: d, date: d.date || '', no: kind === 'job' ? docNo('inv', d) : ('REP-' + (d.no ?? '—')),
+           cx: cxById(d.complex_id) || null, unit: d.unit_number || '', crew: accCrewOf(kind, d),
+           status: d.status, note: d.note || '', note_en: d.note_en || '',
+           acc_status: d.acc_status || '', acc_note: d.acc_note || '', acc_at: d.acc_at || null, acc_by: d.acc_by || null,
+           sp, total: sp.total, pay: accPay(sp), arch: !!d.archived_at };
+}
+function accDocs(){
+  const f = accF();
+  const inR = (d) => (!f.from || d.date >= f.from) && (!f.to || d.date <= f.to);
+  const q = String(f.q || '').trim().toLowerCase();
+  const has = s => String(s || '').toLowerCase().indexOf(q) >= 0;
+  const rows = [];
+  if (f.kind !== 'rep') (state.data.jobs || []).forEach(j => {
+    if (!f.arch && isArch(j)) return;
+    if (!inR(j)) return;
+    if (f.st === 'done' && j.status === 'draft') return;
+    if (f.st === 'approved' && j.status !== 'approved') return;
+    if (f.cp && j.counterparty_id !== f.cp) return;
+    if (f.tech && j.technician_id !== f.tech && !(j.helper_ids || []).includes(f.tech)) return;
+    rows.push(accDocRow('job', j));
+  });
+  if (f.kind !== 'job') (state.data.repairs || []).forEach(r => {
+    if (!f.arch && isArch(r)) return;
+    if (!inR(r)) return;
+    if (r.status === 'declined') return;
+    if (f.st === 'done' && r.status === 'draft') return;
+    if (f.st === 'approved' && r.status !== 'approved') return;
+    if (f.cp && r.counterparty_id !== f.cp) return;
+    if (f.tech && r.created_by !== f.tech && !(r.helper_ids || []).includes(f.tech)) return;
+    rows.push(accDocRow('rep', r));
+  });
+  let out = rows;
+  if (f.ast !== 'all') out = out.filter(r => (r.acc_status || '') === f.ast);
+  if (f.notes) out = out.filter(r => String(r.note).trim() || String(r.acc_note).trim());
+  if (q.length >= 2) out = out.filter(r => has(r.unit) || has(r.no) || has(r.note) || has(r.note_en) || has(r.acc_note)
+                                        || has(r.cx && (r.cx.abbr + ' ' + r.cx.name)));
+  return out.sort((a, b) => String(b.date).localeCompare(String(a.date)) || (+(b.doc.no || 0)) - (+(a.doc.no || 0)));
+}
+function accTotals(rows){
+  const s = { n: rows.length, clean: 0, rep: 0, rent: 0, mat: 0, rentBy: {}, total: 0, pay: 0, notes: 0, unchecked: 0 };
+  rows.forEach(r => {
+    ACC_CATS.forEach(c => { s[c] += r.sp[c]; });
+    Object.keys(r.sp.rentBy).forEach(id => { s.rentBy[id] = (s.rentBy[id] || 0) + r.sp.rentBy[id]; });
+    s.total += r.total; s.pay += r.pay;
+    if (String(r.note).trim() || String(r.acc_note).trim()) s.notes++;
+    if (!r.acc_status) s.unchecked++;
+  });
+  ACC_CATS.forEach(c => { s[c] = accR2(s[c]); }); s.total = accR2(s.total); s.pay = accR2(s.pay);
+  return s;
+}
+/* сводка по сотрудникам: сумма документа делится поровну на бригаду или
+   целиком на основного исполнителя (opt:split) */
+function accByStaff(rows){
+  const m = {};
+  const mode = accSplitMode();
+  rows.forEach(r => {
+    const crew = r.crew.length ? r.crew : ['—'];
+    const share = mode === 'main' ? [crew[0]] : crew;
+    share.forEach(id => {
+      const x = m[id] || (m[id] = { id, n: 0, total: 0, pay: 0, docs: [] });
+      x.n++; x.docs.push(r);
+      x.total += r.total / share.length; x.pay += r.pay / share.length;
+    });
+  });
+  return Object.values(m).map(x => ({ ...x, total: accR2(x.total), pay: accR2(x.pay),
+    name: x.id === '—' ? t('b_free_jobs') : profName(x.id) })).sort((a, b) => b.pay - a.pay || b.total - a.total);
+}
+
+/* ---------- экран ---------- */
+function viewAcc(){
+  const f = accF();
+  const tabs = [['reg', t('acc_reg')], ['rates', t('acc_rates')], ['staff', t('acc_staff')]];
+  if (!tabs.find(x => x[0] === f.tab)) f.tab = 'reg';
+  const nav = `<div class="tabs acc-nav">` + tabs.map(([id, l]) =>
+    `<button class="tabbtn ${f.tab === id ? 'active' : ''}" onclick="App.accTab('${id}')">${l}</button>`).join('') + `</div>`;
+  const head = `<div class="section-title">${ic('receipt')} ${t('tab_acc')}${helpBtn('acc')}</div>`;
+  const body = f.tab === 'rates' ? viewAccRates() : f.tab === 'staff' ? viewAccStaff() : viewAccReg();
+  return `<div class="acc-wrap">${head}${nav}${body}</div>`;
+}
+function accStBadge(st){ return `<span class="acc-st acc-st-${st || 'none'}">${esc(accStName(st))}</span>`; }
+function accMoneyCell(v){ return v > 0.005 ? `<span class="money">${money(v)}</span>` : `<span class="acc-dash">—</span>`; }
+function accRentHint(sp){
+  const parts = [];
+  Object.keys(sp.rentBy || {}).forEach(id => { const et = etById(id); if (et && sp.rentBy[id] > 0.005) parts.push(esc(et.abbr) + ' ' + money(sp.rentBy[id])); });
+  return parts.length ? `<div class="tiny acc-rent-by">${parts.join(' · ')}</div>` : '';
+}
+function accCtlHtml(r, pfx){
+  const id = pfx + '-' + r.id;
+  const btn = (s) => `<button type="button" class="acc-stb acc-st-${s || 'none'} ${(r.acc_status || '') === s ? 'on' : ''}"
+      onclick="App.accMark('${r.kind}','${r.id}','${s}','${id}')">${esc(accStName(s))}</button>`;
+  return `<div class="acc-ctl">
+    <div class="form-row"><span class="lbl">${t('acc_note_acc')}</span>
+      <textarea id="${id}" class="note-ta" rows="2" placeholder="${t('acc_note_ph')}">${esc(r.acc_note || '')}</textarea></div>
+    <div class="acc-stbs">${ACC_ST.map(btn).join('')}
+      <button type="button" class="btn btn-ghost sm" onclick="App.accMark('${r.kind}','${r.id}',null,'${id}')">${ic('save')} ${t('acc_note_save')}</button></div>
+    ${r.acc_at ? `<div class="tiny">${t('acc_marked')}: ${fmtDMY(String(r.acc_at).slice(0, 10))}${r.acc_by ? ' · ' + esc(shortName(profName(r.acc_by))) : ''}</div>` : ''}
+  </div>`;
+}
+function accNotesHtml(r){
+  const en = String(r.note_en || '').trim();
+  const ru = String(r.note || '').trim();
+  if (!ru && !en) return `<div class="tiny acc-nonote">${t('acc_no_note')}</div>`;
+  return `<div class="acc-notes">
+    <div class="lbl">${ic('note')} ${t('acc_note_tech')}</div>
+    <div class="acc-note-txt">${esc(ru || en)}</div>
+    ${en && ru && en !== ru ? `<div class="tiny acc-note-en"><b>EN:</b> ${esc(en)}</div>` : ''}
+    ${ru && hasCyr(ru) && !en ? `<div class="tiny acc-note-en acc-warn">${t('acc_note_notr')}</div>` : ''}
+  </div>`;
+}
+function accRowHtml(r, f){
+  const open = !!f.open[r.id];
+  const cxn = r.cx ? (r.cx.abbr || r.cx.name) : '—';
+  const statusTxt = r.kind === 'job' ? t('status_' + r.status) : t('pst_' + r.status);
+  const statusHtml = r.kind === 'job' ? `<span class="badge-status st-${r.status}">${esc(statusTxt)}</span>`
+                                      : `<span class="chip pst pst-${r.status}">${esc(statusTxt)}</span>`;
+  const noteOn = String(r.note).trim() || String(r.acc_note).trim();
+  const notePrev = String(r.acc_note || r.note || '').trim().replace(/\s+/g, ' ');
+  return `<div class="acc-row ${open ? 'open' : ''} ${r.arch ? 'is-arch' : ''}" data-id="${r.id}" data-kind="${r.kind}">
+    <div class="acc-line" role="button" tabindex="0" onclick="App.accOpen('${r.id}')">
+      <div class="acc-c acc-c-doc"><b>${fmtDMY(r.date)}</b><div class="tiny">${esc(r.no)}${r.kind === 'rep' ? ' <span class="chip">REP</span>' : ''}${r.arch ? ` <span class="chip bad">${t('acc_arch_chip')}</span>` : ''}</div></div>
+      <div class="acc-c acc-c-where"><b>${esc(cxn)} · Unit ${esc(r.unit || '—')}</b><div class="tiny">${esc(accCrewNames(r.crew))}</div></div>
+      <div class="acc-c acc-c-num" data-l="${accCatName('clean')}">${accMoneyCell(r.sp.clean)}</div>
+      <div class="acc-c acc-c-num" data-l="${accCatName('rep')}">${accMoneyCell(r.sp.rep)}</div>
+      <div class="acc-c acc-c-num" data-l="${accCatName('rent')}">${accMoneyCell(r.sp.rent)}${accRentHint(r.sp)}</div>
+      <div class="acc-c acc-c-num" data-l="${accCatName('mat')}">${accMoneyCell(r.sp.mat)}</div>
+      <div class="acc-c acc-c-num acc-c-tot" data-l="${t('acc_total')}"><b class="money">${money(r.total)}</b></div>
+      <div class="acc-c acc-c-num acc-c-pay" data-l="${esc(accLabel())}"><b>${money(r.pay)}</b></div>
+      <div class="acc-c acc-c-st">${statusHtml}${accStBadge(r.acc_status)}</div>
+      <div class="acc-c acc-c-note">${noteOn ? `<span class="acc-note-ic" title="${esc(notePrev)}">${ic('note')}</span>` : ''}<span class="sec-chev">${ic('chev_d')}</span></div>
+    </div>
+    ${noteOn && !open ? `<div class="acc-prev tiny" onclick="App.accOpen('${r.id}')">${ic('note')} ${esc(notePrev.slice(0, 140))}${notePrev.length > 140 ? '…' : ''}</div>` : ''}
+    ${open ? `<div class="acc-body">
+      ${accNotesHtml(r)}
+      ${accCtlHtml(r, 'acn')}
+      <div class="acc-actions">
+        <button class="btn btn-ghost sm" onclick="App.accDoc('${r.kind}','${r.id}')">${ic('search')} ${t('acc_open')}</button>
+        <button class="btn btn-ghost sm" onclick="App.accPdf('${r.kind}','${r.id}')">${ic('report')} PDF</button>
+      </div>
+    </div>` : ''}
+  </div>`;
+}
+function viewAccReg(){
+  const f = accF();
+  const rows = accDocs();
+  const s = accTotals(rows);
+  const today = todayISO();
+  const m0 = today.slice(0, 8) + '01';
+  const pm = parseISO(m0); pm.setDate(0);
+  const pmTo = isoOf(pm), pmFrom = pmTo.slice(0, 8) + '01';
+  const chips = [
+    [t('acc_period_month'), m0, today],
+    [t('acc_period_prev'), pmFrom, pmTo],
+    [t('rep_7'), addDaysISO(today, -6), today],
+    [t('rep_30'), addDaysISO(today, -29), today],
+  ].map(([l, a, b]) => `<button class="tabbtn ${f.from === a && f.to === b ? 'active' : ''}" onclick="App.accRange('${a}','${b}')">${l}</button>`).join('');
+  const astChips = ['all', '', 'checked', 'issue', 'paid'].map(v =>
+    `<button class="tabbtn ${f.ast === v ? 'active' : ''}" onclick="App.accSet('ast','${v}')">${v === 'all' ? t('all') : esc(accStName(v))}</button>`).join('');
+  const staff = [...(state.data.profiles || [])].filter(p => !isAccP(p)).sort((a, b) => a.display_name.localeCompare(b.display_name));
+  const rentBy = accRentTypes().filter(et => (s.rentBy[et.id] || 0) > 0.005)
+    .map(et => `${esc(et.abbr)} ${money(s.rentBy[et.id])} · ${accPctEff('rent:' + et.id)}%`).join(' · ');
+  const sum = `<div class="card acc-sum ${rows.length ? '' : 'empty'}">
+    <div class="acc-sum-grid">
+      <div class="acc-kpi c-blue"><div class="n">${s.n}</div><div class="l">${t('acc_docs')}</div>
+        <div class="s">${t('acc_note_cnt')}: ${s.notes} · ${t('acc_ast_none')}: ${s.unchecked}</div></div>
+      <div class="acc-kpi c-green"><div class="n">${money(s.total)}</div><div class="l">${t('acc_billed')}</div>
+        <div class="s">${accCatName('clean')} ${money(s.clean)} · ${accCatName('rep')} ${money(s.rep)} · ${accCatName('rent')} ${money(s.rent)} · ${accCatName('mat')} ${money(s.mat)}</div></div>
+      <div class="acc-kpi c-yellow"><div class="n">${money(s.pay)}</div><div class="l">${esc(accLabel())}</div>
+        <div class="s">${accRatesSet() ? `${accCatName('clean')} ${accPctEff('clean')}% · ${accCatName('rep')} ${accPctEff('rep')}% · ${accCatName('rent')} ${accPctEff('rent')}%${rentBy ? ' (' + rentBy + ')' : ''} · ${accCatName('mat')} ${accPctEff('mat')}%` : `<span class="acc-warn">${t('acc_no_pct')}</span>`}</div></div>
+    </div>
+    ${rows.length ? `<div class="acc-sum-btns">
+      <button class="btn btn-ghost sm" onclick="App.accCsv()">${ic('download')} ${t('acc_csv')}</button>
+      ${f.kind !== 'rep' ? `<button class="btn btn-ghost sm" onclick="App.accPdfBatch()">${ic('report')} ${t('acc_pdf_batch')}</button>` : ''}
+      <button class="btn btn-ghost sm" onclick="App.accMarkAll('checked')">${ic('check')} ${t('acc_mark_all_checked')}</button>
+      <button class="btn btn-ghost sm" onclick="App.accMarkAll('paid')">${ic('dollar')} ${t('acc_mark_all_paid')}</button>
+    </div>` : ''}
+  </div>`;
+  const filters = `<div class="card acc-filters">
+    <div class="grid-2">
+      <div class="form-row"><span class="lbl">${t('rep_range')} — ${t('from')}</span>
+        <input type="date" value="${f.from}" onchange="App.accSet('from',this.value)"></div>
+      <div class="form-row"><span class="lbl">${t('to')}</span>
+        <input type="date" value="${f.to}" onchange="App.accSet('to',this.value)"></div>
+    </div>
+    <div class="tabs">${chips}</div>
+    <div class="grid-2 acc-grid-3">
+      <div class="form-row"><span class="lbl">${t('counterparty')}</span>
+        <select onchange="App.accSet('cp',this.value)">
+          <option value="">${t('all_counterparties')}</option>
+          ${(state.data.counterparties || []).map(c => `<option value="${c.id}" ${f.cp === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+        </select></div>
+      <div class="form-row"><span class="lbl">${t('acc_f_tech')}</span>
+        <select onchange="App.accSet('tech',this.value)">
+          <option value="">${t('all')}</option>
+          ${staff.map(p => `<option value="${p.id}" ${f.tech === p.id ? 'selected' : ''}>${esc(p.display_name)}</option>`).join('')}
+        </select></div>
+      <div class="form-row"><span class="lbl">${t('acc_f_status')}</span>
+        <select onchange="App.accSet('st',this.value)">
+          <option value="done" ${f.st === 'done' ? 'selected' : ''}>${t('acc_st_done')}</option>
+          <option value="approved" ${f.st === 'approved' ? 'selected' : ''}>${t('acc_st_appr')}</option>
+          <option value="all" ${f.st === 'all' ? 'selected' : ''}>${t('acc_st_all')}</option>
+        </select></div>
+    </div>
+    <div class="form-row"><span class="lbl">${t('acc_f_ast')}</span><div class="tabs" style="margin-bottom:0">${astChips}</div></div>
+    <div class="acc-flags">
+      <label class="chk-line"><input type="checkbox" ${f.notes ? 'checked' : ''} onchange="App.accSet('notes',this.checked)"> ${t('acc_f_notes')}</label>
+      <label class="chk-line"><input type="checkbox" ${f.arch ? 'checked' : ''} onchange="App.accSet('arch',this.checked)"> ${t('acc_f_arch')}</label>
+      <span class="tabs" style="margin:0">
+        ${['all', 'job', 'rep'].map(k => `<button class="tabbtn ${f.kind === k ? 'active' : ''}" onclick="App.accSet('kind','${k}')">${k === 'all' ? t('all') : t('acc_kind_' + k)}</button>`).join('')}
+      </span>
+    </div>
+    <div class="form-row" style="margin-bottom:0"><input id="acc-q" placeholder="${t('acc_search')}" value="${esc(f.q)}" autocomplete="off" oninput="App.accType(this.value)"></div>
+  </div>`;
+  const list = rows.length ? `<div class="card acc-tbl">
+    <div class="acc-line acc-head">
+      <div class="acc-c acc-c-doc">${t('date')}</div>
+      <div class="acc-c acc-c-where">${t('acc_where')}</div>
+      <div class="acc-c acc-c-num">${accCatName('clean')}</div>
+      <div class="acc-c acc-c-num">${accCatName('rep')}</div>
+      <div class="acc-c acc-c-num">${accCatName('rent')}</div>
+      <div class="acc-c acc-c-num">${accCatName('mat')}</div>
+      <div class="acc-c acc-c-num">${t('acc_total')}</div>
+      <div class="acc-c acc-c-num">${esc(accLabel())}</div>
+      <div class="acc-c acc-c-st">${t('acc_f_ast')}</div>
+      <div class="acc-c acc-c-note"></div>
+    </div>
+    ${rows.map(r => accRowHtml(r, f)).join('')}
+    <div class="acc-line acc-foot">
+      <div class="acc-c acc-c-doc"><b>${t('acc_total')}</b></div>
+      <div class="acc-c acc-c-where tiny">${s.n} ${t('acc_docs').toLowerCase()}</div>
+      <div class="acc-c acc-c-num" data-l="${accCatName('clean')}">${accMoneyCell(s.clean)}</div>
+      <div class="acc-c acc-c-num" data-l="${accCatName('rep')}">${accMoneyCell(s.rep)}</div>
+      <div class="acc-c acc-c-num" data-l="${accCatName('rent')}">${accMoneyCell(s.rent)}</div>
+      <div class="acc-c acc-c-num" data-l="${accCatName('mat')}">${accMoneyCell(s.mat)}</div>
+      <div class="acc-c acc-c-num acc-c-tot" data-l="${t('acc_total')}"><b class="money">${money(s.total)}</b></div>
+      <div class="acc-c acc-c-num acc-c-pay" data-l="${esc(accLabel())}"><b>${money(s.pay)}</b></div>
+      <div class="acc-c acc-c-st"></div><div class="acc-c acc-c-note"></div>
+    </div>
+  </div>` : `<div class="list-empty"><div class="big">${ic('receipt')}</div>${t('acc_none')}</div>`;
+  return filters + sum + list;
+}
+
+/* ---------- проценты ---------- */
+function accStampHtml(){
+  const rows = accRows().filter(r => r.updated_at);
+  if (!rows.length) return `<div class="tiny">${t('acc_never')}</div>`;
+  const last = rows.reduce((a, b) => (String(a.updated_at) > String(b.updated_at) ? a : b));
+  return `<div class="tiny">${t('acc_changed')}: ${fmtDMY(String(last.updated_at).slice(0, 10))}${last.updated_by ? ' · ' + esc(shortName(profName(last.updated_by))) : ''}</div>`;
+}
+function accPctInput(key, ph){
+  const v = accPct(key);
+  return `<div class="acc-pct"><input type="number" min="0" max="100" step="0.5" inputmode="decimal" data-rate="${key}"
+      value="${v != null ? v : ''}" placeholder="${ph != null ? ph : '0'}"><span>%</span></div>`;
+}
+function viewAccRates(){
+  const ets = accRentTypes();
+  const sample = accDocs()[0] || null;
+  const example = sample ? (() => {
+    const r = sample;
+    return `<div class="card acc-example"><div style="font-weight:900;margin-bottom:6px">${ic('search')} ${t('acc_example')} · ${esc(r.no)} · Unit ${esc(r.unit || '—')}</div>
+      ${accSecsTable(r)}</div>`;
+  })() : '';
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:4px">${ic('dollar')} ${t('acc_rates_title')}</div>
+    <div class="tiny" style="margin-bottom:10px">${t('acc_rates_hint').replace('{L}', esc(accLabel()))}</div>
+    <div class="acc-rate-rows">
+      <div class="acc-rate-row"><span class="acc-cat-dot c-clean"></span><b>${accCatName('clean')}</b>${accPctInput('clean')}</div>
+      <div class="acc-rate-row"><span class="acc-cat-dot c-rep"></span><b>${accCatName('rep')}</b>${accPctInput('rep')}</div>
+      <div class="acc-rate-row"><span class="acc-cat-dot c-rent"></span><b>${t('acc_rent_all')}</b>${accPctInput('rent')}</div>
+      ${ets.map(et => `<div class="acc-rate-row acc-rate-sub"><span class="icon-circle" style="background:${et.color};color:${textColorFor(et.color)}">${esc(et.abbr)}</span>
+        <span class="grow">${esc(et.name)}<div class="tiny">${t('acc_rent_type_hint')}</div></span>${accPctInput('rent:' + et.id, accPct('rent') != null ? accPct('rent') : '')}</div>`).join('')}
+      <div class="acc-rate-row"><span class="acc-cat-dot c-mat"></span><b>${accCatName('mat')}</b>${accPctInput('mat')}</div>
+    </div>
+    <div class="grid-2" style="margin-top:12px">
+      <div class="form-row"><span class="lbl">${t('acc_label_lbl')}</span><input id="acc-label" maxlength="24" value="${esc(accLabel())}"></div>
+      <div class="form-row"><span class="lbl">${t('acc_split_lbl')}</span>
+        <select id="acc-split"><option value="equal" ${accSplitMode() === 'equal' ? 'selected' : ''}>${t('acc_split_equal')}</option>
+          <option value="main" ${accSplitMode() === 'main' ? 'selected' : ''}>${t('acc_split_main')}</option></select></div>
+    </div>
+    <button class="btn btn-green" onclick="App.accSaveRates()">${ic('save')} ${t('acc_save')}</button>
+    <div style="margin-top:8px">${accStampHtml()}</div>
+  </div>
+  <div class="card">
+    <div style="font-weight:900;margin-bottom:4px">${ic('layers')} ${t('acc_map_title')}</div>
+    <div class="tiny" style="margin-bottom:10px">${t('acc_map_hint')}</div>
+    <div class="acc-map-rows">${ACC_SECS.map(sec => `<div class="acc-map-row">
+        <span class="grow">${esc(ACC_SEC_LBL[sec])}${accSecCat(sec) !== ACC_SEC_DEF[sec] ? ` <span class="chip">${t('acc_changed_chip')}</span>` : ''}</span>
+        <select data-map="${sec}" onchange="App.accMapSet('${sec}', this.value)">
+          ${ACC_CATS.map(c => `<option value="${c}" ${accSecCat(sec) === c ? 'selected' : ''}>${accCatName(c)}</option>`).join('')}
+        </select></div>`).join('')}
+    </div>
+    <div class="tiny" style="margin:8px 0">${t('acc_map_fixed')}</div>
+    <button class="btn btn-ghost sm" onclick="App.accMapReset()">${ic('refresh')} ${t('acc_map_reset')}</button>
+  </div>
+  ${example}`;
+}
+function accSecsTable(r){
+  const sp = r.sp;
+  const lbl = (s) => s.id === 'rep_works' ? t('rep_items') : s.id === 'rep_mats' ? t('rep_mats')
+             : s.id === 'extra' ? (t('extra_section') + (s.name ? ': ' + s.name : '')) : (ACC_SEC_LBL[s.id] || s.id);
+  const lines = sp.secs.map(s => `<div class="acc-sec-line"><span class="grow">${esc(lbl(s))}</span>
+      <span class="chip acc-cat-chip c-${s.cat}">${accCatName(s.cat)}</span><span class="money">${money(s.v)}</span></div>`).join('');
+  const cats = ACC_CATS.filter(c => sp[c] > 0.005).map(c => {
+    const pct = c === 'rent' ? null : accPctEff(c);
+    const rentLines = c === 'rent' ? Object.keys(sp.rentBy).map(id => { const et = etById(id) || { abbr: '?' };
+      return `<div class="tiny">${esc(et.abbr)}: ${money(sp.rentBy[id])} × ${accPctEff('rent:' + id)}% = ${money(sp.rentBy[id] * accPctEff('rent:' + id) / 100)}</div>`; }).join('') : '';
+    return `<div class="acc-sec-line acc-sec-cat"><span class="grow"><span class="acc-cat-dot c-${c}"></span>${accCatName(c)}${rentLines}</span>
+      <span class="tiny">${pct != null ? pct + '%' : ''}</span><span class="money">${money(sp[c])}</span></div>`;
+  }).join('');
+  return `<div class="acc-secs">${lines || `<div class="tiny">${t('acc_no_lines')}</div>`}
+    <div class="acc-sec-sep"></div>${cats}
+    ${sp.extra > 0.005 ? `<div class="acc-sec-line"><span class="grow tiny">${t('acc_tax_freight')}</span><span class="money">${money(sp.extra)}</span></div>` : ''}
+    <div class="acc-sec-line acc-sec-tot"><span class="grow"><b>${t('acc_total')}</b>${sp.scaled ? `<div class="tiny acc-warn">${t('acc_approved_note')}</div>` : ''}</span><b class="money">${money(sp.total)}</b></div>
+    <div class="acc-sec-line acc-sec-pay"><span class="grow"><b>${esc(accLabel())}</b></span><b>${money(r.pay)}</b></div>
+  </div>`;
+}
+async function accSaveRates(){
+  if (!(isAdmin() || isAcc())) return;
+  const inputs = Array.from(document.querySelectorAll('input[data-rate]'));
+  const label = String(($('#acc-label') || {}).value || '').trim();
+  const split = String(($('#acc-split') || {}).value || 'equal');
+  const now = new Date().toISOString();
+  const me = state.user ? state.user.id : null;
+  if (!state.data.acc_settings) state.data.acc_settings = [];
+  let bad = 0, changed = 0;
+  const put = async (id, pct, val) => {
+    const cur = accRow(id);
+    const same = cur && ((cur.pct == null ? null : +cur.pct) === (pct == null ? null : +pct)) && String(cur.val || '') === String(val || '');
+    if (same) return;
+    changed++;
+    await dbUpsert('acc_settings', { id, pct: pct == null ? null : +pct, val: val || null, updated_at: now, updated_by: me });
+  };
+  for (const inp of inputs){
+    const raw = String(inp.value || '').trim().replace(',', '.');
+    let pct = raw === '' ? null : parseFloat(raw);
+    if (pct != null && (!isFinite(pct) || pct < 0 || pct > 100)){ bad++; inp.classList.add('bad'); continue; }
+    inp.classList.remove('bad');
+    if (pct != null) pct = Math.round(pct * 100) / 100;
+    await put('rate:' + inp.dataset.rate, pct, null);
+  }
+  if (bad){ toast('⚠ ' + t('acc_bad_pct'), 'err'); return; }
+  await put('opt:label', null, label && label !== t('acc_payout') ? label : '');
+  await put('opt:split', null, split === 'main' ? 'main' : '');
+  if (changed) audit('acc_rates', 'acc', 'rates', { n: changed, clean: accPct('clean'), rep: accPct('rep'), rent: accPct('rent'), mat: accPct('mat') });
+  toast('✓ ' + t('acc_saved'));
+  render();
+}
+async function accMapSet(sec, cat){
+  if (!(isAdmin() || isAcc()) || ACC_SECS.indexOf(sec) < 0 || ACC_CATS.indexOf(cat) < 0) return;
+  if (!state.data.acc_settings) state.data.acc_settings = [];
+  await dbUpsert('acc_settings', { id: 'map:' + sec, pct: null, val: cat === ACC_SEC_DEF[sec] ? '' : cat,
+    updated_at: new Date().toISOString(), updated_by: state.user ? state.user.id : null });
+  audit('acc_map', 'acc', sec, { cat });
+  render();
+}
+async function accMapReset(){
+  if (!(isAdmin() || isAcc())) return;
+  const rows = accRows().filter(r => r.id.indexOf('map:') === 0 && r.val);
+  for (const r of rows) await dbUpsert('acc_settings', { ...r, val: '', updated_at: new Date().toISOString(), updated_by: state.user ? state.user.id : null });
+  if (rows.length) audit('acc_map', 'acc', 'reset', { n: rows.length });
+  toast('✓ ' + t('saved')); render();
+}
+
+/* ---------- отметки бухгалтера ---------- */
+async function accMarkOne(kind, id, status, note){
+  const tb = kind === 'rep' ? 'repairs' : 'jobs';
+  const d = (state.data[tb] || []).find(x => x.id === id); if (!d) return false;
+  const st = status == null ? (d.acc_status || '') : status;
+  const nt = note == null ? (d.acc_note || '') : String(note).slice(0, 2000);
+  if (HAS_SB){
+    const { data, error } = await state.sb.rpc('acc_doc_mark', { p_kind: kind, p_id: id, p_status: st, p_note: nt });
+    if (error){ dlog('⛔ acc_doc_mark:', error); toast('⚠ ' + rpcFail(error, 'acc_doc_mark'), 'err'); return false; }
+    Object.assign(d, data || { acc_status: st, acc_note: nt, acc_at: new Date().toISOString(), acc_by: state.user.id });
+    saveLocal();
+  } else {
+    await dbUpsert(tb, { ...d, acc_status: st, acc_note: nt, acc_at: new Date().toISOString(), acc_by: state.user.id });
+  }
+  audit('acc_mark', kind === 'rep' ? 'repair' : 'job', id, { status: st, note: nt ? 1 : 0 });
+  return true;
+}
+async function accMark(kind, id, status, taId){
+  if (!(isAdmin() || isAcc())) return;
+  const ta = taId ? document.getElementById(taId) : null;
+  const note = ta ? ta.value : null;
+  const ok = await accMarkOne(kind, id, status, note);
+  if (!ok) return;
+  toast('✓ ' + t('acc_marked'));
+  if ($('#overlay')) closeModal();
+  render();
+}
+async function accMarkAll(status){
+  if (!(isAdmin() || isAcc())) return;
+  const rows = accDocs().filter(r => (r.acc_status || '') !== status);
+  if (!rows.length){ toast(t('acc_nothing'), 'inf'); return; }
+  if (!confirm(t('acc_mark_q').replace('{N}', rows.length).replace('{S}', accStName(status)))) return;
+  let n = 0;
+  for (const r of rows){ if (await accMarkOne(r.kind, r.id, status, null)) n++; }
+  toast('✓ ' + t('acc_marked') + ': ' + n);
+  render();
+}
+
+/* ---------- карточка документа (только чтение) ---------- */
+function accDoc(kind, id){
+  const tb = kind === 'rep' ? 'repairs' : 'jobs';
+  const d = (state.data[tb] || []).find(x => x.id === id); if (!d){ toast(t('no_access'), 'err'); return; }
+  const r = accDocRow(kind, d);
+  const cp = cpById(d.counterparty_id) || { name: '—' };
+  const cx = r.cx || { name: '—', address: '' };
+  const wt = kind === 'job' ? wtById(d.work_type_id) : null;
+  const statusTxt = kind === 'job' ? t('status_' + d.status) : t('pst_' + d.status);
+  openModal(`
+    ${modalHead(r.no + ' · Unit ' + (r.unit || '—'), 'receipt')}
+    <div class="acc-doc-head">
+      <div><b>${fmtDMY(r.date)}</b> · ${kind === 'job' ? `<span class="badge-status st-${d.status}">${esc(statusTxt)}</span>` : `<span class="chip pst pst-${d.status}">${esc(statusTxt)}</span>`} ${accStBadge(r.acc_status)}</div>
+      <div class="tiny">${esc(cp.name)} — ${esc(cx.name)}${cx.address ? ' · ' + esc(cx.address) : ''}</div>
+      ${wt ? `<div class="tiny"><span class="dot" style="background:${wt.color}"></span> ${esc(wt.name)}</div>` : ''}
+      <div class="tiny">${ic('crew')} ${esc(accCrewNames(r.crew))}</div>
+      ${kind === 'job' && d.status === 'approved' && d.approved_by ? `<div class="tiny">${t('approved_by')}: ${esc(shortName(profName(d.approved_by)))}</div>` : ''}
+    </div>
+    <div class="lbl" style="margin-top:8px">${t('acc_detail')}</div>
+    ${accSecsTable(r)}
+    ${accNotesHtml(r)}
+    ${accCtlHtml(r, 'acm')}
+    <div class="acc-actions">
+      <button class="btn btn-ghost" onclick="App.accPdf('${kind}','${id}')">${ic('report')} PDF</button>
+      <button class="btn btn-ghost" onclick="App.closeModal()">${t('close')}</button>
+    </div>`);
+}
+function accPdf(kind, id){
+  if (kind === 'rep'){ makeRepairPdf(id, true); return; }
+  const prevId = state.jobId, prevDraft = jobDraft;
+  state.jobId = id; jobDraft = null;
+  try{
+    const doc = buildInvoicePdfDoc(true);
+    if (!doc){ toast('⛔ PDF', 'err'); return; }
+    const j = state.data.jobs.find(x => x.id === id) || {};
+    const cx = cxById(j.complex_id) || {};
+    savePdfCompat(doc, 'Invoice_' + (cx.abbr || 'UNIT') + '_' + (j.unit_number || 'x') + '_' + (j.date || '') + '.pdf');
+  } finally { state.jobId = prevId; jobDraft = prevDraft; }
+}
+function accPdfBatch(){
+  const f = accF();
+  const rows = accDocs().filter(r => r.kind === 'job');
+  if (!rows.length || !window.jspdf){ toast(t('acc_none'), 'err'); return; }
+  const keep = { from: state.repFrom, to: state.repTo, cp: state.repCp, st: state.repStatus };
+  state.repFrom = f.from; state.repTo = f.to; state.repCp = f.cp; state.repStatus = f.st === 'all' ? 'all' : (f.st === 'approved' ? 'approved' : 'done');
+  try{ batchPdf(); }
+  finally { state.repFrom = keep.from; state.repTo = keep.to; state.repCp = keep.cp; state.repStatus = keep.st; }
+}
+
+/* ---------- CSV для Excel ---------- */
+function accCsv(){
+  const rows = accDocs();
+  if (!rows.length){ toast(t('acc_none'), 'err'); return; }
+  const ets = accRentTypes();
+  const q = v => { const s = String(v == null ? '' : v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const n = v => (Math.round((+v || 0) * 100) / 100).toFixed(2);
+  const head = [t('date'), t('acc_f_kind'), '№', t('counterparty'), t('d_complexes'), 'Unit', t('acc_crew'), t('acc_f_status'),
+    accCatName('clean'), accCatName('rep'), accCatName('rent'), ...ets.map(et => accCatName('rent') + ' ' + et.abbr), accCatName('mat'),
+    t('acc_total'), accLabel(), t('acc_f_ast'), t('acc_note_acc'), t('acc_note_tech'), t('acc_note_tech') + ' (EN)'];
+  const lines = rows.map(r => {
+    const cp = cpById(r.doc.counterparty_id) || { name: '' };
+    return [fmtDMY(r.date), t('acc_kind_' + r.kind), r.no, cp.name, r.cx ? r.cx.name : '', r.unit, accCrewNames(r.crew),
+      r.kind === 'job' ? t('status_' + r.status) : t('pst_' + r.status),
+      n(r.sp.clean), n(r.sp.rep), n(r.sp.rent), ...ets.map(et => n(r.sp.rentBy[et.id] || 0)), n(r.sp.mat),
+      n(r.total), n(r.pay), accStName(r.acc_status), r.acc_note, r.note, r.note_en].map(q).join(',');
+  });
+  const s = accTotals(rows);
+  lines.push([t('acc_total'), '', '', '', '', '', '', '', n(s.clean), n(s.rep), n(s.rent), ...ets.map(et => n(s.rentBy[et.id] || 0)), n(s.mat), n(s.total), n(s.pay)].map(q).join(','));
+  const f = accF();
+  const blob = new Blob(['\ufeff' + head.map(q).join(',') + '\n' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  bkDownload(blob, 'TechLog_acc_' + f.from + '_' + f.to + '.csv');
+  toast('⬇ CSV: ' + rows.length);
+}
+
+/* ---------- сотрудники ---------- */
+function viewAccStaff(){
+  const f = accF();
+  const rows = accDocs();
+  const list = accByStaff(rows);
+  const mode = accSplitMode();
+  const cards = list.map(x => {
+    const open = !!f.staffOpen[x.id];
+    return `<div class="acc-row acc-staff ${open ? 'open' : ''}">
+      <div class="acc-line" role="button" tabindex="0" onclick="App.accStaffOpen('${x.id}')">
+        <span class="avatar">${esc(initials(x.name))}</span>
+        <div class="acc-c acc-c-where"><b>${esc(x.name)}</b><div class="tiny">${x.n} ${t('acc_docs').toLowerCase()}</div></div>
+        <div class="acc-c acc-c-num acc-c-tot" data-l="${t('acc_billed')}"><b class="money">${money(x.total)}</b></div>
+        <div class="acc-c acc-c-num acc-c-pay" data-l="${esc(accLabel())}"><b>${money(x.pay)}</b></div>
+        <div class="acc-c acc-c-note"><span class="sec-chev">${ic('chev_d')}</span></div>
+      </div>
+      ${open ? `<div class="acc-body">${x.docs.map(r => `<button class="rowline" onclick="App.accDoc('${r.kind}','${r.id}')">
+          <div class="grow">${fmtDMY(r.date)} · ${esc(r.no)} · ${esc(r.cx ? (r.cx.abbr || r.cx.name) : '—')} · Unit <b>${esc(r.unit || '—')}</b>
+            <div class="tiny">${esc(accCrewNames(r.crew))}</div></div>
+          <span class="money">${money(r.total)}</span><span class="tiny" style="min-width:64px;text-align:right"><b>${money(r.pay)}</b></span></button>`).join('')}</div>` : ''}
+    </div>`;
+  }).join('');
+  const s = accTotals(rows);
+  return `<div class="card">
+    <div class="tiny">${t('acc_by_staff_hint').replace('{S}', mode === 'main' ? t('acc_split_main') : t('acc_split_equal'))} · ${t('rep_range')}: ${fmtDMY(f.from)} – ${fmtDMY(f.to)}</div>
+    <div class="tiny" style="margin-top:4px">${t('acc_billed')}: <b class="money">${money(s.total)}</b> · ${esc(accLabel())}: <b>${money(s.pay)}</b></div>
+  </div>
+  ${list.length ? `<div class="card acc-tbl acc-tbl-staff">${cards}</div>` : `<div class="list-empty"><div class="big">${ic('crew')}</div>${t('acc_none')}</div>`}`;
+}
+
+/* Enter/Space на строке реестра (role=button) — как клик */
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target && e.target.closest ? e.target.closest('.acc-line[role="button"]') : null;
+  if (!el || e.target !== el) return;
+  e.preventDefault(); el.click();
+});
+function accType(v){
+  const f = accF(); f.q = v;
+  clearTimeout(accType._t);
+  accType._t = setTimeout(() => {
+    const el = $('#acc-q'); const pos = el ? el.selectionStart : null;
+    render();
+    const el2 = $('#acc-q'); if (el2){ el2.focus(); try{ el2.setSelectionRange(pos, pos); }catch(e){} }
+  }, 250);
 }

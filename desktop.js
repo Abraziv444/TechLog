@@ -46,6 +46,7 @@
       if (el.classList.contains('role-admin')) return 'admin';
       if (el.classList.contains('role-manager')) return 'manager';
       if (el.classList.contains('role-tech')) return 'tech';
+      if (el.classList.contains('role-accountant')) return 'accountant';   // v1.08.39
     } catch (e) {}
     return null;
   }
@@ -54,7 +55,7 @@
       var d = JSON.parse(lsGet(LS_DATA) || 'null');
       var arr = (d && Array.isArray(d.profiles)) ? d.profiles : [];
       var ord = { tech: 0, manager: 1, admin: 2 };
-      return arr.filter(function (p) { return p && p.display_name && !p.blocked; })
+      return arr.filter(function (p) { return p && p.display_name && !p.blocked && p.role !== 'accountant'; })   // v1.08.39: бухгалтер — не исполнитель
         .sort(function (a, b) {
           var r = (ord[a.role] ?? 3) - (ord[b.role] ?? 3);
           return r !== 0 ? r : String(a.display_name).localeCompare(String(b.display_name));
@@ -68,8 +69,8 @@
   }
   function lang() { return lsGet('techlog_lang') === 'en' ? 'en' : 'ru'; }
   function T(k) {
-    var ru = { all: 'Все', staff: 'Сотрудники', role_tech: 'сотрудник', role_manager: 'менеджер', role_admin: 'админ' };
-    var en = { all: 'All', staff: 'Staff', role_tech: 'worker', role_manager: 'manager', role_admin: 'admin' };
+    var ru = { all: 'Все', staff: 'Сотрудники', role_tech: 'сотрудник', role_manager: 'менеджер', role_admin: 'админ', role_accountant: 'бухгалтер' };
+    var en = { all: 'All', staff: 'Staff', role_tech: 'worker', role_manager: 'manager', role_admin: 'admin', role_accountant: 'accountant' };   // v1.08.40
     return (lang() === 'en' ? en : ru)[k] || k;
   }
   function currentQuery() {
@@ -405,6 +406,8 @@
     try { if (document.documentElement.classList.contains('tl-compact') !== on)
       document.documentElement.classList.toggle('tl-compact', on); } catch (e) {}
     if (densBtn) densBtn.classList.toggle('on', on);
+    /* v1.08.35: база масштаба текста (16/14px) живёт в ui.js — просим пересчитать */
+    try { window.dispatchEvent(new CustomEvent('tl-density')); } catch (e) {}
   }
   function buildDensity() {
     var need = isDesk() && wide(980);

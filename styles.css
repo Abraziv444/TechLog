@@ -1892,6 +1892,7 @@ select:disabled{opacity:.55;cursor:default}
   margin-top:4px;padding-top:8px;font-weight:900}
 .bn-go{color:var(--green);font-weight:800}
 .bn-site{color:var(--blue);font-weight:800}
+.bn-idle{ color:var(--dim);font-weight:800 }   /* v1.08.37: статус «свободен/план» на ТВ */
 
 /* ===================== v1.08.33 ===================== */
 /* маленький «?» с подсказкой возле функции */
@@ -1905,7 +1906,18 @@ select:disabled{opacity:.55;cursor:default}
 .chk-line input{ width:18px;height:18px;accent-color:var(--green);flex:0 0 auto }
 .chk-line input:disabled{ opacity:.5 }
 /* поиск в шапке и модалка результатов */
-.hdr-srch{ margin-right:2px }
+/* v1.08.35: поиск живёт в одной строке с пилюлей режима, а сама строка
+   ужата до высоты бейджа роли + пилюли ≈ колонка не выше аватарки —
+   шапка не растёт из-за поиска. Плавающую пилюлю логина (.vm-seg) не трогаем. */
+.rt-row{ display:flex;align-items:center;gap:6px }
+.rt-col{ gap:4px }
+.rt-row .vm-inline{ padding:2px }
+/* базовое .vm-inline button задаёт явные width/height — перекрываем их же */
+.rt-row .vm-inline button{ width:30px;height:22px;padding:0 }
+.rt-row .vm-inline svg{ width:13px;height:13px }
+.hdr-srch{ width:28px;height:28px;border-radius:9px }
+.srch-chips{ display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px }
+.srch-chips .chip-preset{ padding:5px 10px;font-size:.72rem }
 .srch-res{ max-height:58vh;overflow:auto;margin-top:4px }
 .srch-grp{ font-size:11px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;
   color:var(--dim-2);margin:10px 2px 2px }
@@ -1925,3 +1937,343 @@ select:disabled{opacity:.55;cursor:default}
 #sess-list div:last-child{ border-bottom:0 }
 /* перенос дня в ленте недели */
 .today-jump.tpl-move{ margin-left:6px }
+
+/* ============ v1.08.34: переключатель клавиатуры у номера юнита ============ */
+.unit-wrap{display:flex;gap:6px;align-items:stretch}
+.unit-wrap input{flex:1;min-width:0}
+.kb-toggle{
+  flex:0 0 auto;min-width:54px;padding:0 10px;
+  font:inherit;font-size:.8rem;font-weight:900;letter-spacing:.5px;
+  color:var(--blue);background:var(--panel-2);
+  border:2px solid var(--line);border-radius:var(--r-sm);cursor:pointer;
+}
+.kb-toggle:active{border-color:var(--blue)}
+
+/* ============ v1.08.36: имя корневой папки Диска — напротив поля ============ */
+.gd-fname{
+  flex:0 1 auto;max-width:46%;display:inline-flex;align-items:center;gap:4px;
+  font-size:.78rem;font-weight:800;color:var(--green);
+  background:rgba(88,204,2,.1);border:1.6px solid rgba(88,204,2,.4);
+  border-radius:8px;padding:3px 7px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.gd-fname:empty{ display:none }
+.gd-fname svg{ width:13px;height:13px;flex:0 0 auto }
+.gd-fname.bad{
+  color:var(--yellow);border-color:rgba(255,200,60,.45);background:rgba(255,200,60,.08);
+}
+
+/* =====================================================================
+   v1.08.37 · РЕЖИМ ТЕЛЕВИЗОРА
+   Экран без входа в аккаунт: html.tl-tv поднимает базовый кегль (всё в
+   rem само укрупняется под просмотр с дивана), body.tl-tvmode прячет
+   прокрутку, body.tl-tvfs — «киоск»: зелёная кнопка скрыта, ✕ показан.
+   Карточки/пины/строки сотрудников переиспользуют классы приложения.
+   ===================================================================== */
+html.tl-tv{ font-size:19px }
+body.tl-tvmode{ padding-bottom:0 !important; overflow:hidden }
+body.tl-tvmode .vm-seg{ display:none }
+#app.scr-tv{ max-width:none; padding:0 }
+
+.tvwrap{ display:grid; grid-template-columns:1fr 460px; gap:12px;
+  height:100vh; height:100dvh; padding:12px; box-sizing:border-box }
+.tv-left{ display:flex; flex-direction:column; gap:12px; min-width:0; min-height:0 }
+.tv-mapbox{ position:relative; border:2px solid var(--line); border-radius:var(--r);
+  overflow:hidden; background:#0B1114; flex:1; min-height:0 }
+#tv-map{ position:absolute; inset:0 }
+.tv-bottom{ display:flex; gap:12px; min-height:0 }
+.tv-bottom:empty{ display:none }
+.tv-bottom .twg{ flex:1; min-width:0 }
+.tvwrap.nomap .tv-mapbox{ display:none }
+.tvwrap.nomap .tv-bottom{ flex:1; flex-wrap:wrap; align-content:stretch }
+.tv-rail{ display:flex; flex-direction:column; gap:10px; min-height:0; overflow:hidden }
+#tv-zrail{ display:flex; flex-direction:column; gap:10px; flex:1; min-height:0; overflow:hidden }
+
+.tv-head{ display:flex; align-items:center; gap:12px; background:var(--panel);
+  border:2px solid var(--line); border-radius:var(--r); padding:10px 14px; flex:0 0 auto }
+.tv-head .logo{ width:52px; height:52px; margin:0 }
+.tv-head .who{ min-width:0 }
+.tv-head .who b{ font-size:1rem }
+.tv-head .who .tiny{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.tv-clock{ margin-left:auto; text-align:right }
+.tv-clock .hm{ font-weight:900; font-size:2.1rem; line-height:1; font-variant-numeric:tabular-nums }
+.tv-clock .dt{ color:var(--dim); font-size:.8rem; font-weight:800; white-space:nowrap }
+body.tl-tvfs .tv-clock{ margin-right:46px }
+
+/* виджеты правой колонки и низа */
+.twg{ background:var(--panel); border:2px solid var(--line); border-radius:var(--r);
+  padding:12px 14px; min-height:0; display:flex; flex-direction:column }
+.twg-h{ display:flex; gap:9px; align-items:center; margin-bottom:8px; font-size:.95rem; font-weight:900 }
+.twg-h svg{ width:20px; height:20px; flex:0 0 auto }
+.twg-h .tiny{ margin-left:auto; font-weight:800 }
+.twg-workers{ flex:1 }
+.tv-stats{ flex:0 0 auto }
+.tv-stats.stats-day{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+.tv-stats.stats-day.one{ grid-template-columns:1fr }
+.tv-stats .dcard-head .n{ font-size:1.9rem }
+
+/* сотрудники: сжатые плитки 2 колонки */
+.twtiles{ flex:1; min-height:0; display:grid; grid-template-columns:1fr 1fr;
+  gap:8px; align-content:start; overflow:hidden }
+.twtile{ display:flex; align-items:center; gap:9px; background:var(--panel-2);
+  border:2px solid var(--line-soft); border-radius:12px; padding:7px 10px; min-width:0 }
+.twtile .bn-sno{ min-width:30px; height:30px; font-size:.82rem; border-radius:9px }
+.twtile .nm{ min-width:0; flex:1 }
+.twtile .nm b{ display:block; font-size:.85rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.twtile .nm .st-line{ display:block; font-size:.68rem; font-weight:800;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.twtile .ck{ flex:0 0 auto; font-size:.82rem; font-weight:900; color:var(--green) }
+/* сотрудники: подробные строки */
+.tv-rows{ flex:1; min-height:0; overflow:hidden }
+.bn-srow.tvw{ border-top:1px solid var(--line-soft); padding:9px 2px }
+.bn-srow.tvw:first-child{ border-top:0; padding-top:2px }
+.bn-srow.tvw .grow b{ font-size:.98rem }
+.tv-done{ font-size:.76rem; color:var(--dim); white-space:nowrap }
+.tv-done b{ color:var(--green) }
+.tv-stot{ display:flex; gap:10px; align-items:center; border-top:2px solid var(--line);
+  margin-top:8px; padding-top:8px; font-weight:900; flex:0 0 auto }
+.tv-stot .grow{ flex:1 }
+.tv-upd{ display:flex; align-items:center; gap:8px; justify-content:flex-end;
+  font-size:.7rem; color:var(--dim); flex:0 0 auto; margin-top:4px }
+.tvwrap .dotlive, .tvwait .dotlive{ width:10px; height:10px; border-radius:50%; background:var(--green);
+  box-shadow:0 0 8px rgba(88,204,2,.8); animation:tvpulse 2.4s infinite; display:inline-block }
+@keyframes tvpulse{ 0%,100%{opacity:1} 50%{opacity:.35} }
+
+/* графики */
+.tvch{ flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; overflow:hidden }
+.tvch-row{ display:flex; align-items:center; gap:9px; min-width:0 }
+.tvch-nm{ flex:0 0 96px; font-size:.74rem; font-weight:800; color:var(--dim);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right }
+.tvch-bar{ flex:1; height:17px; background:var(--panel-2); border-radius:9px; overflow:hidden }
+.tvch-bar i{ display:block; height:100%; border-radius:9px; min-width:6px; transition:width .6s }
+.tvch-row b{ flex:0 0 40px; font-size:.82rem; text-align:right; font-variant-numeric:tabular-nums }
+
+/* пины и машины на ТВ — крупнее базовых */
+.map-pin.tvpin{ min-width:36px; height:36px; border-radius:18px; font-size:1rem; border-width:3px }
+.map-pin.tvpin.tvdone{ background:#3a4a52 !important; color:#8AA0AB !important;
+  opacity:.55; filter:saturate(.2) }
+.map-car.tvcar{ width:40px; height:40px; margin:-20px 0 0 -20px; font-size:1.05rem }
+.tv-legend{ position:absolute; left:12px; bottom:12px; z-index:900; display:flex; gap:14px;
+  align-items:center; background:rgba(15,23,27,.88); border:2px solid var(--line);
+  border-radius:12px; padding:7px 13px; font-size:.72rem; font-weight:800; color:var(--dim) }
+.tv-legend .sw{ width:15px; height:15px; border-radius:8px; border:2px solid #0F171B;
+  display:inline-block; vertical-align:-3px; margin-right:6px }
+.tv-legend .sw-done{ background:#3a4a52; opacity:.6 }
+.tv-legend .car-sw{ width:16px; height:16px; border-radius:5px; background:var(--panel);
+  border:2px solid var(--green); display:inline-block; vertical-align:-3px; margin-right:6px;
+  box-shadow:0 0 6px rgba(88,204,2,.7) }
+
+/* кнопки: на весь экран и выход */
+.tv-fsbtn{ position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:950;
+  display:flex; align-items:center; gap:12px; background:var(--green); color:var(--green-ink);
+  border:none; border-radius:18px; box-shadow:0 4px 0 var(--green-dk); cursor:pointer;
+  font:inherit; font-weight:900; font-size:1.15rem; letter-spacing:.4px; padding:14px 26px;
+  text-transform:uppercase }
+.tv-fsbtn:active{ transform:translateX(-50%) translateY(3px); box-shadow:0 1px 0 var(--green-dk) }
+.tv-fsbtn svg{ width:24px; height:24px }
+body.tl-tvfs .tv-fsbtn{ display:none }
+.tv-x{ position:fixed; top:10px; right:10px; z-index:1000; width:46px; height:46px;
+  border-radius:50%; background:rgba(23,35,42,.85); border:2px solid var(--line);
+  color:var(--dim); display:none; place-items:center; cursor:pointer }
+.tv-x svg{ width:22px; height:22px }
+.tv-x:hover{ color:var(--text); border-color:var(--dim) }
+body.tl-tvfs .tv-x{ display:grid }
+
+/* экран ожидания кода */
+.tvwait{ text-align:center }
+.tvw-code{ font-weight:900; font-size:3.4rem; letter-spacing:.35em; text-indent:.35em;
+  margin-top:6px; font-variant-numeric:tabular-nums }
+.tvw-hint{ font-size:.85rem; color:var(--dim); font-weight:700; max-width:360px; margin:14px auto 0 }
+.tvw-spin{ display:flex; gap:9px; align-items:center; justify-content:center;
+  margin-top:14px; font-size:.8rem; color:var(--dim); font-weight:800 }
+
+/* карточка «ТВ-экраны» в настройках */
+.tvs-row{ display:flex; gap:12px; align-items:center; border-top:1px solid var(--line-soft); padding:10px 0 }
+.tvs-row:first-child{ border-top:0; padding-top:2px }
+.tvs-row .grow{ flex:1; min-width:0 }
+.tvs-code{ font-weight:900; font-size:1.25rem; letter-spacing:.14em; flex:0 0 auto }
+.tvs-live{ display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--green);
+  box-shadow:0 0 8px rgba(88,204,2,.8); vertical-align:middle; margin-left:6px }
+.tvs-btns{ display:flex; flex-direction:column; gap:6px; flex:0 0 auto; align-items:stretch }
+
+/* карточка «Режим телевизора»: конструктор раскладки */
+.tvz-t{ font-size:.72rem; color:var(--dim); text-transform:uppercase; letter-spacing:.5px;
+  font-weight:900; margin:10px 0 0 }
+.tvz-zone{ border:2px dashed var(--line); border-radius:12px; padding:8px; min-height:52px; margin-top:6px }
+.tvz-zone.hot{ border-color:var(--green); background:rgba(88,204,2,.06) }
+.tvz-item{ display:flex; align-items:center; gap:8px; background:var(--panel);
+  border:2px solid var(--line); border-radius:11px; padding:7px 9px; margin:6px 0;
+  font-size:.86rem; font-weight:800; cursor:grab }
+.tvz-item.off{ opacity:.45 }
+.tvz-item .hnd{ color:var(--dim); font-size:1rem; flex:0 0 auto }
+.tvz-item input{ width:19px; height:19px; accent-color:var(--green); margin:0; flex:0 0 auto }
+.tvz-item .nm{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.tvz-item .zi-b{ width:30px; height:28px; display:grid; place-items:center; border:2px solid var(--line);
+  border-radius:9px; color:var(--dim); background:none; cursor:pointer; font-weight:900; flex:0 0 auto }
+.tvz-item .zi-b svg{ width:15px; height:15px }
+.tvz-item .zi-b:disabled{ opacity:.35; cursor:default }
+.tvz-item .zi-b:not(:disabled):hover{ color:var(--text); border-color:var(--dim) }
+
+/* =====================================================================
+   v1.08.38: ОФЛАЙН-РЕЖИМ — пилюля связи в шапке и блеклые серверные кнопки
+   ===================================================================== */
+/* Пилюля живёт ПОД логотипом — зеркально пилюле логина под аватаркой:
+   в правой колонке шапки места нет (роль «Сотрудник» + переключатель уже
+   впритык на 320–360px), а под логотипом свободно и не отъедает ширину
+   у названия. */
+.logo-wrap{ flex:0 0 auto;display:flex;flex-direction:column;align-items:center;min-width:44px }
+.net-pill{
+  display:inline-flex;align-items:center;gap:4px;margin-top:-7px;position:relative;z-index:1;
+  font-size:.55rem;font-weight:900;letter-spacing:.2px;line-height:1.3;
+  border-radius:999px;padding:1px 6px;border:2px solid var(--line);
+  background:var(--bg);color:var(--dim);white-space:nowrap;max-width:72px;
+  font-variant-numeric:tabular-nums;
+}
+.btn .net-pill{ margin:0;max-width:none }
+.net-pill::before{ content:'';width:6px;height:6px;border-radius:50%;background:var(--dim-2);flex:0 0 auto }
+.net-pill.on{ color:var(--green);border-color:var(--green) }
+.net-pill.on::before{ background:var(--green);box-shadow:0 0 5px var(--green) }
+.net-pill.off{ color:var(--red);border-color:var(--red) }
+.net-pill.off::before{ background:var(--red) }
+.net-pill.warn{ color:var(--yellow);border-color:var(--yellow) }
+.net-pill.warn::before{ background:var(--yellow) }
+@media (max-width:380px){ .net-pill{ font-size:.5rem;padding:1px 5px;gap:3px } }
+/* серверные функции без связи: видно, что кнопка есть, но она не активна */
+html.tl-offline .net-need{ opacity:.38 !important;filter:grayscale(.7);cursor:not-allowed !important;
+  box-shadow:none !important;transform:none !important }
+html.tl-offline .net-need:active{ transform:none !important }
+/* экран входа: подсказка видна только без связи */
+.net-login-note{ display:none;align-items:center;gap:8px;text-align:left;
+  border:2px solid var(--red);border-radius:12px;background:rgba(255,75,75,.08);
+  color:var(--red);padding:8px 10px;font-size:.8rem;font-weight:700;margin-bottom:12px }
+html.tl-offline .net-login-note{ display:flex }
+
+/* =====================================================================
+   v1.08.38: разделы инвойса — спойлеры. Пустая секция свёрнута до
+   заголовка; стрелка слева, тап по заголовку раскрывает.
+   ===================================================================== */
+.inv-head{ cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent }
+.inv-head:focus-visible{ outline:2px solid var(--blue);outline-offset:-2px }
+.inv-head .sec-chev{ display:inline-grid;place-items:center;width:20px;height:20px;flex:0 0 auto;
+  margin-right:-2px;color:var(--dim);transition:transform .18s ease }
+.inv-head .sec-chev .ic{ width:16px;height:16px }
+.inv-sec.sec-closed .inv-head .sec-chev{ transform:rotate(-90deg) }
+.inv-sec.sec-closed .inv-body{ display:none }
+.inv-sec.sec-closed .inv-head{ color:var(--dim) }
+.inv-sec.sec-closed .inv-head .amt{ color:var(--dim-2) }
+.inv-sec.sec-closed{ margin-bottom:6px }
+.inv-tools{ display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px }
+.inv-tools .tiny{ flex:1;min-width:120px }
+.inv-tools .btn.sm{ width:auto;flex:0 0 auto;white-space:nowrap }
+
+/* =====================================================================
+   v1.08.39: БУХГАЛТЕРИЯ — роль, реестр, проценты, сводка по сотрудникам
+   (мобильная база: строки реестра — карточки; таблица — в desktop.css)
+   ===================================================================== */
+.rt-accountant{background:var(--teal);color:#083b37}
+.avatar.role-accountant,.login-pill.role-accountant{border-color:var(--teal);color:var(--teal)}
+.acc-wrap .tabs{margin-bottom:10px}
+.acc-grid-3{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.acc-flags{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin:2px 0 8px}
+.acc-flags .tabs{min-width:0;max-width:100%}
+.acc-flags .chk-line{padding:4px 0}
+.acc-sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.acc-kpi{background:var(--panel-2);border:2px solid var(--line);border-radius:var(--r-sm);padding:10px 12px}
+.acc-kpi .n{font-size:1.35rem;font-weight:900;line-height:1.1}
+.acc-kpi .l{font-size:.74rem;font-weight:900;margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+.acc-kpi .s{font-size:.66rem;color:var(--dim);margin-top:4px;line-height:1.35}
+.acc-kpi.c-green{border-color:var(--green)} .acc-kpi.c-green .n{color:var(--green)}
+.acc-kpi.c-blue .n{color:var(--blue)}
+.acc-kpi.c-yellow{border-color:var(--yellow)} .acc-kpi.c-yellow .n{color:var(--yellow)}
+.acc-sum-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.acc-sum-btns .btn{width:auto;flex:1 1 auto;margin:0}
+.acc-warn{color:var(--orange);font-weight:800}
+.acc-dash{color:var(--dim-2)}
+.acc-tbl{padding:0 12px}
+.acc-line.acc-head{display:none}
+.acc-row{border-bottom:1px solid var(--line-soft)}
+.acc-row:last-child{border-bottom:none}
+.acc-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px 0;cursor:pointer;text-align:left}
+.acc-line:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:8px}
+.acc-c{min-width:0}
+.acc-c-doc{flex:0 0 auto;min-width:0;max-width:48%;order:0}
+.acc-c-where{flex:1 1 40%;min-width:120px;order:0}
+.acc-c-where b,.acc-c-doc b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc-c-num{flex:0 1 auto;min-width:0;max-width:100%;font-size:.82rem;order:2;overflow-wrap:anywhere}
+.acc-c-num[data-l]::before{content:attr(data-l) ' ';color:var(--dim);font-size:.66rem;font-weight:800;text-transform:uppercase}
+.acc-c-num .money{font-size:.86rem}
+.acc-c-tot,.acc-c-pay{font-size:.9rem}
+.acc-c-pay b{color:var(--yellow);font-weight:900}
+.acc-rent-by{display:inline;margin-left:4px;white-space:normal}
+.acc-c-st{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 100%;order:3;min-width:0}
+.acc-c-note{display:flex;align-items:center;gap:6px;margin-left:auto;order:1}
+.acc-note-ic .ic,.acc-note-ic svg{width:18px;height:18px;color:var(--blue)}
+.acc-line .sec-chev{display:inline-flex;transition:transform .18s ease}
+.acc-line .sec-chev svg{width:18px;height:18px}
+.acc-row.open .acc-line .sec-chev{transform:rotate(180deg)}
+.acc-row.is-arch .acc-line{opacity:.72}
+.acc-st{font-size:.62rem;font-weight:900;text-transform:uppercase;border-radius:8px;padding:2px 7px;border:2px solid var(--line);color:var(--dim);white-space:nowrap}
+.acc-st-checked{border-color:var(--blue);color:var(--blue)}
+.acc-st-issue{border-color:var(--orange);color:var(--orange)}
+.acc-st-paid{border-color:var(--green);color:var(--green)}
+.acc-prev{padding:0 0 10px;color:var(--dim);cursor:pointer;display:flex;gap:6px;align-items:flex-start}
+.acc-prev svg{width:14px;height:14px;flex:0 0 auto;margin-top:2px;color:var(--blue)}
+.acc-body{padding:2px 0 12px}
+.acc-notes{background:var(--panel-2);border:2px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:10px}
+.acc-notes .lbl{display:block;font-size:.66rem;color:var(--dim);font-weight:900;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.acc-notes .lbl svg{width:13px;height:13px;vertical-align:-2px}
+.acc-note-txt{white-space:pre-wrap;word-break:break-word;font-weight:600}
+.acc-note-en{margin-top:6px;white-space:pre-wrap;word-break:break-word}
+.acc-nonote{margin-bottom:8px}
+.acc-ctl .form-row{margin-bottom:6px}
+.acc-stbs{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.acc-stb{font:inherit;font-size:.7rem;font-weight:900;text-transform:uppercase;border-radius:10px;padding:6px 10px;border:2px solid var(--line);background:var(--panel-2);color:var(--dim);cursor:pointer}
+.acc-stb.acc-st-checked{border-color:var(--blue);color:var(--blue)}
+.acc-stb.acc-st-issue{border-color:var(--orange);color:var(--orange)}
+.acc-stb.acc-st-paid{border-color:var(--green);color:var(--green)}
+.acc-stb.on{background:var(--line);color:var(--text)}
+.acc-stb.on.acc-st-checked{background:var(--blue);color:#04314A}
+.acc-stb.on.acc-st-issue{background:var(--orange);color:#3a2100}
+.acc-stb.on.acc-st-paid{background:var(--green);color:var(--green-ink)}
+.acc-stbs .btn.sm{width:auto;margin:0;margin-left:auto}
+.acc-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.acc-actions .btn{width:auto;flex:1 1 auto;margin:0}
+.acc-foot{border-top:2px solid var(--line);font-weight:800;cursor:default}
+.acc-doc-head{display:grid;gap:3px;margin-bottom:6px}
+.acc-secs{background:var(--panel-2);border:2px solid var(--line);border-radius:var(--r-sm);padding:6px 10px;margin-bottom:10px}
+.acc-sec-line{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:5px 0;border-bottom:1px solid var(--line-soft);font-size:.86rem;min-width:0}
+.acc-sec-line .grow{flex:1 1 120px;min-width:0}
+.acc-sec-line:last-child{border-bottom:none}
+.acc-sec-line .money{min-width:56px;text-align:right;margin-left:auto}
+.acc-sec-sep{border-top:2px solid var(--line);margin:4px 0}
+.acc-sec-cat{font-weight:800}
+.acc-sec-tot{font-size:.95rem}
+.acc-sec-pay b:last-child{color:var(--yellow)}
+.acc-cat-chip{font-size:.6rem;text-transform:uppercase}
+.acc-cat-dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:-1px;background:var(--dim)}
+.c-clean.acc-cat-dot,.acc-cat-chip.c-clean{background:var(--blue)}
+.c-rep.acc-cat-dot,.acc-cat-chip.c-rep{background:var(--orange)}
+.c-rent.acc-cat-dot,.acc-cat-chip.c-rent{background:var(--green)}
+.c-mat.acc-cat-dot,.acc-cat-chip.c-mat{background:var(--purple)}
+.acc-cat-chip.c-clean,.acc-cat-chip.c-rep,.acc-cat-chip.c-rent,.acc-cat-chip.c-mat{color:#0B0F12;border-color:transparent}
+.acc-rate-rows{display:grid;gap:6px;grid-template-columns:minmax(0,1fr)}
+.acc-nav.tabs{flex-wrap:wrap;overflow:visible}
+.acc-rate-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 0;border-bottom:1px solid var(--line-soft);min-width:0}
+.acc-rate-row:last-child{border-bottom:none}
+.acc-rate-row b,.acc-rate-row .grow{flex:1 1 120px;min-width:0}
+.acc-rate-sub{padding-left:14px}
+.acc-pct{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.acc-pct input{width:88px;max-width:100%;text-align:right;padding:8px 10px}
+.acc-pct input.bad{border-color:var(--red)}
+.acc-pct span{font-weight:900;color:var(--dim)}
+.acc-map-rows{display:grid;gap:4px;grid-template-columns:minmax(0,1fr)}
+.acc-map-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:5px 0;border-bottom:1px solid var(--line-soft);min-width:0}
+.acc-map-row .grow{flex:1 1 140px;min-width:0}
+.acc-map-row .grow{flex:1;min-width:0}
+.acc-map-row:last-child{border-bottom:none}
+.acc-map-row select{width:auto;min-width:130px;max-width:100%;padding:6px 10px}
+.acc-example .acc-secs{margin-bottom:0}
+.acc-staff .acc-line{align-items:center}
+.acc-staff .avatar{width:40px;height:40px;border:2px solid var(--teal);color:var(--teal);font-size:.9rem;flex:0 0 auto}
+.acc-inv-line{margin-bottom:10px}
+.acc-inv-line .acc-st{margin-left:4px}

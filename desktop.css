@@ -307,6 +307,7 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
     border:2px dashed var(--line,#31434C); border-radius:12px;
   }
   html.tl-desktop #app:has(.inv-sec) .docbar + .card > .note-green{ grid-column:1 / -1; }
+  html.tl-desktop #app:has(.inv-sec) .docbar + .card > .inv-tools{ grid-column:1 / -1; }   /* v1.08.38 */
 
   /* --- секции → непрерывная таблица бланка --- */
   html.tl-desktop #app:has(.inv-sec) .inv-sec{
@@ -320,14 +321,16 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   }
   html.tl-desktop #app:has(.inv-sec) .card + .inv-sec::before,
   html.tl-desktop #app:has(.inv-sec) .card + .inv-sec::after,
-  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec .inv-body::before{
+  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec .inv-head::after{
     position:absolute; top:-24px;
     font-size:.62rem; font-weight:900; letter-spacing:1.2px;
     color:var(--dim-2,#5D737E); text-align:center;
   }
   html.tl-desktop #app:has(.inv-sec) .card + .inv-sec::before{ content:"SERVICES"; left:0; width:200px; }
   html.tl-desktop #app:has(.inv-sec) .card + .inv-sec::after{ content:"AMOUNT"; right:0; width:120px; }
-  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec .inv-body::before{ content:"DESCRIPTION"; left:0; right:0; }
+  /* v1.08.38: подпись DESCRIPTION висит на заголовке (он есть и у свёрнутой
+     секции; .inv-head в ПК-режиме position:static — координаты от .inv-sec) */
+  html.tl-desktop #app:has(.inv-sec) .card + .inv-sec .inv-head::after{ content:"DESCRIPTION"; left:200px; right:120px; }
   /* последняя строка (перед галочкой «Работа выполнена») — низ таблицы */
   html.tl-desktop #app:has(.inv-sec) .inv-sec:has(+ .opt){
     border-radius:0 0 16px 16px; margin-bottom:14px;
@@ -347,9 +350,18 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   }
   /* колонка «AMOUNT»: сумма секции по центру правой полосы */
   html.tl-desktop #app:has(.inv-sec) .inv-head .amt{
-    position:absolute; top:50%; right:0; transform:translateY(-50%);
+    position:absolute; top:0; bottom:0; right:0; transform:none;
     width:120px; margin-left:0; text-align:center; font-size:1.02rem;
+    display:grid; place-items:center;
+    border-left:2px solid var(--line-soft,#26363E);   /* v1.08.38: разделитель AMOUNT есть и у свёрнутой строки */
   }
+  /* v1.08.38: свёрнутая секция в бланке — одна строка «услуга | — | сумма».
+     Стрелка спойлера уходит на левое поле колонки SERVICES (абсолютно, от
+     .inv-sec), чтобы не отъедать ширину у названия и не ломать его в две
+     строки; заголовку — отступ под неё. */
+  html.tl-desktop #app:has(.inv-sec) .inv-sec.sec-closed .inv-head{ min-height:44px; }
+  html.tl-desktop #app:has(.inv-sec) .inv-head{ padding-left:28px; }
+  html.tl-desktop #app:has(.inv-sec) .inv-head .sec-chev{ position:absolute; left:6px; top:13px; margin:0; }
 
   /* --- подвал бланка: итог и действия правым столбцом, как GRAND TOTAL --- */
   html.tl-desktop #app:has(.inv-sec) > .opt{ width:max-content; }
@@ -777,3 +789,55 @@ html.tl-desktop .map-flex .map-box{height:60vh}
 .tl-desktop .overlay .modal:has(#srch-q){ width:min(620px,92vw) }
 .tl-desktop .overlay .modal:has(.opt-list){ width:min(640px,92vw) }
 .tl-desktop .opt-list{ max-height:48vh }
+
+/* =====================================================================
+   v1.08.35: «компактно» теперь реально ужимает интерфейс, а не только
+   срезает пару отступов. Базовый rem уменьшен — всё, что задано в rem,
+   пропорционально плотнее; px-элементы управления подтянуты отдельно.
+   ===================================================================== */
+/* база шрифта 14px ставится из ui.js (inline перебивает CSS) */
+html.tl-desktop.tl-compact input,
+html.tl-desktop.tl-compact select,
+html.tl-desktop.tl-compact textarea{ min-height:32px; padding:6px 9px; }
+html.tl-desktop.tl-compact .btn{ padding:8px 11px; }
+html.tl-desktop.tl-compact .icon-btn,
+html.tl-desktop.tl-compact .sync-btn{ width:32px; height:32px; }
+html.tl-desktop.tl-compact .card{ padding:8px 10px; }
+html.tl-desktop.tl-compact .section-title{ margin:6px 0 5px; }
+html.tl-desktop.tl-compact .topbar{ margin-bottom:2px; }
+html.tl-desktop.tl-compact .form-row{ margin-bottom:6px; }
+html.tl-desktop.tl-compact .day-cell{ padding:5px 2px; }
+
+/* =====================================================================
+   v1.08.39: бухгалтерия на ПК — реестр как таблица с шапкой
+   ===================================================================== */
+html.tl-desktop .acc-wrap{max-width:1080px;margin:0 auto}
+html.tl-desktop .acc-tbl:not(.acc-tbl-staff) .acc-line{
+  display:grid;align-items:center;gap:4px 8px;padding:8px 0;
+  grid-template-columns:104px minmax(150px,1.6fr) repeat(4,minmax(64px,.8fr)) minmax(70px,.9fr) minmax(76px,.9fr) 120px 44px;
+}
+html.tl-desktop .acc-tbl .acc-head{display:grid;font-size:.64rem;font-weight:900;text-transform:uppercase;color:var(--dim);letter-spacing:.3px;cursor:default;border-bottom:2px solid var(--line)}
+html.tl-desktop .acc-tbl .acc-head .acc-c-num{text-align:right}
+html.tl-desktop .acc-tbl .acc-c-num{text-align:right;font-size:.82rem}
+html.tl-desktop .acc-tbl .acc-c-doc b{font-size:.84rem}
+html.tl-desktop .acc-tbl .acc-c-st,html.tl-desktop .acc-tbl .acc-c-num,html.tl-desktop .acc-tbl .acc-c-note{order:0;flex:none}
+html.tl-desktop .acc-tbl .acc-c-num[data-l]::before{content:none}
+html.tl-desktop .acc-tbl .acc-rent-by{display:block;margin:0;font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.tl-desktop .acc-tbl .acc-c-st{flex-direction:column;align-items:flex-start;gap:3px}
+html.tl-desktop .acc-tbl .acc-c-note{margin-left:0;justify-content:flex-end}
+html.tl-desktop .acc-tbl .acc-prev{padding:0 0 8px 112px}
+html.tl-desktop .acc-tbl .acc-body{padding:4px 0 12px 112px}
+html.tl-desktop .acc-tbl .acc-foot{cursor:default}
+html.tl-desktop .acc-tbl .acc-foot .acc-c-num{font-size:.86rem}
+html.tl-desktop .acc-tbl-staff .acc-line{display:grid;grid-template-columns:48px 1fr 140px 140px 44px;gap:8px}
+html.tl-desktop .acc-tbl-staff .acc-c-num{text-align:right}
+html.tl-desktop .acc-tbl-staff .acc-c-num[data-l]::before{content:none}
+html.tl-desktop .acc-sum-btns .btn{flex:0 1 auto}
+html.tl-desktop .acc-actions .btn{flex:0 1 auto}
+html.tl-desktop .acc-rate-rows{max-width:640px}
+html.tl-desktop .acc-map-rows{max-width:640px}
+@media (max-width:1100px){
+  html.tl-desktop .acc-tbl:not(.acc-tbl-staff) .acc-line{
+    grid-template-columns:86px minmax(130px,1.4fr) repeat(4,minmax(58px,.8fr)) minmax(66px,.9fr) minmax(70px,.9fr) 104px 36px;
+  }
+}

@@ -97,6 +97,47 @@ Deno.serve(async (req) => {
 
   if (url.searchParams.get("cfg")) return jres(r);              // быстрый режим для карточки
 
+  /* v1.08.36 · ЛЁГКАЯ ВЕТКА ?names=1 — имена корневых папок для подписей
+     напротив полей в настройках: без квоты, без write-теста. Значения можно
+     передать параметрами (?photo=…&inv=…&files=…) — так приложение резолвит
+     только что вставленную ссылку, не дожидаясь записи org_settings в базу.
+     Старые сборки функции ветки не знают и провалятся в полную проверку —
+     приложение возьмёт те же имена из r.paths (фолбэк предусмотрен). */
+  if (url.searchParams.get("names")) {
+    try {
+      const t = await driveToken();
+      const nameOf = async (id: string) => {
+        if (!id) return "";
+        try {
+          const q = await (await fetch(
+            `https://www.googleapis.com/drive/v3/files/${id}?fields=name&supportsAllDrives=true`,
+            { headers: { Authorization: `Bearer ${t}` } })).json();
+          return String(q?.name ?? "");
+        } catch (_e) { return ""; }
+      };
+      const rootName = folder ? await nameOf(folder) : "";
+      let org: Record<string, unknown> | null = null;
+      try {
+        const q = await s.from("org_settings")
+          .select("gd_photo_folder,gd_files_folder,gd_inv_folder").eq("id", "org").maybeSingle();
+        org = (q.data ?? null) as Record<string, unknown> | null;
+      } catch (_e) { org = null; }
+      const pick = (param: string, key: string) =>
+        url.searchParams.has(param) ? url.searchParams.get(param) : org?.[key];
+      const one = async (raw: unknown, dir: string) => {
+        const own = folderIdOf(String(raw ?? ""));
+        if (own) return { id: own, name: await nameOf(own), own: true };
+        return { id: "", name: rootName ? rootName + " / " + dir : dir, own: false };
+      };
+      return jres({ names: {
+        root:    folder ? { id: folder, name: rootName } : null,
+        photo:   await one(pick("photo", "gd_photo_folder"), PHOTOS_DIR),
+        invoice: await one(pick("inv",   "gd_inv_folder"),   INVOICES_DIR),
+        file:    await one(pick("files", "gd_files_folder"), FILES_DIR),
+      } });
+    } catch (e) { return jres({ error: String((e as Error)?.message ?? e) }, 200); }
+  }
+
   /* v1.07.70 · сквозная проверка загрузки.
      ?probe=1   — открыть сессию докачки для тестовой картинки (с Origin
                   браузера, как для настоящего фото) и вернуть её адрес;

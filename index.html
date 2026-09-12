@@ -53,6 +53,15 @@
 /* Сторож загрузки: если приложение не стартовало за 6 секунд — показывает диагностику.
    Работает даже когда app.js вообще не загрузился (никаких зависимостей). */
 (function(){
+  /* v1.08.40: сплэш и экран «не удалось запустить» — на языке интерфейса */
+  var EN = false;
+  try{ EN = localStorage.getItem('techlog_lang') === 'en'; }catch(e){}
+  if (EN){ var sp = document.querySelector('.boot-splash .tiny'); if (sp) sp.textContent = 'loading…'; }
+  var W = EN
+    ? { ok: 'ok', cfg: 'NOT loaded (syntax?)', sb: 'NOT loaded (CDN/internet)', na: 'unavailable', srv: 'version on the server: ',
+        title: 'Could not start', reset: 'Clear cache and reload', reload: 'Just reload' }
+    : { ok: 'ок', cfg: 'НЕ загружен (синтаксис?)', sb: 'НЕ загружен (CDN/интернет)', na: 'недоступен', srv: 'на сервере версия: ',
+        title: 'Не удалось запустить', reset: 'Сбросить кеш и перезагрузить', reload: 'Просто обновить' };
   window.__tlErr = null;
   addEventListener('error', function(e){
     window.__tlErr = (e.message||'script error') + (e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : '');
@@ -71,18 +80,18 @@
     var lines = [];
     if (extra) lines.push(extra);
     if (window.__tlErr) lines.push('[!] ' + window.__tlErr);
-    lines.push('config.js: ' + (window.TECHLOG_CONFIG ? 'ок' : 'НЕ загружен (синтаксис?)'));
-    lines.push('supabase-js: ' + (window.supabase ? 'ок' : 'НЕ загружен (CDN/интернет)'));
+    lines.push('config.js: ' + (window.TECHLOG_CONFIG ? W.ok : W.cfg));
+    lines.push('supabase-js: ' + (window.supabase ? W.ok : W.sb));
     try{ var a = await fetch('./app.js', {method:'HEAD', cache:'no-store'}); lines.push('app.js: HTTP ' + a.status); }
-    catch(e){ lines.push('app.js: недоступен'); }
-    try{ var r = await fetch('./version.json?ts=' + Date.now(), {cache:'no-store'}); var v = await r.json(); lines.push('на сервере версия: ' + v.version); }
-    catch(e){ lines.push('version.json: недоступен'); }
+    catch(e){ lines.push('app.js: ' + W.na); }
+    try{ var r = await fetch('./version.json?ts=' + Date.now(), {cache:'no-store'}); var v = await r.json(); lines.push(W.srv + v.version); }
+    catch(e){ lines.push('version.json: ' + W.na); }
     app.innerHTML = '<div class="login-wrap">' +
       '<div class="logo"><span>TL</span></div>' +
-      '<div class="hello">Не удалось запустить</div>' +
+      '<div class="hello">' + W.title + '</div>' +
       '<div class="tiny" style="text-align:left;white-space:pre-line;background:#17232A;border:2px solid #31434C;border-radius:12px;padding:10px 12px;margin-top:10px">' + lines.join('\n') + '</div>' +
-      '<button class="btn btn-red" style="margin-top:14px" onclick="__tlReset()">Сбросить кеш и перезагрузить</button>' +
-      '<button class="btn btn-ghost" style="margin-top:8px" onclick="location.reload()">Просто обновить</button></div>';
+      '<button class="btn btn-red" style="margin-top:14px" onclick="__tlReset()">' + W.reset + '</button>' +
+      '<button class="btn btn-ghost" style="margin-top:8px" onclick="location.reload()">' + W.reload + '</button></div>';
   };
   setTimeout(function(){
     var app = document.getElementById('app');

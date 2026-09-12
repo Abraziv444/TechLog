@@ -35,7 +35,7 @@ import { svc, userClient, CORS, jres } from "./google.ts";
    ТО ставятся в push_queue прямо отсюда при смене состояния машины.
    ===================================================================== */
 
-const BN_VER = "1.08.33";
+const BN_VER = "1.08.37";
 const AUTH = "https://auth.bouncie.com/oauth/token";
 const API = "https://api.bouncie.dev/v1";
 
@@ -237,6 +237,73 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   const url = new URL(req.url);
   if (url.searchParams.get("ping")) return jres({ fn: "bouncie", ver: BN_VER });
+
+  /* =====================================================================
+     v1.08.37 · РЕЖИМ ТЕЛЕВИЗОРА: ?tv=1&from=&to= + заголовок x-tv-key.
+     Телевизор не залогинен, поэтому доступ проверяется по approved-сессии
+     из public.tv_sessions (создаётся кнопкой «Режим телевизора», апрув —
+     в админке). Ответ санитизирован: НИКАКИХ imei/vin/одометров/топлива —
+     только номер машины, водитель, позиция и суточная сводка миль.
+     ===================================================================== */
+  if (url.searchParams.get("tv")) {
+    try {
+      const key = req.headers.get("x-tv-key") ?? url.searchParams.get("tvkey") ?? "";
+      if (!key) return jres({ error: "TV_FORBIDDEN" }, 403);
+      const s = svc();
+      const { data: sess } = await s.from("tv_sessions")
+        .select("id,status").eq("device_key", key).maybeSingle();
+      if (!sess || sess.status !== "approved") return jres({ error: "TV_FORBIDDEN" }, 403);
+      await s.from("tv_sessions").update({ last_seen_at: new Date().toISOString() }).eq("id", sess.id);
+      const { data: rows } = await s.from("vehicles")
+        .select("imei,car_no,driver_id").not("imei", "is", null);
+      const veh = (rows ?? []).filter(v => String(v.imei ?? "").trim());
+      if (!veh.length) return jres({ at: new Date().toISOString(), cars: [] });
+      const live = await bnGet(s, "/vehicles?limit=100");
+      const byImei: Record<string, any> = {};
+      for (const x of (Array.isArray(live) ? live : [])) byImei[String(x.imei ?? "")] = x;
+      /* суточные мили — как в ?stats=1, но без журнала визитов и лишних полей */
+      const from = url.searchParams.get("from") ?? "";
+      const to = url.searchParams.get("to") ?? "";
+      const day: Record<string, { mi: number; min: number; n: number }> = {};
+      if (from && to && new Date(to).getTime() - new Date(from).getTime() <= 2 * 86400_000) {
+        await Promise.all(veh.map(async (v) => {
+          const imei = String(v.imei).trim();
+          try {
+            const trips = await bnGet(s, "/trips?gps-format=polyline&imei=" + encodeURIComponent(imei)
+              + "&starts-after=" + encodeURIComponent(from) + "&ends-before=" + encodeURIComponent(to));
+            const arr = Array.isArray(trips) ? trips : [];
+            const seen = new Set<string>();
+            let mi = 0, sec = 0, cnt = 0;
+            for (const tr of arr) {
+              const k2 = tr.transactionId || (tr.startTime + "|" + tr.endTime);
+              if (seen.has(k2)) continue; seen.add(k2);
+              mi += +tr.distance || 0; cnt++;
+              const a = Date.parse(tr.startTime), b = Date.parse(tr.endTime);
+              if (b > a) sec += (b - a) / 1000;
+            }
+            day[imei] = { mi: Math.round(mi * 10) / 10, min: Math.round(sec / 60), n: cnt };
+          } catch (_e) { /* без сводки — машина всё равно уедет в ответ */ }
+        }));
+      }
+      const cars = veh.map(v => {
+        const imei = String(v.imei).trim();
+        const x = byImei[imei]; const st = x && x.stats; const l = st && st.location;
+        const d = day[imei];
+        return {
+          car_no: v.car_no ?? null, driver_id: v.driver_id ?? null,
+          run: !!(st && (st.isRunning || (+st.speed || 0) > 2)),
+          lat: l && l.lat != null ? +l.lat : null,
+          lng: l && l.lat != null ? +(l.lon ?? l.lng) : null,
+          heading: l ? (+l.heading || 0) : 0,
+          mi: d ? d.mi : null, min: d ? d.min : null, n: d ? d.n : null };
+      });
+      return jres({ at: new Date().toISOString(), cars });
+    } catch (e) {
+      const msg = String((e as Error)?.message ?? e);
+      const code = /BN_NOT_CONFIGURED|BN_NOT_CONNECTED/.test(msg) ? 409 : 500;
+      return jres({ error: msg.slice(0, 160) }, code);
+    }
+  }
 
   try {
     const sb = userClient(req);

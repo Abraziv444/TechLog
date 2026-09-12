@@ -1,4 +1,4 @@
-/* TechLog · proposal-tips.js · v1.08.23
+/* TechLog · proposal-tips.js · v1.08.40
  * Подсказки «?» к полям пропозала. Автономный модуль:
  * app.js / styles.css не трогает, вешается на текст подписей.
  * Подключение: <script defer src="proposal-tips.js"></script> в index.html
@@ -11,8 +11,11 @@
 
   var LS_KEY = 'tl_tips_off';
 
-  /* ---- Тексты подсказок. Правьте прямо здесь. -------------------------- */
-  var TIPS = {
+  /* ---- Тексты подсказок. Правьте прямо здесь. --------------------------
+     v1.08.40: два словаря — русский и английский; выбор по языку интерфейса
+     (localStorage techlog_lang), чтобы в EN-режиме подписи PO NUMBER / SALES TAX /
+     FREIGHT / $ и алиасы UNIT / TOTAL не открывали русские тексты. */
+  var TIPS_RU = {
     'ДАТА':
       'Дата составления пропозала, по умолчанию сегодня. Это не срок работ — срок задаётся в «Выполнить до».',
     'КОНТРАГЕНТ':
@@ -53,8 +56,12 @@
       'Покупка материалов отдельной секцией: гипсокартон, бруски, краска. В итог идут отдельной строкой, чтобы заказчик видел, за что платит.',
     'ВСЕГО':
       'Работы + материалы + налог + доставка. Считается автоматически; правка сметы у одобренного документа снимает апрув.',
+    'ИСПОЛНИТЕЛИ':
+      'Кто выполняет работы. Первое имя — основной исполнитель, остальные — коворкеры.'
+  };
 
-    /* английский интерфейс */
+  /* английский интерфейс */
+  var TIPS_EN = {
     'DATE': 'Document date, today by default. This is not the deadline — that is «Complete By».',
     'COUNTERPARTY': 'The client the document is issued to. Changing it resets complex and unit.',
     'COMPLEX': 'The complex where the work is done. Picking it fills in the counterparty.',
@@ -67,8 +74,18 @@
     'NOTES': 'Terms and exclusions: what is not covered, access to the unit. «Insert block» — ready-made texts.',
     'WORKS': 'What is being restored. Take rows from the catalog — code, description and price come with them.',
     'MATERIALS': 'Materials purchased, kept separate so the client sees what the money went on.',
-    'CREW': 'Who does the work. The first name is the lead; the rest are coworkers.'
+    'CREW': 'Who does the work. The first name is the lead; the rest are coworkers.',
+    'UNIT #': 'Apartment number. For a common area put the building or «common area».',
+    'PO NUMBER': 'The client’s Purchase Order number, if they issued one. Printed on the PDF. No number — leave it empty.',
+    '$': 'Line amount in dollars. The total is recalculated automatically.',
+    'TOTAL': 'Sum of all lines, calculated automatically and not editable by hand. Sales Tax and Freight are separate.',
+    'SALES TAX': 'Sales tax as a dollar amount. Not taxable — leave it empty.',
+    'FREIGHT': 'Delivery and logistics as a separate amount when it is not built into the lines.',
+    'GRAND TOTAL': 'Works + materials + tax + freight. Calculated automatically; editing an approved estimate resets the approval.'
   };
+
+  function lang() { return lsGet('techlog_lang') === 'en' ? 'en' : 'ru'; }
+  function TIPS_() { return lang() === 'en' ? TIPS_EN : TIPS_RU; }
 
   /* Варианты написания подписей → канонический ключ */
   var ALIAS = {
@@ -82,11 +99,11 @@
     'АПАРТКОМПЛЕКС': 'АПАРТ-КОМПЛЕКС',
     'АПАРТ КОМПЛЕКС': 'АПАРТ-КОМПЛЕКС',
     'ПОЗИЦИИ / LINE ITEMS': 'ПОЗИЦИИ',
-    'UNIT #': 'ЮНИТ №',
-    'UNIT': 'ЮНИТ №',
-    'TOTAL': 'ИТОГО',
-    'GRAND TOTAL': 'ВСЕГО',
-    'SUBTOTAL': 'ИТОГО'
+    'UNIT': 'UNIT #',
+    'SUBTOTAL': 'TOTAL',
+    'APARTMENT COMPLEX': 'COMPLEX',
+    'CREW': 'ИСПОЛНИТЕЛИ',
+    'PERFORMED BY': 'CREW'
   };
 
   /* Подписи, по которым определяем, что открыт именно пропозал */
@@ -134,7 +151,7 @@
   }
 
   function keyOf(el) {
-    var t = norm(el.textContent);
+    var t = norm(el.textContent), TIPS = TIPS_();
     if (!t || t.length > 60) return null;
     if (TIPS[t]) return t;
     var a = ALIAS[t];
@@ -174,7 +191,7 @@
     var b = document.createElement('b');
     b.textContent = key;
     var t = document.createElement('span');
-    t.textContent = TIPS[key];
+    t.textContent = TIPS_()[key] || '';
     p.appendChild(b);
     p.appendChild(t);
 
@@ -219,7 +236,7 @@
     b.setAttribute('data-k', key);
     b.setAttribute('role', 'button');
     b.setAttribute('tabindex', '0');
-    b.setAttribute('aria-label', 'Подсказка: ' + key);
+    b.setAttribute('aria-label', (lang() === 'en' ? 'Hint: ' : 'Подсказка: ') + key);
     b.addEventListener('click', onBadgeClick);
     b.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') onBadgeClick(e);
@@ -304,7 +321,7 @@
     off: function () { lsSet(LS_KEY, '1'); clearBadges(); },
     refresh: scan,
     version: '1.08.18',
-    tips: TIPS
+    tips: TIPS_RU, tipsEn: TIPS_EN
   };
 
   if (document.readyState === 'loading') {

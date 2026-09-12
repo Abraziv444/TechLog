@@ -28,6 +28,7 @@ const expose = `;window.__T = {
   hasCyr, enText, needsTr, trFields, trMiss, trCanWrite, trDocLabel,
   translit, pdfLatinize, enName,
   renderNoFmt, docNo, pickNo, docNoVals, DOC_FMT_DEF, FILE_FMT_DEF, DOC_TOKENS, FILE_TOKENS,
+  gdNamesFrom,
   popPos, applyPopPos, emptyFormData, mqLogPaint, mqLog, state, trIntervalMs,
   needsRepair, repWorks, repMats, repGrand, repCleanItems, repHistAdd, repNew,
   repMoneyHidden, repCanCreate, wtById, seedDemoData,
@@ -38,7 +39,16 @@ const expose = `;window.__T = {
   TABLES, BN, bnMiP, bnDestFor, bnSelSet, bnDotHtml, bnCompute, bnDemoFill,
   bnVehicles, vehFreeNo, vehApplyLocal, dirVehicles, bnChipsHtml, bnStatsHtml,
   tplOn, polyDecode, optOrder, optRouteLen, srchRows, bnVisible, bnCanTrack,
-  ttVisits, ttDur, codeRemindOn, codeMonths, vehServiceLine, sessMgrOn
+  ttVisits, ttDur, codeRemindOn, codeMonths, vehServiceLine, sessMgrOn,
+  /* v1.08.38 */
+  invSecFilled, INV_SECS, NET, NET_ONLY, netOff, netState, netSet, netMark, netPillText, isNetErr,
+  pendingAdd, pendingLoad, pendingSave, pendingApplyLocal, pendingFlush, dbUpsert, dbDelete, dbSaveOrg, audit,
+  emptyData, setUser: u => { state.user = u; }, setData: d => { state.data = d; },
+  /* v1.08.39: бухгалтерия */
+  ACC_SEC_DEF, ACC_SECS, ACC_CATS, accSplitJob, accSplitRep, accPay, accSecCat, accExtraCat, accPctEff, accPct,
+  accByStaff, accTotals, accDocRow, accDocs, accF, isAcc, isAccP, scopeFilter, viewAcc,
+  /* v1.08.40: переводы */
+  sectionFaqHtml, faqHtml, viewHeader, viewLogin, viewStats, SECTION_HELP, chainCardBody, tvAgo, gdInvPathSample
 };`;
 
 try {
@@ -215,12 +225,19 @@ console.log('\n— инвойсы на Диск (v1.07.85) —');
   t('очередь знает вид «invoice»', /kind === 'invoice' \? M_INV_MAX/.test(src));
   t('кнопка «Инвойс на Диск» в карточке медиа', /App\.invToDrive\(/.test(src));
   t('перед отправкой работает страж перевода', /trPdfGuard\('job', j, go\)/.test(src));
-  t('поле папки инвойсов в настройках Диска', /gd_inv_folder', App\.gdFolderIdOf/.test(src));
+  /* v1.08.36: поле сохраняется через App.gdRootSet('invoice', …) — внутри тот же
+     gdFolderIdOf + setOrgText, плюс мгновенный резолв имени папки */
+  t('поле папки инвойсов в настройках Диска', /gdRootSet\('invoice'/.test(src));
   t('диагностика БД знает про gd_inv_folder',
     T.DB_NEED_COLS.some(c => c[0] === 'org_settings' && c[1] === 'gd_inv_folder'));
   const g = fs.readFileSync(ROOT + '/supabase/functions/_shared/google.ts', 'utf8');
   t('INVOICES_DIR в общем модуле', /INVOICES_DIR = "Invoices"/.test(g));
-  t('версия функций поднята', /FN_VER = "1\.08\.25"/.test(g));
+  {  /* v1.08.36: версию не хардкодим — формат верный и не старше 1.08.25 */
+    const m = g.match(/FN_VER = "(\d+)\.(\d+)\.(\d+)"/);
+    const v = m ? m.slice(1).map(Number) : null;
+    const cmp = v ? v[0] * 1e6 + v[1] * 1e3 + v[2] : -1;
+    t('версия функций поднята (' + (v ? v.join('.') : '?') + ')', cmp >= 1e6 + 8e3 + 25);
+  }
   const mb = fs.readFileSync(ROOT + '/supabase/functions/media-begin/index.ts', 'utf8');
   t('media-begin принимает invoice', /invoice: \{ max: 50/.test(mb) && /kind === "invoice"/.test(mb));
   t('media-begin читает свою папку из настроек', /gd_inv_folder/.test(mb) && /folderIdOf/.test(mb));
@@ -797,8 +814,9 @@ console.log('\n— пуши, время, поиск, оптимизация (v1.
     t('dashboard-копия ' + fn + ' с локальным google.ts', ok33);
   }
   const sw = fs.readFileSync(ROOT + '/sw.js', 'utf8');
-  t('sw.js: VERSION 1.08.33 и обработчик пушей',
-    /VERSION = '1\.08\.33'/.test(sw) && /addEventListener\('push'/.test(sw)
+  const swVJ = JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version;
+  t('sw.js: VERSION = version.json (' + swVJ + ') и обработчик пушей',
+    sw.includes("VERSION = '" + swVJ + "'") && /addEventListener\('push'/.test(sw)
     && /notificationclick/.test(sw));
 
   // polyline: энкодер в тесте → polyDecode восстанавливает точки
@@ -865,5 +883,309 @@ console.log('\n— пуши, время, поиск, оптимизация (v1.
   t('vehServiceLine: красная просрочка', /200/.test(T.vehServiceLine(vSvc)));
 }
 
-console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
-process.exit(bad ? 1 : 0);
+console.log('\n— имена корневых папок Диска (v1.08.36) —');
+{
+  // новая функция отвечает форматом {names:…} — берём как есть
+  const fresh = T.gdNamesFrom({ names: { root: { id: 'r', name: 'Архив' },
+    photo: { id: 'p', name: 'APC Фото', own: true } } });
+  t('gdNamesFrom: свежий ответ ?names=1 — как есть',
+    fresh && fresh.photo.name === 'APC Фото' && fresh.root.name === 'Архив');
+  // старая сборка функции отвечает полной проверкой — маппим из paths/folder
+  const legacy = T.gdNamesFrom({ folder: { id: 'r', name: 'Архив' }, paths: {
+    photo:   { root: { id: 'p', name: 'Своя фото', own: true } },
+    invoice: { root: { id: '',  name: 'Invoices',  own: false } },
+    file:    { root: { id: 'f', name: '',          own: true } } } });
+  t('gdNamesFrom: фолбэк из paths старой функции',
+    legacy && legacy.photo.name === 'Своя фото' && legacy.photo.own === true
+    && legacy.invoice.own === false && legacy.file.name === '' && legacy.root.name === 'Архив');
+  t('gdNamesFrom: пустой ответ → null', T.gdNamesFrom({}) === null && T.gdNamesFrom(null) === null);
+}
+
+console.log('\n— спойлеры инвойса (v1.08.38) —');
+{
+  const e = T.emptyFormData();
+  t('INV_SECS — 13 разделов', T.INV_SECS.length === 13);
+  t('пустая форма: все 13 разделов пустые', T.INV_SECS.every(id => !T.invSecFilled(id, e, null, '')));
+  const f = T.emptyFormData();
+  f.steam.rooms = 4;
+  t('одни «Rooms» без галочек — раздел всё ещё пустой', !T.invSecFilled('steam', f, null, ''));
+  f.steam.rotovac = true;
+  t('галочка Rotovac — заполнен', T.invSecFilled('steam', f, null, ''));
+  t('сумма > 0 — заполнен даже без известной галочки', T.invSecFilled('dye', e, { dye: 10 }, ''));
+  const w = T.emptyFormData(); w.wetvac.areas.lr = true;
+  t('wetvac: отмечена только зона — заполнен', T.invSecFilled('wetvac', w, null, ''));
+  const a = T.emptyFormData(); a.airduct.note = '1x5 removed pad';
+  t('airduct: только заметка — заполнен', T.invSecFilled('airduct', a, null, ''));
+  const q = T.emptyFormData(); q.equipment['x'] = { qty: 0, days: 3 };
+  t('equipment: qty 0 — пустой', !T.invSecFilled('equipment', q, null, ''));
+  q.equipment['x'].qty = 2;
+  t('equipment: qty 2 — заполнен', T.invSecFilled('equipment', q, null, ''));
+  const pd = T.emptyFormData(); pd.pad.size = 'q12';
+  t('pad: выбран размер — заполнен', T.invSecFilled('pad', pd, null, ''));
+  const o = T.emptyFormData(); o.others[1].desc = 'cut ceiling';
+  t('others: описание строки — заполнен', T.invSecFilled('others', o, null, ''));
+  t('note: только текст заметки — заполнен', T.invSecFilled('note', e, null, 'Ключ в офисе'));
+  const x = T.emptyFormData(); x.extra = [{ qty: 1 }];
+  t('note: строка доп. работ — заполнен', T.invSecFilled('note', x, null, ''));
+  ['net_on','net_off','net_srv','net_off_hint','net_saved_off','net_login_off','inv_sec_open_all','inv_sec_fold_empty']
+    .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
+}
+
+
+/* v1.08.39: бухгалтерия — раскладка инвойса и REP по категориям, проценты,
+   масштабирование к апрувленной сумме, сводка по сотрудникам, роль. */
+console.log('\n— бухгалтерия: раскладка и проценты (v1.08.39) —');
+{
+  T.state.data = T.seedDemoData();
+  T.state.data.acc_settings = [];
+  T.setUser(T.state.data.profiles.find(p => p.role === 'accountant'));
+  const job = T.state.data.jobs.find(j => j.status === 'done');
+  const blw = T.state.data.equipment_types.find(e => e.abbr === 'BLW'), dhm = T.state.data.equipment_types.find(e => e.abbr === 'DHM');
+  t('демо-профиль бухгалтера есть, isAcc()', !!T.state.user && T.isAcc() && T.isAccP(T.state.user));
+  t('scopeFilter у бухгалтера отдаёт все работы', T.scopeFilter(T.state.data.jobs, 'technician_id').length === T.state.data.jobs.length);
+  t('карта по умолчанию: steam→clean, repairs→rep, equipment→rent, extra→rep', T.accSecCat('steam') === 'clean' && T.accSecCat('repairs') === 'rep'
+    && T.accSecCat('equipment') === 'rent' && T.accSecCat('extra') === 'rep' && T.ACC_SEC_DEF.pad === 'rep');
+  const sp = T.accSplitJob(job);
+  t('демо-инвойс: клининг 295, аренда 630 (BLW 450 + DHM 180), итог 925', sp.clean === 295 && sp.rent === 630
+    && sp.rentBy[blw.id] === 450 && sp.rentBy[dhm.id] === 180 && sp.total === 925 && !sp.scaled, JSON.stringify(sp));
+  t('секции раскладки: treatments, airduct, equipment, others', sp.secs.map(x => x.id).sort().join(',') === 'airduct,equipment,others,treatments', sp.secs.map(x => x.id).join(','));
+  t('без процентов «к выплате» 0', T.accPay(sp) === 0);
+  T.state.data.acc_settings = [
+    { id: 'rate:clean', pct: 40 }, { id: 'rate:rep', pct: 50 }, { id: 'rate:rent', pct: 10 }, { id: 'rate:rent:' + blw.id, pct: 20 }, { id: 'rate:mat', pct: 0 }];
+  t('accPctEff: свой процент BLW 20, DHM берёт общий 10', T.accPctEff('rent:' + blw.id) === 20 && T.accPctEff('rent:' + dhm.id) === 10);
+  t('к выплате = 295×.4 + 450×.2 + 180×.1 = 226', T.accPay(sp) === 226, T.accPay(sp));
+  /* апрувленная сумма отличается от расчёта — пропорция */
+  const j2 = JSON.parse(JSON.stringify(job)); j2.status = 'approved'; j2.approved_total = 1850;
+  const sp2 = T.accSplitJob(j2);
+  t('апрув 1850 (×2): категории удвоены, итог 1850, флаг scaled', sp2.scaled && sp2.total === 1850 && sp2.clean === 590 && sp2.rentBy[blw.id] === 900, JSON.stringify(sp2));
+  /* доп. работы: покупка → материалы, флаг repair → ремонт, остальное → extra-карта */
+  const j3 = JSON.parse(JSON.stringify(job));
+  const ew = T.state.data.extra_works[0];
+  j3.form_data.extra = [
+    { id: 'x1', kind: 'purchase', name: 'Paint', product_name: 'Paint', qty: 2, price: 25 },
+    { id: 'x2', kind: 'work', ew_id: ew && ew.id, name: 'Works', price: 100, repair: true },
+    { id: 'x3', kind: 'work', name: 'Free work', price: 40 } ];
+  j3.total = 925 + 190;   // сохранённый итог = расчёт (иначе раскладка масштабируется к total, как в отчётах)
+  const sp3 = T.accSplitJob(j3);
+  t('покупка 50 → материалы; repair-работа 100 → ремонт; прочая 40 → по карте extra (ремонт)', sp3.mat === 50 && sp3.rep === 140, JSON.stringify({ mat: sp3.mat, rep: sp3.rep }));
+  t('accExtraCat', T.accExtraCat({ kind: 'purchase' }) === 'mat' && T.accExtraCat({ kind: 'work', repair: true }) === 'rep' && T.accExtraCat({ kind: 'work' }) === 'rep');
+  T.state.data.acc_settings.push({ id: 'map:extra', val: 'clean' });
+  t('карта extra→clean переопределяет прочие доп. работы', T.accSplitJob(j3).clean === 295 + 40 && T.accSplitJob(j3).rep === 100);
+  /* документ ремонта */
+  const rep = { id: 'r1', no: 7, date: job.date, status: 'sent', complex_id: job.complex_id, counterparty_id: job.counterparty_id, unit_number: '5B',
+    items: [{ q: 1, d: 'Drywall', a: 300 }, { q: 1, d: 'Paint', a: 200 }], materials: [{ q: 1, d: 'Sheets', a: 120 }], sales_tax: 8.5, freight: 20,
+    created_by: 'demo-tech', helper_ids: ['demo-manager'], note: 'быстро', note_en: '' };
+  const spr = T.accSplitRep(rep);
+  t('REP: работы 500 → ремонт, материалы 120 → материалы, итог 620, налог+доставка 28.5 вне базы', spr.rep === 500 && spr.mat === 120 && spr.total === 620 && spr.extra === 28.5, JSON.stringify(spr));
+  t('REP к выплате = 500×50% + 120×0% = 250', T.accPay(spr) === 250);
+  /* реестр и сводка по сотрудникам */
+  T.state.data.repairs = [rep];
+  const f = T.accF(); f.from = '2000-01-01'; f.to = '2099-12-31'; f.st = 'done'; f.kind = 'all'; f.ast = 'all'; f.notes = false; f.q = '';
+  const rows = T.accDocs();
+  t('реестр: инвойс done + REP sent, черновик исключён', rows.length === 2 && rows.some(r => r.kind === 'rep') && !rows.some(r => r.status === 'draft'), rows.map(r => r.kind + ':' + r.status).join(','));
+  const tot = T.accTotals(rows);
+  t('итоги: выставлено 925+620, к выплате 226+250', tot.total === 1545 && tot.pay === 476 && tot.n === 2, JSON.stringify(tot));
+  const st = T.accByStaff(rows);
+  const by = id => st.find(x => x.id === id) || {};
+  t('поровну на бригаду: Ivan 113, Alexey 113+125, Sergey 125', by('demo-admin').pay === 113 && by('demo-manager').pay === 238 && by('demo-tech').pay === 125, JSON.stringify(st.map(x => x.id + '=' + x.pay)));
+  T.state.data.acc_settings.push({ id: 'opt:split', val: 'main' });
+  const st2 = T.accByStaff(rows);
+  t('всё основному: Ivan 226, Sergey 250, Alexey нет', st2.find(x => x.id === 'demo-admin').pay === 226 && st2.find(x => x.id === 'demo-tech').pay === 250 && !st2.find(x => x.id === 'demo-manager'));
+  f.notes = true;
+  t('фильтр «только с заметками» — обе (заметки техника есть в обоих)', T.accDocs().length === 2);
+  f.notes = false; f.q = '5B';
+  t('поиск по юниту находит REP', T.accDocs().length === 1 && T.accDocs()[0].kind === 'rep');
+  f.q = ''; f.st = 'approved';
+  t('фильтр «только апрув» — пусто', T.accDocs().length === 0);
+  f.st = 'done';
+  const html = T.viewAcc();
+  t('viewAcc рендерит реестр с обеими строками и кнопками CSV/PDF', /acc-tbl/.test(html) && (html.match(/class="acc-row /g) || []).length === 2 && /accCsv/.test(html) && /accPdfBatch/.test(html));
+  T.setUser(T.state.data.profiles.find(p => p.role === 'admin'));
+  t('таблица acc_settings в TABLES и BK_TABLES-логике (DB_NEED_COLS)', T.TABLES.includes('acc_settings') && T.DB_NEED_COLS.some(x => x[0] === 'acc_settings') && T.DB_NEED_RPCS.includes('acc_doc_mark'));
+  t('sql-миграция 1.08.39 лежит в supabase/', fs.existsSync(ROOT + '/supabase/update-to-1_08_39.sql') && fs.existsSync(ROOT + '/supabase/full-install-1_08_39.sql'));
+}
+
+console.log('\n— переводы RU/EN (v1.08.40) —');
+{
+  const CYR = /[\u0400-\u04FF]/;
+  const dictSrc = appSrc.slice(appSrc.indexOf('const I18N = {'), appSrc.indexOf('function t(k)'));
+  /* задвоенные ключи: в объектном литерале побеждает последний — расхождения незаметны */
+  const dupOf = seg => { const seen = new Set(), dup = new Set();
+    seg.replace(/(['"`])(?:\\.|(?!\1).)*\1/g, '""').replace(/(?:^|[\s,{])([A-Za-z_][A-Za-z0-9_]*)\s*:/g, (m, k) => { if (seen.has(k)) dup.add(k); seen.add(k); return m; });
+    return [...dup]; };
+  const enAt = dictSrc.indexOf('\n  en: {');
+  const dRu = dupOf(dictSrc.slice(0, enAt)), dEn = dupOf(dictSrc.slice(enAt));
+  t('в словаре ru нет задвоенных ключей', dRu.length === 0, dRu.join(', '));
+  t('в словаре en нет задвоенных ключей', dEn.length === 0, dEn.join(', '));
+  /* каждое действие audit('…') имеет подпись act_* — иначе журнал показывает код */
+  const acts = [...new Set([...appSrc.matchAll(/\baudit\(\s*['"]([a-z_]+)['"]/g)].map(m => m[1]))];
+  const noAct = acts.filter(a => !(('act_' + a) in T.DICT.ru) || !(('act_' + a) in T.DICT.en));
+  t(`все ${acts.length} действий журнала имеют подпись act_* в обоих языках`, noAct.length === 0, noAct.join(', '));
+  /* английские значения без кириллицы (кроме имени папки «Архив TechLog» и примера в name_en_hint) */
+  const allowCyr = new Set(['name_en_hint', 'arch_hint', 'arch_q']);
+  const enCyr = Object.keys(T.DICT.en).filter(k => !allowCyr.has(k) && CYR.test(JSON.stringify(T.DICT.en[k])));
+  t('в английских значениях словаря нет кириллицы', enCyr.length === 0, enCyr.slice(0, 6).join(', '));
+  /* справка по разделам: обе половины H(ru, en) одинаковой структуры, английская без кириллицы */
+  const prevLang = T.state.lang, prevUser = T.state.user, prevData = T.state.data;
+  T.state.user = { id: 'u1', role: 'admin', display_name: 'Test Admin', login: 'admin' };
+  T.state.data = T.state.data || { jobs: [], placements: [], proposals: [], repairs: [], profiles: [], org_settings: {}, complexes: [], counterparties: [], equipment_types: [], work_types: [] };
+  const keys = ['home', 'board', 'map', 'proposals', 'reports', 'stats', 'dirs', 'archive', 'stock', 'journal', 'settings', 'acc'];
+  const li = h => (h.match(/<li\b/g) || []).length, h4 = h => (h.match(/<h4\b/g) || []).length;
+  keys.forEach(k => {
+    let ru = '', en = '';
+    try { T.state.lang = 'ru'; ru = T.sectionFaqHtml(k); T.state.lang = 'en'; en = T.sectionFaqHtml(k); } catch (e) { t('справка «' + k + '» рисуется', false, e && e.message); return; }
+    t(`справка «${k}»: пунктов поровну (ru ${li(ru)} / en ${li(en)}, h4 ${h4(ru)}/${h4(en)})`, li(ru) === li(en) && h4(ru) === h4(en) && li(ru) > 0);
+    t(`справка «${k}»: в английской версии нет кириллицы`, !CYR.test(en.replace(/Архив TechLog/g, '')), (en.match(/[^\s<>]*[\u0400-\u04FF][^\s<>]*/g) || []).slice(0, 4).join(' '));
+  });
+  T.state.lang = 'en';
+  t('FAQ (вкладка) по-английски без кириллицы', !CYR.test(T.faqHtml()));
+  t('журнал в справке перечисляет события (не «—»)', /Recorded events<\/b>: [^—]/.test(T.sectionFaqHtml('journal')));
+  t('шапка в EN-режиме без кириллицы (подсказки Телефон/ПК)', !CYR.test(T.viewHeader()));
+  t('экран входа в EN-режиме без кириллицы', !CYR.test(T.viewLogin()));
+  t('чипы статистики 7d/30d/90d по-английски', /7d<\/button>.*30d<\/button>.*90d<\/button>/s.test(T.viewStats()));
+  t('«был в сети N min» по-английски', /\bmin$/.test(T.tvAgo(new Date(Date.now() - 5 * 60000).toISOString())));
+  t('пример пути инвойсов по-английски', /^archive \/ Invoices/.test(T.gdInvPathSample()));
+  const sh = T.SECTION_HELP;
+  t('справка секций: у смешанных подписей есть английский вариант (te)', ['equipment', 'others', 'note'].every(k => sh[k].items.every(it => !/ \/ /.test(it.t) && (!CYR.test(it.t) || it.te))));
+  T.state.lang = prevLang; T.state.user = prevUser; T.state.data = prevData;
+}
+
+console.log('\n— офлайн-режим: пометка кнопок и состояние (v1.08.38) —');
+{
+  const d = w.document.createElement('div');
+  d.innerHTML = '<button id="b1" onclick="App.sync()">s</button>' +
+    '<button id="b2" onclick="App.saveJob()">j</button>' +
+    '<button id="b3" data-net="1" onclick="App.approveJob()">a</button>' +
+    '<button id="b4" data-net="0" onclick="App.sync()">p</button>' +
+    '<select id="s1" onchange="App.setRole(\'u\', this.value)"><option>x</option></select>' +
+    '<button id="b5" onclick="App.closeModal(); App.eqDo()">m</button>';
+  w.document.body.appendChild(d);
+  T.netMark(d);
+  const has = id => d.querySelector('#' + id).classList.contains('net-need');
+  t('App.sync → .net-need', has('b1'));
+  t('App.saveJob — не помечена', !has('b2'));
+  t('data-net="1" помечает принудительно', has('b3'));
+  t('data-net="0" исключает даже серверный обработчик', !has('b4'));
+  t('select с onchange=App.setRole помечен', has('s1'));
+  t('второй вызов в onclick (closeModal(); eqDo()) тоже ловится', has('b5'));
+  t('повторный netMark не дублирует класс', (T.netMark(d), d.querySelector('#b1').className === 'net-need'));
+  t('NET_ONLY не содержит saveJob/createTask/mediaPick/pickupOne/saveProposal/saveRepair',
+    !['saveJob','createTask','mediaPick','pickupOne','saveProposal','saveRepair','deleteJob','archive'].some(k => T.NET_ONLY.has(k)));
+  t('isNetErr: «TypeError: Failed to fetch»', T.isNetErr({ message: 'TypeError: Failed to fetch' }));
+  t('isNetErr: NetworkError (Firefox)', T.isNetErr(new Error('NetworkError when attempting to fetch resource.')));
+  t('isNetErr: «duplicate key» — не сетевая', !T.isNetErr({ message: 'duplicate key value violates unique constraint' }));
+  T.NET.srv = true; T.NET.fails = 0;
+  t('исходно: онлайн', !T.netOff() && T.netState() === 'on');
+  T.netSet(false);
+  t('один сбой пинга — ещё онлайн', !T.netOff());
+  T.netSet(false);
+  t('второй подряд — «нет сервера»', T.netOff() && T.netState() === 'warn' && T.netPillText() === T.DICT.ru.net_srv);
+  t('select под офлайном disabled', d.querySelector('#s1').disabled === true && w.document.documentElement.classList.contains('tl-offline'));
+  T.netSet(true, 42);
+  t('успешный пинг 42 мс — онлайн, пилюля «42 мс»', !T.netOff() && T.netPillText() === '42 мс');
+  t('select снова активен, tl-offline снят', d.querySelector('#s1').disabled === false && !w.document.documentElement.classList.contains('tl-offline'));
+  d.remove();
+}
+
+console.log('\n— офлайн-очередь: insert/org_settings (v1.08.38) —');
+{
+  T.pendingSave([]);
+  T.pendingAdd('upsert', 'jobs', { id: 'j1', unit_number: '1' });
+  T.pendingAdd('insert', 'audit_log', { action: 'x' }, 'a1');
+  T.pendingAdd('insert', 'audit_log', { action: 'y' }, 'a2');
+  T.pendingAdd('upsert', 'org_settings', { id: 'org', company_short: 'ZZ' });
+  const q = T.pendingLoad();
+  t('четыре записи в очереди (upsert, 2×insert, org)', q.length === 4, q.length);
+  t('insert-строки не схлопываются (разные ключи)', q.filter(x => x.op === 'insert').length === 2);
+  T.pendingAdd('delete', 'jobs', 'j1');
+  t('delete той же строки вытесняет upsert', T.pendingLoad().filter(x => x.table === 'jobs').length === 1
+    && T.pendingLoad().find(x => x.table === 'jobs').op === 'delete');
+  const data = { jobs: [{ id: 'j1' }, { id: 'j2' }], org_settings: { id: 'org', company_short: 'APC' }, audit_log: [] };
+  T.pendingApplyLocal(data);
+  t('pendingApplyLocal: delete применён к снимку', data.jobs.length === 1 && data.jobs[0].id === 'j2');
+  t('pendingApplyLocal: org_settings из очереди поверх снимка', data.org_settings.company_short === 'ZZ');
+  t('pendingApplyLocal: insert-строки снимок не трогают', data.audit_log.length === 0);
+  T.pendingSave([]);
+}
+
+/* Режим Supabase на заглушке клиента: без сети dbUpsert/dbDelete/dbSaveOrg/audit
+   не дёргают сервер и кладут в очередь; при возврате сети pendingFlush
+   досылает всё одним проходом (upsert / insert / delete). */
+console.log('\n— офлайн-запись в режиме Supabase (v1.08.38) —');
+{
+  const dom2 = new JSDOM(`<!doctype html><html><body><div id="app"></div><div id="toasts"></div></body></html>`,
+    { url: 'https://example.com/', pretendToBeVisual: true, runScripts: 'dangerously' });
+  const w2 = dom2.window;
+  w2.TECHLOG_CONFIG = { SUPABASE_URL: 'https://demo.supabase.co', SUPABASE_ANON_KEY: 'anon' };
+  w2.scrollTo = () => {};
+  w2.fetch = () => Promise.reject(new TypeError('Failed to fetch'));
+  if (!w2.navigator.vibrate) w2.navigator.vibrate = () => {};
+  const calls = [];
+  let netDown = true;
+  const resp = (op, table, payload) => {
+    calls.push(op + ':' + table);
+    return netDown ? Promise.resolve({ error: { message: 'TypeError: Failed to fetch' } }) : Promise.resolve({ data: null, error: null });
+  };
+  const from = (table) => ({
+    upsert: (row) => resp('upsert', table, row),
+    insert: (row) => resp('insert', table, row),
+    delete: () => ({ eq: (k, v) => resp('delete', table, v) }),
+    select: () => ({ eq: () => ({ single: () => resp('select', table), maybeSingle: () => resp('select', table) }), limit: () => resp('select', table) }),
+  });
+  w2.supabase = { createClient: () => ({ from, rpc: () => Promise.resolve({ data: null, error: { message: 'TypeError: Failed to fetch' } }),
+    auth: { getSession: () => Promise.resolve({ data: { session: null } }), onAuthStateChange: () => {}, signOut: () => Promise.resolve({}),
+            mfa: { getAuthenticatorAssuranceLevel: () => Promise.resolve({ data: null }) } } }) };
+  try {
+    const sc = w2.document.createElement('script');
+    sc.textContent = appSrc + expose;
+    w2.document.body.appendChild(sc);
+  } catch (e) { console.log('⛔ app.js (SB) не выполнился:', e.message); }
+  const S = w2.__T;
+  t('app.js поднялся в режиме Supabase на заглушке', !!S && !!S.state);
+  if (S){
+    const run = async () => {
+      await new Promise(r => setTimeout(r, 50));
+      S.setUser({ id: 'u1', role: 'admin', display_name: 'Test', login: 'test' });
+      const data = S.emptyData(); S.setData(data);
+      S.pendingSave([]);
+      S.NET.srv = false; S.NET.fails = 2;                 // сервер «молчит»
+      t('netOff() в режиме SB без сервера', S.netOff());
+      calls.length = 0;
+      await S.dbUpsert('jobs', { id: 'j9', unit_number: '9', form_data: {} });
+      await S.dbDelete('placements', 'p9');
+      await S.dbSaveOrg({ id: 'org', company_short: 'OFF' });
+      S.audit('job_create', 'job', 'j9', { unit: '9' });
+      await new Promise(r => setTimeout(r, 20));
+      t('без сети сервер не вызывался вовсе', calls.length === 0, calls.join(','));
+      const q = S.pendingLoad();
+      t('очередь: jobs upsert + placements delete + org upsert + audit insert',
+        q.length === 4 && q.some(x => x.op === 'upsert' && x.table === 'jobs') && q.some(x => x.op === 'delete' && x.table === 'placements')
+        && q.some(x => x.table === 'org_settings') && q.some(x => x.op === 'insert' && x.table === 'audit_log'),
+        q.map(x => x.op + ':' + x.table).join(','));
+      t('строка работы уже в локальном кэше', S.state.data.jobs.some(j => j.id === 'j9'));
+      t('красных тостов «Ошибка записи» нет', ![...w2.document.querySelectorAll('#toasts .toast.err')].length);
+      /* сеть вернулась: досыл одним проходом */
+      netDown = false; S.NET.srv = true; S.NET.fails = 0;
+      const sent = await S.pendingFlush();
+      t('pendingFlush дослал 4 записи', sent === 4, sent);
+      t('очередь пуста', S.pendingLoad().length === 0);
+      t('на сервер ушли upsert, delete, org-upsert и insert журнала',
+        calls.includes('upsert:jobs') && calls.includes('delete:placements') && calls.includes('upsert:org_settings') && calls.includes('insert:audit_log'),
+        calls.join(','));
+      /* сеть пропала на ходу: ошибка fetch → в очередь, без красного тоста */
+      netDown = true; calls.length = 0;
+      await S.dbUpsert('jobs', { id: 'j10', unit_number: '10', form_data: {} });
+      t('сетевая ошибка на ходу: запись осталась в очереди', S.pendingLoad().some(x => x.id === 'j10'));
+      t('первый сбой — ещё «онлайн» (контрольный пинг запланирован)', !S.netOff());
+      await S.dbUpsert('jobs', { id: 'j11', unit_number: '11', form_data: {} });
+      t('второй сбой подряд — «нет сервера», обе записи в очереди', S.netOff() && S.pendingLoad().length === 2);
+      t('на сервер ходили только два раза (третьего вызова без сети нет)', calls.length === 2, calls.join(','));
+      S.pendingSave([]);
+    };
+    run().catch(e => t('SB-сценарий выполнился без исключений', false, e && e.stack || e)).then(finish);
+  } else finish();
+}
+function finish(){
+  console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
+  process.exit(bad ? 1 : 0);
+}
