@@ -40,9 +40,10 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
   const pill = await p.evaluate(() => {
     const el = document.querySelector('.topbar .net-pill');
     return el ? { cls: el.className, txt: el.textContent.trim(),
-      row: !!el.closest('.logo-wrap') && !!el.closest('.logo-wrap').querySelector('.logo') } : null;
+      /* v1.08.45: бейдж переехал к плашке роли и стал кнопкой */
+      row: el.tagName === 'BUTTON' && !!el.closest('.rt-role') && !!el.closest('.rt-role').querySelector('.role-tag') } : null;
   });
-  t('пилюля есть в шапке — под логотипом', !!pill && pill.row, JSON.stringify(pill));
+  t('бейдж есть в шапке — кнопкой слева от роли (v1.08.45)', !!pill && pill.row, JSON.stringify(pill));
   t('при сети — зелёная с пингом «NN мс»', !!pill && /\bon\b/.test(pill.cls) && /^\d+ мс$/.test(pill.txt), pill && pill.txt);
   t('состояние: онлайн', await p.evaluate(() => window.App.netState() === 'on' && !window.App.netOff()));
 

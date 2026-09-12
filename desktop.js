@@ -643,34 +643,79 @@
   var html = document.documentElement;
   function q(s) { return document.querySelector(s); }
   function isDesk() { return html.classList.contains('tl-desktop'); }
-  var pin = false;
+  var hold = false;                                // клик по язычку держит меню, пока не ушли по пункту
+  var PIN_KEY = 'techlog_menu_pin';
+  var PIN = false;                                 // v1.08.45: закрепление «канцелярской кнопкой»
+  try { PIN = localStorage.getItem(PIN_KEY) === '1'; } catch (e) {}
+  if (PIN) html.classList.add('tl-menu-pin');
+  function ru() { return localStorage.getItem('techlog_lang') !== 'en'; }
+  function setPin(v) {
+    PIN = !!v;
+    try { localStorage.setItem(PIN_KEY, PIN ? '1' : '0'); } catch (e) {}
+    html.classList.toggle('tl-menu-pin', PIN);
+    if (PIN) { hold = false; html.classList.remove('tl-menu-open'); }
+    var pb = document.getElementById('dsk-menu-pin');
+    if (pb) pinPaint(pb);
+    sched();                                       // полоса контента изменилась — пересчитать колонки
+  }
+  function pinPaint(b) {
+    b.title = ru() ? (PIN ? 'Открепить меню' : 'Закрепить меню — не будет уезжать')
+                   : (PIN ? 'Unpin menu' : 'Pin menu — keep it in place');
+    b.setAttribute('aria-label', b.title);
+    b.setAttribute('aria-pressed', PIN ? 'true' : 'false');
+  }
   function off() {
     html.classList.remove('tl-fit');
     html.classList.remove('tl-menu-open');
-    pin = false;
+    hold = false;
     html.style.removeProperty('--dsk-fit');
   }
-  /* язычок у левого края: наведение выдвигает меню, клик закрепляет */
+  /* язычок у левого края: наведение выдвигает меню, клик держит открытым.
+     v1.08.45: стрелка в язычке поворачивается, когда меню выехало (показывает,
+     что повторный клик уведёт его обратно); в самом меню — кнопка-«pin с
+     иголкой», закрепляющая его насовсем (html.tl-menu-pin + localStorage). */
   function buildTab() {
-    if (document.getElementById('dsk-menu-tab')) return;
-    var b = document.createElement('button');
-    b.type = 'button'; b.id = 'dsk-menu-tab'; b.textContent = '›';
-    b.title = (localStorage.getItem('techlog_lang') === 'en') ? 'Menu' : 'Меню';
-    b.addEventListener('mouseenter', function () { html.classList.add('tl-menu-open'); });
-    b.addEventListener('click', function () {
-      pin = !pin;
-      html.classList.toggle('tl-menu-open', pin);
-    });
-    document.body.appendChild(b);
-    var bar = document.querySelector('.tabbar');
-    if (bar) {
-      bar.addEventListener('mouseleave', function () { if (!pin) html.classList.remove('tl-menu-open'); });
-      /* клик по пункту меню: переход состоялся — меню уезжает обратно */
-      bar.addEventListener('click', function (e) {
-        if (e.target.closest && e.target.closest('.tab'))
-          setTimeout(function () { pin = false; html.classList.remove('tl-menu-open'); }, 150);
+    if (!document.getElementById('dsk-menu-tab')) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.id = 'dsk-menu-tab';
+      b.innerHTML = '<span class="arr">›</span>';
+      b.title = ru() ? 'Меню' : 'Menu';
+      b.addEventListener('mouseenter', function () { html.classList.add('tl-menu-open'); });
+      b.addEventListener('click', function () {
+        hold = !hold;
+        html.classList.toggle('tl-menu-open', hold);
+      });
+      document.body.appendChild(b);
+      /* v1.08.45: делегирование вместо слушателей на самой .tabbar — панель
+         пересоздаётся при каждой отрисовке (render), и прежние обработчики
+         mouseleave/клика по пункту молча отваливались вместе со старым DOM. */
+      document.addEventListener('mouseout', function (e) {
+        if (PIN || hold) return;
+        var bar = e.target && e.target.closest && e.target.closest('.tabbar');
+        if (!bar) return;
+        if (e.relatedTarget && bar.contains(e.relatedTarget)) return;
+        html.classList.remove('tl-menu-open');
+      });
+      document.addEventListener('click', function (e) {
+        if (PIN) return;
+        /* клик по пункту меню: переход состоялся — меню уезжает обратно */
+        if (e.target && e.target.closest && e.target.closest('.tabbar .tab'))
+          setTimeout(function () { hold = false; html.classList.remove('tl-menu-open'); }, 150);
       });
     }
+    buildPin();
+  }
+  /* кнопка закрепления живёт в самой панели меню и пересоздаётся после
+     каждой отрисовки (render стирает .tabbar вместе с ней) */
+  function buildPin() {
+    var bar = document.querySelector('.tabbar');
+    if (!bar || bar.querySelector('#dsk-menu-pin')) return;
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'dsk-menu-pin';
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l-1 5.5 3.2 2.8V13H6.8v-1.7L10 8.5 9 3z"/><path d="M12 13v8"/></svg>';
+    pinPaint(b);
+    b.addEventListener('click', function (e) { e.stopPropagation(); setPin(!PIN); });
+    bar.insertBefore(b, bar.firstChild);
   }
   function fit() {
     try {
@@ -691,7 +736,8 @@
         /* включаемся, когда началась теснота: по расчёту или по факту скролла */
         if (needSide <= availSide && board.scrollWidth <= board.clientWidth + 2) return off();
       }
-      var availBottom = window.innerWidth - (staffCol ? 124 : 16) - RIGHT;
+      var availBottom = window.innerWidth
+        - (PIN ? (staffCol ? 236 : 128) : (staffCol ? 124 : 16)) - RIGHT;   // v1.08.45: pin держит полосу меню
       var w = Math.floor((availBottom - PADX - (n - 1) * GAP) / n);
       w = Math.max(MINW, Math.min(BASE, w));
       html.classList.add('tl-fit');
@@ -713,7 +759,8 @@
         .observe(html, { attributes: true, attributeFilter: ['class'] });
       window.addEventListener('resize', sched);
       fit();
-      window.TLBoardFit = { fit: fit, off: off };   // для отладки
+      window.TLBoardFit = { fit: fit, off: off,
+        pinSet: setPin, pinned: function () { return PIN; }, buildTab: buildTab };   // для отладки и тестов
     } catch (e) {}
   }
   if (document.body) start();

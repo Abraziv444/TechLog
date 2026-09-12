@@ -43,15 +43,18 @@ const stubRoutes = async (p) => {
     return {
       h: bar ? Math.round(bar.getBoundingClientRect().height) : 0,
       rowKids: row ? [...row.children].map(e => e.className || e.id).join('|') : '(нет .rt-row)',
-      srchInRow: !!document.querySelector('.rt-row .hdr-srch'),
-      srchSize: Math.round(document.querySelector('.hdr-srch').getBoundingClientRect().height),
+      /* v1.08.45: поиск переехал из шапки в меню — в шапке его быть не должно */
+      srchInRow: !document.querySelector('.topbar .hdr-srch') && !!document.querySelector('.tabbar .hdr-srch'),
+      srchSize: Math.round(document.querySelector('.tabbar .hdr-srch').getBoundingClientRect().height),
+      tabSize: Math.round(document.querySelectorAll('.tabbar .tab')[1].getBoundingClientRect().height),
       pill: Math.round(document.querySelector('#vm-slot').getBoundingClientRect().height),
       rtcol: Math.round(document.querySelector('.rt-col').getBoundingClientRect().height),
       avwrap: Math.round(document.querySelector('.avatar-wrap').getBoundingClientRect().height),
     };
   });
-  t('поиск и пилюля режима — одной строкой', hdr.srchInRow, hdr.rowKids);
-  t('шапка не выросла из-за поиска (значок не выше пилюли)', hdr.srchSize <= hdr.pill, hdr.srchSize + ' vs ' + hdr.pill);
+  t('поиск переехал в меню (v1.08.45): в шапке нет, в таббаре есть', hdr.srchInRow, hdr.rowKids);
+  t('кнопка поиска в меню — как соседние вкладки', hdr.srchSize >= 24 && Math.abs(hdr.srchSize - hdr.tabSize) <= 2,
+    hdr.srchSize + ' vs ' + hdr.tabSize);
   t('правая колонка не выше колонки аватарки (+4px допуск)', hdr.rtcol <= hdr.avwrap + 4, hdr.rtcol + ' vs ' + hdr.avwrap);
   t('шапка ≤ 70px', hdr.h > 0 && hdr.h <= 70, hdr.h + 'px');
 

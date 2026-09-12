@@ -1955,7 +1955,8 @@ select:disabled{opacity:.55;cursor:default}
   .vm-inline button::after{ top:-12px;bottom:-12px }
 }
 .rt-row .vm-inline svg{ width:13px;height:13px }
-.hdr-srch{ width:28px;height:28px;border-radius:9px }
+/* v1.08.45: глобальный поиск переехал из шапки в меню (кнопка .tab.hdr-srch
+   в таббаре) — правило размера в шапке снято */
 .srch-chips{ display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px }
 .srch-chips .chip-preset{ padding:5px 10px;font-size:.72rem }
 .srch-res{ max-height:58vh;overflow:auto;margin-top:4px }
@@ -2157,19 +2158,27 @@ body.tl-tvfs .tv-x{ display:grid }
 /* =====================================================================
    v1.08.38: ОФЛАЙН-РЕЖИМ — пилюля связи в шапке и блеклые серверные кнопки
    ===================================================================== */
-/* Пилюля живёт ПОД логотипом — зеркально пилюле логина под аватаркой:
-   в правой колонке шапки места нет (роль «Сотрудник» + переключатель уже
-   впритык на 320–360px), а под логотипом свободно и не отъедает ширину
-   у названия. */
+/* v1.08.45: бейдж связи переехал из-под логотипа в правую колонку шапки —
+   встал слева от плашки роли и стал КНОПКОЙ (клик открывает «Проверку
+   связи»). У статусов разная длина («NN мс» · «нестабильно» · «нет
+   сервера» · «офлайн»), поэтому ширина фиксированная — бейдж не прыгает
+   при смене состояния. */
 .logo-wrap{ flex:0 0 auto;display:flex;flex-direction:column;align-items:center;min-width:44px }
+.rt-role{ display:flex;align-items:center;gap:6px }
 .net-pill{
-  display:inline-flex;align-items:center;gap:4px;margin-top:-7px;position:relative;z-index:1;
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;position:relative;z-index:1;
   font-size:.55rem;font-weight:900;letter-spacing:.2px;line-height:1.3;
   border-radius:999px;padding:1px 6px;border:2px solid var(--line);
-  background:var(--bg);color:var(--dim);white-space:nowrap;max-width:72px;
+  background:var(--bg);color:var(--dim);white-space:nowrap;
+  min-width:96px;min-height:21px;
   font-variant-numeric:tabular-nums;
 }
-.btn .net-pill{ margin:0;max-width:none }
+button.net-pill{ cursor:pointer;font-family:inherit }
+/* зона нажатия шире тонкой пилюли — невидимое поле, как у переключателя
+   Телефон/ПК: вниз уходит в нижний отступ шапки (8px), вверх — в зазор
+   между строками, за пределы шапки не выходит и контент не перехватывает */
+button.net-pill::after{ content:"";position:absolute;left:-2px;right:-2px;top:-4px;bottom:-9px }
+.btn .net-pill{ margin:0;min-width:0 }
 .net-pill::before{ content:'';width:6px;height:6px;border-radius:50%;background:var(--dim-2);flex:0 0 auto }
 .net-pill.on{ color:var(--green);border-color:var(--green) }
 .net-pill.on::before{ background:var(--green);box-shadow:0 0 5px var(--green) }
@@ -2177,7 +2186,30 @@ body.tl-tvfs .tv-x{ display:grid }
 .net-pill.off::before{ background:var(--red) }
 .net-pill.warn{ color:var(--yellow);border-color:var(--yellow) }
 .net-pill.warn::before{ background:var(--yellow) }
-@media (max-width:380px){ .net-pill{ font-size:.5rem;padding:1px 5px;gap:3px } }
+.net-pill.slow{ color:var(--orange);border-color:var(--orange) }
+.net-pill.slow::before{ background:var(--orange);box-shadow:0 0 5px var(--orange) }
+@media (max-width:380px){ .net-pill{ font-size:.5rem;padding:1px 5px;gap:3px;min-width:86px } }
+/* v1.08.45: модалка «Проверка связи» — окошко лога повыше, чем у отправки
+   файлов (в нём до шести строк сервисов), строка-предупреждение оранжевая */
+.net-mrow{ display:flex;align-items:center;gap:8px;margin:2px 0 8px }
+.net-log{ height:138px }
+.mq-log .warn{ color:var(--orange) }
+
+/* v1.08.45: «глазик» у полей пароля — кнопка в правом углу поля.
+   Прижата к низу строки (bottom), а не к центру: в рядах с подписью
+   .lbl над полем центр строки — это зазор между подписью и полем. */
+.pass-row{ position:relative }
+.pass-row input{ padding-right:46px }
+.pass-eye{
+  position:absolute;right:5px;bottom:5px;
+  width:34px;height:34px;display:grid;place-items:center;
+  background:transparent;border:0;border-radius:10px;
+  color:var(--dim);cursor:pointer;padding:0;
+}
+.pass-eye svg{ width:20px;height:20px }
+.pass-eye:hover{ color:var(--text);background:var(--panel-2) }
+.pass-eye.on{ color:var(--blue) }
+
 /* серверные функции без связи: видно, что кнопка есть, но она не активна */
 html.tl-offline .net-need{ opacity:.38 !important;filter:grayscale(.7);cursor:not-allowed !important;
   box-shadow:none !important;transform:none !important }

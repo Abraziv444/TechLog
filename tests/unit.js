@@ -1085,6 +1085,11 @@ console.log('\n— офлайн-режим: пометка кнопок и со�
   t('select под офлайном disabled', d.querySelector('#s1').disabled === true && w.document.documentElement.classList.contains('tl-offline'));
   T.netSet(true, 42);
   t('успешный пинг 42 мс — онлайн, пилюля «42 мс»', !T.netOff() && T.netPillText() === '42 мс');
+  T.netSet(true, 640);
+  t('v1.08.45: пинг 640 мс — статус «нестабильно», не офлайн', !T.netOff() && T.netState() === 'slow'
+    && T.netPillText() === T.DICT.ru.net_unst);
+  T.netSet(true, 120);
+  t('v1.08.45: пинг вернулся к 120 мс — снова «on»', T.netState() === 'on' && T.netPillText() === '120 мс');
   t('select снова активен, tl-offline снят', d.querySelector('#s1').disabled === false && !w.document.documentElement.classList.contains('tl-offline'));
   d.remove();
 }

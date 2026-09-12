@@ -68,7 +68,9 @@
     left:16px; right:auto; top:50%; bottom:auto;
     transform:translateY(-50%);
     width:96px; max-width:none;
-    max-height:calc(100dvh - 32px); overflow:auto;
+    /* v1.08.45: снизу-слева живёт кнопка плотности (#dsk-density) — колонка
+       меню не должна на неё наезжать, даже когда пунктов много */
+    max-height:calc(100dvh - 128px); overflow:auto;
     flex-direction:column; justify-content:flex-start; gap:6px;
     padding:12px 8px;
     border:2px solid var(--line,#31434C);
@@ -81,6 +83,12 @@
   }
   html.tl-desktop .tab svg{ width:26px; height:26px; }
   html.tl-desktop .tab span{ font-size:.6rem; }
+  /* v1.08.45: с поиском у админа 15 пунктов — тесная раскладка (tb-tight)
+     ужимает вертикаль, чтобы весь список влезал без прокрутки */
+  html.tl-desktop .tabbar.tb-tight{ gap:3px; padding:8px; }
+  html.tl-desktop .tabbar.tb-tight .tab{ padding:5px 4px; gap:2px; }
+  html.tl-desktop .tabbar.tb-tight .tab svg{ width:22px; height:22px; }
+  html.tl-desktop .tabbar.tb-tight .tab span{ font-size:.55rem; }
 
   /* ---------- Плавающая кнопка «＋» — в правый нижний угол ---------- */
   html.tl-desktop .fab{ right:28px; left:auto; bottom:28px; }
@@ -765,6 +773,44 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   @media (hover:hover){
     html.tl-desktop.tl-fit #dsk-menu-tab:hover{ color:var(--blue,#1CB0F6); }
   }
+
+  /* ---------- v1.08.45: стрелка в язычке показывает направление ----------
+     Меню спрятано — «›» (клик выдвинет), меню выехало — стрелка
+     поворачивается в «‹» (клик уведёт обратно). */
+  html.tl-desktop.tl-fit #dsk-menu-tab .arr{
+    display:inline-block; transition:transform .28s ease;
+  }
+  html.tl-desktop.tl-fit.tl-menu-open #dsk-menu-tab .arr,
+  html.tl-desktop.tl-fit.tl-menu-pin #dsk-menu-tab .arr{ transform:rotate(180deg); }
+
+  /* ---------- v1.08.45: кнопка «закрепить меню» (pin с иголкой) ----------
+     Живёт в правом верхнем углу самой панели меню и видна только когда
+     меню умеет уезжать (tl-fit); панель резервирует под неё полосу сверху. */
+  #dsk-menu-pin{ display:none; }
+  html.tl-desktop.tl-fit .tabbar{ padding-top:26px; }
+  html.tl-desktop.tl-fit #dsk-menu-pin{
+    display:grid; place-items:center;
+    position:absolute; top:3px; right:4px; z-index:2;
+    width:24px; height:24px; padding:0; cursor:pointer;
+    background:transparent; border:0; border-radius:8px;
+    color:var(--dim-2,#5D737E);
+  }
+  html.tl-desktop.tl-fit #dsk-menu-pin svg{ width:16px; height:16px; }
+  html.tl-desktop.tl-fit #dsk-menu-pin:hover{
+    color:var(--text,#EAF3F7); background:var(--panel-2,#1C2B33);
+  }
+  html.tl-desktop.tl-fit.tl-menu-pin #dsk-menu-pin{ color:var(--blue,#1CB0F6); }
+
+  /* ---------- v1.08.45: закреплённое меню (html.tl-menu-pin) ----------
+     Меню стоит на месте без тени-наплыва, язычок спрятан, контент
+     отдаёт ему полосу — как в просторной раскладке. */
+  html.tl-desktop.tl-fit.tl-menu-pin .tabbar{
+    transform:translate(0, -50%); box-shadow:none;
+  }
+  html.tl-desktop.tl-fit.tl-menu-pin #dsk-menu-tab{ display:none; }
+  html.tl-desktop.tl-fit.tl-menu-pin body{ padding-left:128px; }
+  html.tl-desktop.tl-fit.tl-menu-pin.tl-staff body{ padding-left:236px; }
+  html.tl-desktop.tl-fit.tl-menu-pin #dsk-staff{ left:124px; }
 
   /* ---------- Узкая колонка: шапка сотрудника вертикально ----------
      Триггер — фактическая ширина колонки (container query), поэтому

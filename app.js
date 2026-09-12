@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.44';
+const APP_VERSION = '1.08.45';
 const DB_SQL_FILE = 'full-install-1_08_39.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -191,7 +191,11 @@ const I18N = {
     sync_err: 'Ошибка синхронизации', offline_note: 'Оффлайн: показаны сохранённые данные',
     /* ---- v1.08.38: офлайн-режим и спойлеры инвойса ---- */
     net_on: 'онлайн', net_off: 'офлайн', net_srv: 'нет сервера', net_ms: 'мс', net_check: 'проверяю связь…',
-    net_pill_t: 'Связь с сервером и пинг', net_check_btn: 'Проверить связь',
+    net_pill_t: 'Связь с сервером · нажмите — проверка', net_check_btn: 'Проверить связь',
+    net_unst: 'нестабильно', net_modal_h: 'Проверка связи', net_l_fail: 'нет ответа',
+    net_l_inet: 'Интернет', net_l_gd: 'Сервис Google Диска', net_l_map: 'Сервис карт',
+    net_l_bn: 'Сервис Bouncie', net_l_gh: 'Сервер GitHub (хостинг)', net_l_cf: 'Сервер Cloudflare',
+    pass_show: 'Показать пароль', pass_hide: 'Скрыть пароль',
     net_off_hint: 'Нет связи — эта функция станет доступна, когда появится сеть',
     net_saved_off: 'Сохранено на устройстве — отправится, когда появится связь',
     net_went_off: 'Связь пропала: записи копятся на устройстве, серверные функции временно недоступны',
@@ -1119,7 +1123,11 @@ const I18N = {
     sync_err: 'Sync error', offline_note: 'Offline: showing cached data',
     /* ---- v1.08.38: offline mode & invoice spoilers ---- */
     net_on: 'online', net_off: 'offline', net_srv: 'no server', net_ms: 'ms', net_check: 'checking connection…',
-    net_pill_t: 'Server connection and ping', net_check_btn: 'Check connection',
+    net_pill_t: 'Server connection · tap to check', net_check_btn: 'Check connection',
+    net_unst: 'unstable', net_modal_h: 'Connection check', net_l_fail: 'no response',
+    net_l_inet: 'Internet', net_l_gd: 'Google Drive service', net_l_map: 'Maps service',
+    net_l_bn: 'Bouncie service', net_l_gh: 'GitHub server (hosting)', net_l_cf: 'Cloudflare server',
+    pass_show: 'Show password', pass_hide: 'Hide password',
     net_off_hint: 'No connection — this function becomes available when the network is back',
     net_saved_off: 'Saved on this device — will be sent when the connection is back',
     net_went_off: 'Connection lost: writes are queued on the device, server functions are paused',
@@ -3093,9 +3101,15 @@ function pendingApplyLocal(data){
    ===================================================================== */
 const NET = { srv: true, ping: null, fails: 0, at: 0, busy: false, timer: null, toastAt: 0, saveToastAt: 0, offAt: 0 };
 const NET_PING_MS = 30000, NET_RETRY_MS = 8000, NET_TIMEOUT_MS = 8000;
+const NET_SLOW_MS = 500;   // v1.08.45: пинг ≥ 500 мс — статус «нестабильно» (оранжевый)
 /* «связи нет» = браузер офлайн ИЛИ сервер молчит (два пинга подряд) */
 function netOff(){ return !navigator.onLine || !NET.srv; }
-function netState(){ return !navigator.onLine ? 'off' : (NET.srv ? 'on' : 'warn'); }
+function netState(){
+  if (!navigator.onLine) return 'off';
+  if (!NET.srv) return 'warn';
+  /* v1.08.45: третий статус «нестабильно» — сервер отвечает, но пинг улетает */
+  return (NET.ping != null && NET.ping >= NET_SLOW_MS) ? 'slow' : 'on';
+}
 function isNetErr(e){
   const m = String((e && e.message) || e || '');
   return /failed to fetch|networkerror|network request failed|load failed|internet connection|err_internet|err_network|aborted|abort/i.test(m);
@@ -3243,13 +3257,18 @@ function netPillText(){
   if (NET.busy && s !== 'on') return '…';
   if (s === 'off') return t('net_off');
   if (s === 'warn') return t('net_srv');
+  if (s === 'slow') return t('net_unst');
   return NET.ping != null ? NET.ping + ' ' + t('net_ms') : t('net_on');
 }
-/* Пилюля — пассивный индикатор (не кнопка: 16px под логотипом пальцем не
-   взять, а расширенная зона нажатия накрывала бы сам логотип). Ручная
-   проверка — кнопка «Проверить связь» в карточке синхронизации. */
-function netPillHtml(){
-  return `<span class="net-pill ${netState()}" title="${t('net_pill_t')}" aria-label="${t('net_pill_t')}" role="status">${netPillText()}</span>`;
+/* v1.08.45: бейдж переехал из-под логотипа в правую колонку шапки — встал
+   слева от плашки роли, и стал кнопкой: клик (в любом статусе) открывает
+   модалку «Проверка связи» (netModal). Внутри других кнопок (карточка
+   синхронизации в настройках) остаётся пассивный span — кнопка в кнопке
+   разваливает разметку (урок «?» из 1.08.41). */
+function netPillHtml(click){
+  const tt = t('net_pill_t');
+  if (click) return `<button type="button" class="net-pill ${netState()}" title="${tt}" aria-label="${tt}" onclick="App.netModal()">${netPillText()}</button>`;
+  return `<span class="net-pill ${netState()}" title="${tt}" aria-label="${tt}" role="status">${netPillText()}</span>`;
 }
 function netPillDraw(){
   const cls = 'net-pill ' + netState(), txt = netPillText();
@@ -3263,10 +3282,120 @@ async function netCheck(){
   const s = netState();
   const q = pendingLoad().length, m = (typeof mediaQ !== 'undefined' && mediaQ) ? mediaQ.length : 0;
   const head = s === 'off' ? t('net_off') : s === 'warn' ? t('net_srv')
-    : t('net_on') + (NET.ping != null ? ' · ' + NET.ping + ' ' + t('net_ms') : '');
+    : (s === 'slow' ? t('net_unst') : t('net_on')) + (NET.ping != null ? ' · ' + NET.ping + ' ' + t('net_ms') : '');
   const parts = []; if (q) parts.push(q + ' ' + t('net_q_rows')); if (m) parts.push(m + ' ' + t('net_q_media'));
   const tail = parts.length ? ' · ' + t('net_queue') + ': ' + parts.join(', ') : '';
-  toast((s === 'on' ? '🟢 ' : '🔴 ') + head + tail, s === 'on' ? (parts.length ? 'inf' : undefined) : 'err');
+  toast((s === 'on' ? '🟢 ' : s === 'slow' ? '🟠 ' : '🔴 ') + head + tail,
+    s === 'on' ? (parts.length ? 'inf' : undefined) : s === 'slow' ? 'inf' : 'err');
+}
+
+/* =====================================================================
+   v1.08.45 · МОДАЛКА «ПРОВЕРКА СВЯЗИ»
+   Открывается по клику на бейдж связи в шапке — в любом статусе (зелёный,
+   оранжевый «нестабильно», жёлтый «нет сервера», красный «офлайн»).
+   Кнопка «Проверить связь» и окошко, где бегут строки проверки:
+   интернет (тот же пинг, что кормит бейдж), сервис Google Диска
+   (edge-функция media-health), сервис карт (тайл OSM); администратору и
+   менеджеру — ещё сервис Bouncie, сервер GitHub (хостинг сборки) и сервер
+   Cloudflare. Медленный ответ (≥ NET_SLOW_MS) подсвечен оранжевым.
+   ===================================================================== */
+let _netRun = false;
+function netLog(text, cls){
+  const box = $('#net-log'); if (!box) return null;
+  const d = document.createElement('div');
+  d.className = 'mq-l ' + (cls || '');
+  const m = document.createElement('span'); m.className = 'm'; m.textContent = text;
+  d.appendChild(m); box.appendChild(d); box.scrollTop = box.scrollHeight;
+  return d;
+}
+function netLogSet(el, text, cls){
+  if (!el) return;
+  el.className = 'mq-l ' + (cls || '');
+  const m = el.querySelector('.m'); if (m) m.textContent = text;
+  const box = $('#net-log'); if (box) box.scrollTop = box.scrollHeight;
+}
+async function netProbe(run){
+  const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+  const tm = setTimeout(() => { try{ ctl && ctl.abort(); }catch(e){} }, NET_TIMEOUT_MS);
+  const t0 = performance.now();
+  try{ await run(ctl ? ctl.signal : undefined); return Math.max(1, Math.round(performance.now() - t0)); }
+  finally{ clearTimeout(tm); }
+}
+async function netLine(label, run){
+  const el = netLog(label + ' …', 'dim');
+  try{
+    const ms = await netProbe(run);
+    netLogSet(el, `✓ ${label} — ${ms} ${t('net_ms')}`, ms >= NET_SLOW_MS ? 'warn' : 'ok');
+  }catch(e){
+    netLogSet(el, `✗ ${label} — ${t('net_l_fail')}`, 'err');
+  }
+}
+function netModal(){
+  openModal(`
+    ${modalHead(t('net_modal_h'), 'wifi')}
+    <div class="net-mrow">${netPillHtml()}</div>
+    <div class="mq-log net-log" id="net-log"></div>
+    <button class="btn btn-blue" id="net-run" style="margin-top:10px" onclick="App.netRunChecks()">${ic('wifi')} ${t('net_check_btn')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
+  `);
+  netRunChecks();
+}
+async function netRunChecks(){
+  if (_netRun) return;
+  _netRun = true;
+  const btn = $('#net-run'); if (btn) btn.disabled = true;
+  const box = $('#net-log'); if (box) box.innerHTML = '';
+  try{
+    /* 1. интернет: тот же пинг, что кормит бейдж (Supabase; в демо — свой хостинг) */
+    const el = netLog(t('net_l_inet') + ' …', 'dim');
+    const ok = await netPing();
+    if (ok) netLogSet(el, `✓ ${t('net_l_inet')} — ${NET.ping} ${t('net_ms')}`, NET.ping >= NET_SLOW_MS ? 'warn' : 'ok');
+    else netLogSet(el, `✗ ${t('net_l_inet')} — ${t(navigator.onLine ? 'net_srv' : 'net_off')}`, 'err');
+    /* 2. сервис Google Диска: edge-функция media-health (?ping=1 отвечает без прав) */
+    if (HAS_SB) await netLine(t('net_l_gd'), async sig => {
+      const token = await mediaJwt();
+      const r = await fetch(mediaFN() + '/media-health?ping=1',
+        { cache: 'no-store', signal: sig, headers: { Authorization: 'Bearer ' + token } });
+      if (r.status === 404) throw new Error('deploy');
+    });
+    else netLog('— ' + t('net_l_gd') + ' · ' + t('diag_skip'), 'dim');
+    /* 3. сервис карт: тайл OSM картинкой — без CORS (как в «Диагностике») */
+    {
+      const em = netLog(t('net_l_map') + ' …', 'dim');
+      const ms = await new Promise(res => {
+        const t0 = performance.now(); const im = new Image(); let done = false;
+        const fin = okk => { if (done) return; done = true; res(okk ? Math.max(1, Math.round(performance.now() - t0)) : null); };
+        im.onload = () => fin(true); im.onerror = () => fin(false);
+        setTimeout(() => fin(false), NET_TIMEOUT_MS);
+        im.src = 'https://tile.openstreetmap.org/3/2/3.png?d=' + Date.now();
+      });
+      if (ms != null) netLogSet(em, `✓ ${t('net_l_map')} — ${ms} ${t('net_ms')}`, ms >= NET_SLOW_MS ? 'warn' : 'ok');
+      else netLogSet(em, `✗ ${t('net_l_map')} — ${t('net_l_fail')}`, 'err');
+    }
+    /* 4. администратору и менеджеру — сервисы сборки и трекера */
+    if (isManager()){
+      if (HAS_SB) await netLine(t('net_l_bn'), async sig => {
+        const token = await mediaJwt();
+        const r = await fetch(mediaFN() + '/bouncie?ping=1',
+          { cache: 'no-store', signal: sig, headers: { Authorization: 'Bearer ' + token } });
+        if (r.status === 404) throw new Error('deploy');
+      });
+      else netLog('— ' + t('net_l_bn') + ' · ' + t('diag_skip'), 'dim');
+      await netLine(t('net_l_gh'), sig =>
+        fetch('version.json?ping=' + Date.now(), { cache: 'no-store', signal: sig }));
+      await netLine(t('net_l_cf'), sig =>
+        fetch('https://www.cloudflare.com/cdn-cgi/trace',
+          { mode: 'no-cors', cache: 'no-store', credentials: 'omit', signal: sig }));
+    }
+    /* хвост — очереди устройства, как в быстрой проверке */
+    const q = pendingLoad().length, m = (typeof mediaQ !== 'undefined' && mediaQ) ? mediaQ.length : 0;
+    const parts = []; if (q) parts.push(q + ' ' + t('net_q_rows')); if (m) parts.push(m + ' ' + t('net_q_media'));
+    if (parts.length) netLog('⏳ ' + t('net_queue') + ': ' + parts.join(', '), 'dim');
+  } finally {
+    _netRun = false;
+    const b2 = $('#net-run'); if (b2) b2.disabled = false;
+    netPillDraw();
+  }
 }
 let _netMo = null, _netMoT = null;
 function netInit(){
@@ -4735,7 +4864,6 @@ function viewHeader(){
   <div class="topbar">
     <div class="logo-wrap">
       <div class="logo clicky" role="button" tabindex="0" title="${t('tab_home')}" onclick="App.logoHome()"><span>TL</span></div>
-      ${netPillHtml()}
     </div>
     <div class="brand clicky" role="button" tabindex="0" title="${t('upd_checking')}" onclick="App.checkVerClick()">
       <div class="name">Tech<b>Log</b><span class="name-tag">${t('app_tag')}</span></div>
@@ -4743,13 +4871,15 @@ function viewHeader(){
     </div>
     <div class="rt-col">
       <div class="rt-row">
-      <button class="icon-btn hdr-srch" title="${t('srch_btn')}" aria-label="${t('srch_btn')}" onclick="App.searchOpen()">${ic('search')}</button>
       <span class="vm-inline" id="vm-slot" role="group">
         <button class="${vmCur()==='mobile'?'on':''}" onclick="App.setVm('mobile')" aria-label="${t('vm_phone')}" title="${t('vm_phone')}">${ICONS.phone}</button>
         <button class="${vmCur()==='desktop'?'on':''}" onclick="App.setVm('desktop')" aria-label="${t('vm_pc')}" title="${t('vm_pc')}">${ICONS.monitor}</button>
       </span>
       </div>
-      <div class="role-tag rt-${u.role}" title="${t('role_' + u.role)}">${t('role_' + u.role)}</div>
+      <div class="rt-row rt-role">
+        ${netPillHtml(1)}
+        <div class="role-tag rt-${u.role}" title="${t('role_' + u.role)}">${t('role_' + u.role)}</div>
+      </div>
     </div>
     <div class="avatar-wrap">
       <button class="avatar role-${u.role}" onclick="App.go('settings')" aria-label="${t('settings')}">${esc(initials(u.display_name))}</button>
@@ -4777,6 +4907,7 @@ function viewFooter(){
 function viewTabbar(){
   /* v1.08.39: у бухгалтера свой набор вкладок — без экранов правки документов */
   const items = isAcc() ? [
+    ['srch', ic('search'), t('srch_btn')],           // v1.08.45: глобальный поиск переехал из шапки в меню
     ['acc', ic('receipt'), t('tab_acc')],
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
@@ -4784,6 +4915,7 @@ function viewTabbar(){
     ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
   ] : [
+    ['srch', ic('search'), t('srch_btn')],           // v1.08.45: глобальный поиск переехал из шапки в меню
     ['home', ICONS.home, t('tab_home')],
     ...((isManager() || vmCur() === 'desktop') ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.49: воркеру — недельная доска в ПК-режиме
     ...(isManager() ? [['proposals', ICONS.prop, t('tab_proposals')]] : []),  // v1.07.27
@@ -4802,7 +4934,9 @@ function viewTabbar(){
   /* v1.08.23: у админа вкладок стало 12 — на узком экране подписи начинали
      наезжать на соседние кнопки и перехватывать нажатия. В тесной раскладке
      подпись обрезается и не выходит за свою кнопку. */
-  return `<nav class="tabbar${items.length > 11 ? ' tb-tight' : ''}">` + items.map(([id, ic, label]) => id === 'faq'
+  return `<nav class="tabbar${items.length > 11 ? ' tb-tight' : ''}">` + items.map(([id, ic, label]) => id === 'srch'
+    ? `<button class="tab hdr-srch" onclick="App.searchOpen()">${ic}<span>${label}</span></button>`
+    : id === 'faq'
     ? `<button class="tab" onclick="App.faq()">${ic}<span>${label}</span></button>`
     : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" onclick="App.go('${id}')">
       ${ic}<span>${label}</span>
@@ -6127,6 +6261,28 @@ async function restorePk(pid, jobId){
 /* =====================================================================
    ЭКРАН: ЛОГИН
    ===================================================================== */
+/* =====================================================================
+   v1.08.45 · «ГЛАЗИК» У ПОЛЕЙ ПАРОЛЯ
+   Кнопка в правом углу поля переключает видимость ввода: нажата — текст
+   виден постоянно, повторное нажатие снова прячет за точками.
+   ===================================================================== */
+function passEyeBtn(id){
+  return `<button type="button" class="pass-eye" tabindex="-1" title="${t('pass_show')}" aria-label="${t('pass_show')}" aria-pressed="false" onclick="App.passEye('${id}', this)">${ic('eye')}</button>`;
+}
+function passEyeToggle(id, btn){
+  const inp = $('#' + id); if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  if (btn){
+    btn.innerHTML = ic(show ? 'eye_off' : 'eye');
+    btn.classList.toggle('on', show);
+    btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+    const tt = t(show ? 'pass_hide' : 'pass_show');
+    btn.title = tt; btn.setAttribute('aria-label', tt);
+  }
+  inp.focus();
+}
+
 function viewLogin(){
   if (!HAS_SB){
     const users = (state.data?.profiles) || [];
@@ -6159,8 +6315,8 @@ function viewLogin(){
     <div id="auth-signin">
       <div class="form-row"><input id="li-login" placeholder="${t('login')}" autocomplete="username" autocapitalize="none"
           autofocus enterkeyhint="go" onkeydown="App.enterKey(event,'in')"></div>
-      <div class="form-row"><input id="li-pass" type="password" placeholder="${t('password')}" autocomplete="current-password"
-          enterkeyhint="go" onkeydown="App.enterKey(event,'in')"></div>
+      <div class="form-row pass-row"><input id="li-pass" type="password" placeholder="${t('password')}" autocomplete="current-password"
+          enterkeyhint="go" onkeydown="App.enterKey(event,'in')">${passEyeBtn('li-pass')}</div>
       <button class="btn btn-green" onclick="App.signIn()">${t('sign_in')}</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="App.authMode(true)">${t('no_acc')}</button>
       <button class="btn btn-ghost" style="margin-top:8px" onclick="App.tvStart()">${ic('tv')} ${t('tv_btn')}</button>
@@ -6171,8 +6327,8 @@ function viewLogin(){
       <div class="form-row"><input id="su-login" placeholder="${t('login')}" autocomplete="username" autocapitalize="none"
           onblur="App.loginCheck()" oninput="App.loginTyped()" enterkeyhint="go" onkeydown="App.enterKey(event,'up')">
         <div class="tiny" id="su-login-st">${t('login_hint')}</div></div>
-      <div class="form-row"><input id="su-pass" type="password" placeholder="${t('password')}" autocomplete="new-password"
-          onfocus="App.loginCheck()" enterkeyhint="go" onkeydown="App.enterKey(event,'up')"></div>
+      <div class="form-row pass-row"><input id="su-pass" type="password" placeholder="${t('password')}" autocomplete="new-password"
+          onfocus="App.loginCheck()" enterkeyhint="go" onkeydown="App.enterKey(event,'up')">${passEyeBtn('su-pass')}</div>
       <div class="form-row"><input id="su-invite" placeholder="${t('invite_code')}" autocapitalize="characters"
           enterkeyhint="go" onkeydown="App.enterKey(event,'up')"></div>
       <button class="btn btn-blue" onclick="App.signUp()">${t('sign_up')}</button>
@@ -8204,7 +8360,7 @@ const App = {
   accStaffOpen(id){ const f = accF(); f.staffOpen[id] = !f.staffOpen[id]; render(); },
   accType, accMark, accMarkAll, accSaveRates, accMapSet, accMapReset, accDoc, accPdf, accPdfBatch, accCsv,
   /* v1.08.38: офлайн-режим и спойлеры инвойса */
-  netCheck, netOff, netState: () => netState(), invSecAll, invSecToggle,
+  netCheck, netModal, netRunChecks, netOff, netState: () => netState(), invSecAll, invSecToggle,
   /* v1.08.37: режим телевизора */
   tvStart, tvCancel, tvNewCode, tvFsGo, tvFsExit,
   tvListRefresh, tvApprove, tvDeny, tvRevoke,
@@ -8356,7 +8512,7 @@ const App = {
   searchInput, searchKindSet, searchClear, searchOpenPk, logoHome, checkVerClick,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis, staffBlock, staffPassModal, staffSetPass,
-  staffAddModal, staffCreate, inviteSave, ownPassModal, ownPassSave,
+  staffAddModal, staffCreate, inviteSave, ownPassModal, ownPassSave, passEye: passEyeToggle,
   priceMode(v){ state.priceMode = v; render(); },
   priceCpSel(v){ state.priceCp = v; render(); },
   diag: showDiagnostics, copyDiag,
@@ -8734,6 +8890,53 @@ window.addEventListener('tl:viewmode', () => { try { render(); } catch(e){} });
   };
   window.addEventListener('pointerup', panEnd);
   window.addEventListener('pointercancel', panEnd);
+})();
+
+/* =====================================================================
+   v1.08.45 · SHIFT + КОЛЕСО = ГОРИЗОНТАЛЬНАЯ ПРОКРУТКА
+   Зажатый Shift (на Mac — та же клавиша ⇧) превращает колесо мыши в
+   горизонтальную прокрутку ближайшего контейнера с горизонтальным
+   скроллом: широкие таблицы (Бухгалтерия, Отчёты), лента недели,
+   вкладки справочников. Урок v1.07.67 соблюдён: блокирующий
+   (passive:false) обработчик wheel НЕ висит на документе постоянно —
+   он подключается по keydown Shift и снимается по keyup/blur, поэтому
+   обычная прокрутка идёт мимо JS, на потоке композитора. Доску не
+   трогаем — у неё свой обработчик колеса.
+   ===================================================================== */
+(function(){
+  'use strict';
+  let armed = false;
+  function findH(el){
+    for (let n = el; n && n !== document.body; n = n.parentElement){
+      if (!(n instanceof Element)) break;
+      if (n.classList.contains('board')) return null;          // у доски свой wheel
+      if (n.scrollWidth > n.clientWidth + 2){
+        const s = getComputedStyle(n);
+        if (s.overflowX === 'auto' || s.overflowX === 'scroll') return n;
+      }
+    }
+    return null;
+  }
+  function onWheel(e){
+    if (!e.shiftKey || e.ctrlKey || e.defaultPrevented) return;
+    const el = findH(e.target instanceof Element ? e.target : null);
+    if (!el) return;
+    let d = e.deltaX || e.deltaY;                              // Chrome с Shift кладёт значение в deltaX
+    if (e.deltaMode === 1) d *= 32;                            // «строки» → пиксели
+    if (!d) return;
+    const before = el.scrollLeft;
+    el.scrollLeft = before + d;
+    if (el.scrollLeft !== before) e.preventDefault();          // край — отдаём прокрутку странице
+  }
+  function arm(v){
+    if (v === armed) return;
+    armed = v;
+    if (v) document.addEventListener('wheel', onWheel, { passive: false, capture: true });
+    else document.removeEventListener('wheel', onWheel, { capture: true });
+  }
+  window.addEventListener('keydown', e => { if (e.key === 'Shift') arm(true); });
+  window.addEventListener('keyup',   e => { if (e.key === 'Shift') arm(false); });
+  window.addEventListener('blur',    () => arm(false));
 })();
 
 
@@ -11507,10 +11710,10 @@ function ownPassModal(){
   openModal(`
     ${modalHead(t('my_pass_title'), 'key')}
     ${HAS_SB ? '' : `<div class="note-green" style="margin-bottom:10px">${t('demo_only_sb')}</div>`}
-    <div class="form-row"><span class="lbl">${t('new_pass')}</span>
-      <input id="op-pass" type="password" autocomplete="new-password" placeholder="••••••"></div>
-    <div class="form-row"><span class="lbl">${t('pass_repeat')}</span>
-      <input id="op-pass2" type="password" autocomplete="new-password" placeholder="••••••"></div>
+    <div class="form-row pass-row"><span class="lbl">${t('new_pass')}</span>
+      <input id="op-pass" type="password" autocomplete="new-password" placeholder="••••••">${passEyeBtn('op-pass')}</div>
+    <div class="form-row pass-row"><span class="lbl">${t('pass_repeat')}</span>
+      <input id="op-pass2" type="password" autocomplete="new-password" placeholder="••••••">${passEyeBtn('op-pass2')}</div>
     <button class="btn btn-green" onclick="App.ownPassSave()" ${HAS_SB?'':'disabled'}>${t('save')}</button>
   `);
   setTimeout(()=>$('#op-pass')?.focus(), 50);
@@ -11960,7 +12163,7 @@ function faqHtml(){
     <div class="faq-example">${faqDayCardsExample()}</div>
     <p>Reading the sample: <b>7 jobs</b> are planned — Steam Clean 4, Air Duct 2, Vetvag 1. <b>8 equipment units</b> to collect — 5 blowers (BLW), 2 dehumidifiers (DHM) and 1 air scrubber (SCR) — and one pickup is already overdue. The numbers come from the same lists shown below on the screen: flip the strip to another day and the cards recalculate; for managers they respect the Mine/All filter.</p>
     <h4>${ic('refresh')} Sync, offline & updates</h4>
-    <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android and iPhone (see the iPhone section below), works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode. <b>Offline mode (v1.08.38):</b> the pill under the TL logo shows the connection — green “NN ms” is the server ping, red “offline” means no network, yellow “no server” means the network is up but Supabase is not answering; tap it to re-check. Invoices, tasks, photos and videos, pickups, proposals and repairs keep working without a connection: every write is queued on the device and sent automatically when the network returns, followed by a silent sync. Buttons that need a live server (sync, sign-in, approvals via RPC, stock operations, staff, Drive, backups, push, 2FA, TV, Bouncie, translation, routes) turn faded and show a hint instead of acting.</p>
+    <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android and iPhone (see the iPhone section below), works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode. <b>Offline mode (v1.08.38):</b> the connection badge in the header (left of the role) shows the state — green “NN ms” is the server ping, orange “unstable” means ping of 500 ms and up, red “offline” means no network, yellow “no server” means the network is up but Supabase is not answering; tapping it opens the “Connection check” window with a per-service check (internet, Google Drive, maps; admin and manager also see Bouncie, GitHub and Cloudflare). Invoices, tasks, photos and videos, pickups, proposals and repairs keep working without a connection: every write is queued on the device and sent automatically when the network returns, followed by a silent sync. Buttons that need a live server (sync, sign-in, approvals via RPC, stock operations, staff, Drive, backups, push, 2FA, TV, Bouncie, translation, routes) turn faded and show a hint instead of acting.</p>
     <h4>${ic('phone')} iPhone & iPad (iOS)</h4>
     <p><b>Install:</b> in Safari tap <b>Share → “Add to Home Screen”</b> — unlike Android there is no automatic prompt, so the app shows its own banner with step-by-step instructions on the Home screen (and a button in Settings). Sign in again after installing: the Home-Screen app has <b>its own storage</b>, separate from the Safari tab. Installing is worth it: Safari wipes a site’s local data (session, offline cache, an unsaved draft) after <b>7 days</b> of using the browser without visiting the site, while the installed app keeps them for as long as you use it; don’t work in Private Browsing — nothing there survives closing the tab. <b>Routes</b> open in <b>Apple Maps</b>: the multi-stop “Day route” needs iOS 18.4+, older systems open only the final stop — a limitation of Apple’s URL scheme; if you prefer Google Maps, switch in Settings → “Navigation app”. <b>PDF invoices</b> (single and batch) go through the system <b>Share sheet</b> — “Save to Files”, AirDrop or mail; inside an installed web-app this is the only reliable way. <b>Dictation:</b> the in-app mic button is hidden on iOS — use the <b>🎤 key on the keyboard</b>, it types RU and EN into any field; the “Translate to EN” button works as usual. <b>Minimizing is safe:</b> iOS freezes background apps aggressively, so every save goes into a queue and is re-sent automatically when you return to the app, the network comes back or a sync runs — the queue counter shows in Settings and Diagnostics. There is no vibration feedback — iOS doesn’t allow it for web apps.</p>
     <h4>${ic('map')} Map</h4>
@@ -12019,7 +12222,7 @@ function faqHtml(){
     <h4>${ic('camera')} Фото и видео работ</h4>
     <p>В карточке работы есть блок <b>«Фото и видео»</b>: съёмка идёт прямо из приложения, фото сжимается до 1920 px, видео принимается длиной до 90 секунд. Рядом с заголовком счётчик — сколько уже прикреплено из лимита. <b>Лимиты задаёт администратор</b>: «Настройки» → «Лимиты фото и видео на документ», два степпера (по умолчанию <b>10 фото и 2 видео</b>; фото 1–50, видео 0–10). Лимит общий для всех документов, его проверяет сервер — из браузера обойти нельзя; при значении «видео 0» кнопка съёмки видео пропадает, а уже загруженные файлы сверх нового лимита остаются на месте. Файлы уходят в архив на <b>Google Диске</b> фирмы (миниатюры — в базе), раскладываются по папкам вида <i>2026-09</i>. Без сети всё копится в очереди на телефоне и уходит само при появлении связи: «Настройки» → «Неотправленные фото и видео» — там сводка по документам, журнал отправки построчно и кнопки «Повторить отправку» / «Проверка соединения». Когда на Диске остаётся <b>менее 15 % свободного места</b>, админ и менеджер видят красный баннер на главной; тот же показатель считается при «Тесте соединения» в настройках Диска и обновляется сам при загрузке файлов.</p>
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
-    <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим. <b>Офлайн-режим (v1.08.38):</b> пилюля под логотипом TL показывает связь — зелёная «NN мс» — пинг до сервера, красная «офлайн» — нет сети, жёлтая «нет сервера» — сеть есть, а Supabase не отвечает; нажмите, чтобы проверить заново. Инвойсы, задачи, фото и видео, пикапы, пропозалы и ремонты работают без связи: каждая запись ложится в очередь на устройстве и уходит сама, когда сеть вернётся, следом идёт тихий синк. Кнопки, которым нужен живой сервер (синхронизация, вход, апрувы через RPC, склад, штат, Диск, бэкапы, пуши, 2FA, ТВ, Bouncie, перевод, маршруты), становятся блеклыми и вместо действия показывают подсказку.</p>
+    <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим. <b>Офлайн-режим (v1.08.38):</b> бейдж связи в шапке (слева от роли) показывает состояние — зелёный «NN мс» — пинг до сервера, оранжевый «нестабильно» — пинг от 500 мс, красный «офлайн» — нет сети, жёлтый «нет сервера» — сеть есть, а Supabase не отвечает; нажатие открывает окно «Проверка связи» с построчной проверкой сервисов (интернет, Google Диск, карты; админу и менеджеру — ещё Bouncie, GitHub и Cloudflare). Инвойсы, задачи, фото и видео, пикапы, пропозалы и ремонты работают без связи: каждая запись ложится в очередь на устройстве и уходит сама, когда сеть вернётся, следом идёт тихий синк. Кнопки, которым нужен живой сервер (синхронизация, вход, апрувы через RPC, склад, штат, Диск, бэкапы, пуши, 2FA, ТВ, Bouncie, перевод, маршруты), становятся блеклыми и вместо действия показывают подсказку.</p>
     <h4>${ic('phone')} iPhone и iPad (iOS)</h4>
     <p><b>Установка:</b> в Safari «Поделиться» → <b>«На экран “Домой”»</b> — автоматической подсказки, как на Android, здесь нет, поэтому приложение само показывает баннер с пошаговой инструкцией на главном экране (и кнопку в Настройках). После установки войдите заново: у приложения на «Домой» <b>своё хранилище</b>, отдельное от вкладки Safari. Ставить стоит: вкладка Safari стирает локальные данные сайта (сессию, офлайн-кеш, несохранённый черновик) после <b>7 дней</b> пользования браузером без захода в TechLog, а установленное приложение хранит их, пока вы им пользуетесь; в приватном режиме не работайте — там ничего не переживает закрытия вкладки. <b>Маршруты</b> открываются в <b>Картах Apple</b>: мультиточечный «Маршрут дня» — с iOS 18.4, более старые системы откроют только конечную точку — это ограничение URL-схемы Apple; привычнее Google Maps — переключите в Настройках → «Навигатор». <b>PDF-инвойсы</b> (одиночные и пакетные) уходят через системное окно <b>«Поделиться»</b> — «Сохранить в Файлы», AirDrop, почта; в установленном веб-приложении это единственный надёжный путь. <b>Диктовка:</b> своя кнопка микрофона на iOS скрыта — используйте <b>🎤 на клавиатуре</b> iPhone, она печатает RU и EN в любое поле; кнопка «Перевести на EN» работает как обычно. <b>Сворачивать не страшно:</b> iOS жёстко замораживает фоновые приложения, поэтому каждое сохранение попадает в очередь и досылается само при возврате в приложение, появлении сети или синхронизации — счётчик очереди виден в Настройках и Диагностике. Вибрации нет — iOS не даёт её веб-приложениям.</p>
     <h4>${ic('map')} Карта</h4>
