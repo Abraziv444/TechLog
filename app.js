@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.46';
+const APP_VERSION = '1.08.47';
 const DB_SQL_FILE = 'full-install-1_08_39.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -743,6 +743,23 @@ const I18N = {
     jr_arch_done: 'Журнал заархивирован: {N} строк · файл скачан', jr_arch_drive_ok: 'копия на Диске',
     jr_arch_drive_no: 'на Диск не ушло: {E}', jr_arch_need_net: 'Для архивации нужна связь с сервером',
     jr_arch_mark: 'записи старше — в архиве ({N} строк, файл {F})',
+    /* v1.08.47 · видео и доставка */
+    vid_card_t: 'Видео при отправке', vid_orig: 'Как снято', vid_1080: '1080p', vid_720: '720p',
+    vid_hint: 'Сжатие делает железный кодировщик самого телефона (WebCodecs): картинка пересчитывается в H.264 (1080p ≈ 4 Мбит/с, 720p ≈ 2.5), звук переносится в копии, без пережатия. Не умеет телефон или что-то пошло не так — молча уйдёт оригинал: ролик не потеряется. Рекомендуем 1080p.',
+    vid_test: 'Проверить сжатие', vid_test_run: 'Проверяю кодировщик…',
+    vid_test_ok: 'Сжатие работает: пробный ролик {A} → {B} КБ',
+    vid_test_no: 'Сжатие недоступно ({E}) — видео будут уходить как сняты',
+    vid_test_webm: 'Пробную запись телефон отдал в webm — по нему сжатие не проверить. Ролики родной камеры (mp4) сжимаются как обычно: снимите короткое видео в документ и посмотрите журнал отправки.',
+    mq_st_shrink: 'сжатие', mq_l_shrink: 'сжатие',
+    mq_l_shr_ok: 'сжато {A} → {B} МБ', mq_l_shr_no: 'сжать не вышло — отправляю оригинал',
+    mq_l_shr_skip: 'ролик и так компактный — отправляю как есть',
+    mq_l_sess_dead: 'сессия Диска протухла — открываю новую и продолжаю',
+    mq_l_no_relay: 'обходной путь этому файлу не положен (видео и крупные фото — только напрямую) — жду прямой',
+    mq_l_relay_cap: 'обходной путь: 10 фото за день уже ушло — остальное ждёт прямой',
+    mq_l_vid_big: 'ролик {N} МБ, лимит 120 — сожму и отправлю снова',
+    copy_dl_chk: 'Копию снятого — в «Загрузки»',
+    copy_dl_hint: 'Снятое кнопками «Камера» и «Видео» (когда открывается сразу камера) сохраняется файлом в «Загрузки» телефона: даже если очередь пропадёт, оригинал под рукой. Выбранное из галереи и так лежит на телефоне, его не дублируем.',
+    copy_dl_err: 'Копия в «Загрузки» не сохранилась — разрешите сайту скачивать несколько файлов',
     mq_empty: 'Всё отправлено', mq_later: 'Позже', mq_doc: 'Документ',
     mq_net_on: 'сеть: онлайн', mq_net_off: 'сеть: офлайн', mq_sb_fail: 'сервер недоступен',
     mq_log: 'Журнал отправки', mq_l_wait: 'ожидание действий…',
@@ -1680,6 +1697,23 @@ const I18N = {
     jr_arch_done: 'Journal archived: {N} lines · file downloaded', jr_arch_drive_ok: 'copy on Drive',
     jr_arch_drive_no: 'Drive copy failed: {E}', jr_arch_need_net: 'Archiving needs a server connection',
     jr_arch_mark: 'older entries are archived ({N} lines, file {F})',
+    /* v1.08.47 · video & delivery */
+    vid_card_t: 'Video on upload', vid_orig: 'As shot', vid_1080: '1080p', vid_720: '720p',
+    vid_hint: 'Compression is done by the phone\'s own hardware encoder (WebCodecs): the picture is re-encoded to H.264 (1080p ≈ 4 Mbps, 720p ≈ 2.5), the audio track is copied untouched. If the phone can\'t, the original is sent silently — the clip is never lost. 1080p recommended.',
+    vid_test: 'Test compression', vid_test_run: 'Checking the encoder…',
+    vid_test_ok: 'Compression works: test clip {A} → {B} KB',
+    vid_test_no: 'Compression unavailable ({E}) — videos will upload as shot',
+    vid_test_webm: 'The phone recorded the test clip as webm, which this check can\'t use. Native-camera clips (mp4) compress as usual: shoot a short video into a document and watch the send log.',
+    mq_st_shrink: 'compress', mq_l_shrink: 'compressing',
+    mq_l_shr_ok: 'compressed {A} → {B} MB', mq_l_shr_no: 'compression failed — sending the original',
+    mq_l_shr_skip: 'clip is already compact — sending as is',
+    mq_l_sess_dead: 'Drive session expired — opening a new one and continuing',
+    mq_l_no_relay: 'relay is not allowed for this file (video and large photos go direct only) — waiting for the direct path',
+    mq_l_relay_cap: 'relay: 10 photos already sent today — the rest waits for the direct path',
+    mq_l_vid_big: 'clip is {N} MB, limit is 120 — compressing and retrying',
+    copy_dl_chk: 'Save a copy to Downloads',
+    copy_dl_hint: 'Anything shot with the Camera/Video buttons (when the camera opens directly) is saved as a file to the phone\'s Downloads: even if the queue is wiped, the original is at hand. Gallery picks already live on the phone and are not duplicated.',
+    copy_dl_err: 'Could not save a copy to Downloads — allow the site to download multiple files',
     mq_empty: 'Everything uploaded', mq_later: 'Later', mq_doc: 'Document',
     mq_net_on: 'network: online', mq_net_off: 'network: offline', mq_sb_fail: 'server unreachable',
     mq_log: 'Upload log', mq_l_wait: 'waiting for actions…',
@@ -8646,6 +8680,13 @@ const App = {
   },
   /* v1.07.77: съёмка */
   camMode(v){ camSet('mode', v); dlog('камера: режим ' + v); render(); },
+  vidMode(v){ mVidModeSet(v); dlog('видео: ' + v); },              // v1.08.47
+  copyDl(v){ mCopyDlSet(v); },                                     // v1.08.47
+  vidTest: mVidTest,                                               // v1.08.47
+  /* v1.08.47: крючки для автотестов — политика доставки без сети */
+  _mt: { relayOk: (...a) => mRelayOk(...a), relayDay: () => mRelayDay(),
+         saveCopy: f => mSaveCopy(f), vidCan: () => mVidCan(),
+         shrink: (it, cb) => mVidShrink(it, cb) },
   camQ(v){ camSet('q', v); dlog('камера: качество ' + v); render(); },
   camSharp(v){ camSet('sharp', v ? '1' : '0'); render(); },
   gdToggleEdit, gdReveal, gdCopy, gdMove,
@@ -15543,6 +15584,366 @@ const M_VMAX = 90, M_CHUNK = 8 * 1024 * 1024;
    у которой ограничение на размер запроса. Кратно 256 КБ, как требует Google. */
 const M_CHUNK_RELAY = 4 * 1024 * 1024;
 let _mediaRelay = false;          // включается сам, когда прямой PUT не проходит
+/* =====================================================================
+   v1.08.47 · ПОЛИТИКА ДОСТАВКИ
+   Видео и «тяжёлые» фото уходят ТОЛЬКО прямым путём в Google: обходной
+   сервер-посредник (media-put) им не положен вовсе — при сбое файл ждёт
+   в очереди, а прямая сессия возобновляемая, докачается с места обрыва.
+   Посредник разрешён одним лишь сильно сжатым фото (до ~250 КБ) и не
+   больше десяти штук в день: страховка для сетей, где googleapis.com
+   закрыт, без прокачивания мегабайтов через функции Supabase. Остальные
+   фото сверх лимита спокойно ждут прямого пути в очереди.
+   ===================================================================== */
+const M_RELAY_MAX = 250 * 1024, M_RELAY_DAY = 10;
+function mRelayDay(){
+  try{ const j = JSON.parse(localStorage.getItem('techlog_relay_day') || '{}');
+       return j.d === todayISO() ? (j.n | 0) : 0; }catch(e){ return 0; }
+}
+function mRelayBump(){
+  try{ localStorage.setItem('techlog_relay_day',
+    JSON.stringify({ d: todayISO(), n: mRelayDay() + 1 })); }catch(e){}
+}
+function mRelayOk(it){
+  return it && it.kind === 'photo' && it.blob && it.blob.size <= M_RELAY_MAX
+      && mRelayDay() < M_RELAY_DAY;
+}
+/* v1.08.47: личные настройки видео (живут на устройстве, как качество фото) */
+function mVidMode(){
+  try{ const v = localStorage.getItem('techlog_vid_mode');
+       return v === 'orig' || v === '720' || v === '1080' ? v : '1080'; }catch(e){ return '1080'; }
+}
+function mVidModeSet(v){ try{ localStorage.setItem('techlog_vid_mode', v); }catch(e){} render(); }
+function mVidTarget(){ return mVidMode() === '720' ? { h: 720, vbr: 2500000 } : { h: 1080, vbr: 4000000 }; }
+function mVidCan(){
+  return typeof VideoEncoder !== 'undefined' && typeof VideoDecoder !== 'undefined'
+      && typeof OffscreenCanvas !== 'undefined';
+}
+function mCopyDl(){ try{ return localStorage.getItem('techlog_copy_dl') !== '0'; }catch(e){ return true; } }
+function mCopyDlSet(v){ try{ localStorage.setItem('techlog_copy_dl', v ? '1' : '0'); }catch(e){} render(); }
+/* Копия снятого в «Загрузки» телефона: то, что пришло из камеры с
+   capture (в галерею такие кадры на многих телефонах НЕ попадают). */
+function mSaveCopy(f){
+  try{
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(f);
+    const dot = f.name ? f.name.lastIndexOf('.') : -1;
+    const ext = dot > 0 ? f.name.slice(dot)
+      : (String(f.type).startsWith('video') ? '.mp4' : '.jpg');
+    const d = new Date(), z = n => String(n).padStart(2, '0');
+    a.download = 'TL_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate())
+      + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + ext;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 8000);
+  }catch(e){ dlog('⛔ copy dl:', e); toast('⚠ ' + t('copy_dl_err'), 'err'); }
+}
+/* =====================================================================
+   v1.08.47 · СЖАТИЕ ВИДЕО (WebCodecs, в воркере)
+   Ролик из родной камеры пережимается железным кодировщиком телефона:
+   картинка → H.264 (1080p ≈ 4 Мбит/с или 720p ≈ 2.5), звук — копией
+   дорожки AAC, без пережатия. Демукс и сборка mp4 — vendor/mp4box и
+   vendor/mp4-muxer; их текст читается через кэш service worker и
+   склеивается с кодом ниже в один blob-воркер (importScripts из
+   blob-воркера мимо кэша, офлайн бы не работал).
+   Железобетонность: ЛЮБАЯ ошибка/таймаут/неподдержка → воркер гасится,
+   исходный blob остаётся в очереди нетронутым и уходит оригиналом.
+   ===================================================================== */
+const VID_WORKER_SRC = String.raw`
+var MP4 = self.MP4Box, MX = self.Mp4Muxer;
+var DS = (typeof DataStream !== 'undefined' && DataStream)
+      || (MP4 && MP4.DataStream);   /* браузерная сборка mp4box кладёт DataStream глобально */
+function vDesc(mp4, id){                       /* avcC/hvcC/vpcC без заголовка бокса */
+  var trak = mp4.getTrackById(id);
+  var es = trak.mdia.minf.stbl.stsd.entries;
+  for (var i = 0; i < es.length; i++){
+    var b = es[i].avcC || es[i].hvcC || es[i].vpcC || es[i].av1C;
+    if (b){ var ds = new DS(undefined, 0, DS.BIG_ENDIAN); b.write(ds);
+            return new Uint8Array(ds.buffer, 8, ds.position - 8); }
+  }
+  return null;
+}
+function aDesc(mp4, id){                       /* AudioSpecificConfig из esds (tag 5) */
+  try{
+    var e0 = mp4.getTrackById(id).mdia.minf.stbl.stsd.entries[0];
+    var dsi = null;
+    (function walk(d){ if (!d || dsi) return;
+      if (d.tag === 5 && d.data) { dsi = d.data; return; }
+      var kids = (d.descs || []).concat(d.esd ? [d.esd] : []);
+      for (var i = 0; i < kids.length; i++) walk(kids[i]);
+    })(e0 && e0.esds);
+    return dsi ? new Uint8Array(dsi) : null;
+  }catch(e){ return null; }
+}
+function rotOf(mp4, id){                       /* поворот из матрицы tkhd (16.16) */
+  try{
+    var m = mp4.getTrackById(id).tkhd.matrix;
+    var a = m[0] | 0, b = m[1] | 0, c = m[3] | 0, d = m[4] | 0;
+    if (a === 0 && d === 0) return (b > 0 && c < 0) ? 90 : 270;
+    if (a < 0 && d < 0) return 180;
+  }catch(e){}
+  return 0;
+}
+function even(n){ n = Math.round(n); return n - (n % 2); }
+self.onmessage = function(ev){
+  var blob = ev.data.blob, target = ev.data.target;
+  var post = function(m, tr){ self.postMessage(m, tr || []); };
+  var fail = function(e){ post({ err: String(e && e.message || e).slice(0, 160) }); };
+  try{
+    if (!MP4 || !DS || !MX) return fail(new Error('libs'));
+    var mp4 = MP4.createFile();
+    var vTrk = null, aTrk = null, muxer = null, targetBuf = null;
+    var dec = null, enc = null, canvas = null, ctx = null;
+    var rot = 0, outW = 0, outH = 0, fps = 30, kfEvery = 60, encN = 0;
+    var vDone = 0, vTotal = 1, dur = 1, finishV, finishA, ready;
+    var pV = new Promise(function(r){ finishV = r; });
+    var pA = new Promise(function(r){ finishA = r; });
+    var pR = new Promise(function(r){ ready = r; });
+    var deadErr = null;
+    var die = function(e){ if (!deadErr){ deadErr = e; try{ dec && dec.close(); }catch(_e){}
+      try{ enc && enc.close(); }catch(_e){} finishV(); finishA(); ready(); } };
+
+    mp4.onError = function(e){ die(new Error('demux: ' + e)); };
+    mp4.onReady = function(info){
+      try{
+        vTrk = (info.videoTracks || [])[0];
+        aTrk = (info.audioTracks || [])[0];
+        if (!vTrk) return die(new Error('no video track'));
+        dur = Math.max(0.5, (info.duration || vTrk.movie_duration || 0)
+          / (info.timescale || 1000));
+        vTotal = vTrk.nb_samples || 1;
+        fps = Math.min(60, Math.max(10, Math.round(vTotal / dur))) || 30;
+        kfEvery = Math.max(10, Math.round(fps * 2));
+        rot = rotOf(mp4, vTrk.id);
+        var sw = vTrk.video ? vTrk.video.width : vTrk.track_width;
+        var sh = vTrk.video ? vTrk.video.height : vTrk.track_height;
+        var dw = rot % 180 ? sh : sw, dh = rot % 180 ? sw : sh;
+        var k = Math.min(1, target.h / dh);
+        outW = even(dw * k); outH = even(dh * k);
+        /* уже компактный: не выше цели и укладывается в целевой битрейт */
+        if (dh <= target.h + 8 && /^avc1/.test(vTrk.codec)
+            && blob.size <= dur * target.vbr / 8 * 1.25){
+          post({ skip: 1 }); deadErr = new Error('skip'); finishV(); finishA(); ready();
+          return;
+        }
+        var desc = vDesc(mp4, vTrk.id);
+        var dcfg = { codec: vTrk.codec, codedWidth: sw, codedHeight: sh,
+                     hardwareAcceleration: 'no-preference' };
+        if (desc) dcfg.description = desc;
+        /* Лестница кодеков: H.264 в приоритете (совместимость), последней
+           ступенью VP9 — на случай сборки браузера без проприетарных
+           кодеков; mp4 с VP9 Диск и плеер понимают. */
+        var ladder = (target.h >= 1080
+          ? ['avc1.640028', 'avc1.4d0028', 'avc1.42002a']
+          : ['avc1.4d001f', 'avc1.42001f', 'avc1.640028'])
+          .concat(['vp09.00.41.08']);
+        var pickEnc = function(i){
+          if (i >= ladder.length) return Promise.reject(new Error('no encoder'));
+          var isVp = ladder[i].indexOf('vp09') === 0;
+          var cfg = { codec: ladder[i], width: outW, height: outH,
+                      bitrate: target.vbr, framerate: fps, latencyMode: 'quality' };
+          if (!isVp) cfg.avc = { format: 'avc' };
+          return VideoEncoder.isConfigSupported(cfg).then(function(s){
+            return s.supported ? { cfg: cfg, mcodec: isVp ? 'vp9' : 'avc' } : pickEnc(i + 1);
+          }, function(){ return pickEnc(i + 1); });
+        };
+        VideoDecoder.isConfigSupported(dcfg).then(function(s){
+          if (!s.supported) throw new Error('decode ' + vTrk.codec);
+          return pickEnc(0);
+        }).then(function(pick){
+          var ecfg = pick.cfg;
+          var mo = { target: new MX.ArrayBufferTarget(), fastStart: 'in-memory',
+                     video: { codec: pick.mcodec, width: outW, height: outH } };
+          if (aTrk) mo.audio = { codec: 'aac',
+            sampleRate: aTrk.audio ? aTrk.audio.sample_rate : 44100,
+            numberOfChannels: aTrk.audio ? aTrk.audio.channel_count : 2 };
+          muxer = new MX.Muxer(mo);
+          targetBuf = mo.target;
+          canvas = new OffscreenCanvas(outW, outH);
+          ctx = canvas.getContext('2d');
+          enc = new VideoEncoder({
+            output: function(chunk, meta){ try{ muxer.addVideoChunk(chunk, meta); }
+              catch(e){ die(e); } },
+            error: function(e){ die(e); }
+          });
+          enc.configure(ecfg);
+          dec = new VideoDecoder({
+            output: function(frame){
+              try{
+                if (deadErr){ frame.close(); return; }
+                ctx.save();
+                if (rot === 90){ ctx.translate(outW, 0); ctx.rotate(Math.PI / 2); }
+                else if (rot === 180){ ctx.translate(outW, outH); ctx.rotate(Math.PI); }
+                else if (rot === 270){ ctx.translate(0, outH); ctx.rotate(-Math.PI / 2); }
+                var w = rot % 180 ? outH : outW, h = rot % 180 ? outW : outH;
+                ctx.drawImage(frame, 0, 0, w, h);
+                ctx.restore();
+                var vf = new VideoFrame(canvas, { timestamp: frame.timestamp,
+                                                 duration: frame.duration || undefined });
+                enc.encode(vf, { keyFrame: encN % kfEvery === 0 });
+                encN++; vf.close();
+              }catch(e){ die(e); }
+              frame.close();
+              vDone++;
+              if (!(vDone % 15)) post({ pct: Math.min(97, Math.round(vDone * 95 / vTotal)) });
+              if (vDone >= vTotal) finishV();
+            },
+            error: function(e){ die(e); }
+          });
+          dec.configure(dcfg);
+          mp4.setExtractionOptions(vTrk.id, 'v', { nbSamples: 60 });
+          if (aTrk) mp4.setExtractionOptions(aTrk.id, 'a', { nbSamples: 200 });
+          else finishA();
+          ready();
+          mp4.start();
+        }).catch(die);
+      }catch(e){ die(e); }
+    };
+    var aCfgSent = false, aDone = 0, aTotal = 0;
+    mp4.onSamples = function(id, user, samples){
+      try{
+        if (deadErr) return;
+        if (user === 'v'){
+          for (var i = 0; i < samples.length; i++){
+            var s = samples[i];
+            dec.decode(new EncodedVideoChunk({
+              type: s.is_sync ? 'key' : 'delta',
+              timestamp: Math.round(s.cts * 1e6 / s.timescale),
+              duration: Math.round(s.duration * 1e6 / s.timescale),
+              data: s.data }));
+          }
+        } else {
+          if (!aTotal) aTotal = aTrk.nb_samples || 0;
+          for (var j = 0; j < samples.length; j++){
+            var a = samples[j];
+            var meta = null;
+            if (!aCfgSent){
+              aCfgSent = true;
+              var ad = aDesc(mp4, aTrk.id);
+              meta = { decoderConfig: { codec: aTrk.codec,
+                sampleRate: aTrk.audio ? aTrk.audio.sample_rate : 44100,
+                numberOfChannels: aTrk.audio ? aTrk.audio.channel_count : 2 } };
+              if (ad) meta.decoderConfig.description = ad;
+            }
+            muxer.addAudioChunkRaw(new Uint8Array(a.data),
+              a.is_sync ? 'key' : 'delta',
+              Math.round(a.cts * 1e6 / a.timescale),
+              Math.round(a.duration * 1e6 / a.timescale), meta || undefined);
+            aDone++;
+          }
+          if (aTotal && aDone >= aTotal) finishA();
+        }
+      }catch(e){ die(e); }
+    };
+
+    (async function(){
+      var CH = 8 * 1024 * 1024, off = 0;
+      while (off < blob.size){
+        var buf = await blob.slice(off, off + CH).arrayBuffer();
+        buf.fileStart = off;
+        off = mp4.appendBuffer(buf) || (off + buf.byteLength);
+        if (deadErr) break;
+        await pR.catch(function(){});
+        if (dec) while (dec.decodeQueueSize > 12 && !deadErr)
+          await new Promise(function(r){ setTimeout(r, 20); });
+        if (enc) while (enc.encodeQueueSize > 12 && !deadErr)
+          await new Promise(function(r){ setTimeout(r, 20); });
+      }
+      mp4.flush();
+      await pR;
+      if (deadErr) throw deadErr;
+      /* демукс отдал не всё поштучно? — добираем хвост декодера */
+      if (dec && dec.state === 'configured') await dec.flush().catch(function(){});
+      finishV();
+      await pV; await pA;
+      if (deadErr) throw deadErr;
+      if (enc && enc.state === 'configured') await enc.flush();
+      muxer.finalize();
+      var out = targetBuf.buffer;
+      post({ done: 1, buf: out }, [out]);
+    })().catch(function(e){
+      if (String(e && e.message) === 'skip') return;   /* уже отвечено */
+      fail(e);
+    });
+  }catch(e){ fail(e); }
+};
+`;
+/* Самопроверка на устройстве: короткий пробный ролик (canvas → MediaRecorder
+   в mp4, если телефон умеет) прогоняется через тот же путь сжатия. */
+async function mVidTest(){
+  toast('⏳ ' + t('vid_test_run'), 'inf');
+  try{
+    if (!mVidCan()){ toast('⚠ ' + t('vid_test_no').replace('{E}', 'WebCodecs'), 'err'); return; }
+    const mime = ['video/mp4;codecs=avc1', 'video/mp4']
+      .find(m => { try{ return MediaRecorder.isTypeSupported(m); }catch(e){ return false; } });
+    if (!mime){ toast('ℹ ' + t('vid_test_webm'), 'inf'); return; }
+    const c = document.createElement('canvas'); c.width = 640; c.height = 360;
+    const g = c.getContext('2d');
+    const rec = new MediaRecorder(c.captureStream(15), { mimeType: mime });
+    const parts = [];
+    rec.ondataavailable = e => { if (e.data && e.data.size) parts.push(e.data); };
+    const stopped = new Promise(r => { rec.onstop = r; });
+    rec.start(200);
+    const t0 = performance.now(); let hue = 0;
+    while (performance.now() - t0 < 1700){
+      g.fillStyle = 'hsl(' + ((hue += 9) % 360) + ',70%,45%)'; g.fillRect(0, 0, 640, 360);
+      g.fillStyle = '#fff'; g.font = '900 46px system-ui'; g.fillText('TechLog', 40, 200);
+      await new Promise(r => setTimeout(r, 66));
+    }
+    rec.stop(); await stopped;
+    const blob = new Blob(parts, { type: mime });
+    const r = await mVidShrink({ blob, dur: 2 }, () => {});
+    if (r && (r.blob || r.skip)){
+      const b = r.blob ? Math.round(r.blob.size / 1024) : Math.round(blob.size / 1024);
+      toast('✓ ' + t('vid_test_ok').replace('{A}', Math.round(blob.size / 1024)).replace('{B}', b));
+    } else toast('⚠ ' + t('vid_test_no').replace('{E}', String(r && r.err || '?').slice(0, 50)), 'err');
+  }catch(e){
+    toast('⚠ ' + t('vid_test_no').replace('{E}', String(e.message || e).slice(0, 50)), 'err');
+  }
+}
+let _vidWkUrl = null, _vidLibsFail = '';
+async function mVidWorkerUrl(){
+  if (_vidWkUrl) return _vidWkUrl;
+  if (_vidLibsFail) throw new Error(_vidLibsFail);
+  try{
+    const base = new URL('.', location.href);
+    const [a, b] = await Promise.all([
+      fetch(new URL('vendor/mp4box.all.min.js', base)).then(r => {
+        if (!r.ok) throw new Error('mp4box ' + r.status); return r.text(); }),
+      fetch(new URL('vendor/mp4-muxer.js', base)).then(r => {
+        if (!r.ok) throw new Error('muxer ' + r.status); return r.text(); }),
+    ]);
+    /* UMD mp4box в воркере кладёт экспорт в self.MP4Box; muxer — self.Mp4Muxer */
+    _vidWkUrl = URL.createObjectURL(new Blob(
+      [a, '\n;self.MP4Box = self.MP4Box || (typeof MP4Box !== "undefined" ? MP4Box : null);\n',
+       b, '\n', VID_WORKER_SRC], { type: 'text/javascript' }));
+    return _vidWkUrl;
+  }catch(e){ _vidLibsFail = String(e.message || e); throw e; }
+}
+/* Пережать ролик очереди. Возвращает { blob } | { skip } | { err }.
+   Исходный it.blob НЕ трогается до успешного ответа. */
+async function mVidShrink(it, onPct){
+  try{
+    const url = await mVidWorkerUrl();
+    return await new Promise(resolve => {
+      let w = null;
+      const stop = res => { try{ w && w.terminate(); }catch(e){} clearTimeout(to); resolve(res); };
+      const to = setTimeout(() => stop({ err: 'timeout' }),
+        Math.min(6 * 60 * 1000, 20000 + (it.dur || 60) * 3000));
+      try{ w = new Worker(url); }catch(e){ return stop({ err: String(e.message || e) }); }
+      w.onerror = e => stop({ err: (e && e.message) || 'worker' });
+      w.onmessage = ev => {
+        const m = ev.data || {};
+        if (m.pct != null){ try{ onPct && onPct(m.pct); }catch(e){} return; }
+        if (m.skip) return stop({ skip: 1 });
+        if (m.err) return stop({ err: m.err });
+        if (m.done && m.buf && m.buf.byteLength)
+          return stop({ blob: new Blob([m.buf], { type: 'video/mp4' }) });
+        stop({ err: 'empty' });
+      };
+      w.postMessage({ blob: it.blob, target: mVidTarget() });
+    });
+  }catch(e){ return { err: String(e.message || e) }; }
+}
+
 const mIsNetErr = e => (e instanceof TypeError)
   || /failed to fetch|networkerror|network error|load failed/i.test(String(e && e.message || e));
 const mediaFN = () => (CFG.SUPABASE_URL || '') + '/functions/v1';
@@ -15904,7 +16305,7 @@ async function mediaEnqueueFile(jobId, f, kind){
       : t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video)), 'err');
     return false;
   }
-  let blob, thumb = null, mime;
+  let blob, thumb = null, mime, durV = 0;
   if (kind === 'photo'){
     const p = await mPrepPhoto(f);
     if (!p){                       /* браузер не открыл файл — уводим в документы */
@@ -15917,11 +16318,12 @@ async function mediaEnqueueFile(jobId, f, kind){
     const dur = await mVideoDur(f);
     if (dur > M_VMAX + 2){ toast('⚠ ' + t('media_vlong'), 'err'); return false; }
     blob = f; thumb = await mVideoThumb(f).catch(() => null); mime = f.type || 'video/mp4';
+    durV = Math.round(dur) || 0;                 // v1.08.47: таймаут сжатия считается от длины
   } else {
     if (f.size > M_FILE_BYTES){ toast('⚠ ' + t('media_file_big'), 'err'); return false; }
     blob = f; mime = f.type || 'application/octet-stream';
   }
-  const it = { qid: uid(), job_id: jobId, kind, mime, blob, thumb,
+  const it = { qid: uid(), job_id: jobId, kind, mime, blob, thumb, dur: durV,
     name: f.name || '', state: 'new', attempts: 0, at: Date.now() };
   mediaQ.push(it); await mQPut(it);
   return true;
@@ -15943,13 +16345,21 @@ function mediaFree(jobId, kind){
 }
 /* Общий разбор выбранных файлов: заглушки на полосе, по одному в задачу,
    чтобы не съесть память на слабом телефоне. */
-async function mediaTakeFiles(jobId, files, kind){
+async function mediaTakeFiles(jobId, files, kind, opts){
   if (!files.length) return;
   mPrepBusy(jobId, files.length);
   let added = 0;
   try{
     for (const f of files){
-      try{ if (await mediaEnqueueFile(jobId, f, kind || mKindOf(f))) added++; }
+      try{
+        if (await mediaEnqueueFile(jobId, f, kind || mKindOf(f))){
+          added++;
+          /* v1.08.47: снятое капчей (сразу камера) в галерею на многих
+             телефонах НЕ попадает — единственный экземпляр жил бы в очереди.
+             Копия уходит файлом в «Загрузки»; выбор из галереи не дублируем. */
+          if (opts && opts.cam && mCopyDl()) mSaveCopy(f);
+        }
+      }
       catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
       mPrepBusy(jobId, -1);
     }
@@ -16033,7 +16443,7 @@ function mediaPick(jobId, kind, src){
     const files = [...(inp.files || [])].slice(0, left);
     if (files.length < (inp.files || []).length)
       toast('⚠ ' + t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video), 'err');
-    mediaTakeFiles(jobId, files, kind);
+    mediaTakeFiles(jobId, files, kind, { cam: useCam });   // v1.08.47: капча → копия в «Загрузки»
     setTimeout(() => { try{ inp.remove(); }catch(e){} }, 1000);
   };
   /* v1.07.94: поле обязано жить В РАЗМЕТКЕ. Пока камера снимает, Android
@@ -16082,7 +16492,11 @@ function pickRestore(){
 const MQ_STUCK_DAYS = 7, MQ_STUCK_TRIES = 5;
 function mqStuck(){
   const edge = Date.now() - MQ_STUCK_DAYS * 864e5;
-  return mediaQ.filter(x => (+x.attempts || 0) >= MQ_STUCK_TRIES || (+x.at || Date.now()) < edge);
+  /* v1.08.47: видео из «зависших» исключено — политика «ролик ни в коем
+     случае не теряется»: он ждёт прямого пути сколько угодно. Убрать его
+     можно только вручную крестиком на самой плитке. */
+  return mediaQ.filter(x => x.kind !== 'video'
+    && ((+x.attempts || 0) >= MQ_STUCK_TRIES || (+x.at || Date.now()) < edge));
 }
 async function mediaQClean(){
   const bad = mqStuck();
@@ -16102,8 +16516,8 @@ async function mediaQDel(qid){
 /* ---------- отправка (докачка чанками) ---------- */
 /* v1.07.69: один кусок — напрямую в Google либо через media-put.
    Ответ приводим к одному виду: { status, range, id }. */
-async function mPutChunk(url, range, body){
-  if (!_mediaRelay){
+async function mPutChunk(url, range, body, viaRelay){
+  if (!viaRelay){
     const r = await fetch(url, { method: 'PUT', headers: { 'Content-Range': range }, body });
     const id = r.ok ? ((await r.json().catch(() => ({}))).id || '') : '';
     return { status: r.status, range: r.headers.get('Range') || '', id };
@@ -16118,10 +16532,22 @@ async function mPutChunk(url, range, body){
 }
 async function mPutResumable(it, onProg){
   const total = it.blob.size;
+  /* v1.08.47: посредник — решение ПО ФАЙЛУ, а не глобально: даже когда
+     прямой путь помечен сломанным, видео и крупные фото продолжают идти
+     напрямую (их обходной путь не положен политикой доставки). */
+  const viaRelay = _mediaRelay && mRelayOk(it);
+  it.relay_used = viaRelay;
+  /* Мёртвая сессия Google (404/410: ссылка старше недели или файл закрыт) —
+     не ошибка отправки, а сигнал открыть новую и продолжить. Ролик при
+     этом не теряется: blob лежит в очереди на устройстве. */
+  const dead = st => { if (st !== 404 && st !== 410) return;
+    it.upload_url = ''; it.started = false;
+    const e = new Error('session ' + st); e.code = 'SESSION_DEAD'; throw e; };
   let offset = 0;
   const prog = () => { try{ onProg && onProg(Math.min(100, Math.round(offset * 100 / total))); }catch(e){} };
   if (it.started){
-    const p = await mPutChunk(it.upload_url, `bytes */${total}`);
+    const p = await mPutChunk(it.upload_url, `bytes */${total}`, undefined, viaRelay);
+    dead(p.status);
     if (p.status === 308){
       /* Range через CORS может быть не виден — тогда льём с начала. */
       offset = p.range ? Number(p.range.split('-')[1]) + 1 : 0;
@@ -16129,10 +16555,11 @@ async function mPutResumable(it, onProg){
     } else if (p.id) return p.id;
   }
   while (offset < total){
-    const end = Math.min(offset + (_mediaRelay ? M_CHUNK_RELAY : M_CHUNK), total);
+    const end = Math.min(offset + (viaRelay ? M_CHUNK_RELAY : M_CHUNK), total);
     const r = await mPutChunk(it.upload_url, `bytes ${offset}-${end - 1}/${total}`,
-      it.blob.slice(offset, end));
+      it.blob.slice(offset, end), viaRelay);
     it.started = true; await mQPut(it);
+    dead(r.status);
     if (r.status === 308){ offset = end; prog(); continue; }
     if (r.id) return r.id;
     throw new Error('upload ' + r.status);
@@ -16180,16 +16607,50 @@ async function mediaFlush(verbose){
       idx++;
       /* v1.07.71: файл, который не удаётся отправить, перестаёт дёргать сервер
          каждые 30 секунд — ждёт кнопки «Повторить отправку». */
-      if (!verbose && (it.attempts || 0) >= 5) continue;
+      /* v1.08.47: видео не «залипает» после пяти срывов — прямая сессия
+         возобновляемая, ролик пробуется на каждом фоновом проходе. */
+      if (!verbose && it.kind !== 'video' && (it.attempts || 0) >= 5) continue;
       const tag = `${esc(mqLabel(it))} ${idx}/${list.length}`;
       const lid = lg(`⬆ ${tag} …`, 'dim');
       let stage = 'mq_st_begin';                 // v1.07.69: этап видно в ошибке
       try{
         const token = await mediaJwt(); if (!token){ lg('⛔ ' + t('mq_l_nosb'), 'err', lid); res.stopped = true; break; }
+        /* v1.08.47: видео пережимается один раз перед отправкой; итог
+           (сжато / оригинал / «и так компактный») запоминается в записи
+           очереди, чтобы не жевать ролик заново на каждом проходе. */
+        if (it.kind === 'video' && it.shr !== 1 && it.shr !== 'orig'
+            && (mVidMode() !== 'orig' || it.forceShr) && mVidCan()){
+          stage = 'mq_st_shrink';
+          lg(`🗜 ${tag} · ${t('mq_l_shrink')}…`, 'dim', lid);
+          const sr = await mVidShrink(it,
+            pct => lg(`🗜 ${tag} · ${t('mq_l_shrink')} ${pct}%`, 'dim', lid));
+          if (sr && sr.blob && sr.blob.size < it.blob.size){
+            const a = Math.round(it.blob.size / 104857.6) / 10,
+                  b = Math.round(sr.blob.size / 104857.6) / 10;
+            it.blob = sr.blob; it.mime = 'video/mp4'; it.shr = 1; delete it.forceShr;
+            it.upload_url = ''; it.started = false; delete it.media_id;   // размер сменился
+            await mQPut(it);
+            lg(`🗜 ${tag} — ${t('mq_l_shr_ok').replace('{A}', a).replace('{B}', b)}`, 'ok', lid);
+          } else if (sr && sr.skip){
+            it.shr = 'orig'; delete it.forceShr; await mQPut(it);
+            lg(`🗜 ${tag} — ${t('mq_l_shr_skip')}`, 'dim', lid);
+          } else {
+            it.shr = 'orig'; delete it.forceShr; await mQPut(it);
+            lg(`⚠ ${tag} — ${t('mq_l_shr_no')}${sr && sr.err ? ' (' + esc(String(sr.err).slice(0, 60)) + ')' : ''}`, 'warn', lid);
+          }
+        }
         if (!it.upload_url){
           try{ await mBeginUpload(it, token); }
           catch (e){
             const st = e.status;
+            if (st === 413 && it.kind === 'video' && it.shr !== 1 && mVidCan()){
+              /* v1.08.47: сервер не принял размер — ролик НЕ выбрасываем:
+                 помечаем «сжать принудительно», на следующем проходе он
+                 пережмётся и уйдёт. Оригинал в галерее/«Загрузках». */
+              lg(`⚠ ${tag} — ${t('mq_l_vid_big').replace('{N}', Math.round(it.blob.size / 1048576))}`, 'warn', lid);
+              it.forceShr = 1; it.shr = 0; it.error = 'TOO_BIG'; await mQPut(it);
+              res.fail++; continue;
+            }
             if (st === 409 || st === 403 || st === 413){
               await mediaQDel(it.qid); toast('⛔ ' + (e.message || st), 'err');
               lg(`⛔ ${tag} — ${t('mq_l_drop')} (${esc(String(e.message || st))})`, 'err', lid);
@@ -16209,16 +16670,30 @@ async function mediaFlush(verbose){
         let driveId;
         try{ driveId = await mPutResumable(it, onPct); }
         catch (e){
-          /* v1.07.69: браузер не смог достучаться до сессии Google (её открыли
-             без Origin, либо путь наружу закрыт). Переходим на сервер-посредник
-             и открываем сессию заново — старая ссылка могла быть выдана до
-             обновления сервера. */
-          if (!mIsNetErr(e) || _mediaRelay) throw e;
-          _mediaRelay = true;
-          lg(`⚠ ${tag} — ${t('mq_l_relay')}`, 'warn');
-          it.upload_url = ''; it.started = false; await mQPut(it);
-          await mBeginUpload(it, token);
-          driveId = await mPutResumable(it, onPct);
+          if (e.code === 'SESSION_DEAD'){
+            /* v1.08.47: ссылка докачки умерла (обычно ей больше недели) —
+               открываем новую сессию и заливаем заново. Файл цел в очереди. */
+            lg(`⚠ ${tag} — ${t('mq_l_sess_dead')}`, 'warn');
+            await mQPut(it);
+            await mBeginUpload(it, token);
+            driveId = await mPutResumable(it, onPct);
+          } else {
+            /* v1.07.69: браузер не смог достучаться до сессии Google (её
+               открыли без Origin, либо путь наружу закрыт). */
+            if (!mIsNetErr(e) || it.relay_used) throw e;
+            _mediaRelay = true;               // примета «прямой путь закрыт»
+            /* v1.08.47: посредник положен только мелким фото и не больше
+               десяти в день; видео и крупные фото ждут прямого пути. */
+            if (!mRelayOk(it)){
+              const capped = it.kind === 'photo' && it.blob.size <= M_RELAY_MAX;
+              lg(`⚠ ${tag} — ${t(capped ? 'mq_l_relay_cap' : 'mq_l_no_relay')}`, 'warn');
+              throw e;
+            }
+            lg(`⚠ ${tag} — ${t('mq_l_relay')}`, 'warn');
+            it.upload_url = ''; it.started = false; await mQPut(it);
+            await mBeginUpload(it, token);
+            driveId = await mPutResumable(it, onPct);
+          }
         }
         stage = 'mq_st_commit';
         if (it.thumb && it.thumb_path){
@@ -16248,6 +16723,7 @@ async function mediaFlush(verbose){
         if (it.thumb && it.thumb_path && !mediaThumbCache.has(it.thumb_path))
           mediaThumbCache.set(it.thumb_path, mqThumbUrl(it));
         mqThumbUrls.delete(it.qid);          // ссылка ушла в кеш миниатюр
+        if (it.relay_used && it.kind === 'photo') mRelayBump();   // v1.08.47: 10/день
         if (it.kind === 'video') res.video++; else res.photo++;
         lg(`✓ ${tag}`, 'ok', lid);
         mediaMarkDone(it.media_id, it.job_id);   // v1.07.75: зелёная галочка на плитке
@@ -17642,6 +18118,20 @@ function camCardHtml(){
       <b>${ic('camera')} ${t('cam_hdr_t')}</b>
       <div class="tiny">${t('cam_hdr_h')}</div>
     </div>
+    <div class="cam-set">
+      <b>${ic('play')} ${t('vid_card_t')}</b>
+      <div class="tiny">${t('vid_hint')}</div>
+      <div class="lang-seg cam-seg">
+        ${seg(mVidMode(), 'orig', t('vid_orig'), 'vidMode')}
+        ${seg(mVidMode(), '1080', t('vid_1080'), 'vidMode')}
+        ${seg(mVidMode(), '720', t('vid_720'), 'vidMode')}
+      </div>
+      <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.vidTest()">${ic('flask')} ${t('vid_test')}</button>
+    </div>
+    <label class="opt ${mCopyDl() ? 'on' : ''}" style="margin-top:10px">
+      <input type="checkbox" ${mCopyDl() ? 'checked' : ''} onchange="App.copyDl(this.checked)"> ${t('copy_dl_chk')}
+    </label>
+    <div class="tiny" style="margin-bottom:6px">${t('copy_dl_hint')}</div>
     <button class="btn btn-green sm" style="margin-top:10px" onclick="App.camNative()">${ic('camera')} ${t('cam_native_btn')}</button>
     <div class="tiny" style="margin:4px 0 6px">${t('cam_native_h')}</div>
     <label class="opt ${camUsmOn() ? 'on' : ''}">

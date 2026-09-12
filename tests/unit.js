@@ -1261,6 +1261,60 @@ console.log('\n— переезд на домен (v1.08.44) —');
     man.id === './' && man.scope === './' && String(man.start_url).startsWith('./'));
 }
 
+console.log('\n— v1.08.47: сжатие видео и политика доставки —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const sw = fs.readFileSync(ROOT + '/sw.js', 'utf8');
+  const vj = JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8'));
+  t('версии синхронны (app/sw/version.json = 1.08.47)',
+    /APP_VERSION = '1\.08\.47'/.test(src) && /VERSION = '1\.08\.47'/.test(sw) && vj.version === '1.08.47');
+  t('vendor-библиотеки в сборке', fs.existsSync(ROOT + '/vendor/mp4box.all.min.js')
+    && fs.existsSync(ROOT + '/vendor/mp4-muxer.js'));
+  t('vendor в прекэше service worker',
+    sw.includes("'./vendor/mp4box.all.min.js'") && sw.includes("'./vendor/mp4-muxer.js'"));
+  t('политика: посредник — фото ≤250 КБ и 10/день',
+    /M_RELAY_MAX = 250 \* 1024, M_RELAY_DAY = 10/.test(src)
+    && /it\.kind === 'photo' && it\.blob && it\.blob\.size <= M_RELAY_MAX/.test(src)
+    && /mRelayDay\(\) < M_RELAY_DAY/.test(src));
+  t('посредник решается по файлу, не глобально',
+    /const viaRelay = _mediaRelay && mRelayOk\(it\);/.test(src)
+    && /mPutChunk\(url, range, body, viaRelay\)/.test(src));
+  t('мёртвая сессия распознаётся и возрождается',
+    /e\.code = 'SESSION_DEAD'/.test(src) && /mq_l_sess_dead/.test(src)
+    && src.includes("if (e.code === 'SESSION_DEAD')"));
+  t('видео и крупным фото посредник не положен (строки журнала)',
+    /mq_l_no_relay/.test(src) && /mq_l_relay_cap/.test(src)
+    && /if \(!mRelayOk\(it\)\)\{/.test(src));
+  t('счётчик дня после успешной отправки через посредника',
+    src.includes("if (it.relay_used && it.kind === 'photo') mRelayBump();"));
+  t('413 для видео: пометить «сжать» вместо выбросить',
+    src.includes("st === 413 && it.kind === 'video'") && /it\.forceShr = 1/.test(src));
+  t('видео не хоронится после 5 срывов и не в «зависших»',
+    src.includes("it.kind !== 'video' && (it.attempts || 0) >= 5")
+    && src.includes("mediaQ.filter(x => x.kind !== 'video'"));
+  t('сжатие в очереди: один раз, итог запоминается',
+    src.includes("it.shr !== 1 && it.shr !== 'orig'") && /mq_l_shr_ok/.test(src)
+    && /mq_l_shr_skip/.test(src) && /mq_l_shr_no/.test(src));
+  t('воркер: поворот, звук копией, лестница кодеков с VP9-запаской',
+    /function rotOf\(/.test(src) && /d\.tag === 5 && d\.data/.test(src)
+    && /vp09\.00\.41\.08/.test(src) && /addAudioChunkRaw/.test(src)
+    && src.includes("avc = { format: 'avc' }"));
+  t('исходник в очереди не трогается до успеха сжатия',
+    src.includes('sr.blob.size < it.blob.size') && /Возвращает \{ blob \} \| \{ skip \} \| \{ err \}/.test(src));
+  t('копия в «Загрузки»: только снятое капчей, имя TL_',
+    src.includes('opts && opts.cam && mCopyDl()') && /'TL_' \+ d\.getFullYear/.test(src));
+  /* пункт «скрепка-картинка идёт путём фото» (работает с v1.07.76) —
+     теперь закреплено ассертом, а не только чтением кода */
+  t('скрепка: вид файла решает MIME (картинка→фото, видео→видео)',
+    src.includes("if (/^image\\//.test(ty)) return 'photo';")
+    && src.includes("if (/^video\\//.test(ty)) return 'video';")
+    && src.includes("mediaTakeFiles(jobId, [...(inp.files || [])], null)")
+    && src.includes('kind || mKindOf(f)'));
+  t('настройки: режим видео и копия — на устройстве',
+    /techlog_vid_mode/.test(src) && /techlog_copy_dl/.test(src)
+    && /'vidMode'\)/.test(src) && /vid_test/.test(src));
+}
+
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
   process.exit(bad ? 1 : 0);
 }
