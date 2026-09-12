@@ -52,7 +52,7 @@ function check(name, cond, extra) {
   check('контрагент подставлен', !!cpv, cpv);
   const crew = await p.locator('#rep-crew .chip-tech').count();
   check('бригада подставлена', crew > 0, crew + ' чел.');
-  check('источник — «На основе работы»', (await p.locator('.prop-wrap .tiny').first().textContent()).includes('На основе работы'));
+  check('источник — «На основе задачи»', (await p.locator('.prop-wrap .tiny').first().textContent()).includes('На основе задачи'));
 
   // подсказки «?»
   const tips = await p.locator('.tl-tip').count();

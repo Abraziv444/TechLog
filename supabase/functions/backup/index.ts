@@ -18,9 +18,14 @@ import { svc, userClient, CORS, jres, driveToken, driveConfig, monthFolder } fro
      ?run=1   — сделать бэкап сейчас. Права: админ (JWT) либо заголовок
                 x-cron-key = app_secrets.push_cron_key;
      ?list=1  — последние копии в папке (имя · дата · размер), админ.
+
+   v1.08.46 · POST {action:"journal", name, text} — кладёт текстовый
+   .log-архив журнала в <корень вложений>/journals (создаёт папку при
+   отсутствии; корень вложений — org_settings.gd_files_folder, при пустом
+   значении — папка Files внутри корневой gd_folder_id). Права: админ.
    ===================================================================== */
 
-const BK_VER = "1.08.33";
+const BK_VER = "1.08.46";
 type Sb = ReturnType<typeof svc>;
 
 const TABLES = [
@@ -132,9 +137,9 @@ async function listBackups(t: string, folderId: string) {
   return (r.files ?? []) as { id: string; name: string; createdTime: string; size?: string }[];
 }
 
-async function upload(t: string, folderId: string, name: string, body: string) {
+async function upload(t: string, folderId: string, name: string, body: string, mime = "application/sql") {
   const boundary = "tlbk" + crypto.randomUUID().slice(0, 8);
-  const meta = JSON.stringify({ name, parents: [folderId], mimeType: "application/sql" });
+  const meta = JSON.stringify({ name, parents: [folderId], mimeType: mime });
   const payload =
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n` +
     `--${boundary}\r\nContent-Type: application/sql\r\n\r\n${body}\r\n--${boundary}--`;
@@ -171,6 +176,29 @@ Deno.serve(async (req) => {
 
     const { data: ck } = await s.from("app_secrets").select("value").eq("key", "push_cron_key").maybeSingle();
     const byKey = !!ck?.value && req.headers.get("x-cron-key") === ck.value;
+
+    /* v1.08.46: архив журнала действий → Files/journals */
+    if (req.method === "POST") {
+      const b = await req.json().catch(() => null) as
+        { action?: string; name?: string; text?: string } | null;
+      if (b?.action === "journal") {
+        if (!(await isAdminReq(req, s))) return jres({ error: "FORBIDDEN" }, 403);
+        const name = String(b.name || "").replace(/[^\w.\-]+/g, "_").slice(0, 80) || "journal.log";
+        const text = String(b.text || "");
+        if (!text || text.length > 8 * 1024 * 1024) return jres({ error: "BAD_TEXT" }, 400);
+        const t = await driveToken();
+        const { data: org } = await s.from("org_settings")
+          .select("gd_files_folder").limit(1).maybeSingle();
+        const filesRoot = String(org?.gd_files_folder ?? "").match(/[-\w]{20,}/)?.[0] || "";
+        const cfg = await driveConfig();
+        const rootId = cfg.gd_folder_id.match(/[-\w]{20,}/)?.[0] ?? cfg.gd_folder_id;
+        const parent = filesRoot || await monthFolder(t, rootId, "Files");
+        const folder = await monthFolder(t, parent, "journals");   // найти/создать по имени
+        const up = await upload(t, folder, name, text, "text/plain");
+        return jres({ ok: true, name, id: up?.id ?? null, kb: Math.max(1, Math.round(text.length / 1024)) });
+      }
+      return jres({ error: "BAD_REQUEST" }, 400);
+    }
 
     if (url.searchParams.get("list")) {
       if (!byKey && !(await isAdminReq(req, s))) return jres({ error: "FORBIDDEN" }, 403);

@@ -1439,7 +1439,14 @@ html.tl-pop-side .mq-pop{left:auto;right:12px;transform:none}
 .mq-mini .mq-mini-h{display:flex;align-items:center;gap:6px;color:var(--dim);
   font-family:inherit;margin-bottom:3px}
 .mq-mini .mq-mini-x{margin-left:auto;color:var(--blue)}
-.mq-mini .mq-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:1px 0}
+.mq-mini .mq-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:1px 0;display:block}
+.mq-mini .mq-l .m{display:inline;white-space:inherit}
+/* v1.08.46: полоска отправки — тоже «поповер» и слушает общую настройку:
+   «сверху» (по умолчанию) — под шапкой, «снизу» — над таббаром, «сбоку» —
+   справа сверху узкой колонкой. Раньше висела снизу при любой настройке. */
+html.tl-pop-top .mq-mini{ bottom:auto; top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px) }
+html.tl-pop-side .mq-mini{ bottom:auto; top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px);
+  left:auto; right:12px; max-width:340px; margin:0 }
 .mq-mini .ok{color:var(--green-hi)} .mq-mini .err{color:var(--red)}
 /* пока мини-журнал на экране, тосты поднимаются над ним */
 html.tl-pop-bottom body.has-mq-mini #toasts{bottom:calc(env(safe-area-inset-bottom,0px) + 178px)}
@@ -1460,10 +1467,13 @@ html.tl-pop-bottom body.has-mq-mini #toasts{bottom:calc(env(safe-area-inset-bott
    на 320px и на любом экране при увеличенном шрифте.
    ===================================================================== */
 .btn-rowpp{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}
-/* overflow-wrap:anywhere не переносит подписи в обычной жизни — он лишь
-   разрешает разорвать слово, когда места действительно нет. Без него
-   длинное «ПОДКЛЮЧИТЬ» держало колонку шире экрана при крупном шрифте. */
-.btn{min-width:0;overflow-wrap:anywhere}
+/* v1.08.46: было overflow-wrap:anywhere (страховка 1.08.41 от вылезания
+   «ПОДКЛЮЧИТЬ» при крупном шрифте), но anywhere участвует в расчёте
+   min-content и рвал слово посреди уже при обычном шрифте: в модалке
+   очереди «ПОВТОРИТЬ ОТПРАВКУ» превращалось в «ПОВТОРИТ / Ь / ОТПРАВКУ» —
+   тот самый «вертикальный текст». break-word переносит целыми словами и
+   рвёт слово только когда оно САМО шире кнопки — страховка сохранена. */
+.btn{min-width:0;overflow-wrap:break-word}
 .btn > svg{flex:none}
 .grid-2 > *, .grid-3 > *{min-width:0}
 @media (max-width:360px){
@@ -2189,6 +2199,35 @@ button.net-pill::after{ content:"";position:absolute;left:-2px;right:-2px;top:-4
 .net-pill.slow{ color:var(--orange);border-color:var(--orange) }
 .net-pill.slow::before{ background:var(--orange);box-shadow:0 0 5px var(--orange) }
 @media (max-width:380px){ .net-pill{ font-size:.5rem;padding:1px 5px;gap:3px;min-width:86px } }
+/* v1.08.46: жёлтый баннер «Ждут апрува» на главной — вход в единое место
+   решений администратора; правый шеврон намекает, что карточка открывается */
+.banner.b-apv{ border-color:var(--yellow); color:var(--yellow) }
+.banner.b-apv .ic{ color:var(--yellow) }
+.banner.b-apv b{ color:var(--text) }
+
+/* v1.08.46: крестик очистки у выпадающих списков. Кнопка стоит в потоке
+   сразу после селекта, но отрицательным полем ложится на его правый край —
+   перед системной стрелкой; сумма полей равна нулю, поэтому соседям в
+   flex-рядах ничего не сдвигает. В .form-row (селект во всю ширину, кнопка
+   упала бы на новую строку) — абсолютное позиционирование. */
+.selx-x{
+  flex:none;width:24px;height:24px;display:inline-grid;place-items:center;
+  margin-left:-56px;margin-right:32px;position:relative;z-index:2;
+  align-self:center;vertical-align:middle;
+  background:transparent;border:0;border-radius:8px;padding:0;
+  color:var(--dim);cursor:pointer;
+  visibility:hidden;pointer-events:none;
+}
+.selx-x.on{ visibility:visible;pointer-events:auto }
+.selx-x:hover{ color:var(--text);background:var(--panel-2) }
+.selx-x .ic{ width:15px;height:15px }
+/* селект с крестиком резервирует место справа, чтобы текст не подлезал
+   под кнопку (сама кнопка занимает right 24..48px) */
+select:has(+ .selx-x){ padding-right:54px }
+.form-row{ position:relative }
+.form-row .selx-x.in-row{ position:absolute;right:34px;bottom:10px;margin:0 }
+
+
 /* v1.08.45: модалка «Проверка связи» — окошко лога повыше, чем у отправки
    файлов (в нём до шести строк сервисов), строка-предупреждение оранжевая */
 .net-mrow{ display:flex;align-items:center;gap:8px;margin:2px 0 8px }

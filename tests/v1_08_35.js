@@ -74,7 +74,7 @@ const stubRoutes = async (p) => {
   await p.waitForTimeout(250);
   const gAll = await p.evaluate(() => [...document.querySelectorAll('.srch-grp')].map(e => e.textContent));
   t('«Всё»: и работы, и комплексы найдены',
-    gAll.some(s => /Работы/.test(s)) && gAll.some(s => /Комплексы/.test(s)), JSON.stringify(gAll));
+    gAll.some(s => /Задачи/.test(s)) && gAll.some(s => /Комплексы/.test(s)), JSON.stringify(gAll));
 
   await p.evaluate(() => window.App.srchChip('cx'));
   await p.waitForTimeout(200);
@@ -90,8 +90,8 @@ const stubRoutes = async (p) => {
   await p.evaluate(() => window.App.srchChip('job'));
   await p.waitForTimeout(200);
   const gJob = await p.evaluate(() => [...document.querySelectorAll('.srch-grp')].map(e => e.textContent));
-  t('чип «Работы»: остались только работы',
-    gJob.length === 1 && /Работы/.test(gJob[0]), JSON.stringify(gJob));
+  t('чип «Задачи»: остались только задачи',
+    gJob.length === 1 && /Задачи/.test(gJob[0]), JSON.stringify(gJob));
 
   await p.evaluate(() => window.App.srchChip('unit'));
   await p.waitForTimeout(200);

@@ -26,7 +26,16 @@
 
   function getMode() {
     var m = safeGet(KEY);
-    return m === 'desktop' ? 'desktop' : 'mobile'; // по умолчанию — мобильная
+    if (m === 'desktop' || m === 'mobile') return m;
+    /* v1.08.46: на новом устройстве режим выбирается сам — мышь + широкий
+       экран = ПК, иначе телефон. В localStorage НИЧЕГО не пишем: автовыбор —
+       не выбор человека; ручной клик по пилюле по-прежнему сильнее и
+       запоминается. app.js (vmCur) считает точно так же. */
+    try {
+      if (window.matchMedia('(hover:hover) and (pointer:fine)').matches
+          && window.innerWidth >= 1024) return 'desktop';
+    } catch (e) {}
+    return 'mobile';
   }
 
   function labels() {

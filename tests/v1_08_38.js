@@ -221,13 +221,17 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
       closed: first && first.classList.contains('sec-closed'),
       label: cs && cs.content, amtBorder: amt && amt.borderLeftWidth,
       tools: (document.querySelector('.inv-tools') || {}).offsetWidth,
+      closedAny: document.querySelectorAll('.inv-sec.sec-closed').length,
+      chev: document.querySelectorAll('.inv-sec .sec-chev').length,
       headH: (document.querySelector('.inv-sec[data-sec="removals"] .inv-head') || {}).offsetHeight };
   });
   t('ПК-режим включён', dsk.desktop, JSON.stringify(dsk));
-  t('первая секция свёрнута, подпись DESCRIPTION на заголовке', dsk.closed && /DESCRIPTION/.test(dsk.label || ''), dsk.label);
+  /* v1.08.46: на ПК спойлеров больше нет — секции всегда развёрнуты,
+     панель «Свернуть/Развернуть» и шевроны не рисуются. */
+  t('ПК: секции не сворачиваются (sec-closed нет)', dsk.closed === false && dsk.closedAny === 0, JSON.stringify({c: dsk.closed, n: dsk.closedAny}));
   t('колонка AMOUNT с разделителем', dsk.amtBorder === '2px', dsk.amtBorder);
-  t('панель спойлеров видна на ПК', dsk.tools > 200, dsk.tools);
-  t('свёрнутая строка бланка компактна (Removals < 60px; было 116)', dsk.headH > 30 && dsk.headH < 60, dsk.headH);
+  t('ПК: панели спойлеров нет', !dsk.tools, dsk.tools);
+  t('ПК: шевронов в заголовках нет', dsk.chev === 0, dsk.chev);
 
   t('ошибок страницы нет', errs.length === 0, errs.slice(0, 3).join(' | '));
   console.log('\nИТОГ: ' + ok + ' ✓ / ' + bad + ' ✗');
