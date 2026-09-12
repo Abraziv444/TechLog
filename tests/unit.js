@@ -28,7 +28,7 @@ const expose = `;window.__T = {
   hasCyr, enText, needsTr, trFields, trMiss, trCanWrite, trDocLabel,
   translit, pdfLatinize, enName,
   renderNoFmt, docNo, pickNo, docNoVals, DOC_FMT_DEF, FILE_FMT_DEF, DOC_TOKENS, FILE_TOKENS,
-  gdNamesFrom,
+  gdNamesFrom, gdCfg, mediaSettingsCardHtml, gdRootsRowsHtml,
   popPos, applyPopPos, emptyFormData, mqLogPaint, mqLog, state, trIntervalMs,
   needsRepair, repWorks, repMats, repGrand, repCleanItems, repHistAdd, repNew,
   repMoneyHidden, repCanCreate, wtById, seedDemoData,
@@ -225,9 +225,10 @@ console.log('\n— инвойсы на Диск (v1.07.85) —');
   t('очередь знает вид «invoice»', /kind === 'invoice' \? M_INV_MAX/.test(src));
   t('кнопка «Инвойс на Диск» в карточке медиа', /App\.invToDrive\(/.test(src));
   t('перед отправкой работает страж перевода', /trPdfGuard\('job', j, go\)/.test(src));
-  /* v1.08.36: поле сохраняется через App.gdRootSet('invoice', …) — внутри тот же
-     gdFolderIdOf + setOrgText, плюс мгновенный резолв имени папки */
-  t('поле папки инвойсов в настройках Диска', /gdRootSet\('invoice'/.test(src));
+  /* v1.08.42: три строки каталогов собираются одним блоком gdRootsRowsHtml —
+     проверяем механизм (onchange через gdRootSet) и проводку инвойсов в нём */
+  t('поле папки инвойсов в настройках Диска',
+    /App\.gdRootSet\('\$\{kind\}', this\)/.test(src) && /one\('invoice',\s*'gd_inv_folder'/.test(src));
   t('диагностика БД знает про gd_inv_folder',
     T.DB_NEED_COLS.some(c => c[0] === 'org_settings' && c[1] === 'gd_inv_folder'));
   const g = fs.readFileSync(ROOT + '/supabase/functions/_shared/google.ts', 'utf8');
@@ -1186,6 +1187,29 @@ console.log('\n— офлайн-запись в режиме Supabase (v1.08.38)
   } else finish();
 }
 function finish(){
-  console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
+  console.log('\n— каталоги Диска видны в обоих режимах карточки (v1.08.42) —');
+{
+  const d = T.seedDemoData();
+  T.state.data = d;
+  T.state.user = d.profiles.find(p => p.role === 'admin');
+  const hasRoots = h => /id="gd-photo"/.test(h) && /id="gd-inv"/.test(h)
+    && /id="gd-files"/.test(h) && /id="gd-nm-photo"/.test(h) && /gd-roots-t/.test(h);
+  /* режим ПРОСМОТРА: ключи заведены и подключено — как у настоящего админа */
+  Object.assign(T.gdCfg, { loaded: true, client_id: 'x.apps', has_secret: true,
+    has_refresh: true, folder_id: 'FLD1' });
+  const ro = T.mediaSettingsCardHtml();
+  t('просмотр: карточка в режиме просмотра (токен показан)', /gd-cid" readonly/.test(ro));
+  t('просмотр: три строки каталогов на месте', hasRoots(ro));
+  t('просмотр: поля каталогов редактируемые', !/id="gd-photo"[^>]*readonly/.test(ro));
+  /* режим РЕДАКТИРОВАНИЯ: ключей нет — карточка сама открывает форму */
+  Object.assign(T.gdCfg, { client_id: '', has_secret: false, has_refresh: false, folder_id: '' });
+  const ed = T.mediaSettingsCardHtml();
+  t('редактирование: три строки каталогов на месте', hasRoots(ed));
+  t('редактирование: это точно форма ключей', /id="gd-sec"/.test(ed));
+  t('блок каталогов один и тот же (без дублей id в разметке)',
+    (ro.match(/id="gd-photo"/g) || []).length === 1 && (ed.match(/id="gd-photo"/g) || []).length === 1);
+}
+
+console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
   process.exit(bad ? 1 : 0);
 }

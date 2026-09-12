@@ -111,14 +111,19 @@
 
   /* ---- Стили ------------------------------------------------------------ */
   var CSS = [
-    '.tl-tip{display:inline-block;position:relative;width:17px;height:17px;line-height:15px;',
-    'margin:0 0 0 6px;border-radius:50%;border:1.5px solid rgba(126,224,10,.6);',
-    'color:#7ee00a;background:rgba(126,224,10,.08);font:800 11px/15px system-ui,sans-serif;',
-    'text-align:center;vertical-align:middle;cursor:pointer;user-select:none;',
+    /* v1.08.41: ловится по 24×24 (норма зоны нажатия), а видимый кружок —
+       прежние 17px: его рисует ::before. Отрицательные поля держат строку. */
+    '.tl-tip{display:inline-grid;place-items:center;position:relative;width:24px;height:24px;',
+    'margin:-4px 0 -4px 4px;border:0;background:transparent;',
+    'color:#7ee00a;font:800 11px/15px system-ui,sans-serif;',
+    'text-align:center;vertical-align:-6px;cursor:pointer;user-select:none;',
     '-webkit-tap-highlight-color:transparent;text-transform:none;letter-spacing:0;flex:0 0 auto}',
-    '.tl-tip::after{content:"?"}',
-    '.tl-tip::before{content:"";position:absolute;left:-9px;top:-9px;right:-9px;bottom:-9px}',
-    '.tl-tip.is-on{background:#7ee00a;color:#08210a;border-color:#7ee00a}',
+    '.tl-tip::before{content:"";position:absolute;left:50%;top:50%;width:17px;height:17px;',
+    'margin:-8.5px 0 0 -8.5px;border-radius:50%;border:1.5px solid rgba(126,224,10,.6);',
+    'background:rgba(126,224,10,.08)}',
+    '.tl-tip::after{content:"?";position:relative}',
+    '.tl-tip.is-on{color:#08210a}',
+    '.tl-tip.is-on::before{background:#7ee00a;border-color:#7ee00a}',
     '#tl-tip-pop{position:fixed;z-index:99999;max-width:270px;box-sizing:border-box;',
     'padding:10px 12px;border-radius:12px;background:#16202b;border:1px solid #33455a;',
     'box-shadow:0 10px 28px rgba(0,0,0,.55);color:#dfe8f1;',

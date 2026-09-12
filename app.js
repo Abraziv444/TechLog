@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.40';
+const APP_VERSION = '1.08.42';
 const DB_SQL_FILE = 'full-install-1_08_39.sql';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
 const CFG = (window.TECHLOG_CONFIG || {});
 const HAS_SB = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY);
@@ -571,6 +571,7 @@ const I18N = {
     /* v1.07.87: инвойсы по папкам сотрудников */
     gd_ph_folder: 'Папка для фото и видео', gd_fl_folder: 'Папка для вложений',
     gd_nm_bad: 'папка недоступна', gd_nm_wait: 'имя папки…',
+    gd_roots_t: 'Корневые папки: фото · инвойсы · вложения',
     gd_ph_hint: 'Внутри сами создаются папки: контрагент → комплекс → юнит. Все снимки по юниту лежат вместе. Пусто — «Photos» внутри архива. Имя на Диске:',
     gd_fl_hint: 'Внутри: сотрудник → месяц (2026_09) → номер документа. Пусто — «Files» внутри архива. Имя на Диске:',
     doc_name_lock: 'Имя для документов меняет администратор: по нему названа ваша папка на Google Диске, где лежат инвойсы и вложения.',
@@ -1488,6 +1489,7 @@ const I18N = {
     prop_hide_h: 'On by default: proposal amounts are visible to the admin only, everyone else sees a dash. Only an admin can switch it off.',
     gd_ph_folder: 'Photo and video folder', gd_fl_folder: 'Attachments folder',
     gd_nm_bad: 'folder unreachable', gd_nm_wait: 'folder name…',
+    gd_roots_t: 'Root folders: photos · invoices · attachments',
     gd_ph_hint: 'Inside it creates: counterparty → complex → unit. All shots of a unit stay together. Empty — «Photos» in the archive. Drive name:',
     gd_fl_hint: 'Inside: staff → month (2026_09) → document number. Empty — «Files» in the archive. Drive name:',
     doc_name_lock: 'The document name is changed by an admin: your Google Drive folder with invoices and attachments is named after it.',
@@ -6574,7 +6576,7 @@ function viewJob(){
     <div class="tiny" style="margin-top:6px">${t('approve_reset_note')}</div>
   </div>` : (isApproved ? `<div class="note-purple">${ic('check')} ${t('status_approved')}: ${esc(profName(j.approved_by))} — ${money(j.approved_total ?? total)}</div>` : '')}
 
-  <button class="btn btn-ghost" style="margin-bottom:8px" onclick="App.jobHistory('${j.id}')">${ic('clock')} ${t('job_history')}</button>
+  <button class="btn btn-ghost jb-hist" style="margin-bottom:8px" onclick="App.jobHistory('${j.id}')">${ic('clock')} ${t('job_history')}</button>
 
   <div class="total-bar"><span>${t('total')}</span><span class="sum ${j.status==='approved'?'ok':'pend'}" id="jb-total">${money(total)}</span></div>
 
@@ -6586,7 +6588,7 @@ function viewJob(){
     <span></span>
   </div>
   ${tplOn() && state.data.jobs.some(x=>x.id===j.id) ? `
-  <button class="btn btn-ghost" style="margin-bottom:8px" onclick="App.jobClone('${j.id}')">${ic('note')} ${t('tpl_clone')} ${tipQ('tpl_tip')}</button>` : ''}
+  <div class="tpl-row"><button class="btn btn-ghost jb-clone" onclick="App.jobClone('${j.id}')">${ic('note')} ${t('tpl_clone')}</button>${tipQ('tpl_tip')}</div>` : ''}
   <div class="btn-row3">
     <button class="btn btn-ghost" onclick="App.go('home')">← ${t('back')}</button>
     <button class="btn btn-blue" onclick="App.makePdf()">${ic('download')} ${t('pdf')}</button>
@@ -7009,7 +7011,7 @@ function viewPickupsReport(){
           <div style="font-weight:900">${esc(cx.name)}</div>
           <div class="tiny">${esc(cx.address||'')} · ${codeLineHtml(cx, true)}</div>
         </div>
-        <button class="btn btn-ghost sm" onclick="App.navToCx('${cxId}')">${ic('compass')}</button>
+        <button class="btn btn-ghost sm" title="${t('navigate')}" aria-label="${t('navigate')}" onclick="App.navToCx('${cxId}')">${ic('compass')}</button>
       </div>
       ${Object.values(byJob).map(jl => {
         const p0 = jl[0];
@@ -7160,7 +7162,7 @@ function viewArchive(){
                     !String(j.unit_number || '').trim() ? t('unit') : ''].filter(Boolean).join(', ');
       return `<div class="rowline"><div class="grow"><b>${esc(docNo('job', j) || (cx.abbr || '—'))}</b>
         <div class="tiny">${fmtDMY(j.date)} · ${t('act_need')}: ${esc(miss)}</div></div>
-        <button class="btn btn-ghost sm" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button></div>`;
+        <button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button></div>`;
     }).join('') || `<div class="list-empty">${t('act_meta_ok')}</div>`}
   </div>
   <div class="card">
@@ -7169,7 +7171,7 @@ function viewArchive(){
     ${invStaleJobs().map(({ j, v }) => { const cx = cxById(j.complex_id) || {};
       return `<div class="rowline"><div class="grow"><b>${esc(docNo('job', j) || (cx.abbr || '—'))}</b>
         <div class="tiny">${fmtDMY(j.date)} · ${t('inv_pdf_on')} ${fmtDMY(String(v.at).slice(0, 10))}</div></div>
-        <button class="btn btn-ghost sm" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button>
+        <button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button>
         <button class="btn btn-blue sm" onclick="App.invToDrive('${j.id}')">${ic('upload')}</button></div>`;
     }).join('') || `<div class="list-empty">${t('act_pdf_ok')}</div>`}
   </div>
@@ -7183,7 +7185,7 @@ function viewArchive(){
         <div class="tiny">${t('rep_h_reset')} — ${esc(h.by_name || profName(h.by) || '—')}, ${
           esc(String(h.at || '').slice(0, 16).replace('T', ' '))}</div></div>
         <span class="money">${repMoney(repGrand(r))}</span>
-        <button class="btn btn-ghost sm" onclick="App.openRepair('${r.id}')">${ic('chev_r')}</button></div>`;
+        <button class="btn btn-ghost sm" title="${t('rep_open')}" aria-label="${t('rep_open')}" onclick="App.openRepair('${r.id}')">${ic('chev_r')}</button></div>`;
     }).join('') || `<div class="list-empty">${t('act_rep_reset_ok')}</div>`}
   </div>`; })()}
   <div class="card">
@@ -7252,7 +7254,7 @@ function auditListModal(filter){
       const cx = cxById(j.complex_id) || {};
       return `<div class="rowline"><div class="grow"><b>${esc(docNo('job', j) || (cx.abbr || '—') + ' · ' + (j.unit_number || '—'))}</b>
         <div class="tiny">${fmtDMY(j.date)} · ${mediaChips(j.id)}</div></div>
-        <button class="btn btn-ghost sm" onclick="App.closeModal();App.openJob('${j.id}')">${ic('chev_r')}</button></div>`;
+        <button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.closeModal();App.openJob('${j.id}')">${ic('chev_r')}</button></div>`;
     }).join('') || `<div class="list-empty">${t('aud_all_ok')}</div>`}</div>
   `);
 }
@@ -10170,7 +10172,7 @@ function dirVehicles(){
   const vs = bnVehicles().slice().sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999));
   const rows = vs.map(v => `
     <div class="rowline">
-      <span class="dot num" style="background:var(--blue);color:#fff">${v.car_no ?? '·'}</span>
+      <span class="dot num" style="background:var(--blue);color:${INK_DARK}">${v.car_no ?? '·'}</span>
       <div class="grow"><b>${esc(v.make || '—')}</b>${v.mil ? ` <span class="chip bad">⚠ ${t('veh_mil')}</span>` : ''}${v.fuel_low ? ` <span class="chip bad">🔻 ${t('veh_fuel_low')}</span>` : ''}
         <div class="tiny">${v.driver_id ? ic('crew') + ' ' + esc(profName(v.driver_id)) : t('veh_no_driver_l')}</div>
         <div class="tiny">VIN ${esc(v.vin || '—')} · IMEI ${esc(v.imei || '—')}</div>
@@ -12251,7 +12253,7 @@ function trPendingModal(){
       <div class="rowline">
         <div class="grow"><b>${esc(trDocLabel(it.kind, it.doc))}</b>
           <div class="tiny">${trMiss(it.kind, it.doc).map(f => esc(f.label)).join(' · ')}</div></div>
-        <button class="btn btn-ghost sm" onclick="App.trOneDoc('${it.kind}','${it.doc.id}')">${ic('globe')}</button>
+        <button class="btn btn-ghost sm" title="${t('translate_en')}" aria-label="${t('translate_en')}" onclick="App.trOneDoc('${it.kind}','${it.doc.id}')">${ic('globe')}</button>
       </div>`).join('') || `<div class="list-empty">${t('tr_nothing')}</div>`}</div>
     ${list.length ? `<button class="btn btn-blue" style="margin-top:8px" onclick="App.closeModal();App.trRun()">${ic('globe')} ${t('tr_run')} (${Math.min(list.length, TR_MAX_DOCS)})</button>` : ''}
   `);
@@ -12914,7 +12916,7 @@ function chainBlockModal(kind, id){
     const lock = b.t === 'job' && editLocked(o) ? ` <span class="tiny">🔒 ${t('ch_block_locked')}</span>` : '';
     return `<div class="rowline"><div class="grow"><b>${esc(label)}</b>
         <span class="tiny">· ${fmtDMY(o.date)}</span>${lock}</div>
-      <button class="btn btn-ghost sm" onclick="${open}">${ic('chev_r')}</button></div>`;
+      <button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="${open}">${ic('chev_r')}</button></div>`;
   };
   const extra = [];
   if (kind === 'job'){
@@ -13318,7 +13320,7 @@ function viewProposalForm(){
       return `<div class="rowline"><div class="grow">${esc(jcx.abbr || '')} · Unit <b>${esc(j.unit_number || '—')}</b>
         <span class="tiny">· ${fmtDMY(j.date)} · ${money(jobGrand(j))}</span></div>
         <button class="btn btn-ghost sm" title="${t('mq_open')}" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button>
-        <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">${ic('close')}</button></div>`; }).join('')
+        <button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.linkProposal('${j.id}', null)">${ic('close')}</button></div>`; }).join('')
       || `<div class="tiny">—</div>`}
     ${propJobPickerHtml(p)}
   </div>` : ''}
@@ -14474,12 +14476,12 @@ function viewRepairForm(){
     <div style="font-weight:900;margin-bottom:6px">${ic('link')} ${t('prop_linked')}</div>
     ${job ? `<div class="rowline"><div class="grow">WORK · ${esc((cxById(job.complex_id) || {}).abbr || '')} · Unit <b>${esc(job.unit_number || '—')}</b>
         <span class="tiny">· ${fmtDMY(job.date)}</span></div>
-      <button class="btn btn-ghost sm" onclick="App.openJob('${job.id}')">${ic('chev_r')}</button>
-      <button class="btn btn-ghost sm" onclick="App.repUnlink('job')">${ic('close')}</button></div>` : ''}
+      <button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.openJob('${job.id}')">${ic('chev_r')}</button>
+      <button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.repUnlink('job')">${ic('close')}</button></div>` : ''}
     ${prop ? `<div class="rowline"><div class="grow">PROPOSAL · P-${prop.no ?? '·'}
         <span class="tiny">· ${fmtDMY(prop.date)}</span></div>
-      ${isManager() ? `<button class="btn btn-ghost sm" onclick="App.openProposal('${prop.id}')">${ic('chev_r')}</button>` : ''}
-      <button class="btn btn-ghost sm" onclick="App.repUnlink('prop')">${ic('close')}</button></div>` : ''}
+      ${isManager() ? `<button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.openProposal('${prop.id}')">${ic('chev_r')}</button>` : ''}
+      <button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.repUnlink('prop')">${ic('close')}</button></div>` : ''}
     ${!job && !prop ? `<div class="tiny">—</div>` : ''}
     ${repJobPickerHtml(r)}
   </div>
@@ -16269,7 +16271,7 @@ function mediaQueueModal(){
       <div style="display:flex;gap:8px;align-items:center">
         <div class="grow">${title}
           <div class="tiny">${ic('upload')} ${ph} ${t('mq_photo')} · ${v} ${t('mq_video')}</div></div>
-        ${j ? `<button class="btn btn-ghost sm" onclick="App.closeModal();App.openJob('${id}')">${ic('send')}</button>` : ''}
+        ${j ? `<button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.closeModal();App.openJob('${id}')">${ic('send')}</button>` : ''}
       </div>
       ${th ? `<div class="mq-ths">${th}</div>` : ''}
     </div>`;
@@ -16596,6 +16598,23 @@ async function gdMove(){
 const gdShow = { sec: false, ref: false };
 function gdHasKeys(){ return !!(gdCfg.client_id || gdCfg.has_secret || gdCfg.folder_id); }
 function gdEditMode(){ return gdEdit || !gdHasKeys(); }
+/* v1.08.42: три корневых каталога Диска (фото · инвойсы · вложения) видны
+   ВСЕГДА — и в просмотре, и в редактировании карточки. Это рабочие настройки
+   организации, а не секреты OAuth: за карандашом им прятаться незачем. До
+   этого строки жили только в режиме редактирования, и подключённый админ
+   (карточка открывается просмотром) их попросту не видел. */
+function gdRootsRowsHtml(){
+  const row = (lbl, inner) => `<div class="form-row"><span class="lbl">${lbl}</span><div class="gd-val">${inner}</div></div>`;
+  const one = (kind, key, inp, nm, lblK, hintK) => row(t(lblK),
+    `<input id="${inp}" autocomplete="off" placeholder="${t('gd_folder_ph')}"
+      value="${esc(((state.data.org_settings || {})[key]) || '')}"
+      onchange="App.gdRootSet('${kind}', this)"><span class="gd-fname${gdNmBad(kind)}" id="${nm}">${gdNmHtml(kind)}</span>`)
+    + `<div class="tiny gd-hint">${t(hintK)}${gdDirName(kind)}</div>`;
+  return `<div class="tiny gd-roots-t">${t('gd_roots_t')}</div>`
+    + one('photo',   'gd_photo_folder', 'gd-photo', 'gd-nm-photo', 'gd_ph_folder',  'gd_ph_hint')
+    + one('invoice', 'gd_inv_folder',   'gd-inv',   'gd-nm-inv',   'gd_inv_folder', 'gd_inv_hint')
+    + one('file',    'gd_files_folder', 'gd-files', 'gd-nm-files', 'gd_fl_folder',  'gd_fl_hint');
+}
 function gdMask(real, fallback){
   const s = String(real || '');
   if (!s) return fallback || '';
@@ -16690,18 +16709,7 @@ function mediaSettingsCardHtml(){
     <label class="opt ${gdTrimOn() ? 'on' : ''}" style="margin:2px 0 6px">
       <input type="checkbox" ${gdTrimOn() ? 'checked' : ''} onchange="App.gdTrimToggle(this.checked)"> ${t('gd_trim')}</label>
     <div class="tiny gd-hint">${gdTrimOn() ? t('gd_trim_hint') : t('gd_folder_hint')}</div>
-    ${row(t('gd_ph_folder'), `<input id="gd-photo" autocomplete="off" placeholder="${t('gd_folder_ph')}"
-      value="${esc(((state.data.org_settings || {}).gd_photo_folder) || '')}"
-      onchange="App.gdRootSet('photo', this)"><span class="gd-fname${gdNmBad('photo')}" id="gd-nm-photo">${gdNmHtml('photo')}</span>`)}
-    <div class="tiny gd-hint">${t('gd_ph_hint')}${gdDirName('photo')}</div>
-    ${row(t('gd_inv_folder'), `<input id="gd-inv" autocomplete="off" placeholder="${t('gd_folder_ph')}"
-      value="${esc(((state.data.org_settings || {}).gd_inv_folder) || '')}"
-      onchange="App.gdRootSet('invoice', this)"><span class="gd-fname${gdNmBad('invoice')}" id="gd-nm-inv">${gdNmHtml('invoice')}</span>`)}
-    <div class="tiny gd-hint">${t('gd_inv_hint')}${gdDirName('invoice')}</div>
-    ${row(t('gd_fl_folder'), `<input id="gd-files" autocomplete="off" placeholder="${t('gd_folder_ph')}"
-      value="${esc(((state.data.org_settings || {}).gd_files_folder) || '')}"
-      onchange="App.gdRootSet('file', this)"><span class="gd-fname${gdNmBad('file')}" id="gd-nm-files">${gdNmHtml('file')}</span>`)}
-    <div class="tiny gd-hint">${t('gd_fl_hint')}${gdDirName('file')}</div>
+    ${gdRootsRowsHtml()}
     ${isAdmin() ? `<label class="opt ${((state.data.org_settings || {}).prop_mgr_create) ? 'on' : ''}">
       <input type="checkbox" ${((state.data.org_settings || {}).prop_mgr_create) ? 'checked' : ''}
         onchange="App.setOrgFlag('prop_mgr_create', this.checked)"> ${t('prop_mgr')}</label>
@@ -16745,6 +16753,7 @@ function mediaSettingsCardHtml(){
     ${row(t('gd_token'), ro(gdShow.ref ? gdCfg.refresh
         : (gdCfg.has_refresh ? gdMask(gdCfg.refresh, '1//••••••••••••') : '')) + eyeB('ref') + copyB('ref'))}
     ${row(t('gd_redirect'), ro(redirect) + copyB('redirect'))}
+    ${gdRootsRowsHtml()}
     <button class="btn btn-blue" style="margin-top:8px" onclick="App.mediaConnect()">${ic('link')} ${t('gd_connect')}</button>`;
   return `<div class="card" id="gd-card">
     <div class="gd-head">

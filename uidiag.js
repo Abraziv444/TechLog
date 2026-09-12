@@ -402,14 +402,22 @@
     var coarse = false;
     try { coarse = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0; } catch (e) {}
     var items = [], MIN = coarse ? 40 : 24;
+    /* v1.08.41: сравниваем ОКРУГЛЁННЫЕ размеры — те самые, что печатаем.
+       При масштабе страницы 90% браузер меряет длины в 1/64 физического
+       пикселя, и честные 24px возвращаются как 23.993: отчёт спорил сам с
+       собой строкой «24×24px (< 24)». В отчёте Абра таких было полсотни. */
+    var big = function (w, h) { return Math.min(Math.round(w), Math.round(h)) >= MIN; };
     hits().forEach(function (el) {
       if (items.length > 12) return;
       if (el.closest('.stepper') || el.tagName === 'A' && el.closest('.legal-links,.tiny')) return;
       if (el.closest('.leaflet-control-attribution')) return;   // v1.07.79: обязательная подпись карты, размер задаёт Leaflet
+      /* v1.08.41: выключенная кнопка и pointer-events:none нажатий не берут по
+         замыслу — в справке ▲▼ нарисованы для примера. Так же считает checkCover. */
+      if (el.disabled || css(el, 'pointerEvents') === 'none') return;
       var r = hitBox(el);
-      if (Math.min(r.w, r.h) >= MIN) return;
+      if (big(r.w, r.h)) return;
       var e = effectiveHit(el, r);
-      if (Math.min(e.w, e.h) >= MIN) return;          // зону уже расширили — вопросов нет
+      if (big(e.w, e.h)) return;                      // зону уже расширили — вопросов нет
       var grown = (e.w > r.w + 1 || e.h > r.h + 1)
         ? ' (с учётом расширенной зоны ' + Math.round(e.w) + '×' + Math.round(e.h) + ')' : '';
       items.push({ level: 'warn',
@@ -601,7 +609,7 @@
          снимаем ТРИ прохода: разовая заминка отличается от постоянной. После
          этого — контрольный проход с СПРЯТАННЫМ содержимым: если и там встаёт,
          дело не в нашей разметке, а во внешнем (расширения, сборка мусора). */
-      var EV = [], RES = [], SHIFT = 0, obs = [];
+      var EV = [], RES = [], SHIFT = 0, SHIFT_BY = {}, obs = [];
       SCROLL_WIN = [];
       try {
         var oEv = new PerformanceObserver(function (l) {
@@ -622,11 +630,35 @@
         oRes.observe({ type: 'resource', buffered: false });
         obs.push(oRes);
       } catch (e) {}
+      /* v1.08.41: наблюдатель за переездами включается НЕ СРАЗУ (два кадра и
+         ещё 0.3 с).
+         Прямо перед прокруткой отработала проверка крупного шрифта: она
+         ставит документу 1.6× и возвращает обратно, и браузер относил этот
+         переезд к ближайшему кадру — то есть уже к нашему замеру. Отсюда в
+         отчёте были «сдвиги» на экранах, где ничего не двигалось (у инвойса
+         натекало 0.8), а виновными назывались случайные карточки. */
       try {
         var oLs = new PerformanceObserver(function (l) {
-          l.getEntries().forEach(function (e) { if (!e.hadRecentInput) SHIFT += e.value; });
+          l.getEntries().forEach(function (e) {
+            if (e.hadRecentInput) return;
+            SHIFT += e.value;
+            /* v1.08.41: без имени виновника строка «вёрстка переезжала» была
+               бесполезной — непонятно, что чинить. Браузер сообщает узлы,
+               которые сдвинулись; складываем вклад по каждому. */
+            try {
+              (e.sources || []).forEach(function (s) {
+                if (!s.node || s.node.nodeType !== 1 || isSelf(s.node)) return;
+                var k = pathOf(s.node);
+                SHIFT_BY[k] = (SHIFT_BY[k] || 0) + e.value;
+              });
+            } catch (er) {}
+          });
         });
-        oLs.observe({ type: 'layout-shift', buffered: false });
+        requestAnimationFrame(function () { requestAnimationFrame(function () {
+          setTimeout(function () {
+            try { oLs.observe({ type: 'layout-shift', buffered: false }); } catch (e) {}
+          }, 300);
+        }); });
         obs.push(oLs);
       } catch (e) {}
       var heap0 = 0; try { heap0 = (performance.memory || {}).usedJSHeapSize || 0; } catch (e) {}
@@ -704,8 +736,13 @@
         if (RES.length) items.push({ level: 'warn',
           msg: 'сеть во время прокрутки: ' + RES.length + ' запрос(ов), дольше всех ' +
             RES.sort(function (a, b) { return b.d - a.d; })[0].n + ' ' + RES[0].d + ' мс', el: null });
-        if (SHIFT > 0.01) items.push({ level: 'warn',
-          msg: 'вёрстка переезжала во время прокрутки, суммарный сдвиг ' + SHIFT.toFixed(3), el: null });
+        if (SHIFT > 0.01) {
+          var who = Object.keys(SHIFT_BY).sort(function (a, b) { return SHIFT_BY[b] - SHIFT_BY[a]; }).slice(0, 3);
+          items.push({ level: 'warn',
+            msg: 'вёрстка переезжала во время прокрутки, суммарный сдвиг ' + SHIFT.toFixed(3) +
+                 (who.length ? ' — двигались: ' + who.map(function (k) {
+                    return k + ' (' + SHIFT_BY[k].toFixed(3) + ')'; }).join(' · ') : ''), el: null });
+        }
         try {
           var heap1 = (performance.memory || {}).usedJSHeapSize || 0;
           if (heap0 && heap1) items.push({ level: 'ok',
@@ -863,10 +900,14 @@
 
     /* прыжки фокуса: следующий по разметке элемент оказывается заметно
        выше предыдущего — палец идёт вниз, а фокус скачет вверх */
+    /* v1.08.41: панель управления картой — разметка Leaflet: кнопки зума лежат
+       поверх карты и в разметке идут раньше, чем видны. Их «скачок» о нашем
+       интерфейсе ничего не говорит — считаем прыжки только по своим элементам. */
+    var own = all.filter(function (el) { return !(el.closest && el.closest('.leaflet-control-container')); });
     var jumps = 0, first = null;
-    for (var i = 0; i + 1 < all.length; i++) {
-      var a = box(all[i]), b = box(all[i + 1]);
-      if (b.t < a.t - 40) { jumps++; if (!first) first = all[i + 1]; }
+    for (var i = 0; i + 1 < own.length; i++) {
+      var a = box(own[i]), b = box(own[i + 1]);
+      if (b.t < a.t - 40) { jumps++; if (!first) first = own[i + 1]; }
     }
     if (jumps > 2)
       items.push({ level: 'warn', msg: 'порядок табуляции скачет вверх ' + jumps + ' раз, первый — ' + pathOf(first), el: first });
@@ -1081,6 +1122,11 @@
     var A = window.App || {};
     var scr = (A.curScreen && A.curScreen()) || '';
     var txt = function (sel) { var e = document.querySelector(sel); return e ? (e.textContent || '').trim() : ''; };
+    /* v1.08.41: открыта модалка — экран под ней не при чём. Обход документов
+       открывает «Очередь отправки» поверх «Настроек», и карточки настроек
+       попадали в отчёт документа как «не показаны». */
+    if (qsa('.overlay').filter(visible)[0])
+      return mk('feat', T('c_feat'), [{ level: 'ok', msg: 'открыта модалка — модули экрана под ней не проверяем', el: null }]);
 
     /* документ работы: номер, перевод, инвойс на Диск */
     if (scr === 'job') {
@@ -1120,13 +1166,26 @@
 
     /* настройки: все карточки новых модулей на месте */
     if (scr === 'settings') {
-      [['[onclick*="noAddTok"]', 'конструктор нумерации'],
-       ['[onclick*="App.trRun"]', 'карточка переводов'],
-       ['[onclick*="App.popPos"]', 'место всплывашек'],
-       ['#gd-inv', 'папка для инвойсов'],
-       ['[onchange*="gd_inv_by_tech"]', 'галочка «инвойсы по папкам сотрудников»']
+      /* v1.08.41: карточки настроек лежат в складных секциях и в свёрнутом виде
+         вообще не отрисованы — это «не разворачивали», а не «не показана». Поля
+         папок Диска к тому же появляются только в режиме правки (карандаш).
+         Раньше и то и другое уходило в отчёт предупреждением. */
+      var foldShut = function (key) {
+        return !!document.querySelector('.fold:not(.on) [onclick*="foldToggle(\'' + key + '\')"]');
+      };
+      var gdRO = function () { return !!document.querySelector('#gd-card [onclick*="gdToggleEdit"]'); };
+      [['num', '[onclick*="noAddTok"]', 'конструктор нумерации'],
+       ['tr',  '[onclick*="App.trRun"]', 'карточка переводов'],
+       ['pop', '[onclick*="App.popPos"]', 'место всплывашек'],
+       ['gd',  '#gd-inv', 'папка для инвойсов'],
+       ['gd',  '[onclick*="gd_inv_tech_tip"]', 'галочка «инвойсы по папкам сотрудников»']
       ].forEach(function (p) {
-        var el = document.querySelector(p[0]);
+        var el = document.querySelector(p[1]);
+        if (el) { items.push({ level: 'ok', msg: p[2] + ': на месте', el: el }); return; }
+        if (foldShut(p[0])) { items.push({ level: 'ok', msg: p[2] + ': секция свёрнута — не разворачивали', el: null }); return; }
+        if (p[0] === 'gd' && gdRO()) {
+          items.push({ level: 'ok', msg: p[2] + ': карточка Диска в режиме просмотра — поля открываются карандашом', el: null }); return;
+        }
         /* v1.08.01: раньше писали «нужны права администратора» даже админу.
            Причин две: роль и незагруженная карточка Google Drive. */
         var why = 'не показана';
@@ -1135,7 +1194,7 @@
           why = adm ? 'не показана — карточка Google Drive ещё не загрузилась (нет связи с Supabase?)'
                     : 'не показана — роль не администратор';
         } catch (e) {}
-        items.push({ level: el ? 'ok' : 'warn', msg: p[1] + ': ' + (el ? 'на месте' : why), el: el });
+        items.push({ level: 'warn', msg: p[2] + ': ' + why, el: null });
       });
     }
 

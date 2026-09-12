@@ -543,7 +543,11 @@ html.tl-pop-side #toasts{left:auto;right:12px;align-items:flex-end}
 .chip-tech.primary{border-color:var(--green); color:var(--green)}
 .chip-tech .x{
   background:none; border:none; color:inherit; font-weight:900; cursor:pointer;
-  padding:0 2px; font-size:.8rem; opacity:.8; position:relative;
+  font-size:.8rem; opacity:.8; position:relative;
+  /* v1.08.41: было 16×15 + прозрачное поле (20×23) — всё равно ниже нормы.
+     Теперь сама кнопка 24×24, а отрицательные поля не дают чипу вырасти. */
+  width:24px; height:24px; padding:0; display:inline-grid; place-items:center;
+  margin:-5px -6px -5px 0;
 }
 .crew-add{display:flex; gap:8px}
 .crew-add select{flex:1}
@@ -996,6 +1000,9 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
   border-left:4px solid #8AA0AB;border-radius:10px;padding:6px 30px 6px 24px;margin:6px 0}
 .bjob .bnum{position:absolute;left:7px;top:7px;font-size:.68rem;font-weight:900;color:var(--dim)}
 .bjob .pri.corner{right:28px}
+/* v1.08.41: .pri::after растит зону на 10px во все стороны, а справа в 2px от
+   маркера стоит рельса ▲▼ — «Диагностика» ловила перекрытие. Вправо не растём. */
+.bjob .pri.corner::after{inset:-8px -1px -8px -8px}
 .bjob .bwt{display:flex;align-items:center;gap:5px;margin-top:2px}
 .bjob .dotc{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 /* v1.07.79: точка статуса — в левый жёлоб (под номером). Правый жёлоб
@@ -1169,10 +1176,12 @@ html.tl-pop-bottom #toasts{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) 
 .mth .mvid{position:absolute;left:4px;bottom:2px;color:#fff;text-shadow:0 0 4px #000;font-size:.8rem}
 .mth .mst{position:absolute;right:3px;bottom:1px;font-size:.7rem}
 /* v1.08.01: крестики были 18×17 и 25×24 — ниже нормы. Зону расширяем
-   прозрачным полем внутрь своего блока: соседей не задевает. */
-.chip-tech .x::after{content:'';position:absolute;inset:-6px -4px}
+   прозрачным полем внутрь своего блока: соседей не задевает.
+   v1.08.41: у чипа исполнителя кнопка выросла до 24×24 сама (см. выше), поле
+   ей больше не нужно; у плитки медиа крестик добираем до 24 по высоте. */
 .mth .mx::after{content:'';position:absolute;inset:-3px}
-.mth .mx{position:absolute;top:0;right:0;padding:1px 6px;color:#fff;
+.mth .mx{position:absolute;top:0;right:0;min-width:24px;height:24px;padding:0 5px;color:#fff;
+  display:grid;place-items:center;
   background:rgba(0,0,0,.55);border-radius:0 0 0 8px;cursor:pointer;font-weight:900}
 .mfull{position:fixed;inset:0;background:rgba(4,10,14,.94);z-index:9999;
   display:flex;align-items:center;justify-content:center;cursor:zoom-out}
@@ -1260,6 +1269,9 @@ html.tl-pop-bottom #toasts{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) 
 .mth .mfile .ic{width:24px;height:24px;color:var(--blue)}
 .mth .mfile b{font-size:.62rem;letter-spacing:.04em;color:var(--text)}
 .btn.sm.mattach{margin-top:8px;width:100%;justify-content:center}
+/* v1.08.41: «Камера», «Галерея», «Прикрепить файл» выходили 37–38px — палец
+   требует 40. Отдельным правилом, чтобы не трогать все мелкие кнопки разом. */
+.media-card .btn.sm{min-height:40px}
 .mv-file{display:grid;place-items:center;gap:10px;color:var(--text);padding:24px;text-align:center}
 .mv-file .ic{width:46px;height:46px;color:var(--blue)}
 .mv-file .nm{font-weight:800;word-break:break-word;max-width:80vw}
@@ -1274,7 +1286,9 @@ html.tl-pop-bottom #toasts{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) 
 
 /* ===== v1.07.33: редактор пропозала по образцу (Кол-во|Код|Описание|Сумма) ===== */
 .prop-head{display:grid;grid-template-columns:46px 60px 1fr 78px 30px;gap:6px;
-  font-size:.6rem;color:var(--dim);font-weight:800;text-transform:uppercase;margin-bottom:2px}
+  font-size:.6rem;color:var(--dim);font-weight:800;text-transform:uppercase;margin-bottom:2px;
+  /* v1.08.41: при шрифте ×1.6 «Кол-во» не влезало в колонку 46px — переносим */
+  overflow-wrap:anywhere;line-height:1.15}
 .prop-row{display:grid;grid-template-columns:46px 60px 1fr 78px 30px;gap:6px;align-items:start;margin:6px 0}
 .prop-row input.pq,.prop-row input.pa{text-align:right;padding:8px 6px}
 .prop-row input.pc{padding:8px 6px}
@@ -1352,6 +1366,12 @@ html:not(.tl-desktop) .topbar::after{
   border-color:var(--blue);color:var(--blue)}
 /* id-правило #vm-slot (display:inline-block) било класс — уравниваем силу */
 #vm-slot.vm-inline{display:inline-flex;flex-direction:row;min-height:0;width:auto;height:auto}
+
+/* v1.08.41: «Создать такую же» и подсказка «?» — одной строкой. Раньше «?»
+   стоял ВНУТРИ кнопки: браузер такую вложенность разбирает по-своему и
+   выбрасывал «?» наружу, отдельным элементом поверх подвала документа. */
+.tpl-row{display:flex;align-items:center;gap:4px;margin-bottom:8px}
+.tpl-row .btn{flex:1 1 auto}
 
 /* ===== v1.07.58: подсказка о доступном пропозале в «Добавить задание» ===== */
 .nt-prop-hit{display:flex;gap:6px;align-items:center;color:var(--green);
@@ -1872,7 +1892,7 @@ select:disabled{opacity:.55;cursor:default}
   font-weight:800;font-size:.78rem;cursor:pointer;font-family:inherit}
 .bn-chip.on{border-color:var(--green);color:var(--text)}
 .bn-chip-no{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;
-  padding:0 4px;border-radius:6px;background:var(--blue);color:#fff;font-size:.7rem;font-weight:900}
+  padding:0 4px;border-radius:6px;background:var(--blue);color:#04314A;font-size:.7rem;font-weight:900}
 
 /* --- панель «Пробег за сегодня» (на телефоне — под картой) --- */
 .bn-stats{background:var(--panel);border:2px solid var(--line);border-radius:16px;
@@ -1883,6 +1903,9 @@ select:disabled{opacity:.55;cursor:default}
   color:var(--text);cursor:pointer;font:inherit}
 .bn-srow .grow{min-width:0}
 .bn-srow .grow b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* v1.08.41: при шрифте ×1.6 вторая строка («→ Unit 204 · STEAM CLEAN») вылезала
+   за панель — многоточие ей полагалось так же, как заголовку */
+.bn-srow .grow .tiny{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bn-sno{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;
   border-radius:9px;background:var(--panel-2);border:2px solid var(--dim);
   font-weight:900;flex:0 0 auto}
@@ -1895,11 +1918,15 @@ select:disabled{opacity:.55;cursor:default}
 .bn-idle{ color:var(--dim);font-weight:800 }   /* v1.08.37: статус «свободен/план» на ТВ */
 
 /* ===================== v1.08.33 ===================== */
-/* маленький «?» с подсказкой возле функции */
-.tipq{ width:17px;height:17px;border-radius:50%;border:1.6px solid var(--dim-2);
+/* маленький «?» с подсказкой возле функции.
+   v1.08.41: палец и курсор ловятся по 24×24, а видимое кольцо осталось 17px —
+   его рисует псевдоэлемент. Отрицательные поля держат высоту строки как была. */
+.tipq{ position:relative;width:24px;height:24px;border:0;border-radius:50%;
   background:transparent;color:var(--dim-2);font-size:11px;font-weight:900;line-height:1;
-  display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;
-  margin-left:4px;padding:0;cursor:pointer }
+  display:inline-grid;place-items:center;vertical-align:-6px;flex:0 0 auto;
+  margin:-4px 0 -4px 4px;padding:0;cursor:pointer }
+.tipq::before{ content:'';position:absolute;left:50%;top:50%;width:17px;height:17px;
+  margin:-8.5px 0 0 -8.5px;border-radius:50%;border:1.6px solid var(--dim-2) }
 .tipq:active{ transform:scale(.92) }
 /* строка-галочка в карточках настроек и модалках */
 .chk-line{ display:flex;align-items:center;gap:8px;padding:6px 0;font-weight:700;font-size:14px;cursor:pointer }
@@ -1914,6 +1941,19 @@ select:disabled{opacity:.55;cursor:default}
 .rt-row .vm-inline{ padding:2px }
 /* базовое .vm-inline button задаёт явные width/height — перекрываем их же */
 .rt-row .vm-inline button{ width:30px;height:22px;padding:0 }
+/* v1.08.41: 30×22 — ниже нормы 24 даже для мыши, и это повторялось на КАЖДОМ
+   экране (52 замечания из 148). Кнопку не растим — шапка бы выросла; растим
+   невидимую зону вверх и вниз. По горизонтали нельзя: соседняя половинка
+   переключателя стоит вплотную и перехватила бы нажатия. */
+.vm-inline button{ position:relative }
+.vm-inline button::after{ content:'';position:absolute;left:0;right:0;top:-6px;bottom:-6px }
+@media (pointer: coarse){
+  /* пальцу нужно 40. Ширину добираем самой кнопкой (зону вбок не растянуть —
+     половинки стоят вплотную), высоту — прозрачным полем. До v1.08.35 на
+     телефоне так и было; правило .rt-row сбило размер заодно и на пальце. */
+  .rt-row .vm-inline button{ width:40px }
+  .vm-inline button::after{ top:-12px;bottom:-12px }
+}
 .rt-row .vm-inline svg{ width:13px;height:13px }
 .hdr-srch{ width:28px;height:28px;border-radius:9px }
 .srch-chips{ display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px }
@@ -2206,6 +2246,7 @@ html.tl-offline .net-login-note{ display:flex }
 .acc-c-pay b{color:var(--yellow);font-weight:900}
 .acc-rent-by{display:inline;margin-left:4px;white-space:normal}
 .acc-c-st{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 100%;order:3;min-width:0}
+.acc-c-st > *{max-width:100%;overflow-wrap:anywhere}   /* v1.08.41: ×1.6 — метки переносятся, а не вылезают */
 .acc-c-note{display:flex;align-items:center;gap:6px;margin-left:auto;order:1}
 .acc-note-ic .ic,.acc-note-ic svg{width:18px;height:18px;color:var(--blue)}
 .acc-line .sec-chev{display:inline-flex;transition:transform .18s ease}
@@ -2277,3 +2318,6 @@ html.tl-offline .net-login-note{ display:flex }
 .acc-staff .avatar{width:40px;height:40px;border:2px solid var(--teal);color:var(--teal);font-size:.9rem;flex:0 0 auto}
 .acc-inv-line{margin-bottom:10px}
 .acc-inv-line .acc-st{margin-left:4px}
+
+/* ============ v1.08.42: каталоги Диска видны и в режиме просмотра ============ */
+.gd-roots-t{ font-weight:900;letter-spacing:.3px;margin:12px 0 6px;text-transform:uppercase }

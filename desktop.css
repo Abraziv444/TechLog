@@ -482,13 +482,22 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop #app:has(.inv-sec) > .opt{
     grid-row:100; grid-column:1 / -1; width:max-content; margin:14px 0 10px;
   }
-  /* ЛЕВАЯ зона */
-  html.tl-desktop #app:has(.inv-sec) > .btn.btn-ghost{           /* История работы */
+  /* ЛЕВАЯ зона.
+     v1.08.41: селектор был «любой прямой .btn-ghost» и писался, когда такая
+     кнопка была одна. С v1.08.33 рядом появилась «Создать такую же» — и обе
+     ложились в одну ячейку (grid-row 101 / column 1), кнопка накрывала кнопку.
+     Теперь у каждой свой класс и своя строка: История · Создать такую же ·
+     Назад — сверху вниз, в том же порядке, в каком они идут в разметке
+     (порядок табуляции больше не скачет). */
+  html.tl-desktop #app:has(.inv-sec) > .btn.btn-ghost.jb-hist{   /* История работы */
     grid-row:101; grid-column:1; width:100%; margin:0 0 8px;
+  }
+  html.tl-desktop #app:has(.inv-sec) > .tpl-row{                 /* Создать такую же + «?» */
+    grid-row:103; grid-column:1; width:100%; margin:0 0 8px;
   }
   html.tl-desktop #app:has(.inv-sec) .btn-row3{ display:contents; }
   html.tl-desktop #app:has(.inv-sec) .btn-row3 > *:nth-child(1){ /* Назад */
-    grid-row:102; grid-column:1; width:100%; margin:0;
+    grid-row:104; grid-column:1; width:100%; margin:0;
   }
   /* ЦЕНТР — карточка апрува (или зелёная пометка «апрувнуто» у не-админа) */
   html.tl-desktop #app:has(.inv-sec) > .card[style*="--purple"]{
@@ -505,17 +514,19 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop #app:has(.inv-sec) > .btn.btn-green{           /* Сохранить */
     grid-row:102; grid-column:5 / span 2; width:auto; margin:0 0 8px;
   }
+  /* v1.08.41: Просмотр/Печать идут в разметке РАНЬШЕ Скачать/Удалить — держим
+     тот же порядок и на экране (было наоборот: фокус с «Печать» прыгал вверх). */
   html.tl-desktop #app:has(.inv-sec) .btn-row3 > *:nth-child(2){ /* Скачать PDF */
-    grid-row:103; grid-column:5; margin:0 0 8px;                 /* v1.07.46: зазор до ряда Просмотр/Печать */
+    grid-row:104; grid-column:5; margin:0 0 8px;
   }
   html.tl-desktop #app:has(.inv-sec) .btn-row3 > *:nth-child(3){ /* Удалить */
-    grid-row:103; grid-column:6; margin:0 0 8px;
+    grid-row:104; grid-column:6; margin:0 0 8px;
   }
   /* Просмотр/Печать — та же правая пара колонок (перенесено сюда из блока
      980px в v1.07.83: без сетки эти правила ломали подвал) */
   html.tl-desktop #app:has(.inv-sec) > .btn-rowpp{ display:contents; width:auto; margin:0; }
-  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(1){ grid-row:104; grid-column:5; margin:0; }
-  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(2){ grid-row:104; grid-column:6; margin:0; }
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(1){ grid-row:103; grid-column:5; margin:0 0 8px; }
+  html.tl-desktop #app:has(.inv-sec) .btn-rowpp > *:nth-child(2){ grid-row:103; grid-column:6; margin:0 0 8px; }
 }
 
 /* ---------- Полировка ---------- */
@@ -680,7 +691,10 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   /* кнопки правой зоны — компакт как у btn-row3, текст в одну строку при 205px */
   html.tl-desktop #app:has(.inv-sec) .btn-row3 > .btn,
   html.tl-desktop #app:has(.inv-sec) .btn-rowpp > .btn{
-    font-size:.8rem; padding:12px 6px; letter-spacing:.2px; white-space:nowrap;
+    font-size:.8rem; padding:12px 6px; letter-spacing:.2px;
+    /* v1.08.41: white-space:nowrap убран — при системном шрифте ×1.6 подпись
+       «Скачать PDF инвойс» вылезала из колонки на 21px. Теперь переносится. */
+    white-space:normal; overflow-wrap:anywhere; line-height:1.1;
   }
   html.tl-desktop .pstrip{ padding-left:0; padding-right:0; }
   /* v1.07.78: подписи полос (пропозалы, работы без исполнителя) — по той же сетке */
