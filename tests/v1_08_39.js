@@ -54,7 +54,7 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
   }));
   t('после входа — экран «Бухгалтерия»', r1.screen === 'acc', r1.screen);
   /* v1.08.45: первым пунктом любого меню стал глобальный поиск */
-  t('вкладки: поиск, acc, reports, stats, dirs, faq, settings', r1.tabs.join(',') === 'searchOpen,acc,reports,stats,dirs,faq,settings', r1.tabs.join(','));
+  t('вкладки: acc, поиск, reports, stats, dirs, faq, settings', r1.tabs.join(',') === 'acc,searchOpen,reports,stats,dirs,faq,settings', r1.tabs.join(','));
   t('нет главной, доски, склада, ремонтов, пропозалов', !/home|board|stock|repairs|proposals/.test(r1.tabs.join(',')));
   t('бейдж роли rt-accountant', /rt-accountant/.test(r1.role), r1.role);
   t('заголовок «Бухгалтерия»', /Бухгалтерия/.test(r1.title));
@@ -203,7 +203,7 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
   }));
   t('штатный набор вкладок техника: поиск, затем home', await p.evaluate(() => {
     const tb = document.querySelectorAll('.tabbar .tab');
-    return /searchOpen/.test(tb[0].getAttribute('onclick')) && /App\.go\('home'\)/.test(tb[1].getAttribute('onclick'));
+    return /App\.go\('home'\)/.test(tb[0].getAttribute('onclick')) && /searchOpen/.test(tb[1].getAttribute('onclick'));
   }));
 
   console.log('— 10. ПК-режим и словарь —');

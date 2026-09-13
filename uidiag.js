@@ -297,7 +297,11 @@
 
   /* --- 2. налезание соседних блоков в обычном потоке -------------------- */
   function checkFlow() {
-    var items = [], parents = qsa('#app *').filter(function (p) { return p.children.length > 1 && !isSelf(p); });
+    /* v1.08.50: значок «руль с номером» — два слоя <text> (размытый ореол
+       + чёткая цифра) поверх пути руля; слои НАМЕРЕННО совпадают. Всё, что
+       внутри .carno-ic, для проверки потока — один элемент. */
+    var items = [], parents = qsa('#app *').filter(function (p) {
+      return p.children.length > 1 && !isSelf(p) && !p.closest('.carno-ic'); });
     parents.slice(0, 400).forEach(function (p) {
       var kids = [].slice.call(p.children).filter(function (k) {
         if (!visible(k)) return false;
@@ -506,6 +510,9 @@
     var items = [], n = 0;
     qsa('#app *').forEach(function (el) {
       if (items.length > 10 || n > 500 || !visible(el)) return;
+      /* v1.08.50: значок «руль с номером» — графика: нижний слой цифры
+         намеренно полупрозрачный ореол, читаемость даёт верхний чёткий */
+      if (el.closest && el.closest('.carno-ic')) return;
       var own = [].slice.call(el.childNodes).some(function (x) { return x.nodeType === 3 && x.textContent.trim(); });
       if (!own) return;
       n++;
@@ -1330,8 +1337,8 @@
      Обход всех экранов одной кнопкой. Ради этого всё и затевалось: на
      чужом айфоне человек жмёт один раз и присылает готовый .txt.
      ------------------------------------------------------------------ */
-  var SCREENS = ['home', 'board', 'proposals', 'stock', 'map', 'reports', 'stats', 'dirs',
-                 'archive', 'journal', 'acc', 'settings'];   // v1.07.88: архив-корзина; v1.08.39: бухгалтерия
+  var SCREENS = ['home', 'board', 'proposals', 'stock', 'map', 'reports', 'stats', 'study', 'dirs',
+                 'archive', 'journal', 'acc', 'settings'];   // v1.07.88: архив-корзина; v1.08.39: бухгалтерия; v1.08.51: учёба
   var ALL = null;
 
   function available() {

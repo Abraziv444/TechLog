@@ -1,0 +1,50 @@
+{
+ "meta": {
+  "schema": "techlog-quiz",
+  "schema_version": 1,
+  "id": "section-N",
+  "section": 0,
+  "title": { "ru": "Название раздела", "en": "Section title" },
+  "description": { "ru": "", "en": "" },
+  "source": { "book": "", "publisher": "Legend Brands", "edition": "", "pages": "" },
+  "languages": ["ru", "en"],
+  "default_language": "ru",
+  "pass_percent": 70,
+  "shuffle_questions": true,
+  "shuffle_options": false,
+  "question_count": 1
+ },
+ "topics": [
+  { "id": "t01", "pages": "1-10", "title": { "ru": "Тема", "en": "Topic" } }
+ ],
+ "assets": {
+  "scheme_example": {
+   "type": "svg",
+   "title": { "ru": "Название схемы", "en": "Scheme title" },
+   "caption": { "ru": "", "en": "" },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 400 120\"><rect width=\"400\" height=\"120\" fill=\"#ffffff\"/><text x=\"200\" y=\"64\" text-anchor=\"middle\" font-size=\"16\" fill=\"#111\">SVG</text></svg>"
+  }
+ },
+ "questions": [
+  {
+   "id": "q001",
+   "type": "single",
+   "difficulty": "medium",
+   "topic": "t01",
+   "asset": "scheme_example",
+   "ref": { "section": 0, "chapter": { "ru": "Глава", "en": "Chapter" }, "pages": [1] },
+   "question": { "ru": "Текст вопроса?", "en": "Question text?" },
+   "hint": { "ru": "Подсказка.", "en": "Hint." },
+   "options": [
+    { "id": "1", "text": { "ru": "Вариант 1", "en": "Option 1" }, "explanation": { "ru": "Неверно, потому что…", "en": "Incorrect because…" }, "pages": [1] },
+    { "id": "2", "text": { "ru": "Вариант 2", "en": "Option 2" }, "explanation": { "ru": "Верно: …", "en": "Correct: …" }, "pages": [1] },
+    { "id": "3", "text": { "ru": "Вариант 3", "en": "Option 3" }, "explanation": { "ru": "Неверно…", "en": "Incorrect…" }, "pages": [2] },
+    { "id": "4", "text": { "ru": "Вариант 4", "en": "Option 4" }, "explanation": { "ru": "Неверно…", "en": "Incorrect…" }, "pages": [2] },
+    { "id": "5", "text": { "ru": "Все варианты верны", "en": "All of the above are correct" }, "explanation": { "ru": "Неверно…", "en": "Incorrect…" } },
+    { "id": "6", "text": { "ru": "Верны варианты 1 и 3", "en": "Options 1 and 3 are correct" }, "explanation": { "ru": "Неверно…", "en": "Incorrect…" } }
+   ],
+   "correct": ["2"],
+   "explanation": { "ru": "Общий разбор вопроса со ссылкой на раздел и страницы.", "en": "Overall explanation with a reference to the section and pages." }
+  }
+ ]
+}

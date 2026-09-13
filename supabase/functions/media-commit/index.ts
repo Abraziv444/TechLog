@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
        Диске: своя строка в media не заводится, счётчики документа не растут,
        а у человека в его папке лежит тот же бланк. Ошибка здесь не должна
        ронять загрузку — оборачиваем целиком. */
-    if (m.kind === "invoice") {
+    if (m.kind === "invoice" && m.job_id) {
       try {
         const o = await s.from("org_settings")
           .select("gd_inv_helpers,gd_inv_folder").eq("id", "org").maybeSingle();
@@ -75,7 +75,8 @@ Deno.serve(async (req) => {
     const { data: p } = await s.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
     await s.from("audit_log").insert({ actor: user.id, actor_name: p?.display_name ?? "",
       action: m.kind === "video" ? "video_upload" : "photo_upload",
-      entity: "job", entity_id: m.job_id,
+      entity: m.repair_id ? "repair" : "job",
+      entity_id: m.repair_id ?? m.job_id,
       details: { media_id: m.id, file: m.file_name, size: g.size ?? m.size_bytes, seq: m.seq } });
 
     /* v1.07.64: свободное место на Диске — не чаще раза в 6 часов, чтобы

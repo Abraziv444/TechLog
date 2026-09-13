@@ -2199,6 +2199,36 @@ button.net-pill::after{ content:"";position:absolute;left:-2px;right:-2px;top:-4
 .net-pill.slow{ color:var(--orange);border-color:var(--orange) }
 .net-pill.slow::before{ background:var(--orange);box-shadow:0 0 5px var(--orange) }
 @media (max-width:380px){ .net-pill{ font-size:.5rem;padding:1px 5px;gap:3px;min-width:86px } }
+/* v1.08.50: номер машины = присланный руль с цифрой внутри.
+   Прежние рамки-кружочки снимаются: сам значок и есть «кружок».
+   Цвет — через currentColor, поэтому состояние «едет» просто красит
+   значок зелёным и подсвечивает свечением. */
+.carno-ic{ display:block; width:100%; height:100% }
+.car-no{ min-width:0; height:auto; padding:0; border:0; background:none;
+  display:inline-flex; width:22px; height:22px; color:var(--blue); vertical-align:-5px }
+.car-no .ic{ display:none }
+.bn-sno{ min-width:0; border:0; background:none; padding:0;
+  width:27px; height:27px; color:var(--ink) }
+.bn-sno.run{ border:0; box-shadow:none; color:var(--green);
+  filter:drop-shadow(0 0 6px rgba(88,204,2,.55)) }
+.twtile .bn-sno{ min-width:0; width:31px; height:31px; border-radius:0 }
+.bn-chip-no{ min-width:0; border:0; background:none; padding:0;
+  width:20px; height:20px; color:inherit }   /* руль — цветом текста чипа */
+.carno-dot{ display:inline-flex; width:24px; height:24px; color:var(--blue);
+  flex:0 0 auto }
+
+/* v1.08.48: открытая модалка забирает прокрутку себе — страница под
+   подложкой стоит (overflow:hidden на body, позиция сохраняется сама);
+   ширина системного скроллбара компенсируется полем, чтобы контент не
+   дёргался. overscroll-behavior отучает докрутку модалки цеплять фон. */
+body.tl-lock{ overflow:hidden; padding-right:var(--sbw, 0px) }
+.overlay{ overscroll-behavior:contain }
+.modal{ overscroll-behavior:contain }
+
+/* v1.08.48: номер машины сотрудника — с рулём */
+.car-no{ display:inline-flex; align-items:center; gap:3px }
+.car-no .ic{ width:12px; height:12px }
+
 /* v1.08.46: жёлтый баннер «Ждут апрува» на главной — вход в единое место
    решений администратора; правый шеврон намекает, что карточка открывается */
 .banner.b-apv{ border-color:var(--yellow); color:var(--yellow) }
@@ -2392,3 +2422,82 @@ html.tl-offline .net-login-note{ display:flex }
 
 /* ============ v1.08.42: каталоги Диска видны и в режиме просмотра ============ */
 .gd-roots-t{ font-weight:900;letter-spacing:.3px;margin:12px 0 6px;text-transform:uppercase }
+
+/* ============ v1.08.51: УЧЁБА — тесты и материалы ============ */
+.st-sec{ border-left:6px solid var(--sc, var(--blue)); padding-left:12px }
+.st-sec-h{ display:flex;align-items:center;gap:10px;min-width:0 }
+.st-sec-h .grow{ min-width:0 }
+.st-sec-no{ display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;flex:0 0 auto;
+  background:var(--sc, var(--blue));color:#0B0F12;font-weight:900;font-size:1rem }
+.st-sec-dot{ display:inline-block;width:12px;height:12px;border-radius:50%;flex:0 0 auto;margin-right:4px }
+.st-btns{ display:flex;flex-wrap:wrap;gap:8px;margin-top:10px }
+.st-btns .btn{ flex:1 1 140px }
+.st-sec-btns .btn{ flex:1 1 120px }
+.st-resume{ display:flex;align-items:center;gap:8px;border-color:var(--yellow) }
+.st-resume .grow{ min-width:0 }
+.st-start-row{ display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:6px 0 }
+.st-start-row b{ flex:1 1 90px }
+.st-run{ border-left:6px solid var(--sc, var(--blue)) }
+.st-run-h{ display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0 }
+.st-run-h .grow{ min-width:0;flex:1 1 140px }
+.st-timer{ display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;font-weight:900;
+  padding:4px 10px;border-radius:999px;background:var(--panel-2);border:2px solid var(--line);color:var(--dim) }
+.st-timer .ic{ width:16px;height:16px }
+.st-run-h .st-lang{ width:auto;flex:0 0 auto } .st-run-h .st-lang button{ flex:0 0 auto;min-width:44px;padding:7px 10px }
+.st-rv-tools .lang-seg{ width:auto } .st-rv-tools .lang-seg button{ flex:0 0 auto;min-width:44px;padding:7px 10px }
+.st-prog{ height:8px;border-radius:6px;background:var(--panel-2);border:1px solid var(--line);overflow:hidden;margin:10px 0 }
+.st-prog span{ display:block;height:100%;background:var(--sc, var(--green));transition:width .3s }
+.st-qtext{ font-size:1.08rem;font-weight:800;line-height:1.4;margin:8px 0 }
+.st-multi{ color:var(--yellow);margin:-2px 0 6px }
+.st-asset{ margin:8px 0 10px;background:#fff;border-radius:var(--r-sm);padding:6px;border:2px solid var(--line);text-align:center }
+.st-asset svg,.st-asset img{ max-width:100%;height:auto;display:block;margin:0 auto }
+.st-asset figcaption{ color:#374151;padding:4px 2px 0;text-align:left }
+.st-opts{ display:grid;gap:8px }
+.st-opt{ display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;padding:10px 12px;
+  border:2px solid var(--line);border-radius:var(--r-sm);background:var(--panel-2);line-height:1.35;min-height:48px }
+.st-opt .grow{ min-width:0;flex:1 }
+.st-opt .ic{ width:20px;height:20px;flex:0 0 auto;color:var(--green) }
+.st-opt.on{ border-color:var(--blue);background:rgba(28,176,246,.12) }
+.st-opt.ok{ border-color:var(--green);background:rgba(88,204,2,.12) }
+.st-opt.bad{ border-color:var(--red);background:rgba(255,75,75,.12) }
+.st-opt:disabled{ cursor:default;opacity:1 }
+.st-opt:disabled:not(.ok):not(.bad){ opacity:.6 }
+.st-opt-id{ display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:8px;flex:0 0 auto;
+  background:var(--line);font-weight:900;font-size:.85rem }
+.st-opt.ok .st-opt-id{ background:var(--green);color:var(--green-ink) }
+.st-opt.bad .st-opt-id{ background:var(--red);color:#fff }
+.st-opt-ex{ font-size:.86rem;font-weight:600;color:var(--dim);margin-top:4px }
+.st-hint{ margin-top:10px;padding:8px 12px;border-radius:var(--r-sm);background:rgba(255,200,0,.12);border:2px dashed var(--yellow) }
+.st-verdict{ margin-top:10px;font-weight:900;font-size:1rem;display:flex;align-items:center;gap:6px }
+.st-verdict.ok{ color:var(--green) } .st-verdict.bad{ color:var(--red) }
+.st-ex{ margin-top:6px;padding:8px 12px;border-radius:var(--r-sm);background:var(--panel-2);font-weight:600 }
+.st-ex .ic{ width:16px;height:16px;vertical-align:-3px }
+.st-ref{ margin-top:4px } .st-ref .ic{ width:14px;height:14px;vertical-align:-2px }
+.st-run-btns{ margin-top:12px } .st-run-btns .btn-green{ flex:2 1 160px }
+.st-res{ display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:6px 0 10px }
+.st-ring{ width:120px;height:120px;flex:0 0 auto }
+.st-res-txt{ flex:1 1 160px;min-width:0 }
+.st-res-verdict{ font-weight:900;font-size:1.2rem;display:flex;align-items:center;gap:6px }
+.st-res-nums{ display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 }
+.st-rv-tools{ display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px }
+.st-rv-list{ display:grid;gap:10px }
+.st-rv{ border:2px solid var(--line);border-left-width:6px;border-radius:var(--r-sm);padding:8px 10px }
+.st-rv.ok{ border-left-color:var(--green) } .st-rv.bad{ border-left-color:var(--red) }
+.st-rv-h{ display:flex;align-items:flex-start;gap:6px;margin-bottom:6px } .st-rv-h .ic{ width:18px;height:18px;flex:0 0 auto;margin-top:2px }
+.st-qn{ display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:7px;background:var(--line);font-size:.8rem;font-weight:900;flex:0 0 auto }
+.st-rv-opt{ display:flex;gap:8px;align-items:flex-start;padding:4px 0;font-size:.92rem;color:var(--dim) }
+.st-rv-opt.ok{ color:var(--text) } .st-rv-opt.bad{ color:var(--text) }
+.st-rv-opt.ok .st-opt-id{ background:var(--green);color:var(--green-ink) } .st-rv-opt.bad .st-opt-id{ background:var(--red);color:#fff }
+.st-srow .grow{ min-width:0 } .st-srow .btn{ flex:0 0 auto }
+.st-sum{ display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px }
+.st-kpi{ display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px 4px;border-radius:var(--r-sm);background:var(--panel-2) }
+.st-kpi b{ font-size:1.15rem;font-weight:900 } .st-kpi span{ font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.3px }
+.st-urow{ border-bottom:1px solid var(--line-soft);padding:2px 0 } .st-urow:last-child{ border-bottom:none }
+.st-urow > .rowline{ cursor:pointer } .st-urow.open > .rowline{ background:var(--panel-2);border-radius:var(--r-sm) }
+.st-secline{ display:flex;align-items:center;gap:8px;padding:5px 0 5px 44px;min-width:0 } .st-secline .grow{ min-width:0 }
+.st-sess{ padding-left:20px }
+.st-read{ display:flex;flex-direction:column }
+.st-read-h{ display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px } .st-read-h .grow{ min-width:0 }
+.st-read-h a.icon-btn{ display:inline-grid;place-items:center }
+.st-frame{ width:100%;height:calc(100dvh - 240px);min-height:380px;border:2px solid var(--line);border-radius:var(--r-sm);background:#fff }
+.st-sels{ display:grid;gap:6px;grid-template-columns:minmax(0,1fr);margin-top:6px } .st-sels select{ min-width:0 }

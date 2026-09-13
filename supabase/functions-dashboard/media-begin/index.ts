@@ -57,18 +57,36 @@ Deno.serve(async (req) => {
     const { data: { user } } = await sb.auth.getUser();
     if (!user) return jres({ error: "UNAUTHORIZED" }, 401);
 
-    const { job_id, kind, mime, size, name } = await req.json();
+    const { job_id, repair_id, doc, kind, mime, size, name } = await req.json();
+    const isRep = doc === "rep" || (!!repair_id && !job_id);   // v1.08.48: медиа у ремонта
     const lim = LIMITS[kind as "photo" | "video" | "file" | "invoice"];
     if (!lim) return jres({ error: "BAD_KIND" }, 400);
     if (!Number.isFinite(size) || size <= 0 || size > lim.bytes)
       return jres({ error: "TOO_BIG", max: lim.bytes }, 413);
 
-    // права: если RLS не отдал работу — доступа нет; логику не дублируем
-    const { data: job } = await sb.from("jobs")
-      .select("id,date,unit_number,technician_id,counterparty_id,complex_id," +
-              "complexes(abbr,name),counterparties(abbr,name),work_types(name)")
-      .eq("id", job_id).maybeSingle();
+    // права: если RLS не отдал документ — доступа нет; логику не дублируем.
+    // v1.08.48: у ремонта свой владелец — строка приводится к «job-подобному»
+    // виду (technician = created_by, вид работы = REPAIR), и вся раскладка
+    // по папкам/именам ниже работает без ветвлений.
+    let job: any = null;
+    if (isRep) {
+      const { data: rep } = await sb.from("repairs")
+        .select("id,date,unit_number,created_by,counterparty_id,complex_id," +
+                "complexes(abbr,name),counterparties(abbr,name)")
+        .eq("id", repair_id).maybeSingle();
+      if (!rep) return jres({ error: "NO_ACCESS" }, 403);
+      job = { ...rep, technician_id: (rep as any).created_by,
+              work_types: { name: "REPAIR" } };
+    } else {
+      const q = await sb.from("jobs")
+        .select("id,date,unit_number,technician_id,counterparty_id,complex_id," +
+                "complexes(abbr,name),counterparties(abbr,name),work_types(name)")
+        .eq("id", job_id).maybeSingle();
+      job = q.data;
+    }
     if (!job) return jres({ error: "NO_ACCESS" }, 403);
+    const ownerCol = isRep ? "repair_id" : "job_id";
+    const ownerId  = isRep ? repair_id : job_id;
 
     const s = svc();
     /* v1.07.81: media_max_file мог ещё не появиться в базе (SQL не выполнен) —
@@ -95,14 +113,14 @@ Deno.serve(async (req) => {
       : kind === "file" ? Number(org?.media_max_file ?? LIMITS.file.max)
       : kind === "invoice" ? LIMITS.invoice.max
       : Number(org?.media_max_photo ?? LIMITS.photo.max);
-    await s.from("media").delete().eq("job_id", job_id).eq("status", "uploading")
+    await s.from("media").delete().eq(ownerCol, ownerId).eq("status", "uploading")
       .lt("created_at", new Date(Date.now() - 86_400_000).toISOString());
     const { data: rows } = await s.from("media")
-      .select("seq").eq("job_id", job_id).eq("kind", kind)
+      .select("seq").eq(ownerCol, ownerId).eq("kind", kind)
       .order("seq", { ascending: false }).limit(1);
     const { count } = await s.from("media")
       .select("id", { count: "exact", head: true })
-      .eq("job_id", job_id).eq("kind", kind);
+      .eq(ownerCol, ownerId).eq("kind", kind);
     if ((count ?? 0) >= maxCount) return jres({ error: "LIMIT", max: maxCount }, 409);
     const seq = (rows?.[0]?.seq ?? 0) + 1;
 
@@ -145,9 +163,10 @@ Deno.serve(async (req) => {
     }) + "." + ext;
 
     const id = crypto.randomUUID();
-    const thumb_path = (kind === "file" || kind === "invoice") ? null : `${job_id}/${id}.jpg`;  // у документа превью нет
+    const thumb_path = (kind === "file" || kind === "invoice") ? null : `${ownerId}/${id}.jpg`;  // у документа превью нет
     const { error: insErr } = await s.from("media").insert({
-      id, job_id, owner_id: user.id, kind, seq, file_name,
+      id, job_id: isRep ? null : job_id, repair_id: isRep ? repair_id : null,
+      owner_id: user.id, kind, seq, file_name,
       mime: String(mime ?? ""), size_bytes: size, thumb_path, status: "uploading" });
     if (insErr) return jres({ error: insErr.message }, 500);
 

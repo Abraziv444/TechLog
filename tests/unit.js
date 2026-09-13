@@ -49,7 +49,9 @@ const expose = `;window.__T = {
   ACC_SEC_DEF, ACC_SECS, ACC_CATS, accSplitJob, accSplitRep, accPay, accSecCat, accExtraCat, accPctEff, accPct,
   accByStaff, accTotals, accDocRow, accDocs, accF, isAcc, isAccP, scopeFilter, viewAcc,
   /* v1.08.40: переводы */
-  sectionFaqHtml, faqHtml, viewHeader, viewLogin, viewStats, SECTION_HELP, chainCardBody, tvAgo, gdInvPathSample
+  sectionFaqHtml, faqHtml, viewHeader, viewLogin, viewStats, SECTION_HELP, chainCardBody, tvAgo, gdInvPathSample,
+  /* v1.08.51: учёба */
+  STUDY, qzNorm, studyAllowedFor, studyMenuOn, studySections, studyDefaultCat, studySecStat, fmtMs, BK_TABLES
 };`;
 
 try {
@@ -350,7 +352,7 @@ console.log('\n— диагностика новых модулей (v1.07.89) �
 console.log('\n— камера на любом телефоне (v1.07.90) —');
 {
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
-  t('mediaPick принимает источник', /function mediaPick\(jobId, kind, src\)/.test(src));
+  t('mediaPick принимает источник', /function mediaPick\(jobId, kind, src, doc\)/.test(src));
   t('«Камера» — всегда capture', /src === 'cam' \|\| \(src !== 'lib' && camMode\(\) === 'quick'\)/.test(src));
   t('кнопки «Камера» и «Галерея» в карточке', /'photo','cam'/.test(src) && /'photo','lib'/.test(src));
   t('кнопка «Камера не открылась?»', /App\.camFix\(\)/.test(src) && /cam_nocam/.test(src));
@@ -1266,8 +1268,8 @@ console.log('\n— v1.08.47: сжатие видео и политика дос�
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
   const sw = fs.readFileSync(ROOT + '/sw.js', 'utf8');
   const vj = JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8'));
-  t('версии синхронны (app/sw/version.json = 1.08.47)',
-    /APP_VERSION = '1\.08\.47'/.test(src) && /VERSION = '1\.08\.47'/.test(sw) && vj.version === '1.08.47');
+  t('версии синхронны (app = sw = version.json)',
+    src.includes(`APP_VERSION = '${vj.version}'`) && sw.includes(`VERSION = '${vj.version}'`));
   t('vendor-библиотеки в сборке', fs.existsSync(ROOT + '/vendor/mp4box.all.min.js')
     && fs.existsSync(ROOT + '/vendor/mp4-muxer.js'));
   t('vendor в прекэше service worker',
@@ -1308,11 +1310,201 @@ console.log('\n— v1.08.47: сжатие видео и политика дос�
   t('скрепка: вид файла решает MIME (картинка→фото, видео→видео)',
     src.includes("if (/^image\\//.test(ty)) return 'photo';")
     && src.includes("if (/^video\\//.test(ty)) return 'video';")
-    && src.includes("mediaTakeFiles(jobId, [...(inp.files || [])], null)")
+    && src.includes("mediaTakeFiles(jobId, [...(inp.files || [])], null, { doc })")
     && src.includes('kind || mKindOf(f)'));
   t('настройки: режим видео и копия — на устройстве',
     /techlog_vid_mode/.test(src) && /techlog_copy_dl/.test(src)
     && /'vidMode'\)/.test(src) && /vid_test/.test(src));
+}
+
+console.log('\n— v1.08.48: медиа у ремонта, ТВ-уборка, модалки —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  const sql = fs.readFileSync(ROOT + '/supabase/full-install-1_08_48.sql', 'utf8');
+  const beg = fs.readFileSync(ROOT + '/supabase/functions/media-begin/index.ts', 'utf8');
+  const com = fs.readFileSync(ROOT + '/supabase/functions/media-commit/index.ts', 'utf8');
+  const del = fs.readFileSync(ROOT + '/supabase/functions/media-delete/index.ts', 'utf8');
+  t('SQL-комплект 1.08.48 на месте (DB_SQL_FILE двинулся на 1.08.51)',
+    src.includes("DB_SQL_FILE = 'full-install-1_08_51.sql'")
+    && fs.existsSync(ROOT + '/supabase/update-to-1_08_48.sql'));
+  t('SQL: ровно один владелец медиа + права ремонта + tv_cleanup',
+    sql.includes('media_owner_one') && sql.includes('can_view_repair')
+    && sql.includes('tv_cleanup') && sql.includes('repair_id uuid references public.repairs'));
+  t('media-begin: ветка ремонта (isRep, ownerCol, вид REPAIR)',
+    /const isRep = doc === "rep"/.test(beg) && /ownerCol/.test(beg)
+    && beg.includes('work_types: { name: "REPAIR" }')
+    && beg.includes('repair_id: isRep ? repair_id : null'));
+  t('media-commit: журнал по владельцу (repair|job)',
+    com.includes('entity: m.repair_id ? "repair" : "job"'));
+  t('media-delete: полный вынос файлов ремонта',
+    del.includes('if (repair_id) {') && del.includes('.eq("repair_id", repair_id)')
+    && del.includes('entity: "repair"'));
+  t('клиент: владелец записи — задача ИЛИ ремонт (mOwnId/mOwnMatch)',
+    /function mOwnId\(/.test(src) && /function mOwnMatch\(/.test(src)
+    && src.includes("doc === 'rep' ? m.repair_id === id : m.job_id === id"));
+  t('полоса медиа и сборщики принимают doc',
+    src.includes("function mediaStripHtml(jobId, doc = 'job')")
+    && src.includes("function mediaEnqueueFile(jobId, f, kind, doc = 'job')")
+    && src.includes("function mediaPick(jobId, kind, src, doc)"));
+  t('форма ремонта: свой медиа-блок и кнопка чека',
+    src.includes("mediaStripHtml(r.id, 'rep')")
+    && src.includes("App.mediaPick('${r.id}','photo','cam','rep')"));
+  t('кнопки сметы переименованы, «+строка» осталась',
+    src.includes("t('rep_add_work')") && src.includes("t('rep_add_mat')")
+    && (src.match(/t\('prop_add_row'\)/g) || []).length >= 2);
+  t('связи ремонта: пикер пропозала и фильтр задач по контрагенту',
+    /function repPropPickerHtml\(/.test(src) && /repLinkProp/.test(src)
+    && src.includes("j.counterparty_id === r.counterparty_id)   // v1.08.48"));
+  t('удаление навсегда уносит файлы ремонта',
+    /mediaDropRepair\(id\)/.test(src) && /function mediaDropRepair/.test(src));
+  t('ТВ: три кнопки уборки и RPC',
+    src.includes("App.tvCleanup('revoked')") && src.includes("App.tvCleanup('inactive')")
+    && src.includes("App.tvCleanup('revoke_all')") && src.includes("rpc('tv_cleanup'"));
+  t('ТВ-сессии видны в списке устройств, kill гасит и их',
+    src.includes("t('sess_tv')") && src.includes("via: 'st_kill'"));
+  t('модалки: фон заперт (tl-lock + компенсация скроллбара)',
+    src.includes("b.classList.add('tl-lock')") && /--sbw/.test(src)
+    && css.includes('body.tl-lock{ overflow:hidden; padding-right:var(--sbw, 0px) }')
+    && css.includes('.modal{ overscroll-behavior:contain }'));
+  t('иконка руля у номера машины (значок с цифрой)',
+    /function carNoSvg\(/.test(src) && src.includes("${carNoSvg(u.car_no)}"));
+  t('очередь: подпись и владелец для ремонта',
+    src.includes("it.doc === 'rep' ? 'REP·' : ''") && src.includes('mOwnId(it)'));
+}
+
+console.log('\n— v1.08.49: поиск — место, галочка, мультивыбор —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  t('поиск стоит сразу после «Главной» (и после «Бухгалтерии» у бухгалтера)',
+    /\['home', ICONS\.home, t\('tab_home'\)\],\n    \.\.\.srchItem,/.test(src)
+    && /\['acc', ic\('receipt'\), t\('tab_acc'\)\],\n    \.\.\.srchItem,/.test(src));
+  t('на телефоне кнопку прячет личная галочка, на ПК — всегда видна',
+    src.includes("(vmCur() !== 'mobile' || srchTabOn())")
+    && /techlog_srch_tab/.test(src) && src.includes("App.srchTab(this.checked)"));
+  t('из карточки настроек поиск открывается и при спрятанной кнопке',
+    src.includes("onclick=\"App.searchOpen()\">${ic('search')} ${t('srch_open_here')}"));
+  t('выбор видов — множество с запретом пустоты',
+    src.includes("let srchSel = new Set(SRCH_KINDS)")
+    && src.includes("if (!srchSel.size) srchSel = new Set(SRCH_KINDS)")
+    && src.includes("srchSel = new Set([k])"));
+  t('«Юнит» — отдельный режим, комплексы в нём скрыты',
+    src.includes('srchUnit = !srchUnit') && src.includes("S.has('cx') && !U"));
+  t('выбор запоминается на устройстве',
+    /techlog_srch_sel/.test(src) && /srchSaveSel\(\); srchChipsSync\(\); srchRender\(\);/.test(src));
+  t('фильтры видов читают набор, а не одиночный вид',
+    src.includes("if (S.has('job')) liveJobs()") && src.includes("if (S.has('pk'))")
+    && src.includes("if (S.has('prop'))") && src.includes("if (S.has('rep'))"));
+}
+
+console.log('\n— v1.08.50: присланный руль + цифра —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  t('основа значка — присланный SVG (путь руля перенесён байт в байт)',
+    src.includes("const CAR_WHEEL_D = 'M61.44,0c33.93,0,61.44,27.51,61.44,61.44")
+    && src.includes('c6.2,5.27,15.18,6.23,16.58,16.16C54.37,106.74,53.19,111.38,47.26,109.05'));
+  t('центр приглушён маской, цифра с размытым ореолом (два слоя text)',
+    src.includes('radialGradient id=') && src.includes('${id}m')
+    && src.includes('feGaussianBlur stdDeviation=') && src.includes('dominant-baseline'));
+  t('значок заменил кружочки во всех местах номера',
+    (src.match(/carNoSvg\(/g) || []).length >= 7);
+  t('старые рамки сняты, подсветка «едет» — цветом значка',
+    css.includes('.carno-ic{ display:block') && css.includes('.bn-sno.run{ border:0; box-shadow:none; color:var(--green)')
+    && css.includes('.car-no .ic{ display:none }'));
+}
+
+
+console.log('\n— v1.08.51: учёба —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  const sw  = fs.readFileSync(ROOT + '/sw.js', 'utf8');
+  t('SQL-комплект 1.08.51 на месте и подключён',
+    src.includes("DB_SQL_FILE = 'full-install-1_08_51.sql'")
+    && fs.existsSync(ROOT + '/supabase/update-to-1_08_51.sql') && fs.existsSync(ROOT + '/supabase/full-install-1_08_51.sql'));
+  const sql = fs.readFileSync(ROOT + '/supabase/update-to-1_08_51.sql', 'utf8');
+  t('SQL: study_sessions с RLS, колонки доступа, study_access под защитой guard, восстановление',
+    sql.includes('create table if not exists public.study_sessions') && sql.includes('study_sel') && sql.includes('study_upd')
+    && sql.includes('add column if not exists study_on') && sql.includes('add column if not exists study_access')
+    && sql.includes('new.study_access is distinct from old.study_access') && /v_allowed[^;]*'study_sessions'/.test(sql));
+  t('словарь: все st_* и act_study_* ключи есть в RU и EN',
+    Object.keys(T.DICT.ru).filter(k => /^st_|^act_study_|^tab_study$/.test(k)).every(k => k in T.DICT.en)
+    && T.DICT.ru.tab_study === 'Учёба' && T.DICT.en.tab_study === 'Study');
+  t('study_sessions в синке и в бэкапе; DB-диагностика знает новые колонки',
+    T.TABLES.includes('study_sessions') && T.BK_TABLES.includes('study_sessions')
+    && T.DB_NEED_COLS.some(c => c[0] === 'study_sessions') && T.DB_NEED_COLS.some(c => c[0] === 'profiles' && c[1] === 'study_access'));
+  t('каталог: 8 разделов по умолчанию, тест и учебник у каждого',
+    T.studyDefaultCat().sections.length === 8 && T.studyDefaultCat().sections.every(s => /^tests\/section-\d\.json$/.test(s.test) && /^books\/section-\d\.html$/.test(s.book)));
+  const idx = JSON.parse(fs.readFileSync(ROOT + '/dictionary/index.json', 'utf8'));
+  t('dictionary/index.json: 8 разделов, файлы 3/5/7 и учебник 8 реально лежат в сборке',
+    idx.sections.length === 8 && [3, 5, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
+    && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')
+    && fs.existsSync(ROOT + '/dictionary/tests/template.json') && fs.existsSync(ROOT + '/dictionary/tests/tools/normalize-quiz.py'));
+  /* нормализация: единый формат и три старых варианта структуры */
+  const canon = T.qzNorm(JSON.parse(fs.readFileSync(ROOT + '/dictionary/tests/template.json', 'utf8')), 1);
+  t('qzNorm: единый формат — вопрос, 6 вариантов, верный «2», схема, ссылка на страницы',
+    canon.questions.length === 1 && canon.questions[0].options.length === 6 && canon.questions[0].correct[0] === '2'
+    && canon.questions[0].asset === 'scheme_example' && canon.assets.scheme_example.svg.startsWith('<svg')
+    && canon.questions[0].options[1].explanation.ru.startsWith('Верно') && canon.questions[0].ref.pages[0] === 1);
+  const legacyA = T.qzNorm({ meta: { title: 'X' }, assets: { pic: { type: 'svg', title: 'P', content: '<svg/>' } },
+    questions: [{ id: 'U1-Q01', manualSection: 3, pages: [1], question: { en: 'q', ru: 'в' }, media: 'pic',
+      options: [{ id: '1', text: { en: 'a', ru: 'а' } }, { id: '2', text: { en: 'b', ru: 'б' } }], correctOption: '2',
+      option_explanations: { '2': { en: 'ok', ru: 'да', ref: { pages: [7] } } } }] }, 3);
+  t('qzNorm: старый вариант A (correctOption + option_explanations + media/content)',
+    legacyA.questions[0].correct[0] === '2' && legacyA.questions[0].asset === 'pic' && legacyA.assets.pic.svg === '<svg/>'
+    && legacyA.questions[0].options[1].explanation.ru === 'да' && legacyA.questions[0].options[1].pages[0] === 7 && legacyA.meta.section === 3);
+  const legacyB = T.qzNorm({ meta: {}, media: { m1: { type: 'svg', svg: '<svg/>' } },
+    questions: [{ id: 'S5-001', type: 'single', book: { journalSection: 5, chapter: 1, chapterTitle: { en: 'Bg', ru: 'Общ' }, pages: '1' }, mediaRef: 'm1',
+      question: { en: 'q', ru: 'в' }, options: [{ id: 1, text: { en: 'a', ru: 'а' }, correct: false, explanation: { en: 'no', ru: 'нет' } },
+      { id: 2, text: { en: 'b', ru: 'б' }, correct: true, explanation: { en: 'yes', ru: 'да' } }], reference: { journalSection: 5, chapter: 1, pages: '1', label: { en: 'L', ru: 'Л' } } }] }, 5);
+  t('qzNorm: старый вариант B (correct:true в варианте, mediaRef, book.chapterTitle; номер главы — не название)',
+    legacyB.questions[0].correct[0] === '2' && legacyB.questions[0].asset === 'm1' && legacyB.questions[0].ref.chapter.ru === 'Общ'
+    && legacyB.questions[0].ref.pages[0] === '1' && legacyB.questions[0].options[0].id === '1' && legacyB.questions[0].type === 'single');
+  const legacyC = T.qzNorm({ meta: {}, assets: { a1: { type: 'svg', svg: '<svg/>' } },
+    questions: [{ id: 'q001', journalSection: 7, pages: '1-2', sectionTitle: { en: 'Intro', ru: 'Введ' }, asset: 'a1', multiSelect: true,
+      question: { en: 'q', ru: 'в' }, options: [{ id: '1', text: { en: 'a', ru: 'а' } }, { id: '2', text: { en: 'b', ru: 'б' } }], correct: ['1', '2'] }] }, 7);
+  t('qzNorm: старый вариант C (correct[] + multiSelect + asset + sectionTitle) → multi',
+    legacyC.questions[0].type === 'multi' && legacyC.questions[0].correct.length === 2 && legacyC.questions[0].ref.chapter.en === 'Intro');
+  t('qzNorm: вопрос без верного ответа или с одним вариантом отбрасывается',
+    T.qzNorm({ questions: [{ id: 'x', question: 'q', options: [{ id: '1', text: 'a' }] }, { id: 'y', question: 'q', options: [{ id: '1', text: 'a' }, { id: '2', text: 'b' }] }] }, 1).questions.length === 0);
+  /* доступ */
+  const orgBak = T.state.data.org_settings;
+  T.state.data.org_settings = { ...orgBak, study_on: true, study_all: true };
+  t('доступ: «всем» — техник без флага допущен; админ — всегда',
+    T.studyAllowedFor({ role: 'tech' }) && T.studyAllowedFor({ role: 'admin' }));
+  T.state.data.org_settings = { ...orgBak, study_on: true, study_all: false };
+  t('доступ: «по списку» — только с флагом study_access',
+    !T.studyAllowedFor({ role: 'tech' }) && T.studyAllowedFor({ role: 'tech', study_access: true }) && !T.studyAllowedFor({ role: 'manager' }));
+  T.state.data.org_settings = { ...orgBak, study_on: false, study_all: true };
+  t('доступ: общий выключатель снят — техник нет, админ да',
+    !T.studyAllowedFor({ role: 'tech', study_access: true }) && T.studyAllowedFor({ role: 'admin' }));
+  T.state.data.org_settings = orgBak;
+  const userBak = T.state.user;
+  T.state.user = { id: 'u1', role: 'tech' };
+  const withBtn = T.viewTabbar().includes("App.go('study')");
+  T.state.user = { id: 'u1', role: 'tech', study_off: true };
+  const noBtn = T.viewTabbar().includes("App.go('study')");
+  T.state.user = { id: 'u1', role: 'accountant' };
+  const accBtn = T.viewTabbar().includes("App.go('study')");
+  T.state.user = userBak;
+  t('меню: кнопка есть у техника, прячется личной галочкой, у бухгалтера нет', withBtn && !noBtn && !accBtn);
+  /* статистика по сессиям и формат времени */
+  const list = [
+    { kind: 'test', section: 3, score_pct: 60, duration_ms: 60000, started_at: '2026-09-13T10:00:00Z' },
+    { kind: 'test', section: 3, score_pct: 85, duration_ms: 90000, started_at: '2026-09-13T11:00:00Z' },
+    { kind: 'read', section: 3, duration_ms: 30000, started_at: '2026-09-13T12:00:00Z' }];
+  const st = T.studySecStat(3, list);
+  t('studySecStat: попытки 2, лучший 85, последний (по дате) 85, время чтения 30 с', st.n === 2 && st.best === 85 && st.last === 85 && st.readMs === 30000 && st.testMs === 150000);
+  t('fmtMs: 5 с / 2 мин 05 с / 1 ч 01 мин', T.fmtMs(5000) === '5 с' && T.fmtMs(125000) === '2 мин 05 с' && T.fmtMs(3660000) === '1 ч 01 мин');
+  /* верстка, sw, справка */
+  t('CSS: стили теста, вариантов, кольца результата, рамки учебника',
+    css.includes('.st-opt.ok{') && css.includes('.st-ring{') && css.includes('.st-frame{') && css.includes('.st-kpi{'));
+  t('service worker: index.json в прекэше, dictionary/ — stale-while-revalidate',
+    sw.includes("'./dictionary/index.json'") && sw.includes("url.pathname.includes('/dictionary/')") && sw.includes("VERSION = '1.08.51'"));
+  t('справка экрана S.study на двух языках и карточка настроек',
+    src.includes('S.study = H(') && src.includes("fold('study', t('st_card'), 'grad', studyCardHtml())")
+    && src.includes("App.studyAccess('${uid_}', this.checked)"));
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);

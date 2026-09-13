@@ -1,0 +1,72 @@
+{
+  "schema": "techlog-study",
+  "schema_version": 1,
+  "updated": "2026-09-13",
+  "note": "Каталог учебных разделов. test — файл теста (dictionary/tests/…), book — учебник (dictionary/books/…, .html или .pdf). Файла нет — раздел показывается, кнопка гаснет. Добавили файл — просто впишите имя сюда.",
+  "sections": [
+    {
+      "id": 1,
+      "color": "#1CB0F6",
+      "tab": { "ru": "синий", "en": "blue" },
+      "title": { "ru": "Устранение последствий залива", "en": "Water Damage Restoration" },
+      "test": "tests/section-1.json",
+      "book": "books/section-1.html"
+    },
+    {
+      "id": 2,
+      "color": "#FF4B4B",
+      "tab": { "ru": "красный", "en": "red" },
+      "title": { "ru": "Восстановление после пожара и копоти", "en": "Fire and Smoke Restoration Technology" },
+      "test": "tests/section-2.json",
+      "book": "books/section-2.html"
+    },
+    {
+      "id": 3,
+      "color": "#FFC800",
+      "tab": { "ru": "жёлтый", "en": "yellow" },
+      "title": { "ru": "Устранение и контроль запахов", "en": "Odor Removal and Control" },
+      "test": "tests/section-3.json",
+      "book": "books/section-3.html"
+    },
+    {
+      "id": 4,
+      "color": "#58CC02",
+      "tab": { "ru": "зелёный", "en": "green" },
+      "title": { "ru": "Устранение плесени и микробов", "en": "Microbial Remediation" },
+      "test": "tests/section-4.json",
+      "book": "books/section-4.html"
+    },
+    {
+      "id": 5,
+      "color": "#8AA0AB",
+      "tab": { "ru": "серый", "en": "grey" },
+      "title": { "ru": "Уборка мест происшествий", "en": "Trauma Scene Cleanup" },
+      "test": "tests/section-5.json",
+      "book": "books/section-5.html"
+    },
+    {
+      "id": 6,
+      "color": "#9A5A22",
+      "tab": { "ru": "коричневый", "en": "brown" },
+      "title": { "ru": "Чистка мягкой мебели и тканей", "en": "Upholstery and Fabric Cleaning" },
+      "test": "tests/section-6.json",
+      "book": "books/section-6.html"
+    },
+    {
+      "id": 7,
+      "color": "#2F5FD0",
+      "tab": { "ru": "тёмно-синий", "en": "dark blue" },
+      "title": { "ru": "Чистка ковров", "en": "Carpet Cleaning" },
+      "test": "tests/section-7.json",
+      "book": "books/section-7.html"
+    },
+    {
+      "id": 8,
+      "color": "#CE82FF",
+      "tab": { "ru": "резерв", "en": "reserved" },
+      "title": { "ru": "Раздел 8 — учебные материалы", "en": "Section 8 — study materials" },
+      "test": "tests/section-8.json",
+      "book": "books/section-8.html"
+    }
+  ]
+}

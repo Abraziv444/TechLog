@@ -124,7 +124,13 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
     first: (document.querySelector('.tabbar').firstElementChild || {}).className || '',
   }));
   t('в шапке кнопки поиска больше нет', !srch.inTop);
-  t('в меню (таббаре) поиск есть — первым пунктом', srch.inBar && /hdr-srch/.test(srch.first), srch.first);
+  const ord = await p.evaluate(() =>
+    [...document.querySelectorAll('.tabbar .tab')].slice(0, 2).map(b => ({
+      srch: b.classList.contains('hdr-srch'),
+      label: (b.querySelector('span') || {}).textContent || '' })));
+  t('в меню (таббаре) поиск стоит сразу после «Главной»',   /* v1.08.49 */
+    ord[0] && /Главная/i.test(ord[0].label) && ord[1] && ord[1].srch,
+    JSON.stringify(ord));
   await p.click('.tabbar .hdr-srch');
   await p.waitForSelector('#srch-q', { timeout: 3000 });
   t('клик по пункту меню открывает глобальный поиск', true);

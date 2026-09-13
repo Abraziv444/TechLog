@@ -12,7 +12,40 @@ Deno.serve(async (req) => {
   if (!user) return jres({ error: "UNAUTHORIZED" }, 401);
   const { data: prof } = await sb.from("profiles").select("role,display_name").eq("id", user.id).maybeSingle();
 
-  const { media_id, job_id, mode } = await req.json();
+  const { media_id, job_id, repair_id, mode } = await req.json();
+
+  /* v1.08.48: удаление документа РЕМОНТА уносит его файлы — та же логика,
+     что и у задач: только из архива, право админа или автора; файлы в
+     корзину Диска (30 дней), превью и строки media — прочь. */
+  if (repair_id) {
+    const { data: rep } = await sb.from("repairs").select("id,created_by,archived_at")
+      .eq("id", repair_id).maybeSingle();
+    if (!rep) return jres({ error: "NO_ACCESS" }, 403);
+    if (prof?.role !== "admin" && (rep as any).created_by !== user.id)
+      return jres({ error: "FORBIDDEN" }, 403);
+    if (!(rep as any).archived_at) return jres({ error: "NOT_ARCHIVED" }, 409);
+    const { data: rows } = await s.from("media")
+      .select("id,kind,file_name,drive_file_id,thumb_path").eq("repair_id", repair_id);
+    let trashed = 0;
+    if (rows?.length) {
+      const t = await driveToken();
+      for (const m of rows) {
+        if (!m.drive_file_id) continue;
+        const d = await fetch(`https://www.googleapis.com/drive/v3/files/${m.drive_file_id}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ trashed: true }) });
+        if (d.ok || d.status === 404) trashed++;
+      }
+      const thumbs = rows.map((m) => m.thumb_path).filter(Boolean) as string[];
+      if (thumbs.length) await s.storage.from("media-thumbs").remove(thumbs);
+      await s.from("media").delete().eq("repair_id", repair_id);
+      await s.from("audit_log").insert({ actor: user.id, actor_name: prof?.display_name ?? "",
+        action: "media_purge", entity: "repair", entity_id: repair_id,
+        details: { files: rows.length, trashed } });
+    }
+    return jres({ ok: true, files: rows?.length ?? 0, trashed });
+  }
   const s = svc();
 
   /* v1.07.88 · АРХИВ (корзина). Документ, помеченный на удаление, не теряет

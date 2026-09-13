@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.08.47';
+const VERSION = '1.08.51';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -23,7 +23,8 @@ const ASSETS = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
-  './icons/favicon-64.png'
+  './icons/favicon-64.png',
+  './dictionary/index.json'
 ];
 
 self.addEventListener('install', (e) => {
@@ -84,6 +85,19 @@ self.addEventListener('fetch', (e) => {
         return res;
       }).catch(() => caches.match(req))
     );
+    return;
+  }
+
+  // v1.08.51: учебные файлы (dictionary/: каталог, тесты JSON, учебники) —
+  // stale-while-revalidate: отдаём из кэша мгновенно (и офлайн), но в фоне
+  // подтягиваем свежий файл — обновлённый тест доедет без смены версии.
+  if (url.origin === self.location.origin && url.pathname.includes('/dictionary/')) {
+    e.respondWith((async () => {
+      const cache = await caches.open(CACHE);
+      const hit = await cache.match(req);
+      const net = fetch(req, { cache: 'no-cache' }).then((res) => { if (res && res.ok) cache.put(req, res.clone()).catch(() => {}); return res; }).catch(() => null);
+      return hit || (await net) || Response.error();
+    })());
     return;
   }
 

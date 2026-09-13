@@ -90,8 +90,10 @@ const stubRoutes = async (p) => {
   await p.evaluate(() => window.App.srchChip('job'));
   await p.waitForTimeout(200);
   const gJob = await p.evaluate(() => [...document.querySelectorAll('.srch-grp')].map(e => e.textContent));
-  t('чип «Задачи»: остались только задачи',
-    gJob.length === 1 && /Задачи/.test(gJob[0]), JSON.stringify(gJob));
+  /* v1.08.49: выбор множественный — «Задачи» добавляются к «Комплексам» */
+  t('чип «Задачи» ДОБАВЛЯЕТСЯ к выбору (мультивыбор)',
+    gJob.length === 2 && gJob.some(s => /Задачи/.test(s)) && gJob.some(s => /Комплексы/.test(s)),
+    JSON.stringify(gJob));
 
   await p.evaluate(() => window.App.srchChip('unit'));
   await p.waitForTimeout(200);

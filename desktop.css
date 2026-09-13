@@ -901,3 +901,12 @@ html.tl-desktop .acc-map-rows{max-width:640px}
     grid-template-columns:86px minmax(130px,1.4fr) repeat(4,minmax(58px,.8fr)) minmax(66px,.9fr) minmax(70px,.9fr) 104px 36px;
   }
 }
+
+/* ============ v1.08.51: учёба — на ПК читаемая ширина и высокая рамка учебника ============ */
+html.tl-desktop .scr-study .st-run,
+html.tl-desktop .scr-study .st-sec,
+html.tl-desktop .scr-study .st-resume{ max-width:860px }
+html.tl-desktop .scr-study .st-sum{ grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) }
+html.tl-desktop .st-frame{ height:calc(100dvh - 200px) }
+html.tl-desktop .modal .st-rv-list{ max-height:none }
+html.tl-desktop .st-sels{ grid-template-columns:1fr 1fr }

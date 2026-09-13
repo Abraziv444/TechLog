@@ -60,7 +60,8 @@ function check(name, cond, extra) {
 
   // ---------------------------------------------------- 3. справочник и суммы
   console.log('\n== работы, материалы, суммы ==');
-  await p.locator('button:has-text("Справочник")').first().click();
+  /* v1.08.48: синяя кнопка каталога подписана «Добавить задачу» */
+  await p.locator('button:has-text("Добавить задачу")').first().click();
   await p.waitForTimeout(400);
   const catRows = await p.locator('#overlay .rowline').count();
   const firstCat = await p.locator('#overlay .rowline b').first().textContent();
@@ -68,14 +69,14 @@ function check(name, cond, extra) {
   check('ремонтные позиции сверху', /гипсокартон/i.test(firstCat));
   await p.locator('#overlay .rowline').first().click();     // гипсокартон 85
   await p.waitForTimeout(400);
-  await p.locator('button:has-text("Справочник")').first().click();
+  await p.locator('button:has-text("Добавить задачу")').first().click();
   await p.waitForTimeout(300);
   await p.locator('#overlay .rowline').nth(2).click();       // ванна 320
   await p.waitForTimeout(400);
   check('строк работ', await p.locator('#rep-rows-work .prop-row').count() === 2,
         (await p.locator('#rep-rows-work .prop-row').count()) + '');
   // материалы
-  await p.locator('button:has-text("Справочник")').nth(1).click();
+  await p.locator('button:has-text("Добавить материалы")').first().click();
   await p.waitForTimeout(300);
   await p.locator('#overlay .rowline').first().click();
   await p.waitForTimeout(300);
@@ -213,8 +214,8 @@ function check(name, cond, extra) {
     await p.locator('.rowline:has-text("R-")').first().click();
     await p.waitForTimeout(600);
   }
-  check('без фото показана подсказка', /нет фото|Привяжите работу/.test(
-    await p.locator('.card:has-text("Фото до и после")').first().textContent()));
+  check('без фото показана подсказка', /Пока нет фото|нет фото/i.test(
+    await p.locator('.card:has-text("Фото связанной задачи")').first().textContent()));
   // подкладываем снимки в инвойс
   await p.evaluate(() => {
     const jid = repDraft.job_id;
@@ -233,7 +234,7 @@ function check(name, cond, extra) {
   check('пометки «до» и «после» сохранились в документе',
         ph.before.length === 1 && ph.after.length === 1, JSON.stringify(ph));
   check('счётчик в заголовке обновился',
-        /до 1 · после 1/.test(await p.locator('.card:has-text("Фото до и после")').first().textContent()));
+        /до 1 · после 1/.test(await p.locator('.card:has-text("Фото связанной задачи")').first().textContent()));
   // тот же снимок переносим в другую колонку — дублей быть не должно
   await p.locator('.rep-ph').nth(1).locator('button:has-text("до")').click();
   await p.waitForTimeout(300);

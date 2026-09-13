@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Раздел 8 — учебные материалы</title>
+<style>
+  :root{ --ink:#111827; --dim:#6b7280; --line:#d1d5db; --accent:#2F5FD0; --soft:#f3f4f6 }
+  *{box-sizing:border-box}
+  body{margin:0;padding:20px 18px 48px;background:#fff;color:var(--ink);
+       font:16px/1.55 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;max-width:780px}
+  h1{font-size:1.6rem;margin:0 0 4px}
+  h2{font-size:1.15rem;margin:28px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--line)}
+  .tag{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--soft);
+       color:var(--dim);font-size:.78rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+  .lead{color:var(--dim);margin:10px 0 0}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.94rem}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  th{background:var(--soft)}
+  figure{margin:16px 0}
+  figcaption{color:var(--dim);font-size:.86rem;margin-top:6px}
+  code{background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+  ul{margin:8px 0 8px 20px;padding:0}
+  li{margin:4px 0}
+  .note{border-left:4px solid var(--accent);background:#f8fafc;padding:10px 14px;margin:16px 0}
+</style>
+</head>
+<body>
+
+<span class="tag">Образец вёрстки</span>
+<h1>Раздел 8 — учебные материалы</h1>
+<p class="lead">Этот файл лежит в <code>dictionary/books/section-8.html</code> и показан
+приложением как есть. Замените его настоящим учебником — имя файла и путь менять не нужно.</p>
+
+<div class="note">
+  Пока страница открыта, приложение считает время чтения. Свернули приложение или
+  ушли на другой экран — счёт останавливается. Итог попадает в статистику
+  администратора рядом со временем тестов.
+</div>
+
+<h2>Что можно класть в такой файл</h2>
+<ul>
+  <li>текст с заголовками, списками и таблицами;</li>
+  <li>схемы в SVG — они не мылятся и весят копейки;</li>
+  <li>фотографии приборов и оборудования (файлом рядом или строкой <code>data:</code>);</li>
+  <li>планы расстановки техники, сравнительные таблицы, алгоритмы действий.</li>
+</ul>
+
+<h2>Таблица — как она выглядит</h2>
+<table>
+  <tr><th>Категория воды</th><th>Что это</th><th>Срок переоценки</th></tr>
+  <tr><td>1</td><td>Чистый источник</td><td>24–48 ч при обычной температуре</td></tr>
+  <tr><td>2</td><td>Значительное загрязнение</td><td>переходит в 3 при длительном застое</td></tr>
+  <tr><td>3</td><td>Грубое загрязнение</td><td>—</td></tr>
+</table>
+
+<h2>Схема — как она выглядит</h2>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 150" width="100%" role="img"
+     aria-label="Порядок работы: осмотр, замер, сушка, контроль">
+  <rect width="640" height="150" fill="#ffffff"/>
+  <g font-family="Arial, sans-serif" font-size="13" fill="#111827">
+    <rect x="14"  y="46" width="130" height="52" rx="10" fill="#eef2ff" stroke="#2F5FD0" stroke-width="1.6"/>
+    <text x="79"  y="77" text-anchor="middle" font-weight="bold">Осмотр</text>
+    <rect x="176" y="46" width="130" height="52" rx="10" fill="#ecfdf5" stroke="#15803d" stroke-width="1.6"/>
+    <text x="241" y="77" text-anchor="middle" font-weight="bold">Замер</text>
+    <rect x="338" y="46" width="130" height="52" rx="10" fill="#fefce8" stroke="#a16207" stroke-width="1.6"/>
+    <text x="403" y="77" text-anchor="middle" font-weight="bold">Сушка</text>
+    <rect x="500" y="46" width="126" height="52" rx="10" fill="#fef2f2" stroke="#b91c1c" stroke-width="1.6"/>
+    <text x="563" y="77" text-anchor="middle" font-weight="bold">Контроль</text>
+    <g stroke="#6b7280" stroke-width="2" fill="none">
+      <path d="M146 72h26"/><path d="M164 66l8 6-8 6"/>
+      <path d="M308 72h26"/><path d="M326 66l8 6-8 6"/>
+      <path d="M470 72h26"/><path d="M488 66l8 6-8 6"/>
+    </g>
+    <text x="320" y="130" text-anchor="middle" fill="#6b7280" font-size="11.5">
+      контроль не сошёлся — возвращаемся к замеру</text>
+  </g>
+</svg>
+<figcaption>Рис. 1. Порядок работы на объекте (пример схемы в учебнике).</figcaption>
+</figure>
+
+<h2>Дальше</h2>
+<p>Когда учебник по разделу готов — просто положите его файлом сюда и опубликуйте
+сборку. Тест по этому же разделу живёт отдельно, в <code>dictionary/tests/section-8.json</code>.</p>
+
+</body>
+</html>

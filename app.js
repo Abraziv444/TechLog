@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.47';
-const DB_SQL_FILE = 'full-install-1_08_39.sql';
+const APP_VERSION = '1.08.51';
+const DB_SQL_FILE = 'full-install-1_08_51.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -760,6 +760,24 @@ const I18N = {
     copy_dl_chk: 'Копию снятого — в «Загрузки»',
     copy_dl_hint: 'Снятое кнопками «Камера» и «Видео» (когда открывается сразу камера) сохраняется файлом в «Загрузки» телефона: даже если очередь пропадёт, оригинал под рукой. Выбранное из галереи и так лежит на телефоне, его не дублируем.',
     copy_dl_err: 'Копия в «Загрузки» не сохранилась — разрешите сайту скачивать несколько файлов',
+    /* v1.08.48 · ремонт: свои медиа, кнопки, связи; ТВ-уборка; модалки */
+    rep_add_work: 'Добавить задачу', rep_add_mat: 'Добавить материалы',
+    rep_media_t: 'Фото и видео', rep_receipt: 'Сфотографировать чек',
+    rep_media_h: 'Свои файлы документа ремонта. Раскладка на Диске та же: контрагент → комплекс → юнит; имена — по общему шаблону, вид документа REPAIR. Вложения-скрепки — в Files/сотрудник/месяц/дата_комплекс_юнит.',
+    rep_photos_link: 'Фото связанной задачи',
+    rep_pick_prop: 'Выбрать пропозал…', rep_prop_none: 'Пропозалов этого комплекса нет',
+    tvs_clean_rev: 'Очистить отозванные', tvs_clean_inact: 'Очистить неактивные',
+    tvs_kill_all: 'Завершить все ТВ-сессии',
+    tvs_clean_done: 'Убрано из списка: {N}', tvs_kill_done: 'Завершено ТВ-сессий: {N}',
+    tvs_kill_q: 'Завершить все активные ТВ-экраны ({N})? Каждому телевизору понадобится новая авторизация по коду.',
+    tvs_inact_q: 'Убрать из списка авторизованные ТВ, не выходившие в сеть больше суток ({N})?',
+    act_tv_cleanup: 'уборка ТВ-сессий',
+    sess_tv: 'ТВ', st_kill_q_tv: 'Завершить все сессии сотрудника? Активные ТВ-экраны ({N}) тоже будут завершены.',
+    /* v1.08.49 · поиск */
+    srch_tab_chk: 'Кнопка поиска в нижней панели (на телефоне)',
+    srch_tab_hint: 'Снимите галочку — на телефоне кнопка ${ic} исчезнет из нижней панели и панель станет свободнее. На ПК кнопка остаётся всегда. Сам поиск никуда не денется: он есть в этой карточке.',
+    srch_open_here: 'Открыть поиск',
+    srch_multi_hint: 'Чипы складываются: отметьте несколько видов — ищем по всем сразу. «Юнит» — отдельный режим: совпадение только по номеру юнита в выбранных видах.',
     mq_empty: 'Всё отправлено', mq_later: 'Позже', mq_doc: 'Документ',
     mq_net_on: 'сеть: онлайн', mq_net_off: 'сеть: офлайн', mq_sb_fail: 'сервер недоступен',
     mq_log: 'Журнал отправки', mq_l_wait: 'ожидание действий…',
@@ -1084,6 +1102,37 @@ const I18N = {
     err_sync_all: 'sync: все таблицы недоступны — ', m_no_worker: 'нет воркера', m_timeout: 'таймаут',
     bk_log_export: '# TechLog — выгрузка бэкапа —', bk_log_import: '# TechLog — загрузка из бэкапа —',
     bk_no_table: 'таблицы нет — пропущена',
+    /* v1.08.51: учёба — тесты по разделам и учебные материалы */
+    tab_study: 'Учёба', st_card: 'Учёба', st_tab_sec: 'Разделы', st_tab_mine: 'Мои результаты', st_tab_stat: 'Статистика',
+    st_test: 'Тест', st_materials: 'Материалы', st_no_test: 'файл теста не загружен', st_no_file: 'файл не найден', st_no_q: 'в файле нет вопросов',
+    st_q_short: 'вопр.', st_attempts: 'попыток', st_best: 'лучший', st_read_time: 'чтение',
+    st_mode: 'Режим', st_mode_learn: 'Обучение', st_mode_exam: 'Экзамен',
+    st_mode_tip: 'Обучение — после каждого ответа сразу виден разбор. Экзамен — ответы без разбора, объяснения только в итогах.',
+    st_count: 'Вопросов', st_all: 'Все', st_lang: 'Язык теста', st_shuffle: 'Перемешать вопросы', st_pages: 'стр.',
+    st_pass_lbl: 'Порог зачёта', st_start_hint: 'таймер идёт, пока экран открыт', st_begin: 'Начать',
+    st_q: 'Вопрос', st_multi: 'несколько верных ответов — отметьте все', st_hint: 'Подсказка', st_hint_hide: 'Скрыть подсказку',
+    st_check: 'Проверить', st_next: 'Дальше', st_finish: 'Завершить', st_stop: 'Прервать', st_drop: 'Сбросить',
+    st_right: 'Верно', st_wrong_a: 'Неверно — верный ответ', st_loading: 'Загрузка теста…',
+    st_finish_q: 'Завершить тест сейчас? Отвечено {N} из {M} — результат запишется по отвеченным.',
+    st_result: 'Результат', st_passed: 'Зачёт', st_failed: 'Не сдан', st_correct: 'верных', st_wrong: 'неверных', st_skipped: 'пропущено',
+    st_time: 'Время', st_avg_q: 'на вопрос', st_review: 'Разбор', st_again: 'Ещё раз', st_your: 'ваш ответ', st_hint_used: 'с подсказкой',
+    st_only_wrong: 'Только ошибки', st_all_right: 'Ошибок нет', st_section: 'Раздел', st_p: 'стр.',
+    st_read_done: 'Готово', st_open_tab: 'Открыть в новой вкладке',
+    st_read_hint: 'Время чтения считается, пока страница открыта; при выходе оно попадёт в вашу статистику.',
+    st_read_saved: 'Чтение записано', st_reading: 'чтение',
+    st_resume_t: 'Незавершённый тест', st_resume: 'Продолжить',
+    st_mine_empty: 'Пока ни одного теста. Начните с любого раздела.', st_tests: 'тестов', st_answers: 'ответов',
+    st_time_tests: 'время тестов', st_time_read: 'время чтения',
+    st_people: 'сотрудников', st_passed_n: 'Сдано', st_all_time: 'всё время', st_all_sections: 'Все разделы', st_stat_empty: 'За период записей нет',
+    st_denied: 'Учёба для вас пока не включена — обратитесь к администратору.',
+    st_menu_chk: 'Показывать «Учёбу» в меню',
+    st_menu_hint: 'Снимите галочку — кнопка исчезнет из меню на всех ваших устройствах; включить можно здесь же.',
+    st_admin_t: 'Доступ сотрудников',
+    st_admin_tip: '«Учёба включена» — общий выключатель. «Всем» — доступ у всех активных сотрудников; «По списку» — только отмеченным (тот же флажок есть в карточке сотрудника в Штате).',
+    st_on_chk: 'Учёба включена', st_who: 'Доступна', st_who_all: 'Всем', st_who_list: 'По списку', st_list_pick: 'Отметьте, кому доступна учёба:',
+    st_admin_hint: 'Статистика по всем сотрудникам — экран «Учёба» → «Статистика». Файлы тестов: dictionary/tests, учебники: dictionary/books.',
+    st_access: 'Учёба доступна', st_h: 'ч', st_m: 'мин', st_s: 'с',
+    act_study_start: 'начат тест', act_study_test: 'тест завершён', act_study_read: 'открыт учебник',
     week_days: ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'],
     months: ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'],
   },
@@ -1714,6 +1763,24 @@ const I18N = {
     copy_dl_chk: 'Save a copy to Downloads',
     copy_dl_hint: 'Anything shot with the Camera/Video buttons (when the camera opens directly) is saved as a file to the phone\'s Downloads: even if the queue is wiped, the original is at hand. Gallery picks already live on the phone and are not duplicated.',
     copy_dl_err: 'Could not save a copy to Downloads — allow the site to download multiple files',
+    /* v1.08.48 · repair media, buttons, links; TV cleanup; modals */
+    rep_add_work: 'Add task', rep_add_mat: 'Add materials',
+    rep_media_t: 'Photos & video', rep_receipt: 'Shoot the receipt',
+    rep_media_h: 'This repair document\'s own files. Same Drive layout: counterparty → complex → unit; names follow the shared template, document kind REPAIR. Paper-clip attachments go to Files/employee/month/date_complex_unit.',
+    rep_photos_link: 'Photos of the linked task',
+    rep_pick_prop: 'Pick a proposal…', rep_prop_none: 'No proposals for this complex',
+    tvs_clean_rev: 'Clear revoked', tvs_clean_inact: 'Clear inactive',
+    tvs_kill_all: 'End all TV sessions',
+    tvs_clean_done: 'Removed from the list: {N}', tvs_kill_done: 'TV sessions ended: {N}',
+    tvs_kill_q: 'End all active TV screens ({N})? Each TV will need a new code authorization.',
+    tvs_inact_q: 'Remove authorized TVs that have been offline for over a day ({N})?',
+    act_tv_cleanup: 'TV sessions cleanup',
+    sess_tv: 'TV', st_kill_q_tv: 'End all of this employee\'s sessions? Active TV screens ({N}) will be ended too.',
+    /* v1.08.49 · search */
+    srch_tab_chk: 'Search button in the bottom bar (on the phone)',
+    srch_tab_hint: 'Untick — on the phone the ${ic} button leaves the bottom bar and the bar gets roomier. On PC the button always stays. Search itself is not going anywhere: it lives in this card too.',
+    srch_open_here: 'Open search',
+    srch_multi_hint: 'Chips add up: tick several kinds — we search all of them at once. \u201CUnit\u201D is a separate mode: match by unit number only, within the selected kinds.',
     mq_empty: 'Everything uploaded', mq_later: 'Later', mq_doc: 'Document',
     mq_net_on: 'network: online', mq_net_off: 'network: offline', mq_sb_fail: 'server unreachable',
     mq_log: 'Upload log', mq_l_wait: 'waiting for actions…',
@@ -2036,6 +2103,37 @@ const I18N = {
     err_sync_all: 'sync: all tables unavailable — ', m_no_worker: 'no worker', m_timeout: 'timeout',
     bk_log_export: '# TechLog — backup export —', bk_log_import: '# TechLog — restore from backup —',
     bk_no_table: 'table missing — skipped',
+    /* v1.08.51: study — section tests and study materials */
+    tab_study: 'Study', st_card: 'Study', st_tab_sec: 'Sections', st_tab_mine: 'My results', st_tab_stat: 'Statistics',
+    st_test: 'Test', st_materials: 'Materials', st_no_test: 'test file not loaded', st_no_file: 'file not found', st_no_q: 'no questions in the file',
+    st_q_short: 'q.', st_attempts: 'attempts', st_best: 'best', st_read_time: 'reading',
+    st_mode: 'Mode', st_mode_learn: 'Learning', st_mode_exam: 'Exam',
+    st_mode_tip: 'Learning — the explanation appears right after each answer. Exam — no explanations until the results.',
+    st_count: 'Questions', st_all: 'All', st_lang: 'Test language', st_shuffle: 'Shuffle questions', st_pages: 'pp.',
+    st_pass_lbl: 'Pass mark', st_start_hint: 'the timer runs while the screen is open', st_begin: 'Start',
+    st_q: 'Question', st_multi: 'several correct answers — mark all of them', st_hint: 'Hint', st_hint_hide: 'Hide hint',
+    st_check: 'Check', st_next: 'Next', st_finish: 'Finish', st_stop: 'Stop', st_drop: 'Discard',
+    st_right: 'Correct', st_wrong_a: 'Incorrect — the right answer is', st_loading: 'Loading the test…',
+    st_finish_q: 'Finish the test now? {N} of {M} answered — the result is scored on what you answered.',
+    st_result: 'Result', st_passed: 'Passed', st_failed: 'Not passed', st_correct: 'correct', st_wrong: 'wrong', st_skipped: 'skipped',
+    st_time: 'Time', st_avg_q: 'per question', st_review: 'Review', st_again: 'Try again', st_your: 'your answer', st_hint_used: 'hint used',
+    st_only_wrong: 'Mistakes only', st_all_right: 'No mistakes', st_section: 'Section', st_p: 'p.',
+    st_read_done: 'Done', st_open_tab: 'Open in a new tab',
+    st_read_hint: 'Reading time counts while the page is open; it goes to your statistics when you leave.',
+    st_read_saved: 'Reading recorded', st_reading: 'reading',
+    st_resume_t: 'Unfinished test', st_resume: 'Continue',
+    st_mine_empty: 'No tests yet. Start with any section.', st_tests: 'tests', st_answers: 'answers',
+    st_time_tests: 'test time', st_time_read: 'reading time',
+    st_people: 'employees', st_passed_n: 'Passed', st_all_time: 'all time', st_all_sections: 'All sections', st_stat_empty: 'No records for the period',
+    st_denied: 'Study is not enabled for you yet — ask the administrator.',
+    st_menu_chk: 'Show “Study” in the menu',
+    st_menu_hint: 'Untick — the button leaves the menu on all your devices; turn it back on here.',
+    st_admin_t: 'Staff access',
+    st_admin_tip: '“Study enabled” is the master switch. “Everyone” — all active staff; “By list” — only the marked ones (the same flag is in the employee card in Staff).',
+    st_on_chk: 'Study enabled', st_who: 'Available to', st_who_all: 'Everyone', st_who_list: 'By list', st_list_pick: 'Mark who has access to study:',
+    st_admin_hint: 'Statistics for all staff — Study → Statistics. Test files: dictionary/tests, textbooks: dictionary/books.',
+    st_access: 'Study available', st_h: 'h', st_m: 'min', st_s: 's',
+    act_study_start: 'test started', act_study_test: 'test finished', act_study_read: 'textbook opened',
     week_days: ['MO','TU','WE','TH','FR','SA','SU'],
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   }
@@ -2573,6 +2671,11 @@ function popCardHtml(){
       ${seg('top', t('pop_top'))}${seg('bottom', t('pop_bottom'))}${seg('side', t('pop_side'))}
     </div>
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.popDemo()">${ic('bell')} ${t('pop_demo')}</button>
+    <label class="opt ${srchTabOn() ? 'on' : ''}" style="margin-top:10px">
+      <input type="checkbox" ${srchTabOn() ? 'checked' : ''} onchange="App.srchTab(this.checked)"> ${t('srch_tab_chk')}
+    </label>
+    <div class="tiny">${t('srch_tab_hint').replace('${ic}', ic('search'))}</div>
+    <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.searchOpen()">${ic('search')} ${t('srch_open_here')}</button>
   </div>`;
 }
 /* v1.08.08: «Обновите БД» без объяснений пугает и ничего не говорит о том,
@@ -3542,6 +3645,9 @@ const DB_NEED_COLS = [
   ['jobs',          'acc_status'],      // v1.08.39: бухгалтерия
   ['repairs',       'acc_status'],
   ['acc_settings',  'pct'],
+  ['study_sessions','score_pct'],     // v1.08.51: учёба
+  ['profiles',      'study_access'],
+  ['org_settings',  'study_on'],
 ];
 const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
@@ -3549,10 +3655,10 @@ const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'vehicle_save', 'admin_set_bouncie_config',    // v1.08.32
                       'admin_sessions', 'admin_kill_sessions',        // v1.08.33
                       'admin_last_seen', 'vehicle_service_set',
-  'tv_list', 'tv_decide',       // v1.08.33
+  'tv_list', 'tv_decide', 'tv_cleanup',       // v1.08.33 · v1.08.48
   'acc_doc_mark'];              // v1.08.39
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings'];   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings','study_sessions'];   // v1.08.51: + сессии учёбы (RLS: свои; админ — все)   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)
 
 function emptyData(){
   const d = { org_settings: {
@@ -4135,6 +4241,43 @@ function maxExtendDays(){ const v = +((state.data && state.data.org_settings || 
    что проверяет сервер; фото и видео идут по обычным лимитам из настроек. */
 const M_FILE_MAX = 20, M_FILE_BYTES = 25 * 1024 * 1024;
 const M_INV_MAX = 50;            /* v1.07.85: предохранитель на число PDF-инвойсов документа */
+/* v1.08.48: у записи очереди/медиа один владелец — задача ИЛИ ремонт */
+function mOwnId(x){ return x && (x.doc === 'rep' ? x.repair_id : x.job_id); }
+/* =====================================================================
+   v1.08.50 · НОМЕР МАШИНЫ = ПРИСЛАННЫЙ РУЛЬ + ЦИФРА
+   Основа — заливочная SVG-иконка руля (viewBox 122.88). Центр руля
+   приглушается радиальной маской, поверх — цифра: снизу её размытая
+   копия (мягкий «фейд» по краю), сверху — чёткая. Цвет наследуется
+   (currentColor), так что подсветки «едет»/активна работают как раньше.
+   ===================================================================== */
+const CAR_WHEEL_D = 'M61.44,0c33.93,0,61.44,27.51,61.44,61.44c0,33.93-27.51,61.44-61.44,61.44S0,95.37,0,61.44 C0,27.51,27.51,0,61.44,0L61.44,0z M61.17,61.6c1.76,0,3.18,1.42,3.18,3.18c0,1.76-1.42,3.18-3.18,3.18 c-1.76,0-3.18-1.42-3.18-3.18C57.99,63.03,59.42,61.6,61.17,61.6L61.17,61.6z M61.2,53.28c6.34,0,11.47,5.14,11.47,11.47 c0,6.34-5.14,11.47-11.47,11.47c-6.33,0-11.47-5.14-11.47-11.47C49.73,58.41,54.87,53.28,61.2,53.28L61.2,53.28z M14.78,44.57 c4.45-12.31,13.52-22.7,24.9-28.01c15.63-7.29,34.61-7.75,50.69,4.15c9.48,7.01,12.94,12.76,17.67,22.95 c3.58,9.03,0.64,11.97-10.87,6.9c-23.79-11.77-47.84-11.24-72.12,0C16.09,56.41,11.06,51.53,14.78,44.57L14.78,44.57z M75.9,109.05 c16.62-5.23,26.32-15.81,32.27-29.3c3.87-10.43-8.26-13.97-12.52-7.1c-2.55,5.06-5.59,9.4-9.55,12.77 c-6.2,5.27-15.18,6.23-16.58,16.16C68.79,106.74,69.97,111.38,75.9,109.05L75.9,109.05z M47.26,109.05 c-16.62-5.23-26.32-15.81-32.27-29.3c-3.87-10.43,8.26-13.97,12.52-7.1c2.55,5.06,5.59,9.4,9.55,12.77 c6.2,5.27,15.18,6.23,16.58,16.16C54.37,106.74,53.19,111.38,47.26,109.05L47.26,109.05z';
+let _cnoSeq = 0;
+function carNoSvg(n){
+  const id = 'cno' + (++_cnoSeq);
+  const s = String(n ?? '·');
+  const fs = s.length > 1 ? 47 : 58;
+  const txt = (extra) => `<text x="61.44" y="64" ${extra} font-size="${fs}"
+      font-weight="900" text-anchor="middle" dominant-baseline="central"
+      font-family="inherit">${esc(s)}</text>`;
+  return `<svg class="carno-ic" viewBox="0 0 122.88 122.88" fill="currentColor" aria-hidden="true">
+    <defs>
+      <radialGradient id="${id}g" cx="50%" cy="50%" r="50%">
+        <stop offset="0" stop-color="#fff" stop-opacity=".16"/>
+        <stop offset=".44" stop-color="#fff" stop-opacity=".16"/>
+        <stop offset=".8" stop-color="#fff" stop-opacity="1"/>
+      </radialGradient>
+      <mask id="${id}m"><rect width="122.88" height="122.88" fill="url(#${id}g)"/></mask>
+      <filter id="${id}b" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="2.8"/></filter>
+    </defs>
+    <path mask="url(#${id}m)" fill-rule="evenodd" clip-rule="evenodd" d="${CAR_WHEEL_D}"/>
+    ${txt(`filter="url(#${id}b)" opacity=".55"`)}
+    ${txt('')}
+  </svg>`;
+}
+function mOwnMatch(m, id, doc){
+  return doc === 'rep' ? m.repair_id === id : m.job_id === id;
+}
 function mKindOf(f){
   const ty = String(f.type || '');
   if (/^image\//.test(ty)) return 'photo';
@@ -4230,6 +4373,7 @@ const ICONS = {
    контур stroke=currentColor — цвет наследуется от соседнего текста)
    ===================================================================== */
 const IC = {
+  grad: '<path d="M22 9.5 12 4.5 2 9.5l10 5 10-5z"/><path d="M6 12.4V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-4.6"/><path d="M22 9.5v6"/>',   /* v1.08.51: учёба */
   /* v1.07.78: плюс/минус/стрелки — рисованные, чтобы «＋ − ← ▲ ▼ ‹ ›»
      выглядели одинаково в обоих режимах и не зависели от шрифта ОС */
   plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
@@ -4322,6 +4466,7 @@ const IC = {
      и рисовал пустоту (карточка очереди, «Доска» в настройках, кнопки PDF). */
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
   report: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  wheel: '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="2.5"/><path d="M12 3.6v5.9M4.7 16.1l5.1-2.9M19.3 16.1l-5.1-2.9"/>',
   gear: '<circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.4a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.4h4l.4-2.4a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.06-.4.1-.8.1-1.2z"/>',
   board: '<rect x="3" y="4" width="5.4" height="16" rx="1.2"/><rect x="9.8" y="4" width="5.4" height="11" rx="1.2"/><rect x="16.6" y="4" width="5.4" height="7" rx="1.2"/>',
   prop: '<rect x="4" y="2.8" width="16" height="18.4" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
@@ -4745,7 +4890,7 @@ const JR_DOC_ACTIONS = ['job_create','job_update','job_done','job_reopen','job_a
   'repair_create','repair_update','repair_archive','repair_restore','repair_delete',   // v1.08.30
   'repair_approve_reset','repair_to_invoice'];
 const JR_TECH_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
-  'name_change','jr_archive',   // v1.08.46
+  'name_change','jr_archive','tv_cleanup',   // v1.08.46 · v1.08.48
   'password_change','password_reset','car_no_set','org_toggle','org_set','stock_set',
   'equip_take','equip_return','equip_repair','equip_repair_back','equip_intake','equip_writeoff',   // v1.08.27
   'backup_export','backup_restore',
@@ -4998,6 +5143,7 @@ function render(){
   else if (state.screen === 'stock') body = viewStock();         // v1.08.27
   else if (state.screen === 'acc') body = viewAcc();             // v1.08.39
   else if (state.screen === 'approvals') body = viewApprovals(); // v1.08.46
+  else if (state.screen === 'study') body = viewStudy();         // v1.08.51
   /* v1.08.46: перерисовка ТОГО ЖЕ экрана (фото легло в очередь, тумблер,
      автообновление) не должна швырять страницу вверх — возвращаем прокрутку.
      Смена экрана — как раньше, с чистого верха. */
@@ -5083,17 +5229,21 @@ function viewFooter(){
 
 function viewTabbar(){
   /* v1.08.39: у бухгалтера свой набор вкладок — без экранов правки документов */
+  /* v1.08.49: поиск стоит СРАЗУ ПОСЛЕ «Главной» (в ПК-меню — строкой под
+     ней); на телефоне кнопку можно спрятать галочкой в «Подсказках». */
+  const srchItem = (vmCur() !== 'mobile' || srchTabOn())
+    ? [['srch', ic('search'), t('srch_btn')]] : [];
   const items = isAcc() ? [
-    ['srch', ic('search'), t('srch_btn')],           // v1.08.45: глобальный поиск переехал из шапки в меню
     ['acc', ic('receipt'), t('tab_acc')],
+    ...srchItem,
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
     ['dirs', ICONS.dirs, t('tab_dirs')],
     ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
   ] : [
-    ['srch', ic('search'), t('srch_btn')],           // v1.08.45: глобальный поиск переехал из шапки в меню
     ['home', ICONS.home, t('tab_home')],
+    ...srchItem,
     ...((isManager() || vmCur() === 'desktop') ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.49: воркеру — недельная доска в ПК-режиме
     ...(isManager() ? [['proposals', ICONS.prop, t('tab_proposals')]] : []),  // v1.07.27
     ['repairs', ic('toolbox'), t('tab_repairs')],                            // v1.08.23
@@ -5101,6 +5251,7 @@ function viewTabbar(){
     ['map', ICONS.map, t('tab_map')],
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
+    ...(studyMenuOn() ? [['study', ic('grad'), t('tab_study')]] : []),   // v1.08.51: учёба
     ['dirs', ICONS.dirs, t('tab_dirs')],
     ...(isManager() ? [['archive', ICONS.warn || ICONS.archive, t('tab_action')]] : []),   // v1.08.12
     ...(isAdmin() ? [['journal', ICONS.book, t('tab_journal')]] : []),   // v1.07.18
@@ -5920,6 +6071,30 @@ function sectionFaqHtml(key){
       <li><b>${ic('upload')} Unsent photos and video</b>: a summary by document, a five-line send log and the "Retry sending" / "Connection check" buttons — while one runs, the other is disabled.</li>
     </ul>`);
 
+  S.study = H(`
+    <h4>${ic('grad')} Учёба</h4>
+    <ul>
+      <li><b>Разделы</b> — восемь разделов учебника, у каждого две кнопки: <b>Тест</b> и <b>Материалы</b>. Кнопка блёклая — файла для раздела пока нет (тесты лежат в dictionary/tests, учебники — в dictionary/books). В строке раздела: число вопросов, попытки, лучший результат и время чтения; справа — процент последней попытки.</li>
+      <li><b>Перед тестом</b> выбирается режим: <b>Обучение</b> — разбор сразу после каждого ответа; <b>Экзамен</b> — только ответы, разбор в итогах. Число вопросов (все или часть), язык теста и перемешивание.</li>
+      <li><b>В тесте</b>: варианты нумерованы — в вопросах вида «верны 1 и 3» речь именно об этих номерах. «Подсказка» — намёк до ответа (отмечается в результате). Вопрос с несколькими верными ответами помечен — отмечайте все. Таймер идёт, пока экран открыт; свернули приложение — счёт стоит. Незавершённый тест переживает перезагрузку — на экране появится «Продолжить».</li>
+      <li><b>Итог</b> — модалка с процентом, зачёт/не сдан по порогу (по умолчанию 70 %, админ меняет в Настройках), число верных и неверных, время и среднее на вопрос. <b>Разбор</b> — каждый вопрос с вашим ответом, верным, объяснениями и ссылкой на раздел и страницы; галочка «Только ошибки».</li>
+      <li><b>Материалы</b> — учебник раздела открывается внутри приложения; время чтения засекается и попадает в статистику. «Готово» — закрыть и записать.</li>
+      <li><b>Мои результаты</b> — все ваши тесты и чтения: сводка сверху, список ниже, у каждого теста — «глазик» разбора.</li>
+      <li><b>Статистика</b> (админ) — по всем сотрудникам за период: тесты, сдано, ответов, доля верных и неверных, время тестов и чтения; строка сотрудника раскрывается по разделам и сессиям; выгрузка CSV.</li>
+      <li><b>Доступ</b>: Настройки → «Учёба» — общий выключатель, «Всем» или «По списку» (тот же флажок в карточке сотрудника в Штате), порог зачёта. Сам сотрудник может убрать кнопку из меню галочкой «Показывать «Учёбу» в меню».</li>
+    </ul>`,
+  `
+    <h4>${ic('grad')} Study</h4>
+    <ul>
+      <li><b>Sections</b> — eight textbook sections, each with two buttons: <b>Test</b> and <b>Materials</b>. A dimmed button means there is no file for that section yet (tests live in dictionary/tests, textbooks in dictionary/books). The row shows the question count, attempts, best score and reading time; the last attempt's percentage is on the right.</li>
+      <li><b>Before a test</b> pick the mode: <b>Learning</b> — the explanation right after each answer; <b>Exam</b> — answers only, explanations in the results. Number of questions (all or a part), test language and shuffling.</li>
+      <li><b>During the test</b>: options are numbered — questions like “1 and 3 are correct” refer to those numbers. “Hint” gives a nudge before answering (marked in the result). A question with several correct answers is flagged — mark all of them. The timer runs while the screen is open; minimising the app pauses it. An unfinished test survives a reload — “Continue” appears on the screen.</li>
+      <li><b>Result</b> — a modal with the percentage, passed / not passed against the pass mark (70 % by default, the admin changes it in Settings), correct and wrong counts, time and average per question. <b>Review</b> — every question with your answer, the right one, explanations and a reference to the section and pages; a “Mistakes only” tick.</li>
+      <li><b>Materials</b> — the section's textbook opens inside the app; reading time is measured and goes to the statistics. “Done” closes and records it.</li>
+      <li><b>My results</b> — all your tests and readings: a summary on top, the list below, an “eye” button opens the review of each test.</li>
+      <li><b>Statistics</b> (admin) — all staff for a period: tests, passed, answers, share of correct and wrong, test and reading time; an employee row expands into sections and sessions; CSV export.</li>
+      <li><b>Access</b>: Settings → “Study” — the master switch, “Everyone” or “By list” (the same flag is in the employee card in Staff), the pass mark. An employee can remove the button from the menu with “Show “Study” in the menu”.</li>
+    </ul>`);
   S.acc = H(`
     <h4>${ic('receipt')} Бухгалтерия</h4>
     <ul>
@@ -6123,6 +6298,21 @@ function modalTrap(on){
        доступности. Отдельный aria-hidden в браузере без поддержки inert
        дал бы худшее из двух — от скринридера спрятано, а Tab доходит. */
     app.inert = !!on;
+  }catch(e){}
+  /* v1.08.48: пока модалка открыта, колесо и жесты крутят ТОЛЬКО её:
+     прокрутка страницы под подложкой выключается (overflow:hidden на body),
+     позиция при этом сохраняется сама. Ширину системного скроллбара
+     компенсируем полем, чтобы контент не дёргался. */
+  try{
+    const b = document.body;
+    if (on){
+      const sw = window.innerWidth - document.documentElement.clientWidth;
+      b.style.setProperty('--sbw', (sw > 0 ? sw : 0) + 'px');
+      b.classList.add('tl-lock');
+    } else {
+      b.classList.remove('tl-lock');
+      b.style.removeProperty('--sbw');
+    }
   }catch(e){}
 }
 function closeModal(){ $('#overlay')?.remove(); modalTrap(false); maybeApplyPendingUpdate(); }
@@ -7411,6 +7601,7 @@ async function purgeDoc(kind, id){
   if (!row || !isArch(row)){ toast('⚠ ' + t('arch_title'), 'err'); return; }
   if (!confirm(t('arch_purge_q'))) return;
   if (kind === 'rep'){                                            // v1.08.30
+    await mediaDropRepair(id);                   // v1.08.48: файлы — в корзину Диска
     await dbDelete('repairs', id);
     audit('repair_delete', 'repair', id, { no: row.no });
   } else if (kind === 'prop'){
@@ -7424,6 +7615,31 @@ async function purgeDoc(kind, id){
       complex: (cxById(row.complex_id) || {}).abbr || '' });
   }
   toast('🗑 ' + t('deleted')); render();
+}
+/* v1.08.48: файлы документа РЕМОНТА при удалении навсегда — в корзину
+   Диска и прочь из media (серверная media-delete, ветка repair_id). */
+async function mediaDropRepair(repId){
+  const own = (state.data.media || []).filter(m => m.repair_id === repId);
+  /* и локальную очередь тоже — недосланное этому документу больше некуда */
+  for (const q of mediaQ.filter(x => x.repair_id === repId)){
+    try{ await mediaQDel(q.qid); }catch(e){ dlog('media: очередь', e); }
+  }
+  if (!HAS_SB || !own.length) return true;
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-delete', { method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ repair_id: repId }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+    state.data.media = (state.data.media || []).filter(m => m.repair_id !== repId);
+    saveLocal();
+    return true;
+  }catch(e){
+    dlog('⚠ media: файлы ремонта остались на Диске —', e.message || e);
+    toast('⚠ ' + t('media_del_left'), 'err');
+    return false;
+  }
 }
 /* Переезд файлов документа между рабочими папками и «Архив TechLog» */
 async function mediaMoveJob(jobId, mode){
@@ -8291,6 +8507,7 @@ function viewSettings(){
   ${fold('sec', t('sec_card'), 'key', secCardHtml())}
   ${fold('pop', t('pop_card'), 'bell', popCardHtml())}
   ${fold('cam', t('cam_card'), 'camera', camCardHtml())}
+  ${isAcc() ? '' : fold('study', t('st_card'), 'grad', studyCardHtml())}
   ${fold('uid', t('ui_card'), 'steth', uiDiagCardHtml())}
 
   ${isAdmin() ? `
@@ -8624,7 +8841,702 @@ function initSW(){
 /* =====================================================================
    ПУБЛИЧНЫЕ ОБРАБОТЧИКИ + СТАРТ
    ===================================================================== */
+/* =====================================================================
+   v1.08.51 · УЧЁБА — тесты по разделам учебника и учебные материалы.
+   Каталог разделов: dictionary/index.json (8 разделов, у каждого файл
+   теста dictionary/tests/section-N.json и учебник dictionary/books/…).
+   Единый формат теста — dictionary/tests/SCHEMA.md; старые варианты
+   структуры читаются через qzNorm(). Результаты — study_sessions
+   (kind: test | read), пишутся через dbUpsert (офлайн — в очередь).
+   ===================================================================== */
+const STUDY_DIR = './dictionary/';
+const STUDY_LS_RUN = 'techlog_study_run';
+const STUDY_COLORS = ['#1CB0F6','#FF4B4B','#FFC800','#58CC02','#8AA0AB','#9A5A22','#2F5FD0','#CE82FF'];
+const STUDY = {
+  cat: null, catBusy: false, catAt: 0,
+  quiz: {}, busy: {}, exists: {},
+  tab: 'sec', run: null, read: null, lang: null,
+  stat: { period: '30', user: '', open: {}, sec: 0 },
+  mine: { open: {}, onlyWrong: false },
+  tick: 0,
+};
+/* ---------- доступ ---------- */
+function studyOn(){ const o = (state.data && state.data.org_settings) || {}; return o.study_on !== false; }
+function studyAllowedFor(p){
+  if (!p) return false;
+  if (p.role === 'admin') return true;
+  if (!studyOn()) return false;
+  const o = (state.data && state.data.org_settings) || {};
+  if (o.study_all !== false) return true;
+  return p.study_access === true;
+}
+function studyAllowed(){ return !!(state.user && (isAdmin() || (studyOn() && studyAllowedFor(state.user)))); }
+function studyMenuOn(){ return studyAllowed() && !isAcc() && !(state.user && state.user.study_off === true); }
+function studyPassPct(q){ const o = (state.data && state.data.org_settings) || {}; return +o.study_pass || (q && q.meta && +q.meta.pass_percent) || 70; }
+function studyMyProfile(){ return (state.data.profiles || []).find(p => p.id === state.user.id); }
+async function studySelfOff(v){
+  const me = studyMyProfile(); if (!me) return;
+  me.study_off = !!v; state.user.study_off = !!v;
+  await dbUpsert('profiles', { ...me, study_off: !!v });
+  render();
+}
+async function studyAccessSet(uid_, v){
+  if (!isAdmin()) return;
+  const u = (state.data.profiles || []).find(p => p.id === uid_); if (!u) return;
+  await dbUpsert('profiles', { ...u, study_access: !!v });
+  audit('staff_flag', 'profile', uid_, { name: u.display_name, key: 'study_access', v: !!v });
+  if ($('#overlay')) staffCfgModal(uid_); else render();
+}
+/* ---------- локализация текстов теста ---------- */
+function stLang(){ return STUDY.lang || state.lang || 'ru'; }
+function L(o){
+  if (o == null) return '';
+  if (typeof o === 'string') return o;
+  const l = stLang();
+  return o[l] || o.ru || o.en || Object.values(o).find(x => typeof x === 'string') || '';
+}
+/* ---------- каталог ---------- */
+function studyDefaultCat(){
+  const names = [
+    ['Устранение последствий залива', 'Water Damage Restoration'],
+    ['Восстановление после пожара и копоти', 'Fire and Smoke Restoration Technology'],
+    ['Устранение и контроль запахов', 'Odor Removal and Control'],
+    ['Устранение плесени и микробов', 'Microbial Remediation'],
+    ['Уборка мест происшествий', 'Trauma Scene Cleanup'],
+    ['Чистка мягкой мебели и тканей', 'Upholstery and Fabric Cleaning'],
+    ['Чистка ковров', 'Carpet Cleaning'],
+    ['Раздел 8 — учебные материалы', 'Section 8 — study materials']];
+  return { sections: names.map(([ru, en], i) => ({ id: i + 1, color: STUDY_COLORS[i], title: { ru, en },
+    test: 'tests/section-' + (i + 1) + '.json', book: 'books/section-' + (i + 1) + '.html' })) };
+}
+function studySections(){ return ((STUDY.cat || studyDefaultCat()).sections || []).filter(s => s && s.id); }
+function studySec(id){ return studySections().find(s => +s.id === +id); }
+async function studyCatLoad(force){
+  if (STUDY.catBusy || (!force && STUDY.cat && Date.now() - STUDY.catAt < 300000)) return;
+  STUDY.catBusy = true;
+  try{
+    const r = await fetch(STUDY_DIR + 'index.json', { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if (j && Array.isArray(j.sections)) STUDY.cat = j;
+  }catch(e){ dlog('study: index.json —', e && e.message ? e.message : e); }
+  STUDY.catAt = Date.now(); STUDY.catBusy = false;
+  studyProbe();
+  if (state.screen === 'study') render();
+}
+/* есть ли файлы у разделов — лёгкие HEAD-запросы (SW их не кэширует:
+   офлайн проверка молчит, кнопки остаются активны) */
+function studyProbe(){
+  if (netOff() || !navigator.onLine) return;
+  studySections().forEach(s => {
+    [s.test, s.book].forEach(f => {
+      if (!f || f in STUDY.exists) return;
+      STUDY.exists[f] = null;
+      fetch(STUDY_DIR + f, { method: 'HEAD', cache: 'no-cache' }).then(r => {
+        STUDY.exists[f] = r.ok; if (state.screen === 'study') render();
+      }).catch(() => { delete STUDY.exists[f]; });
+    });
+  });
+}
+function studyHas(f){ return !!f && STUDY.exists[f] !== false; }
+/* ---------- нормализация файла теста (единый формат + старые варианты) ---------- */
+function qzLoc(v){
+  if (v == null) return null;
+  if (typeof v === 'string') return v.trim() ? { ru: v.trim(), en: v.trim() } : null;
+  if (typeof v !== 'object') return qzLoc(String(v));
+  const o = {}; ['ru','en'].forEach(k => { if (typeof v[k] === 'string' && v[k].trim()) o[k] = v[k].trim(); });
+  if (!Object.keys(o).length) return null;
+  if (!o.ru) o.ru = o.en; if (!o.en) o.en = o.ru;
+  return o;
+}
+function qzPages(v){
+  if (v == null) return null;
+  if (Array.isArray(v)) return v.filter(x => x != null && x !== '');
+  if (typeof v === 'number') return [v];
+  const s = String(v).trim(); return s ? [s] : null;
+}
+function qzNorm(raw, sec){
+  const m = raw.meta || {}, src = m.source || {};
+  const assets = {};
+  [raw.assets, raw.media].forEach(h => {
+    if (!h || typeof h !== 'object' || Array.isArray(h)) return;
+    Object.keys(h).forEach(k => {
+      const a = h[k]; if (!a) return;
+      if (typeof a === 'string'){ assets[k] = { type: 'svg', svg: a }; return; }
+      const body = a.svg || a.content || a.code || a.markup;
+      assets[k] = { type: body ? 'svg' : (a.type || 'image'), title: qzLoc(a.title), caption: qzLoc(a.caption),
+        svg: body || '', src: a.src || a.url || a.file || '' };
+    });
+  });
+  const topics = {};
+  (raw.topics || []).forEach(tp => { if (tp && tp.id != null) topics[String(tp.id)] = qzLoc(tp.title); });
+  const qs = (raw.questions || []).map((q, i) => {
+    let opts = q.options || q.answers || [];
+    if (opts && !Array.isArray(opts)) opts = Object.keys(opts).map(k => ({ id: k, text: opts[k] }));
+    const exMap = q.option_explanations || q.optionExplanations || {};
+    let correct = [];
+    const options = opts.map((o, j) => {
+      if (typeof o === 'string') o = { id: String(j + 1), text: o };
+      const id = String(o.id != null ? o.id : j + 1);
+      let ex = qzLoc(o.explanation), pg = qzPages(o.pages);
+      if (!ex && exMap[id]){ ex = qzLoc(exMap[id]); const r = exMap[id] && exMap[id].ref; if (r && !pg) pg = qzPages(r.pages); }
+      if (o.correct === true) correct.push(id);
+      return { id, text: qzLoc(o.text || o.label) || { ru: '', en: '' }, explanation: ex, pages: pg };
+    });
+    let rc = q.correct; if (rc == null) rc = q.correctOption ?? q.correct_option ?? q.answer;
+    if (rc != null) correct = (Array.isArray(rc) ? rc : [rc]).map(String);
+    correct = [...new Set(correct)];
+    let type = q.type;
+    if (type !== 'single' && type !== 'multi') type = (q.multiSelect === true || correct.length > 1) ? 'multi' : 'single';
+    /* ссылка на книгу */
+    const ref = {};
+    const r0 = q.ref || q.source_ref || q.reference || {};
+    if (typeof r0 === 'object'){
+      let ch = r0.chapterTitle || r0.sectionTitle || r0.chapter;
+      if (typeof ch === 'number' || (typeof ch === 'string' && /^\d+$/.test(ch.trim()))) ch = null;
+      ref.section = r0.section ?? r0.journalSection ?? r0.manualSection;
+      ref.chapter = qzLoc(ch); ref.pages = qzPages(r0.pages); ref.text = qzLoc(r0.label || r0.text);
+      if (!ref.chapter && !ref.pages && !ref.text && ref.section == null) ref.text = qzLoc(r0);
+    } else if (typeof r0 === 'string') ref.text = qzLoc(r0);
+    const bk = (q.book && typeof q.book === 'object') ? q.book : {};
+    if (ref.section == null) ref.section = bk.journalSection ?? bk.section ?? q.journalSection ?? q.manualSection ?? q.section ?? sec;
+    if (!ref.chapter) ref.chapter = qzLoc(bk.chapterTitle || bk.sectionTitle || q.sectionTitle || q.bookUnitTitle || q.chapterTitle);
+    if (!ref.pages) ref.pages = qzPages(bk.pages) || qzPages(q.pages);
+    let topic = q.topic;
+    if (typeof topic === 'string') topic = topics[topic] || qzLoc(topic); else topic = qzLoc(topic);
+    const asset = q.asset || q.media || q.mediaRef || q.assetRef;
+    return {
+      id: String(q.id || ('q' + (i + 1))), type, difficulty: q.difficulty || '',
+      topic, asset: (typeof asset === 'string' && assets[asset]) ? asset : '',
+      ref, question: qzLoc(q.question || q.prompt || q.text) || { ru: '', en: '' },
+      hint: qzLoc(q.hint), options, correct, explanation: qzLoc(q.explanation),
+    };
+  }).filter(q => q.options.length >= 2 && q.correct.length);
+  const secN = +(m.section ?? src.manualSection ?? src.journalSection ?? src.section ?? sec) || +sec || 0;
+  return {
+    meta: {
+      id: m.id || m.quiz_id || ('section-' + secN), section: secN,
+      title: qzLoc(m.title) || qzLoc(src.title) || qzLoc(src.book) || { ru: 'Раздел ' + secN, en: 'Section ' + secN },
+      description: qzLoc(m.description),
+      source: { book: src.book || (typeof src.title === 'string' ? src.title : ''), publisher: src.publisher || '',
+                edition: src.edition || src.version || '', pages: src.pages || src.pagesCovered || '' },
+      pass_percent: +(m.pass_percent || m.passScorePercent || m.pass_score_percent || (m.scoring && (m.scoring.passPercent || m.scoring.pass_percent)) || 70),
+      shuffle_questions: m.shuffle_questions !== false, shuffle_options: m.shuffle_options === true,
+    },
+    assets, questions: qs,
+  };
+}
+async function studyQuizLoad(secId){
+  const s = studySec(secId); if (!s || !s.test) return null;
+  if (STUDY.quiz[secId] && STUDY.quiz[secId].questions) return STUDY.quiz[secId];
+  if (STUDY.busy[secId]) return null;
+  STUDY.busy[secId] = true; if (state.screen === 'study') render();
+  try{
+    const r = await fetch(STUDY_DIR + s.test);
+    if (!r.ok) throw new Error(r.status === 404 ? t('st_no_file') : 'HTTP ' + r.status);
+    const raw = await r.json();
+    const q = qzNorm(raw, secId);
+    if (!q.questions.length) throw new Error(t('st_no_q'));
+    STUDY.quiz[secId] = q; STUDY.exists[s.test] = true;
+  }catch(e){
+    STUDY.quiz[secId] = { err: (e && e.message) || String(e) };
+    dlog('⛔ study: тест раздела ' + secId + ':', e);
+  }
+  STUDY.busy[secId] = false;
+  if (state.screen === 'study') render();
+  return STUDY.quiz[secId] && STUDY.quiz[secId].questions ? STUDY.quiz[secId] : null;
+}
+/* ---------- таймер «активного» времени (пауза, когда экран скрыт) ---------- */
+function stClockNew(){ return { acc: 0, since: Date.now() }; }
+function stClockMs(c){ return c ? c.acc + (c.since ? Date.now() - c.since : 0) : 0; }
+function stClockPause(c){ if (c && c.since){ c.acc += Date.now() - c.since; c.since = 0; } }
+function stClockResume(c){ if (c && !c.since) c.since = Date.now(); }
+function studyPauseAll(){ if (STUDY.run) { stClockPause(STUDY.run.clock); stClockPause(STUDY.run.qclock); studyRunSave(); } if (STUDY.read) stClockPause(STUDY.read.clock); }
+function studyResumeAll(){ if (STUDY.run && !STUDY.run.done){ stClockResume(STUDY.run.clock); stClockResume(STUDY.run.qclock); } if (STUDY.read) stClockResume(STUDY.read.clock); }
+document.addEventListener('visibilitychange', () => { if (document.hidden) studyPauseAll(); else if (state.screen === 'study') studyResumeAll(); });
+function fmtMs(ms){
+  ms = Math.max(0, +ms || 0); const s = Math.round(ms / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  if (h) return h + ' ' + t('st_h') + ' ' + String(m).padStart(2, '0') + ' ' + t('st_m');
+  if (m) return m + ' ' + t('st_m') + ' ' + String(r).padStart(2, '0') + ' ' + t('st_s');
+  return r + ' ' + t('st_s');
+}
+function fmtMsShort(ms){ const s = Math.round((+ms || 0) / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }
+function studyTickStart(){
+  clearInterval(STUDY.tick);
+  STUDY.tick = setInterval(() => {
+    const el = $('#st-timer'); if (!el) return;
+    const c = STUDY.run ? STUDY.run.clock : STUDY.read ? STUDY.read.clock : null;
+    if (c) el.textContent = fmtMsShort(stClockMs(c));
+  }, 1000);
+}
+/* ---------- сессии ---------- */
+function studySessions(){ return state.data.study_sessions || (state.data.study_sessions = []); }
+function studyMySessions(){ return studySessions().filter(s => s.user_id === state.user.id).sort((a, b) => String(b.started_at).localeCompare(String(a.started_at))); }
+function studySecStat(secId, list){
+  const src = list || studyMySessions();
+  const tests = src.filter(s => +s.section === +secId && s.kind === 'test').sort((a, b) => String(b.started_at).localeCompare(String(a.started_at)));
+  const reads = src.filter(s => +s.section === +secId && s.kind === 'read');
+  const best = tests.reduce((m, s) => Math.max(m, +s.score_pct || 0), 0);
+  const last = tests[0] ? +tests[0].score_pct || 0 : null;
+  return { n: tests.length, best, last, readMs: reads.reduce((a, s) => a + (+s.duration_ms || 0), 0),
+           testMs: tests.reduce((a, s) => a + (+s.duration_ms || 0), 0) };
+}
+async function studySave(row){
+  studySessions();   // кэш со старой версии мог не знать таблицу — массив должен существовать до dbUpsert
+  row = { id: row.id || uid(), user_id: state.user.id, created_at: new Date().toISOString(), ...row };
+  await dbUpsert('study_sessions', row);
+  return row;
+}
+/* ---------- запуск теста ---------- */
+function studyStartModal(secId){
+  const s = studySec(secId); if (!s) return;
+  const q = STUDY.quiz[secId];
+  if (!q || !q.questions){ studyQuizLoad(secId).then(qq => { if (qq) studyStartModal(secId); else if (STUDY.quiz[secId] && STUDY.quiz[secId].err) toast('⛔ ' + STUDY.quiz[secId].err, 'err'); }); return; }
+  const n = q.questions.length;
+  const cnts = [20, 40, 60].filter(x => x < n);
+  const st = STUDY._start = STUDY._start || { mode: 'learn', count: 0, shuffle: q.meta.shuffle_questions };
+  const seg = (grp, val, lbl) => `<button class="${st[grp] === val ? 'on' : ''}" onclick="App.studyStartOpt('${grp}','${val}','${secId}')">${lbl}</button>`;
+  openModal(`
+    ${modalHead(L(s.title), 'grad')}
+    <div class="tiny" style="margin-bottom:8px">${esc(L(q.meta.title))}${q.meta.source.book ? ` · ${esc(q.meta.source.book)}` : ''}${q.meta.source.pages ? ` · ${t('st_pages')} ${esc(String(q.meta.source.pages))}` : ''}</div>
+    <div class="st-start-row"><b>${t('st_mode')}</b> ${tipQ('st_mode_tip')}
+      <div class="lang-seg cam-seg">${seg('mode', 'learn', t('st_mode_learn'))}${seg('mode', 'exam', t('st_mode_exam'))}</div></div>
+    <div class="st-start-row"><b>${t('st_count')}</b>
+      <div class="lang-seg cam-seg">${seg('count', 0, t('st_all') + ' · ' + n)}${cnts.map(c => seg('count', c, String(c))).join('')}</div></div>
+    <div class="st-start-row"><b>${t('st_lang')}</b>
+      <div class="lang-seg cam-seg">${seg('lang', 'ru', 'RU')}${seg('lang', 'en', 'EN')}</div></div>
+    <label class="chk-line" style="margin:6px 0"><input type="checkbox" ${st.shuffle ? 'checked' : ''} onchange="App.studyStartOpt('shuffle', this.checked, '${secId}')"> ${t('st_shuffle')}</label>
+    <div class="tiny" style="margin:4px 0 10px">${t('st_pass_lbl')}: <b>${studyPassPct(q)}%</b> · ${t('st_start_hint')}</div>
+    <button class="btn btn-green" onclick="App.studyBegin('${secId}')">${ic('play')} ${t('st_begin')}</button>`);
+}
+function studyStartOpt(grp, val, secId){
+  const st = STUDY._start = STUDY._start || {};
+  if (grp === 'count') val = +val; else if (grp === 'shuffle') val = !!val;
+  st[grp] = val; studyStartModal(secId);
+}
+function studyBegin(secId){
+  const q = STUDY.quiz[secId]; if (!q || !q.questions) return;
+  const st = STUDY._start || {};
+  STUDY.lang = st.lang || stLang();
+  let order = q.questions.map((_, i) => i);
+  if (st.shuffle !== false){ for (let i = order.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; } }
+  if (st.count) order = order.slice(0, st.count);
+  STUDY.run = { id: uid(), sec: +secId, quizId: q.meta.id, mode: st.mode || 'learn', order, i: 0,
+    answers: {}, pick: [], checked: false, hintOn: false, done: false,
+    started_at: new Date().toISOString(), clock: stClockNew(), qclock: stClockNew(), lang: STUDY.lang };
+  closeModal(); studyRunSave(); STUDY.tab = 'sec'; render();
+  audit('study_start', 'study', STUDY.run.id, { sec: +secId, n: order.length, mode: STUDY.run.mode });
+}
+function studyRunSave(){ try{ if (STUDY.run && !STUDY.run.done) localStorage.setItem(STUDY_LS_RUN, JSON.stringify(STUDY.run)); else localStorage.removeItem(STUDY_LS_RUN); }catch(e){} }
+function studyRunRestore(){
+  if (STUDY.run) return;
+  try{
+    const r = JSON.parse(localStorage.getItem(STUDY_LS_RUN) || 'null');
+    if (!r || !r.order || r.done) return;
+    if (!state.user || (r.uid && r.uid !== state.user.id)) return;
+    r.clock = r.clock || stClockNew(); r.qclock = r.qclock || stClockNew();
+    stClockPause(r.clock); stClockPause(r.qclock);
+    STUDY.run = r; STUDY.lang = r.lang || STUDY.lang;
+    studyQuizLoad(r.sec);
+  }catch(e){}
+}
+function studyRunQ(){ const r = STUDY.run, q = STUDY.quiz[r.sec]; return (q && q.questions) ? q.questions[r.order[r.i]] : null; }
+function studyPick(optId){
+  const r = STUDY.run; if (!r || r.checked) return;
+  const q = studyRunQ(); if (!q) return;
+  if (q.type === 'multi'){ const i = r.pick.indexOf(optId); if (i >= 0) r.pick.splice(i, 1); else r.pick.push(optId); }
+  else r.pick = [optId];
+  studyRunSave(); render();
+}
+function studyHint(){ const r = STUDY.run; if (!r) return; r.hintOn = !r.hintOn; render(); }
+function studyCheck(){
+  const r = STUDY.run; if (!r || !r.pick.length) return;
+  const q = studyRunQ(); if (!q) return;
+  const ok = r.pick.length === q.correct.length && r.pick.every(p => q.correct.includes(p));
+  r.answers[q.id] = { q: q.id, pick: [...r.pick], ok, ms: stClockMs(r.qclock), hint: !!r.hintOn };
+  r.checked = true; studyRunSave();
+  if (r.mode === 'exam') studyNext(); else render();
+}
+function studyNext(){
+  const r = STUDY.run; if (!r) return;
+  if (!r.checked && r.pick.length) { studyCheck(); if (r.mode !== 'exam') return; }
+  if (r.i >= r.order.length - 1){ studyFinish(); return; }
+  r.i++; r.pick = []; r.checked = false; r.hintOn = false; r.qclock = stClockNew();
+  studyRunSave(); render();
+  try{ window.scrollTo(0, 0); }catch(e){}
+}
+function studyAbortAsk(){
+  const r = STUDY.run; if (!r) return;
+  const n = Object.keys(r.answers).length;
+  if (!n){ STUDY.run = null; studyRunSave(); render(); return; }
+  if (confirm(t('st_finish_q').replace('{N}', n).replace('{M}', r.order.length))) studyFinish();
+}
+async function studyFinish(){
+  const r = STUDY.run; if (!r || r.done) return;
+  const q = STUDY.quiz[r.sec]; if (!q || !q.questions) return;
+  stClockPause(r.clock); stClockPause(r.qclock); r.done = true; studyRunSave();
+  const ans = Object.values(r.answers);
+  const correct = ans.filter(a => a.ok).length, wrong = ans.length - correct;
+  const total = r.order.length;
+  const pct = ans.length ? Math.round(correct * 100 / total) : 0;
+  const passPct = studyPassPct(q);
+  const row = await studySave({ id: r.id, kind: 'test', section: r.sec, quiz_id: r.quizId, mode: r.mode, lang: r.lang || stLang(),
+    started_at: r.started_at, finished_at: new Date().toISOString(), duration_ms: Math.round(stClockMs(r.clock)),
+    total, answered: ans.length, correct, wrong, score_pct: pct, passed: pct >= passPct,
+    answers: ans.map(a => ({ q: a.q, pick: a.pick, ok: a.ok, ms: Math.round(a.ms || 0), hint: !!a.hint })) });
+  audit('study_test', 'study', row.id, { sec: r.sec, total, correct, wrong, pct, ms: row.duration_ms, passed: row.passed });
+  STUDY.run = null; studyRunSave(); render();
+  studyResultModal(row);
+}
+function studyResultModal(row){
+  const s = studySec(row.section);
+  const pct = +row.score_pct || 0, passPct = studyPassPct(STUDY.quiz[row.section]);
+  const col = row.passed ? 'var(--green)' : 'var(--red)';
+  const ring = `<svg class="st-ring" viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="12"/>
+    <circle cx="60" cy="60" r="52" fill="none" stroke="${col}" stroke-width="12" stroke-linecap="round"
+      stroke-dasharray="${(326.7 * pct / 100).toFixed(1)} 326.7" transform="rotate(-90 60 60)"/>
+    <text x="60" y="66" text-anchor="middle" font-size="26" font-weight="900" fill="var(--text)">${pct}%</text></svg>`;
+  openModal(`
+    ${modalHead(t('st_result'), 'grad')}
+    <div class="tiny" style="margin-bottom:6px">${s ? esc(L(s.title)) : ''} · ${fmtDMY(String(row.started_at).slice(0, 10))}</div>
+    <div class="st-res">${ring}
+      <div class="st-res-txt">
+        <div class="st-res-verdict" style="color:${col}">${row.passed ? ic('check') + ' ' + t('st_passed') : ic('close') + ' ' + t('st_failed')}</div>
+        <div class="tiny">${t('st_pass_lbl')}: ${passPct}%</div>
+        <div class="st-res-nums">
+          <span class="chip ok">${t('st_correct')}: ${row.correct}</span>
+          <span class="chip bad">${t('st_wrong')}: ${row.wrong}</span>
+          ${row.answered < row.total ? `<span class="chip">${t('st_skipped')}: ${row.total - row.answered}</span>` : ''}
+        </div>
+        <div class="tiny">${t('st_time')}: <b>${fmtMs(row.duration_ms)}</b> · ${t('st_avg_q')}: ${row.answered ? fmtMs(row.duration_ms / row.answered) : '—'}</div>
+      </div></div>
+    <div class="st-btns">
+      <button class="btn btn-blue" onclick="App.studySessReview('${row.id}')">${ic('eye')} ${t('st_review')}</button>
+      <button class="btn btn-ghost" onclick="App.closeModal();App.studyStart('${row.section}')">${ic('refresh')} ${t('st_again')}</button>
+    </div>`);
+}
+/* ---------- разбор сессии (свой или админом) ---------- */
+async function studySessReview(id){
+  const row = studySessions().find(s => s.id === id); if (!row) return;
+  const q = await studyQuizLoad(row.section);
+  const s = studySec(row.section);
+  const who = row.user_id !== state.user.id ? ` · ${esc(shortName(profName(row.user_id)))}` : '';
+  if (!q){
+    openModal(`${modalHead(t('st_review'), 'grad')}<div class="tiny">${esc((STUDY.quiz[row.section] && STUDY.quiz[row.section].err) || t('st_no_file'))}</div>`);
+    return;
+  }
+  const byId = {}; q.questions.forEach(x => { byId[x.id] = x; });
+  const answers = Array.isArray(row.answers) ? row.answers : [];
+  const only = STUDY.mine.onlyWrong;
+  const list = answers.filter(a => !only || !a.ok);
+  const items = list.map((a, n) => {
+    const qq = byId[a.q]; if (!qq) return '';
+    const picked = a.pick || [];
+    const opts = qq.options.map(o => {
+      const isC = qq.correct.includes(o.id), isP = picked.includes(o.id);
+      const cls = isC ? 'ok' : (isP ? 'bad' : '');
+      const ex = (isP || isC) && o.explanation ? `<div class="st-opt-ex">${esc(L(o.explanation))}${o.pages && o.pages.length ? ` <span class="tiny">(${t('st_p')} ${esc(o.pages.join(', '))})</span>` : ''}</div>` : '';
+      return `<div class="st-rv-opt ${cls}"><span class="st-opt-id">${esc(o.id)}</span><div class="grow">${esc(L(o.text))}${isP ? ` <span class="chip ${a.ok ? 'ok' : 'bad'}">${t('st_your')}</span>` : ''}${isC && !isP ? ` <span class="chip ok">${t('st_right')}</span>` : ''}${ex}</div></div>`;
+    }).join('');
+    return `<div class="st-rv ${a.ok ? 'ok' : 'bad'}">
+      <div class="st-rv-h"><span class="st-qn">${n + 1}</span> ${a.ok ? ic('check', 'color:var(--green)') : ic('close', 'color:var(--red)')} <b>${esc(L(qq.question))}</b></div>
+      ${opts}
+      ${qq.explanation ? `<div class="st-ex">${ic('book')} ${esc(L(qq.explanation))}</div>` : ''}
+      ${studyRefHtml(qq)}
+      <div class="tiny">${t('st_time')}: ${fmtMs(a.ms)}${a.hint ? ' · ' + t('st_hint_used') : ''}</div>
+    </div>`;
+  }).join('');
+  openModal(`
+    ${modalHead(t('st_review'), 'grad')}
+    <div class="tiny" style="margin-bottom:6px">${s ? esc(L(s.title)) : ''} · ${fmtDMY(String(row.started_at).slice(0, 10))}${who} ·
+      <b style="color:${row.passed ? 'var(--green)' : 'var(--red)'}">${row.score_pct}%</b> · ${row.correct}/${row.total} · ${fmtMs(row.duration_ms)}</div>
+    <div class="st-rv-tools">
+      <label class="chk-line"><input type="checkbox" ${only ? 'checked' : ''} onchange="App.studyOnlyWrong(this.checked,'${row.id}')"> ${t('st_only_wrong')}</label>
+      <div class="lang-seg cam-seg"><button class="${stLang() === 'ru' ? 'on' : ''}" onclick="App.studyLang('ru','${row.id}')">RU</button><button class="${stLang() === 'en' ? 'on' : ''}" onclick="App.studyLang('en','${row.id}')">EN</button></div>
+    </div>
+    <div class="st-rv-list">${items || `<div class="list-empty">${t('st_all_right')}</div>`}</div>`);
+}
+function studyRefHtml(q){
+  const r = q.ref || {}; const parts = [];
+  if (r.section != null) parts.push(t('st_section') + ' ' + esc(String(r.section)));
+  if (r.chapter) parts.push(esc(L(r.chapter)));
+  if (r.pages && r.pages.length) parts.push(t('st_p') + ' ' + esc(r.pages.join(', ')));
+  if (!parts.length && r.text) parts.push(esc(L(r.text)));
+  return parts.length ? `<div class="tiny st-ref">${ic('book')} ${parts.join(' · ')}</div>` : '';
+}
+/* ---------- чтение учебника ---------- */
+function studyReadOpen(secId){
+  const s = studySec(secId); if (!s || !s.book) return;
+  if (STUDY.read) studyReadClose(true);
+  STUDY.read = { id: uid(), sec: +secId, file: s.book, started_at: new Date().toISOString(), clock: stClockNew() };
+  STUDY.tab = 'sec'; render();
+  audit('study_read', 'study', STUDY.read.id, { sec: +secId, file: s.book, phase: 'open' });
+}
+async function studyReadClose(silent){
+  const rd = STUDY.read; if (!rd) return;
+  stClockPause(rd.clock);
+  const ms = Math.round(stClockMs(rd.clock));
+  STUDY.read = null;
+  if (ms >= 5000){
+    await studySave({ id: rd.id, kind: 'read', section: rd.sec, file: rd.file, lang: stLang(),
+      started_at: rd.started_at, finished_at: new Date().toISOString(), duration_ms: ms,
+      total: 0, answered: 0, correct: 0, wrong: 0, score_pct: null, passed: null, answers: [] });
+    if (!silent) toast('✓ ' + t('st_read_saved') + ': ' + fmtMs(ms));
+  }
+  if (!silent) render();
+}
+function studyReadHtml(){
+  const rd = STUDY.read, s = studySec(rd.sec);
+  const url = STUDY_DIR + rd.file;
+  const ext = (rd.file.split('.').pop() || '').toLowerCase();
+  const frame = ext === 'pdf'
+    ? `<iframe class="st-frame" src="${url}" title="${esc(L(s.title))}"></iframe>`
+    : ext === 'md' || ext === 'txt'
+    ? `<iframe class="st-frame" src="${url}" sandbox="" title="${esc(L(s.title))}"></iframe>`
+    : `<iframe class="st-frame" src="${url}" sandbox="allow-same-origin allow-popups" title="${esc(L(s.title))}"></iframe>`;
+  return `<div class="st-read">
+    <div class="st-read-h">
+      <span class="st-sec-dot" style="background:${s.color || STUDY_COLORS[(rd.sec - 1) % 8]}"></span>
+      <b class="grow">${esc(L(s.title))}</b>
+      <span class="st-timer" title="${t('st_read_time')}">${ic('clock')} <span id="st-timer">${fmtMsShort(stClockMs(rd.clock))}</span></span>
+      <a class="icon-btn" href="${url}" target="_blank" rel="noopener" title="${t('st_open_tab')}" aria-label="${t('st_open_tab')}">${ic('share')}</a>
+      <button class="btn btn-ghost sm" onclick="App.studyReadClose()">${ic('close')} ${t('st_read_done')}</button>
+    </div>
+    ${frame}
+    <div class="tiny" style="margin-top:6px">${t('st_read_hint')}</div>
+  </div>`;
+}
+/* ---------- экран ---------- */
+function viewStudy(){
+  if (!studyAllowed()){
+    return `<div class="section-title">${ic('grad')} ${t('tab_study')}</div><div class="card"><div class="list-empty">${t('st_denied')}</div></div>`;
+  }
+  studyCatLoad(false); studyRunRestore();
+  const tabs = [['sec', t('st_tab_sec')], ['mine', t('st_tab_mine')], ...(isAdmin() ? [['stat', t('st_tab_stat')]] : [])];
+  if (!tabs.find(x => x[0] === STUDY.tab)) STUDY.tab = 'sec';
+  const head = `<div class="section-title">${ic('grad')} ${t('tab_study')}${helpBtn('study')}</div>`;
+  if (STUDY.run && STUDY.tab === 'sec') { studyResumeAll(); setTimeout(studyTickStart, 0); return head + studyRunHtml(); }
+  if (STUDY.read && STUDY.tab === 'sec') { studyResumeAll(); setTimeout(studyTickStart, 0); return head + studyReadHtml(); }
+  studyPauseAll();
+  const nav = `<div class="tabs acc-nav">` + tabs.map(([id, l]) =>
+    `<button class="tabbtn ${STUDY.tab === id ? 'active' : ''}" onclick="App.studyTab('${id}')">${l}</button>`).join('') + `</div>`;
+  const body = STUDY.tab === 'mine' ? studyMineHtml() : STUDY.tab === 'stat' ? studyStatHtml() : studySecHtml();
+  return head + nav + body;
+}
+function studySecHtml(){
+  const mine = studyMySessions();
+  const resume = STUDY.run ? `<div class="card st-resume"><div class="grow"><b>${t('st_resume_t')}</b><div class="tiny">${esc(L((studySec(STUDY.run.sec) || {}).title))} · ${STUDY.run.i + 1}/${STUDY.run.order.length}</div></div>
+      <button class="btn btn-green sm" onclick="App.studyResume()">${ic('play')} ${t('st_resume')}</button>
+      <button class="btn btn-ghost sm" onclick="App.studyDrop()">${ic('trash')}</button></div>` : '';
+  const cards = studySections().map(s => {
+    const st = studySecStat(s.id, mine);
+    const q = STUDY.quiz[s.id];
+    const testOk = studyHas(s.test), bookOk = studyHas(s.book);
+    const qn = q && q.questions ? q.questions.length : null;
+    const col = s.color || STUDY_COLORS[(s.id - 1) % 8];
+    const err = q && q.err ? `<div class="tiny" style="color:var(--red)">${esc(q.err)}</div>` : '';
+    return `<div class="card st-sec" style="--sc:${col}">
+      <div class="st-sec-h"><span class="st-sec-no" style="color:${textColorFor(col)}">${s.id}</span>
+        <div class="grow"><b>${esc(L(s.title))}</b>
+          <div class="tiny">${s.tab ? esc(L(s.tab)) + ' · ' : ''}${qn != null ? qn + ' ' + t('st_q_short') : (testOk ? t('st_test') : t('st_no_test'))}${st.n ? ` · ${t('st_attempts')}: ${st.n} · ${t('st_best')}: <b>${st.best}%</b>` : ''}${st.readMs ? ` · ${t('st_read_time')}: ${fmtMs(st.readMs)}` : ''}</div>${err}</div>
+        ${st.last != null ? `<span class="chip ${st.last >= studyPassPct(q) ? 'ok' : 'bad'}">${st.last}%</span>` : ''}
+      </div>
+      <div class="st-btns st-sec-btns">
+        <button class="btn btn-green sm" ${testOk && !STUDY.busy[s.id] ? '' : 'disabled'} onclick="App.studyStart('${s.id}')">${STUDY.busy[s.id] ? '…' : ic('play') + ' ' + t('st_test')}</button>
+        <button class="btn btn-blue sm" ${bookOk ? '' : 'disabled'} onclick="App.studyRead('${s.id}')">${ic('book')} ${t('st_materials')}</button>
+      </div>
+    </div>`;
+  }).join('');
+  return resume + cards;
+}
+function studyRunHtml(){
+  const r = STUDY.run, q = studyRunQ(), qz = STUDY.quiz[r.sec];
+  const s = studySec(r.sec) || {};
+  if (!q){
+    const err = qz && qz.err;
+    return `<div class="card"><div class="list-empty">${err ? esc(err) : t('st_loading')}</div>
+      ${err ? `<button class="btn btn-ghost sm" onclick="App.studyDrop()">${t('st_drop')}</button>` : ''}</div>`;
+  }
+  const n = r.order.length, done = Object.keys(r.answers).length;
+  const a = r.answers[q.id];
+  const asset = q.asset && qz.assets[q.asset];
+  const assetHtml = asset ? `<figure class="st-asset">${asset.type === 'svg' ? asset.svg : `<img src="${esc(STUDY_DIR + 'tests/' + asset.src)}" alt="">`}${asset.caption || asset.title ? `<figcaption class="tiny">${esc(L(asset.caption || asset.title))}</figcaption>` : ''}</figure>` : '';
+  const opts = q.options.map(o => {
+    const on = r.pick.includes(o.id);
+    let cls = on ? 'on' : '';
+    if (r.checked){ if (q.correct.includes(o.id)) cls += ' ok'; else if (on) cls += ' bad'; }
+    const ex = r.checked && (on || q.correct.includes(o.id)) && o.explanation
+      ? `<div class="st-opt-ex">${esc(L(o.explanation))}${o.pages && o.pages.length ? ` <span class="tiny">(${t('st_p')} ${esc(o.pages.join(', '))})</span>` : ''}</div>` : '';
+    return `<button type="button" class="st-opt ${cls}" ${r.checked ? 'disabled' : ''} onclick="App.studyPick('${esc(o.id)}')">
+      <span class="st-opt-id">${esc(o.id)}</span><span class="grow">${esc(L(o.text))}${ex}</span>${on ? ic('check') : ''}</button>`;
+  }).join('');
+  const verdict = r.checked ? `<div class="st-verdict ${a && a.ok ? 'ok' : 'bad'}">${a && a.ok ? ic('check') + ' ' + t('st_right') : ic('close') + ' ' + t('st_wrong_a') + ': ' + esc(q.correct.join(', '))}</div>
+    ${q.explanation ? `<div class="st-ex">${ic('book')} ${esc(L(q.explanation))}</div>` : ''}${studyRefHtml(q)}` : '';
+  const pct = Math.round(done * 100 / n);
+  const secCol = s.color || STUDY_COLORS[(r.sec - 1) % 8];
+  return `<div class="card st-run" style="--sc:${secCol}">
+    <div class="st-run-h">
+      <span class="st-sec-no" style="color:${textColorFor(secCol)}">${r.sec}</span>
+      <div class="grow"><b>${esc(L(s.title))}</b><div class="tiny">${t('st_q')} ${r.i + 1} / ${n}${q.topic ? ' · ' + esc(L(q.topic)) : ''} · ${r.mode === 'exam' ? t('st_mode_exam') : t('st_mode_learn')}</div></div>
+      <span class="st-timer">${ic('clock')} <span id="st-timer">${fmtMsShort(stClockMs(r.clock))}</span></span>
+      <div class="lang-seg cam-seg st-lang"><button class="${stLang() === 'ru' ? 'on' : ''}" onclick="App.studyLang('ru')">RU</button><button class="${stLang() === 'en' ? 'on' : ''}" onclick="App.studyLang('en')">EN</button></div>
+    </div>
+    <div class="st-prog"><span style="width:${pct}%"></span></div>
+    <div class="st-qtext">${esc(L(q.question))}</div>
+    ${q.type === 'multi' ? `<div class="tiny st-multi">${ic('layers')} ${t('st_multi')}</div>` : ''}
+    ${assetHtml}
+    <div class="st-opts">${opts}</div>
+    ${r.hintOn && q.hint ? `<div class="st-hint">${ic('help')} ${esc(L(q.hint))}</div>` : ''}
+    ${verdict}
+    <div class="st-btns st-run-btns">
+      ${!r.checked && q.hint ? `<button class="btn btn-ghost sm" onclick="App.studyHint()">${ic('help')} ${r.hintOn ? t('st_hint_hide') : t('st_hint')}</button>` : ''}
+      ${!r.checked
+        ? `<button class="btn btn-green" ${r.pick.length ? '' : 'disabled'} onclick="App.studyCheck()">${ic('check')} ${r.mode === 'exam' ? (r.i >= n - 1 ? t('st_finish') : t('st_next')) : t('st_check')}</button>`
+        : `<button class="btn btn-green" onclick="App.studyNext()">${r.i >= n - 1 ? ic('check') + ' ' + t('st_finish') : t('st_next') + ' ' + ic('chev_r')}</button>`}
+      <button class="btn btn-ghost sm" onclick="App.studyAbort()">${ic('close')} ${t('st_stop')}</button>
+    </div>
+  </div>`;
+}
+function studyMineHtml(){
+  const list = studyMySessions();
+  if (!list.length) return `<div class="card"><div class="list-empty">${t('st_mine_empty')}</div></div>`;
+  const tests = list.filter(s => s.kind === 'test');
+  const sum = { n: tests.length, ans: tests.reduce((a, s) => a + (+s.answered || 0), 0), ok: tests.reduce((a, s) => a + (+s.correct || 0), 0),
+    testMs: tests.reduce((a, s) => a + (+s.duration_ms || 0), 0), readMs: list.filter(s => s.kind === 'read').reduce((a, s) => a + (+s.duration_ms || 0), 0) };
+  const top = `<div class="card st-sum">
+    <div class="st-kpi"><b>${sum.n}</b><span>${t('st_tests')}</span></div>
+    <div class="st-kpi"><b>${sum.ans}</b><span>${t('st_answers')}</span></div>
+    <div class="st-kpi"><b style="color:var(--green)">${sum.ans ? Math.round(sum.ok * 100 / sum.ans) : 0}%</b><span>${t('st_correct')}</span></div>
+    <div class="st-kpi"><b>${fmtMs(sum.testMs)}</b><span>${t('st_time_tests')}</span></div>
+    <div class="st-kpi"><b>${fmtMs(sum.readMs)}</b><span>${t('st_time_read')}</span></div>
+  </div>`;
+  return top + `<div class="card">` + list.slice(0, 200).map(s => studySessRow(s, false)).join('') + `</div>`;
+}
+function studySessRow(s, withName){
+  const sec = studySec(s.section) || {};
+  const col = sec.color || STUDY_COLORS[((+s.section || 1) - 1) % 8];
+  const when = fmtDMY(String(s.started_at).slice(0, 10)) + ' ' + fmtHM(s.started_at);
+  if (s.kind === 'read'){
+    return `<div class="rowline st-srow"><span class="st-sec-dot" style="background:${col}"></span>
+      <div class="grow"><b>${ic('book')} ${esc(L(sec.title) || (t('st_section') + ' ' + s.section))}</b>
+        <div class="tiny">${when}${withName ? ' · ' + esc(shortName(profName(s.user_id))) : ''} · ${t('st_reading')}</div></div>
+      <span class="chip">${fmtMs(s.duration_ms)}</span></div>`;
+  }
+  return `<div class="rowline st-srow"><span class="st-sec-dot" style="background:${col}"></span>
+    <div class="grow"><b>${esc(L(sec.title) || (t('st_section') + ' ' + s.section))}</b>
+      <div class="tiny">${when}${withName ? ' · ' + esc(shortName(profName(s.user_id))) : ''} · ${s.correct}/${s.total} · ${fmtMs(s.duration_ms)} · ${s.mode === 'exam' ? t('st_mode_exam') : t('st_mode_learn')}</div></div>
+    <span class="chip ${s.passed ? 'ok' : 'bad'}">${s.score_pct ?? 0}%</span>
+    <button class="btn btn-ghost sm" onclick="App.studySessReview('${s.id}')">${ic('eye')}</button></div>`;
+}
+/* ---------- статистика (админ) ---------- */
+function studyStatHtml(){
+  const f = STUDY.stat;
+  const days = +f.period || 0;
+  const since = days ? new Date(Date.now() - days * 86400000).toISOString() : '';
+  let list = studySessions().filter(s => (!since || String(s.started_at) >= since) && (!f.user || s.user_id === f.user) && (!f.sec || +s.section === +f.sec));
+  const chips = [['7', t('stat_7d')], ['30', t('stat_30d')], ['90', t('stat_90d')], ['0', t('st_all_time')]].map(([v, l]) =>
+    `<button class="chip ${f.period === v ? 'ok' : ''}" onclick="App.studyStatSet('period','${v}')">${l}</button>`).join('');
+  const profs = (state.data.profiles || []).slice().sort((a, b) => a.display_name.localeCompare(b.display_name));
+  const secOpts = `<option value="0">${t('st_all_sections')}</option>` + studySections().map(s => `<option value="${s.id}" ${+f.sec === +s.id ? 'selected' : ''}>${s.id} · ${esc(L(s.title))}</option>`).join('');
+  const usrOpts = `<option value="">${t('jr_all_staff')}</option>` + profs.map(p => `<option value="${p.id}" ${f.user === p.id ? 'selected' : ''}>${esc(p.display_name)}</option>`).join('');
+  const tests = list.filter(s => s.kind === 'test'), reads = list.filter(s => s.kind === 'read');
+  const ans = tests.reduce((a, s) => a + (+s.answered || 0), 0), ok = tests.reduce((a, s) => a + (+s.correct || 0), 0), wr = tests.reduce((a, s) => a + (+s.wrong || 0), 0);
+  const tot = `<div class="card st-sum">
+    <div class="st-kpi"><b>${new Set(list.map(s => s.user_id)).size}</b><span>${t('st_people')}</span></div>
+    <div class="st-kpi"><b>${tests.length}</b><span>${t('st_tests')}</span></div>
+    <div class="st-kpi"><b>${tests.filter(s => s.passed).length}</b><span>${t('st_passed_n')}</span></div>
+    <div class="st-kpi"><b>${ans}</b><span>${t('st_answers')}</span></div>
+    <div class="st-kpi"><b style="color:var(--green)">${ok}</b><span>${t('st_correct')} · ${ans ? Math.round(ok * 100 / ans) : 0}%</span></div>
+    <div class="st-kpi"><b style="color:var(--red)">${wr}</b><span>${t('st_wrong')} · ${ans ? Math.round(wr * 100 / ans) : 0}%</span></div>
+    <div class="st-kpi"><b>${fmtMs(tests.reduce((a, s) => a + (+s.duration_ms || 0), 0))}</b><span>${t('st_time_tests')}</span></div>
+    <div class="st-kpi"><b>${fmtMs(reads.reduce((a, s) => a + (+s.duration_ms || 0), 0))}</b><span>${t('st_time_read')}</span></div>
+  </div>`;
+  /* по сотрудникам */
+  const by = {};
+  list.forEach(s => {
+    const u = by[s.user_id] = by[s.user_id] || { uid: s.user_id, tests: 0, passed: 0, ans: 0, ok: 0, wr: 0, testMs: 0, readMs: 0, secs: {}, rows: [] };
+    u.rows.push(s);
+    const sc = u.secs[s.section] = u.secs[s.section] || { tests: 0, best: 0, ans: 0, ok: 0, testMs: 0, readMs: 0 };
+    if (s.kind === 'test'){
+      u.tests++; if (s.passed) u.passed++; u.ans += +s.answered || 0; u.ok += +s.correct || 0; u.wr += +s.wrong || 0; u.testMs += +s.duration_ms || 0;
+      sc.tests++; sc.best = Math.max(sc.best, +s.score_pct || 0); sc.ans += +s.answered || 0; sc.ok += +s.correct || 0; sc.testMs += +s.duration_ms || 0;
+    } else { u.readMs += +s.duration_ms || 0; sc.readMs += +s.duration_ms || 0; }
+  });
+  const rows = Object.values(by).sort((a, b) => (b.testMs + b.readMs) - (a.testMs + a.readMs)).map(u => {
+    const open = !!f.open[u.uid];
+    const p = profs.find(x => x.id === u.uid) || { display_name: '—', role: 'tech' };
+    const secRows = Object.keys(u.secs).sort((a, b) => +a - +b).map(k => {
+      const sc = u.secs[k], s = studySec(k) || {};
+      return `<div class="st-secline"><span class="st-sec-dot" style="background:${s.color || STUDY_COLORS[(k - 1) % 8]}"></span>
+        <div class="grow"><b>${k} · ${esc(L(s.title) || '')}</b><div class="tiny">${sc.tests ? `${t('st_tests')}: ${sc.tests} · ${t('st_best')}: ${sc.best}% · ${t('st_correct')}: ${sc.ans ? Math.round(sc.ok * 100 / sc.ans) : 0}% (${sc.ok}/${sc.ans}) · ${fmtMs(sc.testMs)}` : ''}${sc.readMs ? `${sc.tests ? ' · ' : ''}${t('st_reading')}: ${fmtMs(sc.readMs)}` : ''}</div></div></div>`;
+    }).join('');
+    const sess = open ? `<div class="st-sess">${u.rows.slice().sort((a, b) => String(b.started_at).localeCompare(String(a.started_at))).slice(0, 100).map(s => studySessRow(s, false)).join('')}</div>` : '';
+    return `<div class="st-urow ${open ? 'open' : ''}">
+      <div class="rowline" role="button" tabindex="0" onclick="App.studyStatOpen('${u.uid}')">
+        <span class="avatar role-${p.role}">${esc(initials(p.display_name))}</span>
+        <div class="grow"><b>${esc(p.display_name)}</b>
+          <div class="tiny">${t('st_tests')}: ${u.tests} (${t('st_passed_n').toLowerCase()} ${u.passed}) · ${t('st_answers')}: ${u.ans} · <span style="color:var(--green)">${u.ans ? Math.round(u.ok * 100 / u.ans) : 0}%</span> / <span style="color:var(--red)">${u.ans ? Math.round(u.wr * 100 / u.ans) : 0}%</span> · ${t('st_time_tests')}: ${fmtMs(u.testMs)} · ${t('st_time_read')}: ${fmtMs(u.readMs)}</div></div>
+        <span class="sec-chev">${ic(open ? 'chev_u' : 'chev_d')}</span></div>
+      ${open ? secRows + sess : ''}
+    </div>`;
+  }).join('');
+  return `<div class="card st-filters">
+      <div class="chip-wrap">${chips}</div>
+      <div class="st-sels"><select onchange="App.studyStatSet('user', this.value)">${usrOpts}</select>
+        <select onchange="App.studyStatSet('sec', this.value)">${secOpts}</select></div>
+      <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.studyStatCsv()">${ic('download')} CSV</button>
+    </div>` + tot + `<div class="card">${rows || `<div class="list-empty">${t('st_stat_empty')}</div>`}</div>`;
+}
+function studyStatCsv(){
+  const f = STUDY.stat, days = +f.period || 0, since = days ? new Date(Date.now() - days * 86400000).toISOString() : '';
+  const list = studySessions().filter(s => (!since || String(s.started_at) >= since) && (!f.user || s.user_id === f.user) && (!f.sec || +s.section === +f.sec))
+    .sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)));
+  const esc1 = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const head = ['date', 'time', 'employee', 'kind', 'section', 'mode', 'total', 'answered', 'correct', 'wrong', 'score_pct', 'passed', 'minutes'];
+  const lines = [head.join(';')].concat(list.map(s => [fmtDMY(String(s.started_at).slice(0, 10)), fmtHM(s.started_at), profName(s.user_id), s.kind, s.section, s.mode || '',
+    s.total, s.answered, s.correct, s.wrong, s.score_pct ?? '', s.passed == null ? '' : (s.passed ? 1 : 0), (Math.round((+s.duration_ms || 0) / 6000) / 10)].map(esc1).join(';')));
+  bkDownload(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }), 'study_' + todayISO() + '.csv');
+}
+/* ---------- карточка в Настройках ---------- */
+function studyCardHtml(){
+  const org = state.data.org_settings || {};
+  const me = state.user || {};
+  const self = studyAllowed() ? `<label class="chk-line"><input type="checkbox" ${me.study_off === true ? '' : 'checked'}
+      onchange="App.studySelfOff(!this.checked)"> ${t('st_menu_chk')}</label>
+    <div class="tiny" style="margin:2px 0 8px">${t('st_menu_hint')}</div>` : `<div class="tiny">${t('st_denied')}</div>`;
+  if (!isAdmin()) return `<div class="card">${self}</div>`;
+  const all = org.study_all !== false;
+  const chips = all ? '' : `<div class="tiny" style="margin:6px 0 2px">${t('st_list_pick')}</div><div class="chip-wrap">` +
+    (state.data.profiles || []).filter(p => p.role !== 'admin' && !p.blocked).sort((a, b) => a.display_name.localeCompare(b.display_name)).map(p =>
+      `<button class="chip ${p.study_access === true ? 'ok' : ''}" onclick="App.studyAccess('${p.id}', ${p.study_access === true ? 'false' : 'true'})">${esc(shortName(p.display_name))}</button>`).join('') + `</div>`;
+  return `<div class="card">
+    ${self}
+    <div style="font-weight:800;margin:4px 0">${ic('gear')} ${t('st_admin_t')} ${tipQ('st_admin_tip')}</div>
+    <label class="chk-line"><input type="checkbox" ${org.study_on !== false ? 'checked' : ''} onchange="App.setOrgFlag('study_on', this.checked)"> ${t('st_on_chk')}</label>
+    <div class="tiny" style="margin:4px 0 2px">${t('st_who')}:</div>
+    <div class="lang-seg cam-seg"><button class="${all ? 'on' : ''}" onclick="App.setOrgFlag('study_all', true)">${t('st_who_all')}</button><button class="${all ? '' : 'on'}" onclick="App.setOrgFlag('study_all', false)">${t('st_who_list')}</button></div>
+    ${chips}
+    <div class="form-row" style="margin-top:8px"><span class="lbl">${t('st_pass_lbl')}, %</span>${orgStepperHtml('study_pass', +org.study_pass || 70, 30, 100, 5)}</div>
+    <div class="tiny">${t('st_admin_hint')}</div>
+  </div>`;
+}
+
 const App = {
+  /* v1.08.51: учёба */
+  studyTab(v){ STUDY.tab = v; render(); },
+  studyStart(sec){ studyStartModal(sec); },
+  studyStartOpt, studyBegin, studyPick, studyHint, studyCheck, studyNext, studySessReview, studyStatCsv, studySelfOff,
+  studyAbort(){ studyAbortAsk(); },
+  studyResume(){ STUDY.tab = 'sec'; render(); },
+  studyDrop(){ STUDY.run = null; studyRunSave(); render(); },
+  studyRead(sec){ studyReadOpen(sec); },
+  studyReadClose(){ studyReadClose(false); },
+  studyLang(l, sessId){ STUDY.lang = l; if (sessId) studySessReview(sessId); else render(); },
+  studyOnlyWrong(v, sessId){ STUDY.mine.onlyWrong = !!v; studySessReview(sessId); },
+  studyStatSet(k, v){ STUDY.stat[k] = k === 'sec' ? +v : v; render(); },
+  studyStatOpen(uid_){ STUDY.stat.open[uid_] = !STUDY.stat.open[uid_]; render(); },
+  studyAccess(uid_, v){ studyAccessSet(uid_, v); },
   /* v1.08.39: бухгалтерия */
   accTab(v){ accF().tab = v; render(); },
   accSet(k, v){ const f = accF(); f[k] = v; render(); },
@@ -8633,7 +9545,7 @@ const App = {
   accStaffOpen(id){ const f = accF(); f.staffOpen[id] = !f.staffOpen[id]; render(); },
   accType, accMark, accMarkAll, accSaveRates, accMapSet, accMapReset, accDoc, accPdf, accPdfBatch, accCsv,
   /* v1.08.38: офлайн-режим и спойлеры инвойса */
-  netCheck, netModal, netRunChecks, netOff, netState: () => netState(), invSecAll, invSecToggle, jrArchive, staffName,
+  netCheck, netModal, netRunChecks, netOff, netState: () => netState(), invSecAll, invSecToggle, jrArchive, staffName, tvCleanup,
   /* v1.08.37: режим телевизора */
   tvStart, tvCancel, tvNewCode, tvFsGo, tvFsExit,
   tvListRefresh, tvApprove, tvDeny, tvRevoke,
@@ -8641,6 +9553,7 @@ const App = {
   tvcDragStart, tvcOver, tvcLeave, tvcDrop,
   go(s){
     dictStop();
+    if (state.screen === 'study' && s !== 'study'){ studyPauseAll(); if (STUDY.read) studyReadClose(true); }   // v1.08.51
     if (state.screen==='job' && s!=='job') { state.jobId=null; localStorage.removeItem('techlog_draft'); }
     if (state.screen==='map' && s!=='map' && mapObj){ try{ mapObj.remove(); }catch(e){} mapObj=null; }
     state.screen = s; render(); maybeApplyPendingUpdate();
@@ -8681,6 +9594,7 @@ const App = {
   /* v1.07.77: съёмка */
   camMode(v){ camSet('mode', v); dlog('камера: режим ' + v); render(); },
   vidMode(v){ mVidModeSet(v); dlog('видео: ' + v); },              // v1.08.47
+  srchTab(v){ srchTabSet(v); },                                    // v1.08.49
   copyDl(v){ mCopyDlSet(v); },                                     // v1.08.47
   vidTest: mVidTest,                                               // v1.08.47
   /* v1.08.47: крючки для автотестов — политика доставки без сети */
@@ -8702,7 +9616,7 @@ const App = {
   /* v1.08.23: документ ремонтных работ */
   openRepair, newRepairFromJob, newRepairFromProp, saveRepair, delRepair,
   repClose, repSaveClose, repDrop, repField, repItem, repItemAdd, repItemDel,
-  repCatModal, repCatAdd, repCrewAdd, repCrewDel, repSetStatus, repLinkJob, repUnlink,
+  repCatModal, repCatAdd, repCrewAdd, repCrewDel, repSetStatus, repLinkJob, repLinkProp, repUnlink,
   repToInvoice, makeRepairPdf, repPrint, setNeedsRepair, repPhoto,
   /* v1.08.26: возврат оборудования на склад */
   returnPk, returnJob, returnAllMine,
@@ -9025,7 +9939,7 @@ const App = {
   setStaffFlag(uid, k, v){ setStaffFlag(uid, k, v); },
   ttOthersSet(uid, m){ ttOthersSet(uid, m); },
   ttListToggle(uid, tid){ ttListToggle(uid, tid); },
-  staffKillSessions(uid){ if (confirm(t('st_kill') + '?')) staffKillSessions(uid); },
+  staffKillSessions(uid){ staffKillSessions(uid); },
   ttDate(v){ state.ttDate = v || todayISO(); render(); },
   bnTrack(imei){ if (state.screen !== 'map'){ state.screen = 'map'; state.mapDay = true; render(); setTimeout(()=>bnTrackShow(imei), 400); } else bnTrackShow(imei); },
   vehServiceSet(id, v){ vehServiceSet(id, v); },
@@ -9034,12 +9948,20 @@ const App = {
   optApply(){ optApplyOrder(); },
   searchOpen(){ searchOpen(); },
   searchType(){ srchRender(); },
-  /* v1.08.35: чип «что ищем» — классы меняем на месте, фокус из поля не уходит */
+  /* v1.08.35/49: чипы «что ищем» — мультивыбор; классы на месте, фокус цел */
   srchChip(k){
-    srchKind = k;
-    document.querySelectorAll('.srch-chips .chip-preset')
-      .forEach(b => b.classList.toggle('on', b.dataset.sk === k));
-    srchRender();
+    if (k === 'all'){ srchSel = new Set(SRCH_KINDS); srchUnit = false; }
+    else if (k === 'unit'){ srchUnit = !srchUnit; }
+    else {
+      if (srchSel.size === SRCH_KINDS.length){
+        /* было «всё» — первый клик по виду сужает выбор до него одного */
+        srchSel = new Set([k]);
+      } else if (srchSel.has(k)){
+        srchSel.delete(k);
+        if (!srchSel.size) srchSel = new Set(SRCH_KINDS);   // пусто = «всё»
+      } else srchSel.add(k);
+    }
+    srchSaveSel(); srchChipsSync(); srchRender();
   },
   searchGo(kind, id){ searchGo(kind, id); },
   jobClone(id){ jobClone(id); },
@@ -9585,13 +10507,13 @@ function tvWorkersHtml(cfg){
   (TV.bn || []).forEach(c => { if (c.mi != null){ totMi += c.mi; hasMi = true; } });
   const rows = compact
     ? `<div class="twtiles">${list.map(p => { const st = tvWorkerStatus(p); return `
-        <div class="twtile"><span class="bn-sno${st.run ? ' run' : ''}">${p.car_no ?? '·'}</span>
+        <div class="twtile"><span class="bn-sno${st.run ? ' run' : ''}">${carNoSvg(p.car_no)}</span>
           <span class="nm"><b>${esc(shortName(p.name))}</b><span class="st-line ${st.cls}">${st.html}</span></span>
           <span class="ck">✓${dayN[p.id] || 0}</span></div>`; }).join('')}</div>`
     : `<div class="tv-rows">${list.slice(0, cfg.wScreen).map(p => {
         const st = tvWorkerStatus(p); const car = tvCarOf(p.id);
         return `
-        <div class="bn-srow tvw"><span class="bn-sno${st.run ? ' run' : ''}">${p.car_no ?? '·'}</span>
+        <div class="bn-srow tvw"><span class="bn-sno${st.run ? ' run' : ''}">${carNoSvg(p.car_no)}</span>
           <div class="grow"><b>${esc(shortName(p.name))}</b><div class="st-line ${st.cls}">${st.html}</div>
             <div class="tv-done">${t('tv_done_day')}: <b>✓ ${dayN[p.id] || 0}</b></div></div>
           <div class="bn-smi"><b>${car && car.mi != null ? car.mi.toFixed(1) : '—'}</b> <span class="tiny">${t('bn_mi')}</span>
@@ -9880,7 +10802,16 @@ function tvSessionsCardHtml(){
   if (!HAS_SB) return `<div class="tiny">${t('demo_sb_only')}</div>`;
   return `<div class="tiny" style="margin-bottom:8px">${t('tvs_hint')}</div>
     <div id="tvs-list">${tvsRowsHtml()}</div>
-    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.tvListRefresh()">${ic('refresh')} ${t('tvs_refresh')}</button>`;
+    <div class="btn-rowpp" style="margin-top:8px">
+      <button class="btn btn-ghost sm" onclick="App.tvListRefresh()">${ic('refresh')} ${t('tvs_refresh')}</button>
+      <button class="btn btn-ghost sm" onclick="App.tvCleanup('revoked')">${ic('trash')} ${t('tvs_clean_rev')}</button>
+      <span></span>
+    </div>
+    <div class="btn-rowpp" style="margin-top:6px">
+      <button class="btn btn-ghost sm" onclick="App.tvCleanup('inactive')">${ic('clock')} ${t('tvs_clean_inact')}</button>
+      <button class="btn btn-ghost sm" onclick="App.tvCleanup('revoke_all')">${ic('ban')} ${t('tvs_kill_all')}</button>
+      <span></span>
+    </div>`;
 }
 function tvSettingsAfter(){
   if (!HAS_SB || !isAdmin() || !foldOpen('tvs')) return;
@@ -9905,6 +10836,27 @@ async function tvDecideDo(id, approve){
     if (error) throw error;
     toast('✓ ' + t('saved'));
     audit('tv_decide', 'tv', id, { approve });
+    TVS.at = 0; tvListRefresh(true);
+  }catch(e){ toast('⛔ ' + errStr(e), 'err'); }
+}
+/* v1.08.48: уборка списка ТВ. 'revoked' — стереть отозванные (без вопроса),
+   'inactive' — стереть авторизованные, молчащие больше суток,
+   'revoke_all' — завершить все активные (телевизорам — новый код). */
+async function tvCleanup(mode){
+  if (!HAS_SB || !isAdmin()) return;
+  const list = TVS.list || [];
+  if (mode !== 'revoked'){
+    const n = mode === 'revoke_all'
+      ? list.filter(x => x.status === 'approved').length
+      : list.filter(x => x.status === 'approved'
+          && (!x.last_seen_at || Date.now() - Date.parse(x.last_seen_at) > 864e5)).length;
+    if (!confirm(t(mode === 'revoke_all' ? 'tvs_kill_q' : 'tvs_inact_q').replace('{N}', n))) return;
+  }
+  try{
+    const { data, error } = await state.sb.rpc('tv_cleanup', { p_mode: mode });
+    if (error) throw error;
+    toast('✓ ' + t(mode === 'revoke_all' ? 'tvs_kill_done' : 'tvs_clean_done').replace('{N}', data ?? 0));
+    audit('tv_cleanup', 'tv', mode, { n: data ?? 0 });
     TVS.at = 0; tvListRefresh(true);
   }catch(e){ toast('⛔ ' + errStr(e), 'err'); }
 }
@@ -10415,7 +11367,7 @@ function bnChipsHtml(){
     <span class="tiny" style="font-weight:900;white-space:nowrap">${ic('car')} ${t('map_cars')}:</span>
     <button type="button" class="bn-chip ${all ? 'on' : ''}" onclick="App.bnCarsAll()">${t('map_cars_all')}</button>
     ${vs.map(v => `<button type="button" class="bn-chip ${sel.has(String(v.imei)) ? 'on' : ''}"
-      onclick="App.bnToggleCar('${esc(String(v.imei))}')"><span class="bn-chip-no">${v.car_no ?? '·'}</span>${
+      onclick="App.bnToggleCar('${esc(String(v.imei))}')"><span class="bn-chip-no">${carNoSvg(v.car_no)}</span>${
         esc(shortName(v.driver_id ? profName(v.driver_id) : (v.make || '—')))}</button>`).join('')}
   </div>
   ${BN.off && isAdmin() ? `<div class="tiny" style="margin-top:6px">${ic('warn')} ${t('bn_off_admin')}</div>` : ''}
@@ -10445,7 +11397,7 @@ function bnStatsHtml(inner){
       else st = x.run ? t('bn_moving') : t('bn_parked');
     }
     return `<button type="button" class="bn-srow" onclick="App.bnFocusCar('${esc(String(v.imei))}')">
-      <span class="bn-sno${x && x.run ? ' run' : ''}">${v.car_no ?? '·'}</span>
+      <span class="bn-sno${x && x.run ? ' run' : ''}">${carNoSvg(v.car_no)}</span>
       <div class="grow"><b>${esc(shortName(v.driver_id ? profName(v.driver_id) : (v.make || '—')))}</b>
         <div class="tiny">${st || (d && d.err ? '⚠ ' + esc(d.err) : '—')}</div></div>
       <div class="bn-smi"><b>${d && d.mi != null ? d.mi.toFixed(1) : '—'}</b> <span class="tiny">${t('bn_mi')}</span>
@@ -10715,7 +11667,7 @@ function dirVehicles(){
   const vs = bnVehicles().slice().sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999));
   const rows = vs.map(v => `
     <div class="rowline">
-      <span class="dot num" style="background:var(--blue);color:${INK_DARK}">${v.car_no ?? '·'}</span>
+      <span class="carno-dot" title="${t('car_no')}">${carNoSvg(v.car_no)}</span>
       <div class="grow"><b>${esc(v.make || '—')}</b>${v.mil ? ` <span class="chip bad">⚠ ${t('veh_mil')}</span>` : ''}${v.fuel_low ? ` <span class="chip bad">🔻 ${t('veh_fuel_low')}</span>` : ''}
         <div class="tiny">${v.driver_id ? ic('crew') + ' ' + esc(profName(v.driver_id)) : t('veh_no_driver_l')}</div>
         <div class="tiny">VIN ${esc(v.vin || '—')} · IMEI ${esc(v.imei || '—')}</div>
@@ -11178,7 +12130,34 @@ function jobGrand(j){ return (j.status==='approved' && j.approved_total != null)
    открываются; чужие для воркера — неактивная строка «дата · № · Имя Ф.»
    (менеджер и админ открывают всё, как и всюду).
    ===================================================================== */
-let srchKind = 'all';   // v1.08.35: чип-фильтр «что ищем»
+/* v1.08.35: чип-фильтр «что ищем».
+   v1.08.49: выбор МНОЖЕСТВЕННЫЙ — набор видов (Set) + отдельный режим
+   «Юнит» (совпадение только по номеру юнита в выбранных видах). Пустого
+   набора не бывает: снятие последнего чипа возвращает «всё». Выбор
+   запоминается на устройстве. */
+const SRCH_KINDS = ['job', 'pk', 'prop', 'rep', 'cx'];
+let srchSel = new Set(SRCH_KINDS), srchUnit = false;
+function srchLoadSel(){
+  try{
+    const j = JSON.parse(localStorage.getItem('techlog_srch_sel') || 'null');
+    if (j && Array.isArray(j.k) && j.k.length)
+      srchSel = new Set(j.k.filter(k => SRCH_KINDS.includes(k)));
+    if (!srchSel.size) srchSel = new Set(SRCH_KINDS);
+    srchUnit = !!(j && j.u);
+  }catch(e){}
+}
+function srchSaveSel(){
+  try{ localStorage.setItem('techlog_srch_sel',
+    JSON.stringify({ k: [...srchSel], u: srchUnit ? 1 : 0 })); }catch(e){}
+}
+function srchChipsSync(){
+  const all = srchSel.size === SRCH_KINDS.length;
+  document.querySelectorAll('.srch-chips .chip-preset').forEach(b => {
+    const k = b.dataset.sk;
+    b.classList.toggle('on', k === 'all' ? all && !srchUnit
+      : k === 'unit' ? srchUnit : srchSel.has(k));
+  });
+}
 function srchDocNo(kind, x){
   if (kind === 'job') return docNo('inv', x);
   if (kind === 'prop') return 'PROP-' + (x.no ?? '—');
@@ -11203,25 +12182,26 @@ function srchRows(q){
      задач в Magnolia Vinings (MGV). */
   const cxN = id => { const c = cxById(id); return c ? ((c.abbr || '') + ' ' + (c.name || '')) : ''; };
   const out = { jobs: [], pk: [], props: [], reps: [], cx: [] };
-  /* v1.08.35: чипы «что ищем». 'unit' — совпадение только по номеру юнита
-     во всех видах документов; остальные чипы оставляют один вид. */
-  const K = srchKind || 'all', U = K === 'unit';
-  if (K === 'all' || K === 'job' || U) liveJobs().forEach(j => {
+  /* v1.08.35/49: набор видов складывается; 'unit' — режим совпадения
+     только по номеру юнита внутри выбранных видов. */
+  const S = srchSel && srchSel.size ? srchSel : new Set(SRCH_KINDS);
+  const U = !!srchUnit;
+  if (S.has('job')) liveJobs().forEach(j => {
     if (U ? has(j.unit_number)
           : (has(j.unit_number) || has(docNo('inv', j)) || has(cxN(j.complex_id)) || has(j.note))) out.jobs.push(j);
   });
-  if (K === 'all' || K === 'pk' || U) (state.data.placements || []).forEach(p => {
+  if (S.has('pk')) (state.data.placements || []).forEach(p => {
     if (U ? has(p.unit_number) : (has(p.unit_number) || has(cxN(p.complex_id)))) out.pk.push(p);
   });
-  if (K === 'all' || K === 'prop' || U) (state.data.proposals || []).forEach(p => {
+  if (S.has('prop')) (state.data.proposals || []).forEach(p => {
     if (U ? has(p.unit_number)
           : (has(p.unit_number) || has('prop-' + (p.no ?? '')) || has(cxN(p.complex_id)))) out.props.push(p);
   });
-  if (K === 'all' || K === 'rep' || U) (state.data.repairs || []).forEach(r => {
+  if (S.has('rep')) (state.data.repairs || []).forEach(r => {
     if (U ? has(r.unit_number)
           : (has(r.unit_number) || has('rep-' + (r.no ?? '')) || has(cxN(r.complex_id)))) out.reps.push(r);
   });
-  if (K === 'all' || K === 'cx') (state.data.complexes || []).forEach(c => {
+  if (S.has('cx') && !U) (state.data.complexes || []).forEach(c => {
     if (has(c.name) || has(c.abbr) || has(c.address)) out.cx.push(c);
   });
   const lim = a => a.slice(0, 12);
@@ -11262,16 +12242,18 @@ function srchRender(){
   box.innerHTML = html || `<div class="tiny" style="padding:8px 2px">${t('srch_empty')}</div>`;
 }
 function searchOpen(){
-  srchKind = 'all';
+  srchLoadSel();
+  const all = srchSel.size === SRCH_KINDS.length;
+  const onCls = k => k === 'all' ? (all && !srchUnit) : k === 'unit' ? srchUnit : srchSel.has(k);
   const chips = [['all', t('srch_f_all')], ['unit', t('srch_f_unit')], ['job', t('srch_jobs')],
     ['pk', t('srch_pk')], ['prop', t('srch_props')], ['rep', t('srch_reps')], ['cx', t('srch_cx')]]
-    .map(([k, l]) => `<button type="button" class="chip-preset ${srchKind === k ? 'on' : ''}"
+    .map(([k, l]) => `<button type="button" class="chip-preset ${onCls(k) ? 'on' : ''}"
       data-sk="${k}" onclick="App.srchChip('${k}')">${l}</button>`).join('');
   openModal(`
     ${modalHead(t('srch_btn'), 'search')}
     <input id="srch-q" placeholder="${t('srch_ph')}" autocomplete="off" oninput="App.searchType()">
     <div class="srch-chips">${chips}</div>
-    <div class="tiny" style="margin:4px 0">${tipQ('srch_locked_tip')} ${t('srch_hint')}</div>
+    <div class="tiny" style="margin:4px 0">${tipQ('srch_locked_tip')} ${t('srch_hint')} ${t('srch_multi_hint')}</div>
     <div id="srch-res" class="srch-res"></div>`);
   setTimeout(()=>{ const i = $('#srch-q'); if (i) i.focus(); }, 60);
   srchRender();
@@ -11766,10 +12748,18 @@ async function ttListToggle(uid_, tid){
 }
 async function staffKillSessions(uid_){
   if (!isAdmin() || !HAS_SB) return;
+  /* v1.08.48: по просьбе — вместе с сессиями человека завершаются и все
+     активные ТВ-экраны; число называем прямо в вопросе. */
+  const tvN = (TVS.list || []).filter(x => x.status === 'approved').length;
+  if (!confirm(tvN ? t('st_kill_q_tv').replace('{N}', tvN) : t('st_kill') + '?')) return;
   const { error } = await state.sb.rpc('admin_kill_sessions', { target: uid_ });
   if (error){ toast('⚠ ' + rpcFail(error, 'admin_kill_sessions'), 'err'); return; }
+  if (tvN){
+    const { data: n } = await state.sb.rpc('tv_cleanup', { p_mode: 'revoke_all' }).catch(() => ({ data: 0 }));
+    audit('tv_cleanup', 'tv', 'revoke_all', { n: n ?? tvN, via: 'st_kill' });
+  }
   const u = state.data.profiles.find(p => p.id === uid_);
-  audit('sess_kill', 'profile', uid_, { name: u ? u.display_name : '' });
+  audit('sess_kill', 'profile', uid_, { name: u ? u.display_name : '', tv: tvN });
   toast('✓ ' + t('st_kill_ok'));
   staffCfgModal(uid_);
 }
@@ -11814,6 +12804,9 @@ async function staffCfgModal(uid_){
     ${chk('bn_access', effBn, t('st_bn_access'))}
     ${chk('bn_service', u.bn_service ?? (u.role === 'admin'), t('st_bn_service'))}
     ${chk('bn_track', u.bn_track ?? (u.role === 'admin'), t('st_bn_track'))}
+    ${(u.role !== 'admin' && !isAccP(u)) ? `<div style="font-weight:800;margin:10px 0 4px">${ic('grad')} ${t('tab_study')} ${tipQ('st_admin_tip')}</div>
+    <label class="chk-line"><input type="checkbox" ${studyAllowedFor(u) ? 'checked' : ''} ${isAdmin() && (state.data.org_settings || {}).study_all === false ? '' : 'disabled'}
+      onchange="App.studyAccess('${uid_}', this.checked)"> ${t('st_access')}${(state.data.org_settings || {}).study_all === false ? '' : ` <span class="tiny">(${t('st_who_all').toLowerCase()})</span>`}</label>` : ''}
     <div style="font-weight:800;margin:10px 0 4px">${ic('map')} ${t('tt_title')} ${tipQ('tt_tip')}</div>
     ${chk('tt_self', u.tt_self === true, t('st_tt_self'))}
     <div class="tiny" style="margin:4px 0 2px">${t('st_tt_others')}:</div>
@@ -11824,8 +12817,21 @@ async function staffCfgModal(uid_){
     state.sb.rpc('admin_sessions', { target: uid_ }).then(({ data, error }) => {
       const el = $('#sess-list'); if (!el) return;
       if (error){ el.textContent = rpcFail(error, 'admin_sessions'); return; }
-      if (!data || !data.length){ el.textContent = t('st_sess_none'); return; }
-      el.innerHTML = data.map(s => `<div>${esc(uaShort(s.ua))} · ${fmtSeen(s.refreshed_at || s.created_at)}</div>`).join('');
+      el.innerHTML = (data && data.length)
+        ? data.map(s => `<div>${esc(uaShort(s.ua))} · ${fmtSeen(s.refreshed_at || s.created_at)}</div>`).join('')
+        : t('st_sess_none');
+      /* v1.08.48: активные ТВ-экраны — в том же списке устройств (админ):
+         это тоже сессии организации, «Завершить все» гасит и их. */
+      if (isAdmin()){
+        state.sb.rpc('tv_list').then(({ data: tv }) => {
+          const box = $('#sess-list'); if (!box || !Array.isArray(tv)) return;
+          TVS.list = tv;
+          const act = tv.filter(x => x.status === 'approved');
+          if (!act.length) return;
+          box.innerHTML += act.map(x =>
+            `<div><span class="chip">${t('sess_tv')}</span> ${esc(uaShort(x.agent))} · ${esc(x.code || '')} · ${fmtSeen(x.last_seen_at || x.approved_at)}</div>`).join('');
+        }).catch(() => {});
+      }
     }).catch(()=>{});
   }
 }
@@ -11840,7 +12846,7 @@ function dirStaff(){
     <div class="rowline staff-row ${u.blocked?'is-blocked':''}">
       <span class="avatar role-${u.role}">${esc(initials(u.display_name))}</span>
       <div class="grow">
-        <b>${esc(u.display_name)}</b>${u.car_no != null ? ` <span class="car-no" title="${t('car_no')}">${u.car_no}</span>` : ''}
+        <b>${esc(u.display_name)}</b>${u.car_no != null ? ` <span class="car-no" title="${t('car_no')}">${carNoSvg(u.car_no)}</span>` : ''}
         <span class="chip ${u.blocked?'bad':'ok'} chip-st">${u.blocked?t('st_blocked'):t('st_active')}</span>
         <div class="tiny">@${esc(u.login)} · ${t('registered')} ${reg}${canSeeSessions() && HAS_SB ? ` · ${t('st_last_seen')}: ${fmtSeen(LS_SEEN.map[u.id])}` : ''}</div>
       </div>
@@ -14693,9 +15699,7 @@ function repPhoto(id, slot){
 }
 function repPhotoCardHtml(r){
   const job = r.job_id ? (state.data.jobs || []).find(x => x.id === r.job_id) : null;
-  if (!job) return `<div class="card" style="margin:8px 12px">
-    <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('rep_photos')}</div>
-    <div class="tiny">${t('rep_photos_nojob')}</div></div>`;
+  if (!job) return '';   // v1.08.48: свои фото у ремонта выше; пометки «до/после» — по фото задачи
   const ph = repPhotos(r);
   const rows = (state.data.media || [])
     .filter(m => m.job_id === job.id && (m.kind === 'photo' || m.kind === 'video'))
@@ -14713,7 +15717,7 @@ function repPhotoCardHtml(r){
       </div></div>`;
   };
   return `<div class="card" style="margin:8px 12px">
-    <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('rep_photos')}
+    <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('rep_photos_link')}
       <span class="tiny"> · ${t('rep_ph_before')} ${ph.before.length} · ${t('rep_ph_after')} ${ph.after.length}</span></div>
     <div class="tiny" style="margin-bottom:6px">${t('rep_photos_h')}</div>
     ${rows.length ? `<div class="rep-phs">${rows.map(tile).join('')}</div>`
@@ -14995,7 +15999,7 @@ function viewRepairForm(){
     <div class="prop-head"><span>${t('prop_qty')}</span><span>${t('prop_code')}</span><span>${t('prop_desc')}</span><span style="text-align:right">$</span><span></span></div>
     <div id="rep-rows-work">${repRowsHtml('work')}</div>
     <div class="btn-rowpp">
-      <button class="btn btn-blue sm" onclick="App.repCatModal('work')">${ic('toolbox')} ${t('rep_cat')}</button>
+      <button class="btn btn-blue sm" onclick="App.repCatModal('work')">${ic('plus')} ${t('rep_add_work')}</button>
       <button class="btn btn-ghost sm" onclick="App.repItemAdd('work')">${ic('plus')} ${t('prop_add_row')}</button>
       <span></span>
     </div>
@@ -15006,8 +16010,13 @@ function viewRepairForm(){
     <div class="prop-head"><span>${t('prop_qty')}</span><span>${t('prop_code')}</span><span>${t('prop_desc')}</span><span style="text-align:right">$</span><span></span></div>
     <div id="rep-rows-mat">${repRowsHtml('mat')}</div>
     <div class="btn-rowpp">
-      <button class="btn btn-blue sm" onclick="App.repCatModal('mat')">${ic('cart')} ${t('rep_cat')}</button>
+      <button class="btn btn-blue sm" onclick="App.repCatModal('mat')">${ic('plus')} ${t('rep_add_mat')}</button>
       <button class="btn btn-ghost sm" onclick="App.repItemAdd('mat')">${ic('plus')} ${t('prop_add_row')}</button>
+      <span></span>
+    </div>
+    <div class="btn-rowpp" style="margin-top:6px">
+      <button class="btn btn-ghost sm" title="${t('rep_receipt')}"
+        onclick="App.mediaPick('${r.id}','photo','cam','rep')">${ic('camera')} ${t('rep_receipt')}</button>
       <span></span>
     </div>
   </div>
@@ -15019,6 +16028,11 @@ function viewRepairForm(){
     ${dictationHTML('rep-note', r.note || '', 'repdraft')}
   </div>
   <div style="margin:8px 12px">${trCardHtml('rep', r)}</div>
+
+  <div style="margin:8px 12px">
+    <div class="tiny" style="margin:0 2px 4px">${t('rep_media_h')}</div>
+    ${mediaStripHtml(r.id, 'rep')}
+  </div>
   ${repPhotoCardHtml(r)}
 
   <div class="card" style="margin:8px 12px">
@@ -15048,6 +16062,7 @@ function viewRepairForm(){
       <button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.repUnlink('prop')">${ic('close')}</button></div>` : ''}
     ${!job && !prop ? `<div class="tiny">—</div>` : ''}
     ${repJobPickerHtml(r)}
+    ${repPropPickerHtml(r)}
   </div>
 
   <div style="margin:10px 12px">
@@ -15068,6 +16083,7 @@ function repJobPickerHtml(r){
   if (r.job_id) return '';
   const cand = (state.data.jobs || []).filter(j => !isArch(j))
     .filter(j => !r.complex_id || j.complex_id === r.complex_id)
+    .filter(j => !r.counterparty_id || j.counterparty_id === r.counterparty_id)   // v1.08.48
     .filter(j => isManager() || j.technician_id === state.user.id || isJobSharedWithMe(j))
     .sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 30);
   if (!cand.length) return `<div class="tiny" style="margin-top:6px">${t('prop_pick_job_none')}</div>`;
@@ -15077,6 +16093,33 @@ function repJobPickerHtml(r){
       ${cand.map(j => `<option value="${j.id}">Unit ${esc(j.unit_number || '—')} · ${fmtDMY(j.date)}</option>`).join('')}
     </select>
     <button class="btn btn-blue sm" onclick="App.repLinkJob()">${t('prop_link')}</button></div>`;
+}
+/* v1.08.48: пропозал выбирается прямо в ремонте — из пропозалов того же
+   комплекса (черновики и отправленные, без архива). */
+function repPropPickerHtml(r){
+  if (r.proposal_id) return '';
+  const cand = (state.data.proposals || [])
+    .filter(p => !isArch(p))
+    .filter(p => !r.complex_id || p.complex_id === r.complex_id)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 30);
+  if (!cand.length) return `<div class="tiny" style="margin-top:6px">${t('rep_prop_none')}</div>`;
+  return `<div style="display:flex;gap:6px;align-items:center;margin-top:8px">
+    <select id="rep-prop-sel" style="flex:1;min-width:130px">
+      <option value="">${t('rep_pick_prop')}</option>
+      ${cand.map(p => `<option value="${p.id}">P-${p.no ?? '·'} · ${fmtDMY(p.date)} · ${t('pst_' + (p.status || 'draft'))}</option>`).join('')}
+    </select>
+    <button class="btn btn-blue sm" onclick="App.repLinkProp()">${t('prop_link')}</button></div>`;
+}
+function repLinkProp(){
+  const v = (($('#rep-prop-sel') || {}).value) || '';
+  if (!v || !repDraft){ toast('⚠ ' + t('rep_pick_prop'), 'err'); return; }
+  const p = propById(v);
+  repDraft.proposal_id = v;
+  if (p){
+    if (!repDraft.counterparty_id) repDraft.counterparty_id = p.counterparty_id;
+    if (!repDraft.complex_id) repDraft.complex_id = p.complex_id;
+  }
+  render();
 }
 function repLinkJob(){
   const v = (($('#rep-job-sel') || {}).value) || '';
@@ -15619,6 +16662,9 @@ function mVidCan(){
       && typeof OffscreenCanvas !== 'undefined';
 }
 function mCopyDl(){ try{ return localStorage.getItem('techlog_copy_dl') !== '0'; }catch(e){ return true; } }
+/* v1.08.49: кнопка поиска в нижней панели телефона — личная настройка */
+function srchTabOn(){ try{ return localStorage.getItem('techlog_srch_tab') !== '0'; }catch(e){ return true; } }
+function srchTabSet(v){ try{ localStorage.setItem('techlog_srch_tab', v ? '1' : '0'); }catch(e){} render(); }
 function mCopyDlSet(v){ try{ localStorage.setItem('techlog_copy_dl', v ? '1' : '0'); }catch(e){} render(); }
 /* Копия снятого в «Загрузки» телефона: то, что пришло из камеры с
    capture (в галерею такие кадры на многих телефонах НЕ попадают). */
@@ -16293,10 +17339,10 @@ const mVideoThumb = f => new Promise(res => {
 /* v1.07.76: один путь для съёмки и для вложения — из файла делаем элемент
    очереди. Фото сжимаем и делаем превью, видео проверяем по длительности,
    документ уходит как есть, без превью. */
-async function mediaEnqueueFile(jobId, f, kind){
+async function mediaEnqueueFile(jobId, f, kind, doc = 'job'){
   const lim = mediaLimits();
-  const rows = (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind);
-  const loc = mediaQ.filter(x => x.job_id === jobId && x.kind === kind);
+  const rows = (state.data.media || []).filter(m => mOwnMatch(m, jobId, doc) && m.kind === kind);
+  const loc = mediaQ.filter(x => x.doc === doc && mOwnId(x) === jobId && x.kind === kind);
   /* v1.07.85: инвойс лимитами документа не считается — бланк перевыпускают */
   const max = kind === 'invoice' ? M_INV_MAX
     : kind === 'file' ? lim.file : (kind === 'video' ? lim.video : lim.photo);
@@ -16310,7 +17356,7 @@ async function mediaEnqueueFile(jobId, f, kind){
     const p = await mPrepPhoto(f);
     if (!p){                       /* браузер не открыл файл — уводим в документы */
       toast('⚠ ' + t('media_heic'), 'err');
-      return mediaEnqueueFile(jobId, f, 'file');
+      return mediaEnqueueFile(jobId, f, 'file', doc);
     }
     blob = p.blob; thumb = p.thumb; mime = p.mime;
     if (p.blur) toast('⚠ ' + t('media_blur'), 'err');
@@ -16323,7 +17369,9 @@ async function mediaEnqueueFile(jobId, f, kind){
     if (f.size > M_FILE_BYTES){ toast('⚠ ' + t('media_file_big'), 'err'); return false; }
     blob = f; mime = f.type || 'application/octet-stream';
   }
-  const it = { qid: uid(), job_id: jobId, kind, mime, blob, thumb, dur: durV,
+  const it = { qid: uid(), doc,
+    job_id: doc === 'rep' ? null : jobId, repair_id: doc === 'rep' ? jobId : null,
+    kind, mime, blob, thumb, dur: durV,
     name: f.name || '', state: 'new', attempts: 0, at: Date.now() };
   mediaQ.push(it); await mQPut(it);
   return true;
@@ -16337,22 +17385,23 @@ function mPrepBusy(jobId, d){
   mediaStripRefresh(jobId);
 }
 /* Сколько ещё файлов этого вида влезает в документ */
-function mediaFree(jobId, kind){
+function mediaFree(jobId, kind, doc = 'job'){
   const lim = mediaLimits();
   const max = kind === 'file' ? lim.file : (kind === 'video' ? lim.video : lim.photo);
-  return max - (state.data.media || []).filter(m => m.job_id === jobId && m.kind === kind).length
-             - mediaQ.filter(x => x.job_id === jobId && x.kind === kind).length;
+  return max - (state.data.media || []).filter(m => mOwnMatch(m, jobId, doc) && m.kind === kind).length
+             - mediaQ.filter(x => (x.doc || 'job') === doc && mOwnId(x) === jobId && x.kind === kind).length;
 }
 /* Общий разбор выбранных файлов: заглушки на полосе, по одному в задачу,
    чтобы не съесть память на слабом телефоне. */
 async function mediaTakeFiles(jobId, files, kind, opts){
+  const doc = (opts && opts.doc) || 'job';
   if (!files.length) return;
   mPrepBusy(jobId, files.length);
   let added = 0;
   try{
     for (const f of files){
       try{
-        if (await mediaEnqueueFile(jobId, f, kind || mKindOf(f))){
+        if (await mediaEnqueueFile(jobId, f, kind || mKindOf(f), doc)){
           added++;
           /* v1.08.47: снятое капчей (сразу камера) в галерею на многих
              телефонах НЕ попадает — единственный экземпляр жил бы в очереди.
@@ -16371,12 +17420,12 @@ async function mediaTakeFiles(jobId, files, kind, opts){
   render(); mediaFlush();
 }
 /* Скрепка: файлы с телефона и с компьютера — без камеры, можно несколько */
-function mediaAttach(jobId){
+function mediaAttach(jobId, doc){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   const inp = document.createElement('input');
   inp.type = 'file'; inp.multiple = true;
   inp.accept = 'image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.rtf,.heic,.zip';
-  inp.onchange = () => mediaTakeFiles(jobId, [...(inp.files || [])], null);
+  inp.onchange = () => mediaTakeFiles(jobId, [...(inp.files || [])], null, { doc });
   inp.click();
 }
 /* v1.07.85: PDF-инвойс уезжает на Диск той же очередью, что фото и вложения:
@@ -16406,10 +17455,10 @@ async function invToDrive(jobId){
    в «Съёмке». Причина: на части телефонов (Android с новым системным
    выбором картинок) вариант без capture показывает только галерею —
    камеры в нём нет вовсе, и кнопка «Фото» выглядела сломанной. */
-function mediaPick(jobId, kind, src){
+function mediaPick(jobId, kind, src, doc){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   const lim = mediaLimits();
-  const left = mediaFree(jobId, kind);
+  const left = mediaFree(jobId, kind, doc || 'job');
   if (left <= 0){
     toast('⚠ ' + t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video), 'err'); return; }
   const inp = document.createElement('input');
@@ -16443,7 +17492,7 @@ function mediaPick(jobId, kind, src){
     const files = [...(inp.files || [])].slice(0, left);
     if (files.length < (inp.files || []).length)
       toast('⚠ ' + t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video), 'err');
-    mediaTakeFiles(jobId, files, kind, { cam: useCam });   // v1.08.47: капча → копия в «Загрузки»
+    mediaTakeFiles(jobId, files, kind, { cam: useCam, doc });   // v1.08.47/48
     setTimeout(() => { try{ inp.remove(); }catch(e){} }, 1000);
   };
   /* v1.07.94: поле обязано жить В РАЗМЕТКЕ. Пока камера снимает, Android
@@ -16510,7 +17559,7 @@ async function mediaQDel(qid){
   mediaQ = mediaQ.filter(x => x.qid !== qid);
   await mQDelIdb(qid);
   mqThumbDrop(qid);
-  mediaStripRefresh(gone && gone.job_id);
+  mediaStripRefresh(gone && mOwnId(gone));
   render(); mediaBadge();
 }
 /* ---------- отправка (докачка чанками) ---------- */
@@ -16581,7 +17630,10 @@ async function mCommit(it, driveId){
 async function mBeginUpload(it, token){
   const r = await fetch(mediaFN() + '/media-begin', { method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-    body: JSON.stringify({ job_id: it.job_id, kind: it.kind, mime: it.mime,
+    body: JSON.stringify({ doc: it.doc || 'job',
+                           job_id: it.job_id || undefined,
+                           repair_id: it.repair_id || undefined,
+                           kind: it.kind, mime: it.mime,
                            size: it.blob.size, name: it.name || '' }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok){ const e = new Error(j.error || r.status); e.status = r.status; throw e; }
@@ -16716,7 +17768,9 @@ async function mediaFlush(verbose){
         mediaQ = mediaQ.filter(x => x.qid !== it.qid);
         await mQDelIdb(it.qid);
         if (!state.data.media) state.data.media = [];
-        state.data.media.push({ id: it.media_id, job_id: it.job_id, owner_id: state.user.id,
+        state.data.media.push({ id: it.media_id,
+          job_id: it.job_id || null, repair_id: it.repair_id || null,
+          owner_id: state.user.id,
           kind: it.kind, seq: 0, file_name: '', thumb_path: it.thumb_path, status: 'ready' });
         /* v1.07.73: превью уже есть на телефоне — показываем его сразу, не
            дожидаясь, пока картинка доедет до хранилища и вернётся обратно. */
@@ -16726,13 +17780,13 @@ async function mediaFlush(verbose){
         if (it.relay_used && it.kind === 'photo') mRelayBump();   // v1.08.47: 10/день
         if (it.kind === 'video') res.video++; else res.photo++;
         lg(`✓ ${tag}`, 'ok', lid);
-        mediaMarkDone(it.media_id, it.job_id);   // v1.07.75: зелёная галочка на плитке
-        mediaStripRefresh(it.job_id);        // полоса обновляется и в модалке
+        mediaMarkDone(it.media_id, mOwnId(it));   // v1.07.75: зелёная галочка на плитке
+        mediaStripRefresh(mOwnId(it));        // полоса обновляется и в модалке
         render();
       }catch(e){
         it.attempts = (it.attempts || 0) + 1;
         it.error = String(e && e.message || e).slice(0, 120); it.pct = 0;
-        await mQPut(it); mediaStripRefresh(it.job_id);
+        await mQPut(it); mediaStripRefresh(mOwnId(it));
         dlog('media stuck', it.qid, e);
         lg(`⛔ ${tag} — ${t(stage)}: ${esc(String(e && e.message || e))}`, 'err', lid);
         res.fail++; res.stopped = true;
@@ -16808,10 +17862,10 @@ function mediaStripRefresh(jobId){
   });
   mediaHydrate();
 }
-function mediaStripHtml(jobId){
-  const rows = (state.data.media || []).filter(m => m.job_id === jobId)
+function mediaStripHtml(jobId, doc = 'job'){
+  const rows = (state.data.media || []).filter(m => mOwnMatch(m, jobId, doc))
     .sort((a, b) => (a.kind > b.kind ? 1 : a.kind < b.kind ? -1 : (a.seq || 0) - (b.seq || 0)));
-  const loc = mediaQ.filter(x => x.job_id === jobId);
+  const loc = mediaQ.filter(x => (x.doc || 'job') === doc && mOwnId(x) === jobId);
   const nP = rows.filter(m => m.kind === 'photo').length + loc.filter(x => x.kind === 'photo').length;
   const nV = rows.filter(m => m.kind === 'video').length + loc.filter(x => x.kind === 'video').length;
   const cells = rows.map(m => `
@@ -16854,10 +17908,10 @@ function mediaStripHtml(jobId){
     ${(!rows.length && !loc.length) ? `<div class="tiny mstrip-hint">${t('media_hint0')}</div>` : ''}
     <div class="mstrip">${cells}
       <button type="button" class="btn btn-ghost sm" title="${t('media_cam_hint')}"
-        onclick="App.mediaPick('${jobId}','photo','cam')">${ic('camera')} ${t('media_cam')}</button>
+        onclick="App.mediaPick('${jobId}','photo','cam','${doc}')">${ic('camera')} ${t('media_cam')}</button>
       <button type="button" class="btn btn-ghost sm" title="${t('media_lib_hint')}"
-        onclick="App.mediaPick('${jobId}','photo','lib')">${ic('image')} ${t('media_lib')}</button>
-      ${lim.video ? `<button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video')">${ic('video')} ${t('media_video')}</button>` : ''}
+        onclick="App.mediaPick('${jobId}','photo','lib','${doc}')">${ic('image')} ${t('media_lib')}</button>
+      ${lim.video ? `<button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video',null,'${doc}')">${ic('video')} ${t('media_video')}</button>` : ''}
     </div>
     <div class="tiny" style="margin-top:6px">${t('cam_mode_now')}:
       <b class="${camMode() === 'quick' ? 'gd-low' : 'gd-ok'}">${camMode() === 'quick' ? t('cam_mode_soft') : t('cam_mode_best')}</b>
@@ -16867,12 +17921,12 @@ function mediaStripHtml(jobId){
     <button type="button" class="btn btn-ghost sm" style="margin-top:6px"
       title="${esc(t('cam_nocam_hint'))}" onclick="App.camFix()">${ic('help')} ${t('cam_nocam')}</button>
     <button type="button" class="btn btn-ghost sm mattach" data-mattach="${jobId}"
-      title="${t('media_file_hint')}" onclick="App.mediaAttach('${jobId}')">
+      title="${t('media_file_hint')}" onclick="App.mediaAttach('${jobId}','${doc}')">
       ${ic('clip')} ${t('media_attach')}${nF ? ` · ${nF}/${mediaLimits().file}` : ''}</button>
-    ${HAS_SB ? `<button type="button" class="btn btn-ghost sm" style="margin-top:6px"
+    ${(HAS_SB && doc === 'job') ? `<button type="button" class="btn btn-ghost sm" style="margin-top:6px"
       title="${t('inv_drive_hint')}" onclick="App.invToDrive('${jobId}')">
       ${ic('pdf')} ${t('inv_drive')}${nI ? ` · ${nI}` : ''}</button>` : ''}
-    ${invDriveBoxHtml(jobById(jobId) || { id: jobId })}
+    ${doc === 'job' ? invDriveBoxHtml(jobById(jobId) || { id: jobId }) : ''}
   </div>`;
 }
 async function mediaHydrate(){
@@ -17184,10 +18238,12 @@ function mqLogPaint(){
   box.scrollTop = box.scrollHeight;
 }
 function mqLabel(it){
-  const j = (state.data.jobs || []).find(x => x.id === it.job_id);
-  const cx = j ? (cxById(j.complex_id) || {}) : {};
-  const who = j ? `${cx.abbr || cx.name || '—'}·${j.unit_number || '—'}`
-                : String(it.job_id || '').slice(0, 6);
+  const d = it.doc === 'rep'
+    ? (state.data.repairs || []).find(x => x.id === it.repair_id)
+    : (state.data.jobs || []).find(x => x.id === it.job_id);
+  const cx = d ? (cxById(d.complex_id) || {}) : {};
+  const who = d ? `${it.doc === 'rep' ? 'REP·' : ''}${cx.abbr || cx.name || '—'}·${d.unit_number || '—'}`
+                : String(mOwnId(it) || '').slice(0, 6);
   return `${who} ${it.kind === 'video' ? t('mq_video') : t('mq_photo')}`;
 }
 function mqSetBusy(mode){
@@ -18313,7 +19369,7 @@ const BK_TABLES = ['profiles','counterparties','complexes','aux_equipment','work
   'equipment_types','size_types','extra_works','product_types','price_list',
   'counterparty_prices','equipment_stock','org_settings','hidden_staff',
   'code_requests','complex_code_history','proposals','repairs','jobs','placements',
-  'ext_requests','media','equip_moves','acc_settings'];   // v1.08.27: журнал после placements — при восстановлении FK уже на месте; v1.08.39: + acc_settings
+  'ext_requests','media','equip_moves','acc_settings','study_sessions'];   // v1.08.51: + учёба; v1.08.27: журнал после placements — при восстановлении FK уже на месте; v1.08.39: + acc_settings
 const BK_EXPORT_ONLY = ['audit_log','tech_log'];
 const BK_PAGE = 1000, BK_CHUNK = 300;
 let bkLogLines = null;
