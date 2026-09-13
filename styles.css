@@ -2501,3 +2501,26 @@ html.tl-offline .net-login-note{ display:flex }
 .st-read-h a.icon-btn{ display:inline-grid;place-items:center }
 .st-frame{ width:100%;height:calc(100dvh - 240px);min-height:380px;border:2px solid var(--line);border-radius:var(--r-sm);background:#fff }
 .st-sels{ display:grid;gap:6px;grid-template-columns:minmax(0,1fr);margin-top:6px } .st-sels select{ min-width:0 }
+
+/* ============ v1.08.56: учёба по образцу — чипы разделов, KPI-плитки, без вкладок ============ */
+.st-chips{ display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 12px }
+.st-chip{ display:inline-flex;align-items:center;gap:7px;padding:8px 12px 8px 8px;border-radius:14px;
+  background:var(--panel-2);border:2px solid var(--line);font-weight:900;font-size:.82rem;letter-spacing:.3px;text-transform:uppercase;min-height:44px;color:var(--text) }
+.st-chip .st-chip-no{ display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--sc, var(--blue));font-size:.85rem }
+.st-chip.on{ background:var(--blue);border-color:var(--blue);color:#0B0F12;box-shadow:0 4px 0 var(--blue-dk) }
+.st-chip.on .st-chip-t{ color:#0B0F12 }
+.st-chip:active{ transform:translateY(2px) }
+.st-cap{ font-weight:900;letter-spacing:.4px;text-transform:uppercase;font-size:.78rem;color:var(--dim);margin:0 0 8px }
+.st-cap .ic{ width:16px;height:16px;vertical-align:-3px }
+.st-kpi{ border:2px solid var(--line) }
+.st-kpi.k-blue{ border-color:var(--blue) } .st-kpi.k-blue b{ color:#5CC9FF }   /* светлее --blue: контраст на панели ≥ 4.5 */
+.st-kpi.k-green{ border-color:var(--green) } .st-kpi.k-green b{ color:var(--green) }
+.st-kpi.k-red{ border-color:var(--red) } .st-kpi.k-red b{ color:#FF7A7A }   /* светлее --red: контраст на панели ≥ 4.5 */
+.st-kpi.k-yellow{ border-color:var(--yellow) } .st-kpi.k-yellow b{ color:var(--yellow) }
+.st-rows{ margin-top:10px;border-top:1px solid var(--line-soft);padding-top:4px }
+.st-empty{ margin-top:8px }
+.st-pills{ display:flex;flex-wrap:wrap;gap:6px }
+.st-pill{ display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 5px;border-radius:999px;border:2px solid var(--line);background:var(--panel-2);font-weight:900;font-size:.85rem;min-height:36px;color:var(--text) }
+.st-pill .st-chip-no{ display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--sc, var(--blue));font-size:.75rem }
+.st-pill.ok{ border-color:var(--green);color:var(--green) } .st-pill.bad{ border-color:var(--red);color:var(--red) }
+.st-sec-btns .btn{ min-height:52px;font-size:1rem }

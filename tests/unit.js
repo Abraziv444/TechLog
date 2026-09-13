@@ -1434,11 +1434,16 @@ console.log('\n— v1.08.51: учёба —');
   t('study_sessions в синке и в бэкапе; DB-диагностика знает новые колонки',
     T.TABLES.includes('study_sessions') && T.BK_TABLES.includes('study_sessions')
     && T.DB_NEED_COLS.some(c => c[0] === 'study_sessions') && T.DB_NEED_COLS.some(c => c[0] === 'profiles' && c[1] === 'study_access'));
-  t('каталог: 8 разделов по умолчанию, тест и учебник у каждого',
-    T.studyDefaultCat().sections.length === 8 && T.studyDefaultCat().sections.every(s => /^tests\/section-\d\.json$/.test(s.test) && /^books\/section-\d\.html$/.test(s.book)));
+  t('каталог: 8 разделов по умолчанию, тест, учебник и короткая подпись у каждого',
+    T.studyDefaultCat().sections.length === 8 && T.studyDefaultCat().sections.every(s => /^tests\/section-\d\.json$/.test(s.test) && /^books\/section-\d\.html$/.test(s.book) && s.short && s.short.ru && s.short.en));
+  t('v1.08.56: экран без вкладок — чипы, две кнопки, результаты и статистика на экране; языка в тесте нет',
+    src.includes('function studyChipsHtml') && src.includes('function studyResultsHtml') && src.includes('function studyOverallHtml')
+    && !src.includes('STUDY.tab') && !src.includes('studyLang') && src.includes("function stLang(){ return state.lang || 'ru'; }")
+    && !src.includes("seg('lang', 'ru', 'RU')") && (src.match(/onclick="App\.studyRead\('\$\{s\.id\}'\)"/g) || []).length === 1);
   const idx = JSON.parse(fs.readFileSync(ROOT + '/dictionary/index.json', 'utf8'));
-  t('dictionary/index.json: 8 разделов, файлы 3/5/7 и учебник 8 реально лежат в сборке',
-    idx.sections.length === 8 && [3, 5, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
+  t('v1.08.56: index.json — у всех восьми разделов short на двух языках', idx.sections.every(s => s.short && s.short.ru && s.short.en));
+  t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
+    idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')
     && fs.existsSync(ROOT + '/dictionary/tests/template.json') && fs.existsSync(ROOT + '/dictionary/tests/tools/normalize-quiz.py'));
   /* нормализация: единый формат и три старых варианта структуры */
@@ -1466,6 +1471,71 @@ console.log('\n— v1.08.51: учёба —');
       question: { en: 'q', ru: 'в' }, options: [{ id: '1', text: { en: 'a', ru: 'а' } }, { id: '2', text: { en: 'b', ru: 'б' } }], correct: ['1', '2'] }] }, 7);
   t('qzNorm: старый вариант C (correct[] + multiSelect + asset + sectionTitle) → multi',
     legacyC.questions[0].type === 'multi' && legacyC.questions[0].correct.length === 2 && legacyC.questions[0].ref.chapter.en === 'Intro');
+  const legacyD = T.qzNorm({ meta: { quiz_id: 'wdr-s1', source: { section: 1, title: { en: 'WDR', ru: 'ВДР' } }, covers: { pages: '1-162' } },
+    chapters: [{ no: 1, pages: '1-6', title: { en: 'Introduction', ru: 'Введение' } }],
+    questions: [{ id: 's1-q008', type: 'single', source_ref: { section: 1, pages: [2], chapter_no: 1, chapter_title: { en: 'Introduction', ru: 'Введение' } },
+      media: { type: 'svg', file: 'media/s1-restore-or-replace.svg', caption: { en: 'C', ru: 'П' }, alt: { en: 'A', ru: 'Ф' } },
+      question: { en: 'q', ru: 'в' }, options: [{ id: '1', text: { en: 'a', ru: 'а' } }, { id: '2', text: { en: 'b', ru: 'б' } }], correct: ['1'],
+      option_explanations: { '1': { en: 'ok', ru: 'да', ref: { section: 1, pages: [2] } } } }] }, 1);
+  t('qzNorm: вариант D (раздел 1: media-объект с файлом, chapters, chapter_title/chapter_no)',
+    legacyD.questions[0].asset === 's1-restore-or-replace' && legacyD.assets['s1-restore-or-replace'].type === 'image'
+    && legacyD.assets['s1-restore-or-replace'].src === 'media/s1-restore-or-replace.svg' && legacyD.assets['s1-restore-or-replace'].alt.ru === 'Ф'
+    && legacyD.questions[0].topic.ru === 'Введение' && legacyD.questions[0].ref.chapter.en === 'Introduction' && legacyD.meta.title.ru === 'ВДР');
+  const s1 = JSON.parse(fs.readFileSync(ROOT + '/dictionary/tests/section-1.json', 'utf8'));
+  t('section-1.json в сборке: 399 вопросов, 48 встроенных схем без <metadata>, 10 тем-глав',
+    s1.questions.length === 399 && Object.keys(s1.assets).length === 48 && Object.values(s1.assets).every(a => a.svg.startsWith('<svg') && !a.svg.includes('<metadata'))
+    && s1.topics.length === 10 && s1.questions.filter(q => q.asset).length === 48 && s1.questions.every(q => q.options.length === 6 && q.options.every(o => o.explanation)));
+  const legacyE = T.qzNorm({ schema_version: '1.0', id: 'razdel-2', title: { en: 'FS', ru: 'ПД' }, source: { book: 'Fire', journal_section: 2, pages: 'i-iii, 1-64' },
+    settings: { pass_score_percent: 75, shuffle_questions: true, shuffle_options_default: false },
+    sections: [{ id: 2, title: { en: 'Fire and Smoke', ru: 'Пожар и дым' }, pages: '2-5' }],
+    media: { 'fire-triangle': { type: 'svg', title: { en: 'T', ru: 'Т' }, content: '<svg/>' } },
+    questions: [{ id: 'q-005', section: 2, pages: '2', topic: { en: 'About Smoke', ru: 'О дыме' }, type: 'single', media: ['fire-triangle'],
+      question: { en: 'q', ru: 'в' }, options: [{ n: 1, text: { en: 'a', ru: 'а' } }, { n: 2, text: { en: 'b', ru: 'б' } }], correct: 1,
+      explanation: { en: 'e', ru: 'о' }, reference: { en: 'Journal section 2 (red), Section 2, p. 2', ru: 'Журнал, раздел 2, с. 2' } }] }, 2);
+  t('qzNorm: вариант E (раздел 2: без meta, settings, sections-главы, options.n, correct числом, media списком)',
+    legacyE.questions[0].correct[0] === '1' && legacyE.questions[0].options[1].id === '2' && legacyE.questions[0].asset === 'fire-triangle'
+    && legacyE.questions[0].ref.section === 2 && legacyE.questions[0].ref.chapter.ru === 'Пожар и дым' && legacyE.questions[0].ref.pages[0] === '2'
+    && legacyE.questions[0].topic.ru === 'О дыме' && legacyE.meta.pass_percent === 75 && legacyE.meta.title.ru === 'ПД' && legacyE.meta.section === 2);
+  const s2 = JSON.parse(fs.readFileSync(ROOT + '/dictionary/tests/section-2.json', 'utf8'));
+  t('section-2.json в сборке: 201 вопрос, 17 схем, 8 тем-глав, у всех вопросов ссылка на раздел 2',
+    s2.questions.length === 201 && Object.keys(s2.assets).length === 17 && s2.topics.length === 8 && s2.meta.section === 2
+    && s2.questions.every(q => q.ref && q.ref.section === 2 && q.ref.chapter && q.options.length === 6));
+  const legacyF = T.qzNorm({ meta: { id: 'mr-s4', title: { en: 'MR', ru: 'МР' }, source: { book: 'Microbial Remediation', pagesCovered: 'i–iv, 1–82' } },
+    mediaLibrary: { apf_table: { id: 'apf_table', type: 'svg', svg: '<svg/>' } },
+    questions: [{ id: 'MR4-061', section: 5, sectionTitle: { en: 'Health and Safety', ru: 'Охрана труда' }, pages: '24, 26', topic: 'ppe', type: 'single',
+      media: { type: 'svg', id: 'apf_table', caption: { en: 'APF', ru: 'КЗФ' } },
+      question: { en: 'q', ru: 'в' }, options: [
+        { id: 'a', text: { en: 'a', ru: 'а' }, isCorrect: true, explanation: { en: 'ok', ru: 'да' } },
+        { id: 'b', text: { en: 'b', ru: 'б' }, isCorrect: false, explanation: { en: 'no', ru: 'нет' } },
+        { id: 'c', text: { en: 'Options 1 and 2', ru: 'Верны варианты 1 и 2' }, isCorrect: false }],
+      correctOptionIds: ['a'], explanation: { en: 'e', ru: 'о' }, reference: { section: 5, pages: '24, 26', citation: { en: 'Section 5, pp. 24, 26', ru: 'Раздел 5, стр. 24, 26' } } }] }, 4);
+  const f0 = legacyF.questions[0];
+  t('qzNorm: вариант F (раздел 4: mediaLibrary, media.id + caption, a…f → 1…6, isCorrect/correctOptionIds, section = глава, slug-тема скрыта)',
+    f0.options.map(o => o.id).join('') === '123' && f0.correct[0] === '1' && f0.options[0].explanation.ru === 'да'
+    && f0.asset === 'apf_table' && legacyF.assets.apf_table.caption.ru === 'КЗФ' && f0.ref.section === 4 && f0.ref.chapter.ru === 'Охрана труда'
+    && f0.ref.pages[0] === '24, 26' && f0.ref.text.ru.startsWith('Раздел 5') && f0.topic && f0.topic.ru === 'Охрана труда');
+  const s4 = JSON.parse(fs.readFileSync(ROOT + '/dictionary/tests/section-4.json', 'utf8'));
+  t('section-4.json в сборке: 193 вопроса, 26 схем, 16 тем-глав, варианты 1–6, у всех ссылка на раздел 4',
+    s4.questions.length === 193 && Object.keys(s4.assets).length === 26 && s4.topics.length === 16 && s4.meta.section === 4
+    && s4.questions.every(q => q.ref && q.ref.section === 4 && q.options.map(o => o.id).join('') === '123456' && q.correct.length === 1 && q.options.every(o => o.explanation)));
+  const legacyG = T.qzNorm({ schemaVersion: '1.0', meta: { id: 'uf', title: { en: 'UF', ru: 'ЧО' }, source: { title: 'Upholstery', pages: 'i–iv, 1–72' },
+      sections: [{ number: 5, title: { en: 'The Chemistry of Cleaning', ru: 'Химия чистки' }, pages: '37–42' }] },
+    assets: { 'fig-ph-scale': { type: 'svg', title: { en: 'pH', ru: 'pH' }, content: '<svg/>' } },
+    questions: [{ id: 's6-137', section: 5, sectionTitle: { en: 'The Chemistry of Cleaning', ru: 'Химия чистки' }, pages: '38', topic: 'pH', type: 'single_choice',
+      question: { en: 'q', ru: 'в' }, options: [
+        { id: '1', text: { en: 'a', ru: 'а' }, correct: true, explanation: { en: 'ok [Sec. 5, p. 38]', ru: 'да [Разд. 5, стр. 38]' }, reference: { section: 5, pages: '38' } },
+        { id: '2', text: { en: 'b', ru: 'б' }, correct: false, explanation: { en: 'no', ru: 'нет' }, reference: { section: 5, pages: '39' } }],
+      correctOptionId: '1', explanation: { en: 'e', ru: 'о' }, reference: { section: 5, pages: '38' },
+      media: { type: 'svg', assetId: 'fig-ph-scale', caption: { en: 'pH scale', ru: 'Шкала pH' } } }] }, 6);
+  const g0 = legacyG.questions[0];
+  t('qzNorm: вариант G (раздел 6: meta.sections[number], single_choice, correctOptionId, media.assetId, страницы варианта из reference, строка-тема скрыта)',
+    g0.type === 'single' && g0.correct[0] === '1' && g0.asset === 'fig-ph-scale' && legacyG.assets['fig-ph-scale'].caption.ru === 'Шкала pH'
+    && g0.ref.section === 6 && g0.ref.chapter.ru === 'Химия чистки' && g0.ref.pages[0] === '38' && g0.options[1].pages[0] === '39'
+    && g0.topic && g0.topic.ru === 'Химия чистки');
+  const s6 = JSON.parse(fs.readFileSync(ROOT + '/dictionary/tests/section-6.json', 'utf8'));
+  t('section-6.json в сборке: 272 вопроса, 31 схема, схема у каждого, 8 тем-глав, у всех ссылка на раздел 6',
+    s6.questions.length === 272 && Object.keys(s6.assets).length === 31 && s6.topics.length === 8 && s6.meta.section === 6
+    && s6.questions.every(q => q.asset && q.ref && q.ref.section === 6 && q.ref.chapter && q.options.length === 6 && q.correct.length === 1 && q.options.every(o => o.explanation)));
   t('qzNorm: вопрос без верного ответа или с одним вариантом отбрасывается',
     T.qzNorm({ questions: [{ id: 'x', question: 'q', options: [{ id: '1', text: 'a' }] }, { id: 'y', question: 'q', options: [{ id: '1', text: 'a' }, { id: '2', text: 'b' }] }] }, 1).questions.length === 0);
   /* доступ */
@@ -1501,7 +1571,7 @@ console.log('\n— v1.08.51: учёба —');
   t('CSS: стили теста, вариантов, кольца результата, рамки учебника',
     css.includes('.st-opt.ok{') && css.includes('.st-ring{') && css.includes('.st-frame{') && css.includes('.st-kpi{'));
   t('service worker: index.json в прекэше, dictionary/ — stale-while-revalidate',
-    sw.includes("'./dictionary/index.json'") && sw.includes("url.pathname.includes('/dictionary/')") && sw.includes("VERSION = '1.08.51'"));
+    sw.includes("'./dictionary/index.json'") && sw.includes("url.pathname.includes('/dictionary/')") && /VERSION = '1\.08\.5[1-9]'/.test(sw));
   t('справка экрана S.study на двух языках и карточка настроек',
     src.includes('S.study = H(') && src.includes("fold('study', t('st_card'), 'grad', studyCardHtml())")
     && src.includes("App.studyAccess('${uid_}', this.checked)"));

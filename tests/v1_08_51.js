@@ -33,18 +33,33 @@ function t(name, cond, note){
     await p.evaluate(() => window.App.setLang('ru')); await p.waitForTimeout(300);
   }
 
-  console.log('— экран: 8 разделов —');
+  console.log('— экран: чипы разделов, две кнопки, без вкладок (v1.08.56) —');
   await p.evaluate(() => window.App.go('study')); await p.waitForTimeout(1200);
   {
-    const secs = await p.evaluate(() => [...document.querySelectorAll('.st-sec')].map(c => ({
-      no: c.querySelector('.st-sec-no').textContent.trim(),
-      test: !c.querySelector('button[onclick*="studyStart"]').disabled,
-      book: !c.querySelector('button[onclick*="studyRead"]').disabled })));
-    t('восемь карточек разделов', secs.length === 8, secs.length);
-    t('тесты доступны у 3, 5, 7; у остальных кнопка погашена',
-      secs.filter(s => s.test).map(s => s.no).join(',') === '3,5,7', JSON.stringify(secs.map(s => [s.no, s.test])));
-    t('учебник доступен только у раздела 8', secs.filter(s => s.book).map(s => s.no).join(',') === '8', JSON.stringify(secs.map(s => [s.no, s.book])));
-    t('вкладки Разделы · Мои результаты · Статистика (админ)', (await txt('.acc-nav')).includes('Статистика'));
+    const chips = await p.evaluate(() => [...document.querySelectorAll('.st-chip')].map(c => ({ no: c.querySelector('.st-chip-no').textContent.trim(), on: c.classList.contains('on'), t: c.querySelector('.st-chip-t').textContent.trim() })));
+    t('восемь чипов разделов сверху, выбран 1-й, подписи короткие («Вода», «Пожар»…)',
+      chips.length === 8 && chips[0].on && chips.filter(c => c.on).length === 1 && chips[0].t === 'Вода' && chips[1].t === 'Пожар' && chips[7].t === 'Материалы', JSON.stringify(chips));
+    t('вкладок и переключателя языка нет', !(await p.$('.acc-nav')) && !(await p.$('.st-lang')));
+    const secs = [];
+    for (const n of [1, 2, 3, 4, 5, 6, 7, 8]){
+      await p.evaluate(id => window.App.studySel(id), n); await p.waitForTimeout(150);
+      secs.push(await p.evaluate(() => {
+        const c = document.querySelector('.st-sec');
+        const btns = [...c.querySelectorAll('.st-sec-btns .btn')];
+        return { no: c.querySelector('.st-sec-no').textContent.trim(), nb: btns.length, labels: btns.map(b => b.textContent.trim().toLowerCase()).join('|'),
+          test: !c.querySelector('button[onclick*="studyStart"]').disabled, book: !c.querySelector('button[onclick*="studyRead"]').disabled,
+          on: document.querySelector('.st-chip.on .st-chip-no').textContent.trim(), saved: localStorage.getItem('techlog_study_sec') };
+      }));
+    }
+    t('чип переключает карточку раздела, выбор запоминается на устройстве', secs.every((x, i) => x.no === String(i + 1) && x.on === String(i + 1) && x.saved === String(i + 1)), JSON.stringify(secs.map(x => [x.no, x.on, x.saved])));
+    t('в карточке ровно две кнопки — «Тест» и «Книга»', secs.every(x => x.nb === 2 && /тест\|книга/.test(x.labels)), secs[0].labels);
+    t('«Тест» активен у всех семи разделов 1–7, у раздела 8 погашен',
+      secs.filter(x => x.test).map(x => x.no).join(',') === '1,2,3,4,5,6,7', JSON.stringify(secs.map(x => [x.no, x.test])));
+    t('«Книга» активна только у раздела 8', secs.filter(x => x.book).map(x => x.no).join(',') === '8', JSON.stringify(secs.map(x => [x.no, x.book])));
+    const cards = await p.evaluate(() => ({ res: !!document.querySelector('.st-cap') && /Мои результаты/.test(document.querySelector('.st-cap').textContent), overall: [...document.querySelectorAll('.st-cap')].some(c => /Общий прогресс/.test(c.textContent)),
+      stat: [...document.querySelectorAll('.st-cap')].some(c => /Статистика/.test(c.textContent)), pills: document.querySelectorAll('.st-pill').length, empty: !!document.querySelector('.st-empty') }));
+    t('на экране без кнопок: «Мои результаты» (пока пусто), «Общий прогресс» с 7 пилюлями разделов, «Статистика» (админ)', cards.res && cards.overall && cards.stat && cards.pills === 7 && cards.empty, JSON.stringify(cards));
+    await p.evaluate(() => window.App.studySel('1')); await p.waitForTimeout(150);
   }
 
   console.log('— запуск теста раздела 3 (обучение, 5 вопросов) —');
@@ -52,7 +67,7 @@ function t(name, cond, note){
     await p.evaluate(() => window.App.studyStart('3'));
     await p.waitForFunction(() => !!document.querySelector('#overlay button[onclick*="studyBegin"]'), null, { timeout: 15000 });
     const head = await txt('#overlay');
-    t('модалка старта: режим, число вопросов, язык, порог', /Режим/.test(head) && /Вопросов/.test(head) && /Порог зачёта/.test(head) && /185/.test(head), head.slice(0, 120));
+    t('модалка старта: режим, число вопросов, порог; выбора языка нет', /Режим/.test(head) && /Вопросов/.test(head) && /Порог зачёта/.test(head) && /185/.test(head) && !/Язык теста/.test(head), head.slice(0, 120));
     await p.evaluate(() => { window.App.studyStartOpt('count', 20, '3'); });
     await p.waitForTimeout(200);
     await p.evaluate(() => { window.STUDY_TEST_HOOK = 1; window.App.studyStartOpt('shuffle', false, '3'); });
@@ -123,6 +138,91 @@ function t(name, cond, note){
     await p.evaluate(() => window.App.closeModal());
   }
 
+  console.log('— раздел 1: 399 вопросов, встроенные схемы (v1.08.52) —');
+  {
+    await p.evaluate(() => window.App.studyStart('1'));
+    await p.waitForFunction(() => !!document.querySelector('#overlay button[onclick*="studyBegin"]'), null, { timeout: 20000 });
+    t('модалка старта раздела 1 называет 399 вопросов и страницы 1-162', /399/.test(await txt('#overlay')) && /1-162/.test(await txt('#overlay')));
+    await p.evaluate(() => { window.App.studyStartOpt('shuffle', false, '1'); window.App.studyStartOpt('count', 20, '1'); });
+    await p.waitForTimeout(200);
+    await p.evaluate(() => window.App.studyBegin('1')); await p.waitForTimeout(400);
+    for (let i = 0; i < 7; i++){ await p.evaluate(() => { window.App.studyPick('1'); window.App.studyCheck(); window.App.studyNext(); }); await p.waitForTimeout(80); }
+    const a = await p.evaluate(() => ({
+      i: (document.querySelector('.st-run-h .tiny') || {}).textContent || '',
+      svg: !!document.querySelector('.st-asset svg'), meta: !!document.querySelector('.st-asset svg metadata'),
+      cap: (document.querySelector('.st-asset figcaption') || {}).textContent || '',
+      w: (document.querySelector('.st-asset svg') || {}).getBoundingClientRect ? document.querySelector('.st-asset svg').getBoundingClientRect().width : 0,
+    }));
+    t('8-й вопрос раздела 1 показывает встроенную схему (без <metadata>), с подписью и темой главы',
+      /8 \/ 20/.test(a.i) && a.svg && !a.meta && a.w > 200 && /Восстановить или заменить/.test(a.cap) && /Введение/.test(a.i), JSON.stringify(a));
+    await p.evaluate(() => window.App.studyDrop()); await p.waitForTimeout(300);
+  }
+
+  console.log('— раздел 2: 201 вопрос, главы-темы, схема у 5-го вопроса (v1.08.53) —');
+  {
+    await p.evaluate(() => window.App.studyStart('2'));
+    await p.waitForFunction(() => !!document.querySelector('#overlay button[onclick*="studyBegin"]'), null, { timeout: 20000 });
+    t('модалка старта раздела 2 называет 201 вопрос', /201/.test(await txt('#overlay')));
+    await p.evaluate(() => { window.App.studyStartOpt('shuffle', false, '2'); window.App.studyStartOpt('count', 20, '2'); });
+    await p.waitForTimeout(200);
+    await p.evaluate(() => window.App.studyBegin('2')); await p.waitForTimeout(400);
+    for (let i = 0; i < 4; i++){ await p.evaluate(() => { window.App.studyPick('1'); window.App.studyCheck(); window.App.studyNext(); }); await p.waitForTimeout(80); }
+    await p.evaluate(() => { window.App.studyPick('1'); window.App.studyCheck(); }); await p.waitForTimeout(250);
+    const a = await p.evaluate(() => ({
+      i: (document.querySelector('.st-run-h .tiny') || {}).textContent || '',
+      svg: !!document.querySelector('.st-asset svg'), ids: [...document.querySelectorAll('.st-opt-id')].map(x => x.textContent.trim()).join(''),
+      verdict: (document.querySelector('.st-verdict') || {}).className || '', ref: (document.querySelector('.st-ref') || {}).textContent || '',
+    }));
+    t('5-й вопрос: схема «треугольник горения», варианты 1–6, ответ 1 верный, ссылка «Раздел 2 · Пожар и дым · стр. 2»',
+      /5 \/ 20/.test(a.i) && a.svg && a.ids === '123456' && /ok/.test(a.verdict) && /Раздел 2/.test(a.ref) && /Пожар и дым/.test(a.ref) && /стр\. 2/.test(a.ref), JSON.stringify(a));
+    await p.evaluate(() => window.App.studyDrop()); await p.waitForTimeout(300);
+  }
+
+  console.log('— раздел 4: 193 вопроса, варианты 1–6 вместо a–f, схема у 2-го вопроса (v1.08.54) —');
+  {
+    await p.evaluate(() => window.App.studyStart('4'));
+    await p.waitForFunction(() => !!document.querySelector('#overlay button[onclick*="studyBegin"]'), null, { timeout: 20000 });
+    t('модалка старта раздела 4 называет 193 вопроса', /193/.test(await txt('#overlay')));
+    await p.evaluate(() => { window.App.studyStartOpt('shuffle', false, '4'); window.App.studyStartOpt('count', 20, '4'); });
+    await p.waitForTimeout(200);
+    await p.evaluate(() => window.App.studyBegin('4')); await p.waitForTimeout(400);
+    await p.evaluate(() => { window.App.studyPick('2'); window.App.studyCheck(); window.App.studyNext(); }); await p.waitForTimeout(100);
+    await p.evaluate(() => { window.App.studyPick('2'); window.App.studyCheck(); }); await p.waitForTimeout(250);
+    const a = await p.evaluate(() => ({
+      i: (document.querySelector('.st-run-h .tiny') || {}).textContent || '',
+      svg: !!document.querySelector('.st-asset svg'), cap: (document.querySelector('.st-asset figcaption') || {}).textContent || '',
+      ids: [...document.querySelectorAll('.st-opt-id')].map(x => x.textContent.trim()).join(''),
+      verdict: (document.querySelector('.st-verdict') || {}).className || '', ref: (document.querySelector('.st-ref') || {}).textContent || '',
+      optEx: !!document.querySelector('.st-opt.ok .st-opt-ex'),
+    }));
+    t('2-й вопрос: схема «пять шагов» с подписью, варианты 1–6, ответ 2 верный с объяснением, ссылка «Раздел 4 · Введение · стр. 1», тема без slug',
+      /2 \/ 20/.test(a.i) && a.svg && /Пять шагов/.test(a.cap) && a.ids === '123456' && /ok/.test(a.verdict) && a.optEx
+      && /Раздел 4/.test(a.ref) && /Введение/.test(a.ref) && !/definitions|ppe/.test(a.i), JSON.stringify(a));
+    await p.evaluate(() => window.App.studyDrop()); await p.waitForTimeout(300);
+  }
+
+  console.log('— раздел 6: 272 вопроса, схема у каждого, главы из meta.sections (v1.08.55) —');
+  {
+    await p.evaluate(() => window.App.studyStart('6'));
+    await p.waitForFunction(() => !!document.querySelector('#overlay button[onclick*="studyBegin"]'), null, { timeout: 20000 });
+    t('модалка старта раздела 6 называет 272 вопроса', /272/.test(await txt('#overlay')));
+    await p.evaluate(() => { window.App.studyStartOpt('shuffle', false, '6'); window.App.studyStartOpt('count', 20, '6'); });
+    await p.waitForTimeout(200);
+    await p.evaluate(() => window.App.studyBegin('6')); await p.waitForTimeout(400);
+    await p.evaluate(() => { window.App.studyPick('1'); window.App.studyCheck(); }); await p.waitForTimeout(250);
+    const a = await p.evaluate(() => ({
+      i: (document.querySelector('.st-run-h .tiny') || {}).textContent || '',
+      svg: !!document.querySelector('.st-asset svg'), cap: (document.querySelector('.st-asset figcaption') || {}).textContent || '',
+      ids: [...document.querySelectorAll('.st-opt-id')].map(x => x.textContent.trim()).join(''),
+      verdict: (document.querySelector('.st-verdict') || {}).className || '', ref: (document.querySelector('.st-ref') || {}).textContent || '',
+      optEx: (document.querySelector('.st-opt.ok .st-opt-ex') || {}).textContent || '',
+    }));
+    t('1-й вопрос: схема «семь ключей», варианты 1–6, ответ 1 верный с объяснением и стр. 1, ссылка «Раздел 6 · Волокна и ткани · стр. 1», тема — глава',
+      /1 \/ 20/.test(a.i) && /Волокна и ткани/.test(a.i) && !/seven keys/.test(a.i) && a.svg && /ключ/i.test(a.cap) && a.ids === '123456' && /ok/.test(a.verdict)
+      && /стр\. 1/.test(a.optEx) && /Раздел 6/.test(a.ref) && /Волокна и ткани/.test(a.ref), JSON.stringify(a));
+    await p.evaluate(() => window.App.studyDrop()); await p.waitForTimeout(300);
+  }
+
   console.log('— экзамен: без разбора до конца —');
   {
     await p.evaluate(() => { window.App.studyStart('5'); });
@@ -148,21 +248,37 @@ function t(name, cond, note){
     await p.evaluate(() => window.App.studyReadClose()); await p.waitForTimeout(1700);
     const rs = await p.evaluate(() => (JSON.parse(localStorage.getItem('techlog_state_v1') || '{}').study_sessions || []).find(s => s.kind === 'read'));
     t('чтение ≥5 с записано как сессия read по разделу 8', rs && +rs.section === 8 && rs.duration_ms >= 5000, JSON.stringify(rs && { sec: rs.section, ms: rs.duration_ms }));
-    const card8 = await p.evaluate(() => [...document.querySelectorAll('.st-sec')].find(c => c.querySelector('.st-sec-no').textContent.trim() === '8').textContent);
-    t('в карточке раздела 8 появилось время чтения', /чтение/.test(card8));
+    await p.evaluate(() => window.App.studySel('8')); await p.waitForTimeout(200);
+    const k8 = await p.evaluate(() => [...document.querySelectorAll('.st-kpi')].map(k => k.textContent.replace(/\s+/g, ' ').trim()));
+    t('в «Моих результатах» раздела 8 появилось время чтения (≥5 с)', k8.some(x => /время чтения/.test(x) && /[5-9] с|мин/.test(x)), JSON.stringify(k8));
   }
 
-  console.log('— мои результаты и статистика —');
+  console.log('— результаты и статистика прямо на экране —');
   {
-    await p.evaluate(() => window.App.studyTab('mine')); await p.waitForTimeout(300);
-    const mine = await p.evaluate(() => ({ kpi: document.querySelectorAll('.st-kpi').length, rows: document.querySelectorAll('.st-srow').length, eye: document.querySelectorAll('.st-srow button[onclick*="studySessReview"]').length }));
-    t('«Мои результаты»: сводка и 2 строки (тест + чтение), глазик у теста', mine.kpi === 5 && mine.rows === 2 && mine.eye === 1, JSON.stringify(mine));
-    await p.evaluate(() => window.App.studyTab('stat')); await p.waitForTimeout(300);
-    const st = await p.evaluate(() => ({ kpi: document.querySelectorAll('.st-kpi').length, users: document.querySelectorAll('.st-urow').length, csv: !!document.querySelector('button[onclick*="studyStatCsv"]'), txt: document.querySelector('.st-urow .tiny').textContent }));
-    t('«Статистика»: 8 показателей, 1 сотрудник, CSV, строка с тестами/ответами/%/временем',
+    await p.evaluate(() => window.App.studySel('3')); await p.waitForTimeout(300);
+    const mine = await p.evaluate(() => {
+      const card = document.querySelector('.st-cap').closest('.card');
+      return { kpi: card.querySelectorAll('.st-kpi').length, rows: card.querySelectorAll('.st-srow').length, eye: card.querySelectorAll('.st-srow button[onclick*="studySessReview"]').length,
+        best: [...card.querySelectorAll('.st-kpi')].find(k => /лучший/.test(k.textContent)).textContent.replace(/\s+/g, ' ').trim() };
+    });
+    t('«Мои результаты» раздела 3: 5 плиток, 1 попытка в списке с глазиком, лучший = 5%', mine.kpi === 5 && mine.rows === 1 && mine.eye === 1 && /5%/.test(mine.best), JSON.stringify(mine));
+    const ov = await p.evaluate(() => {
+      const card = [...document.querySelectorAll('.st-cap')].find(c => /Общий прогресс/.test(c.textContent)).closest('.card');
+      const pills = [...card.querySelectorAll('.st-pill')].map(x => ({ no: x.querySelector('.st-chip-no').textContent.trim(), cls: x.className, txt: x.textContent.replace(/\s+/g, ' ').trim() }));
+      return { kpi: card.querySelectorAll('.st-kpi').length, pills, tests: [...card.querySelectorAll('.st-kpi')].find(k => /тестов/.test(k.textContent)).textContent.replace(/\s+/g, ' ').trim() };
+    });
+    t('«Общий прогресс»: 6 плиток, тестов 1, пилюля раздела 3 красная «5%», остальные «—»',
+      ov.kpi === 6 && /^1\s*тестов/.test(ov.tests) && ov.pills.find(x => x.no === '3').cls.includes('bad') && /5%/.test(ov.pills.find(x => x.no === '3').txt) && ov.pills.filter(x => /—/.test(x.txt)).length === 6, JSON.stringify(ov));
+    const st = await p.evaluate(() => {
+      const card = [...document.querySelectorAll('.st-cap')].find(c => /Статистика/.test(c.textContent)).closest('.card');
+      const sum = card.nextElementSibling; const rows = sum.nextElementSibling;
+      return { kpi: sum.querySelectorAll('.st-kpi').length, users: rows.querySelectorAll('.st-urow').length, csv: !!card.querySelector('button[onclick*="studyStatCsv"]'), txt: (rows.querySelector('.st-urow .tiny') || {}).textContent || '' };
+    });
+    t('«Статистика» (админ) внизу экрана: 8 показателей, 1 сотрудник, CSV, строка с тестами/ответами/%/временем',
       st.kpi === 8 && st.users === 1 && st.csv && /тестов: 1/.test(st.txt) && /ответов: 2/.test(st.txt) && /время чтения/.test(st.txt), JSON.stringify(st));
     await p.evaluate(() => document.querySelector('.st-urow .rowline').click()); await p.waitForTimeout(300);
-    t('строка сотрудника раскрывается по разделам и сессиям', (await p.$$('.st-secline')).length === 2 && (await p.$$('.st-sess .st-srow')).length === 2);
+    t('строка сотрудника раскрывается по разделам и попыткам', (await p.$$('.st-secline')).length === 2 && (await p.$$('.st-sess .st-srow')).length === 2);
+    await p.evaluate(() => window.App.studySel('1')); await p.waitForTimeout(150);
   }
 
   console.log('— доступ: настройки админа и карточка сотрудника —');

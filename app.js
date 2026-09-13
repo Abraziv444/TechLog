@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.51';
+const APP_VERSION = '1.08.56';
 const DB_SQL_FILE = 'full-install-1_08_51.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -1104,7 +1104,10 @@ const I18N = {
     bk_no_table: 'таблицы нет — пропущена',
     /* v1.08.51: учёба — тесты по разделам и учебные материалы */
     tab_study: 'Учёба', st_card: 'Учёба', st_tab_sec: 'Разделы', st_tab_mine: 'Мои результаты', st_tab_stat: 'Статистика',
-    st_test: 'Тест', st_materials: 'Материалы', st_no_test: 'файл теста не загружен', st_no_file: 'файл не найден', st_no_q: 'в файле нет вопросов',
+    st_test: 'Тест', st_book: 'Книга', st_materials: 'Материалы', st_no_test: 'файл теста не загружен', st_test_has: 'тест', st_book_has: 'книга', st_no_book: 'книги пока нет',
+    st_my_res: 'Мои результаты', st_last: 'последний', st_sec_empty: 'По этому разделу попыток пока нет — нажмите «Тест».',
+    st_overall: 'Общий прогресс', st_best_by_sec: 'Лучший результат по разделам',
+    st_stat_tip: 'Статистика по всем сотрудникам: тесты, сдано, ответов, доля верных и неверных, время тестов и чтения. Строка сотрудника раскрывается по разделам и попыткам.', st_no_file: 'файл не найден', st_no_q: 'в файле нет вопросов',
     st_q_short: 'вопр.', st_attempts: 'попыток', st_best: 'лучший', st_read_time: 'чтение',
     st_mode: 'Режим', st_mode_learn: 'Обучение', st_mode_exam: 'Экзамен',
     st_mode_tip: 'Обучение — после каждого ответа сразу виден разбор. Экзамен — ответы без разбора, объяснения только в итогах.',
@@ -2105,7 +2108,10 @@ const I18N = {
     bk_no_table: 'table missing — skipped',
     /* v1.08.51: study — section tests and study materials */
     tab_study: 'Study', st_card: 'Study', st_tab_sec: 'Sections', st_tab_mine: 'My results', st_tab_stat: 'Statistics',
-    st_test: 'Test', st_materials: 'Materials', st_no_test: 'test file not loaded', st_no_file: 'file not found', st_no_q: 'no questions in the file',
+    st_test: 'Test', st_book: 'Book', st_materials: 'Materials', st_no_test: 'test file not loaded', st_test_has: 'test', st_book_has: 'book', st_no_book: 'no book yet',
+    st_my_res: 'My results', st_last: 'last', st_sec_empty: 'No attempts in this section yet — press “Test”.',
+    st_overall: 'Overall progress', st_best_by_sec: 'Best score by section',
+    st_stat_tip: 'Statistics for all staff: tests, passed, answers, share of correct and wrong, test and reading time. An employee row expands into sections and attempts.', st_no_file: 'file not found', st_no_q: 'no questions in the file',
     st_q_short: 'q.', st_attempts: 'attempts', st_best: 'best', st_read_time: 'reading',
     st_mode: 'Mode', st_mode_learn: 'Learning', st_mode_exam: 'Exam',
     st_mode_tip: 'Learning — the explanation appears right after each answer. Exam — no explanations until the results.',
@@ -6074,25 +6080,27 @@ function sectionFaqHtml(key){
   S.study = H(`
     <h4>${ic('grad')} Учёба</h4>
     <ul>
-      <li><b>Разделы</b> — восемь разделов учебника, у каждого две кнопки: <b>Тест</b> и <b>Материалы</b>. Кнопка блёклая — файла для раздела пока нет (тесты лежат в dictionary/tests, учебники — в dictionary/books). В строке раздела: число вопросов, попытки, лучший результат и время чтения; справа — процент последней попытки.</li>
-      <li><b>Перед тестом</b> выбирается режим: <b>Обучение</b> — разбор сразу после каждого ответа; <b>Экзамен</b> — только ответы, разбор в итогах. Число вопросов (все или часть), язык теста и перемешивание.</li>
+      <li><b>Чипы разделов</b> сверху — восемь разделов учебника; нажатие выбирает раздел, выбор запоминается на устройстве. Ниже — карточка выбранного раздела с двумя кнопками: <b>Тест</b> и <b>Книга</b>. Кнопка блёклая — файла для раздела пока нет (тесты лежат в dictionary/tests, книги — в dictionary/books).</li>
+      <li><b>Язык</b> вопросов, вариантов и объяснений — тот же, что у интерфейса: меняется в Настройках (RU / EN), отдельного переключателя в тесте нет.</li>
+      <li><b>Перед тестом</b> выбирается режим: <b>Обучение</b> — разбор сразу после каждого ответа; <b>Экзамен</b> — только ответы, разбор в итогах. Число вопросов (все или часть) и перемешивание.</li>
       <li><b>В тесте</b>: варианты нумерованы — в вопросах вида «верны 1 и 3» речь именно об этих номерах. «Подсказка» — намёк до ответа (отмечается в результате). Вопрос с несколькими верными ответами помечен — отмечайте все. Таймер идёт, пока экран открыт; свернули приложение — счёт стоит. Незавершённый тест переживает перезагрузку — на экране появится «Продолжить».</li>
       <li><b>Итог</b> — модалка с процентом, зачёт/не сдан по порогу (по умолчанию 70 %, админ меняет в Настройках), число верных и неверных, время и среднее на вопрос. <b>Разбор</b> — каждый вопрос с вашим ответом, верным, объяснениями и ссылкой на раздел и страницы; галочка «Только ошибки».</li>
-      <li><b>Материалы</b> — учебник раздела открывается внутри приложения; время чтения засекается и попадает в статистику. «Готово» — закрыть и записать.</li>
-      <li><b>Мои результаты</b> — все ваши тесты и чтения: сводка сверху, список ниже, у каждого теста — «глазик» разбора.</li>
-      <li><b>Статистика</b> (админ) — по всем сотрудникам за период: тесты, сдано, ответов, доля верных и неверных, время тестов и чтения; строка сотрудника раскрывается по разделам и сессиям; выгрузка CSV.</li>
+      <li><b>Книга</b> — учебник раздела открывается внутри приложения; время чтения засекается и попадает в статистику. «Готово» — закрыть и записать.</li>
+      <li><b>Мои результаты</b> — прямо под кнопками, по выбранному разделу: попытки, лучший и последний результат, время тестов и чтения, последние попытки (у каждой — «глазик» разбора). Ниже — <b>Общий прогресс</b> по всем разделам и лучший результат по каждому.</li>
+      <li><b>Статистика</b> (админ) — в самом низу экрана: все сотрудники за период (7д/30д/90д/всё, фильтр по сотруднику и разделу) — тесты, сдано, ответов, доля верных и неверных, время тестов и чтения; строка сотрудника раскрывается по разделам и попыткам; выгрузка CSV.</li>
       <li><b>Доступ</b>: Настройки → «Учёба» — общий выключатель, «Всем» или «По списку» (тот же флажок в карточке сотрудника в Штате), порог зачёта. Сам сотрудник может убрать кнопку из меню галочкой «Показывать «Учёбу» в меню».</li>
     </ul>`,
   `
     <h4>${ic('grad')} Study</h4>
     <ul>
-      <li><b>Sections</b> — eight textbook sections, each with two buttons: <b>Test</b> and <b>Materials</b>. A dimmed button means there is no file for that section yet (tests live in dictionary/tests, textbooks in dictionary/books). The row shows the question count, attempts, best score and reading time; the last attempt's percentage is on the right.</li>
-      <li><b>Before a test</b> pick the mode: <b>Learning</b> — the explanation right after each answer; <b>Exam</b> — answers only, explanations in the results. Number of questions (all or a part), test language and shuffling.</li>
+      <li><b>Section chips</b> on top — eight textbook sections; a tap selects the section and the choice is remembered on the device. Below is the selected section's card with two buttons: <b>Test</b> and <b>Book</b>. A dimmed button means there is no file for that section yet (tests live in dictionary/tests, books in dictionary/books).</li>
+      <li><b>Language</b> of questions, options and explanations is the interface language, set in Settings (RU / EN); there is no separate switch inside the test.</li>
+      <li><b>Before a test</b> pick the mode: <b>Learning</b> — the explanation right after each answer; <b>Exam</b> — answers only, explanations in the results. Number of questions (all or a part) and shuffling.</li>
       <li><b>During the test</b>: options are numbered — questions like “1 and 3 are correct” refer to those numbers. “Hint” gives a nudge before answering (marked in the result). A question with several correct answers is flagged — mark all of them. The timer runs while the screen is open; minimising the app pauses it. An unfinished test survives a reload — “Continue” appears on the screen.</li>
       <li><b>Result</b> — a modal with the percentage, passed / not passed against the pass mark (70 % by default, the admin changes it in Settings), correct and wrong counts, time and average per question. <b>Review</b> — every question with your answer, the right one, explanations and a reference to the section and pages; a “Mistakes only” tick.</li>
-      <li><b>Materials</b> — the section's textbook opens inside the app; reading time is measured and goes to the statistics. “Done” closes and records it.</li>
-      <li><b>My results</b> — all your tests and readings: a summary on top, the list below, an “eye” button opens the review of each test.</li>
-      <li><b>Statistics</b> (admin) — all staff for a period: tests, passed, answers, share of correct and wrong, test and reading time; an employee row expands into sections and sessions; CSV export.</li>
+      <li><b>Book</b> — the section's textbook opens inside the app; reading time is measured and goes to the statistics. “Done” closes and records it.</li>
+      <li><b>My results</b> — right under the buttons, for the selected section: attempts, best and last score, test and reading time, recent attempts (an “eye” opens the review). Below — <b>Overall progress</b> across all sections and the best score per section.</li>
+      <li><b>Statistics</b> (admin) — at the bottom of the screen: all staff for a period (7d/30d/90d/all, filters by employee and section) — tests, passed, answers, share of correct and wrong, test and reading time; an employee row expands into sections and attempts; CSV export.</li>
       <li><b>Access</b>: Settings → “Study” — the master switch, “Everyone” or “By list” (the same flag is in the employee card in Staff), the pass mark. An employee can remove the button from the menu with “Show “Study” in the menu”.</li>
     </ul>`);
   S.acc = H(`
@@ -8855,7 +8863,7 @@ const STUDY_COLORS = ['#1CB0F6','#FF4B4B','#FFC800','#58CC02','#8AA0AB','#9A5A22
 const STUDY = {
   cat: null, catBusy: false, catAt: 0,
   quiz: {}, busy: {}, exists: {},
-  tab: 'sec', run: null, read: null, lang: null,
+  sel: 0, run: null, read: null,
   stat: { period: '30', user: '', open: {}, sec: 0 },
   mine: { open: {}, onlyWrong: false },
   tick: 0,
@@ -8888,7 +8896,7 @@ async function studyAccessSet(uid_, v){
   if ($('#overlay')) staffCfgModal(uid_); else render();
 }
 /* ---------- локализация текстов теста ---------- */
-function stLang(){ return STUDY.lang || state.lang || 'ru'; }
+function stLang(){ return state.lang || 'ru'; }   // v1.08.56: язык теста = язык интерфейса (Настройки)
 function L(o){
   if (o == null) return '';
   if (typeof o === 'string') return o;
@@ -8898,19 +8906,28 @@ function L(o){
 /* ---------- каталог ---------- */
 function studyDefaultCat(){
   const names = [
-    ['Устранение последствий залива', 'Water Damage Restoration'],
-    ['Восстановление после пожара и копоти', 'Fire and Smoke Restoration Technology'],
-    ['Устранение и контроль запахов', 'Odor Removal and Control'],
-    ['Устранение плесени и микробов', 'Microbial Remediation'],
-    ['Уборка мест происшествий', 'Trauma Scene Cleanup'],
-    ['Чистка мягкой мебели и тканей', 'Upholstery and Fabric Cleaning'],
-    ['Чистка ковров', 'Carpet Cleaning'],
-    ['Раздел 8 — учебные материалы', 'Section 8 — study materials']];
-  return { sections: names.map(([ru, en], i) => ({ id: i + 1, color: STUDY_COLORS[i], title: { ru, en },
+    ['Устранение последствий залива', 'Water Damage Restoration', 'Вода', 'Water'],
+    ['Восстановление после пожара и копоти', 'Fire and Smoke Restoration Technology', 'Пожар', 'Fire'],
+    ['Устранение и контроль запахов', 'Odor Removal and Control', 'Запахи', 'Odor'],
+    ['Устранение плесени и микробов', 'Microbial Remediation', 'Плесень', 'Mold'],
+    ['Уборка мест происшествий', 'Trauma Scene Cleanup', 'Травмы', 'Trauma'],
+    ['Чистка мягкой мебели и тканей', 'Upholstery and Fabric Cleaning', 'Мебель', 'Upholstery'],
+    ['Чистка ковров', 'Carpet Cleaning', 'Ковры', 'Carpet'],
+    ['Раздел 8 — учебные материалы', 'Section 8 — study materials', 'Материалы', 'Materials']];
+  return { sections: names.map(([ru, en, sru, sen], i) => ({ id: i + 1, color: STUDY_COLORS[i], title: { ru, en }, short: { ru: sru, en: sen },
     test: 'tests/section-' + (i + 1) + '.json', book: 'books/section-' + (i + 1) + '.html' })) };
 }
 function studySections(){ return ((STUDY.cat || studyDefaultCat()).sections || []).filter(s => s && s.id); }
 function studySec(id){ return studySections().find(s => +s.id === +id); }
+/* v1.08.56: выбранный раздел — чипы сверху экрана; запоминается на устройстве */
+function studySelId(){
+  const list = studySections();
+  let id = +STUDY.sel || +(localStorage.getItem('techlog_study_sec') || 0);
+  if (!list.find(s => +s.id === id)) id = list.length ? +list[0].id : 1;
+  STUDY.sel = id; return id;
+}
+function studySelSet(id){ STUDY.sel = +id; try{ localStorage.setItem('techlog_study_sec', String(+id)); }catch(e){} render(); }
+function studyShort(s){ return L(s.short) || (t('st_section') + ' ' + s.id); }
 async function studyCatLoad(force){
   if (STUDY.catBusy || (!force && STUDY.cat && Date.now() - STUDY.catAt < 300000)) return;
   STUDY.catBusy = true;
@@ -8956,55 +8973,82 @@ function qzPages(v){
   const s = String(v).trim(); return s ? [s] : null;
 }
 function qzNorm(raw, sec){
-  const m = raw.meta || {}, src = m.source || {};
+  const m = raw.meta || ((raw.title || raw.source) ? raw : {}), src = m.source || {};   // раздел 2: сведения на верхнем уровне
+  const st = (m.settings && typeof m.settings === 'object') ? m.settings : {};
   const assets = {};
-  [raw.assets, raw.media].forEach(h => {
+  [raw.assets, raw.media, raw.mediaLibrary, raw.media_library, raw.figures].forEach(h => {   // раздел 4: mediaLibrary
     if (!h || typeof h !== 'object' || Array.isArray(h)) return;
     Object.keys(h).forEach(k => {
       const a = h[k]; if (!a) return;
       if (typeof a === 'string'){ assets[k] = { type: 'svg', svg: a }; return; }
       const body = a.svg || a.content || a.code || a.markup;
-      assets[k] = { type: body ? 'svg' : (a.type || 'image'), title: qzLoc(a.title), caption: qzLoc(a.caption),
+      assets[k] = { type: body ? 'svg' : (a.type || 'image'), title: qzLoc(a.title), caption: qzLoc(a.caption), alt: qzLoc(a.alt),
         svg: body || '', src: a.src || a.url || a.file || '' };
     });
   });
   const topics = {};
   (raw.topics || []).forEach(tp => { if (tp && tp.id != null) topics[String(tp.id)] = qzLoc(tp.title); });
+  (raw.chapters || []).forEach(ch => { if (ch && ch.no != null) topics['c' + ch.no] = qzLoc(ch.title); });   // главы книги (раздел 1)
+  [].concat(Array.isArray(raw.sections) ? raw.sections : [], Array.isArray(m.sections) ? m.sections : []).forEach(ch => {   // главы книги (раздел 2: sections[id]; раздел 6: meta.sections[number])
+    const no = ch && (ch.no ?? ch.id ?? ch.number); if (no != null && !topics['c' + no]) topics['c' + no] = qzLoc(ch.title); });
+  /* раздел 4: главы описаны прямо в вопросах (section + sectionTitle) */
+  (raw.questions || []).forEach(q => {
+    if (q && q.section != null && !topics['c' + q.section]){ const tt = qzLoc(q.sectionTitle || q.chapterTitle || q.bookUnitTitle); if (tt) topics['c' + q.section] = tt; }
+  });
+  const hasChapters = Object.keys(topics).some(k => /^c\d+$/.test(k));
   const qs = (raw.questions || []).map((q, i) => {
     let opts = q.options || q.answers || [];
     if (opts && !Array.isArray(opts)) opts = Object.keys(opts).map(k => ({ id: k, text: opts[k] }));
     const exMap = q.option_explanations || q.optionExplanations || {};
     let correct = [];
+    /* раздел 4: id вариантов a…f, а комбинированные говорят «верны 1 и 3» — нумеруем по позиции */
+    const rawIds = opts.map(o => (o && typeof o === 'object' && o.id != null) ? String(o.id) : null);
+    const idMap = {};
+    if (opts.length && rawIds.every((x, k) => x && /^[A-Za-z]$/.test(x) && x.toLowerCase() === String.fromCharCode(97 + k))) rawIds.forEach((x, k) => { idMap[x] = String(k + 1); });
     const options = opts.map((o, j) => {
       if (typeof o === 'string') o = { id: String(j + 1), text: o };
-      const id = String(o.id != null ? o.id : j + 1);
-      let ex = qzLoc(o.explanation), pg = qzPages(o.pages);
+      let id = String(o.id != null ? o.id : (o.n != null ? o.n : j + 1));
+      id = idMap[id] || id;
+      const oref = (o.reference || o.ref); let ex = qzLoc(o.explanation), pg = qzPages(o.pages) || (oref && typeof oref === 'object' ? qzPages(oref.pages) : null);
       if (!ex && exMap[id]){ ex = qzLoc(exMap[id]); const r = exMap[id] && exMap[id].ref; if (r && !pg) pg = qzPages(r.pages); }
-      if (o.correct === true) correct.push(id);
+      if (o.correct === true || o.isCorrect === true) correct.push(id);
       return { id, text: qzLoc(o.text || o.label) || { ru: '', en: '' }, explanation: ex, pages: pg };
     });
-    let rc = q.correct; if (rc == null) rc = q.correctOption ?? q.correct_option ?? q.answer;
-    if (rc != null) correct = (Array.isArray(rc) ? rc : [rc]).map(String);
+    let rc = q.correct; if (rc == null) rc = q.correctOption ?? q.correct_option ?? q.correctOptionId ?? q.correctOptionIds ?? q.answer;
+    if (rc != null) correct = (Array.isArray(rc) ? rc : [rc]).map(x => idMap[String(x)] || String(x));
     correct = [...new Set(correct)];
     let type = q.type;
     if (type !== 'single' && type !== 'multi') type = (q.multiSelect === true || correct.length > 1) ? 'multi' : 'single';
     /* ссылка на книгу */
     const ref = {};
     const r0 = q.ref || q.source_ref || q.reference || {};
+    /* раздел 2 / раздел 4: q.section — глава книги (есть список глав или название главы в вопросе), раздел журнала — из каталога */
+    const chapFromSec = (q.section != null && (topics['c' + q.section]) && (hasChapters || q.sectionTitle || q.chapterTitle || q.bookUnitTitle)) ? q.section : null;
     if (typeof r0 === 'object'){
-      let ch = r0.chapterTitle || r0.sectionTitle || r0.chapter;
+      let ch = r0.chapterTitle || r0.chapter_title || r0.sectionTitle || r0.chapter;
       if (typeof ch === 'number' || (typeof ch === 'string' && /^\d+$/.test(ch.trim()))) ch = null;
-      ref.section = r0.section ?? r0.journalSection ?? r0.manualSection;
-      ref.chapter = qzLoc(ch); ref.pages = qzPages(r0.pages); ref.text = qzLoc(r0.label || r0.text);
+      ref.section = chapFromSec != null ? null : (r0.section ?? r0.journalSection ?? r0.manualSection);   // раздел 4: reference.section — тоже глава
+      ref.chapter = qzLoc(ch); ref.pages = qzPages(r0.pages); ref.text = qzLoc(r0.label || r0.text || r0.citation);
       if (!ref.chapter && !ref.pages && !ref.text && ref.section == null) ref.text = qzLoc(r0);
     } else if (typeof r0 === 'string') ref.text = qzLoc(r0);
     const bk = (q.book && typeof q.book === 'object') ? q.book : {};
-    if (ref.section == null) ref.section = bk.journalSection ?? bk.section ?? q.journalSection ?? q.manualSection ?? q.section ?? sec;
+    if (ref.section == null) ref.section = bk.journalSection ?? bk.section ?? q.journalSection ?? q.manualSection ?? (chapFromSec != null ? sec : q.section) ?? sec;
+    if (!ref.chapter && chapFromSec != null) ref.chapter = topics['c' + chapFromSec];
     if (!ref.chapter) ref.chapter = qzLoc(bk.chapterTitle || bk.sectionTitle || q.sectionTitle || q.bookUnitTitle || q.chapterTitle);
     if (!ref.pages) ref.pages = qzPages(bk.pages) || qzPages(q.pages);
     let topic = q.topic;
-    if (typeof topic === 'string') topic = topics[topic] || qzLoc(topic); else topic = qzLoc(topic);
-    const asset = q.asset || q.media || q.mediaRef || q.assetRef;
+    if (typeof topic === 'string') topic = topics[topic] || null; else topic = qzLoc(topic);   // одноязычная строка вида "ppe" / "seven keys" — не показываем
+    if (!topic){ const cn = (r0 && r0.chapter_no) ?? q.chapter_no ?? q.bookUnit ?? q.bookSection ?? chapFromSec; if (cn != null) topic = topics['c' + cn] || null; }
+    let asset = q.asset || q.media || q.mediaRef || q.assetRef;
+    if (Array.isArray(asset)) asset = asset[0];             // раздел 2: список ключей схем — первая
+    if (asset && typeof asset === 'object'){                 // схема прямо в вопросе: {type, file|svg, caption, alt}
+      const fname = asset.file || asset.src || asset.url || '';
+      const key = String(asset.id || asset.assetId || asset.asset_id || asset.ref || (fname ? fname.split('/').pop().replace(/\.[a-z0-9]+$/i, '') : q.id + '-media')).replace(/[^A-Za-z0-9_-]/g, '_');
+      const body = asset.svg || asset.content || asset.code || asset.markup;
+      if (!assets[key]) assets[key] = { type: body ? 'svg' : 'image', title: qzLoc(asset.title), caption: qzLoc(asset.caption), alt: qzLoc(asset.alt), svg: body || '', src: fname };
+      else { const a = assets[key]; ['caption', 'alt', 'title'].forEach(f => { if (!a[f] && qzLoc(asset[f])) a[f] = qzLoc(asset[f]); }); }   // раздел 4: схема в библиотеке, подпись — в вопросе
+      asset = key;
+    }
     return {
       id: String(q.id || ('q' + (i + 1))), type, difficulty: q.difficulty || '',
       topic, asset: (typeof asset === 'string' && assets[asset]) ? asset : '',
@@ -9012,7 +9056,7 @@ function qzNorm(raw, sec){
       hint: qzLoc(q.hint), options, correct, explanation: qzLoc(q.explanation),
     };
   }).filter(q => q.options.length >= 2 && q.correct.length);
-  const secN = +(m.section ?? src.manualSection ?? src.journalSection ?? src.section ?? sec) || +sec || 0;
+  const secN = +(m.section ?? src.manualSection ?? src.journalSection ?? src.journal_section ?? src.section ?? sec) || +sec || 0;
   return {
     meta: {
       id: m.id || m.quiz_id || ('section-' + secN), section: secN,
@@ -9020,8 +9064,8 @@ function qzNorm(raw, sec){
       description: qzLoc(m.description),
       source: { book: src.book || (typeof src.title === 'string' ? src.title : ''), publisher: src.publisher || '',
                 edition: src.edition || src.version || '', pages: src.pages || src.pagesCovered || '' },
-      pass_percent: +(m.pass_percent || m.passScorePercent || m.pass_score_percent || (m.scoring && (m.scoring.passPercent || m.scoring.pass_percent)) || 70),
-      shuffle_questions: m.shuffle_questions !== false, shuffle_options: m.shuffle_options === true,
+      pass_percent: +(m.pass_percent || m.passScorePercent || m.pass_score_percent || (m.scoring && (m.scoring.passPercent || m.scoring.pass_percent)) || st.pass_score_percent || 70),
+      shuffle_questions: (m.shuffle_questions ?? st.shuffle_questions) !== false, shuffle_options: (m.shuffle_options ?? st.shuffle_options_default) === true,
     },
     assets, questions: qs,
   };
@@ -9104,8 +9148,6 @@ function studyStartModal(secId){
       <div class="lang-seg cam-seg">${seg('mode', 'learn', t('st_mode_learn'))}${seg('mode', 'exam', t('st_mode_exam'))}</div></div>
     <div class="st-start-row"><b>${t('st_count')}</b>
       <div class="lang-seg cam-seg">${seg('count', 0, t('st_all') + ' · ' + n)}${cnts.map(c => seg('count', c, String(c))).join('')}</div></div>
-    <div class="st-start-row"><b>${t('st_lang')}</b>
-      <div class="lang-seg cam-seg">${seg('lang', 'ru', 'RU')}${seg('lang', 'en', 'EN')}</div></div>
     <label class="chk-line" style="margin:6px 0"><input type="checkbox" ${st.shuffle ? 'checked' : ''} onchange="App.studyStartOpt('shuffle', this.checked, '${secId}')"> ${t('st_shuffle')}</label>
     <div class="tiny" style="margin:4px 0 10px">${t('st_pass_lbl')}: <b>${studyPassPct(q)}%</b> · ${t('st_start_hint')}</div>
     <button class="btn btn-green" onclick="App.studyBegin('${secId}')">${ic('play')} ${t('st_begin')}</button>`);
@@ -9118,14 +9160,13 @@ function studyStartOpt(grp, val, secId){
 function studyBegin(secId){
   const q = STUDY.quiz[secId]; if (!q || !q.questions) return;
   const st = STUDY._start || {};
-  STUDY.lang = st.lang || stLang();
   let order = q.questions.map((_, i) => i);
   if (st.shuffle !== false){ for (let i = order.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; } }
   if (st.count) order = order.slice(0, st.count);
   STUDY.run = { id: uid(), sec: +secId, quizId: q.meta.id, mode: st.mode || 'learn', order, i: 0,
     answers: {}, pick: [], checked: false, hintOn: false, done: false,
-    started_at: new Date().toISOString(), clock: stClockNew(), qclock: stClockNew(), lang: STUDY.lang };
-  closeModal(); studyRunSave(); STUDY.tab = 'sec'; render();
+    started_at: new Date().toISOString(), clock: stClockNew(), qclock: stClockNew(), lang: stLang() };
+  closeModal(); studyRunSave(); render();
   audit('study_start', 'study', STUDY.run.id, { sec: +secId, n: order.length, mode: STUDY.run.mode });
 }
 function studyRunSave(){ try{ if (STUDY.run && !STUDY.run.done) localStorage.setItem(STUDY_LS_RUN, JSON.stringify(STUDY.run)); else localStorage.removeItem(STUDY_LS_RUN); }catch(e){} }
@@ -9137,7 +9178,7 @@ function studyRunRestore(){
     if (!state.user || (r.uid && r.uid !== state.user.id)) return;
     r.clock = r.clock || stClockNew(); r.qclock = r.qclock || stClockNew();
     stClockPause(r.clock); stClockPause(r.qclock);
-    STUDY.run = r; STUDY.lang = r.lang || STUDY.lang;
+    STUDY.run = r;
     studyQuizLoad(r.sec);
   }catch(e){}
 }
@@ -9253,7 +9294,6 @@ async function studySessReview(id){
       <b style="color:${row.passed ? 'var(--green)' : 'var(--red)'}">${row.score_pct}%</b> · ${row.correct}/${row.total} · ${fmtMs(row.duration_ms)}</div>
     <div class="st-rv-tools">
       <label class="chk-line"><input type="checkbox" ${only ? 'checked' : ''} onchange="App.studyOnlyWrong(this.checked,'${row.id}')"> ${t('st_only_wrong')}</label>
-      <div class="lang-seg cam-seg"><button class="${stLang() === 'ru' ? 'on' : ''}" onclick="App.studyLang('ru','${row.id}')">RU</button><button class="${stLang() === 'en' ? 'on' : ''}" onclick="App.studyLang('en','${row.id}')">EN</button></div>
     </div>
     <div class="st-rv-list">${items || `<div class="list-empty">${t('st_all_right')}</div>`}</div>`);
 }
@@ -9270,7 +9310,7 @@ function studyReadOpen(secId){
   const s = studySec(secId); if (!s || !s.book) return;
   if (STUDY.read) studyReadClose(true);
   STUDY.read = { id: uid(), sec: +secId, file: s.book, started_at: new Date().toISOString(), clock: stClockNew() };
-  STUDY.tab = 'sec'; render();
+  render();
   audit('study_read', 'study', STUDY.read.id, { sec: +secId, file: s.book, phase: 'open' });
 }
 async function studyReadClose(silent){
@@ -9313,42 +9353,90 @@ function viewStudy(){
     return `<div class="section-title">${ic('grad')} ${t('tab_study')}</div><div class="card"><div class="list-empty">${t('st_denied')}</div></div>`;
   }
   studyCatLoad(false); studyRunRestore();
-  const tabs = [['sec', t('st_tab_sec')], ['mine', t('st_tab_mine')], ...(isAdmin() ? [['stat', t('st_tab_stat')]] : [])];
-  if (!tabs.find(x => x[0] === STUDY.tab)) STUDY.tab = 'sec';
   const head = `<div class="section-title">${ic('grad')} ${t('tab_study')}${helpBtn('study')}</div>`;
-  if (STUDY.run && STUDY.tab === 'sec') { studyResumeAll(); setTimeout(studyTickStart, 0); return head + studyRunHtml(); }
-  if (STUDY.read && STUDY.tab === 'sec') { studyResumeAll(); setTimeout(studyTickStart, 0); return head + studyReadHtml(); }
+  if (STUDY.run) { studyResumeAll(); setTimeout(studyTickStart, 0); return head + studyRunHtml(); }
+  if (STUDY.read) { studyResumeAll(); setTimeout(studyTickStart, 0); return head + studyReadHtml(); }
   studyPauseAll();
-  const nav = `<div class="tabs acc-nav">` + tabs.map(([id, l]) =>
-    `<button class="tabbtn ${STUDY.tab === id ? 'active' : ''}" onclick="App.studyTab('${id}')">${l}</button>`).join('') + `</div>`;
-  const body = STUDY.tab === 'mine' ? studyMineHtml() : STUDY.tab === 'stat' ? studyStatHtml() : studySecHtml();
-  return head + nav + body;
+  /* v1.08.56: по образцу — чипы разделов сверху, две кнопки «Тест» и «Книга»,
+     результаты и статистика прямо на экране, без вкладок и лишних кнопок */
+  return head + studyChipsHtml() + studyResumeHtml() + studySecCardHtml() + studyResultsHtml() + studyOverallHtml() + (isAdmin() ? studyStatHtml() : '');
 }
-function studySecHtml(){
-  const mine = studyMySessions();
-  const resume = STUDY.run ? `<div class="card st-resume"><div class="grow"><b>${t('st_resume_t')}</b><div class="tiny">${esc(L((studySec(STUDY.run.sec) || {}).title))} · ${STUDY.run.i + 1}/${STUDY.run.order.length}</div></div>
+function studyChipsHtml(){
+  const sel = studySelId();
+  return `<div class="st-chips">` + studySections().map(s => {
+    const col = s.color || STUDY_COLORS[(s.id - 1) % 8];
+    return `<button class="st-chip ${+s.id === sel ? 'on' : ''}" style="--sc:${col}" onclick="App.studySel('${s.id}')" title="${esc(L(s.title))}">
+      <span class="st-chip-no" style="color:${textColorFor(col)}">${s.id}</span><span class="st-chip-t">${esc(studyShort(s))}</span></button>`;
+  }).join('') + `</div>`;
+}
+function studyResumeHtml(){
+  return STUDY.run ? `<div class="card st-resume"><div class="grow"><b>${t('st_resume_t')}</b><div class="tiny">${esc(L((studySec(STUDY.run.sec) || {}).title))} · ${STUDY.run.i + 1}/${STUDY.run.order.length}</div></div>
       <button class="btn btn-green sm" onclick="App.studyResume()">${ic('play')} ${t('st_resume')}</button>
       <button class="btn btn-ghost sm" onclick="App.studyDrop()">${ic('trash')}</button></div>` : '';
-  const cards = studySections().map(s => {
-    const st = studySecStat(s.id, mine);
-    const q = STUDY.quiz[s.id];
-    const testOk = studyHas(s.test), bookOk = studyHas(s.book);
-    const qn = q && q.questions ? q.questions.length : null;
+}
+function studySecCardHtml(){
+  const s = studySec(studySelId()); if (!s) return '';
+  const q = STUDY.quiz[s.id];
+  const testOk = studyHas(s.test), bookOk = studyHas(s.book);
+  const qn = q && q.questions ? q.questions.length : null;
+  const col = s.color || STUDY_COLORS[(s.id - 1) % 8];
+  const err = q && q.err ? `<div class="tiny" style="color:var(--red)">${esc(q.err)}</div>` : '';
+  const sub = [s.tab ? esc(L(s.tab)) : '', qn != null ? qn + ' ' + t('st_q_short') : (testOk ? t('st_test_has') : t('st_no_test')), bookOk ? t('st_book_has') : t('st_no_book')].filter(Boolean).join(' · ');
+  return `<div class="card st-sec" style="--sc:${col}">
+    <div class="st-sec-h"><span class="st-sec-no" style="color:${textColorFor(col)}">${s.id}</span>
+      <div class="grow"><b>${esc(L(s.title))}</b><div class="tiny">${sub}</div>${err}</div></div>
+    <div class="st-btns st-sec-btns">
+      <button class="btn btn-green" ${testOk && !STUDY.busy[s.id] ? '' : 'disabled'} onclick="App.studyStart('${s.id}')">${STUDY.busy[s.id] ? '…' : ic('play') + ' ' + t('st_test')}</button>
+      <button class="btn btn-blue" ${bookOk ? '' : 'disabled'} onclick="App.studyRead('${s.id}')">${ic('book')} ${t('st_book')}</button>
+    </div>
+  </div>`;
+}
+/* результаты по выбранному разделу — без кнопок, прямо на экране */
+function studyResultsHtml(){
+  const s = studySec(studySelId()); if (!s) return '';
+  const mine = studyMySessions();
+  const st = studySecStat(s.id, mine);
+  const passPct = studyPassPct(STUDY.quiz[s.id]);
+  const kpi = (v, lbl, cls) => `<div class="st-kpi ${cls || ''}"><b>${v}</b><span>${lbl}</span></div>`;
+  const rows = mine.filter(x => +x.section === +s.id).slice(0, 8);
+  return `<div class="card">
+    <div class="st-cap">${t('st_my_res')} · ${esc(studyShort(s))}</div>
+    <div class="st-sum">
+      ${kpi(st.n, t('st_attempts'), 'k-blue')}
+      ${kpi(st.best ? st.best + '%' : '—', t('st_best'), st.best >= passPct ? 'k-green' : (st.n ? 'k-red' : ''))}
+      ${kpi(st.last != null ? st.last + '%' : '—', t('st_last'), st.last != null ? (st.last >= passPct ? 'k-green' : 'k-red') : '')}
+      ${kpi(fmtMs(st.testMs), t('st_time_tests'), '')}
+      ${kpi(fmtMs(st.readMs), t('st_time_read'), 'k-yellow')}
+    </div>
+    ${rows.length ? `<div class="st-rows">${rows.map(x => studySessRow(x, false)).join('')}</div>` : `<div class="tiny st-empty">${t('st_sec_empty')}</div>`}
+  </div>`;
+}
+/* общий прогресс по всем разделам */
+function studyOverallHtml(){
+  const list = studyMySessions();
+  const tests = list.filter(x => x.kind === 'test');
+  const ans = tests.reduce((a, x) => a + (+x.answered || 0), 0), ok = tests.reduce((a, x) => a + (+x.correct || 0), 0);
+  const kpi = (v, lbl, cls) => `<div class="st-kpi ${cls || ''}"><b>${v}</b><span>${lbl}</span></div>`;
+  const pills = studySections().filter(s => studyHas(s.test)).map(s => {   // только разделы, у которых есть файл теста
+    const st = studySecStat(s.id, list);
+    const passPct = studyPassPct(STUDY.quiz[s.id]);
     const col = s.color || STUDY_COLORS[(s.id - 1) % 8];
-    const err = q && q.err ? `<div class="tiny" style="color:var(--red)">${esc(q.err)}</div>` : '';
-    return `<div class="card st-sec" style="--sc:${col}">
-      <div class="st-sec-h"><span class="st-sec-no" style="color:${textColorFor(col)}">${s.id}</span>
-        <div class="grow"><b>${esc(L(s.title))}</b>
-          <div class="tiny">${s.tab ? esc(L(s.tab)) + ' · ' : ''}${qn != null ? qn + ' ' + t('st_q_short') : (testOk ? t('st_test') : t('st_no_test'))}${st.n ? ` · ${t('st_attempts')}: ${st.n} · ${t('st_best')}: <b>${st.best}%</b>` : ''}${st.readMs ? ` · ${t('st_read_time')}: ${fmtMs(st.readMs)}` : ''}</div>${err}</div>
-        ${st.last != null ? `<span class="chip ${st.last >= studyPassPct(q) ? 'ok' : 'bad'}">${st.last}%</span>` : ''}
-      </div>
-      <div class="st-btns st-sec-btns">
-        <button class="btn btn-green sm" ${testOk && !STUDY.busy[s.id] ? '' : 'disabled'} onclick="App.studyStart('${s.id}')">${STUDY.busy[s.id] ? '…' : ic('play') + ' ' + t('st_test')}</button>
-        <button class="btn btn-blue sm" ${bookOk ? '' : 'disabled'} onclick="App.studyRead('${s.id}')">${ic('book')} ${t('st_materials')}</button>
-      </div>
-    </div>`;
+    return `<button class="st-pill ${st.n ? (st.best >= passPct ? 'ok' : 'bad') : ''}" style="--sc:${col}" onclick="App.studySel('${s.id}')">
+      <span class="st-chip-no" style="color:${textColorFor(col)}">${s.id}</span> ${st.n ? st.best + '%' : '—'}</button>`;
   }).join('');
-  return resume + cards;
+  return `<div class="card">
+    <div class="st-cap">${t('st_overall')}</div>
+    <div class="st-sum">
+      ${kpi(tests.length, t('st_tests'), 'k-blue')}
+      ${kpi(tests.filter(x => x.passed).length, t('st_passed_n'), 'k-green')}
+      ${kpi(ans, t('st_answers'), '')}
+      ${kpi(ans ? Math.round(ok * 100 / ans) + '%' : '—', t('st_correct'), 'k-green')}
+      ${kpi(fmtMs(tests.reduce((a, x) => a + (+x.duration_ms || 0), 0)), t('st_time_tests'), '')}
+      ${kpi(fmtMs(list.filter(x => x.kind === 'read').reduce((a, x) => a + (+x.duration_ms || 0), 0)), t('st_time_read'), 'k-yellow')}
+    </div>
+    <div class="tiny" style="margin:8px 0 4px">${t('st_best_by_sec')}:</div>
+    <div class="st-pills">${pills}</div>
+  </div>`;
 }
 function studyRunHtml(){
   const r = STUDY.run, q = studyRunQ(), qz = STUDY.quiz[r.sec];
@@ -9361,7 +9449,7 @@ function studyRunHtml(){
   const n = r.order.length, done = Object.keys(r.answers).length;
   const a = r.answers[q.id];
   const asset = q.asset && qz.assets[q.asset];
-  const assetHtml = asset ? `<figure class="st-asset">${asset.type === 'svg' ? asset.svg : `<img src="${esc(STUDY_DIR + 'tests/' + asset.src)}" alt="">`}${asset.caption || asset.title ? `<figcaption class="tiny">${esc(L(asset.caption || asset.title))}</figcaption>` : ''}</figure>` : '';
+  const assetHtml = asset ? `<figure class="st-asset">${asset.type === 'svg' ? asset.svg : `<img src="${esc(STUDY_DIR + 'tests/' + asset.src)}" alt="${esc(L(asset.alt || asset.caption || asset.title))}">`}${asset.caption || asset.title ? `<figcaption class="tiny">${esc(L(asset.caption || asset.title))}</figcaption>` : ''}</figure>` : '';
   const opts = q.options.map(o => {
     const on = r.pick.includes(o.id);
     let cls = on ? 'on' : '';
@@ -9380,7 +9468,6 @@ function studyRunHtml(){
       <span class="st-sec-no" style="color:${textColorFor(secCol)}">${r.sec}</span>
       <div class="grow"><b>${esc(L(s.title))}</b><div class="tiny">${t('st_q')} ${r.i + 1} / ${n}${q.topic ? ' · ' + esc(L(q.topic)) : ''} · ${r.mode === 'exam' ? t('st_mode_exam') : t('st_mode_learn')}</div></div>
       <span class="st-timer">${ic('clock')} <span id="st-timer">${fmtMsShort(stClockMs(r.clock))}</span></span>
-      <div class="lang-seg cam-seg st-lang"><button class="${stLang() === 'ru' ? 'on' : ''}" onclick="App.studyLang('ru')">RU</button><button class="${stLang() === 'en' ? 'on' : ''}" onclick="App.studyLang('en')">EN</button></div>
     </div>
     <div class="st-prog"><span style="width:${pct}%"></span></div>
     <div class="st-qtext">${esc(L(q.question))}</div>
@@ -9397,21 +9484,6 @@ function studyRunHtml(){
       <button class="btn btn-ghost sm" onclick="App.studyAbort()">${ic('close')} ${t('st_stop')}</button>
     </div>
   </div>`;
-}
-function studyMineHtml(){
-  const list = studyMySessions();
-  if (!list.length) return `<div class="card"><div class="list-empty">${t('st_mine_empty')}</div></div>`;
-  const tests = list.filter(s => s.kind === 'test');
-  const sum = { n: tests.length, ans: tests.reduce((a, s) => a + (+s.answered || 0), 0), ok: tests.reduce((a, s) => a + (+s.correct || 0), 0),
-    testMs: tests.reduce((a, s) => a + (+s.duration_ms || 0), 0), readMs: list.filter(s => s.kind === 'read').reduce((a, s) => a + (+s.duration_ms || 0), 0) };
-  const top = `<div class="card st-sum">
-    <div class="st-kpi"><b>${sum.n}</b><span>${t('st_tests')}</span></div>
-    <div class="st-kpi"><b>${sum.ans}</b><span>${t('st_answers')}</span></div>
-    <div class="st-kpi"><b style="color:var(--green)">${sum.ans ? Math.round(sum.ok * 100 / sum.ans) : 0}%</b><span>${t('st_correct')}</span></div>
-    <div class="st-kpi"><b>${fmtMs(sum.testMs)}</b><span>${t('st_time_tests')}</span></div>
-    <div class="st-kpi"><b>${fmtMs(sum.readMs)}</b><span>${t('st_time_read')}</span></div>
-  </div>`;
-  return top + `<div class="card">` + list.slice(0, 200).map(s => studySessRow(s, false)).join('') + `</div>`;
 }
 function studySessRow(s, withName){
   const sec = studySec(s.section) || {};
@@ -9447,8 +9519,8 @@ function studyStatHtml(){
     <div class="st-kpi"><b>${tests.length}</b><span>${t('st_tests')}</span></div>
     <div class="st-kpi"><b>${tests.filter(s => s.passed).length}</b><span>${t('st_passed_n')}</span></div>
     <div class="st-kpi"><b>${ans}</b><span>${t('st_answers')}</span></div>
-    <div class="st-kpi"><b style="color:var(--green)">${ok}</b><span>${t('st_correct')} · ${ans ? Math.round(ok * 100 / ans) : 0}%</span></div>
-    <div class="st-kpi"><b style="color:var(--red)">${wr}</b><span>${t('st_wrong')} · ${ans ? Math.round(wr * 100 / ans) : 0}%</span></div>
+    <div class="st-kpi k-green"><b>${ok}</b><span>${t('st_correct')} · ${ans ? Math.round(ok * 100 / ans) : 0}%</span></div>
+    <div class="st-kpi k-red"><b>${wr}</b><span>${t('st_wrong')} · ${ans ? Math.round(wr * 100 / ans) : 0}%</span></div>
     <div class="st-kpi"><b>${fmtMs(tests.reduce((a, s) => a + (+s.duration_ms || 0), 0))}</b><span>${t('st_time_tests')}</span></div>
     <div class="st-kpi"><b>${fmtMs(reads.reduce((a, s) => a + (+s.duration_ms || 0), 0))}</b><span>${t('st_time_read')}</span></div>
   </div>`;
@@ -9482,6 +9554,7 @@ function studyStatHtml(){
     </div>`;
   }).join('');
   return `<div class="card st-filters">
+      <div class="st-cap">${ic('crew')} ${t('st_tab_stat')} ${tipQ('st_stat_tip')}</div>
       <div class="chip-wrap">${chips}</div>
       <div class="st-sels"><select onchange="App.studyStatSet('user', this.value)">${usrOpts}</select>
         <select onchange="App.studyStatSet('sec', this.value)">${secOpts}</select></div>
@@ -9524,15 +9597,14 @@ function studyCardHtml(){
 
 const App = {
   /* v1.08.51: учёба */
-  studyTab(v){ STUDY.tab = v; render(); },
+  studySel(id){ studySelSet(id); },
   studyStart(sec){ studyStartModal(sec); },
   studyStartOpt, studyBegin, studyPick, studyHint, studyCheck, studyNext, studySessReview, studyStatCsv, studySelfOff,
   studyAbort(){ studyAbortAsk(); },
-  studyResume(){ STUDY.tab = 'sec'; render(); },
+  studyResume(){ render(); },
   studyDrop(){ STUDY.run = null; studyRunSave(); render(); },
   studyRead(sec){ studyReadOpen(sec); },
   studyReadClose(){ studyReadClose(false); },
-  studyLang(l, sessId){ STUDY.lang = l; if (sessId) studySessReview(sessId); else render(); },
   studyOnlyWrong(v, sessId){ STUDY.mine.onlyWrong = !!v; studySessReview(sessId); },
   studyStatSet(k, v){ STUDY.stat[k] = k === 'sec' ? +v : v; render(); },
   studyStatOpen(uid_){ STUDY.stat.open[uid_] = !STUDY.stat.open[uid_]; render(); },

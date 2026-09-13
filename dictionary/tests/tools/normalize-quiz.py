@@ -12,11 +12,33 @@ assets / mediaRef, option_explanations / explanation внутри вариант
     python3 normalize-quiz.py вход.json выход.json [--section N] [--id section-3]
     python3 normalize-quiz.py --check выход.json      # только проверка
 
+Схемы, лежащие отдельными файлами (media: {"type":"svg","file":"media/x.svg"}),
+по умолчанию ВСТРАИВАЮТСЯ в выходной JSON (один файл — работает офлайн);
+служебная <metadata> (c2pa) при этом вырезается. --keep-files — оставить
+ссылки на файлы как есть (тогда папку media/ надо положить в dictionary/tests/).
+
 Схема описана в dictionary/tests/SCHEMA.md.
 """
 import json, sys, os, re
 
 LANGS = ('ru', 'en')
+MEDIA_DIR = ''          # каталог, от которого считаются пути media.file (по умолчанию — папка входного файла)
+KEEP_FILES = False      # True — не встраивать файлы, оставить src
+_inline_stats = {'ok': 0, 'miss': []}
+
+
+def load_svg_file(rel):
+    """Читает SVG-файл и вырезает служебные метаданные (c2pa и т.п.)."""
+    path = os.path.join(MEDIA_DIR, rel) if MEDIA_DIR else rel
+    if not os.path.isfile(path):
+        return None
+    body = open(path, encoding='utf-8').read()
+    body = re.sub(r'<\?xml[^>]*\?>\s*', '', body)
+    body = re.sub(r'<!DOCTYPE[^>]*>\s*', '', body)
+    body = re.sub(r'<metadata>.*?</metadata>', '', body, flags=re.S)
+    body = re.sub(r'\s+xmlns:c2pa="[^"]*"', '', body)
+    body = re.sub(r'<script.*?</script>', '', body, flags=re.S | re.I)
+    return body.strip()
 
 
 def loc(v, fallback=None):
@@ -66,13 +88,23 @@ def norm_asset(key, a):
         out['title'] = ttl
     if cap:
         out['caption'] = cap
+    alt = loc(a.get('alt'))
+    if alt:
+        out['alt'] = alt
     body = a.get('svg') or a.get('content') or a.get('code') or a.get('markup')
+    src = a.get('src') or a.get('url') or a.get('file')
+    if not body and src and not KEEP_FILES and str(src).lower().endswith('.svg'):
+        body = load_svg_file(src)
+        if body:
+            _inline_stats['ok'] += 1
+        else:
+            _inline_stats['miss'].append(src)
     if body:
         out['type'] = 'svg'
         out['svg'] = body
-    elif a.get('src') or a.get('url') or a.get('file'):
+    elif src:
         out['type'] = 'image'
-        out['src'] = a.get('src') or a.get('url') or a.get('file')
+        out['src'] = src
     return out
 
 
@@ -83,7 +115,7 @@ def norm_ref(q):
         sec = src.get('section') or src.get('journalSection') or src.get('manualSection')
         if sec is not None:
             ref['section'] = sec
-        raw_ch = src.get('chapterTitle') or src.get('sectionTitle') or src.get('chapter')
+        raw_ch = src.get('chapterTitle') or src.get('chapter_title') or src.get('sectionTitle') or src.get('chapter')
         if isinstance(raw_ch, (int, float)) or (isinstance(raw_ch, str) and raw_ch.strip().isdigit()):
             raw_ch = None                      # это НОМЕР главы, а не название
         ch = loc(raw_ch)
@@ -92,7 +124,7 @@ def norm_ref(q):
         pg = pages_of(src.get('pages'))
         if pg:
             ref['pages'] = pg
-        txt = loc(src.get('label') or src.get('text'))
+        txt = loc(src.get('label') or src.get('text') or src.get('citation'))
         if not txt and not ref:
             txt = loc(src)
         if txt:
@@ -122,19 +154,39 @@ def norm_ref(q):
     return {k: v for k, v in ref.items() if v not in (None, {}, [])} or None
 
 
-def norm_question(q, i, sec):
+def norm_question(q, i, sec, assets=None, chapters=None):
     out = {}
     out['id'] = str(q.get('id') or ('q%03d' % (i + 1)))
+    assets = assets if assets is not None else {}
+    chapters = chapters or {}
+    # раздел 2: q.section — это ГЛАВА книги (есть список sections/chapters), а не раздел журнала
+    chap_from_section = None
+    if q.get('section') is not None and sec and (
+            (chapters and ('c%s' % q.get('section')) in chapters)
+            or q.get('sectionTitle') or q.get('chapterTitle') or q.get('bookUnitTitle')):
+        # раздел 2 / раздел 4: q.section — глава книги (есть список глав или название главы прямо в вопросе)
+        q = dict(q)
+        chap_from_section = q.pop('section')
+        ref0 = q.get('reference')
+        if isinstance(ref0, dict) and ref0.get('section') is not None:      # раздел 4: reference.section — тоже глава
+            q['reference'] = {k: v for k, v in ref0.items() if k != 'section'}
 
     opts, correct = [], []
     raw_opts = q.get('options') or q.get('answers') or []
     if isinstance(raw_opts, dict):                       # {"1": "текст", …}
         raw_opts = [{'id': k, 'text': v} for k, v in raw_opts.items()]
     expl_map = q.get('option_explanations') or q.get('optionExplanations') or {}
+    # раздел 4: id вариантов a…f, а комбинированные варианты говорят «верны 1 и 3» — перенумеровываем по позиции
+    id_map = {}
+    raw_ids = [str(o.get('id')) for o in raw_opts if isinstance(o, dict) and o.get('id') is not None]
+    if raw_opts and len(raw_ids) == len(raw_opts) and all(re.match(r'^[A-Za-z]$', x) for x in raw_ids) \
+            and [x.lower() for x in raw_ids] == [chr(ord('a') + k) for k in range(len(raw_ids))]:
+        id_map = {x: str(k + 1) for k, x in enumerate(raw_ids)}
     for j, o in enumerate(raw_opts):
         if isinstance(o, str):
             o = {'id': str(j + 1), 'text': o}
-        oid = str(o.get('id') if o.get('id') is not None else (j + 1))
+        oid = str(o.get('id') if o.get('id') is not None else (o.get('n') if o.get('n') is not None else (j + 1)))
+        oid = id_map.get(oid, oid)
         item = {'id': oid, 'text': loc(o.get('text') or o.get('label') or o)}
         ex = loc(o.get('explanation'))
         exref = None
@@ -146,20 +198,21 @@ def norm_question(q, i, sec):
                 exref = pages_of(r.get('pages')) if isinstance(r, dict) else None
         if ex:
             item['explanation'] = ex
-        pg = exref or pages_of(o.get('pages'))
+        oref = o.get('reference') or o.get('ref') or {}
+        pg = exref or pages_of(o.get('pages')) or (pages_of(oref.get('pages')) if isinstance(oref, dict) else None)
         if pg:
             item['pages'] = pg
-        if o.get('correct') is True:
+        if o.get('correct') is True or o.get('isCorrect') is True:
             correct.append(oid)
         opts.append(item)
 
     raw_c = q.get('correct')
     if raw_c is None:
-        raw_c = q.get('correctOption', q.get('correct_option', q.get('answer')))
+        raw_c = q.get('correctOption', q.get('correct_option', q.get('correctOptionId', q.get('correctOptionIds', q.get('answer')))))
     if raw_c is not None:
         if not isinstance(raw_c, list):
             raw_c = [raw_c]
-        correct = [str(x) for x in raw_c]
+        correct = [id_map.get(str(x), str(x)) for x in raw_c]
     correct = [c for c in dict.fromkeys(correct)]
 
     typ = q.get('type')
@@ -172,14 +225,42 @@ def norm_question(q, i, sec):
     topic = q.get('topic')
     if isinstance(topic, str) and re.match(r'^t\d+$', topic):
         out['topic'] = topic
+    elif isinstance(topic, str):
+        pass                                   # разделы 4/6: одноязычная строка вида "ppe" / "seven keys" — не показываем
     else:
         tl = loc(topic)
         if tl:
             out['topic'] = tl
     asset = q.get('asset') or q.get('media') or q.get('mediaRef') or q.get('assetRef')
+    if isinstance(asset, list):                          # раздел 2: список ключей схем — берём первую
+        if len(asset) > 1:
+            print('   · %s: схем %d, показывается первая (%s)' % (out['id'], len(asset), asset[0]))
+        asset = asset[0] if asset else None
+    if isinstance(asset, dict):                          # схема прямо в вопросе (раздел 1 / раздел 4)
+        fname = asset.get('file') or asset.get('src') or asset.get('url') or ''
+        key = asset.get('id') or asset.get('assetId') or asset.get('asset_id') or asset.get('ref') \
+            or (re.sub(r'\.[a-z0-9]+$', '', os.path.basename(fname)) if fname else out['id'] + '-media')
+        key = re.sub(r'[^A-Za-z0-9_-]', '_', key)
+        if key not in assets:
+            assets[key] = norm_asset(key, asset)
+        else:                                            # раздел 4: схема в библиотеке, подпись — в вопросе
+            for f in ('caption', 'alt', 'title'):
+                if not assets[key].get(f) and loc(asset.get(f)):
+                    assets[key][f] = loc(asset.get(f))
+        asset = key
     if isinstance(asset, str) and asset.strip():
         out['asset'] = asset.strip()
-    ref = norm_ref(q)
+    if not out.get('topic'):
+        cn = (q.get('source_ref') or {}).get('chapter_no') if isinstance(q.get('source_ref'), dict) else None
+        if cn is None:
+            cn = q.get('chapter_no') or q.get('bookUnit') or q.get('bookSection') or chap_from_section
+        if cn is not None:
+            out['topic'] = 'c%s' % cn
+    ref = norm_ref(q) or {}
+    if chap_from_section is not None:
+        ref['section'] = sec
+        if not ref.get('chapter') and chapters.get('c%s' % chap_from_section):
+            ref['chapter'] = chapters['c%s' % chap_from_section]
     if ref:
         out['ref'] = ref
     out['question'] = loc(q.get('question') or q.get('prompt') or q.get('text'))
@@ -196,9 +277,13 @@ def norm_question(q, i, sec):
 
 def normalize(raw, section=None, quiz_id=None, title=None):
     m = raw.get('meta') or {}
+    if not m and (raw.get('title') or raw.get('source')):     # раздел 2: сведения лежат на верхнем уровне
+        m = raw
     src = m.get('source') or {}
+    st = m.get('settings') if isinstance(m.get('settings'), dict) else {}
     sec = section or m.get('section') or src.get('manualSection') or src.get('journalSection') \
-        or src.get('section') or (raw.get('questions') or [{}])[0].get('journalSection') \
+        or src.get('journal_section') or src.get('section') \
+        or (raw.get('questions') or [{}])[0].get('journalSection') \
         or (raw.get('questions') or [{}])[0].get('manualSection')
     try:
         sec = int(sec)
@@ -223,8 +308,13 @@ def normalize(raw, section=None, quiz_id=None, title=None):
                          ('pagesCovered', 'pages'), ('pages', 'pages'),
                          ('copyright_year', 'year')):
         v = src.get(k_from)
+        if isinstance(v, dict):
+            v = v.get('en') or v.get('ru')
         if v and k_to not in s:
             s[k_to] = v
+    cov = m.get('covers') or {}
+    if isinstance(cov, dict) and cov.get('pages') and 'pages' not in s:
+        s['pages'] = cov['pages']
     lbl = loc(src.get('manualSectionLabel') or src.get('journalSectionName') or src.get('sectionLabel'))
     if lbl:
         s['label'] = lbl
@@ -233,13 +323,14 @@ def normalize(raw, section=None, quiz_id=None, title=None):
     sc = m.get('scoring') or {}
     pp = m.get('pass_percent') or m.get('passScorePercent') or m.get('pass_score_percent') \
         or (sc.get('passPercent') if isinstance(sc, dict) else None) \
-        or (sc.get('pass_percent') if isinstance(sc, dict) else None)
+        or (sc.get('pass_percent') if isinstance(sc, dict) else None) \
+        or st.get('pass_score_percent') or st.get('pass_percent')
     meta['pass_percent'] = int(pp or 70)
-    meta['shuffle_questions'] = bool(m.get('shuffle_questions', True))
-    meta['shuffle_options'] = bool(m.get('shuffle_options', False))
+    meta['shuffle_questions'] = bool(m.get('shuffle_questions', st.get('shuffle_questions', True)))
+    meta['shuffle_options'] = bool(m.get('shuffle_options', st.get('shuffle_options_default', False)))
 
     assets = {}
-    for holder in (raw.get('assets'), raw.get('media')):
+    for holder in (raw.get('assets'), raw.get('media'), raw.get('mediaLibrary'), raw.get('media_library'), raw.get('figures')):
         if isinstance(holder, dict):
             for k, v in holder.items():
                 if isinstance(v, (dict, str)):
@@ -256,8 +347,35 @@ def normalize(raw, section=None, quiz_id=None, title=None):
         if tp.get('pages'):
             item['pages'] = tp['pages']
         topics.append(item)
+    sec_lists = (raw.get('chapters') or []) + (raw.get('sections') if isinstance(raw.get('sections'), list) else []) \
+        + (m.get('sections') if isinstance(m.get('sections'), list) and m is not raw else [])
+    for ch in sec_lists:
+        # главы книги (раздел 1: chapters[no]; раздел 2: sections[id]; раздел 6: meta.sections[number]) → темы c<no>
+        if not isinstance(ch, dict):
+            continue
+        no = ch.get('no') if ch.get('no') is not None else (ch.get('id') if ch.get('id') is not None else ch.get('number'))
+        if no is None:
+            continue
+        item = {'id': 'c%s' % no}
+        ttl = loc(ch.get('title'))
+        if ttl:
+            item['title'] = ttl
+        if ch.get('pages'):
+            item['pages'] = ch['pages']
+        topics.append(item)
 
-    qs = [norm_question(q, i, sec) for i, q in enumerate(raw.get('questions') or [])]
+    chap_map = {tp['id']: tp.get('title') for tp in topics if tp['id'].startswith('c')}
+    if not chap_map:                                     # раздел 4: главы описаны прямо в вопросах (section + sectionTitle)
+        seen = {}
+        for q in (raw.get('questions') or []):
+            no = q.get('section') if isinstance(q, dict) else None
+            ttl = loc(q.get('sectionTitle') or q.get('chapterTitle') or q.get('bookUnitTitle')) if isinstance(q, dict) else None
+            if no is not None and ttl and ('c%s' % no) not in seen:
+                seen['c%s' % no] = ttl
+        for k in sorted(seen, key=lambda x: int(re.sub(r'\D', '', x) or 0)):
+            topics.append({'id': k, 'title': seen[k]})
+        chap_map = dict(seen)
+    qs = [norm_question(q, i, sec, assets, chap_map) for i, q in enumerate(raw.get('questions') or [])]
     meta['question_count'] = len(qs)
     if assets:
         meta['asset_count'] = len(assets)
@@ -331,16 +449,26 @@ def main():
         i = args.index('--id'); quiz_id = args[i + 1]; del args[i:i + 2]
     if '--title' in args:
         i = args.index('--title'); title = args[i + 1]; del args[i:i + 2]
+    global KEEP_FILES, MEDIA_DIR
+    if '--keep-files' in args:
+        args.remove('--keep-files'); KEEP_FILES = True
+    if '--media-dir' in args:
+        i = args.index('--media-dir'); MEDIA_DIR = args[i + 1]; del args[i:i + 2]
     if len(args) < 2:
         print(__doc__); sys.exit(1)
+    if not MEDIA_DIR:
+        MEDIA_DIR = os.path.dirname(os.path.abspath(args[0]))
     raw = json.load(open(args[0], encoding='utf-8'))
     doc = normalize(raw, section, quiz_id, title)
     bad = check(doc)
     json.dump(doc, open(args[1], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    print('%s -> %s · вопросов %d · схем %d%s' % (
+    print('%s -> %s · вопросов %d · схем %d%s%s' % (
         os.path.basename(args[0]), os.path.basename(args[1]),
         len(doc['questions']), len(doc.get('assets') or {}),
+        (' · встроено файлов %d' % _inline_stats['ok']) if _inline_stats['ok'] else '',
         '' if not bad else ' · ПРОБЛЕМ: %d' % len(bad)))
+    for f in _inline_stats['miss']:
+        print('   · файл схемы не найден, оставлена ссылка:', f)
     for b in bad[:20]:
         print('   ·', b)
 

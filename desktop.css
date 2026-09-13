@@ -903,9 +903,8 @@ html.tl-desktop .acc-map-rows{max-width:640px}
 }
 
 /* ============ v1.08.51: учёба — на ПК читаемая ширина и высокая рамка учебника ============ */
-html.tl-desktop .scr-study .st-run,
-html.tl-desktop .scr-study .st-sec,
-html.tl-desktop .scr-study .st-resume{ max-width:860px }
+html.tl-desktop .scr-study .st-run{ max-width:860px }
+html.tl-desktop .scr-study .st-sec-btns .btn{ min-height:56px }
 html.tl-desktop .scr-study .st-sum{ grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) }
 html.tl-desktop .st-frame{ height:calc(100dvh - 200px) }
 html.tl-desktop .modal .st-rv-list{ max-height:none }

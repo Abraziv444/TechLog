@@ -94,11 +94,27 @@ python3 dictionary/tests/tools/normalize-quiz.py --check dictionary/tests/sectio
 
 Приложение читает и прежние варианты структуры (`correctOption`,
 `correct` внутри варианта, `option_explanations`, `media`/`mediaRef`,
-`assets` со `content`) — но хранить лучше в едином виде. Привести:
+`assets` со `content`, схема-объект прямо в вопросе
+`media: {"type":"svg","file":"media/x.svg","caption":…,"alt":…}`,
+`chapters` вместо `topics`, а также файл без `meta` — сведения на верхнем
+уровне, `settings.pass_score_percent`, `sections` как главы книги,
+`options[].n` вместо `id`, `correct` числом, `media` списком ключей;
+библиотека схем `mediaLibrary`, `correctOptionIds` / `isCorrect`,
+буквенные id вариантов a–f — они перенумеровываются в 1–6, чтобы
+«верны варианты 1 и 3» совпадали с бейджами; главы из `sectionTitle`;
+`meta.sections[number]`, `correctOptionId`, `media.assetId`, страницы
+варианта в его `reference`, `type: single_choice`)
+— но хранить лучше в едином виде. Привести:
 
 ```bash
 python3 dictionary/tests/tools/normalize-quiz.py старый.json section-4.json --section 4 --id section-4
 ```
+
+Схемы, лежащие отдельными файлами (`media/*.svg` рядом с JSON), конвертер
+**встраивает** в выходной файл — так тест целиком работает офлайн; служебные
+`<metadata>` (c2pa) из SVG вырезаются. Ключ `--keep-files` оставляет ссылки
+на файлы (тогда папку `media/` нужно положить в `dictionary/tests/`),
+`--media-dir путь` — если файлы лежат не рядом с исходным JSON.
 
 ## Как добавить раздел
 
