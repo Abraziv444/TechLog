@@ -52,7 +52,7 @@ const expose = `;window.__T = {
   sectionFaqHtml, faqHtml, viewHeader, viewLogin, viewStats, SECTION_HELP, chainCardBody, tvAgo, gdInvPathSample,
   /* v1.08.51: учёба */
   STUDY, qzNorm, studyAllowedFor, studyMenuOn, studySections, studyDefaultCat, studySecStat, fmtMs, BK_TABLES,
-  studyBook, studyBookAll
+  studyBook, studyBookAll, stComboRefs, stViewBuild, stOpts, stCorrect, biText, mediaLocked, canArchDoc, printBtnOn
 };`;
 
 try {
@@ -1333,8 +1333,8 @@ console.log('\n— v1.08.48: медиа у ремонта, ТВ-уборка, м
   const beg = fs.readFileSync(ROOT + '/supabase/functions/media-begin/index.ts', 'utf8');
   const com = fs.readFileSync(ROOT + '/supabase/functions/media-commit/index.ts', 'utf8');
   const del = fs.readFileSync(ROOT + '/supabase/functions/media-delete/index.ts', 'utf8');
-  t('SQL-комплект 1.08.48 на месте (DB_SQL_FILE двинулся на 1.08.51)',
-    src.includes("DB_SQL_FILE = 'full-install-1_08_51.sql'")
+  t('SQL-комплект 1.08.48 на месте (DB_SQL_FILE двинулся дальше)',
+    /DB_SQL_FILE = 'full-install-1_08_(51|70|71)\.sql'/.test(src)
     && fs.existsSync(ROOT + '/supabase/update-to-1_08_48.sql'));
   t('SQL: ровно один владелец медиа + права ремонта + tv_cleanup',
     sql.includes('media_owner_one') && sql.includes('can_view_repair')
@@ -1433,8 +1433,8 @@ console.log('\n— v1.08.51: учёба —');
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
   const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
   const sw  = fs.readFileSync(ROOT + '/sw.js', 'utf8');
-  t('SQL-комплект 1.08.51 на месте и подключён',
-    src.includes("DB_SQL_FILE = 'full-install-1_08_51.sql'")
+  t('SQL-комплект 1.08.51 на месте (DB_SQL_FILE двинулся на 1.08.70)',
+    /DB_SQL_FILE = 'full-install-1_08_(51|70|71)\.sql'/.test(src)
     && fs.existsSync(ROOT + '/supabase/update-to-1_08_51.sql') && fs.existsSync(ROOT + '/supabase/full-install-1_08_51.sql'));
   const sql = fs.readFileSync(ROOT + '/supabase/update-to-1_08_51.sql', 'utf8');
   t('SQL: study_sessions с RLS, колонки доступа, study_access под защитой guard, восстановление',
@@ -1642,6 +1642,57 @@ console.log('\n— v1.08.51: учёба —');
     css.includes('.st-opt.ok{') && css.includes('.st-ring{') && css.includes('.st-frame{') && css.includes('.st-kpi{'));
   t('service worker: index.json в прекэше, dictionary/ — stale-while-revalidate',
     sw.includes("'./dictionary/index.json'") && sw.includes("url.pathname.includes('/dictionary/')") && /VERSION = '1\.08\.(5[1-9]|[6-9]\d)'/.test(sw));
+  t('v1.08.72: встроенный регресс — функция regressRun, кнопка в диагностике, десять шагов и уборка остатков',
+    src.includes('async function regressRun()') && src.includes("App.regress()") && src.includes("t('rg_clean')")
+    && ['rg_job','rg_media','rg_send','rg_pk','rg_rep','rg_home','rg_take','rg_yest','rg_del','rg_gone'].every(k => src.includes("t('" + k + "')")) && src.includes('window.confirm = confirm0'));
+  t('v1.08.71: biText — «ru | en» и «ru / en» по языку интерфейса, без разделителя как есть',
+    (() => { const L0 = T.state.lang; T.state.lang = 'en'; const e1 = T.biText('Шланги и насадки | Hoses and nozzles'), e2 = T.biText('Эйрдак-машина / Air duct machine'), e3 = T.biText('Шуруповёрт'), e4 = T.biText('Steam / Dry');
+      T.state.lang = 'ru'; const r1 = T.biText('Шланги и насадки | Hoses and nozzles'), r2 = T.biText('Air duct machine / Эйрдак-машина'); T.state.lang = L0;
+      return e1 === 'Hoses and nozzles' && e2 === 'Air duct machine' && e3 === 'Шуруповёрт' && e4 === 'Steam / Dry' && r1 === 'Шланги и насадки' && r2 === 'Эйрдак-машина'; })());
+  t('v1.08.71: замок после апрува — работник не архивирует апрувнутый документ, админ может, без галочки можно',
+    (() => { const org = T.state.data.org_settings, u = T.state.user; const saveOrg = { ...org }, saveU = u;
+      const job = { id: 'j1', technician_id: 'tech1', status: 'approved', date: '2026-09-14' };
+      T.setUser({ id: 'tech1', role: 'tech', display_name: 'T' }); T.state.data.org_settings = { ...org };
+      const a = T.mediaLocked(job) && !T.canArchDoc({ t: 'job', o: job });
+      T.state.data.org_settings = { ...org, media_lock_approved: false }; const b = !T.mediaLocked(job) && T.canArchDoc({ t: 'job', o: job });
+      T.state.data.org_settings = { ...org }; T.setUser({ id: 'adm', role: 'admin', display_name: 'A' }); const c = !T.mediaLocked(job) && T.canArchDoc({ t: 'job', o: job });
+      T.state.data.org_settings = saveOrg; T.setUser(saveU); return a && b && c; })());
+  t('v1.08.71: кнопка печати на карточке — личная галочка включена по умолчанию, SQL 1.08.71 и media-delete с замком',
+    T.printBtnOn() && src.includes("App.jobPrint('${j.id}')") && src.includes("onchange=\"App.printBtn(this.checked)\"")
+    && fs.readFileSync(path.join(ROOT, 'supabase/update-to-1_08_71.sql'), 'utf8').includes('media_lock_approved boolean not null default true')
+    && fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_08_71.sql'), 'utf8').includes('media_lock_approved')
+    && fs.readFileSync(path.join(ROOT, 'supabase/functions/media-delete/index.ts'), 'utf8').includes('LOCKED_APPROVED')
+    && fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/google.ts'), 'utf8').includes('FN_VER = "1.08.71"') && src.includes("'media-delete': '1.08.71'"));
+  t('v1.08.71: полная проверка Диска — кнопка в карточке Диска и функция gdFullTest в App',
+    src.includes('App.gdFullTest()') && src.includes('async function gdFullTest()') && src.includes("kind === 'invoice' ? M_INV_MAX"));
+  t('v1.08.70: разбор комбо-пунктов — «1 и 3», «все», «ни один», просто число, обычный текст',
+    JSON.stringify(T.stComboRefs('Верны варианты 1 и 3')) === '[1,3]' && T.stComboRefs('Все перечисленные варианты верны') === 'all'
+    && T.stComboRefs('Ни один из приведённых выше вариантов не верен') === 'none' && T.stComboRefs('None of the above') === 'none'
+    && JSON.stringify(T.stComboRefs('Both 1 and 2')) === '[1,2]' && JSON.stringify(T.stComboRefs('Только 2')) === '[2]'
+    && T.stComboRefs('10') === null && T.stComboRefs('1 000') === null && T.stComboRefs('Категория 2 воды') === null
+    && T.stComboRefs('Ни один продукт нельзя применять в генераторе') === null && T.stComboRefs('Через 24–48 часов') === null);
+  t('v1.08.70: представление вопроса — комбо-пункт «1 и 3» верный → набор {1,3}, комбо убраны, «ни один» последним, номера 1…N',
+    (() => { const q = { id: 'x', type: 'single', correct: ['5'], options: [
+        { id: '1', text: { ru: 'А' } }, { id: '2', text: { ru: 'Б' } }, { id: '3', text: { ru: 'В' } }, { id: '4', text: { ru: 'Ни один из вариантов не верен' } }, { id: '5', text: { ru: 'Верны варианты 1 и 3' } }, { id: '6', text: { ru: 'Все варианты верны' } } ] };
+      const v = T.stViewBuild(q); if (!v) return false;
+      const opts = T.stOpts(q, v);
+      return v.plain && v.multi && v.correct.slice().sort().join() === '1,3' && v.order.length === 4 && v.order[3] === '4'
+        && opts.map(x => x.no).join() === '1,2,3,4' && opts.every(x => !/Верны варианты|Все варианты/.test(x.o.text.ru)) && T.stCorrect(q, v).join() === v.correct.join(); })());
+  t('v1.08.70: «все варианты верны» → все смысловые; «ни один» верный → сам пункт; вопрос без комбо — только перемешивание',
+    (() => { const mk = (c) => ({ id: 'y', type: 'single', correct: [c], options: [{ id: '1', text: { ru: 'А' } }, { id: '2', text: { ru: 'Б' } }, { id: '3', text: { ru: 'Ни один из вариантов не верен' } }, { id: '4', text: { ru: 'Все варианты верны' } }] });
+      const a = T.stViewBuild(mk('4')), n = T.stViewBuild(mk('3'));
+      const plain = T.stViewBuild({ id: 'z', type: 'single', correct: ['2'], options: [{ id: '1', text: { ru: 'А' } }, { id: '2', text: { ru: 'Б' } }, { id: '3', text: { ru: 'В' } }] });
+      return a && a.correct.slice().sort().join() === '1,2' && n && n.correct.join() === '3' && n.order[2] === '3'
+        && plain && !plain.plain && !plain.multi && plain.correct.join() === '2' && plain.order.slice().sort().join() === '1,2,3'; })());
+  t('v1.08.70: все 1747 вопросов семи тестов преобразуются; вопросов с несколькими верными > 400',
+    (() => { let n = 0, ok = 0, multi = 0;
+      for (let k = 1; k <= 7; k++){ const j = JSON.parse(fs.readFileSync(path.join(ROOT, `dictionary/tests/section-${k}.json`), 'utf8'));
+        j.questions.forEach(q => { n++; const v = T.stViewBuild(q); if (v){ ok++; if (v.correct.length > 1) multi++; } }); }
+      return n === 1747 && ok === n && multi > 400; })());
+  t('v1.08.70: галочка админа «перемешивать варианты», колонка org_settings.study_shuffle в update-to и full-install, DB_NEED_COLS',
+    src.includes("setOrgFlag('study_shuffle', this.checked)") && src.includes("['org_settings',  'study_shuffle']") && /^full-install-1_08_7\d\.sql$/.test(T.DB_SQL_FILE)
+    && fs.readFileSync(path.join(ROOT, 'supabase/update-to-1_08_70.sql'), 'utf8').includes('study_shuffle boolean not null default true')
+    && fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_08_70.sql'), 'utf8').includes('study_shuffle boolean not null default true'));
   t('v1.08.69: карта — помощник перевода называется LOC, function L на верхнем уровне нет (иначе подменяется window.L Leaflet)',
     src.includes('function LOC(o){') && !/^function L\(/m.test(src) && !/^(const|let|var) L\b/m.test(src) && src.includes('L.map(') && src.includes('LOC(s.title)'));
   t('v1.08.69: телефон — прокручивается #app, документ стоит; ПК не тронут',

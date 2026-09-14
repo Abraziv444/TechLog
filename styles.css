@@ -40,8 +40,14 @@ html:not(.tl-desktop) body{ height:100%;min-height:0;overflow:hidden;padding-bot
 html:not(.tl-desktop) #app{
   height:100%;max-width:none;margin:0;box-sizing:border-box;
   overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  padding:12px max(12px, calc((100% - 536px) / 2)) calc(80px + env(safe-area-inset-bottom));
+  padding:0 max(12px, calc((100% - 536px) / 2)) calc(80px + env(safe-area-inset-bottom));
 }
+/* v1.08.71: над шапкой ничего не просвечивает — верхний отступ экрана ушёл внутрь
+   липкой шапки (раньше 12px над ней были прозрачны и в них уезжала лента дней);
+   панель документа («Назад · Сохранить») стала сплошной, а шапка под ней не липнет */
+html:not(.tl-desktop) .topbar{ padding-top:calc(env(safe-area-inset-top,0px) + 12px);margin-top:0 }
+html:not(.tl-desktop) .docbar{ margin-top:0;background:var(--bg);box-shadow:0 6px 12px -8px rgba(0,0,0,.8) }
+html:not(.tl-desktop) #app:has(.docbar) .topbar{ position:static;box-shadow:none }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input,select,textarea{
   font:inherit;color:var(--text);
@@ -2299,6 +2305,12 @@ select:has(+ .selx-x){ padding-right:54px }
 .net-mrow{ display:flex;align-items:center;gap:8px;margin:2px 0 8px }
 .net-log{ height:138px }
 .mq-log .warn{ color:var(--orange) }
+/* v1.08.70: у строки лога класс warn совпадал с глобальным жёлтым кружком-значком
+   .warn (18×18, inline-flex) — строка «нестабильно»/медленный сервис сжималась в
+   кружок, а её текст сыпался буквами в столбик поверх соседних строк */
+.mq-log .mq-l.warn, .mq-mini .mq-l.warn{ display:flex;width:auto;height:auto;border-radius:0;background:none;
+  box-shadow:none;margin:1px 0;font-size:inherit;font-weight:inherit;justify-content:flex-start;vertical-align:baseline;color:var(--orange) }
+.st-opt.st-opt-m .st-opt-id{ border-radius:6px }
 
 /* v1.08.45: «глазик» у полей пароля — кнопка в правом углу поля.
    Прижата к низу строки (bottom), а не к центру: в рядах с подписью

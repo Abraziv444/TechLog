@@ -11,10 +11,10 @@ Supabase → **SQL Editor** → вставить файл целиком → **R
 
 | Ситуация | Файл |
 |---|---|
-| Новый проект или база любого возраста | `full-install-1_08_51.sql` — один идемпотентный скрипт, добавляет только недостающее |
-| База уже на уровне v1.08.48 | `update-to-1_08_51.sql` — короткая дельта (учёба: таблица `study_sessions` с RLS, `org_settings.study_on/study_all/study_pass`, `profiles.study_access/study_off`, `profiles_guard` v3, `admin_restore_rows`) |
-| База уже на уровне v1.08.39 | `update-to-1_08_48.sql`, затем `update-to-1_08_51.sql` |
-| База старше v1.08.39 | `full-install-1_08_51.sql` — он же и обновляет |
+| Новый проект или база любого возраста | `full-install-1_08_71.sql` — один идемпотентный скрипт, добавляет только недостающее |
+| База уже на уровне v1.08.48 | `update-to-1_08_71.sql (две колонки org_settings.study_shuffle и media_lock_approved — включает 1.08.70; если 1.08.51 ещё не ставили — full-install-1_08_71.sql). После 1.08.71 передеплойте media-delete (замок на архивацию апрувнутого документа, FN_VER 1.08.71)` — короткая дельта (учёба: таблица `study_sessions` с RLS, `org_settings.study_on/study_all/study_pass`, `profiles.study_access/study_off`, `profiles_guard` v3, `admin_restore_rows`) |
+| База уже на уровне v1.08.39 | `update-to-1_08_48.sql`, затем `update-to-1_08_71.sql (две колонки org_settings.study_shuffle и media_lock_approved — включает 1.08.70; если 1.08.51 ещё не ставили — full-install-1_08_71.sql). После 1.08.71 передеплойте media-delete (замок на архивацию апрувнутого документа, FN_VER 1.08.71)` |
+| База старше v1.08.39 | `full-install-1_08_71.sql` — он же и обновляет |
 
 В конце скрипт печатает NOTICE: «схема соответствует v1.08.51 — всё на месте» либо
 WARNING со списком недостающего. Повторный запуск безопасен: `create … if not exists`,

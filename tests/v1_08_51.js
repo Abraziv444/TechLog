@@ -20,6 +20,9 @@ function t(name, cond, note){
     localStorage.setItem('techlog_session_v1', 'demo-admin');
     localStorage.setItem('techlog_view_mode', 'mobile'); });
   await p.reload(); await p.waitForTimeout(1300);
+  /* v1.08.70: варианты по умолчанию перемешиваются и комбо-пункты убираются —
+     этот сценарий проверяет исходный порядок, поэтому галочку снимаем */
+  await p.evaluate(() => window.App.setOrgFlag('study_shuffle', false)); await p.waitForTimeout(400);
 
   const labels = () => p.evaluate(() => [...document.querySelectorAll('.tabbar .tab span')].map(s => s.textContent.trim()));
   const txt = (sel) => p.evaluate(s => (document.querySelector(s) || {}).textContent || '', sel);

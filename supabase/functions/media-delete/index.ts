@@ -55,11 +55,18 @@ Deno.serve(async (req) => {
      то есть только из архива приложения. */
   if (job_id && (mode === "archive" || mode === "restore")) {
     const { data: job } = await sb.from("jobs")
-      .select("id,technician_id,date,unit_number,complexes(abbr,name)")
+      .select("id,technician_id,status,date,unit_number,complexes(abbr,name)")
       .eq("id", job_id).maybeSingle();
     if (!job) return jres({ error: "NO_ACCESS" }, 403);
     if (prof?.role !== "admin" && job.technician_id !== user.id)
       return jres({ error: "FORBIDDEN" }, 403);
+    /* v1.08.71: «после апрува файлы неприкосновенны» — работник не переносит
+       файлы апрувнутого документа в архив (галочка org_settings.media_lock_approved,
+       по умолчанию включена; колонки нет — считаем включённой) */
+    if (prof?.role !== "admin" && mode === "archive" && (job as any).status === "approved") {
+      const lk = await s.from("org_settings").select("media_lock_approved").eq("id", "org").maybeSingle();
+      if (lk.data?.media_lock_approved !== false) return jres({ error: "LOCKED_APPROVED" }, 403);
+    }
     const { data: rows } = await s.from("media")
       .select("id,kind,drive_file_id").eq("job_id", job_id);
     let moved = 0;

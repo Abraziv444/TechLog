@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.69';
-const DB_SQL_FILE = 'full-install-1_08_51.sql';
+const APP_VERSION = '1.08.72';
+const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -663,7 +663,7 @@ const I18N = {
     stock_field: 'у клиентов', stock_avail: 'на складе',
     stock_vis_chk: 'Сотрудники видят остатки склада',
     stock_hint: 'Всего − сломано − в ремонте − у клиентов = на складе. «У клиентов» считается автоматически по невывезенным пикапам.',
-    cl_title: 'Чек-лист перед выездом', cl_edit_hint: 'Каждый пункт — с новой строки.',
+    cl_title: 'Чек-лист перед выездом', cl_edit_hint: 'Каждый пункт — с новой строки. Для английского интерфейса — через вертикальную черту: «Шланги и насадки | Hoses and nozzles» (годится и «русский / English»).',
     proposal_chk: 'PROPOSAL — задачи согласованы заранее',
     pdf_preview: 'Просмотр PDF', pdf_print: 'Печать',
     print_hint: 'Откроется системная печать; если нет — PDF откроется в новой вкладке (меню браузера → Печать).',
@@ -776,6 +776,10 @@ const I18N = {
     sess_tv: 'ТВ', st_kill_q_tv: 'Завершить все сессии сотрудника? Активные ТВ-экраны ({N}) тоже будут завершены.',
     /* v1.08.49 · поиск */
     srch_tab_chk: 'Кнопка поиска в нижней панели (на телефоне)',
+    media_lock_chk: 'После апрува файлы неприкосновенны', media_lock_hint: 'Удалять отправленные фото, видео и файлы может только администратор — это проверяет и сервер. С галочкой работник ещё и не может отправить апрувнутый документ в архив (архив переносит его файлы на Диске); снять замок может только администратор.',
+    gd_full: 'Полная проверка: фото, видео, инвойс', gd_full_hint: 'От имени администратора создаётся пробная работа без цены и галочек, в неё через обычную очередь отправляются пробное фото, короткое пробное видео и PDF-инвойс; по каждому файлу проверяется ссылка с Диска, затем файлы и работа удаляются. Ничего настоящего не трогает.',
+    gd_f_job: 'пробная работа', gd_f_photo: 'фото → Диск', gd_f_video: 'видео → Диск', gd_f_inv: 'инвойс PDF → Диск', gd_f_link: 'ссылки с Диска', gd_f_del: 'удаление файлов', gd_f_purge: 'удаление пробной работы', gd_f_done: 'проверка Диска: {N} из {T} шагов', gd_f_novideo: 'браузер не умеет записывать видео — пропущено', gd_f_wait: 'очередь не опустела за 90 с',
+    print_btn_chk: 'Кнопка печати инвойса на карточке', print_btn_hint: 'На карточке работы появляется кнопка PDF — инвойс скачивается сразу, без открытия документа. Это личная настройка: у каждого сотрудника своя.', print_inv: 'Инвойс PDF',
     srch_tab_hint: 'Снимите галочку — на телефоне кнопка ${ic} исчезнет из нижней панели и панель станет свободнее. На ПК кнопка остаётся всегда. Сам поиск никуда не денется: он есть в этой карточке.',
     srch_open_here: 'Открыть поиск',
     srch_multi_hint: 'Чипы складываются: отметьте, где искать. «Всё» включает все чипы, повторное нажатие — снимает; крестик — снять выбор. «Юнит» — искать и по номеру юнита.',
@@ -1010,6 +1014,8 @@ const I18N = {
     bk_new_proj: 'Как восстановиться в новый проект Supabase',
     prop_qty: 'Кол-во', prop_code: 'Код', prop_complete: 'Выполнить до (Complete By)',
     diag_card: 'Диагностика', diag_run: 'Запустить все тесты',
+    rg_btn: 'Регресс основных функций', rg_hint: 'Сквозной сценарий на живых данных от вашего имени: инвойс на вчера с заполнением, фото + видео + документ в очередь и на Диск, пикап на сегодня, документ работ с двумя строками, «Забрать» на главной, удаление инвойса за вчера и проверка, что фото и видео удалены. Всё пробное помечено Unit TEST и в конце убирается; работает и на телефоне, и на ПК, и в демо-режиме (там отправка на Диск пропускается).',
+    rg_job: 'инвойс на вчера: создание и заполнение', rg_media: 'фото, видео, документ → очередь', rg_send: 'отправка на Диск', rg_pk: 'пикап на сегодня создан', rg_rep: 'документ работ: две строки', rg_home: 'главная: пикап виден', rg_take: 'кнопка «Забрать»', rg_yest: 'вчера: инвойс виден', rg_del: 'удаление инвойса', rg_gone: 'фото и видео удалены', rg_clean: 'уборка остатков', rg_done: 'регресс: {N} из {T} шагов', rg_demo: 'демо-режим — отправка пропущена, файлы в очереди', rg_running: 'идёт регресс…', rg_wait: 'очередь не опустела за 120 с',
     diag_net: 'Интернет', diag_db: 'База данных', diag_auth: 'Сессия входа',
     diag_store: 'Хранилище миниатюр', diag_fn: 'Серверные функции',
     diag_osm: 'Карта: тайлы OSM', diag_geo: 'Карта: геокодер (Nominatim)',
@@ -1115,7 +1121,8 @@ const I18N = {
     st_mode_tip: 'Обучение — после каждого ответа сразу виден разбор. Экзамен — ответы без разбора, объяснения только в итогах.',
     st_count: 'Вопросов', st_all: 'Все', st_lang: 'Язык теста', st_shuffle: 'Перемешать вопросы', st_pages: 'стр.',
     st_pass_lbl: 'Порог зачёта', st_start_hint: 'таймер идёт, пока экран открыт', st_begin: 'Начать',
-    st_q: 'Вопрос', st_multi: 'несколько верных ответов — отметьте все', st_hint: 'Подсказка', st_hint_hide: 'Скрыть подсказку',
+    st_q: 'Вопрос', st_multi: 'несколько верных ответов — отметьте все', st_multi_any: 'верных ответов может быть один или несколько — отметьте все и нажмите «Проверить»',
+    st_shuffle_chk: 'Перемешивать варианты ответов', st_shuffle_hint: 'Варианты идут в случайном порядке у каждого вопроса. Пункты вида «Верны варианты 1 и 3», «Все варианты верны» убираются: вопрос превращается в «отметьте все верные», а правильный ответ — сам набор верных пунктов. Без галочки варианты идут как в файле теста.', st_hint: 'Подсказка', st_hint_hide: 'Скрыть подсказку',
     st_check: 'Проверить', st_next: 'Дальше', st_finish: 'Завершить', st_stop: 'Прервать', st_drop: 'Сбросить',
     st_right: 'Верно', st_wrong_a: 'Неверно — верный ответ', st_loading: 'Загрузка теста…',
     st_finish_q: 'Отвечено {N} из {M}. Результат запишется по отвеченным вопросам, остальные будут считаться пропущенными.',
@@ -1673,7 +1680,7 @@ const I18N = {
     stock_field: 'on site', stock_avail: 'available',
     stock_vis_chk: 'Staff can see warehouse stock',
     stock_hint: 'Total − broken − in repair − on site = available. “On site” is computed from pending pickups.',
-    cl_title: 'Pre-trip checklist', cl_edit_hint: 'One item per line.',
+    cl_title: 'Pre-trip checklist', cl_edit_hint: 'One item per line. To show English in the English interface, split the line with a vertical bar: “<Russian text> | <English text>” (“Russian / English” works too).',
     proposal_chk: 'PROPOSAL — approved earlier',
     pdf_preview: 'Preview PDF', pdf_print: 'Print',
     print_hint: 'System print will open; otherwise the PDF opens in a new tab (browser menu → Print).',
@@ -1786,6 +1793,10 @@ const I18N = {
     sess_tv: 'TV', st_kill_q_tv: 'End all of this employee\'s sessions? Active TV screens ({N}) will be ended too.',
     /* v1.08.49 · search */
     srch_tab_chk: 'Search button in the bottom bar (on the phone)',
+    media_lock_chk: 'Files are locked after approval', media_lock_hint: 'Only an administrator can delete uploaded photos, videos and files — the server checks it too. With this on, a worker also cannot archive an approved document (archiving moves its files on Drive); only an administrator can unlock.',
+    gd_full: 'Full check: photo, video, invoice', gd_full_hint: 'As the administrator, a test job without price or checkboxes is created; a test photo, a short test video and the PDF invoice go through the normal queue; each file is verified by its Drive link, then the files and the job are deleted. Touches nothing real.',
+    gd_f_job: 'test job', gd_f_photo: 'photo → Drive', gd_f_video: 'video → Drive', gd_f_inv: 'invoice PDF → Drive', gd_f_link: 'Drive links', gd_f_del: 'deleting files', gd_f_purge: 'deleting the test job', gd_f_done: 'Drive check: {N} of {T} steps', gd_f_novideo: 'this browser cannot record video — skipped', gd_f_wait: 'the queue did not empty in 90 s',
+    print_btn_chk: 'Invoice print button on the card', print_btn_hint: 'The job card gets a PDF button — the invoice downloads at once without opening the document. Personal setting: each employee has their own.', print_inv: 'Invoice PDF',
     srch_tab_hint: 'Untick — on the phone the ${ic} button leaves the bottom bar and the bar gets roomier. On PC the button always stays. Search itself is not going anywhere: it lives in this card too.',
     srch_open_here: 'Open search',
     srch_multi_hint: 'Chips add up: tick where to search. \u201CAll\u201D turns every chip on, pressing it again turns them off; the cross clears the selection. \u201CUnit\u201D also matches by unit number.',
@@ -2018,6 +2029,8 @@ const I18N = {
     bk_new_proj: 'How to restore into a fresh Supabase project',
     prop_qty: 'Qty', prop_code: 'Item', prop_complete: 'Complete By',
     diag_card: 'Diagnostics', diag_run: 'Run all tests',
+    rg_btn: 'Regression of core functions', rg_hint: 'End-to-end scenario on live data under your name: yesterday’s invoice with fields filled, photo + video + document queued and sent to Drive, today’s pickup, a repair document with two lines, “Pick up” on Home, deleting yesterday’s invoice and checking the photo and video are gone. Everything is marked Unit TEST and removed at the end; works on the phone, on the PC and in demo mode (there the Drive upload is skipped).',
+    rg_job: 'yesterday’s invoice: create and fill', rg_media: 'photo, video, document → queue', rg_send: 'sending to Drive', rg_pk: 'today’s pickup created', rg_rep: 'repair document: two lines', rg_home: 'Home: pickup visible', rg_take: '“Pick up” button', rg_yest: 'yesterday: invoice visible', rg_del: 'deleting the invoice', rg_gone: 'photo and video deleted', rg_clean: 'cleaning leftovers', rg_done: 'regression: {N} of {T} steps', rg_demo: 'demo mode — upload skipped, files queued', rg_running: 'regression running…', rg_wait: 'the queue did not empty in 120 s',
     diag_net: 'Internet', diag_db: 'Database', diag_auth: 'Auth session',
     diag_store: 'Thumbs storage', diag_fn: 'Edge functions',
     diag_osm: 'Map: OSM tiles', diag_geo: 'Map: geocoder (Nominatim)',
@@ -2123,7 +2136,8 @@ const I18N = {
     st_mode_tip: 'Learning — the explanation appears right after each answer. Exam — no explanations until the results.',
     st_count: 'Questions', st_all: 'All', st_lang: 'Test language', st_shuffle: 'Shuffle questions', st_pages: 'pp.',
     st_pass_lbl: 'Pass mark', st_start_hint: 'the timer runs while the screen is open', st_begin: 'Start',
-    st_q: 'Question', st_multi: 'several correct answers — mark all of them', st_hint: 'Hint', st_hint_hide: 'Hide hint',
+    st_q: 'Question', st_multi: 'several correct answers — mark all of them', st_multi_any: 'one or several answers may be correct — mark all of them and press “Check”',
+    st_shuffle_chk: 'Shuffle answer options', st_shuffle_hint: 'Options come in random order for every question. Items like “Options 1 and 3 are correct” or “All of the above” are removed: the question becomes “mark all correct ones” and the right answer is the set itself. Unchecked — options go as in the test file.', st_hint: 'Hint', st_hint_hide: 'Hide hint',
     st_check: 'Check', st_next: 'Next', st_finish: 'Finish', st_stop: 'Stop', st_drop: 'Discard',
     st_right: 'Correct', st_wrong_a: 'Incorrect — the right answer is', st_loading: 'Loading the test…',
     st_finish_q: '{N} of {M} answered. The result is scored on the answered questions; the rest count as skipped.',
@@ -2689,6 +2703,10 @@ function popCardHtml(){
       <input type="checkbox" ${srchTabOn() ? 'checked' : ''} onchange="App.srchTab(this.checked)"> ${t('srch_tab_chk')}
     </label>
     <div class="tiny">${t('srch_tab_hint').replace('${ic}', ic('search'))}</div>
+    <label class="opt ${printBtnOn() ? 'on' : ''}" style="margin-top:10px">
+      <input type="checkbox" ${printBtnOn() ? 'checked' : ''} onchange="App.printBtn(this.checked)"> ${t('print_btn_chk')}
+    </label>
+    <div class="tiny">${t('print_btn_hint')}</div>
     <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.searchOpen()">${ic('search')} ${t('srch_open_here')}</button>
   </div>`;
 }
@@ -2767,6 +2785,110 @@ try{ addEventListener('pagehide', metricsBye); }catch(e){}
    ссылку → удалить. Каждый шаг со своим временем. Файл пробный, крошечный,
    и в конце убирается — в архиве задач он не остаётся.
    ===================================================================== */
+/* v1.08.71: полная проверка Диска от имени администратора — пробная работа,
+   настоящие фото/видео/инвойс через обычную очередь, ссылки, удаление */
+async function gdFullTest(){
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  if (!isAdmin()) return;
+  const out = [], t0 = performance.now();
+  const paint = () => { const box = $('#gd-full'); if (box) box.innerHTML = out.map(x =>
+    `<div class="tiny">${x.ok === null ? '…' : x.ok ? ic('check') : ic('warn')} ${esc(x.name)}${x.ms != null ? ' — ' + x.ms + ' мс' : ''}${x.extra ? ' · ' + esc(x.extra) : ''}</div>`).join(''); };
+  const step = async (name, fn) => {
+    const rec = { name, ok: null, ms: null, extra: '' }; out.push(rec); paint();
+    const a = performance.now();
+    try{ const r = await fn(); rec.ok = true; rec.extra = (r && r.note) || ''; return r; }
+    catch(e){ rec.ok = false; rec.extra = errStr(e); throw e; }
+    finally{ rec.ms = Math.round(performance.now() - a); paint(); }
+  };
+  const waitQ = async (jobId) => { for (let i = 0; i < 90; i++){ if (!mediaQ.some(x => (x.doc || 'job') === 'job' && x.job_id === jobId)) return true; await new Promise(r => setTimeout(r, 1000)); } throw new Error(t('gd_f_wait')); };
+  const cx = (state.data.complexes || [])[0], wt = (state.data.work_types || [])[0];
+  const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  let job = null;
+  const H = async () => ({ Authorization: 'Bearer ' + (await mediaJwt()), 'Content-Type': 'application/json' });
+  try{
+    await step(t('gd_f_job'), async () => {
+      if (!cx || !wt) throw new Error('нет комплексов или видов работ');
+      job = { id: uid(), date: todayISO(), counterparty_id: cx.counterparty_id || null, complex_id: cx.id, unit_number: 'TEST',
+        has_proposal: false, proposal_id: null, work_type_id: wt.id, technician_id: state.user.id,
+        technician_name: shortName(state.user.display_name || ''), helper_ids: [], shared_with_helpers: false, priority: false,
+        sort_order: 999, status: 'draft', note: 'TechLog self-test ' + stamp, form_data: Object.assign(emptyFormData(), { selftest: true }),
+        total: 0, approved_total: null, approved_by: null, approved_at: null,
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      await dbUpsert('jobs', job);
+      return { note: 'Unit TEST · ' + cx.name };
+    });
+    await step(t('gd_f_photo'), async () => {
+      const c = document.createElement('canvas'); c.width = 1200; c.height = 900;
+      const g = c.getContext('2d'); g.fillStyle = '#1CB0F6'; g.fillRect(0, 0, 1200, 900);
+      g.fillStyle = '#fff'; g.font = 'bold 64px sans-serif'; g.fillText('TechLog test photo', 80, 420); g.font = '40px sans-serif'; g.fillText(stamp, 80, 500);
+      for (let i = 0; i < 40; i++){ g.fillStyle = `hsl(${i * 9},80%,55%)`; g.fillRect(80 + i * 26, 620, 20, 120); }
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .9));
+      const f = new File([blob], 'selftest-photo.jpg', { type: 'image/jpeg' });
+      if (!(await mediaEnqueueFile(job.id, f, 'photo'))) throw new Error('не встало в очередь');
+      await mediaFlush(true); await waitQ(job.id);
+      return { note: Math.round(blob.size / 1024) + ' КБ' };
+    });
+    await step(t('gd_f_video'), async () => {
+      if (typeof MediaRecorder === 'undefined') return { note: t('gd_f_novideo') };
+      const c = document.createElement('canvas'); c.width = 640; c.height = 360; const g = c.getContext('2d');
+      const stream = c.captureStream(15);
+      const mime = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined), chunks = [];
+      rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      const done = new Promise(r => { rec.onstop = r; });
+      rec.start(200);
+      let k = 0; const tm = setInterval(() => { g.fillStyle = `hsl(${(k * 12) % 360},70%,45%)`; g.fillRect(0, 0, 640, 360); g.fillStyle = '#fff'; g.font = 'bold 40px sans-serif'; g.fillText('TechLog test video ' + (k++), 40, 200); }, 66);
+      await new Promise(r => setTimeout(r, 2200)); clearInterval(tm); rec.stop(); await done;
+      const blob = new Blob(chunks, { type: rec.mimeType || mime || 'video/webm' });
+      if (!blob.size) throw new Error('пустая запись');
+      const ext = /mp4/.test(blob.type) ? 'mp4' : 'webm';
+      const f = new File([blob], 'selftest-video.' + ext, { type: blob.type });
+      if (!(await mediaEnqueueFile(job.id, f, 'video'))) throw new Error('не встало в очередь');
+      await mediaFlush(true); await waitQ(job.id);
+      return { note: Math.round(blob.size / 1024) + ' КБ · ' + blob.type };
+    });
+    await step(t('gd_f_inv'), async () => {
+      const doc = buildInvoicePdfDoc(true, job); if (!doc) throw new Error('PDF не собрался');
+      const blob = doc.output('blob');
+      const f = new File([blob], 'selftest-invoice.pdf', { type: 'application/pdf' });
+      if (!(await mediaEnqueueFile(job.id, f, 'invoice'))) throw new Error('не встало в очередь');
+      await mediaFlush(true); await waitQ(job.id);
+      return { note: Math.round(blob.size / 1024) + ' КБ' };
+    });
+    let rows = [];
+    await step(t('gd_f_link'), async () => {
+      try{ await syncNow(true); }catch(e){}
+      rows = (state.data.media || []).filter(m => m.job_id === job.id);
+      if (!rows.length) throw new Error('в media нет строк пробной работы');
+      const h = await H(); let okN = 0;
+      for (const m of rows){
+        const r = await fetch(mediaFN() + '/media-view', { method: 'POST', headers: h, body: JSON.stringify({ media_id: m.id }) });
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && (j.url || j.link)) okN++;
+      }
+      if (okN !== rows.length) throw new Error(okN + ' из ' + rows.length);
+      return { note: rows.map(m => m.kind).join(', ') };
+    });
+    await step(t('gd_f_del'), async () => {
+      const h = await H(); let okN = 0;
+      for (const m of rows){
+        const r = await fetch(mediaFN() + '/media-delete', { method: 'POST', headers: h, body: JSON.stringify({ media_id: m.id }) });
+        if (r.ok) okN++;
+      }
+      state.data.media = (state.data.media || []).filter(m => m.job_id !== job.id);
+      if (okN !== rows.length) throw new Error(okN + ' из ' + rows.length);
+      return { note: okN + ' файл(ов) в корзину Диска' };
+    });
+  }catch(e){ /* шаг уже записан */ }
+  if (job){
+    try{ await step(t('gd_f_purge'), async () => { await dbDelete('jobs', job.id); return { note: 'Unit TEST убран' }; }); }catch(e){}
+  }
+  const okN = out.filter(x => x.ok).length;
+  dlog('Диск·полная проверка: ' + okN + '/' + out.length + ' за ' + Math.round(performance.now() - t0) + ' мс · ' + out.map(x => x.name + ' ' + (x.ok ? 'ok' : 'FAIL')).join(' · '));
+  toast((okN === out.length ? '✓ ' : '⚠ ') + t('gd_f_done').replace('{N}', okN).replace('{T}', out.length), okN === out.length ? undefined : 'err');
+  try{ await syncNow(true); }catch(e){}
+  render();
+}
 async function gdCycle(){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   const out = [], t0 = performance.now();
@@ -3625,6 +3747,8 @@ function netInit(){
    приложение падало уже в бою. Список ниже держим рядом с DB_SQL_FILE:
    пополняется вместе с каждой миграцией. */
 const DB_NEED_COLS = [
+  ['org_settings',  'study_shuffle'],// v1.08.70
+  ['org_settings',  'media_lock_approved'],// v1.08.71
   ['profiles',      'board_cols'],
   ['profiles',      'push_prefs'],    // v1.08.33
   ['vehicles',      'service_due_mi'],// v1.08.33
@@ -4445,6 +4569,7 @@ const IC = {
   calendar: '<rect x="4" y="5.4" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M8.4 3.4v4"/><path d="M15.6 3.4v4"/>',
   pin: '<path d="M12 21s-6.6-6.1-6.6-10.7a6.6 6.6 0 0 1 13.2 0C18.6 14.9 12 21 12 21z"/><circle cx="12" cy="10.2" r="2.3"/>',
   book: '<path d="M12 6.4C10.5 4.9 8.5 4.4 5.5 4.4c-.9 0-1.5.6-1.5 1.4v11.6c0 .8.6 1.4 1.5 1.4 3 0 5 .5 6.5 2 1.5-1.5 3.5-2 6.5-2 .9 0 1.5-.6 1.5-1.4V5.8c0-.8-.6-1.4-1.5-1.4-3 0-5 .5-6.5 2z"/><path d="M12 6.4v14.4"/>',
+  printer: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/><circle cx="17.5" cy="12.5" r=".9" fill="currentColor" stroke="none"/>',   // v1.08.71
   clipboard: '<path d="M9 4.6H6.6A1.6 1.6 0 0 0 5 6.2v13.2A1.6 1.6 0 0 0 6.6 21h10.8a1.6 1.6 0 0 0 1.6-1.6V6.2a1.6 1.6 0 0 0-1.6-1.6H15"/><rect x="9" y="3" width="6" height="3.4" rx="1.2"/><path d="M8.6 11.4h6.8"/><path d="M8.6 15h4.8"/>',
   dollar: '<path d="M16.2 7.6a4.4 4.4 0 0 0-3.8-1.8c-2.3 0-4.2 1.2-4.2 3s1.8 2.5 4.2 3 4.2 1.3 4.2 3.1-1.9 3-4.2 3a4.4 4.4 0 0 1-3.8-1.9"/><path d="M12.4 3.4v17.2"/>',
   receipt: '<path d="M6 3.4h12V20l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8h6"/><path d="M9 11.4h6"/><path d="M9 14.8h4"/>',
@@ -5552,7 +5677,7 @@ function viewHome(){
       <div class="info">
         <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(j.unit_number||'—')}${triHtml(!!j.priority, j.id, canPrio(j), true)}</span></div>
         ${addrLineHtml(cx)}
-        <div class="s"><span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}${jobSharedChipHtml(j)}${proposalChipHtml(j)}${repChipHtml(j)}</div>
+        <div class="s"><span style="color:${wt.color};font-weight:800">${esc(biText(wt.name))}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}${jobSharedChipHtml(j)}${proposalChipHtml(j)}${repChipHtml(j)}</div>
         ${codesLineHtml(cx)}
       </div>
       <div class="right">
@@ -5560,6 +5685,7 @@ function viewHome(){
         <div class="money" style="margin-top:6px">${money(total)}</div>
         <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
           ${repBtnHtml(j)}
+          ${jobPrintBtnHtml(j)}
           <button class="btn btn-ghost sm" title="${t('navigate')}"
             onclick="event.stopPropagation();App.navToCx('${j.complex_id}')">${ic('compass')}</button>
         </div>
@@ -5625,7 +5751,7 @@ function searchJobCard(j){
   return `<div class="item clicky" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
     <div class="info">
       <div class="t">${esc(cx.name)} · Unit ${esc(j.unit_number || '—')} <span class="badge-status st-${j.status}">${t('status_' + j.status)}</span></div>
-      <div class="s">${fmtDMY(j.date)} · <span style="color:${wt.color};font-weight:800">${esc(wt.name)}</span> · ${money(jobGrand(j))} · ${esc(j.technician_name || profName(j.technician_id))}${jobSharedChipHtml(j)}${proposalChipHtml(j)}</div>
+      <div class="s">${fmtDMY(j.date)} · <span style="color:${wt.color};font-weight:800">${esc(biText(wt.name))}</span> · ${money(jobGrand(j))} · ${esc(j.technician_name || profName(j.technician_id))}${jobSharedChipHtml(j)}${proposalChipHtml(j)}</div>
     </div>
   </div>`;
 }
@@ -6440,7 +6566,7 @@ function addTaskModal(){
     <div class="form-row"><span class="lbl">${t('work_type')}</span>
       <div class="opt-grid" id="nt-wt">
         ${wts.map(w=>`<button class="opt" data-id="${w.id}" style="border-color:${w.color};color:${w.color}"
-          onclick="App.ntPickWt(this)">${esc(w.name)}</button>`).join('')}
+          onclick="App.ntPickWt(this)">${esc(biText(w.name))}</button>`).join('')}
       </div></div>
     <button class="btn btn-green" onclick="App.createTask()">${t('create')}</button>
   `);
@@ -6755,7 +6881,7 @@ function jobHistory(jobId){
   openModal(`
     ${modalHead(t('job_history'), 'clock')}
     <div class="hist-item">
-      <div class="hist-t">${ic('receipt')} ${t('hist_invoice')} · <span style="color:${wt.color}">${esc(wt.name)}</span></div>
+      <div class="hist-t">${ic('receipt')} ${t('hist_invoice')} · <span style="color:${wt.color}">${esc(biText(wt.name))}</span></div>
       <div class="tiny">${esc(cx.name)} · Unit ${esc(j.unit_number || '—')}</div>
       <div class="tiny">${t('hist_created')}: ${fmtTs(j.created_at)} · ${t('hist_workdate')}: <b>${fmtDMY(j.date)}</b></div>
       <div style="margin-top:4px"><span class="badge-status st-${j.status}">${t('status_' + j.status)}</span>${proposalChipHtml(j)}${j.status === 'approved' && j.approved_at ? ` <span class="tiny">${ic('check')} ${esc(profName(j.approved_by))} · ${fmtTs(j.approved_at)}</span>` : ''}</div>
@@ -7139,7 +7265,7 @@ function viewJob(){
           <button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button></div>
         ${(cx.access_code||cx.callbox_code)?`<div class="tiny">${codeLineHtml(cx, true)}</div>`:''}
         ${ttJobLine(j)}
-        <div class="tiny" style="color:${wt.color};font-weight:800">${esc(wt.name)}</div>
+        <div class="tiny" style="color:${wt.color};font-weight:800">${esc(biText(wt.name))}</div>
       </div>
       <span class="badge-status st-${j.status}">${t('status_'+j.status)}</span>
     </div>
@@ -8138,7 +8264,7 @@ function dirWorkTypes(){
   return `<div class="card">` + list.map(w => `
     <div class="rowline">
       <span class="icon-circle" style="background:${w.color};color:${textColorFor(w.color)}">●</span>
-      <div class="grow"><b style="color:${w.color}">${esc(w.name)}</b>
+      <div class="grow"><b style="color:${w.color}">${esc(biText(w.name))}</b>
         ${w.needs_aux?`<div class="tiny">${ic('toolbox')} ${(w.aux_ids||[]).map(id=>esc((state.data.aux_equipment.find(a=>a.id===id)||{}).name||'')).join(' · ')}</div>`:''}</div>
       <button class="btn btn-ghost sm" title="${t('cl_title')}" onclick="App.wtChecklistModal('${w.id}')">${ic('clipboard')}${(w.checklist&&w.checklist.length)?' '+w.checklist.length:''}</button>
       <button class="btn btn-ghost sm" onclick="App.editWtModal('${w.id}')">${t('edit')}</button>
@@ -8149,7 +8275,7 @@ function dirWorkTypes(){
 function wtChecklistModal(wtId){
   const w = wtById(wtId); if (!w) return;
   openModal(`
-    ${modalHead(t('cl_title') + ' — ' + esc(w.name), 'toolbox')}
+    ${modalHead(t('cl_title') + ' — ' + esc(biText(w.name)), 'toolbox')}
     <div class="tiny" style="margin-bottom:6px">${t('cl_edit_hint')}</div>
     <textarea id="wt-cl" rows="10" style="width:100%" ${isAdmin()?'':'readonly'}>${esc((w.checklist||[]).join('\n'))}</textarea>
     ${isAdmin() ? `<button class="btn btn-green" style="margin-top:8px" onclick="App.wtChecklistSave('${w.id}')">${t('save')}</button>` : ''}
@@ -8172,7 +8298,7 @@ function checklistCardHtml(j){
     <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('cl_title')}
       <span class="chip ${n===cl.length?'ok':'warn'}">${n}/${cl.length}</span></div>
     ${cl.map((s, i) => `<label class="opt ${done[i]?'on':''}" style="margin:3px 0">
-      <input type="checkbox" ${done[i]?'checked':''} onchange="App.clToggle(${i}, this.checked)"> ${esc(s)}</label>`).join('')}
+      <input type="checkbox" ${done[i]?'checked':''} onchange="App.clToggle(${i}, this.checked)"> ${esc(biText(s))}</label>`).join('')}
   </div>`;
 }
 
@@ -8408,7 +8534,7 @@ function editWtModal(id){
   const w = id ? wtById(id) : { id: uid(), name:'', color: PALETTE[0], needs_aux: false, aux_ids: [], sort: state.data.work_types.length+1 };
   openModal(`
     ${modalHead(t('work_type'))}
-    <div class="form-row"><span class="lbl">${t('name')}</span><input id="wt-name" value="${esc(w.name)}"></div>
+    <div class="form-row"><span class="lbl">${t('name')}</span><input id="wt-name" value="${esc(biText(w.name))}"></div>
     <div class="form-row"><span class="lbl">${t('item_code')}</span>
       <input id="wt-code" maxlength="10" placeholder="TMM" value="${esc(w.code || '')}"
         style="width:120px;text-transform:uppercase"></div>
@@ -8674,9 +8800,9 @@ function viewSettings(){
    нужен и для скачивания (телефон/ПК), и для живого предпросмотра в ПК-режиме.
    quiet=true (предпросмотр): без тостов и без блокировки по незаполненным
    полям — предпросмотр обязан показывать текущее состояние формы как есть. */
-function buildInvoicePdfDoc(quiet){
+function buildInvoicePdfDoc(quiet, jobArg){
   if (!window.jspdf){ if (!quiet) toast('jsPDF not loaded', 'err'); return null; }
-  const j = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
+  const j = jobArg || jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
   if (!j) return null;
   if (!quiet){
     const iss = jobIssues(j);
@@ -8737,6 +8863,23 @@ function makePdf(){
     const cx = cxById(j.complex_id) || {name:'', address:''};
     const fname = 'Invoice_' + (cx.abbr||'UNIT') + '_' + (j.unit_number||'x') + '_' + j.date + '.pdf';
     savePdfCompat(doc, fname);   // v1.07.21
+  });
+}
+/* v1.08.71: печать инвойса прямо с карточки, не открывая документ — личная
+   галочка сотрудника «Кнопка печати инвойса на карточке» (по умолчанию включена) */
+function printBtnOn(){ try{ return localStorage.getItem('techlog_print_btn') !== '0'; }catch(e){ return true; } }
+function printBtnSet(v){ try{ localStorage.setItem('techlog_print_btn', v ? '1' : '0'); }catch(e){} render(); }
+function jobPrintBtnHtml(j, cls){
+  if (!printBtnOn() || !j) return '';
+  return `<button class="btn btn-ghost ${cls || 'sm'}" title="${t('print_inv')}" aria-label="${t('print_inv')}"
+    onclick="event.stopPropagation();App.jobPrint('${j.id}')">${ic('printer')}</button>`;
+}
+function jobPrintQuick(id){
+  const j = state.data.jobs.find(x => x.id === id); if (!j) return;
+  trPdfGuard('job', j, () => {
+    const doc = buildInvoicePdfDoc(false, j); if (!doc) return;
+    const cx = cxById(j.complex_id) || { name: '', address: '' };
+    savePdfCompat(doc, 'Invoice_' + (cx.abbr || 'UNIT') + '_' + (j.unit_number || 'x') + '_' + j.date + '.pdf');
   });
 }
 /* публичная ручка для ПК-режима: Blob с актуальным бланком или null */
@@ -9243,13 +9386,79 @@ function studyStartOpt(grp, val, secId){
   if (grp === 'count') val = +val; else if (grp === 'shuffle') val = !!val;
   st[grp] = val; studyStartModal(secId);
 }
+/* v1.08.70: перемешивание вариантов ответов (галочка админа, по умолчанию
+   включена). В файлах тестов верный ответ почти всегда стоит первым, а в каждом
+   вопросе есть пункты, привязанные к номерам: «Верны варианты 1 и 3», «Все
+   перечисленные варианты верны», «Ни один из вариантов не верен». Просто
+   перемешать нельзя — номера потеряют смысл. Поэтому у вопроса строится
+   представление: остаются только смысловые пункты (в случайном порядке, с
+   новыми номерами 1…N), верный ответ — набор этих пунктов (комбо-пункт «1 и 3»
+   → {1, 3}, «все» → все, «ни один» → сам этот пункт, он всегда последний);
+   вопрос показывается как «отметьте все верные». Ответы хранятся по исходным
+   id вариантов, поэтому разбор и статистика читают их как раньше. */
+const ST_CMB_ALL  = /(^|[^а-яa-z])(все|всё|all)([^а-яa-z]|$).*(верн|правильн|перечисл|указан|назван|above|apply|correct|true|answer|option)/i;
+const ST_CMB_NONE = /((ни один|ни одно|ни одна|никакой|ничего)[^.;]{0,40}?(вариант|ответ|перечисл|привед|указан|вышепере)|нет верн|нет правильн|none of the (above|these|listed)|none (is|are) correct|neither of)/i;
+const ST_CMB_LINK = /(^|[^а-яa-z])(и|and|both|только|only|вариант[а-я]*|option[a-z]*|верн[а-я]*|correct)([^а-яa-z]|$)|,/i;
+const ST_CMB_WORDS = /(^|[^а-яa-z])(верн[а-я]*|правильн[а-я]*|вариант[а-я]*|ответ[а-я]*|пункт[а-я]*|только|оба|обе|и|both|and|option[a-z]*|answer[a-z]*|item[a-z]*|are|is|correct|true|only|of|the|above|&)(?=[^а-яa-z]|$)/gi;
+function stComboRefs(text){
+  const s = ' ' + String(text || '').toLowerCase().replace(/[().«»"“”]/g, ' ') + ' ';
+  if (ST_CMB_NONE.test(s)) return 'none';
+  const nums = (s.match(/\d+/g) || []).map(Number);
+  if (!nums.length) return ST_CMB_ALL.test(s) ? 'all' : null;
+  const rest = s.replace(/\d+/g, ' ').replace(ST_CMB_WORDS, ' ').replace(/[,;:\-–—/+.!\s]+/g, '');
+  if (rest !== '') return null;
+  /* просто число («10», «1 000», «50») — обычный ответ, а не ссылка на пункты:
+     нужна связка «и»/«and»/запятая или слово «вариант»/«только» */
+  if (!ST_CMB_LINK.test(s) || nums.some(n => n < 1 || n > 12) || new Set(nums).size !== nums.length) return null;
+  return nums;
+}
+function stShuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function stViewBuild(q){
+  const ids = (q.options || []).map(o => String(o.id));
+  if (ids.length < 2) return null;
+  const txt = o => (o.text && typeof o.text === 'object') ? (o.text.ru || o.text.en || '') : String(o.text || '');
+  const refs = q.options.map(o => stComboRefs(txt(o)));
+  const correctIds = (q.correct || []).map(String);
+  if (!refs.some(r => r !== null)){           // комбо-пунктов нет — просто перемешиваем
+    return { order: stShuffle(ids), correct: correctIds, multi: q.type === 'multi', plain: false };
+  }
+  const plainIds = ids.filter((id, i) => refs[i] === null);
+  const noneIdx = refs.indexOf('none'), noneId = noneIdx >= 0 ? ids[noneIdx] : null;
+  let correct = [];
+  for (const c of correctIds){
+    const i = ids.indexOf(c); if (i < 0) return null;
+    const ref = refs[i];
+    if (ref === null) correct.push(c);
+    else if (ref === 'all') correct.push(...plainIds);
+    else if (ref === 'none'){ if (!noneId) return null; correct.push(noneId); }
+    else for (const n of ref){ const id = String(n); if (!plainIds.includes(id)) return null; correct.push(id); }
+  }
+  correct = [...new Set(correct)];
+  if (!correct.length || plainIds.length < 2) return null;
+  const order = stShuffle(plainIds); if (noneId) order.push(noneId);
+  return { order, correct, multi: true, plain: true, none: noneId };
+}
+function stShuffleOn(){ const o = (state.data && state.data.org_settings) || {}; return o.study_shuffle !== false; }
+function stView(q){ const r = STUDY.run; return (r && r.view && q) ? (r.view[q.id] || null) : null; }
+/* варианты к показу: [{o, no}] — no = номер на бейдже */
+function stOpts(q, view){
+  const v = view === undefined ? stView(q) : view;
+  if (!v) return q.options.map(o => ({ o, no: String(o.id) }));
+  const by = {}; q.options.forEach(o => { by[String(o.id)] = o; });
+  return v.order.map((id, i) => ({ o: by[id], no: String(i + 1) })).filter(x => x.o);
+}
+function stCorrect(q, view){ const v = view === undefined ? stView(q) : view; return v ? v.correct : (q.correct || []).map(String); }
+function stIsMulti(q){ const v = stView(q); return v ? !!v.multi : q.type === 'multi'; }
+function stNums(q, ids, view){ const opts = stOpts(q, view); return ids.map(id => (opts.find(x => String(x.o.id) === String(id)) || {}).no || id); }
 function studyBegin(secId){
   const q = STUDY.quiz[secId]; if (!q || !q.questions) return;
   const st = STUDY._start || {};
   let order = q.questions.map((_, i) => i);
   if (st.shuffle !== false){ for (let i = order.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; } }
   if (st.count) order = order.slice(0, st.count);
-  STUDY.run = { id: uid(), sec: +secId, quizId: q.meta.id, mode: st.mode || 'learn', order, i: 0,
+  let view = null;
+  if (stShuffleOn()){ view = {}; order.forEach(i => { const qq = q.questions[i]; const v = stViewBuild(qq); if (v) view[qq.id] = v; }); }
+  STUDY.run = { id: uid(), sec: +secId, quizId: q.meta.id, mode: st.mode || 'learn', order, i: 0, view,
     answers: {}, pick: [], checked: false, hintOn: false, done: false,
     started_at: new Date().toISOString(), clock: stClockNew(), qclock: stClockNew(), lang: stLang() };
   closeModal(); studyRunSave(); render();
@@ -9272,7 +9481,7 @@ function studyRunQ(){ const r = STUDY.run, q = STUDY.quiz[r.sec]; return (q && q
 function studyPick(optId){
   const r = STUDY.run; if (!r || r.checked) return;
   const q = studyRunQ(); if (!q) return;
-  if (q.type === 'multi'){ const i = r.pick.indexOf(optId); if (i >= 0) r.pick.splice(i, 1); else r.pick.push(optId); }
+  if (stIsMulti(q)){ const i = r.pick.indexOf(optId); if (i >= 0) r.pick.splice(i, 1); else r.pick.push(optId); }
   else r.pick = [optId];
   studyRunSave(); render();
 }
@@ -9280,8 +9489,10 @@ function studyHint(){ const r = STUDY.run; if (!r) return; r.hintOn = !r.hintOn;
 function studyCheck(){
   const r = STUDY.run; if (!r || !r.pick.length) return;
   const q = studyRunQ(); if (!q) return;
-  const ok = r.pick.length === q.correct.length && r.pick.every(p => q.correct.includes(p));
-  r.answers[q.id] = { q: q.id, pick: [...r.pick], ok, ms: stClockMs(r.qclock), hint: !!r.hintOn };
+  const cor = stCorrect(q), v = stView(q);
+  const ok = r.pick.length === cor.length && r.pick.every(p => cor.includes(String(p)));
+  r.answers[q.id] = { q: q.id, pick: [...r.pick], ok, ms: stClockMs(r.qclock), hint: !!r.hintOn,
+    v: v ? { order: v.order, correct: v.correct } : undefined };   // v1.08.70: как выглядел вопрос — для разбора
   r.checked = true; studyRunSave();
   if (r.mode === 'exam') studyNext(); else render();
 }
@@ -9317,7 +9528,7 @@ async function studyFinish(){
   const row = await studySave({ id: r.id, kind: 'test', section: r.sec, quiz_id: r.quizId, mode: r.mode, lang: r.lang || stLang(),
     started_at: r.started_at, finished_at: new Date().toISOString(), duration_ms: Math.round(stClockMs(r.clock)),
     total, answered: ans.length, correct, wrong, score_pct: pct, passed: pct >= passPct,
-    answers: ans.map(a => ({ q: a.q, pick: a.pick, ok: a.ok, ms: Math.round(a.ms || 0), hint: !!a.hint })) });
+    answers: ans.map(a => ({ q: a.q, pick: a.pick, ok: a.ok, ms: Math.round(a.ms || 0), hint: !!a.hint, v: a.v || undefined })) });
   audit('study_test', 'study', row.id, { sec: r.sec, total, correct, wrong, pct, ms: row.duration_ms, passed: row.passed });
   STUDY.run = null; studyRunSave(); render();
   studyResultModal(row);
@@ -9365,12 +9576,14 @@ async function studySessReview(id){
   const list = answers.filter(a => !only || !a.ok);
   const items = list.map((a, n) => {
     const qq = byId[a.q]; if (!qq) return '';
-    const picked = a.pick || [];
-    const opts = qq.options.map(o => {
-      const isC = qq.correct.includes(o.id), isP = picked.includes(o.id);
+    const picked = (a.pick || []).map(String);
+    const av = a.v && a.v.order ? { order: a.v.order.map(String), correct: (a.v.correct || []).map(String) } : null;   // v1.08.70
+    const corr = av ? av.correct : (qq.correct || []).map(String);
+    const opts = stOpts(qq, av).map(({ o, no }) => {
+      const isC = corr.includes(String(o.id)), isP = picked.includes(String(o.id));
       const cls = isC ? 'ok' : (isP ? 'bad' : '');
       const ex = (isP || isC) && o.explanation ? `<div class="st-opt-ex">${esc(LOC(o.explanation))}${o.pages && o.pages.length ? ` <span class="tiny">(${t('st_p')} ${esc(o.pages.join(', '))})</span>` : ''}</div>` : '';
-      return `<div class="st-rv-opt ${cls}"><span class="st-opt-id">${esc(o.id)}</span><div class="grow">${esc(LOC(o.text))}${isP ? ` <span class="chip ${a.ok ? 'ok' : 'bad'}">${t('st_your')}</span>` : ''}${isC && !isP ? ` <span class="chip ok">${t('st_right')}</span>` : ''}${ex}</div></div>`;
+      return `<div class="st-rv-opt ${cls}"><span class="st-opt-id">${esc(no)}</span><div class="grow">${esc(LOC(o.text))}${isP ? ` <span class="chip ${a.ok ? 'ok' : 'bad'}">${t('st_your')}</span>` : ''}${isC && !isP ? ` <span class="chip ok">${t('st_right')}</span>` : ''}${ex}</div></div>`;
     }).join('');
     return `<div class="st-rv ${a.ok ? 'ok' : 'bad'}">
       <div class="st-rv-h"><span class="st-qn">${n + 1}</span> ${a.ok ? ic('check', 'color:var(--green)') : ic('close', 'color:var(--red)')} <b>${esc(LOC(qq.question))}</b></div>
@@ -9556,16 +9769,17 @@ function studyRunHtml(){
   const a = r.answers[q.id];
   const asset = q.asset && qz.assets[q.asset];
   const assetHtml = asset ? `<figure class="st-asset">${asset.type === 'svg' ? asset.svg : `<img src="${esc(STUDY_DIR + 'tests/' + asset.src)}" alt="${esc(LOC(asset.alt || asset.caption || asset.title))}">`}${asset.caption || asset.title ? `<figcaption class="tiny">${esc(LOC(asset.caption || asset.title))}</figcaption>` : ''}</figure>` : '';
-  const opts = q.options.map(o => {
+  const view = stView(q), cor = stCorrect(q), multi = stIsMulti(q);
+  const opts = stOpts(q).map(({ o, no }) => {
     const on = r.pick.includes(o.id);
     let cls = on ? 'on' : '';
-    if (r.checked){ if (q.correct.includes(o.id)) cls += ' ok'; else if (on) cls += ' bad'; }
-    const ex = r.checked && (on || q.correct.includes(o.id)) && o.explanation
+    if (r.checked){ if (cor.includes(String(o.id))) cls += ' ok'; else if (on) cls += ' bad'; }
+    const ex = r.checked && (on || cor.includes(String(o.id))) && o.explanation
       ? `<div class="st-opt-ex">${esc(LOC(o.explanation))}${o.pages && o.pages.length ? ` <span class="tiny">(${t('st_p')} ${esc(o.pages.join(', '))})</span>` : ''}</div>` : '';
-    return `<button type="button" class="st-opt ${cls}" ${r.checked ? 'disabled' : ''} onclick="App.studyPick('${esc(o.id)}')">
-      <span class="st-opt-id">${esc(o.id)}</span><span class="grow">${esc(LOC(o.text))}${ex}</span>${on ? ic('check') : ''}</button>`;
+    return `<button type="button" class="st-opt ${cls}${multi ? ' st-opt-m' : ''}" ${r.checked ? 'disabled' : ''} onclick="App.studyPick('${esc(o.id)}')">
+      <span class="st-opt-id">${esc(no)}</span><span class="grow">${esc(LOC(o.text))}${ex}</span>${on ? ic('check') : ''}</button>`;
   }).join('');
-  const verdict = r.checked ? `<div class="st-verdict ${a && a.ok ? 'ok' : 'bad'}">${a && a.ok ? ic('check') + ' ' + t('st_right') : ic('close') + ' ' + t('st_wrong_a') + ': ' + esc(q.correct.join(', '))}</div>
+  const verdict = r.checked ? `<div class="st-verdict ${a && a.ok ? 'ok' : 'bad'}">${a && a.ok ? ic('check') + ' ' + t('st_right') : ic('close') + ' ' + t('st_wrong_a') + ': ' + esc(stNums(q, cor).join(', '))}</div>
     ${q.explanation ? `<div class="st-ex">${ic('book')} ${esc(LOC(q.explanation))}</div>` : ''}${studyRefHtml(q)}` : '';
   const pct = Math.round(done * 100 / n);
   const secCol = s.color || STUDY_COLORS[(r.sec - 1) % 8];
@@ -9577,7 +9791,7 @@ function studyRunHtml(){
     </div>
     <div class="st-prog"><span style="width:${pct}%"></span></div>
     <div class="st-qtext">${esc(LOC(q.question))}</div>
-    ${q.type === 'multi' ? `<div class="tiny st-multi">${ic('layers')} ${t('st_multi')}</div>` : ''}
+    ${view && view.plain ? `<div class="tiny st-multi">${ic('layers')} ${t('st_multi_any')}</div>` : (multi ? `<div class="tiny st-multi">${ic('layers')} ${t('st_multi')}</div>` : '')}
     ${assetHtml}
     <div class="st-opts">${opts}</div>
     ${r.hintOn && q.hint ? `<div class="st-hint">${ic('help')} ${esc(LOC(q.hint))}</div>` : ''}
@@ -9697,6 +9911,8 @@ function studyCardHtml(){
     <div class="lang-seg cam-seg"><button class="${all ? 'on' : ''}" onclick="App.setOrgFlag('study_all', true)">${t('st_who_all')}</button><button class="${all ? '' : 'on'}" onclick="App.setOrgFlag('study_all', false)">${t('st_who_list')}</button></div>
     ${chips}
     <div class="form-row" style="margin-top:8px"><span class="lbl">${t('st_pass_lbl')}, %</span>${orgStepperHtml('study_pass', +org.study_pass || 70, 30, 100, 5)}</div>
+    <label class="chk-line" style="margin-top:6px"><input type="checkbox" ${org.study_shuffle !== false ? 'checked' : ''} onchange="App.setOrgFlag('study_shuffle', this.checked)"> ${t('st_shuffle_chk')}</label>
+    <div class="tiny" style="margin:2px 0 8px">${t('st_shuffle_hint')}</div>
     <div class="tiny">${t('st_admin_hint')}</div>
   </div>`;
 }
@@ -9775,6 +9991,8 @@ const App = {
   camMode(v){ camSet('mode', v); dlog('камера: режим ' + v); render(); },
   vidMode(v){ mVidModeSet(v); dlog('видео: ' + v); },              // v1.08.47
   srchTab(v){ srchTabSet(v); },                                    // v1.08.49
+  printBtn(v){ printBtnSet(v); }, jobPrint(id){ jobPrintQuick(id); }, gdFullTest,   // v1.08.71
+  regress(){ regressRun(); },                                                          // v1.08.72
   copyDl(v){ mCopyDlSet(v); },                                     // v1.08.47
   vidTest: mVidTest,                                               // v1.08.47
   /* v1.08.47: крючки для автотестов — политика доставки без сети */
@@ -14662,9 +14880,15 @@ function docBlockers(kind, id){
   }
   return out;
 }
+/* v1.08.71: «после апрува файлы неприкосновенны» (галочка админа, по умолчанию
+   включена): удалять отправленные фото/видео/файлы и так может только админ —
+   и в приложении, и на сервере (media-delete); замок закрывает работнику ещё и
+   архивацию апрувнутого документа (архив переносит его файлы на Диске). */
+function mediaLockOn(){ return ((state.data && state.data.org_settings) || {}).media_lock_approved !== false; }
+function mediaLocked(j){ return !!j && j.status === 'approved' && mediaLockOn() && !isAdmin(); }
 function canArchDoc(b){
   if (b.t === 'rep') return isAdmin() || b.o.created_by === state.user.id;
-  return (isAdmin() || b.o.technician_id === state.user.id) && !editLocked(b.o);
+  return (isAdmin() || b.o.technician_id === state.user.id) && !editLocked(b.o) && !mediaLocked(b.o);
 }
 function chainBlockModal(kind, id){
   const bl = docBlockers(kind, id);
@@ -16022,7 +16246,7 @@ function repCatModal(kind){
   openModal(`${modalHead(t('rep_cat'), 'toolbox')}
     <div class="tiny" style="margin-bottom:8px">${t('rep_cat_hint')}</div>
     <div class="card">${list.map(w => `<button class="rowline map-row" onclick="App.repCatAdd('${kind}','${w.id}')">
-      <div class="grow"><b>${esc(w.name)}</b>
+      <div class="grow"><b>${esc(biText(w.name))}</b>
         <div class="tiny">${esc(w.code || '—')}${w.repair ? ` · <span class="chip rep">${t('rep_cat_tag')}</span>` : ''}</div></div>
       <span class="money">${repMoney(+w.price || 0)}</span></button>`).join('')
       || `<div class="list-empty">${t('no_items')}</div>`}</div>`);
@@ -16738,7 +16962,7 @@ function freeJobsStripHtml(){
       <div class="clicky" onclick="App.openJob('${j.id}')">
         <span class="chip pst pst-draft">${t('status_draft')}</span>
         <div><b>${esc(j.unit_number || '—')}</b> <span class="tiny">· ${esc(cx.abbr || cx.name || '—')}</span></div>
-        <div class="tiny"><span class="dotc" style="background:${wt.color}"></span>${esc(wt.name)}</div>
+        <div class="tiny"><span class="dotc" style="background:${wt.color}"></span>${esc(biText(wt.name))}</div>
       </div>
       ${pickSel(j.id)}
     </div>`; }).join('')}</div>`;
@@ -16855,6 +17079,23 @@ function mVidCan(){
 }
 function mCopyDl(){ try{ return localStorage.getItem('techlog_copy_dl') !== '0'; }catch(e){ return true; } }
 /* v1.08.49: кнопка поиска в нижней панели телефона — личная настройка */
+/* v1.08.71: двуязычные подписи, введённые администратором: «Шланги | Hoses» или
+   «Эйрдак-машина / Air duct machine» — по языку интерфейса показывается своя
+   половина (в английском режиме больше не проступает русское). Без разделителя
+   или когда обе половины на одном языке — строка как есть. */
+function biText(v){
+  if (v == null) return '';
+  const s = String(v);
+  let parts = s.split(/\s*\|\s*/);
+  if (parts.length !== 2){ parts = s.split(/\s+\/\s+/); if (parts.length !== 2) return s; }
+  const cyr = x => /[А-Яа-яЁё]/.test(x), lat = x => /[A-Za-z]/.test(x);
+  const [a, b] = parts;
+  if (!(a && b)) return s;
+  const ru = cyr(a) && !cyr(b) ? a : (cyr(b) && !cyr(a) ? b : null);
+  const en = ru === a ? b : (ru === b ? a : null);
+  if (!ru || !en || !lat(en)) return s;
+  return stLang() === 'en' ? en : ru;
+}
 function srchTabOn(){ try{ return localStorage.getItem('techlog_srch_tab') !== '0'; }catch(e){ return true; } }
 function srchTabSet(v){ try{ localStorage.setItem('techlog_srch_tab', v ? '1' : '0'); }catch(e){} render(); }
 function mCopyDlSet(v){ try{ localStorage.setItem('techlog_copy_dl', v ? '1' : '0'); }catch(e){} render(); }
@@ -18632,6 +18873,8 @@ function mediaLimitsCardHtml(){
     <div class="qty-line"><span class="name">${t('media_lim_file')}</span>
       ${orgStepperHtml('media_max_file', o.media_max_file ?? 20, 1, 50)}</div>
     <div class="tiny">${t('media_lim_hint')}</div>
+    <label class="chk-line" style="margin-top:8px"><input type="checkbox" ${o.media_lock_approved !== false ? 'checked' : ''} onchange="App.setOrgFlag('media_lock_approved', this.checked)"> ${t('media_lock_chk')}</label>
+    <div class="tiny">${t('media_lock_hint')}</div>
   </div>`;
 }
 /* Свободное место на Диске: снимается при «Тесте соединения» и при заливке
@@ -18828,6 +19071,9 @@ function gdFoldersHtml(){
     <button class="btn btn-blue" style="margin-top:6px" onclick="App.gdCycle()">${ic('sync')} ${t('gd_cyc')}</button>
     <div class="tiny gd-hint">${t('gd_cyc_hint')}</div>
     <div id="gd-cycle" style="margin:4px 0"></div>
+    <button class="btn btn-blue net-need" style="margin-top:6px" onclick="App.gdFullTest()">${ic('camera')} ${t('gd_full')}</button>
+    <div class="tiny gd-hint">${t('gd_full_hint')}</div>
+    <div id="gd-full" style="margin:4px 0"></div>
     <button class="btn btn-ghost" style="margin-top:6px" onclick="App.gdMove()">${ic('folder')} ${t('gd_move')}</button>
     <div class="tiny dim" style="margin-top:4px">${t('gd_move_hint')}</div>
   </div>`;
@@ -19094,7 +19340,7 @@ const MEDIA_FN_VER = '1.08.12';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
 const MEDIA_FN_MIN = { 'media-begin': '1.08.25', 'media-commit': '1.08.13', 'media-health': '1.08.25',
-                       'media-delete': '1.07.88' };
+                       'media-delete': '1.08.71' };   // v1.08.71: замок на архивацию апрувнутого документа
 const MEDIA_FN_MIN_DEF = '1.07.72';
 function mFnVerOk(ver, name){
   const need = (MEDIA_FN_MIN[name] || MEDIA_FN_MIN_DEF).split('.').map(Number);
@@ -19421,7 +19667,168 @@ function diagCardHtml(){
     <div style="font-weight:900;margin-bottom:6px">${ic('flask')} ${t('diag_card')}</div>
     <button class="btn btn-blue" onclick="App.runDiag()">${ic('play')} ${t('diag_run')}</button>
     <div id="dg-out" class="tiny" style="margin-top:8px"></div>
+    ${isAdmin() ? `<button class="btn btn-green" style="margin-top:10px" id="rg-btn" onclick="App.regress()" ${RG.busy ? 'disabled' : ''}>${ic('play')} ${RG.busy ? t('rg_running') : t('rg_btn')}</button>
+    <div class="tiny" style="margin-top:4px">${t('rg_hint')}</div>
+    <div id="rg-out" class="tiny" style="margin-top:8px">${RG.rows.join('')}</div>` : ''}
   </div>`;
+}
+/* =====================================================================
+   v1.08.72 · РЕГРЕСС ОСНОВНЫХ ФУНКЦИЙ — сквозной сценарий на живых данных
+   (Настройки → Диагностика, только админ; телефон, ПК и демо-режим).
+   Идёт через те же функции, что и кнопки приложения (saveJob, saveRepair,
+   pickupGroup, archiveDoc, purgeDoc, очередь медиа); системные confirm()
+   на время прогона отвечают «да». Всё пробное — Unit TEST, в конце убирается;
+   если шаг упал — «уборка остатков» удаляет всё, что успело создаться.
+   ===================================================================== */
+const RG = { busy: false, rows: [] };
+async function regressRun(){
+  if (RG.busy || !isAdmin()) return;
+  RG.busy = true; RG.rows = [];
+  const paint = () => { const o = $('#rg-out'); if (o) o.innerHTML = RG.rows.join(''); const b = $('#rg-btn'); if (b){ b.disabled = RG.busy; b.innerHTML = ic('play') + ' ' + (RG.busy ? t('rg_running') : t('rg_btn')); } };
+  const out = [];
+  const step = async (name, fn) => {
+    const i = out.push({ name, ok: null, ms: 0, extra: '' }) - 1;
+    const a = performance.now();
+    RG.rows[i] = `<div>… ${esc(name)}</div>`; paint();
+    try{ const r = await fn(); out[i].ok = true; out[i].extra = (r && r.note) || ''; }
+    catch(e){ out[i].ok = false; out[i].extra = errStr(e); }
+    out[i].ms = Math.round(performance.now() - a);
+    RG.rows[i] = `<div>${out[i].ok ? ic('check', 'color:var(--green)') : ic('warn', 'color:var(--red)')} ${esc(name)} — ${out[i].ms} мс${out[i].extra ? ' · ' + esc(out[i].extra) : ''}</div>`;
+    paint();
+    if (!out[i].ok) throw new Error(name);
+  };
+  const today = todayISO(), yest = addDaysISO(today, -1);
+  const screen0 = state.screen, date0 = state.selDate, week0 = state.weekStart;
+  const confirm0 = window.confirm; window.confirm = () => true;
+  let jobId = null, repId = null;
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
+  const waitQ = async (id, sec) => { for (let i = 0; i < sec; i++){ if (!mediaQ.some(x => (x.doc || 'job') === 'job' && x.job_id === id)) return; await wait(1000); } throw new Error(t('rg_wait')); };
+  const T0 = performance.now();
+  try{
+    await step(t('rg_job'), async () => {
+      const cx = (state.data.complexes || [])[0], wt = (state.data.work_types || [])[0], et = (state.data.equipment_types || [])[0];
+      if (!cx || !wt || !et) throw new Error('нет комплексов, видов работ или техники');
+      const fd = Object.assign(emptyFormData(), { selftest: true, vacant: true });
+      fd.steam = Object.assign(fd.steam || {}, { on: true, rooms: 2 });
+      fd.equipment = fd.equipment || {}; fd.equipment[et.id] = { qty: 1, days: 1 };
+      jobId = uid();
+      jobDraft = { id: jobId, date: yest, counterparty_id: cx.counterparty_id || null, complex_id: cx.id, unit_number: 'TEST',
+        has_proposal: false, proposal_id: null, work_type_id: wt.id, technician_id: state.user.id,
+        technician_name: shortName(state.user.display_name || ''), helper_ids: [], shared_with_helpers: false, priority: false,
+        sort_order: 999, status: 'draft', note: 'TechLog regress ' + new Date().toISOString().slice(0, 16).replace('T', ' '),
+        form_data: fd, total: 0, approved_total: null, approved_by: null, approved_at: null,
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      state.jobId = jobId;
+      await saveJob(false);
+      jobDraft = null;
+      const j = jobById(jobId); if (!j) throw new Error('инвойс не сохранился');
+      if (j.date !== yest || j.unit_number !== 'TEST' || !j.form_data.steam.on) throw new Error('поля не сохранились');
+      return { note: 'Unit TEST · ' + fmtDMY(yest) + ' · ' + money(jobGrand(j)) };
+    });
+    await step(t('rg_media'), async () => {
+      const c = document.createElement('canvas'); c.width = 800; c.height = 600; const g = c.getContext('2d');
+      g.fillStyle = '#58CC02'; g.fillRect(0, 0, 800, 600); g.fillStyle = '#0E2A00'; g.font = 'bold 48px sans-serif'; g.fillText('TechLog regress photo', 40, 300);
+      const pb = await new Promise(r => c.toBlob(r, 'image/jpeg', .85));
+      if (!(await mediaEnqueueFile(jobId, new File([pb], 'regress-photo.jpg', { type: 'image/jpeg' }), 'photo'))) throw new Error('фото не встало в очередь');
+      let vNote = 'видео';
+      if (typeof MediaRecorder !== 'undefined'){
+        const vc = document.createElement('canvas'); vc.width = 320; vc.height = 240; const vg = vc.getContext('2d');
+        const mime = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+        const rec = new MediaRecorder(vc.captureStream(15), mime ? { mimeType: mime } : undefined), chunks = [];
+        rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+        const done = new Promise(r => { rec.onstop = r; });
+        rec.start(200); let k = 0;
+        const tm = setInterval(() => { vg.fillStyle = `hsl(${(k * 15) % 360},70%,45%)`; vg.fillRect(0, 0, 320, 240); vg.fillStyle = '#fff'; vg.font = 'bold 28px sans-serif'; vg.fillText('regress ' + (k++), 20, 130); }, 66);
+        await wait(1600); clearInterval(tm); rec.stop(); await done;
+        const vb = new Blob(chunks, { type: rec.mimeType || mime || 'video/webm' });
+        if (vb.size){
+          const ext = /mp4/.test(vb.type) ? 'mp4' : 'webm';
+          if (!(await mediaEnqueueFile(jobId, new File([vb], 'regress-video.' + ext, { type: vb.type }), 'video'))) throw new Error('видео не встало в очередь');
+        } else vNote = 'видео пустое — пропущено';
+      } else vNote = 'видео: браузер не записывает — пропущено';
+      const doc = new File([new Blob(['TechLog regress document ' + new Date().toISOString()], { type: 'text/plain' })], 'regress-doc.txt', { type: 'text/plain' });
+      if (!(await mediaEnqueueFile(jobId, doc, 'file'))) throw new Error('документ не встал в очередь');
+      const n = mediaQ.filter(x => x.job_id === jobId).length;
+      return { note: n + ' в очереди · ' + vNote };
+    });
+    await step(t('rg_send'), async () => {
+      if (!HAS_SB) return { note: t('rg_demo') };
+      await mediaFlush(true); await waitQ(jobId, 120);
+      try{ await syncNow(true); }catch(e){}
+      const rows = (state.data.media || []).filter(m => m.job_id === jobId);
+      if (rows.length < 2) throw new Error('на Диске ' + rows.length + ' файл(ов)');
+      return { note: rows.map(m => m.kind).join(', ') };
+    });
+    await step(t('rg_pk'), async () => {
+      const pk = (state.data.placements || []).find(p => p.job_id === jobId && !p.picked_up);
+      if (!pk) throw new Error('размещения нет'); if (pk.due_date !== today) throw new Error('срок ' + pk.due_date + ', а не ' + today);
+      return { note: (etById(pk.equipment_type_id) || {}).abbr + ' ×' + pk.qty + ' · ' + fmtDMY(pk.due_date) };
+    });
+    await step(t('rg_rep'), async () => {
+      repDraft = repNew({ job: jobId }); repId = repDraft.id;
+      repDraft.items = [{ q: 1, code: '', d: 'Regress line 1', d_en: 'Regress line 1', a: 50 }, { q: 2, code: '', d: 'Regress line 2 (no price)', d_en: '', a: 0 }];
+      repDraft.note = 'TechLog regress';
+      await saveRepair(true); repDraft = null;
+      const r = repById(repId); if (!r) throw new Error('документ работ не сохранился');
+      if ((r.items || []).length !== 2 || Math.round(repGrand(r)) !== 50) throw new Error('строки/итог: ' + (r.items || []).length + ' / ' + repGrand(r));
+      return { note: 'строк 2 · ' + money(repGrand(r)) };
+    });
+    await step(t('rg_home'), async () => {
+      state.screen = 'home'; state.selDate = today; state.weekStart = mondayOf(today); render(); await wait(300);
+      const app = document.getElementById('app');
+      if (!app || !app.innerHTML.includes(`App.pickupGroup('${jobId}'`)) throw new Error('карточки пикапа Unit TEST нет на главной');
+      return { note: 'карточка пикапа на месте' };
+    });
+    await step(t('rg_take'), async () => {
+      await pickupGroup(jobId); await wait(200);
+      const left = (state.data.placements || []).filter(p => p.job_id === jobId && pkPending(p)).length;
+      if (left) throw new Error('не забрано: ' + left);
+      return { note: 'забрано' };
+    });
+    await step(t('rg_yest'), async () => {
+      state.screen = 'home'; state.selDate = yest; state.weekStart = mondayOf(yest); render(); await wait(300);
+      const app = document.getElementById('app');
+      if (!app || !app.innerHTML.includes(`App.openJob('${jobId}')`)) throw new Error('карточки инвойса Unit TEST нет за вчера');
+      return { note: 'инвойс на месте' };
+    });
+    await step(t('rg_del'), async () => {
+      await archiveDoc('rep', repId); await purgeDoc('rep', repId);
+      if (repById(repId)) throw new Error('документ работ остался');
+      await archiveDoc('job', jobId); await purgeDoc('job', jobId);
+      if (jobById(jobId)) throw new Error('инвойс остался');
+      repId = null;
+      return { note: 'документ работ и инвойс удалены' };
+    });
+    await step(t('rg_gone'), async () => {
+      const loc = (state.data.media || []).filter(m => m.job_id === jobId).length + mediaQ.filter(x => x.job_id === jobId).length;
+      if (loc) throw new Error('локально осталось ' + loc);
+      const pl = (state.data.placements || []).filter(p => p.job_id === jobId).length; if (pl) throw new Error('размещения остались: ' + pl);
+      if (HAS_SB && state.sb){
+        const m = await state.sb.from('media').select('id').eq('job_id', jobId);
+        const jj = await state.sb.from('jobs').select('id').eq('id', jobId);
+        if ((m.data || []).length || (jj.data || []).length) throw new Error('на сервере: media ' + (m.data || []).length + ', jobs ' + (jj.data || []).length);
+      }
+      jobId = null;
+      return { note: HAS_SB ? 'ни в базе, ни на устройстве' : 'на устройстве нет' };
+    });
+  }catch(e){ /* шаг уже записан */ }
+  if (jobId || repId){
+    await step(t('rg_clean'), async () => {
+      const notes = [];
+      try{ if (repId && repById(repId)){ await archiveDoc('rep', repId); await purgeDoc('rep', repId); notes.push('документ работ'); } }catch(e){ notes.push('документ работ: ' + errStr(e)); }
+      try{ if (jobId && jobById(jobId)){ await archiveDoc('job', jobId); await purgeDoc('job', jobId); notes.push('инвойс'); } }catch(e){ notes.push('инвойс: ' + errStr(e)); }
+      return { note: notes.join(', ') || 'ничего не осталось' };
+    }).catch(() => {});
+  }
+  window.confirm = confirm0;
+  RG.busy = false;
+  state.screen = screen0 || 'settings'; state.selDate = date0; state.weekStart = week0;
+  const okN = out.filter(x => x.ok).length;
+  RG.rows.push(`<div style="margin-top:6px;font-weight:900">${okN === out.length ? '✓' : '⚠'} ${t('rg_done').replace('{N}', okN).replace('{T}', out.length)} · ${Math.round((performance.now() - T0) / 1000)} с</div>`);
+  dlog('регресс: ' + okN + '/' + out.length + ' · ' + out.map(x => x.name + ' ' + (x.ok ? 'ok' : 'FAIL' + (x.extra ? ' (' + x.extra + ')' : ''))).join(' · '));
+  toast((okN === out.length ? '✓ ' : '⚠ ') + t('rg_done').replace('{N}', okN).replace('{T}', out.length), okN === out.length ? undefined : 'err');
+  render();
+  try{ await syncNow(true); }catch(e){}
 }
 async function runDiag(){
   const out = $('#dg-out'); if (!out) return;
@@ -20316,7 +20723,7 @@ function extraPickerModal(){
       <button class="demo-user" onclick="App.exAdd('${w.id}')">
         <span style="font-size:1.2rem">${w.kind==='purchase'?ic('cart'):ic('toolbox')}</span>
         <span class="grow" style="flex:1;text-align:left">
-          <div style="font-weight:900">${esc(w.name)}</div>
+          <div style="font-weight:900">${esc(biText(w.name))}</div>
           <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : (w.needs_size ? (szById(w.size_type_id)||{}).name || t('needs_size') : t('kind_work'))}</div>
         </span>
       </button>`).join('')
@@ -20376,7 +20783,7 @@ function dirExtraWorks(){
   return `<div class="card">` + (list.map(w => {
     const sz = szById(w.size_type_id);
     return `<div class="rowline">
-      <div class="grow">${w.kind==='purchase'?ic('cart'):ic('toolbox')} <b>${esc(w.name)}</b>
+      <div class="grow">${w.kind==='purchase'?ic('cart'):ic('toolbox')} <b>${esc(biText(w.name))}</b>
         <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : t('kind_work')}${w.needs_size && sz ? ' · ' + ic('ruler') + ' ' + esc(sz.name) + ' (' + esc(sz.unit) + ')' : ''}${+w.price ? ' · ' + ic('dollar') + ' ' + money(+w.price) + (w.needs_size ? '/' + esc((sz||{}).unit||'ед.') : '') : ''}</div></div>
       <button class="btn btn-ghost sm" onclick="App.editEwModal('${w.id}')">${t('edit')}</button>
     </div>`;
@@ -20388,7 +20795,7 @@ function editEwModal(id){
   const sizes = [...(state.data.size_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
   openModal(`
     ${modalHead(t('d_extraworks'), 'toolbox')}
-    <div class="form-row"><span class="lbl">${t('name')}</span><input id="ew-name" value="${esc(w.name)}" placeholder="Вырезка стен / Wall cutout"></div>
+    <div class="form-row"><span class="lbl">${t('name')}</span><input id="ew-name" value="${esc(biText(w.name))}" placeholder="Вырезка стен / Wall cutout"></div>
     <div class="form-row"><span class="lbl">${t('item_code')}</span>
       <input id="ew-code" maxlength="10" placeholder="RWDSC" value="${esc(w.code || '')}"
         style="width:120px;text-transform:uppercase"></div>
@@ -21223,7 +21630,7 @@ function accDoc(kind, id){
     <div class="acc-doc-head">
       <div><b>${fmtDMY(r.date)}</b> · ${kind === 'job' ? `<span class="badge-status st-${d.status}">${esc(statusTxt)}</span>` : `<span class="chip pst pst-${d.status}">${esc(statusTxt)}</span>`} ${accStBadge(r.acc_status)}</div>
       <div class="tiny">${esc(cp.name)} — ${esc(cx.name)}${cx.address ? ' · ' + esc(cx.address) : ''}</div>
-      ${wt ? `<div class="tiny"><span class="dot" style="background:${wt.color}"></span> ${esc(wt.name)}</div>` : ''}
+      ${wt ? `<div class="tiny"><span class="dot" style="background:${wt.color}"></span> ${esc(biText(wt.name))}</div>` : ''}
       <div class="tiny">${ic('crew')} ${esc(accCrewNames(r.crew))}</div>
       ${kind === 'job' && d.status === 'approved' && d.approved_by ? `<div class="tiny">${t('approved_by')}: ${esc(shortName(profName(d.approved_by)))}</div>` : ''}
     </div>
