@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.76';
+const APP_VERSION = '1.08.77';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -927,6 +927,13 @@ const I18N = {
     cam_mode_app: 'В приложении',
     cam_mode_app_h: 'Камера открывается внутри приложения: страница не уходит в фон, и телефон её не выгружает — кадр не пропадёт. Серия кадров, вспышка, зум, видео до 90 с (H.264, без пережатия перед отправкой). HDR и ночного режима нет — для них кнопка «Родная камера».',
     cam_mode_inapp: 'камера в приложении — без выгрузки страницы',
+    /* v1.08.77: превью камеры в приложении */
+    cam_prev_lbl: 'Превью камеры в приложении', cam_prev_fast: 'Быстрое', cam_prev_max: 'Максимум',
+    cam_prev_fast_h: 'Поток превью 1280×720 — стандартный аппаратный размер, телефон отдаёт его без пересчёта: превью плавное, затвор отзывчивый. Снимок берётся с матрицы отдельно (takePhoto) — столько мегапикселей, сколько телефон даст при таком превью (на части телефонов размер снимка привязан к размеру превью — см. «снимок до …» в метриках).',
+    cam_prev_max_h: 'Поток превью максимального размера — снимок с матрицы крупнее (на телефонах, где размер снимка привязан к превью), но превью может идти рывками и снимок делаться дольше. Сравните по метриткам отклика и выберите, что важнее.',
+    cp_h_photo_max: 'снимок до', cp_h_mode_fast: 'быстрое', cp_h_mode_max: 'максимум', cp_no_taps: 'нет — снимки программные (тест)',
+    cp_save: 'Скачать .txt', cp_share: 'Поделиться', cp_saved: 'метрики сохранены: {N}',
+    mq_l_shr_bigger: 'сжатый ролик не меньше оригинала ({A} → {B} МБ) — отправляю оригинал',
     /* v1.08.73: файлы, которыми поделились из галереи или камеры телефона */
     share_title: 'Файлы из телефона', share_q: 'Куда положить: {N}?',
     share_recent: 'открыт недавно', share_pick: 'Или выберите документ',
@@ -1996,6 +2003,13 @@ const I18N = {
     cam_mode_app: 'In-app',
     cam_mode_app_h: 'The camera opens inside the app: the page never goes to the background and the phone cannot unload it — no frame is lost. Burst, torch, zoom, video up to 90 s (H.264, no recompression before upload). No HDR or night mode — use «Native camera» for those.',
     cam_mode_inapp: 'in-app camera — no page unloading',
+    /* v1.08.77: in-app camera preview */
+    cam_prev_lbl: 'In-app camera preview', cam_prev_fast: 'Fast', cam_prev_max: 'Maximum',
+    cam_prev_fast_h: '1280×720 preview stream — a standard hardware size the phone delivers without rescaling: smooth preview, responsive shutter. The photo is taken from the sensor separately (takePhoto) — as many megapixels as the phone gives with this preview (on some phones the photo size is tied to the preview size — see «photo up to …» in the metrics).',
+    cam_prev_max_h: 'Maximum-size preview stream — a larger sensor photo (on phones where the photo size is tied to the preview), but the preview may stutter and the shot may take longer. Compare with the responsiveness metrics and pick what matters more.',
+    cp_h_photo_max: 'photo up to', cp_h_mode_fast: 'fast', cp_h_mode_max: 'maximum', cp_no_taps: 'none — programmatic shots (test)',
+    cp_save: 'Download .txt', cp_share: 'Share', cp_saved: 'metrics saved: {N}',
+    mq_l_shr_bigger: 'the shrunk clip is not smaller than the original ({A} → {B} MB) — sending the original',
     /* v1.08.73: files shared from the phone gallery or camera */
     share_title: 'Files from the phone', share_q: 'Where to put: {N}?',
     share_recent: 'opened recently', share_pick: 'Or pick a document',
@@ -2616,7 +2630,7 @@ async function mfaRefresh(){
   if (!HAS_SB || !state.user){ MFA.on = false; return; }
   try{
     const { data } = await state.sb.auth.mfa.listFactors();
-    const f = (data && (data.totp || [])).find(x => x.status === 'verified');
+    const f = ((data && data.totp) || []).find(x => x.status === 'verified');   // v1.08.77: офлайн — data null
     MFA.on = !!f; MFA.factorId = f ? f.id : '';
   }catch(e){ dlog('⛔ mfa.listFactors:', e); MFA.on = false; }
 }
@@ -10107,6 +10121,7 @@ const App = {
   regress(){ regressRun(); },                                                          // v1.08.72
   camTest(){ camTestRun(); }, camTestCopy(){ ctCopy(); }, camTestSave(){ ctSave(); }, camTestState(){ return CT; },   // v1.08.74
   camPerfUi(on){ camPerfUiSet(on); }, camPerfCopy(){ camPerfCopy(); },                                             // v1.08.75
+  camPerfSave(){ camPerfSave(); }, camPerfShare(){ camPerfShare(); }, camPrev(v){ camPrevSet(v); },              // v1.08.77
   /* v1.08.73: камера в приложении */
   cam: { open: camInOpen, close(){ camInClose(); }, shot(ev){ camInShot(ev); }, torch(ev){ camInTorch(ev); },
          flip(ev){ camInFlip(ev); }, zoom(z, b){ camInZoom(z, b); }, st(){ return CAMIN; }, can: camInCan,
@@ -11722,7 +11737,8 @@ async function bnFetch(qs, opts){
     if (!r.ok){
       BN.err = j.error || ('HTTP ' + r.status);
       if (r.status === 409 || r.status === 404 || /BN_NOT_/.test(BN.err)) BN.off = true;  // не настроено/не задеплоено — не долбим
-      dlog('⛔ bouncie ' + qs.slice(0, 20) + ':', BN.err);
+      if (/BN_NOT_CONFIGURED/.test(BN.err)){ if (!BN.notedOff){ BN.notedOff = true; dlog('bouncie: не настроено (BN_NOT_CONFIGURED) — карта машин выключена'); } }   // v1.08.77: не ошибка
+      else dlog('⛔ bouncie ' + qs.slice(0, 20) + ':', BN.err);
       return null;
     }
     BN.err = '';
@@ -17336,10 +17352,12 @@ self.onmessage = function(ev){
         var sw = vTrk.video ? vTrk.video.width : vTrk.track_width;
         var sh = vTrk.video ? vTrk.video.height : vTrk.track_height;
         var dw = rot % 180 ? sh : sw, dh = rot % 180 ? sw : sh;
-        var k = Math.min(1, target.h / dh);
+        /* v1.08.77: цель — по КОРОТКОЙ стороне: портретный ролик 1080×1920
+           раньше считался «выше 1080» и ужимался до 608×1080 */
+        var k = Math.min(1, target.h / Math.min(dw, dh));
         outW = even(dw * k); outH = even(dh * k);
         /* уже компактный: не выше цели и укладывается в целевой битрейт */
-        if (dh <= target.h + 8 && /^avc1/.test(vTrk.codec)
+        if (Math.min(dw, dh) <= target.h + 8 && /^avc1/.test(vTrk.codec)
             && blob.size <= dur * target.vbr / 8 * 1.25){
           post({ skip: 1 }); deadErr = new Error('skip'); finishV(); finishA(); ready();
           return;
@@ -17584,6 +17602,9 @@ function camSet(k, v){ try{ localStorage.setItem('techlog_cam_' + k, v); }catch(
 function camMode(){ const v = camGet('mode', 'app'); return v === 'quick' || v === 'full' ? v : 'app'; }
 /* Камера в приложении возможна: getUserMedia есть и страница в защищённом
    контексте (https или localhost — иначе браузер API не отдаёт). */
+/* v1.08.77: размер потока превью камеры в приложении: 'fast' (1280×720) или 'max' */
+function camPrev(){ try{ return localStorage.getItem('techlog_cam_prev') === 'max' ? 'max' : 'fast'; }catch(e){ return 'fast'; } }
+function camPrevSet(v){ try{ localStorage.setItem('techlog_cam_prev', v === 'max' ? 'max' : 'fast'); }catch(e){} render(); }
 function camInCan(){
   try{ return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
          && (window.isSecureContext !== false) && typeof MediaStream !== 'undefined'; }
@@ -18356,10 +18377,19 @@ async function camInStart(){
      потока — превью держим 1920×1440, а не 3264×2448: тяжёлый поток сам
      по себе валит к/с на слабом GPU. Без ImageCapture кадр идёт с потока,
      и разрешение потока = разрешение снимка — просим большое. */
-  const hasIC = typeof ImageCapture === 'function';
+  /* v1.08.77: два режима превью (Настройки → Съёмка). «Быстрое» — 1280×720:
+     стандартный аппаратный размер, без программного пересчёта кадров (на
+     телефоне Abr нестандартный 1440×1920 давал 2 к/с). «Максимум» — самый
+     большой поток: на части телефонов размер takePhoto привязан к размеру
+     превью (8 Мп при 3264×2448 против 5 Мп при 1920×1440), но превью рвётся. */
+  const hasIC = typeof ImageCapture === 'function', pm = camPrev();
+  const vt = mVidTarget();
+  const vidH = pm === 'max' ? vt.h : Math.min(720, vt.h), vidW = Math.round(vidH * 16 / 9);
+  const phW = pm === 'max' ? 4096 : (hasIC ? 1280 : 1920), phH = pm === 'max' ? 3072 : (hasIC ? 720 : 1440);
   const cons = isVid
-    ? { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }, audio: true }
-    : { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: hasIC ? 1920 : 3264 }, height: { ideal: hasIC ? 1440 : 2448 } }, audio: false };
+    ? { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: vidW }, height: { ideal: vidH }, frameRate: { ideal: 30, max: 30 } }, audio: true }
+    : { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: phW }, height: { ideal: phH }, frameRate: { ideal: 30, max: 30 } }, audio: false };
+  CAMIN.prevMode = pm; CAMIN.photoMax = '';
   let stream;
   CAMIN.noAudio = false;
   try{ stream = await navigator.mediaDevices.getUserMedia(cons); }
@@ -18530,6 +18560,7 @@ async function camInGrab(){
              кадр всё равно уменьшится до качества из настроек */
           const k = Math.min(1, 4032 / Math.max(pc.imageWidth.max, pc.imageHeight.max));
           ps = { imageWidth: Math.round(pc.imageWidth.max * k), imageHeight: Math.round(pc.imageHeight.max * k) };
+          CAMIN.photoMax = pc.imageWidth.max + '×' + pc.imageHeight.max;               // v1.08.77: в метрики
         }
       }catch(e){}
       blob = await Promise.race([
@@ -18622,7 +18653,10 @@ function camInRecStart(){
   const mime = camInMime();
   let rec;
   try{
-    rec = new MediaRecorder(CAMIN.stream, Object.assign({ videoBitsPerSecond: mVidTarget().vbr, audioBitsPerSecond: 96000 },
+    const st0 = CAMIN.track && CAMIN.track.getSettings ? CAMIN.track.getSettings() : {};
+    const shortSide = Math.min(st0.width || 1280, st0.height || 720);
+    const vbr = shortSide >= 1080 ? 4000000 : shortSide >= 720 ? 2500000 : 1200000;     // v1.08.77: по фактическому потоку
+    rec = new MediaRecorder(CAMIN.stream, Object.assign({ videoBitsPerSecond: vbr, audioBitsPerSecond: 96000 },
       mime ? { mimeType: mime } : {}));
   }catch(e){ camInFail(e); return; }
   CAMIN.rec = rec; CAMIN.recParts = []; CAMIN.recT0 = Date.now();
@@ -18953,7 +18987,7 @@ function camPerfStat(a){ if (!a.length) return null; const b = a.filter(x => x !
   return { min: Math.min(...b), avg: Math.round(b.reduce((s, x) => s + x, 0) / b.length), max: Math.max(...b), n: b.length }; }
 function camPerfSession(){
   const dur = camPerfNow();
-  return { at: new Date().toISOString(), kind: CAMPERF.kind, dur, preview: CAMPERF.preview,
+  return { at: new Date().toISOString(), kind: CAMPERF.kind, dur, preview: CAMPERF.preview, prevMode: CAMIN.prevMode || '', photoMax: CAMIN.photoMax || '',
     shots: CAMPERF.marks.filter(m => m.kind === 'takePhoto' || m.kind === 'frame' || m.kind === 'rec').length,
     taps: CAMPERF.taps.slice(), evs: CAMPERF.evs.slice(), long: CAMPERF.long.slice(), marks: CAMPERF.marks.slice(),
     fps: CAMPERF.fps.slice(), pfps: CAMPERF.pfps.slice(), mem: CAMPERF.mem.slice(), jank: CAMPERF.jank, maxGap: CAMPERF.maxGap,
@@ -18983,10 +19017,10 @@ function camPerfText(s){
   const v = camPerfVerdict(s);
   const L = [];
   const st = x => x ? `${x.min} / ${x.avg} / ${x.max} ms` : '–';
-  L.push(`${t('cp_h_session')} ${s.kind === 'video' ? t('media_video') : t('media_photo')} · ${new Date(s.at).toLocaleTimeString()} · ${(s.dur / 1000).toFixed(1)} s · ${t('cp_h_shots')} ${s.shots}${s.preview ? ' · ' + t('cp_h_preview') + ' ' + s.preview : ''}${s.cores ? ' · ' + s.cores + ' ' + t('cp_h_cores') : ''}${s.devmem ? ' · ' + s.devmem + ' GB' : ''}`);
+  L.push(`${t('cp_h_session')} ${s.kind === 'video' ? t('media_video') : t('media_photo')} · ${new Date(s.at).toLocaleTimeString()} · ${(s.dur / 1000).toFixed(1)} s · ${t('cp_h_shots')} ${s.shots}${s.preview ? ' · ' + t('cp_h_preview') + ' ' + s.preview + (s.prevMode ? ' (' + t(s.prevMode === 'max' ? 'cp_h_mode_max' : 'cp_h_mode_fast') + ')' : '') : ''}${s.photoMax ? ' · ' + t('cp_h_photo_max') + ' ' + s.photoMax : ''}${s.cores ? ' · ' + s.cores + ' ' + t('cp_h_cores') : ''}${s.devmem ? ' · ' + s.devmem + ' GB' : ''}`);
   L.push(`${t('cp_h_fps')}: ${t('cp_live_prev')} ${v.pf ? v.pf.avg + ' (min ' + v.pf.min + ')' : '–'} · ${t('cp_live_main')} ${v.mf ? v.mf.avg + ' (min ' + v.mf.min + ')' : '–'} · ${t('cp_live_jank')} ${s.jank} (max ${s.maxGap} ms)`);
   L.push(`${t('cp_h_long')}: ${s.long.length} · ${v.ltSum} ms (${Math.round(v.ltShare * 100)}%) · max ${v.ltMax} ms`);
-  L.push(`${t('cp_h_tap')}: ${st(v.tap)} · ${t('cp_h_paint')}: ${st(v.paint)}`);
+  L.push(s.taps.length ? `${t('cp_h_tap')}: ${st(v.tap)} · ${t('cp_h_paint')}: ${st(v.paint)}` : `${t('cp_h_tap')}: ${t('cp_no_taps')}`);
   if (s.evs.length){
     const d = camPerfStat(s.evs.map(e => e.delay)), p = camPerfStat(s.evs.map(e => e.proc)), pt = camPerfStat(s.evs.map(e => e.paint));
     L.push(`${t('cp_h_evt')} (${s.evs.length}): ${t('cp_h_delay')} ${st(d)} · ${t('cp_h_proc')} ${st(p)} · ${t('cp_h_present')} ${st(pt)}`);
@@ -19009,11 +19043,14 @@ function camPerfSessions(){
   try{ CAMPERF.sessions = JSON.parse(localStorage.getItem(LS_CAM_PERF) || '[]') || []; }catch(e){ CAMPERF.sessions = []; }
   return CAMPERF.sessions;
 }
-async function camPerfCopy(){
-  const txt = camPerfSessions().map(camPerfText).join('\n\n');
-  if (!txt) return;
-  try{ await navigator.clipboard.writeText(txt); toast('✓ ' + t('copied')); }catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+function camPerfAllText(){
+  const ss = camPerfSessions(); if (!ss.length) return '';
+  return `TechLog ${APP_VERSION} — ${t('cp_title')}\n${navigator.userAgent}\n\n` + ss.map(camPerfText).join('\n\n');
 }
+function camPerfFileName(){ const d = new Date(), z = n => String(n).padStart(2, '0'); return `techlog-cam-metrics-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}.txt`; }
+async function camPerfCopy(){ const txt = camPerfAllText(); if (txt) copyText(txt); }
+function camPerfSave(){ const txt = camPerfAllText(); if (!txt) return; dlTextFile(camPerfFileName(), txt); toast('✓ ' + t('cp_saved').replace('{N}', camPerfFileName())); }
+function camPerfShare(){ const txt = camPerfAllText(); if (txt) shareTextFile(camPerfFileName(), txt); }
 function camPerfCardHtml(){
   const ss = camPerfSessions();
   return `<div class="cam-set" id="cp-card">
@@ -19021,7 +19058,11 @@ function camPerfCardHtml(){
     <div class="tiny">${t('cp_hint')}</div>
     <label class="chk-line" style="margin-top:6px"><input type="checkbox" ${camPerfUiOn() ? 'checked' : ''} onchange="App.camPerfUi(this.checked)"> ${t('cp_ui')}</label>
     ${ss.length ? `<pre class="cp-last">${esc(ss.map(camPerfText).join('\n\n'))}</pre>
-    <button class="btn btn-blue sm" onclick="App.camPerfCopy()">${ic('copy')} ${t('cp_copy')}</button>` : `<div class="tiny" style="margin-top:6px">${t('cp_none')}</div>`}
+    <div class="tl-acts">
+      <button class="btn btn-green sm" onclick="App.camPerfSave()">${ic('download')} ${t('cp_save')}</button>
+      ${tlogCanShare() ? `<button class="btn btn-blue sm" onclick="App.camPerfShare()">${ic('share')} ${t('cp_share')}</button>` : ''}
+      <button class="btn btn-ghost sm" onclick="App.camPerfCopy()">${ic('copy')} ${t('cp_copy')}</button>
+    </div>` : `<div class="tiny" style="margin-top:6px">${t('cp_none')}</div>`}
   </div>`;
 }
 
@@ -19581,6 +19622,12 @@ async function mediaFlush(verbose){
           } else if (sr && sr.skip){
             it.shr = 'orig'; delete it.forceShr; await mQPut(it);
             lg(`🗜 ${tag} — ${t('mq_l_shr_skip')}`, 'dim', lid);
+          } else if (sr && sr.blob){
+            /* v1.08.77: пережали, но не меньше — причина в журнале, а не пустота */
+            const a = Math.round(it.blob.size / 104857.6) / 10, b = Math.round(sr.blob.size / 104857.6) / 10;
+            if (it.forceShr) it.shrFail = 'bigger';
+            it.shr = 'orig'; delete it.forceShr; await mQPut(it);
+            lg(`🗜 ${tag} — ${t('mq_l_shr_bigger').replace('{A}', a).replace('{B}', b)}`, 'dim', lid);
           } else {
             if (it.forceShr) it.shrFail = String(sr && sr.err || '?');   // v1.08.73
             it.shr = 'orig'; delete it.forceShr; await mQPut(it);
@@ -21107,6 +21154,14 @@ function camCardHtml(){
         ${seg(md, 'app', t('cam_mode_app'), 'camMode')}
         ${seg(md, 'full', t('cam_mode_full'), 'camMode')}
         ${seg(md, 'quick', t('cam_mode_quick'), 'camMode')}
+      </div>
+    </div>
+    <div class="cam-set" id="cam-prev">
+      <b>${t('cam_prev_lbl')}</b>
+      <div class="tiny">${camPrev() === 'max' ? t('cam_prev_max_h') : t('cam_prev_fast_h')}</div>
+      <div class="lang-seg cam-seg">
+        ${seg(camPrev(), 'fast', t('cam_prev_fast'), 'camPrev')}
+        ${seg(camPrev(), 'max', t('cam_prev_max'), 'camPrev')}
       </div>
     </div>
     <div class="cam-set">

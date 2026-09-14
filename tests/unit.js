@@ -1779,7 +1779,23 @@ console.log('\n— v1.08.51: учёба —');
     src.includes('async function camInFlushList(jobId, doc, list){') && src.includes("if (CAMIN.deferred && CAMIN.jobId === sJob) CAMIN.deferred.push(entry); else camInFlushList(sJob, sDoc, [entry]);")
     && src.includes('const dj = CAMIN.jobId, dd = CAMIN.doc, dl = CAMIN.deferred || []; CAMIN.deferred = null;') && !src.includes("mediaTakeFiles(CAMIN.jobId, [f], 'photo', { cam: true, doc: CAMIN.doc, rot })")
     && src.includes('if (rec._done) return; rec._done = true;'));
-  t('v1.08.75: превью 1920×1440 при ImageCapture, иначе 3264×2448', src.includes("width: { ideal: hasIC ? 1920 : 3264 }, height: { ideal: hasIC ? 1440 : 2448 }"));
+  t('v1.08.75/77: превью по режиму — быстрое 1280×720 (без ImageCapture 1920×1440), максимум 4096×3072; частота ≤ 30',
+    src.includes("const phW = pm === 'max' ? 4096 : (hasIC ? 1280 : 1920), phH = pm === 'max' ? 3072 : (hasIC ? 720 : 1440);") && src.includes("frameRate: { ideal: 30, max: 30 }"));
+
+  console.log('\n— v1.08.77: превью, портретное видео, экспорт метрик —');
+  t('v1.08.77: ключи RU/EN', ['cam_prev_lbl', 'cam_prev_fast', 'cam_prev_max', 'cam_prev_fast_h', 'cam_prev_max_h', 'cp_h_photo_max', 'cp_no_taps', 'cp_save', 'cp_share', 'cp_saved', 'mq_l_shr_bigger']
+    .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
+  t('v1.08.77: настройка превью — camPrev/camPrevSet, переключатель в карточке «Съёмка», видео в приложении по режиму, битрейт по фактическому потоку',
+    src.includes("function camPrev(){ try{ return localStorage.getItem('techlog_cam_prev') === 'max' ? 'max' : 'fast'; }") && src.includes("${seg(camPrev(), 'fast', t('cam_prev_fast'), 'camPrev')}")
+    && src.includes("const vidH = pm === 'max' ? vt.h : Math.min(720, vt.h)") && src.includes("const vbr = shortSide >= 1080 ? 4000000 : shortSide >= 720 ? 2500000 : 1200000;"));
+  t('v1.08.77: метрики — режим превью и «снимок до», «нет тапов», Скачать/Поделиться',
+    src.includes("CAMIN.photoMax = pc.imageWidth.max + '×' + pc.imageHeight.max;") && src.includes("prevMode: CAMIN.prevMode || '', photoMax: CAMIN.photoMax || ''")
+    && src.includes("`${t('cp_h_tap')}: ${t('cp_no_taps')}`") && src.includes('function camPerfSave(){') && src.includes('function camPerfShare(){') && src.includes('App.camPerfSave()'));
+  t('v1.08.77: портретное видео — цель и правило «уже компактный» по короткой стороне; «не меньше оригинала» в журнал',
+    src.includes('var k = Math.min(1, target.h / Math.min(dw, dh));') && src.includes("if (Math.min(dw, dh) <= target.h + 8 && /^avc1/.test(vTrk.codec)")
+    && src.includes("} else if (sr && sr.blob){") && src.includes("t('mq_l_shr_bigger')"));
+  t('v1.08.77: mfa null-guard, bouncie «не настроено» один раз без ⛔',
+    src.includes("const f = ((data && data.totp) || []).find(x => x.status === 'verified');") && src.includes("if (/BN_NOT_CONFIGURED/.test(BN.err)){ if (!BN.notedOff){"));
   console.log('\n— v1.08.76: журнал теста целиком —');
   t('v1.08.76: ключи RU/EN', ['tl_title', 'tl_save', 'tl_share', 'tl_copy', 'tl_show', 'tl_status_abort', 'tl_aborted', 'tl_aborted_toast', 'tl_done_t', 'tl_done_h', 'tl_sec_log', 'tl_sec_perf', 'tl_sec_mq', 'tl_sec_app', 'log_save', 'log_share']
     .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
