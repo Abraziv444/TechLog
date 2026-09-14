@@ -1840,7 +1840,11 @@ console.log('\n— v1.08.51: учёба —');
   t('v1.08.82: 3 кадра и 2 ролика по 3 с в автоматическом тесте, названия шагов с количеством, проверки по фактическим числам',
     src.includes('const CT_PHOTOS = 3, CT_VIDEOS = 2, CT_VSEC = 3;') && src.includes("const nPh = Math.min(CT_PHOTOS, mediaFree(jobId, 'photo', 'job')), nVd = Math.min(CT_VIDEOS, mediaFree(jobId, 'video', 'job'));")
     && src.includes("for (let k = 1; k <= nVd; k++){") && src.includes("await wait(CT_VSEC * 1000);") && src.includes("ctStepSrv(jobId, nPh)") && /ct_s_photo: 'Камера: \{N\} кадра\(ов\)'/.test(src)
-    && src.includes("if (ph.length < needP || imgOk < needP) throw new Error('миниатюры фото: ' + imgOk + ' из ' + needP);"));
+    && src.includes("if (r.ph < needP || r.phOk < needP) throw new Error('миниатюры фото: ' + r.phOk + ' из ' + needP);"));
+  console.log('\n— v1.08.83: копировать всегда, плитки локально+сервер —');
+  t('v1.08.83: в живой модалке кнопки Копировать/Скачать с первой секунды', src.includes("const copyBtns = `<button class=\"btn btn-blue sm\" onclick=\"App.tlogCopy()\">") && src.includes("`${copyBtns}<button class=\"btn btn-ghost sm\" onclick=\"App.ctLiveHide()\">"));
+  t('v1.08.83: плитки считаются локально + с сервера, в обоих тестах', src.includes('function ctTiles(){') && src.includes('async function ctTilesCheck(jobId, needP, needV){') && src.includes("ctTilesCheck(jobId, nPh, nVd)") && src.includes("ctTilesCheck(st.jobId, 2, 1)")
+    && src.includes("const cntP = () => qOf(jobId).filter(x => x.kind === 'photo').length + (state.data.media || []).filter(m => m.job_id === jobId && m.kind === 'photo').length;") && src.includes("if (rows.length < items + already)"));
   t('v1.08.77: mfa null-guard, bouncie «не настроено» один раз без ⛔',
     src.includes("const f = ((data && data.totp) || []).find(x => x.status === 'verified');") && src.includes("if (/BN_NOT_CONFIGURED/.test(BN.err)){ if (!BN.notedOff){"));
   console.log('\n— v1.08.76: журнал теста целиком —');

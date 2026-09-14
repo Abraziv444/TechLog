@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.82';
+const APP_VERSION = '1.08.83';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -19427,6 +19427,31 @@ function ctSave(){
 /* v1.08.82: объём автоматического прогона (Способ 1): 3 кадра, 2 ролика по 3 с;
    ручной прогон (Способ 2) — 2 кадра и 1 ролик, как договорились */
 const CT_PHOTOS = 3, CT_VIDEOS = 2, CT_VSEC = 3;
+/* v1.08.83: плитки документа — и локальные (очередь), и уже отправленные
+   (строки media с сервера): отправка идёт в фоне с первого кадра, и к моменту
+   проверки часть файлов уже на Диске (в живом прогоне 2 из 3 фото ушли, пока
+   писались ролики — тест считал только локальные и видел «фото 1»). */
+function ctTiles(){
+  const all = [...document.querySelectorAll('.media-card .mth')].filter(el => !el.classList.contains('prep'));
+  const isV = el => !!el.querySelector('.mvid');
+  const hydrated = el => { const im = el.querySelector('img'); return !!(im && /^blob:/.test(im.getAttribute('src') || '')) || !!el.querySelector('.mvph'); };
+  const ph = all.filter(el => !isV(el) && !el.querySelector('.mfile:not(.mvph)')), vd = all.filter(isV);
+  const loc = el => el.classList.contains('loc');
+  return { total: all.length, ph: ph.length, phLoc: ph.filter(loc).length, phSrv: ph.filter(el => !loc(el)).length, phOk: ph.filter(hydrated).length,
+           vd: vd.length, vdLoc: vd.filter(loc).length, vdSrv: vd.filter(el => !loc(el)).length, vdOk: vd.filter(hydrated).length };
+}
+async function ctTilesCheck(jobId, needP, needV){
+  await ctWait(300);
+  /* серверные миниатюры подгружаются из хранилища — ждём до 25 с */
+  let r = ctTiles();
+  await ctUntil(() => { r = ctTiles(); return r.ph >= needP && r.vd >= needV && r.phOk >= needP && r.vdOk >= needV; }, 25, 'плитки/миниатюры').catch(() => {});
+  const srvRows = (state.data.media || []).filter(m => m.job_id === jobId).length;
+  const head = (document.querySelector('.media-card') || {}).textContent || '';
+  ctLine(`   плиток в документе: ${r.total} (фото ${r.ph}: локально ${r.phLoc}, с сервера ${r.phSrv}; видео ${r.vd}: локально ${r.vdLoc}, с сервера ${r.vdSrv}) · миниатюры фото ${r.phOk}/${r.ph} · видео ${r.vdOk}/${r.vd} · в очереди ${ctQOf(jobId).length}, на сервере ${srvRows} · заголовок: ${head.slice(0, 40).replace(/\s+/g, ' ')}`);
+  if (r.ph < needP || r.phOk < needP) throw new Error('миниатюры фото: ' + r.phOk + ' из ' + needP);
+  if (r.vd < needV || r.vdOk < needV) throw new Error('плитки видео: ' + r.vdOk + ' из ' + needV);
+  return { note: r.total + ' плиток, миниатюры на месте' + (r.phSrv + r.vdSrv ? ' (уже на Диске: ' + (r.phSrv + r.vdSrv) + ')' : ''), r };
+}
 /* v1.08.80: общие кирпичи обоих тестов съёмки */
 const ctWait = ms => new Promise(r => setTimeout(r, ms));
 async function ctUntil(fn, sec, what){
@@ -19459,7 +19484,8 @@ async function ctStepSend(jobId){
   const seen = new Map(mqLogLines.map(l => [l.id, l.text]));
   const items = ctQOf(jobId).length;
   const a = performance.now();
-  ctLine(`   к отправке: ${items} файл(ов) · ${ctMB(ctQOf(jobId).reduce((s, x) => s + (x.blob ? x.blob.size : 0), 0))} · соединение ${navigator.onLine ? 'есть' : 'нет'}`);
+  const already = (state.data.media || []).filter(m => m.job_id === jobId).length;
+  ctLine(`   к отправке: ${items} файл(ов) · ${ctMB(ctQOf(jobId).reduce((s, x) => s + (x.blob ? x.blob.size : 0), 0))} · уже на Диске в фоне: ${already} · соединение ${navigator.onLine ? 'есть' : 'нет'}`);
   mediaFlush(true).catch(e => ctLine('   ⛔ отправка: ' + errStr(e), 'err'));
   let lastN = -1;
   for (let i = 0; i < 360 * 2; i++){
@@ -19477,8 +19503,8 @@ async function ctStepSend(jobId){
   try{ await syncNow(true); }catch(e){}
   const rows = (state.data.media || []).filter(m => m.job_id === jobId);
   rows.forEach(m => ctLine(`   на сервере: ${m.kind} · ${m.file_name || ''} · ${ctKB(+m.size_bytes || 0)} · ${m.mime || ''} · ${m.status || ''} · drive ${m.drive_file_id ? String(m.drive_file_id).slice(0, 10) + '…' : 'нет'} · превью ${m.thumb_path ? 'есть' : 'нет'}`));
-  if (rows.length < items) throw new Error('на сервере ' + rows.length + ' из ' + items);
-  return { note: items + ' файл(ов) за ' + Math.round((performance.now() - a) / 1000) + ' с', rows };
+  if (rows.length < items + already) throw new Error('на сервере ' + rows.length + ' из ' + (items + already));
+  return { note: rows.length + ' файл(ов) на Диске (' + items + ' в этом шаге за ' + Math.round((performance.now() - a) / 1000) + ' с)', rows };
 }
 async function ctStepSrv(jobId, need){
   if (!HAS_SB) return { note: t('ct_demo') };
@@ -19615,7 +19641,8 @@ async function camTestRun(){
     });
     await step(t('ct_s_prep'), async () => {
       const a = performance.now();
-      await until(() => qOf(jobId).filter(x => x.kind === 'photo').length >= nPh && !(mPrepN.get(jobId) > 0), 90, 'фото не встали в очередь');
+      const cntP = () => qOf(jobId).filter(x => x.kind === 'photo').length + (state.data.media || []).filter(m => m.job_id === jobId && m.kind === 'photo').length;
+      await until(() => cntP() >= nPh && !(mPrepN.get(jobId) > 0), 90, 'фото не встали в очередь');
       const ph = qOf(jobId).filter(x => x.kind === 'photo');
       ph.forEach((x, i) => ctLine(`   фото ${i + 1}: ${x.name} · ${x.w}×${x.h} · ${ctKB(x.blob ? x.blob.size : 0)}${x.orig ? ' (оригинал)' : ' (пережато)'} · превью ${x.thumb ? ctKB(x.thumb.size) : 'нет'}${x.sharp != null ? ' · резкость ' + x.sharp : ''}${x.small ? ' · мелкий кадр' : ''}`));
       return { note: ph.length + ' фото за ' + Math.round(performance.now() - a) + ' мс' };
@@ -19643,7 +19670,8 @@ async function camTestRun(){
         await wait(500);
       }
       if (CAMIN.el) camInClose(true);
-      await until(() => qOf(jobId).filter(x => x.kind === 'video').length >= nVd && !(mPrepN.get(jobId) > 0), 90, 'ролики не встали в очередь');
+      const cntV = () => qOf(jobId).filter(x => x.kind === 'video').length + (state.data.media || []).filter(m => m.job_id === jobId && m.kind === 'video').length;
+      await until(() => cntV() >= nVd && !(mPrepN.get(jobId) > 0), 90, 'ролики не встали в очередь');
       const vids = qOf(jobId).filter(y => y.kind === 'video');
       vids.forEach((x, i) => ctLine(`   ролик ${i + 1} в очереди: ${x.name} · ${x.mime} · ${ctMB(x.blob.size)} · длительность ${x.dur || '?'} с · превью ${x.thumb ? ctKB(x.thumb.size) : 'нет (значок)'}`));
       return { note: vids.length + ' ролика(ов) · ' + vids.map(x => ctMB(x.blob.size)).join(' + ') };
@@ -19655,36 +19683,21 @@ async function camTestRun(){
       const v = camPerfVerdict(ss.find(x => x.kind === 'photo') || ss[0]);   // вывод — по фото-съёмке
       return { note: v.short };
     });
-    await step(t('ct_s_thumbs'), async () => {
-      await wait(300);
-      const tiles = [...document.querySelectorAll('.media-card .mth.loc')];
-      const ph = tiles.filter(el => !el.querySelector('.mvid')), vd = tiles.filter(el => el.querySelector('.mvid'));
-      const imgOk = ph.filter(el => { const im = el.querySelector('img'); return im && /^blob:/.test(im.getAttribute('src') || ''); }).length;
-      const vOk = vd.filter(el => { const im = el.querySelector('img'); return (im && /^blob:/.test(im.getAttribute('src') || '')) || el.querySelector('.mvph'); }).length;
-      const head = (document.querySelector('.media-card') || {}).textContent || '';
-      ctLine(`   плиток в документе: ${tiles.length} (фото ${ph.length}, видео ${vd.length}) · миниатюры фото ${imgOk}/${ph.length} · видео ${vOk}/${vd.length} · заголовок: ${head.slice(0, 40).replace(/\s+/g, ' ')}`);
-      const needV = qOf(jobId).filter(x => x.kind === 'video').length, needP = qOf(jobId).filter(x => x.kind === 'photo').length;
-      if (ph.length < needP || imgOk < needP) throw new Error('миниатюры фото: ' + imgOk + ' из ' + needP);
-      if (vd.length < needV || vOk < needV) throw new Error('плитки видео: ' + vOk + ' из ' + needV);
-      return { note: tiles.length + ' плиток, миниатюры на месте' };
-    });
+    await step(t('ct_s_thumbs'), async () => ctTilesCheck(jobId, nPh, nVd));
     await step(t('ct_s_save'), async () => {
       await saveJob(false); jobDraft = null;
       const j = jobById(jobId); if (!j) throw new Error('инвойс пропал после сохранения');
       state.screen = 'home'; state.jobId = null; render(); await wait(300);
       if (state.screen !== 'home') throw new Error('не вышли на главную');
-      ctLine(`   сохранено · выход на главную · очередь документа: ${qOf(jobId).length} файл(ов) в IndexedDB`);
+      ctLine(`   сохранено · выход на главную · очередь документа: ${qOf(jobId).length} файл(ов) в IndexedDB · уже на сервере: ${(state.data.media || []).filter(m => m.job_id === jobId).length}`);
       return { note: 'сохранено, вышли' };
     });
     await step(t('ct_s_reopen'), async () => {
       openJob(jobId); await wait(400);
-      const tiles = document.querySelectorAll('.media-card .mth.loc').length;
-      const ok = [...document.querySelectorAll('.media-card .mth.loc img')].filter(im => /^blob:/.test(im.getAttribute('src') || '')).length;
-      ctLine(`   документ открыт заново: плиток ${tiles}, миниатюр из очереди ${ok}`);
-      const need = qOf(jobId).length;
-      if (tiles < need) throw new Error('плиток ' + tiles + ', а в очереди ' + need);
+      const r = await ctTilesCheck(jobId, nPh, nVd);
+      ctLine(`   документ открыт заново: плиток ${r.r.total} (из очереди ${r.r.phLoc + r.r.vdLoc}, с сервера ${r.r.phSrv + r.r.vdSrv})`);
       state.screen = 'home'; state.jobId = null; jobDraft = null; render(); await wait(200);
-      return { note: 'плиток ' + tiles + ' — на месте' };
+      return { note: 'плиток ' + r.r.total + ' — на месте' };
     });
     ctLiveOpen(t('ct_btn'), t('ct_live_send'));                   // v1.08.81
     await step(t('ct_s_send'), async () => { const r = await ctStepSend(jobId); srvRows = r.rows || []; return r; });
@@ -19832,33 +19845,24 @@ async function camTest2Run(resume){
     if (!stop && !await run('photo-launch', t('ct2_s_launch_p'), async () => { await jobOpen(); st.t0s.photo = Date.now(); ct2Save(); phoneCamLaunch(st.jobId, 'photo', 'job'); return { note: 'intent ' + way2IntentUrl('photo') }; })) stop = true;
     if (!stop && !await run('photo-wait', t('ct2_s_wait_p'), async () => {
       await jobOpen();
-      await ct2WaitUser(t('ct2_p_photo'), () => ctQOf(st.jobId).filter(x => x.kind === 'photo').length >= 2 && !(mPrepN.get(st.jobId) > 0), CT2_USER_SEC);
+      const cntP = () => ctQOf(st.jobId).filter(x => x.kind === 'photo').length + (state.data.media || []).filter(m => m.job_id === st.jobId && m.kind === 'photo').length;
+      await ct2WaitUser(t('ct2_p_photo'), () => cntP() >= 2 && !(mPrepN.get(st.jobId) > 0), CT2_USER_SEC);
       const ph = ctQOf(st.jobId).filter(x => x.kind === 'photo');
       ph.forEach((x, i) => ctLine(`   фото ${i + 1}: ${x.name} · ${x.w || '?'}×${x.h || '?'} · ${ctKB(x.blob ? x.blob.size : 0)}${x.orig ? ' (оригинал)' : ' (пережато)'} · превью ${x.thumb ? ctKB(x.thumb.size) : 'нет'}`));
       return { note: ph.length + ' фото за ' + Math.round((Date.now() - (st.t0s.photo || Date.now())) / 1000) + ' с' + w2note('photo') };
     })) stop = true;
-    if (!stop && !await run('photo-thumbs', t('ct_s_thumbs'), async () => {
-      await jobOpen(); await ctWait(300);
-      const tiles = [...document.querySelectorAll('.media-card .mth.loc')].filter(el => !el.querySelector('.mvid'));
-      const ok = tiles.filter(el => { const im = el.querySelector('img'); return im && /^blob:/.test(im.getAttribute('src') || ''); }).length;
-      ctLine(`   плиток фото в документе ${tiles.length}, миниатюр ${ok}`);
-      if (ok < 2) throw new Error('миниатюры фото: ' + ok + ' из 2');
-      return { note: ok + ' миниатюры на месте' };
-    })) stop = true;
+    if (!stop && !await run('photo-thumbs', t('ct_s_thumbs'), async () => { await jobOpen(); return ctTilesCheck(st.jobId, 2, 0); })) stop = true;
     if (!stop && !await run('video-launch', t('ct2_s_launch_v'), async () => { await jobOpen(); st.t0s.video = Date.now(); ct2Save(); phoneCamLaunch(st.jobId, 'video', 'job'); return { note: 'intent ' + way2IntentUrl('video') }; })) stop = true;
     if (!stop && !await run('video-wait', t('ct2_s_wait_v'), async () => {
       await jobOpen();
-      await ct2WaitUser(t('ct2_p_video'), () => ctQOf(st.jobId).some(x => x.kind === 'video') && !(mPrepN.get(st.jobId) > 0), CT2_USER_SEC);
+      const cntV = () => ctQOf(st.jobId).filter(x => x.kind === 'video').length + (state.data.media || []).filter(m => m.job_id === st.jobId && m.kind === 'video').length;
+      await ct2WaitUser(t('ct2_p_video'), () => cntV() >= 1 && !(mPrepN.get(st.jobId) > 0), CT2_USER_SEC);
       const x = ctQOf(st.jobId).find(y => y.kind === 'video');
-      ctLine(`   ролик: ${x.name} · ${x.mime} · ${ctMB(x.blob.size)} · длительность ${x.dur || '?'} с · превью ${x.thumb ? ctKB(x.thumb.size) : 'нет (значок)'}`);
-      return { note: ctMB(x.blob.size) + ' за ' + Math.round((Date.now() - (st.t0s.video || Date.now())) / 1000) + ' с' + w2note('video') };
+      if (x) ctLine(`   ролик: ${x.name} · ${x.mime} · ${ctMB(x.blob.size)} · длительность ${x.dur || '?'} с · превью ${x.thumb ? ctKB(x.thumb.size) : 'нет (значок)'}`);
+      else ctLine('   ролик уже отправлен на Диск, пока вы возвращались');
+      return { note: (x ? ctMB(x.blob.size) : 'ролик на Диске') + ' за ' + Math.round((Date.now() - (st.t0s.video || Date.now())) / 1000) + ' с' + w2note('video') };
     })) stop = true;
-    if (!stop && !await run('video-thumbs', t('ct_s_thumbs'), async () => {
-      await jobOpen(); await ctWait(300);
-      const vd = [...document.querySelectorAll('.media-card .mth.loc')].filter(el => el.querySelector('.mvid'));
-      if (!vd.length) throw new Error('плитка видео не показана');
-      return { note: 'плитка видео на месте' };
-    })) stop = true;
+    if (!stop && !await run('video-thumbs', t('ct_s_thumbs'), async () => { await jobOpen(); return ctTilesCheck(st.jobId, 2, 1); })) stop = true;
     if (!stop && !await run('save-wait', t('ct2_s_save'), async () => {
       /* v1.08.81: «Сохранить» нажимает сам тест — ждать пользователя не надо */
       await jobOpen(); ct2BarHide();
@@ -19910,9 +19914,14 @@ function camTest2Abort(){ if (CT2.running){ CT2.abort = true; ct2Bar(t('ct2_abor
 function ctLiveOpen(title, sub, mode){
   const c = tlogGet();
   const lines = (c && !c.finished ? c.lines : CT.lines).map(l => `${l.time} ${l.text}`).join('\n');
+  /* v1.08.83: «Копировать / Скачать / Поделиться» есть с первой секунды —
+     копируется отчёт в его текущем виде (журнал ещё не закрыт) */
+  const copyBtns = `<button class="btn btn-blue sm" onclick="App.tlogCopy()">${ic('copy')} ${t('tl_copy')}</button>
+    <button class="btn btn-ghost sm" onclick="App.tlogSave()">${ic('download')} ${t('tl_save')}</button>
+    ${tlogCanShare() ? `<button class="btn btn-ghost sm" onclick="App.tlogShare()">${ic('share')} ${t('tl_share')}</button>` : ''}`;
   const acts = mode === 'continue'
-    ? `<button class="btn btn-green" onclick="App.ctLiveHide()">${ic('check')} ${t('ct_live_continue')}</button>`
-    : `<button class="btn btn-ghost sm" onclick="App.ctLiveHide()">${t('ct_live_hide')}</button>${CT2.running ? `<button class="btn btn-red sm" onclick="App.camTest2Abort()">${t('ct2_abort')}</button>` : ''}`;
+    ? `<button class="btn btn-green" onclick="App.ctLiveHide()">${ic('check')} ${t('ct_live_continue')}</button>${copyBtns}`
+    : `${copyBtns}<button class="btn btn-ghost sm" onclick="App.ctLiveHide()">${t('ct_live_hide')}</button>${CT2.running ? `<button class="btn btn-red sm" onclick="App.camTest2Abort()">${t('ct2_abort')}</button>` : ''}`;
   if (document.getElementById('ct-live')){ ctLiveSub(sub); return; }
   openModal(`
     ${modalHead(title, 'flask')}
