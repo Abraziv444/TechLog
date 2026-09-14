@@ -55,10 +55,13 @@ const intake = p => p.evaluate(async () => (await window.App.cam.intakeAll()).ma
     await p.waitForTimeout(2500);
     const st = await p.evaluate(() => { const s = window.App.cam.st(); return { shots: s.shots, cnt: document.querySelector('.camin-cnt').textContent, last: !!document.querySelector('.camin-last img').getAttribute('src') }; });
     t('два кадра: счётчик 2/N, последний кадр показан', st.shots === 2 && /^2\//.test(st.cnt) && st.last, JSON.stringify(st));
-    await p.evaluate(() => window.App.cam.close()); await p.waitForTimeout(600);
+    await p.evaluate(() => window.App.cam.close()); await p.waitForTimeout(300);
     t('камера закрыта, класс снят, поток остановлен', await p.evaluate(() => !document.querySelector('#camin') && !document.documentElement.classList.contains('tl-camin') && !window.App.cam.st().stream));
+    /* v1.08.75: кадры разбираются после «Готово» — ждём плитки */
+    await p.waitForFunction(() => document.querySelectorAll('.media-card .mth.loc').length >= 2, null, { timeout: 20000 }).catch(() => {});
+    await p.waitForTimeout(500);
     const loc = await tiles(p, '.media-card .mth.loc');
-    t('оба кадра встали в очередь документа (плитки в полосе)', loc >= 2, 'плиток ' + loc);
+    t('оба кадра встали в очередь документа (плитки в полосе) после «Готово»', loc >= 2, 'плиток ' + loc);
     const ik = await intake(p);
     t('приёмник пуст после разбора', ik.length === 0, JSON.stringify(ik));
     t('в очереди — фото jpeg с превью', await p.evaluate(async () => {
@@ -73,7 +76,11 @@ const intake = p => p.evaluate(async () => (await window.App.cam.intakeAll()).ma
     t('оверлей видео: красный затвор, подсказка «до 90 с»', await p.evaluate(() => !!document.querySelector('#camin.vid .camin-shutter.rec') && /90/.test(document.querySelector('.camin-left').textContent)));
     await p.evaluate(() => window.App.cam.shot()); await p.waitForTimeout(1800);
     t('идёт запись: таймер виден, затвор «on»', await p.evaluate(() => { const s = window.App.cam.st(); const tm = document.querySelector('.camin-timer'); return !!s.rec && tm && tm.style.display !== 'none' && /\d:\d\d/.test(tm.textContent) && document.querySelector('.camin-shutter').classList.contains('on'); }));
-    await p.evaluate(() => window.App.cam.shot()); await p.waitForTimeout(4000);
+    await p.evaluate(() => window.App.cam.shot());
+    await p.waitForFunction(() => !window.App.cam.st().rec, null, { timeout: 10000 });
+    await p.evaluate(() => window.App.cam.close());                                  // v1.08.75: разбор после «Готово»
+    await p.waitForFunction(() => !!document.querySelector('.media-card .mth.loc .mvid'), null, { timeout: 30000 }).catch(() => {});
+    await p.waitForTimeout(400);
     const vq = await p.evaluate(async () => {
       const d = await new Promise((r, j) => { const o = indexedDB.open('tl-media', 2); o.onsuccess = () => r(o.result); o.onerror = () => j(o.error); });
       const rows = await new Promise((r, j) => { const tx = d.transaction('outbox', 'readonly'); const q = tx.objectStore('outbox').getAll(); q.onsuccess = () => r(q.result); q.onerror = () => j(q.error); });
@@ -81,7 +88,6 @@ const intake = p => p.evaluate(async () => (await window.App.cam.intakeAll()).ma
       const v = rows.filter(x => x.kind === 'video');
       return v.map(x => ({ mime: x.mime, size: x.blob && x.blob.size, dur: x.dur, thumb: !!(x.thumb && x.thumb.size), name: x.name })); });
     t('ролик встал в очередь (mp4/webm, размер > 0, имя TL_…)', vq.length === 1 && vq[0].size > 1000 && /^TL_\d{8}_\d{6}\.(mp4|webm)$/.test(vq[0].name), JSON.stringify(vq));
-    await p.evaluate(() => window.App.cam.close()); await p.waitForTimeout(300);
     t('плитка видео в полосе (с превью или значком)', await p.evaluate(() => [...document.querySelectorAll('.media-card .mth.loc')].some(el => el.querySelector('.mvid'))));
 
     console.log('— приёмник: доразбор при запуске —');

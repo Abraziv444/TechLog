@@ -2665,3 +2665,17 @@ html.tl-camin #toasts{z-index:10001}
 .ct-log .b{font-weight:900;color:var(--text)}
 .ct-log .err{color:var(--red)}
 .ct-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+/* v1.08.75: метрики отклика камеры — плашка в камере и сводка в настройках */
+.camin-perf{position:absolute;left:10px;right:10px;top:calc(96px + env(safe-area-inset-top,0px));
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.66rem;line-height:1.35;
+  color:#fff;background:rgba(0,0,0,.55);border-radius:10px;padding:4px 8px;pointer-events:auto;user-select:none}
+.camin-perf b{color:var(--green)}
+.camin-perf.min{right:auto;padding:2px 8px;font-size:.6rem;opacity:.7}
+.camin-perf.min br,.camin-perf.min br ~ *{display:none}
+@media (orientation:landscape){ .camin-perf{right:140px} }
+.cp-last{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.66rem;
+  line-height:1.35;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:6px 8px;margin:6px 0;max-height:260px;overflow:auto}
+/* v1.08.76: журнал последнего теста — блок в карточках и кнопки */
+.tl-last{margin:8px 0 10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.tl-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tl-acts .btn{flex:1 1 auto;justify-content:center}

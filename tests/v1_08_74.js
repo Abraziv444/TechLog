@@ -44,8 +44,8 @@ function t(name, cond, note){
   console.log(res.rows.map(r => '     ' + r).join('\n'));
   const m = /тест съёмки: (\d+) из (\d+) шагов · (\d+) с/.exec(res.fin);
   t('все шаги пройдены', m && m[1] === m[2] && +m[2] >= 12, res.fin);
-  const names = ['Окружение', 'Инвойс CAMTEST', 'Документ открыт', 'Камера: 2 кадра', 'Обработка фото и очередь', 'Камера: видео 4 с', 'Миниатюры в документе', 'Сохранить и выйти', 'Документ заново', 'Фоновая отправка на Диск', 'Миниатюры с сервера', 'Просмотр фото и видео с Диска', 'Удаление инвойса'];
-  t('состав шагов по порядку', names.every((n, i) => res.rows[i] && res.rows[i].includes(n)), res.rows.slice(0, 13).join(' | '));
+  const names = ['Окружение', 'Инвойс CAMTEST', 'Документ открыт', 'Камера: 2 кадра', 'Обработка фото и очередь', 'Камера: видео 4 с', 'Метрики отклика камеры', 'Миниатюры в документе', 'Сохранить и выйти', 'Документ заново', 'Фоновая отправка на Диск', 'Миниатюры с сервера', 'Просмотр фото и видео с Диска', 'Удаление инвойса'];
+  t('состав шагов по порядку', names.every((n, i) => res.rows[i] && res.rows[i].includes(n)), res.rows.slice(0, 14).join(' | '));
   t('демо: отправка, миниатюры с сервера и просмотр помечены «пропущено»', res.rows.filter(r => /демо-режим — пропущено/.test(r)).length === 3);
   t('журнал: окружение (версия, телефон, демо, API), поток камеры, два кадра с размером, ролик в очереди, миниатюры, очередь в IndexedDB',
     /приложение 1\.08\.\d+ · телефон/.test(res.log) && /сервер: демо/.test(res.log) && /API: getUserMedia есть/.test(res.log)
@@ -69,7 +69,7 @@ function t(name, cond, note){
   await p.evaluate(() => window.App.camTestCopy()); await p.waitForTimeout(300);
   const clip = await p.evaluate(async () => { try{ return await navigator.clipboard.readText(); }catch(e){ return 'ERR ' + e; } });
   t('буфер обмена: заголовок с версией и пользователем, строки с временем, блок «— шаги —»',
-    /^TechLog 1\.08\.\d+ — тест съёмки/.test(clip) && /\n\d\d:\d\d:\d\d\.\d{3}  ▶ Окружение/.test(clip) && /— шаги —\n✓ Окружение — \d+ мс/.test(clip) && clip.split('\n').length > 40, clip.slice(0, 200));
+    /^TechLog 1\.08\.\d+ — Тест съёмки/.test(clip) && /\n\d\d:\d\d:\d\d\.\d{3}  ▶ Окружение/.test(clip) && /--- шаги ---\n✓ Окружение — \d+ ms/.test(clip) && clip.split('\n').length > 40, clip.slice(0, 200));
   const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }), p.evaluate(() => window.App.camTestSave())]);
   const fname = dl.suggestedFilename();
   const path = await dl.path(); const body = require('fs').readFileSync(path, 'utf8');

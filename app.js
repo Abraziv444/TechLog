@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.74';
+const APP_VERSION = '1.08.76';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -97,6 +97,7 @@ function dlog(){
   const line = head + ' ' + parts.join(' ');
   DIAG.push(line);
   if (DIAG.length > 300) DIAG.shift();
+  try{ if (typeof TLOG !== 'undefined' && TLOG.active) tlogLine('dlog: ' + parts.join(' '), 'dim'); }catch(e){}   // v1.08.76
   try {
     PLOG.push(line);
     if (PLOG.length > 2000) PLOG.splice(0, PLOG.length - 2000);   // v1.07.18: максимум 2000 строк
@@ -933,6 +934,28 @@ const I18N = {
     share_none: 'Нет документа, куда положить файлы — откройте инвойс и поделитесь ещё раз',
     share_hint: 'Снимите камерой телефона как обычно, затем в галерее «Поделиться» → TechLog: кадры попадут в открытый документ. Это надёжнее камеры через системный выбор — приложение не ждёт в фоне и не выгружается.',
     intake_rest: 'кадры не пропали: восстановлено {N}',
+    /* v1.08.76: журнал теста */
+    tl_title: 'Журнал последнего теста', tl_save: 'Скачать .txt', tl_share: 'Поделиться', tl_copy: 'Копировать', tl_show: 'Показать',
+    tl_started: 'начат', tl_finished: 'завершён', tl_running: 'идёт', tl_status_abort: '⛔ прерван (страница перезапустилась)',
+    tl_steps: '{N} из {T} шагов', tl_lines: 'строк',
+    tl_sec_log: 'журнал теста', tl_sec_steps: 'шаги', tl_sec_perf: 'метрики отклика камеры (последние съёмки)', tl_sec_mq: 'журнал отправки фото и видео (последние строки)', tl_sec_app: 'журнал приложения (последние строки)',
+    tl_aborted: 'тест прерван: страница была перезапущена (обнаружено {T})', tl_aborted_toast: 'Прошлый тест прервался — журнал сохранён: Настройки → Съёмка → «Журнал последнего теста»',
+    tl_done_t: 'Тест завершён', tl_done_h: 'Журнал сохранён на устройстве целиком и останется доступным в Настройки → Съёмка / Диагностика → «Журнал последнего теста» даже после перезапуска. «Скачать .txt» кладёт файл в «Загрузки», «Поделиться» отправляет его в Telegram, почту и т. п.',
+    log_save: 'Скачать .txt', log_share: 'Поделиться',
+    /* v1.08.75: метрики отклика камеры */
+    cp_title: 'Метрики отклика камеры',
+    cp_hint: 'Пока камера открыта, приложение меряет: задержку от нажатия до обработчика и до следующего кадра экрана, длинные задачи главного потока, кадры в секунду превью и главного потока, время самого снимка (takePhoto / кадр с потока), запись в приёмник, а после «Готово» — декодирование, превью и перерисовку документа. По этим цифрам видно, кто тормозит: наш софт (занят главный поток) или телефон (превью не успевает, камера долго отдаёт кадр). Кадры теперь разбираются только после закрытия камеры — пока снимаете, приложение ничего тяжёлого не делает.',
+    cp_ui: 'Показывать плашку с метриками в камере', cp_copy: 'Копировать метрики', cp_none: 'Съёмки ещё не было — метрики появятся после первой съёмки камерой в приложении',
+    cp_live_prev: 'превью к/с', cp_live_main: 'поток к/с', cp_live_jank: 'рывков', cp_live_tap: 'тап', cp_live_shot: 'снимок', cp_live_long: 'долгих',
+    cp_h_session: 'Съёмка:', cp_h_shots: 'кадров', cp_h_preview: 'превью', cp_h_cores: 'ядер', cp_h_fps: 'Кадры/с',
+    cp_h_long: 'Долгие задачи главного потока', cp_h_tap: 'тап→обработчик', cp_h_paint: 'обработчик→кадр экрана',
+    cp_h_evt: 'Event Timing по нажатиям', cp_h_delay: 'задержка', cp_h_proc: 'обработка', cp_h_present: 'до отрисовки',
+    cp_h_shot: 'снимок', cp_h_intake: 'в приёмник', cp_h_ltafter: 'долгие после тапа', cp_h_after: 'После «Готово»', cp_h_mem: 'Память JS', cp_h_verdict: 'Вывод',
+    cp_v_ok: 'отклик в норме: тап→обработчик {T} мс, долгих задач {L} ({LM} мс), снимок {S} мс, превью {P} к/с',
+    cp_v_soft: 'похоже на софт — главный поток занят: тап→обработчик {T} мс, долгих задач {L} на {LM} мс (смотрите «долгие после тапа» и «После Готово»)',
+    cp_v_hal: 'похоже на камеру телефона — сам снимок идёт {S} мс при отклике интерфейса {T} мс (HAL/ISP телефона; попробуйте качество «Стандарт» или другой телефон)',
+    cp_v_chip: 'похоже на железо — превью {P} к/с при свободном главном потоке ({M} к/с, тап {T} мс): GPU/камера не успевают; ниже разрешение превью помогает',
+    cp_v_weak: 'слабый телефон — главный поток {M} к/с без длинных задач ({L}): просто мало производительности, а не ошибка софта',
     /* v1.08.74: тест съёмки */
     ct_btn: 'Тест съёмки: фото и видео', ct_running: 'Идёт тест съёмки…',
     ct_hint: 'Сквозная проверка камеры в приложении на живых данных от вашего имени: создаёт инвойс Unit CAMTEST на сегодня, открывает камеру и снимает 2 кадра и 4-секундный ролик (держите телефон — снимает то, что перед объективом), проверяет миниатюры в документе, сохраняет и выходит, открывает документ заново, следит за фоновой отправкой на Диск с полным журналом, проверяет миниатюры с сервера и открывает фото и видео с Диска, затем удаляет инвойс. В демо-режиме отправка пропускается. Подробный отчёт можно скопировать или сохранить в .txt.',
@@ -942,6 +965,7 @@ const I18N = {
     ct_s_prep: 'Обработка фото и очередь', ct_s_video: 'Камера: видео 4 с', ct_s_thumbs: 'Миниатюры в документе',
     ct_s_save: 'Сохранить и выйти', ct_s_reopen: 'Документ заново', ct_s_send: 'Фоновая отправка на Диск',
     ct_s_srv: 'Миниатюры с сервера', ct_s_view: 'Просмотр фото и видео с Диска', ct_s_del: 'Удаление инвойса', ct_s_clean: 'Уборка',
+    ct_s_perf: 'Метрики отклика камеры',
     mv_dl_pct: 'загрузка {P}%', mv_dl_mb: '{A} из {B} МБ',
     mq_l_vid_codec: 'ролик {N} МБ не проходит лимит, а пережать его телефон не смог ({E}). Снимите видео кнопкой «Видео» (в приложении, H.264) или выключите HEVC в настройках камеры телефона',
     cam_native_btn: 'Резкость как у родной камеры',
@@ -1979,6 +2003,28 @@ const I18N = {
     share_none: 'No document to put the files in — open an invoice and share again',
     share_hint: 'Shoot with the phone camera as usual, then in the gallery «Share» → TechLog: the frames land in the open document. Safer than the camera via the system chooser — the app is not waiting in the background and cannot be unloaded.',
     intake_rest: 'frames kept: {N} restored',
+    /* v1.08.76: test log */
+    tl_title: 'Last test log', tl_save: 'Download .txt', tl_share: 'Share', tl_copy: 'Copy', tl_show: 'Show',
+    tl_started: 'started', tl_finished: 'finished', tl_running: 'running', tl_status_abort: '⛔ aborted (page restarted)',
+    tl_steps: '{N} of {T} steps', tl_lines: 'lines',
+    tl_sec_log: 'test log', tl_sec_steps: 'steps', tl_sec_perf: 'camera responsiveness metrics (last captures)', tl_sec_mq: 'photo/video upload log (last lines)', tl_sec_app: 'application log (last lines)',
+    tl_aborted: 'test aborted: the page was restarted (detected {T})', tl_aborted_toast: 'The previous test was interrupted — the log is kept: Settings → Capture → «Last test log»',
+    tl_done_t: 'Test finished', tl_done_h: 'The full log is saved on this device and stays available in Settings → Capture / Diagnostics → «Last test log» even after a restart. «Download .txt» puts the file into Downloads, «Share» sends it to Telegram, mail etc.',
+    log_save: 'Download .txt', log_share: 'Share',
+    /* v1.08.75: camera responsiveness metrics */
+    cp_title: 'Camera responsiveness metrics',
+    cp_hint: 'While the camera is open the app measures: delay from the tap to the handler and to the next screen frame, long main-thread tasks, preview and main-thread frames per second, the shot itself (takePhoto / frame grab), the intake write, and after «Done» — decoding, thumbnail and document re-render. The numbers show who is slow: our software (busy main thread) or the phone (preview cannot keep up, the camera takes long to return the frame). Frames are now processed only after the camera closes — nothing heavy runs while you shoot.',
+    cp_ui: 'Show the metrics pill in the camera', cp_copy: 'Copy metrics', cp_none: 'No capture yet — metrics appear after the first in-app capture',
+    cp_live_prev: 'preview fps', cp_live_main: 'main fps', cp_live_jank: 'jank', cp_live_tap: 'tap', cp_live_shot: 'shot', cp_live_long: 'long',
+    cp_h_session: 'Capture:', cp_h_shots: 'shots', cp_h_preview: 'preview', cp_h_cores: 'cores', cp_h_fps: 'Frames/s',
+    cp_h_long: 'Long main-thread tasks', cp_h_tap: 'tap→handler', cp_h_paint: 'handler→screen frame',
+    cp_h_evt: 'Event Timing for taps', cp_h_delay: 'delay', cp_h_proc: 'processing', cp_h_present: 'to paint',
+    cp_h_shot: 'shot', cp_h_intake: 'intake', cp_h_ltafter: 'long after tap', cp_h_after: 'After «Done»', cp_h_mem: 'JS memory', cp_h_verdict: 'Verdict',
+    cp_v_ok: 'responsiveness OK: tap→handler {T} ms, long tasks {L} ({LM} ms), shot {S} ms, preview {P} fps',
+    cp_v_soft: 'looks like software — main thread busy: tap→handler {T} ms, {L} long tasks totalling {LM} ms (see «long after tap» and «After Done»)',
+    cp_v_hal: 'looks like the phone camera — the shot itself takes {S} ms while the UI responds in {T} ms (phone HAL/ISP; try «Standard» quality or another phone)',
+    cp_v_chip: 'looks like hardware — preview {P} fps with a free main thread ({M} fps, tap {T} ms): GPU/camera cannot keep up; a lower preview resolution helps',
+    cp_v_weak: 'weak phone — main thread {M} fps without long tasks ({L}): just low performance, not a software bug',
     /* v1.08.74: camera self-test */
     ct_btn: 'Camera test: photo and video', ct_running: 'Camera test running…',
     ct_hint: 'End-to-end check of the in-app camera on live data under your name: creates a Unit CAMTEST invoice for today, opens the camera and takes 2 shots and a 4-second clip (hold the phone — it records what is in front of the lens), checks the thumbnails in the document, saves and exits, reopens the document, follows the background upload to Drive with the full log, checks the thumbnails from the server and opens the photo and the video from Drive, then deletes the invoice. In demo mode the upload is skipped. The detailed report can be copied or saved as .txt.',
@@ -1988,6 +2034,7 @@ const I18N = {
     ct_s_prep: 'Photo processing and queue', ct_s_video: 'Camera: 4-s video', ct_s_thumbs: 'Thumbnails in the document',
     ct_s_save: 'Save and exit', ct_s_reopen: 'Document reopened', ct_s_send: 'Background upload to Drive',
     ct_s_srv: 'Thumbnails from the server', ct_s_view: 'Viewing the photo and the video from Drive', ct_s_del: 'Deleting the invoice', ct_s_clean: 'Cleanup',
+    ct_s_perf: 'Camera responsiveness metrics',
     mv_dl_pct: 'loading {P}%', mv_dl_mb: '{A} of {B} MB',
     mq_l_vid_codec: 'the {N} MB clip exceeds the limit and the phone could not shrink it ({E}). Record with the «Video» button (in-app, H.264) or turn HEVC off in the phone camera settings',
     cam_native_btn: 'Sharpness like the native camera',
@@ -4661,6 +4708,7 @@ const IC = {
      где они были элементом интерфейса (кнопки, заголовки, статусы). */
   camera: '<path d="M3.8 8.2h3.1l1.4-2.4h7.4l1.4 2.4h3.1a1.6 1.6 0 0 1 1.6 1.6v8a1.6 1.6 0 0 1-1.6 1.6H3.8a1.6 1.6 0 0 1-1.6-1.6v-8a1.6 1.6 0 0 1 1.6-1.6z"/><circle cx="12" cy="13.4" r="3.5"/>',
   bolt: '<path d="M13.2 2.6 5.4 13.4h5.4l-1.2 8 7.8-10.8h-5.4z"/>',   /* v1.08.73: вспышка камеры в приложении */
+  gauge: '<path d="M4.2 16.6a8.2 8.2 0 1 1 15.6 0"/><path d="M12 14.6 16.4 9"/><circle cx="12" cy="15" r="1.4"/>',   /* v1.08.75: метрики отклика */
   video: '<rect x="2.6" y="6.4" width="12.6" height="11.2" rx="2"/><path d="M15.2 11.1 20.9 8v8l-5.7-3.1z"/>',
   link: '<path d="M10.2 13.4a3.7 3.7 0 0 0 5.5.4l2.5-2.5a3.7 3.7 0 0 0-5.2-5.2l-1.4 1.4"/><path d="M13.8 10.6a3.7 3.7 0 0 0-5.5-.4l-2.5 2.5a3.7 3.7 0 0 0 5.2 5.2l1.4-1.4"/>',
   eye_off: '<path d="M4.2 4.4 19.8 20"/><path d="M9.7 9.8a3.2 3.2 0 0 0 4.5 4.5"/><path d="M6.6 6.8C4.5 8.1 2.9 9.9 2 12c1.9 4 5.6 6.4 10 6.4 1.6 0 3.2-.3 4.6-.9"/><path d="M19.3 16C20.5 15 21.4 13.6 22 12c-1.9-4-5.6-6.4-10-6.4-.7 0-1.3.05-2 .16"/>',
@@ -10058,9 +10106,11 @@ const App = {
   printBtn(v){ printBtnSet(v); }, jobPrint(id){ jobPrintQuick(id); }, gdFullTest,   // v1.08.71
   regress(){ regressRun(); },                                                          // v1.08.72
   camTest(){ camTestRun(); }, camTestCopy(){ ctCopy(); }, camTestSave(){ ctSave(); }, camTestState(){ return CT; },   // v1.08.74
+  camPerfUi(on){ camPerfUiSet(on); }, camPerfCopy(){ camPerfCopy(); },                                             // v1.08.75
   /* v1.08.73: камера в приложении */
-  cam: { open: camInOpen, close(){ camInClose(); }, shot(){ camInShot(); }, torch(){ camInTorch(); },
-         flip(){ camInFlip(); }, zoom(z, b){ camInZoom(z, b); }, st(){ return CAMIN; }, can: camInCan,
+  cam: { open: camInOpen, close(){ camInClose(); }, shot(ev){ camInShot(ev); }, torch(ev){ camInTorch(ev); },
+         flip(ev){ camInFlip(ev); }, zoom(z, b){ camInZoom(z, b); }, st(){ return CAMIN; }, can: camInCan,
+         pd(ev){ CAMIN.pdTs = ev && ev.timeStamp || 0; }, perf(){ return CAMPERF; }, perfText: camPerfText,
          recover: intakeRecover, shareModal: shareIntakeModal,
          intakeAll: () => intakeAll(), intakeDel: id => intakeDel(id), intakePut: r => intakePut(r) },
   copyDl(v){ mCopyDlSet(v); },                                     // v1.08.47
@@ -10242,7 +10292,8 @@ const App = {
   /* v1.08.32: машины Bouncie и справочник «Автомобили» */
   bnToggleCar, bnCarsAll, bnFocusCar, bnSaveKeys, bnConnect, bnTest, bnReveal, bnToggleEdit,
   vehModal, vehSave, vehDel, vehImport,
-  showLog: showLogModal, copyLog, clearLog,
+  showLog: showLogModal, copyLog, clearLog, logSave, logShare,                                     // v1.08.76
+  tlogSave(){ tlogSave(); }, tlogCopy(){ tlogCopy(); }, tlogShare(){ tlogShare(); }, tlogShow(){ tlogShow(); }, tlogGet(){ return tlogGet(); },
   jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
   jrAct(v){ state.jr.act = v; loadJournal(true); },
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
@@ -10686,6 +10737,7 @@ function canonUrl(loc){
        когда данные уже загружены (раньше запускалось через 900 мс от старта,
        и при медленной сети документ ещё не был известен) */
     if (state.user) setTimeout(() => { pickRestore().catch(e => dlog('⛔ pickRestore:', e)); }, 400);
+    try{ tlogInit(); }catch(e){}                                    // v1.08.76: тест, прерванный перезапуском страницы
     if (state.user) checkPickupBanner(true);
     setInterval(() => checkForUpdate('таймер 10 мин'), 10 * 60 * 1000);
     /* v1.07.83: раз в минуту смотрим на часы; сама проверка переводов
@@ -14432,12 +14484,19 @@ function showLogModal(){
   openModal(`
     ${modalHead(t('log_title'), 'receipt')}
     <pre class="diag-pre">${esc(txt)}</pre>
-    <button class="btn btn-blue" onclick="App.copyLog()">${ic('clipboard')} ${t('diag_copy')}</button>
+    <div class="tl-acts">
+      <button class="btn btn-green sm" onclick="App.logSave()">${ic('download')} ${t('log_save')}</button>
+      ${tlogCanShare() ? `<button class="btn btn-blue sm" onclick="App.logShare()">${ic('share')} ${t('log_share')}</button>` : ''}
+      <button class="btn btn-ghost sm" onclick="App.copyLog()">${ic('clipboard')} ${t('diag_copy')}</button>
+    </div>
     <button class="btn btn-red" style="margin-top:8px" onclick="App.clearLog()">${ic('trash')} ${t('clear')}</button>
     <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
   `);
 }
-function copyLog(){ navigator.clipboard?.writeText(window.__lastLog || '').then(()=>toast('✓ ' + t('copied'))); }
+function copyLog(){ copyText(window.__lastLog || ''); }
+function logFileName(){ const d = new Date(), z = n => String(n).padStart(2, '0'); return `techlog-log-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}.txt`; }
+function logSave(){ dlTextFile(logFileName(), PLOG.join('\n') || '—'); toast('✓ ' + t('ct_saved').replace('{N}', logFileName())); }   // v1.08.76
+function logShare(){ shareTextFile(logFileName(), PLOG.join('\n') || '—'); }
 function clearLog(){ PLOG.length = 0; try{ localStorage.removeItem('techlog_log'); }catch(e){} closeModal(); toast('🗑 ' + t('deleted')); }
 
 /* ---------- Диагностика БД по всем таблицам (только админ) ---------- */
@@ -18020,11 +18079,15 @@ async function mediaTakeFiles(jobId, files, kind, opts){
     }
   }
   let added = 0, i = 0;
+  const perf = opts && typeof opts.perf === 'function' ? opts.perf : null;   // v1.08.75: метрики
   try{
     for (const f of files){
       const iid = iids[i++];
       try{
-        if (await mediaEnqueueFile(jobId, f, kind || mKindOf(f), doc, { rot: (opts && opts.rot) || 0, dur: (opts && opts.dur) || 0 })){
+        const pa = performance.now();
+        const okE = await mediaEnqueueFile(jobId, f, kind || mKindOf(f), doc, { rot: (opts && opts.rot) || 0, dur: (opts && opts.dur) || 0 });
+        if (perf) perf('prep', performance.now() - pa);
+        if (okE){
           added++;
           /* v1.08.47: снятое капчей (сразу камера) в галерею на многих
              телефонах НЕ попадает — единственный экземпляр жил бы в очереди.
@@ -18041,7 +18104,11 @@ async function mediaTakeFiles(jobId, files, kind, opts){
   navigator.vibrate?.(15);
   mediaStripRefresh(jobId);
   mediaBgPop();
-  render(); mediaFlush();
+  const ra = performance.now();
+  render();
+  if (perf) perf('render', performance.now() - ra);
+  mediaFlush();
+  if (perf) perf('flush', 0);
   return added;
 }
 /* v1.08.73: доразбор приёмника при запуске — файлы, которые не успели встать
@@ -18285,9 +18352,14 @@ function camInMotion(e){
 async function camInStart(){
   const v = CAMIN.el.querySelector('video');
   const isVid = CAMIN.kind === 'video';
+  /* v1.08.75: где есть ImageCapture, снимок берётся с матрицы отдельно от
+     потока — превью держим 1920×1440, а не 3264×2448: тяжёлый поток сам
+     по себе валит к/с на слабом GPU. Без ImageCapture кадр идёт с потока,
+     и разрешение потока = разрешение снимка — просим большое. */
+  const hasIC = typeof ImageCapture === 'function';
   const cons = isVid
     ? { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }, audio: true }
-    : { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: 3264 }, height: { ideal: 2448 } }, audio: false };
+    : { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: hasIC ? 1920 : 3264 }, height: { ideal: hasIC ? 1440 : 2448 } }, audio: false };
   let stream;
   CAMIN.noAudio = false;
   try{ stream = await navigator.mediaDevices.getUserMedia(cons); }
@@ -18306,6 +18378,9 @@ async function camInStart(){
   CAMIN.stream = stream; CAMIN.track = stream.getVideoTracks()[0] || null;
   v.srcObject = stream; v.muted = true;
   try{ await v.play(); }catch(e){}
+  try{ const st0 = CAMIN.track.getSettings ? CAMIN.track.getSettings() : {};
+    CAMPERF.preview = (st0.width || v.videoWidth) + '×' + (st0.height || v.videoHeight) + (st0.frameRate ? '@' + Math.round(st0.frameRate) : '');
+    camPerfMark('open', performance.now() - CAMPERF.t0 - 0, CAMPERF.preview); }catch(e){}
   /* возможности дорожки: вспышка и зум */
   let cap = {};
   try{ cap = CAMIN.track.getCapabilities ? CAMIN.track.getCapabilities() : {}; }catch(e){ cap = {}; }
@@ -18337,6 +18412,7 @@ function camInOpen(jobId, kind, doc){
   if (CAMIN.el) camInClose(true);
   CAMIN.jobId = jobId; CAMIN.kind = kind === 'video' ? 'video' : 'photo'; CAMIN.doc = doc || 'job';
   CAMIN.shots = 0; CAMIN.busy = false; CAMIN.rot = 0; CAMIN.recParts = []; CAMIN.rec = null; CAMIN.last = null;
+  CAMIN.deferred = []; CAMIN.pdTs = 0;
   /* v1.08.74: промис «камера запустилась / не запустилась» — для теста съёмки */
   CAMIN.ready = new Promise((res, rej) => { CAMIN._res = res; CAMIN._rej = rej; });
   CAMIN.ready.catch(() => {});
@@ -18349,20 +18425,21 @@ function camInOpen(jobId, kind, doc){
     <div class="camin-top">
       <button type="button" class="camin-btn" title="${t('cam_in_done')}" onclick="App.cam.close()">${ic('close')}</button>
       <div class="camin-title">${esc(camInTitle())}</div>
-      <button type="button" class="camin-btn camin-torch" style="display:none" title="${t('cam_in_torch')}" onclick="App.cam.torch()">${ic('bolt')}</button>
-      <button type="button" class="camin-btn camin-flip" style="display:none" title="${t('cam_in_flip')}" onclick="App.cam.flip()">${ic('refresh')}</button>
+      <button type="button" class="camin-btn camin-torch" style="display:none" title="${t('cam_in_torch')}" onpointerdown="App.cam.pd(event)" onclick="App.cam.torch(event)">${ic('bolt')}</button>
+      <button type="button" class="camin-btn camin-flip" style="display:none" title="${t('cam_in_flip')}" onpointerdown="App.cam.pd(event)" onclick="App.cam.flip(event)">${ic('refresh')}</button>
     </div>
     <div class="camin-msg wait">${t('cam_in_wait')}</div>
     ${isVid ? `<div class="camin-timer" style="display:none">0:00</div>` : ''}
     <div class="camin-zoom" style="display:none"></div>
     <div class="camin-bot">
       <div class="camin-last"><img alt=""><b class="camin-cnt">0</b></div>
-      <button type="button" class="camin-shutter ${isVid ? 'rec' : ''}" title="${isVid ? t('cam_in_rec') : t('cam_in_shot')}" onclick="App.cam.shot()"></button>
+      <button type="button" class="camin-shutter ${isVid ? 'rec' : ''}" title="${isVid ? t('cam_in_rec') : t('cam_in_shot')}" onpointerdown="App.cam.pd(event)" onclick="App.cam.shot(event)"></button>
       <button type="button" class="btn btn-green sm camin-done" onclick="App.cam.close()">${ic('check')} ${t('cam_in_done')}</button>
     </div>
     <div class="camin-left tiny">${isVid ? t('cam_in_rec_hint').replace('{N}', M_VMAX) : ''}</div>`;
   document.body.appendChild(el); CAMIN.el = el;
   document.documentElement.classList.add('tl-camin');
+  camPerfStart(CAMIN.kind, el.querySelector('video'));               // v1.08.75: метрики отклика
   /* полный экран + поворот «как держишь»: без него страница зафиксирована
      портретом (манифест), и боковой кадр приходил бы лежачим */
   CAMIN.locked = false;
@@ -18402,6 +18479,9 @@ function camInFail(e){
 function camInClose(silent){
   if (CAMIN.rec){ camInRecStop(); }
   camInStrCancel();
+  camPerfStop();                                                   // v1.08.75
+  const dj = CAMIN.jobId, dd = CAMIN.doc, dl = CAMIN.deferred || []; CAMIN.deferred = null;   // null = «закрыто»
+  setTimeout(() => { camInFlushList(dj, dd, dl); }, 0);            // разбор — после того, как оверлей снят
   if (CAMIN.motionOn){ try{ removeEventListener('devicemotion', camInMotion); }catch(e){} CAMIN.motionOn = false; }
   if (CAMIN._vis){ document.removeEventListener('visibilitychange', CAMIN._vis); CAMIN._vis = null; }
   if (CAMIN._key){ document.removeEventListener('keydown', CAMIN._key); CAMIN._key = null; }
@@ -18413,6 +18493,7 @@ function camInClose(silent){
   if (!silent && CAMIN.shots) navigator.vibrate?.(10);
 }
 async function camInTorch(on, quiet){
+  if (on && typeof on === 'object' && on.timeStamp){ camPerfTap(on, 'torch'); on = null; }   // v1.08.75
   if (!CAMIN.track) return;
   const want = on == null ? !CAMIN.torch : !!on;
   try{ await CAMIN.track.applyConstraints({ advanced: [{ torch: want }] }); CAMIN.torch = want; }
@@ -18426,7 +18507,8 @@ async function camInZoom(z, btn){
   const zb = CAMIN.el && CAMIN.el.querySelector('.camin-zoom');
   if (zb) zb.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
 }
-async function camInFlip(){
+async function camInFlip(ev){
+  if (ev && ev.timeStamp) camPerfTap(ev, 'flip');                    // v1.08.75
   if (CAMIN.busy || CAMIN.rec) return;
   CAMIN.facing = CAMIN.facing === 'environment' ? 'user' : 'environment';
   camInStrCancel(); camInMsg(t('cam_in_wait'), 'wait');
@@ -18434,7 +18516,7 @@ async function camInFlip(){
 }
 /* Снимок: ImageCapture.takePhoto (полное разрешение), иначе кадр с потока */
 async function camInGrab(){
-  const v = CAMIN.el.querySelector('video');
+  const v = (CAMIN.el && CAMIN.el.querySelector('video')) || document.createElement('video');
   const rot = CAMIN.locked ? 0 : CAMIN.rot;
   let blob = null, used = 'frame';
   if (typeof ImageCapture === 'function' && CAMIN.track){
@@ -18466,8 +18548,10 @@ async function camInGrab(){
   if (!blob) throw new Error('empty frame');
   return { blob, rot, src: used };
 }
-async function camInShot(){
+async function camInShot(ev){
+  const tap = ev && ev.timeStamp ? camPerfTap(ev, 'shutter') : null;    // v1.08.75: задержка ввода
   if (!CAMIN.el || CAMIN.busy) return;
+  const sJob = CAMIN.jobId, sDoc = CAMIN.doc;
   if (CAMIN.kind === 'video'){ if (CAMIN.rec) camInRecStop(); else camInRecStart(); return; }
   if (!CAMIN.stream){ camInMsg(t('cam_in_wait'), 'wait'); return; }
   if (CAMIN.left <= 0){ camInMsg(t('cam_in_full'), 'err'); return; }
@@ -18476,23 +18560,54 @@ async function camInShot(){
   if (fl){ fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go'); }
   camInMsg(t('cam_in_taking'), 'wait');
   try{
+    const a = performance.now();
     const { blob, rot, src } = await camInGrab();
+    camPerfMark(src, performance.now() - a, Math.round(blob.size / 1024) + ' KB');
     const d = new Date(), z = n => String(n).padStart(2, '0');
     const name = 'TL_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + (CAMIN.shots ? '_' + (CAMIN.shots + 1) : '') + '.jpg';
     const f = new File([blob], name, { type: 'image/jpeg' });
     CAMIN.shots++; CAMIN.left--;
-    CAMIN.last = { size: blob.size, name, src, rot, at: Date.now() };   // v1.08.74: для отчёта
-    const im = CAMIN.el.querySelector('.camin-last img');
+    CAMIN.last = { size: blob.size, name, src, rot, at: Date.now(), ms: Math.round(performance.now() - a) };   // v1.08.74: для отчёта
+    const im = CAMIN.el && CAMIN.el.querySelector('.camin-last img');     // камеру могли закрыть, пока шёл снимок
     if (im){ try{ const u = URL.createObjectURL(blob); im.onload = () => URL.revokeObjectURL(u); im.src = u; }catch(e){} }
     navigator.vibrate?.(12);
     camInMsg('');
-    /* в очередь — не дожидаясь обработки: можно снимать дальше */
-    mediaTakeFiles(CAMIN.jobId, [f], 'photo', { cam: true, doc: CAMIN.doc, rot })
-      .catch(e => dlog('⛔ кадр в очередь:', e));
+    /* v1.08.75: НЕ в очередь сразу — только в приёмник (переживёт выгрузку),
+       разбор (декодирование, превью, перерисовка документа) — после
+       «Готово»: пока снимаете, главный поток свободен для камеры */
+    const b = performance.now();
+    const iid = uid();
+    const entry = { f, rot, iid, kind: 'photo', ready: null };
+    entry.ready = intakePut({ iid, doc: sDoc, job_id: sDoc === 'rep' ? null : sJob, repair_id: sDoc === 'rep' ? sJob : null,
+      kind: 'photo', file: f, name, type: 'image/jpeg', cam: true, rot, at: Date.now() });
+    /* камера ещё открыта — в список до «Готово»; уже закрыта (нажали
+       «Готово» во время снимка) — разбираем этот кадр сами */
+    if (CAMIN.deferred && CAMIN.jobId === sJob) CAMIN.deferred.push(entry); else camInFlushList(sJob, sDoc, [entry]);
+    await entry.ready;
+    camPerfMark('intake', performance.now() - b);
+    if (tap) tap.done = Math.round(performance.now() - (ev.timeStamp || a));
   }catch(e){
     camInMsg(String(e && e.message || e).slice(0, 60), 'err');
   }
   CAMIN.busy = false; camInCount();
+}
+/* v1.08.75: разбор отложенных кадров после закрытия камеры — одним вызовом
+   на группу (кадры с одинаковым доворотом), с отметками времени в метрики */
+async function camInFlushList(jobId, doc, list){
+  if (!list || !list.length || !jobId) return 0;
+  await Promise.all(list.map(d => d.ready && d.ready.catch(() => {})));
+  const groups = new Map();
+  for (const d of list){ const k = d.kind + ':' + (d.rot || 0) + ':' + (d.dur || 0); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(d); }
+  const perf = (k, ms) => camPerfMark(k, ms);
+  let chain = Promise.resolve(0);
+  for (const g of groups.values()){
+    chain = chain.then(async n => {
+      const r = await mediaTakeFiles(jobId, g.map(d => d.f), g[0].kind, { cam: true, doc, rot: g[0].rot || 0, dur: g[0].dur || 0, iids: g.map(d => d.iid), perf })
+        .catch(e => { dlog('⛔ кадры в очередь:', e); return 0; });
+      return n + (r || 0);
+    });
+  }
+  return chain;
 }
 /* ---- видео ---- */
 function camInMime(){
@@ -18511,9 +18626,13 @@ function camInRecStart(){
       mime ? { mimeType: mime } : {}));
   }catch(e){ camInFail(e); return; }
   CAMIN.rec = rec; CAMIN.recParts = []; CAMIN.recT0 = Date.now();
-  rec.ondataavailable = e => { if (e.data && e.data.size) CAMIN.recParts.push(e.data); };
+  rec._job = CAMIN.jobId; rec._doc = CAMIN.doc;                    // v1.08.75: адресат ролика, даже если камеру закрыли до onstop
+  rec._parts = []; rec._t0 = Date.now();
+  rec.ondataavailable = e => { if (e.data && e.data.size) rec._parts.push(e.data); };
   rec.onerror = e => { dlog('запись:', e); camInRecStop(); };
   rec.onstop = () => camInRecDone(rec);
+  const a0 = performance.now();
+  rec.onstart = () => camPerfMark('recstart', performance.now() - a0, mime || '');   // v1.08.75: start() → onstart
   try{ rec.start(1000); }catch(e){ CAMIN.rec = null; camInFail(e); return; }
   const sh = CAMIN.el.querySelector('.camin-shutter'); if (sh) sh.classList.add('on');
   const tmEl = CAMIN.el.querySelector('.camin-timer'); if (tmEl) tmEl.style.display = '';
@@ -18530,15 +18649,17 @@ function camInRecStart(){
 function camInRecStop(){
   const rec = CAMIN.rec; if (!rec) return;
   clearTimeout(CAMIN.recTimer); CAMIN.recTimer = null;
+  CAMIN.recStopAt = performance.now();                            // v1.08.75
   try{ if (rec.state !== 'inactive') rec.stop(); else camInRecDone(rec); }catch(e){ camInRecDone(rec); }
 }
 function camInRecDone(rec){
-  if (CAMIN.rec !== rec) return;
-  CAMIN.rec = null;
-  const parts = CAMIN.recParts; CAMIN.recParts = [];
-  const sh = CAMIN.el && CAMIN.el.querySelector('.camin-shutter'); if (sh) sh.classList.remove('on');
-  const tmEl = CAMIN.el && CAMIN.el.querySelector('.camin-timer'); if (tmEl) tmEl.style.display = 'none';
-  const dur = Math.round((Date.now() - CAMIN.recT0) / 1000);
+  if (rec._done) return; rec._done = true;
+  const same = CAMIN.rec === rec;                 // v1.08.75: ролик доводим до приёмника, даже если камеру уже закрыли/переоткрыли
+  if (same) CAMIN.rec = null;
+  const parts = rec._parts || []; CAMIN.recParts = [];
+  const sh = same && CAMIN.el && CAMIN.el.querySelector('.camin-shutter'); if (sh) sh.classList.remove('on');
+  const tmEl = same && CAMIN.el && CAMIN.el.querySelector('.camin-timer'); if (tmEl) tmEl.style.display = 'none';
+  const dur = Math.round((Date.now() - (rec._t0 || CAMIN.recT0)) / 1000);
   const type = rec.mimeType || parts[0] && parts[0].type || 'video/webm';
   const blob = new Blob(parts, { type });
   if (!blob.size || dur < 1){ camInMsg('⚠ 0 s', 'err'); return; }
@@ -18546,13 +18667,362 @@ function camInRecDone(rec){
   const d = new Date(), z = n => String(n).padStart(2, '0');
   const name = 'TL_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + '.' + ext;
   const f = new File([blob], name, { type });
-  CAMIN.shots++; CAMIN.left--;
+  if (same){ CAMIN.shots++; CAMIN.left--; }
   CAMIN.last = { size: blob.size, name, src: 'rec', dur, at: Date.now() };   // v1.08.74
+  camPerfMark('rec', CAMIN.recStopAt ? performance.now() - CAMIN.recStopAt : 0, dur + ' s, ' + Math.round(blob.size / 1024) + ' KB');   // v1.08.75: стоп → onstop
   navigator.vibrate?.(12);
-  camInCount();
-  const jobId = CAMIN.jobId, doc = CAMIN.doc;
-  mediaTakeFiles(jobId, [f], 'video', { cam: true, doc, dur }).catch(e => dlog('⛔ ролик в очередь:', e));
-  if (CAMIN.left <= 0) camInClose();
+  if (same) camInCount();
+  /* v1.08.75: в приёмник сразу, разбор (длительность, превью) — после закрытия */
+  const iid = uid(), sJob = rec._job || CAMIN.jobId, sDoc = rec._doc || CAMIN.doc;
+  const entry = { f, rot: 0, iid, kind: 'video', dur, ready: null };
+  const b = performance.now();
+  entry.ready = intakePut({ iid, doc: sDoc, job_id: sDoc === 'rep' ? null : sJob, repair_id: sDoc === 'rep' ? sJob : null,
+    kind: 'video', file: f, name, type, cam: true, rot: 0, at: Date.now() });
+  if (CAMIN.deferred && CAMIN.jobId === sJob) CAMIN.deferred.push(entry); else camInFlushList(sJob, sDoc, [entry]);
+  entry.ready.then(() => { camPerfMark('intake', performance.now() - b, Math.round(blob.size / 1024) + ' KB'); if (CAMIN.left <= 0 && CAMIN.el) camInClose(); })
+    .catch(e => dlog('⛔ ролик в приёмник:', e));
+}
+
+/* =====================================================================
+   v1.08.76 · ЖУРНАЛ ТЕСТА — ведётся построчно в localStorage, переживает
+   перезапуск страницы, скачивается целиком одним .txt (сам журнал, шаги,
+   метрики отклика камеры, журнал отправки, хвост журнала приложения).
+   Кнопки «Скачать .txt / Поделиться / Копировать / Показать» — в карточке
+   «Съёмка» и в «Диагностике» всегда, пока есть последний тест, и в
+   модалке сразу по завершении. Пишут сюда «Тест съёмки» и «Регресс
+   основных функций»; строки dlog() во время теста тоже попадают в него.
+   Если страница перезапустилась посреди теста — при следующем старте
+   журнал получает строку «тест прерван» и остаётся доступным.
+   ===================================================================== */
+const LS_TLOG = 'techlog_testlog', TLOG_MAX_LINES = 4000;
+const TLOG = { cur: null, active: false, _t: null };
+function tlogStamp(){
+  const d = new Date(), z = (n, k = 2) => String(n).padStart(k, '0');
+  return `${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}.${z(d.getMilliseconds(), 3)}`;
+}
+function tlogGet(){
+  if (TLOG.cur) return TLOG.cur;
+  try{ TLOG.cur = JSON.parse(localStorage.getItem(LS_TLOG) || 'null'); }catch(e){ TLOG.cur = null; }
+  return TLOG.cur;
+}
+function tlogSaveNow(){
+  clearTimeout(TLOG._t); TLOG._t = null;
+  try{ if (TLOG.cur) localStorage.setItem(LS_TLOG, JSON.stringify(TLOG.cur)); }catch(e){ dlog('⚠ tlog save:', e); }
+}
+function tlogSaveSoon(){ if (TLOG._t) return; TLOG._t = setTimeout(tlogSaveNow, 300); }
+function tlogStart(kind, title){
+  TLOG.cur = { kind, title, ver: APP_VERSION, started: new Date().toISOString(), finished: null, aborted: false, ok: null, total: null,
+    user: (state.user && (state.user.display_name || state.user.login)) || '', role: (state.user && state.user.role) || '',
+    ua: navigator.userAgent, lines: [], steps: [], txt: '' };
+  TLOG.active = true;
+  tlogSaveNow();
+}
+function tlogLine(text, cls){
+  const c = TLOG.cur; if (!c || c.finished) return;
+  c.lines.push({ time: tlogStamp(), text: String(text), cls: cls || '' });
+  if (c.lines.length > TLOG_MAX_LINES) c.lines.splice(0, c.lines.length - TLOG_MAX_LINES);
+  tlogSaveSoon();
+}
+function tlogStep(st){ const c = TLOG.cur; if (!c || c.finished) return; c.steps.push({ name: st.name, ok: st.ok, ms: st.ms, extra: st.extra || '' }); tlogSaveSoon(); }
+function tlogEnd(ok, total){
+  const c = TLOG.cur; if (!c) return;
+  TLOG.active = false;
+  c.finished = new Date().toISOString(); c.ok = ok; c.total = total;
+  c.txt = tlogText(c);
+  tlogSaveNow();
+}
+/* при старте: тест, который не дошёл до конца — страница перезапустилась */
+function tlogInit(){
+  const c = tlogGet(); if (!c || c.finished) return;
+  c.lines.push({ time: tlogStamp(), text: '⚠ ' + t('tl_aborted').replace('{T}', new Date().toLocaleString()), cls: 'err' });
+  c.finished = new Date().toISOString(); c.aborted = true;
+  c.ok = c.steps.filter(s => s.ok).length; c.total = c.steps.length;
+  c.txt = tlogText(c);
+  tlogSaveNow();
+  setTimeout(() => toast('⚠ ' + t('tl_aborted_toast'), 'err'), 1500);
+}
+function tlogText(c){
+  c = c || tlogGet(); if (!c) return '';
+  const L = [];
+  L.push(`TechLog ${c.ver || APP_VERSION} — ${c.title || c.kind}`);
+  L.push(`${t('tl_started')} ${new Date(c.started).toLocaleString()} · ${c.finished ? t('tl_finished') + ' ' + new Date(c.finished).toLocaleString() : t('tl_running')}`
+    + ` · ${c.user || '—'} (${c.role || '—'})${c.finished ? ' · ' + (c.aborted ? t('tl_status_abort') : (c.ok === c.total ? '✓ ' : '⚠ ') + c.ok + ' / ' + c.total) : ''}`);
+  L.push(c.ua || navigator.userAgent);
+  L.push('', `--- ${t('tl_sec_log')} ---`);
+  c.lines.forEach(l => L.push(`${l.time}  ${l.text}`));
+  if (c.steps.length){
+    L.push('', `--- ${t('tl_sec_steps')} ---`);
+    c.steps.forEach(s => L.push(`${s.ok === null ? '…' : s.ok ? '✓' : '✗'} ${s.name} — ${s.ms} ms${s.extra ? ' · ' + s.extra : ''}`));
+  }
+  try{
+    const ss = camPerfSessions();
+    if (ss.length){ L.push('', `--- ${t('tl_sec_perf')} ---`); ss.slice(0, 2).forEach((sx, i) => { if (i) L.push(''); L.push(camPerfText(sx)); }); }
+  }catch(e){}
+  try{
+    if (mqLogLines.length){ L.push('', `--- ${t('tl_sec_mq')} ---`); mqLogLines.slice(-150).forEach(l => L.push(`${l.time}  ${String(l.text).replace(/<[^>]+>/g, '')}`)); }
+  }catch(e){}
+  try{
+    if (PLOG.length){ L.push('', `--- ${t('tl_sec_app')} ---`); PLOG.slice(-400).forEach(l => L.push(l)); }
+  }catch(e){}
+  return L.join('\n');
+}
+function tlogFileName(c){
+  const d = new Date(c && c.started || Date.now()), z = n => String(n).padStart(2, '0');
+  return `techlog-${(c && c.kind) || 'test'}-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}.txt`;
+}
+function dlTextFile(name, txt){
+  const f = new File([txt], name, { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 8000);
+}
+async function copyText(txt){
+  try{ await navigator.clipboard.writeText(txt); toast('✓ ' + t('copied')); return true; }
+  catch(e){
+    try{ const ta = document.createElement('textarea'); ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('✓ ' + t('copied')); return true; }
+    catch(e2){ toast('⛔ ' + (e2.message || e2), 'err'); return false; }
+  }
+}
+async function shareTextFile(name, txt){
+  try{
+    const f = new File([txt], name, { type: 'text/plain' });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [f] })){ await navigator.share({ files: [f], title: name }); return true; }
+    if (navigator.share){ await navigator.share({ title: name, text: txt.slice(0, 60000) }); return true; }
+  }catch(e){ if (e && e.name === 'AbortError') return false; dlog('⚠ share:', e); }
+  dlTextFile(name, txt); return true;
+}
+function tlogCanShare(){ try{ return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.txt', { type: 'text/plain' })] })); }catch(e){ return false; } }
+function tlogSave(){ const c = tlogGet(); if (!c) return; const txt = c.finished ? (c.txt || tlogText(c)) : tlogText(c); dlTextFile(tlogFileName(c), txt); toast('✓ ' + t('ct_saved').replace('{N}', tlogFileName(c))); }
+function tlogCopy(){ const c = tlogGet(); if (!c) return; copyText(c.finished ? (c.txt || tlogText(c)) : tlogText(c)); }
+function tlogShare(){ const c = tlogGet(); if (!c) return; shareTextFile(tlogFileName(c), c.finished ? (c.txt || tlogText(c)) : tlogText(c)); }
+function tlogShow(){
+  const c = tlogGet(); if (!c) return;
+  const txt = c.finished ? (c.txt || tlogText(c)) : tlogText(c);
+  openModal(`
+    ${modalHead(t('tl_title'), 'receipt')}
+    <div class="tiny">${esc(tlogHead(c))}</div>
+    <pre class="diag-pre">${esc(txt)}</pre>
+    ${tlogBtnsHtml('')}
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>`);
+}
+function tlogHead(c){
+  return `${c.title || c.kind} · ${new Date(c.started).toLocaleString()} · ${c.finished ? (c.aborted ? t('tl_status_abort') : (c.ok === c.total ? '✓ ' : '⚠ ') + t('tl_steps').replace('{N}', c.ok).replace('{T}', c.total)) : t('tl_running')} · ${c.lines.length} ${t('tl_lines')}`;
+}
+function tlogBtnsHtml(style){
+  return `<div class="tl-acts" style="${style || ''}">
+    <button class="btn btn-green sm" onclick="App.tlogSave()">${ic('download')} ${t('tl_save')}</button>
+    ${tlogCanShare() ? `<button class="btn btn-blue sm" onclick="App.tlogShare()">${ic('share')} ${t('tl_share')}</button>` : ''}
+    <button class="btn btn-ghost sm" onclick="App.tlogCopy()">${ic('copy')} ${t('tl_copy')}</button>
+    <button class="btn btn-ghost sm" onclick="App.tlogShow()">${ic('receipt')} ${t('tl_show')}</button>
+  </div>`;
+}
+/* блок «последний тест» для карточек настроек */
+function tlogCardHtml(){
+  const c = tlogGet(); if (!c) return '';
+  return `<div class="tl-last" id="tl-last">
+    <b>${ic('receipt')} ${t('tl_title')}</b>
+    <div class="tiny">${esc(tlogHead(c))}</div>
+    ${tlogBtnsHtml('')}
+  </div>`;
+}
+/* модалка по завершении теста — кнопки под рукой, искать не надо */
+function tlogDoneModal(){
+  const c = tlogGet(); if (!c) return;
+  openModal(`
+    ${modalHead(t('tl_done_t'), c.ok === c.total ? 'check' : 'warn')}
+    <div class="ask-text">${esc(tlogHead(c))}</div>
+    <div class="tiny">${t('tl_done_h')}</div>
+    ${tlogBtnsHtml('margin-top:10px')}
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>`);
+}
+
+/* =====================================================================
+   v1.08.75 · МЕТРИКИ ОТКЛИКА КАМЕРЫ В ПРИЛОЖЕНИИ
+   ---------------------------------------------------------------------
+   Зачем: интерфейс камеры тормозит — и надо понимать, кто виноват:
+   софт (главный поток занят нашей же работой — render(), очередь,
+   обработка кадра) или железо телефона (превью не успевает, камера долго
+   отдаёт снимок). Пока камера открыта, собираем:
+   · тап → обработчик (задержка ввода: сколько главный поток был занят,
+     когда пришло нажатие) и обработчик → следующий кадр экрана;
+   · Event Timing API по нажатиям внутри камеры (задержка / обработка /
+     до отрисовки) — стандартная метрика отзывчивости Chrome;
+   · длинные задачи главного потока (PerformanceObserver longtask):
+     сколько, сумма, максимум, и какие пришлись на секунду после тапа;
+   · к/с превью (requestVideoFrameCallback — реально показанные кадры
+     камеры) и к/с главного потока (rAF), рывки > 50 мс;
+   · время самих операций: takePhoto / кадр с потока, запись в приёмник,
+     и уже после закрытия — декодирование, превью, render();
+   · память JS-кучи (Chrome).
+   Живая плашка в камере (можно выключить в Настройках → Съёмка), сводка
+   последней съёмки там же и в отчёте «Теста съёмки», копируется текстом.
+   Побочный вывод и первая мера: пока камера открыта, приложение больше
+   НЕ обрабатывает кадры и не перерисовывает документ под оверлеем —
+   снимки ложатся в приёмник (IndexedDB) и разбираются после «Готово».
+   ===================================================================== */
+const LS_CAM_PERF = 'techlog_cam_perf', LS_CAM_PERF_UI = 'techlog_cam_perf_ui';
+const CAMPERF = { on: false, kind: '', t0: 0, taps: [], evs: [], long: [], marks: [], fps: [], pfps: [], mem: [],
+  jank: 0, maxGap: 0, frames: 0, lastTs: 0, secStart: 0, secFrames: 0, secPF: 0, raf: 0, po: null, poEv: null,
+  preview: '', sessions: [], live: null };
+function camPerfUiOn(){ try{ return localStorage.getItem(LS_CAM_PERF_UI) !== '0'; }catch(e){ return true; } }
+function camPerfUiSet(on){ try{ localStorage.setItem(LS_CAM_PERF_UI, on ? '1' : '0'); }catch(e){} render(); }
+function camPerfNow(){ return Math.round(performance.now() - CAMPERF.t0); }
+function camPerfMemMB(){ try{ return performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null; }catch(e){ return null; } }
+function camPerfStart(kind, v){
+  camPerfStop(true);
+  Object.assign(CAMPERF, { on: true, kind, t0: performance.now(), taps: [], evs: [], long: [], marks: [], fps: [], pfps: [], mem: [],
+    jank: 0, maxGap: 0, frames: 0, lastTs: 0, secStart: 0, secFrames: 0, secPF: 0, preview: '' });
+  const m0 = camPerfMemMB(); if (m0 != null) CAMPERF.mem.push(m0);
+  try{
+    CAMPERF.po = new PerformanceObserver(list => { for (const e of list.getEntries()) CAMPERF.long.push({ t: Math.round(e.startTime - CAMPERF.t0), ms: Math.round(e.duration) }); });
+    CAMPERF.po.observe({ type: 'longtask', buffered: false });
+  }catch(e){ CAMPERF.po = null; }
+  try{
+    CAMPERF.poEv = new PerformanceObserver(list => { for (const e of list.getEntries()){
+      let inside = false; try{ inside = !!(e.target && e.target.closest && e.target.closest('#camin')); }catch(e2){}
+      if (!inside || !/^(pointerdown|pointerup|click|touchstart|touchend|keydown)$/.test(e.name)) continue;
+      CAMPERF.evs.push({ t: Math.round(e.startTime - CAMPERF.t0), name: e.name, delay: Math.round(e.processingStart - e.startTime),
+        proc: Math.round(e.processingEnd - e.processingStart), paint: Math.round(e.duration - (e.processingEnd - e.startTime)), dur: Math.round(e.duration) });
+    } });
+    CAMPERF.poEv.observe({ type: 'event', durationThreshold: 16, buffered: false });
+  }catch(e){ CAMPERF.poEv = null; }
+  const loop = ts => {
+    if (!CAMPERF.on) return;
+    if (CAMPERF.lastTs){ const d = ts - CAMPERF.lastTs; if (d > 50) CAMPERF.jank++; if (d > CAMPERF.maxGap) CAMPERF.maxGap = Math.round(d); }
+    CAMPERF.lastTs = ts; CAMPERF.frames++; CAMPERF.secFrames++;
+    if (!CAMPERF.secStart) CAMPERF.secStart = ts;
+    if (ts - CAMPERF.secStart >= 1000){
+      CAMPERF.fps.push(CAMPERF.secFrames); CAMPERF.pfps.push(CAMPERF.secPF);
+      CAMPERF.secFrames = 0; CAMPERF.secPF = 0; CAMPERF.secStart = ts;
+      const m = camPerfMemMB(); if (m != null) CAMPERF.mem.push(m);
+      camPerfLive();
+    }
+    CAMPERF.raf = requestAnimationFrame(loop);
+  };
+  CAMPERF.raf = requestAnimationFrame(loop);
+  if (v && v.requestVideoFrameCallback){
+    const cb = () => { if (!CAMPERF.on) return; CAMPERF.secPF++; try{ v.requestVideoFrameCallback(cb); }catch(e){} };
+    try{ v.requestVideoFrameCallback(cb); }catch(e){}
+  }
+}
+/* тап по кнопке камеры: задержка ввода и время до следующего кадра экрана */
+function camPerfTap(ev, what){
+  if (!CAMPERF.on) return null;
+  const now = performance.now();
+  const rec = { t: camPerfNow(), what, delay: ev && ev.timeStamp ? Math.max(0, Math.round(now - ev.timeStamp)) : null, paint: null,
+    pd: ev && CAMIN.pdTs ? Math.max(0, Math.round(ev.timeStamp - CAMIN.pdTs)) : null };
+  CAMPERF.taps.push(rec);
+  requestAnimationFrame(() => requestAnimationFrame(() => { rec.paint = Math.round(performance.now() - now); }));
+  return rec;
+}
+function camPerfMark(kind, ms, extra){
+  const m = { t: camPerfNow(), kind, ms: Math.round(ms), extra: extra || '' };
+  if (CAMPERF.on){ CAMPERF.marks.push(m); return; }
+  /* камера уже закрыта — отметки разбора идут в сохранённую сессию */
+  const s0 = CAMPERF.sessions[0]; if (!s0) return;
+  s0.marks.push(m);
+  try{ localStorage.setItem(LS_CAM_PERF, JSON.stringify(CAMPERF.sessions)); }catch(e){}
+}
+function camPerfLive(){
+  if (!CAMIN.el || !camPerfUiOn()) return;
+  let el = CAMIN.el.querySelector('.camin-perf');
+  if (!el){ el = document.createElement('div'); el.className = 'camin-perf'; el.onclick = () => { el.classList.toggle('min'); }; CAMIN.el.appendChild(el); }
+  const pf = CAMPERF.pfps[CAMPERF.pfps.length - 1], mf = CAMPERF.fps[CAMPERF.fps.length - 1];
+  const lastTap = CAMPERF.taps[CAMPERF.taps.length - 1];
+  const lt = CAMPERF.long.length, ltMs = CAMPERF.long.reduce((s, x) => s + x.ms, 0);
+  const lastM = CAMPERF.marks.filter(m => m.kind === 'takePhoto' || m.kind === 'frame').slice(-1)[0];
+  const mem = CAMPERF.mem[CAMPERF.mem.length - 1];
+  el.innerHTML = `<b>${t('cp_live_prev')} ${pf != null ? pf : '–'}</b> · ${t('cp_live_main')} ${mf != null ? mf : '–'} · ${t('cp_live_jank')} ${CAMPERF.jank}`
+    + `<br>${t('cp_live_tap')} ${lastTap ? (lastTap.delay != null ? lastTap.delay : '–') + '/' + (lastTap.paint != null ? lastTap.paint : '…') + ' ms' : '–'}`
+    + ` · ${t('cp_live_shot')} ${lastM ? lastM.ms + ' ms' : '–'} · ${t('cp_live_long')} ${lt} (${ltMs} ms)${mem != null ? ' · JS ' + mem + ' MB' : ''}`;
+}
+function camPerfStop(silent){
+  if (!CAMPERF.on) return null;
+  CAMPERF.on = false;
+  try{ cancelAnimationFrame(CAMPERF.raf); }catch(e){}
+  try{ if (CAMPERF.po) CAMPERF.po.disconnect(); }catch(e){} CAMPERF.po = null;
+  try{ if (CAMPERF.poEv) CAMPERF.poEv.disconnect(); }catch(e){} CAMPERF.poEv = null;
+  const s = camPerfSession();
+  CAMPERF.sessions = [s].concat(CAMPERF.sessions).slice(0, 2);
+  try{ localStorage.setItem(LS_CAM_PERF, JSON.stringify(CAMPERF.sessions)); }catch(e){}
+  if (!silent) dlog('камера: метрики отклика — ' + camPerfVerdict(s).short);
+  return s;
+}
+function camPerfStat(a){ if (!a.length) return null; const b = a.filter(x => x != null); if (!b.length) return null;
+  return { min: Math.min(...b), avg: Math.round(b.reduce((s, x) => s + x, 0) / b.length), max: Math.max(...b), n: b.length }; }
+function camPerfSession(){
+  const dur = camPerfNow();
+  return { at: new Date().toISOString(), kind: CAMPERF.kind, dur, preview: CAMPERF.preview,
+    shots: CAMPERF.marks.filter(m => m.kind === 'takePhoto' || m.kind === 'frame' || m.kind === 'rec').length,
+    taps: CAMPERF.taps.slice(), evs: CAMPERF.evs.slice(), long: CAMPERF.long.slice(), marks: CAMPERF.marks.slice(),
+    fps: CAMPERF.fps.slice(), pfps: CAMPERF.pfps.slice(), mem: CAMPERF.mem.slice(), jank: CAMPERF.jank, maxGap: CAMPERF.maxGap,
+    ua: navigator.userAgent, cores: navigator.hardwareConcurrency || null, devmem: navigator.deviceMemory || null };
+}
+/* вердикт: софт или железо */
+function camPerfVerdict(s){
+  const tap = camPerfStat(s.taps.map(x => x.delay)), paint = camPerfStat(s.taps.map(x => x.paint));
+  const ltSum = s.long.reduce((a, x) => a + x.ms, 0), ltMax = s.long.reduce((a, x) => Math.max(a, x.ms), 0);
+  const ltShare = s.dur ? ltSum / s.dur : 0;
+  const shots = s.marks.filter(m => m.kind === 'takePhoto' || m.kind === 'frame');
+  const shot = camPerfStat(shots.map(m => m.ms));
+  const pf = camPerfStat(s.pfps), mf = camPerfStat(s.fps);
+  const soft = (tap && tap.avg > 80) || ltShare > 0.25 || (ltMax > 500) || (paint && paint.avg > 120);
+  const hal = shot && shot.avg > 1200 && !(tap && tap.avg > 80);
+  const chip = pf && pf.avg > 0 && pf.avg < 18 && !soft;
+  const weak = mf && mf.avg < 35 && !soft;
+  let key = 'ok';
+  if (soft) key = 'soft'; else if (hal) key = 'hal'; else if (chip) key = 'chip'; else if (weak) key = 'weak';
+  const short = t('cp_v_' + key)
+    .replace('{T}', tap ? tap.avg : '–').replace('{L}', s.long.length).replace('{LM}', ltSum).replace('{S}', shot ? shot.avg : '–')
+    .replace('{P}', pf ? pf.avg : '–').replace('{M}', mf ? mf.avg : '–');
+  return { key, short, tap, paint, ltSum, ltMax, ltShare, shot, pf, mf };
+}
+function camPerfText(s){
+  if (!s) return '';
+  const v = camPerfVerdict(s);
+  const L = [];
+  const st = x => x ? `${x.min} / ${x.avg} / ${x.max} ms` : '–';
+  L.push(`${t('cp_h_session')} ${s.kind === 'video' ? t('media_video') : t('media_photo')} · ${new Date(s.at).toLocaleTimeString()} · ${(s.dur / 1000).toFixed(1)} s · ${t('cp_h_shots')} ${s.shots}${s.preview ? ' · ' + t('cp_h_preview') + ' ' + s.preview : ''}${s.cores ? ' · ' + s.cores + ' ' + t('cp_h_cores') : ''}${s.devmem ? ' · ' + s.devmem + ' GB' : ''}`);
+  L.push(`${t('cp_h_fps')}: ${t('cp_live_prev')} ${v.pf ? v.pf.avg + ' (min ' + v.pf.min + ')' : '–'} · ${t('cp_live_main')} ${v.mf ? v.mf.avg + ' (min ' + v.mf.min + ')' : '–'} · ${t('cp_live_jank')} ${s.jank} (max ${s.maxGap} ms)`);
+  L.push(`${t('cp_h_long')}: ${s.long.length} · ${v.ltSum} ms (${Math.round(v.ltShare * 100)}%) · max ${v.ltMax} ms`);
+  L.push(`${t('cp_h_tap')}: ${st(v.tap)} · ${t('cp_h_paint')}: ${st(v.paint)}`);
+  if (s.evs.length){
+    const d = camPerfStat(s.evs.map(e => e.delay)), p = camPerfStat(s.evs.map(e => e.proc)), pt = camPerfStat(s.evs.map(e => e.paint));
+    L.push(`${t('cp_h_evt')} (${s.evs.length}): ${t('cp_h_delay')} ${st(d)} · ${t('cp_h_proc')} ${st(p)} · ${t('cp_h_present')} ${st(pt)}`);
+  }
+  const shots = s.marks.filter(m => m.kind === 'takePhoto' || m.kind === 'frame' || m.kind === 'rec');
+  shots.forEach((m, i) => {
+    const tap = s.taps.filter(x => x.t <= m.t).slice(-1)[0];
+    const ik = s.marks.find(x => x.kind === 'intake' && x.t >= m.t && x.t <= m.t + 30000);
+    const lt = s.long.filter(x => tap && x.t >= tap.t && x.t <= tap.t + 1500);
+    L.push(`  ${t('cp_h_shot')} ${i + 1}: ${tap ? t('cp_h_tap') + ' ' + (tap.delay != null ? tap.delay : '–') + '/' + (tap.paint != null ? tap.paint : '–') + ' ms · ' : ''}${m.kind} ${m.ms} ms${m.extra ? ' (' + m.extra + ')' : ''}${ik ? ' · ' + t('cp_h_intake') + ' ' + ik.ms + ' ms' : ''}${lt.length ? ' · ' + t('cp_h_ltafter') + ' ' + lt.map(x => x.ms).join('+') + ' ms' : ''}`);
+  });
+  const after = s.marks.filter(m => m.kind === 'prep' || m.kind === 'render' || m.kind === 'flush' || m.kind === 'vthumb');
+  if (after.length) L.push(`${t('cp_h_after')}: ${after.map(m => m.kind + ' ' + m.ms + ' ms').join(' · ')}`);
+  if (s.mem.length) L.push(`${t('cp_h_mem')}: ${s.mem[0]} → ${s.mem[s.mem.length - 1]} MB (max ${Math.max(...s.mem)})`);
+  L.push(`${t('cp_h_verdict')}: ${v.short}`);
+  return L.join('\n');
+}
+function camPerfSessions(){
+  if (CAMPERF.sessions.length) return CAMPERF.sessions;
+  try{ CAMPERF.sessions = JSON.parse(localStorage.getItem(LS_CAM_PERF) || '[]') || []; }catch(e){ CAMPERF.sessions = []; }
+  return CAMPERF.sessions;
+}
+async function camPerfCopy(){
+  const txt = camPerfSessions().map(camPerfText).join('\n\n');
+  if (!txt) return;
+  try{ await navigator.clipboard.writeText(txt); toast('✓ ' + t('copied')); }catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+}
+function camPerfCardHtml(){
+  const ss = camPerfSessions();
+  return `<div class="cam-set" id="cp-card">
+    <b>${ic('gauge')} ${t('cp_title')}</b>
+    <div class="tiny">${t('cp_hint')}</div>
+    <label class="chk-line" style="margin-top:6px"><input type="checkbox" ${camPerfUiOn() ? 'checked' : ''} onchange="App.camPerfUi(this.checked)"> ${t('cp_ui')}</label>
+    ${ss.length ? `<pre class="cp-last">${esc(ss.map(camPerfText).join('\n\n'))}</pre>
+    <button class="btn btn-blue sm" onclick="App.camPerfCopy()">${ic('copy')} ${t('cp_copy')}</button>` : `<div class="tiny" style="margin-top:6px">${t('cp_none')}</div>`}
+  </div>`;
 }
 
 /* =====================================================================
@@ -18582,6 +19052,7 @@ function ctPaint(){
 function ctLine(text, cls){
   const l = { time: ctStamp(), text, cls: cls || '' };
   CT.lines.push(l);
+  tlogLine(text, cls);                                             // v1.08.76: и в постоянный журнал
   const el = $('#ct-log');
   if (el){ el.insertAdjacentHTML('beforeend', `<div class="${l.cls}">${l.time} ${esc(text)}</div>`); el.scrollTop = el.scrollHeight; }
   else ctPaint();
@@ -18623,6 +19094,7 @@ async function camTestRun(){
   if (CT.busy || !isAdmin()) return;
   if (!camInCan()){ toast('⚠ ' + t('cam_in_denied'), 'err'); return; }
   CT.busy = true; CT.rows = []; CT.lines = []; CT.txt = ''; CT.t0 = performance.now();
+  tlogStart('camtest', t('ct_btn'));                              // v1.08.76
   const steps = [];
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const until = async (fn, sec, what) => {
@@ -18639,6 +19111,7 @@ async function camTestRun(){
     catch(e){ steps[i].ok = false; steps[i].extra = errStr(e); ctLine('   ✗ ' + steps[i].extra, 'err'); }
     steps[i].ms = Math.round(performance.now() - a);
     CT.rows[i] = `<div>${steps[i].ok ? ic('check', 'color:var(--green)') : ic('warn', 'color:var(--red)')} ${esc(name)} — ${steps[i].ms} мс${steps[i].extra ? ' · ' + esc(steps[i].extra) : ''}</div>`;
+    tlogStep(steps[i]);                                           // v1.08.76
     ctPaint();
     if (!steps[i].ok) throw new Error(name);
   };
@@ -18716,6 +19189,7 @@ async function camTestRun(){
       }
       if (CAMIN.shots !== 2) throw new Error('снято ' + CAMIN.shots + ' из 2');
       camInClose(true);
+      ctLine('   камера закрыта — кадры разбираются после «Готово» (v1.08.75)');
       return { note: '2 кадра · ' + sizes.map(ctKB).join(' + ') };
     });
     await step(t('ct_s_prep'), async () => {
@@ -18745,6 +19219,13 @@ async function camTestRun(){
       const x = qOf(jobId).find(y => y.kind === 'video');
       ctLine(`   ролик в очереди: ${x.name} · ${x.mime} · ${ctMB(x.blob.size)} · длительность ${x.dur || '?'} с · превью ${x.thumb ? ctKB(x.thumb.size) : 'нет (значок)'}`);
       return { note: ctMB(x.blob.size) + ' · ' + (x.dur || '?') + ' с' };
+    });
+    await step(t('ct_s_perf'), async () => {
+      const ss = camPerfSessions();
+      if (!ss.length) return { note: 'метрик нет' };
+      ss.slice(0, 2).reverse().forEach(sx => camPerfText(sx).split('\n').forEach(l => ctLine('   ' + l)));
+      const v = camPerfVerdict(ss.find(x => x.kind === 'photo') || ss[0]);   // вывод — по фото-съёмке
+      return { note: v.short };
     });
     await step(t('ct_s_thumbs'), async () => {
       await wait(300);
@@ -18874,11 +19355,13 @@ async function camTestRun(){
   state.screen = screen0 || 'settings'; state.jobId = null; jobDraft = null;
   const okN = steps.filter(x => x.ok).length, total = Math.round((performance.now() - CT.t0) / 1000);
   ctLine(`${okN === steps.length ? '✓' : '⚠'} ${t('ct_done').replace('{N}', okN).replace('{T}', steps.length)} · ${total} с`, 'b');
-  CT.txt = ctReportTxt(steps);
-  CT.rows.push(`<div style="margin-top:6px;font-weight:900">${okN === steps.length ? '✓' : '⚠'} ${t('ct_done').replace('{N}', okN).replace('{T}', steps.length)} · ${total} с</div>`);
   dlog('тест съёмки: ' + okN + '/' + steps.length + ' · ' + steps.map(x => x.name + ' ' + (x.ok ? 'ok' : 'FAIL' + (x.extra ? ' (' + x.extra + ')' : ''))).join(' · '));
+  tlogEnd(okN, steps.length);                                     // v1.08.76: журнал закрыт и сохранён целиком
+  CT.txt = (tlogGet() && tlogGet().txt) || ctReportTxt(steps);
+  CT.rows.push(`<div style="margin-top:6px;font-weight:900">${okN === steps.length ? '✓' : '⚠'} ${t('ct_done').replace('{N}', okN).replace('{T}', steps.length)} · ${total} с</div>`);
   toast((okN === steps.length ? '✓ ' : '⚠ ') + t('ct_done').replace('{N}', okN).replace('{T}', steps.length), okN === steps.length ? undefined : 'err');
   render();
+  setTimeout(tlogDoneModal, 400);                                 // кнопки «Скачать / Поделиться / Копировать» — сразу
   try{ if (HAS_SB) await syncNow(true); }catch(e){}
 }
 
@@ -20630,14 +21113,17 @@ function camCardHtml(){
       <b>${ic('share')} ${t('share_title')}</b>
       <div class="tiny">${t('share_hint')}</div>
     </div>
+    ${camPerfCardHtml()}
     ${isAdmin() ? `<div class="cam-set" id="ct-card">
       <b>${ic('flask')} ${t('ct_btn')}</b>
+      ${tlogCardHtml()}
       <div class="tiny">${t('ct_hint')}</div>
       <button class="btn btn-green" style="margin-top:8px" id="ct-btn" onclick="App.camTest()" ${CT.busy ? 'disabled' : ''}>${ic('play')} ${CT.busy ? t('ct_running') : t('ct_btn')}</button>
       <div id="ct-out" class="tiny" style="margin-top:8px">${ctOutHtml()}</div>
       <div id="ct-acts" class="ct-acts" style="${CT.txt && !CT.busy ? '' : 'display:none'}">
-        <button class="btn btn-blue sm" onclick="App.camTestCopy()">${ic('copy')} ${t('ct_copy')}</button>
-        <button class="btn btn-ghost sm" onclick="App.camTestSave()">${ic('save')} ${t('ct_save')}</button>
+        <button class="btn btn-green sm" onclick="App.tlogSave()">${ic('download')} ${t('tl_save')}</button>
+        ${tlogCanShare() ? `<button class="btn btn-blue sm" onclick="App.tlogShare()">${ic('share')} ${t('tl_share')}</button>` : ''}
+        <button class="btn btn-ghost sm" onclick="App.tlogCopy()">${ic('copy')} ${t('tl_copy')}</button>
       </div>
     </div>` : ''}
     <div class="cam-set">
@@ -20699,7 +21185,8 @@ function diagCardHtml(){
     <div id="dg-out" class="tiny" style="margin-top:8px"></div>
     ${isAdmin() ? `<button class="btn btn-green" style="margin-top:10px" id="rg-btn" onclick="App.regress()" ${RG.busy ? 'disabled' : ''}>${ic('play')} ${RG.busy ? t('rg_running') : t('rg_btn')}</button>
     <div class="tiny" style="margin-top:4px">${t('rg_hint')}</div>
-    <div id="rg-out" class="tiny" style="margin-top:8px">${RG.rows.join('')}</div>` : ''}
+    <div id="rg-out" class="tiny" style="margin-top:8px">${RG.rows.join('')}</div>
+    ${tlogCardHtml()}` : ''}
   </div>`;
 }
 /* =====================================================================
@@ -20714,6 +21201,7 @@ const RG = { busy: false, rows: [] };
 async function regressRun(){
   if (RG.busy || !isAdmin()) return;
   RG.busy = true; RG.rows = [];
+  tlogStart('regress', t('rg_btn'));                              // v1.08.76
   const paint = () => { const o = $('#rg-out'); if (o) o.innerHTML = RG.rows.join(''); const b = $('#rg-btn'); if (b){ b.disabled = RG.busy; b.innerHTML = ic('play') + ' ' + (RG.busy ? t('rg_running') : t('rg_btn')); } };
   const out = [];
   const step = async (name, fn) => {
@@ -20724,6 +21212,7 @@ async function regressRun(){
     catch(e){ out[i].ok = false; out[i].extra = errStr(e); }
     out[i].ms = Math.round(performance.now() - a);
     RG.rows[i] = `<div>${out[i].ok ? ic('check', 'color:var(--green)') : ic('warn', 'color:var(--red)')} ${esc(name)} — ${out[i].ms} мс${out[i].extra ? ' · ' + esc(out[i].extra) : ''}</div>`;
+    tlogLine((out[i].ok ? '✓ ' : '✗ ') + name + ' — ' + out[i].ms + ' ms' + (out[i].extra ? ' · ' + out[i].extra : ''), out[i].ok ? '' : 'err'); tlogStep(out[i]);   // v1.08.76
     paint();
     if (!out[i].ok) throw new Error(name);
   };
@@ -20857,7 +21346,9 @@ async function regressRun(){
   RG.rows.push(`<div style="margin-top:6px;font-weight:900">${okN === out.length ? '✓' : '⚠'} ${t('rg_done').replace('{N}', okN).replace('{T}', out.length)} · ${Math.round((performance.now() - T0) / 1000)} с</div>`);
   dlog('регресс: ' + okN + '/' + out.length + ' · ' + out.map(x => x.name + ' ' + (x.ok ? 'ok' : 'FAIL' + (x.extra ? ' (' + x.extra + ')' : ''))).join(' · '));
   toast((okN === out.length ? '✓ ' : '⚠ ') + t('rg_done').replace('{N}', okN).replace('{T}', out.length), okN === out.length ? undefined : 'err');
+  tlogEnd(okN, out.length);                                       // v1.08.76
   render();
+  setTimeout(tlogDoneModal, 400);
   try{ await syncNow(true); }catch(e){}
 }
 async function runDiag(){

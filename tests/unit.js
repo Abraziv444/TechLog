@@ -1749,16 +1749,55 @@ console.log('\n— v1.08.51: учёба —');
   t('v1.08.74: ключи RU/EN', ['ct_btn', 'ct_running', 'ct_hint', 'ct_copy', 'ct_save', 'ct_saved', 'ct_done', 'ct_wait', 'ct_demo', 'ct_s_env', 'ct_s_job', 'ct_s_open', 'ct_s_photo',
       'ct_s_prep', 'ct_s_video', 'ct_s_thumbs', 'ct_s_save', 'ct_s_reopen', 'ct_s_send', 'ct_s_srv', 'ct_s_view', 'ct_s_del', 'ct_s_clean']
     .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
-  t('v1.08.74: кнопка в карточке «Съёмка» (админ), отчёт, копирование и .txt', src.includes('id="ct-btn" onclick="App.camTest()"') && src.includes('App.camTestCopy()') && src.includes('App.camTestSave()')
-    && src.includes('async function camTestRun(){') && src.includes('function ctReportTxt(steps){') && src.includes("name = `techlog-camtest-") && src.includes('navigator.clipboard.writeText(CT.txt)'));
+  t('v1.08.74: кнопка в карточке «Съёмка» (админ), отчёт, копирование и .txt (с 1.08.76 — через журнал теста)', src.includes('id="ct-btn" onclick="App.camTest()"') && src.includes('App.tlogCopy()') && src.includes('App.tlogSave()')
+    && src.includes('async function camTestRun(){') && src.includes('function ctReportTxt(steps){') && src.includes('techlog-${(c && c.kind) || \'test\'}-'));
   t('v1.08.74: шаги — окружение, инвойс, камера, обработка, видео, миниатюры, сохранить/выйти, заново, отправка с журналом, сервер, просмотр, удаление, уборка',
     ['ct_s_env', 'ct_s_job', 'ct_s_open', 'ct_s_photo', 'ct_s_prep', 'ct_s_video', 'ct_s_thumbs', 'ct_s_save', 'ct_s_reopen', 'ct_s_send', 'ct_s_srv', 'ct_s_view', 'ct_s_del', 'ct_s_clean']
       .every(k => src.includes(`await step(t('${k}')`)) && src.includes("ctLine('   журнал: ' + l.text.replace(/<[^>]+>/g, '')") && src.includes('mvFetch(vd.id, (p, g) => { got = g; })'));
   t('v1.08.74: камера — промис готовности, без ухода в камеру телефона под тестом, видео без звука при запрете микрофона, сведения о кадре',
     src.includes('CAMIN.ready = new Promise((res, rej) => { CAMIN._res = res; CAMIN._rej = rej; });') && src.includes('if (CAMIN.noFallback) return;')
-    && src.includes('CAMIN.noAudio = true;') && src.includes('CAMIN.last = { size: blob.size, name, src, rot, at: Date.now() };')
+    && src.includes('CAMIN.noAudio = true;') && src.includes('CAMIN.last = { size: blob.size, name, src, rot, at: Date.now(), ms: Math.round(performance.now() - a) };')
     && src.includes('it.w = ex.w; it.h = ex.h; it.iw = ex.iw; it.ih = ex.ih; it.orig = ex.orig; it.small = ex.small; it.sharp = ex.sharp;'));
   t('v1.08.74: стили журнала теста', css.includes('.ct-log{max-height:260px') && css.includes('.ct-acts{display:flex'));
+
+  console.log('\n— v1.08.75: метрики отклика камеры —');
+  t('v1.08.75: ключи RU/EN', ['cp_title', 'cp_hint', 'cp_ui', 'cp_copy', 'cp_none', 'cp_live_prev', 'cp_live_main', 'cp_live_jank', 'cp_live_tap', 'cp_live_shot', 'cp_live_long',
+      'cp_h_session', 'cp_h_fps', 'cp_h_long', 'cp_h_tap', 'cp_h_paint', 'cp_h_evt', 'cp_h_shot', 'cp_h_after', 'cp_h_mem', 'cp_h_verdict',
+      'cp_v_ok', 'cp_v_soft', 'cp_v_hal', 'cp_v_chip', 'cp_v_weak', 'ct_s_perf'].every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
+  t('v1.08.75: сбор — longtask, Event Timing, rAF и requestVideoFrameCallback, память; тап→обработчик и →кадр экрана',
+    src.includes("CAMPERF.po.observe({ type: 'longtask', buffered: false });") && src.includes("CAMPERF.poEv.observe({ type: 'event', durationThreshold: 16, buffered: false });")
+    && src.includes('v.requestVideoFrameCallback(cb)') && src.includes('function camPerfTap(ev, what){') && src.includes('requestAnimationFrame(() => requestAnimationFrame(() => { rec.paint = Math.round(performance.now() - now); }));')
+    && src.includes('function camPerfMemMB(){'));
+  t('v1.08.75: кнопки камеры передают событие (задержка ввода), pointerdown запоминается',
+    src.includes('onpointerdown="App.cam.pd(event)" onclick="App.cam.shot(event)"') && src.includes("const tap = ev && ev.timeStamp ? camPerfTap(ev, 'shutter') : null;")
+    && src.includes("pd(ev){ CAMIN.pdTs = ev && ev.timeStamp || 0; }"));
+  t('v1.08.75: отметки времени — takePhoto/кадр, приёмник, recstart/rec, после закрытия prep/render/flush в сохранённую сессию',
+    src.includes("camPerfMark(src, performance.now() - a, Math.round(blob.size / 1024) + ' KB');") && src.includes("camPerfMark('intake', performance.now() - b);")
+    && src.includes("rec.onstart = () => camPerfMark('recstart'") && src.includes("camPerfMark('rec', CAMIN.recStopAt") && src.includes("if (perf) perf('prep', performance.now() - pa);")
+    && src.includes("if (perf) perf('render', performance.now() - ra);") && src.includes('const s0 = CAMPERF.sessions[0]; if (!s0) return;'));
+  t('v1.08.75: разбор кадров отложен до «Готово»: приёмник сразу, список deferred, «Готово» во время снимка кадр не теряет',
+    src.includes('async function camInFlushList(jobId, doc, list){') && src.includes("if (CAMIN.deferred && CAMIN.jobId === sJob) CAMIN.deferred.push(entry); else camInFlushList(sJob, sDoc, [entry]);")
+    && src.includes('const dj = CAMIN.jobId, dd = CAMIN.doc, dl = CAMIN.deferred || []; CAMIN.deferred = null;') && !src.includes("mediaTakeFiles(CAMIN.jobId, [f], 'photo', { cam: true, doc: CAMIN.doc, rot })")
+    && src.includes('if (rec._done) return; rec._done = true;'));
+  t('v1.08.75: превью 1920×1440 при ImageCapture, иначе 3264×2448', src.includes("width: { ideal: hasIC ? 1920 : 3264 }, height: { ideal: hasIC ? 1440 : 2448 }"));
+  console.log('\n— v1.08.76: журнал теста целиком —');
+  t('v1.08.76: ключи RU/EN', ['tl_title', 'tl_save', 'tl_share', 'tl_copy', 'tl_show', 'tl_status_abort', 'tl_aborted', 'tl_aborted_toast', 'tl_done_t', 'tl_done_h', 'tl_sec_log', 'tl_sec_perf', 'tl_sec_mq', 'tl_sec_app', 'log_save', 'log_share']
+    .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
+  t('v1.08.76: журнал в localStorage построчно (throttle), старт/строка/шаг/конец, dlog во время теста',
+    src.includes("const LS_TLOG = 'techlog_testlog'") && src.includes('function tlogStart(kind, title){') && src.includes('function tlogLine(text, cls){') && src.includes('function tlogStep(st){') && src.includes('function tlogEnd(ok, total){')
+    && src.includes('TLOG._t = setTimeout(tlogSaveNow, 300)') && src.includes("if (typeof TLOG !== 'undefined' && TLOG.active) tlogLine('dlog: ' + parts.join(' '), 'dim');"));
+  t('v1.08.76: .txt целиком — журнал, шаги, метрики камеры, журнал отправки, хвост журнала приложения; имя techlog-<kind>-дата.txt',
+    src.includes("L.push('', `--- ${t('tl_sec_steps')} ---`);") && src.includes("`--- ${t('tl_sec_perf')} ---`") && src.includes("mqLogLines.slice(-150)") && src.includes("PLOG.slice(-400)") && src.includes('function tlogFileName(c){'));
+  t('v1.08.76: кнопки Скачать/Поделиться/Копировать/Показать в карточке Съёмка и в Диагностике, модалка по завершении, Web Share для файла',
+    src.includes('function tlogBtnsHtml(style){') && src.includes('function tlogCardHtml(){') && src.includes('${tlogCardHtml()}')
+    && (src.match(/\$\{tlogCardHtml\(\)\}/g) || []).length === 2 && src.includes('function tlogDoneModal(){') && src.includes('setTimeout(tlogDoneModal, 400);') && src.includes("navigator.canShare({ files: [f] })"));
+  t('v1.08.76: тест съёмки и регресс пишут в журнал; прерванный тест помечается при старте; «Журнал событий» скачивается',
+    src.includes("tlogStart('camtest', t('ct_btn'));") && src.includes("tlogStart('regress', t('rg_btn'));") && src.includes('function tlogInit(){') && src.includes('try{ tlogInit(); }catch(e){}')
+    && src.includes('function logSave(){') && src.includes('App.logSave()') && css.includes('.tl-acts{display:flex'));
+  t('v1.08.75: вердикт софт/камера/железо, плашка, карточка в настройках с копированием, шаг в тесте съёмки',
+    src.includes('function camPerfVerdict(s){') && src.includes("if (soft) key = 'soft'; else if (hal) key = 'hal'; else if (chip) key = 'chip'; else if (weak) key = 'weak';")
+    && src.includes('function camPerfLive(){') && src.includes('function camPerfCardHtml(){') && src.includes('App.camPerfCopy()') && src.includes("await step(t('ct_s_perf')")
+    && src.includes('${camPerfCardHtml()}') && css.includes('.camin-perf{position:absolute') && css.includes('.cp-last{white-space:pre-wrap'));
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
