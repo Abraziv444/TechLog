@@ -55,7 +55,7 @@ function t(name, cond, note){
     t('в карточке ровно две кнопки — «Тест» и «Книга»', secs.every(x => x.nb === 2 && /тест\|книга/.test(x.labels)), secs[0].labels);
     t('«Тест» активен у всех семи разделов 1–7, у раздела 8 погашен',
       secs.filter(x => x.test).map(x => x.no).join(',') === '1,2,3,4,5,6,7', JSON.stringify(secs.map(x => [x.no, x.test])));
-    t('«Книга» активна у разделов 1 (v1.08.60: section-1-ru/en) и 8', secs.filter(x => x.book).map(x => x.no).join(',') === '1,8', JSON.stringify(secs.map(x => [x.no, x.book])));
+    t('«Книга» активна у разделов 1, 2 (v1.08.60–61: section-N-ru/en) и 8', secs.filter(x => x.book).map(x => x.no).join(',') === '1,2,8', JSON.stringify(secs.map(x => [x.no, x.book])));
     const cards = await p.evaluate(() => ({ res: !!document.querySelector('.st-cap') && /Мои результаты/.test(document.querySelector('.st-cap').textContent), overall: [...document.querySelectorAll('.st-cap')].some(c => /Общий прогресс/.test(c.textContent)),
       stat: [...document.querySelectorAll('.st-cap')].some(c => /Статистика/.test(c.textContent)), pills: document.querySelectorAll('.st-pill').length, empty: !!document.querySelector('.st-empty') }));
     t('на экране без кнопок: «Мои результаты» (пока пусто), «Общий прогресс» с 7 пилюлями разделов, «Статистика» (админ)', cards.res && cards.overall && cards.stat && cards.pills === 7 && cards.empty, JSON.stringify(cards));

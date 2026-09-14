@@ -28,9 +28,21 @@ function t(name, cond, note){
     await p.evaluate(() => window.App.go('study')); await p.waitForTimeout(1600);
     const c1 = await p.evaluate(() => { window.App.studySel('1'); const b = document.querySelector('.st-sec button[onclick*="studyRead"]'); return { dis: b.disabled, sub: (document.querySelector('.st-sec .tiny') || {}).textContent || '' }; });
     t('раздел 1: кнопка «Книга» активна, в подписи «книга»', !c1.dis && /книга/.test(c1.sub), JSON.stringify(c1));
-    await p.evaluate(() => window.App.studySel('2')); await p.waitForTimeout(900);
+    await p.evaluate(() => window.App.studySel('3')); await p.waitForTimeout(900);
     const c2 = await p.evaluate(() => ({ dis: document.querySelector('.st-sec button[onclick*="studyRead"]').disabled, sub: (document.querySelector('.st-sec .tiny') || {}).textContent || '' }));
-    t('раздел 2: файлов книги нет (ни ru, ни en) — кнопка гаснет, «книги пока нет»', c2.dis && /книги пока нет/.test(c2.sub), JSON.stringify(c2));
+    t('раздел 3: файлов книги нет (ни ru, ни en) — кнопка гаснет, «книги пока нет»', c2.dis && /книги пока нет/.test(c2.sub), JSON.stringify(c2));
+    await p.evaluate(() => window.App.studySel('2')); await p.waitForTimeout(900);
+    const c3 = await p.evaluate(() => ({ dis: document.querySelector('.st-sec button[onclick*="studyRead"]').disabled }));
+    await p.evaluate(() => window.App.studyRead('2')); await p.waitForTimeout(500);
+    const s2 = await p.evaluate(() => document.querySelector('.st-frame').getAttribute('src'));
+    t('v1.08.61: раздел 2 — кнопка активна, открывается section-2-ru.html', !c3.dis && /books\/section-2-ru\.html$/.test(s2), s2);
+    let f2s = null; for (let i = 0; i < 60 && !f2s; i++){ await p.waitForTimeout(250); f2s = p.frames().find(f => /section-2-ru/.test(f.url())); }
+    await f2s.waitForFunction(() => document.querySelectorAll('#inner .pg[data-on]').length > 0, null, { timeout: 30000 }); await f2s.waitForTimeout(500);
+    await f2s.evaluate(() => { const i = document.getElementById('pgin'); i.value = 'ii'; i.dispatchEvent(new Event('change')); }); await f2s.waitForTimeout(400);
+    const r2 = await f2s.evaluate(() => ({ tot: document.getElementById('pgtot').textContent.trim(), pg: document.getElementById('pgin').value, toc: [...document.querySelectorAll('#btoc .toci span')].map(e => e.textContent) }));
+    t('v1.08.61: 67 страниц, ввод «ii» ведёт на римскую титульную, оглавление с главой «Пожар и дым»', r2.tot === '/ 67' && r2.pg === 'ii' && r2.toc.includes('Пожар и дым'), JSON.stringify(r2));
+    await p.evaluate(() => window.App.studyReadClose()); await p.waitForTimeout(300);
+    await p.evaluate(() => window.App.studySel('1')); await p.waitForTimeout(300);
 
     await p.evaluate(() => window.App.studyRead('1')); await p.waitForTimeout(600);
     const rd = await p.evaluate(() => { const f = document.querySelector('.st-frame'); return { src: f.getAttribute('src'), sandbox: f.getAttribute('sandbox'), allow: f.getAttribute('allow') }; });

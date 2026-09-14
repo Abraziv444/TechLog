@@ -1456,7 +1456,12 @@ console.log('\n— v1.08.51: учёба —');
   t('v1.08.60: index.json — у разделов 1–7 книга {ru,en}, файлы раздела 1 в сборке',
     (() => { const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'dictionary/index.json'), 'utf8'));
       return j.sections.filter(s => s.id <= 7).every(s => s.book && s.book.ru === `books/section-${s.id}-ru.html` && s.book.en === `books/section-${s.id}-en.html`)
-        && fs.existsSync(path.join(ROOT, 'dictionary/books/section-1-ru.html')) && fs.existsSync(path.join(ROOT, 'dictionary/books/section-1-en.html')); })());
+        && [1, 2].every(n => fs.existsSync(path.join(ROOT, `dictionary/books/section-${n}-ru.html`)) && fs.existsSync(path.join(ROOT, `dictionary/books/section-${n}-en.html`))); })());
+  t('v1.08.61: учебник раздела 2 — 67 страниц, титулы i–iii, оглавление с главами, RU/EN',
+    (() => { const ru = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-2-ru.html'), 'utf8'), en = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-2-en.html'), 'utf8');
+      const pg = (h) => { const m = h.match(/"pages":(\d+)/); return m ? +m[1] : 0; };
+      return pg(ru) === 67 && pg(en) === 67 && ru.includes('"labels":["i","ii","iii","1"') && en.includes('"labels":["i","ii","iii","1"')
+        && ru.includes('"t":"Пожар и дым"') && en.includes('"t":"Fire and Smoke"') && ru.includes('"section":2'); })());
   t('v1.08.60: учебник раздела 1 — 173 страницы, шрифты и картинки внутри, RU/EN',
     (() => { const ru = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-1-ru.html'), 'utf8'), en = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-1-en.html'), 'utf8');
       const pg = (h) => { const m = h.match(/"pages":(\d+)/); return m ? +m[1] : 0; };

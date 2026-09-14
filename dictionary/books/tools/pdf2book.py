@@ -149,16 +149,48 @@ def unmangle(name):
     return re.sub(r'#U([0-9A-Fa-f]{4})', lambda m: chr(int(m.group(1), 16)), name)
 
 
+ROMAN = [(1000, 'm'), (900, 'cm'), (500, 'd'), (400, 'cd'), (100, 'c'), (90, 'xc'),
+         (50, 'l'), (40, 'xl'), (10, 'x'), (9, 'ix'), (5, 'v'), (4, 'iv'), (1, 'i')]
+
+
+def to_roman(n):
+    out = ''
+    for v, r in ROMAN:
+        while n >= v:
+            out += r
+            n -= v
+    return out
+
+
+def from_roman(s):
+    vals = {'i': 1, 'v': 5, 'x': 10, 'l': 50, 'c': 100, 'd': 500, 'm': 1000}
+    tot = 0
+    for i, ch in enumerate(s.lower()):
+        v = vals[ch]
+        tot += -v if i + 1 < len(s) and vals[s[i + 1].lower()] > v else v
+    return tot
+
+
 def order_files(src):
-    """Титульные листы первыми, дальше по номеру первой страницы."""
+    """Титульные листы первыми (без номера или с римскими i–iii), дальше по
+    номеру первой страницы. Возвращает (ключ сортировки, путь, имя, функция подписи)."""
     out = []
     for fn in os.listdir(src):
         if not fn.lower().endswith('.pdf'):
             continue
         nice = unmangle(fn)
         m = re.search(r'page\s*(\d+)\s*[-–]\s*(\d+)', nice)
-        start = int(m.group(1)) if m else -1
-        out.append((start, os.path.join(src, fn), nice))
+        mr = re.search(r'page\s*([ivxlc]+)\s*[-–]\s*([ivxlc]+)\b', nice, re.I)
+        if m:
+            start = int(m.group(1))
+            lab = (lambda st: lambda i: str(st + i))(start)
+        elif mr:
+            start = -1000 + from_roman(mr.group(1))
+            lab = (lambda st: lambda i: to_roman(st + i))(from_roman(mr.group(1)))
+        else:
+            start = -2000
+            lab = lambda i: ''
+        out.append((start, os.path.join(src, fn), nice, lab))
     out.sort(key=lambda x: (x[0], x[2]))
     if not out:
         sys.exit('в %s нет PDF-файлов' % src)
@@ -502,13 +534,13 @@ def main():
 
     files = order_files(args.src)
     pages, toc, labels = [], [], []
-    for start, path, nice in files:
+    for start, path, nice, lab in files:
         doc = pymupdf.open(path)
         res = FontResolver(doc)
         for i, page in enumerate(doc):
             svg, title, chap = build_page(doc, page, res, metrics, charsets,
                                           args.ppt, args.quality, icache, stats)
-            label = str(start + i) if start > 0 else ''
+            label = lab(i)
             pages.append({'l': label, 's': svg})
             labels.append(label)
             key = (chap, title)
