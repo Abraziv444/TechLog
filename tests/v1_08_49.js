@@ -95,18 +95,37 @@ function t(name, cond, note){
     const g0 = await groups();
     t('со «Всё» найдены и задачи, и комплексы', g0.includes('Задачи') && g0.includes('Комплексы'), g0.join(','));
 
-    await p.evaluate(() => [...document.querySelectorAll('.srch-chips .chip-preset')]
-      .find(b => b.textContent.trim() === 'Задачи').click());
-    await p.waitForTimeout(300);
-    const g1 = await groups();
-    t('клик «Задачи» сужает выбор до одного вида',
-      g1.includes('Задачи') && !g1.includes('Пикапы') && !g1.includes('Комплексы'), g1.join(','));
+    const click = name => p.evaluate(n => [...document.querySelectorAll('.srch-chips .chip-preset')]
+      .find(b => b.textContent.trim() === n).click(), name);
+    const clearBtn = () => p.evaluate(() => { const b = document.querySelector('.srch-chips .srch-clear'); return b ? { has: true, off: b.disabled } : { has: false }; });
+    t('v1.08.58: по умолчанию горят все шесть чипов и «Всё», крестик активен',
+      (await chipOn('Юнит')) && (await chipOn('Задачи')) && (await chipOn('Комплексы')) && (await clearBtn()).has && !(await clearBtn()).off);
 
-    await p.evaluate(() => [...document.querySelectorAll('.srch-chips .chip-preset')]
-      .find(b => b.textContent.trim() === 'Пикапы').click());
-    await p.waitForTimeout(300);
+    /* снятие одного чипа при «Всё» — «Всё» гаснет, остальные остаются */
+    await click('Юнит'); await p.waitForTimeout(300);
+    t('снят «Юнит» при «Всё» — «Всё» погасло, остальные пять горят',
+      !(await chipOn('Всё')) && !(await chipOn('Юнит')) && (await chipOn('Задачи')) && (await chipOn('Пикапы')) && (await chipOn('Комплексы')));
+    await click('Комплексы'); await p.waitForTimeout(300);
+    const g1 = await groups();
+    t('снят «Комплексы» — комплексы пропали из результатов, задачи остались',
+      g1.includes('Задачи') && !g1.includes('Комплексы'), g1.join(','));
+    await click('Комплексы'); await click('Юнит'); await p.waitForTimeout(300);
+    t('вернули оба — «Всё» снова горит', await chipOn('Всё'));
+
+    /* «Всё» при полном наборе — снимает все; крестик — тоже */
+    await click('Всё'); await p.waitForTimeout(300);
+    const emptyState = await p.evaluate(() => ({ on: document.querySelectorAll('.srch-chips .chip-preset.on').length, txt: document.querySelector('#srch-res').textContent, clear: document.querySelector('.srch-chips .srch-clear').disabled }));
+    t('«Всё» при полном выборе снимает все чипы: ничего не горит, подсказка «ничего не выбрано», крестик погашен',
+      emptyState.on === 0 && /Ничего не выбрано/.test(emptyState.txt) && emptyState.clear, JSON.stringify(emptyState));
+    await click('Всё'); await p.waitForTimeout(200);
+    t('«Всё» из пустого — включает все', await chipOn('Всё') && (await chipOn('Юнит')));
+    await p.evaluate(() => document.querySelector('.srch-chips .srch-clear').click()); await p.waitForTimeout(300);
+    t('крестик снимает весь выбор', (await p.evaluate(() => document.querySelectorAll('.srch-chips .chip-preset.on').length)) === 0);
+
+    /* обычное сложение чипов из пустого */
+    await click('Задачи'); await click('Пикапы'); await p.waitForTimeout(300);
     const g2 = await groups();
-    t('второй чип ДОБАВЛЯЕТСЯ: видны и задачи, и пикапы',
+    t('чипы складываются: из пустого «Задачи» + «Пикапы» — видны оба вида, комплексов нет',
       g2.includes('Задачи') && g2.includes('Пикапы') && !g2.includes('Комплексы'), g2.join(','));
     t('оба чипа подсвечены, «Всё» — нет',
       (await chipOn('Задачи')) && (await chipOn('Пикапы')) && !(await chipOn('Всё')));

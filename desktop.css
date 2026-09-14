@@ -715,8 +715,12 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop.tl-pop-side #toasts{left:auto;right:16px;align-items:flex-end}
   /* v1.07.95: мини-журнал отправки был прибит к нижней панели телефона
      (bottom:66px). В ПК-режиме панель — слева, и полоса висела в пустоте. */
-  html.tl-desktop .mq-mini{ left:auto; right:16px; width:min(520px, 44vw);
-    bottom:calc(16px + env(safe-area-inset-bottom)); }
+  /* v1.08.57: положение — только ПАРОЙ top/bottom, иначе блок растягивался
+     на весь экран при настройке «сбоку» (top от styles.css + bottom отсюда). */
+  html.tl-desktop .mq-mini{ left:auto; right:16px; width:min(480px, 44vw); max-width:480px; margin:0; }
+  html.tl-desktop.tl-pop-bottom .mq-mini{ top:auto; bottom:calc(16px + env(safe-area-inset-bottom)); }
+  html.tl-desktop.tl-pop-top .mq-mini,
+  html.tl-desktop.tl-pop-side .mq-mini{ bottom:auto; top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px); }
   html.tl-desktop .prop-wrap{display:block;max-width:780px;margin:0 auto}
 }
 

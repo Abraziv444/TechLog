@@ -190,7 +190,7 @@ t('modalTrap в app.js', /function modalTrap\(on\)/.test(appSrc.replace(/\r/g, '
   /function modalTrap/.test(fs.readFileSync(ROOT + '/app.js', 'utf8')));
 const appNow = fs.readFileSync(ROOT + '/app.js', 'utf8');
 t('openModal включает ловушку', /document\.body\.appendChild\(ov\);\n  modalTrap\(true\);/.test(appNow));
-t('closeModal выключает', /closeModal\(\)\{ \$\('#overlay'\)\?\.remove\(\); modalTrap\(false\);/.test(appNow));
+t('closeModal выключает', /closeModal\(\)\{\s*\$\('#overlay'\)\?\.remove\(\); modalTrap\(false\);/.test(appNow));   // v1.08.59: closeModal стал многострочным
 
 console.log('\n— латиница в бланке (v1.07.84) —');
 t('транслит имени', T.translit('Иван Петров') === 'Ivan Petrov', T.translit('Иван Петров'));
@@ -1384,12 +1384,17 @@ console.log('\n— v1.08.49: поиск — место, галочка, муль
     && /techlog_srch_tab/.test(src) && src.includes("App.srchTab(this.checked)"));
   t('из карточки настроек поиск открывается и при спрятанной кнопке',
     src.includes("onclick=\"App.searchOpen()\">${ic('search')} ${t('srch_open_here')}"));
-  t('выбор видов — множество с запретом пустоты',
-    src.includes("let srchSel = new Set(SRCH_KINDS)")
-    && src.includes("if (!srchSel.size) srchSel = new Set(SRCH_KINDS)")
-    && src.includes("srchSel = new Set([k])"));
-  t('«Юнит» — отдельный режим, комплексы в нём скрыты',
-    src.includes('srchUnit = !srchUnit') && src.includes("S.has('cx') && !U"));
+  t('v1.08.58: чипы — одна группа из шести, «Всё» = все горят, повтор снимает все, крестик снимает, пустой выбор разрешён',
+    src.includes("const SRCH_ALL = ['unit', ...SRCH_KINDS]") && src.includes('function srchAllOn(){ return srchUnit && srchSel.size === SRCH_KINDS.length; }')
+    && src.includes("if (k === 'all'){ if (srchAllOn()){ srchSel = new Set(); srchUnit = false; } else { srchSel = new Set(SRCH_KINDS); srchUnit = true; } }")
+    && src.includes("else if (k === 'none'){ srchSel = new Set(); srchUnit = false; }") && src.includes('class="chip-preset srch-clear"')
+    && !src.includes("srchSel = new Set([k])") && !src.includes("if (!srchSel.size) srchSel = new Set(SRCH_KINDS);   // пусто"));
+  t('v1.08.59: askModal — модалка да/нет; «Прервать» тест идёт через неё, а не через confirm()',
+    src.includes('function askModal(o){') && src.includes("if (_askResolve){ const r = _askResolve; _askResolve = null; r(false); }")
+    && src.includes("const yes = await askModal({ title: t('st_finish_t')") && !src.includes("if (confirm(t('st_finish_q')")
+    && Object.keys(T.DICT.ru).filter(k => /^ask_|^st_finish_/.test(k)).every(k => k in T.DICT.en));
+  t('v1.08.58: «Юнит» — добавочное поле (искать и по номеру юнита), комплексы ищутся всегда',
+    src.includes('const unit = x => U && has(x.unit_number);') && src.includes("if (S.has('cx')) (state.data.complexes") && !src.includes("S.has('cx') && !U"));
   t('выбор запоминается на устройстве',
     /techlog_srch_sel/.test(src) && /srchSaveSel\(\); srchChipsSync\(\); srchRender\(\);/.test(src));
   t('фильтры видов читают набор, а не одиночный вид',
@@ -1442,6 +1447,12 @@ console.log('\n— v1.08.51: учёба —');
     && !src.includes("seg('lang', 'ru', 'RU')") && (src.match(/onclick="App\.studyRead\('\$\{s\.id\}'\)"/g) || []).length === 1);
   const idx = JSON.parse(fs.readFileSync(ROOT + '/dictionary/index.json', 'utf8'));
   t('v1.08.56: index.json — у всех восьми разделов short на двух языках', idx.sections.every(s => s.short && s.short.ru && s.short.en));
+  const dcss = fs.readFileSync(ROOT + '/desktop.css', 'utf8');
+  t('v1.08.57: полоска отправки — top/bottom всегда парой, крестик и «подробнее», max-height, тосты отодвигаются',
+    css.includes('.mq-mini{position:fixed;left:8px;right:8px;top:auto;') && css.includes('html.tl-pop-top .mq-mini, html.tl-pop-side .mq-mini{ bottom:auto;')
+    && css.includes('max-height:min(40dvh,240px)') && dcss.includes('html.tl-desktop.tl-pop-bottom .mq-mini{ top:auto;') && dcss.includes('html.tl-desktop.tl-pop-side .mq-mini{ bottom:auto;')
+    && !/html\.tl-desktop \.mq-mini\{[^}]*bottom:/.test(dcss) && css.includes('html.tl-pop-side body.has-mq-mini #toasts')
+    && src.includes('class="mq-mini-c"') && src.includes("e.target.closest('.mq-mini-c')") && src.includes("e.key === 'Escape' && $('#mq-mini')"));
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')

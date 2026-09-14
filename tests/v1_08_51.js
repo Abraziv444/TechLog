@@ -115,8 +115,22 @@ function t(name, cond, note){
     const resumed = await p.evaluate(() => ({ run: !!document.querySelector('.st-run'), i: (document.querySelector('.st-run-h .tiny') || {}).textContent || '' }));
     t('после перезагрузки тест восстановлен на 2-м вопросе', resumed.run && /2 \/ 20/.test(resumed.i), JSON.stringify(resumed));
 
-    /* «Прервать» → диалог принят → итоги по 2 отвеченным */
-    await p.evaluate(() => window.App.studyAbort()); await p.waitForTimeout(700);
+    /* «Прервать» → своя модалка-вопрос в дизайне приложения (v1.08.59) */
+    await p.evaluate(() => window.App.studyAbort()); await p.waitForTimeout(400);
+    const ask = await p.evaluate(() => {
+      const m = document.querySelector('#overlay .modal'); if (!m) return null;
+      return { title: (m.querySelector('h3') || {}).textContent || '', text: (m.querySelector('.ask-text') || {}).textContent || '',
+        ok: (m.querySelector('#ask-ok') || {}).textContent || '', no: (m.querySelector('#ask-no') || {}).textContent || '', backx: !!m.querySelector('.back-x') };
+    });
+    t('вопрос о завершении — модалка приложения: заголовок, «2 из 20», кнопки «Завершить» / «Продолжить тест», стрелка назад',
+      ask && /Завершить тест\?/.test(ask.title) && /2 из 20/.test(ask.text) && /Завершить/.test(ask.ok) && /Продолжить тест/.test(ask.no) && ask.backx, JSON.stringify(ask));
+    await p.evaluate(() => document.querySelector('#ask-no').click()); await p.waitForTimeout(300);
+    t('«Продолжить тест» — окно закрылось, тест на месте', !(await p.$('#overlay')) && !!(await p.$('.st-run')));
+    await p.evaluate(() => window.App.studyAbort()); await p.waitForTimeout(300);
+    await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+    t('Esc — тоже «нет»', !(await p.$('#overlay')) && !!(await p.$('.st-run')));
+    await p.evaluate(() => window.App.studyAbort()); await p.waitForTimeout(300);
+    await p.evaluate(() => document.querySelector('#ask-ok').click()); await p.waitForTimeout(700);
     const res = await txt('#overlay');
     t('модалка результатов: процент, зачёт/не сдан, верных/неверных, время',
       /Результат/.test(res) && /%/.test(res) && /верных/.test(res) && /неверных/.test(res) && /Время/.test(res), res.slice(0, 160));

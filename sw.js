@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.08.56';
+const VERSION = '1.08.59';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [

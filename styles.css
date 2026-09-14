@@ -1430,26 +1430,42 @@ html.tl-pop-side .mq-pop{left:auto;right:12px;transform:none}
 .gd-mark{color:var(--green);background:rgba(88,204,2,.12);border-radius:5px;padding:0 3px}
 /* v1.07.70: подзаголовок сквозной проверки в отчёте теста */
 .gd-probe-h{margin:6px 0 2px;font-weight:900;color:var(--dim);text-transform:uppercase;font-size:.72rem;letter-spacing:.03em}
-/* v1.07.72: мини-журнал отправки — три строки над панелью вкладок */
-.mq-mini{position:fixed;left:8px;right:8px;z-index:60;
+/* v1.07.72: мини-журнал отправки — три строки над панелью вкладок.
+   v1.08.57: оформление — как у обычных модалок (панель, рамка, радиус 20,
+   крестик .back-x, заголовок с иконкой), сам журнал — тёмная вставка.
+   Положение задаётся ПАРОЙ top/bottom в каждом правиле: раньше «сбоку»
+   ставило top, а ПК-правило добавляло bottom — блок растягивался на всю
+   высоту экрана пустой панелью. max-height — страховка от того же. */
+.mq-mini{position:fixed;left:8px;right:8px;top:auto;z-index:60;
   bottom:calc(66px + env(safe-area-inset-bottom));
-  background:var(--black-chip);border:2px solid var(--line);border-radius:var(--r-sm);
-  padding:6px 8px;font:700 .72rem/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer;max-width:560px;margin:0 auto}
-.mq-mini .mq-mini-h{display:flex;align-items:center;gap:6px;color:var(--dim);
-  font-family:inherit;margin-bottom:3px}
-.mq-mini .mq-mini-x{margin-left:auto;color:var(--blue)}
+  background:var(--panel);border:2px solid var(--line);border-radius:20px;
+  padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:480px;margin:0 auto;
+  max-height:min(40dvh,240px);overflow:hidden;cursor:pointer}
+.mq-mini .mq-mini-h{display:flex;align-items:center;gap:8px;font-weight:900;font-size:.92rem;color:var(--text);margin-bottom:6px;min-width:0}
+.mq-mini .mq-mini-h > span:first-child{ display:contents }
+.mq-mini .mq-mini-h .ic{width:18px;height:18px;flex:0 0 auto}
+.mq-mini .mq-mini-t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mq-mini .mq-mini-x{flex:0 0 auto;color:var(--blue);font-size:.8rem;font-weight:800;padding:6px 8px;border-radius:10px;min-height:36px}
+.mq-mini .mq-mini-c{flex:0 0 auto;width:36px;height:36px;border-radius:12px;border:2px solid var(--line);display:grid;place-items:center;color:var(--dim)}
+.mq-mini .mq-mini-c .ic{width:16px;height:16px}
+.mq-mini .mq-mini-b{background:var(--black-chip);border-radius:12px;padding:6px 8px;
+  font:700 .72rem/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;max-height:calc(3 * 1.35 * .72rem + 12px);overflow:hidden}
 .mq-mini .mq-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:1px 0;display:block}
 .mq-mini .mq-l .m{display:inline;white-space:inherit}
+.mq-mini .mq-l .ic{width:12px;height:12px;vertical-align:-2px}
 /* v1.08.46: полоска отправки — тоже «поповер» и слушает общую настройку:
    «сверху» (по умолчанию) — под шапкой, «снизу» — над таббаром, «сбоку» —
-   справа сверху узкой колонкой. Раньше висела снизу при любой настройке. */
-html.tl-pop-top .mq-mini{ bottom:auto; top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px) }
-html.tl-pop-side .mq-mini{ bottom:auto; top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px);
-  left:auto; right:12px; max-width:340px; margin:0 }
+   справа сверху узкой колонкой. */
+html.tl-pop-top .mq-mini, html.tl-pop-side .mq-mini{ bottom:auto; top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px) }
+html.tl-pop-side .mq-mini{ left:auto; right:12px; max-width:340px; margin:0 }
 .mq-mini .ok{color:var(--green-hi)} .mq-mini .err{color:var(--red)}
-/* пока мини-журнал на экране, тосты поднимаются над ним */
-html.tl-pop-bottom body.has-mq-mini #toasts{bottom:calc(env(safe-area-inset-bottom,0px) + 178px)}
+/* пока мини-журнал на экране, тосты отодвигаются от него: «снизу» — выше
+   полоски, «сверху»/«сбоку» — ниже неё (v1.08.57: раньше в этих двух режимах
+   тост-баннер «Пикап сегодня» ложился прямо на кнопки полоски). Высоту
+   полоски пишет mqMini() в --mqh. */
+html.tl-pop-bottom body.has-mq-mini #toasts{bottom:calc(env(safe-area-inset-bottom,0px) + 82px + var(--mqh, 96px))}
+html.tl-pop-top body.has-mq-mini #toasts,
+html.tl-pop-side body.has-mq-mini #toasts{top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px + var(--mqh, 96px))}
 .mq-mini .warn{color:var(--yellow)} .mq-mini .dim{color:var(--dim)}
 .banner .grow{flex:1;min-width:0;font-weight:800}
 .pk-line{flex-wrap:wrap}
@@ -2524,3 +2540,14 @@ html.tl-offline .net-login-note{ display:flex }
 .st-pill .st-chip-no{ display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--sc, var(--blue));font-size:.75rem }
 .st-pill.ok{ border-color:var(--green);color:var(--green) } .st-pill.bad{ border-color:var(--red);color:var(--red) }
 .st-sec-btns .btn{ min-height:52px;font-size:1rem }
+
+/* ============ v1.08.58: чипы поиска — крестик «снять выбор» рядом со «Всё» ============ */
+.srch-chips .chip-preset.srch-clear{ padding:5px 8px;min-width:36px;display:inline-grid;place-items:center;color:var(--dim) }
+.srch-chips .chip-preset.srch-clear .ic{ width:14px;height:14px }
+.srch-chips .chip-preset.srch-clear:disabled{ opacity:.35;cursor:default }
+
+/* ============ v1.08.59: модалка-вопрос (askModal) вместо системного confirm ============ */
+.ask-text{ font-weight:700;line-height:1.45;margin:2px 0 8px }
+.ask-note{ margin:0 0 12px }
+.ask-btns{ display:flex;flex-wrap:wrap;gap:8px }
+.ask-btns .btn{ flex:1 1 150px;min-height:48px }

@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.56';
+const APP_VERSION = '1.08.59';
 const DB_SQL_FILE = 'full-install-1_08_51.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -777,7 +777,8 @@ const I18N = {
     srch_tab_chk: 'Кнопка поиска в нижней панели (на телефоне)',
     srch_tab_hint: 'Снимите галочку — на телефоне кнопка ${ic} исчезнет из нижней панели и панель станет свободнее. На ПК кнопка остаётся всегда. Сам поиск никуда не денется: он есть в этой карточке.',
     srch_open_here: 'Открыть поиск',
-    srch_multi_hint: 'Чипы складываются: отметьте несколько видов — ищем по всем сразу. «Юнит» — отдельный режим: совпадение только по номеру юнита в выбранных видах.',
+    srch_multi_hint: 'Чипы складываются: отметьте, где искать. «Всё» включает все чипы, повторное нажатие — снимает; крестик — снять выбор. «Юнит» — искать и по номеру юнита.',
+    srch_type_hint: 'Введите минимум два символа', srch_clear: 'Снять выбор', srch_none_sel: 'Ничего не выбрано — отметьте, где искать, или нажмите «Всё».',
     mq_empty: 'Всё отправлено', mq_later: 'Позже', mq_doc: 'Документ',
     mq_net_on: 'сеть: онлайн', mq_net_off: 'сеть: офлайн', mq_sb_fail: 'сервер недоступен',
     mq_log: 'Журнал отправки', mq_l_wait: 'ожидание действий…',
@@ -1116,7 +1117,9 @@ const I18N = {
     st_q: 'Вопрос', st_multi: 'несколько верных ответов — отметьте все', st_hint: 'Подсказка', st_hint_hide: 'Скрыть подсказку',
     st_check: 'Проверить', st_next: 'Дальше', st_finish: 'Завершить', st_stop: 'Прервать', st_drop: 'Сбросить',
     st_right: 'Верно', st_wrong_a: 'Неверно — верный ответ', st_loading: 'Загрузка теста…',
-    st_finish_q: 'Завершить тест сейчас? Отвечено {N} из {M} — результат запишется по отвеченным.',
+    st_finish_q: 'Отвечено {N} из {M}. Результат запишется по отвеченным вопросам, остальные будут считаться пропущенными.',
+    st_finish_t: 'Завершить тест?', st_finish_no: 'Продолжить тест', st_finish_note: 'Вернуться к этому тесту после завершения нельзя — только начать новый.',
+    ask_title: 'Подтвердите', ask_ok: 'Да',
     st_result: 'Результат', st_passed: 'Зачёт', st_failed: 'Не сдан', st_correct: 'верных', st_wrong: 'неверных', st_skipped: 'пропущено',
     st_time: 'Время', st_avg_q: 'на вопрос', st_review: 'Разбор', st_again: 'Ещё раз', st_your: 'ваш ответ', st_hint_used: 'с подсказкой',
     st_only_wrong: 'Только ошибки', st_all_right: 'Ошибок нет', st_section: 'Раздел', st_p: 'стр.',
@@ -1783,7 +1786,8 @@ const I18N = {
     srch_tab_chk: 'Search button in the bottom bar (on the phone)',
     srch_tab_hint: 'Untick — on the phone the ${ic} button leaves the bottom bar and the bar gets roomier. On PC the button always stays. Search itself is not going anywhere: it lives in this card too.',
     srch_open_here: 'Open search',
-    srch_multi_hint: 'Chips add up: tick several kinds — we search all of them at once. \u201CUnit\u201D is a separate mode: match by unit number only, within the selected kinds.',
+    srch_multi_hint: 'Chips add up: tick where to search. \u201CAll\u201D turns every chip on, pressing it again turns them off; the cross clears the selection. \u201CUnit\u201D also matches by unit number.',
+    srch_type_hint: 'Type at least two characters', srch_clear: 'Clear selection', srch_none_sel: 'Nothing selected \u2014 tick where to search or press \u201CAll\u201D.',
     mq_empty: 'Everything uploaded', mq_later: 'Later', mq_doc: 'Document',
     mq_net_on: 'network: online', mq_net_off: 'network: offline', mq_sb_fail: 'server unreachable',
     mq_log: 'Upload log', mq_l_wait: 'waiting for actions…',
@@ -2120,7 +2124,9 @@ const I18N = {
     st_q: 'Question', st_multi: 'several correct answers — mark all of them', st_hint: 'Hint', st_hint_hide: 'Hide hint',
     st_check: 'Check', st_next: 'Next', st_finish: 'Finish', st_stop: 'Stop', st_drop: 'Discard',
     st_right: 'Correct', st_wrong_a: 'Incorrect — the right answer is', st_loading: 'Loading the test…',
-    st_finish_q: 'Finish the test now? {N} of {M} answered — the result is scored on what you answered.',
+    st_finish_q: '{N} of {M} answered. The result is scored on the answered questions; the rest count as skipped.',
+    st_finish_t: 'Finish the test?', st_finish_no: 'Continue the test', st_finish_note: 'You cannot return to this test after finishing — only start a new one.',
+    ask_title: 'Confirm', ask_ok: 'Yes',
     st_result: 'Result', st_passed: 'Passed', st_failed: 'Not passed', st_correct: 'correct', st_wrong: 'wrong', st_skipped: 'skipped',
     st_time: 'Time', st_avg_q: 'per question', st_review: 'Review', st_again: 'Try again', st_your: 'your answer', st_hint_used: 'hint used',
     st_only_wrong: 'Mistakes only', st_all_right: 'No mistakes', st_section: 'Section', st_p: 'p.',
@@ -6323,7 +6329,35 @@ function modalTrap(on){
     }
   }catch(e){}
 }
-function closeModal(){ $('#overlay')?.remove(); modalTrap(false); maybeApplyPendingUpdate(); }
+let _askResolve = null;   // v1.08.59: ожидающий ответ askModal — закрытие окна любым способом = «нет»
+function closeModal(){
+  $('#overlay')?.remove(); modalTrap(false); maybeApplyPendingUpdate();
+  if (_askResolve){ const r = _askResolve; _askResolve = null; r(false); }
+}
+/* v1.08.59: вопрос «да/нет» в дизайне приложения вместо системного confirm().
+   askModal({ title, text, ok, cancel, icon, danger }) → Promise<boolean>.
+   Крестик, подложка и Esc — это «нет». */
+function askModal(o){
+  o = o || {};
+  return new Promise(res => {
+    openModal(`
+      ${modalHead(o.title || t('ask_title'), o.icon || 'help')}
+      <div class="ask-text">${esc(o.text || '')}</div>
+      ${o.note ? `<div class="tiny ask-note">${esc(o.note)}</div>` : ''}
+      <div class="ask-btns">
+        <button type="button" class="btn ${o.danger ? 'btn-red' : 'btn-green'}" id="ask-ok">${o.okIcon ? ic(o.okIcon) + ' ' : ''}${esc(o.ok || t('ask_ok'))}</button>
+        <button type="button" class="btn btn-ghost" id="ask-no">${esc(o.cancel || t('cancel'))}</button>
+      </div>`);
+    _askResolve = res;
+    const done = v => { const r = _askResolve; _askResolve = null; closeModal(); if (r) r(v); };
+    $('#ask-ok').onclick = () => done(true);
+    $('#ask-no').onclick = () => done(false);
+    setTimeout(() => { const b = $('#ask-no'); if (b) b.focus(); }, 40);
+  });
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && _askResolve && $('#overlay')) closeModal();
+});
 function modalHead(title, iconName){ return `<h3><button class="back-x" aria-label="${t('back')}" onclick="App.closeModal()">${ic('arr_l')}</button> ${iconName?ic(iconName)+' ':''}${esc(title)}</h3>`; }
 
 /* ---------- Добавить задание ---------- */
@@ -9207,11 +9241,17 @@ function studyNext(){
   studyRunSave(); render();
   try{ window.scrollTo(0, 0); }catch(e){}
 }
-function studyAbortAsk(){
+async function studyAbortAsk(){
   const r = STUDY.run; if (!r) return;
   const n = Object.keys(r.answers).length;
   if (!n){ STUDY.run = null; studyRunSave(); render(); return; }
-  if (confirm(t('st_finish_q').replace('{N}', n).replace('{M}', r.order.length))) studyFinish();
+  /* v1.08.59: своя модалка вместо системного confirm(); таймер на время вопроса стоит */
+  stClockPause(r.clock); stClockPause(r.qclock);
+  const yes = await askModal({ title: t('st_finish_t'), icon: 'grad',
+    text: t('st_finish_q').replace('{N}', n).replace('{M}', r.order.length), note: t('st_finish_note'),
+    ok: t('st_finish'), okIcon: 'check', cancel: t('st_finish_no') });
+  if (yes){ studyFinish(); return; }
+  if (STUDY.run && !STUDY.run.done){ stClockResume(STUDY.run.clock); stClockResume(STUDY.run.qclock); }
 }
 async function studyFinish(){
   const r = STUDY.run; if (!r || r.done) return;
@@ -9648,6 +9688,7 @@ const App = {
     if (inp){ inp.blur(); inp.setAttribute('inputmode', unitKb()); inp.focus(); }
   },
   mediaQueueModal, mqPing, mqRetry, plHours,
+  mqMini(v){ mqMini(!!v); },   // v1.08.57: ручка для диагностики и тестов
   /* v1.07.67: диагностика интерфейса (движок — uidiag.js) */
   uiDiagRun(){
     if (window.UIDiag) window.UIDiag.open();
@@ -10022,17 +10063,14 @@ const App = {
   searchType(){ srchRender(); },
   /* v1.08.35/49: чипы «что ищем» — мультивыбор; классы на месте, фокус цел */
   srchChip(k){
-    if (k === 'all'){ srchSel = new Set(SRCH_KINDS); srchUnit = false; }
+    /* v1.08.58: «Всё» — включить все шесть / (когда все горят) снять все;
+       крестик — снять все; остальные чипы просто переключаются, «Всё»
+       гаснет, как только снят хоть один. Пустой выбор разрешён. */
+    if (k === 'all'){ if (srchAllOn()){ srchSel = new Set(); srchUnit = false; } else { srchSel = new Set(SRCH_KINDS); srchUnit = true; } }
+    else if (k === 'none'){ srchSel = new Set(); srchUnit = false; }
     else if (k === 'unit'){ srchUnit = !srchUnit; }
-    else {
-      if (srchSel.size === SRCH_KINDS.length){
-        /* было «всё» — первый клик по виду сужает выбор до него одного */
-        srchSel = new Set([k]);
-      } else if (srchSel.has(k)){
-        srchSel.delete(k);
-        if (!srchSel.size) srchSel = new Set(SRCH_KINDS);   // пусто = «всё»
-      } else srchSel.add(k);
-    }
+    else if (srchSel.has(k)) srchSel.delete(k);
+    else srchSel.add(k);
     srchSaveSel(); srchChipsSync(); srchRender();
   },
   searchGo(kind, id){ searchGo(kind, id); },
@@ -12208,27 +12246,41 @@ function jobGrand(j){ return (j.status==='approved' && j.approved_total != null)
    набора не бывает: снятие последнего чипа возвращает «всё». Выбор
    запоминается на устройстве. */
 const SRCH_KINDS = ['job', 'pk', 'prop', 'rep', 'cx'];
-let srchSel = new Set(SRCH_KINDS), srchUnit = false;
+/* v1.08.58: чипы «что ищем» — ОДНА группа из шести переключателей:
+   Юнит · Задачи · Пикапы · Пропозалы · Ремонты · Комплексы. «Всё» — мастер:
+   горит, когда включены все шесть; нажатие включает все, повторное — снимает
+   все. Крестик снимает выбор. Пустой выбор разрешён (ничего не ищем).
+   «Юнит» теперь обычный член группы: «искать и по номеру юнита» (раньше был
+   отдельным режимом «только номер юнита» и в «Всё» не входил). */
+const SRCH_ALL = ['unit', ...SRCH_KINDS];
+let srchSel = new Set(SRCH_KINDS), srchUnit = true;   // по умолчанию горят все шесть (пять видов + «Юнит»)
 function srchLoadSel(){
   try{
     const j = JSON.parse(localStorage.getItem('techlog_srch_sel') || 'null');
-    if (j && Array.isArray(j.k) && j.k.length)
+    if (!j) return;
+    if (j.v === 2 && Array.isArray(j.k)){
       srchSel = new Set(j.k.filter(k => SRCH_KINDS.includes(k)));
-    if (!srchSel.size) srchSel = new Set(SRCH_KINDS);
-    srchUnit = !!(j && j.u);
+      srchUnit = !!j.u;
+    } else if (Array.isArray(j.k)){                 // старая запись (v1.08.49): режим «только юнит» → просто юнит включён
+      srchSel = new Set(j.k.filter(k => SRCH_KINDS.includes(k)));
+      if (!srchSel.size) srchSel = new Set(SRCH_KINDS);
+      srchUnit = true;
+    }
   }catch(e){}
 }
 function srchSaveSel(){
   try{ localStorage.setItem('techlog_srch_sel',
-    JSON.stringify({ k: [...srchSel], u: srchUnit ? 1 : 0 })); }catch(e){}
+    JSON.stringify({ v: 2, k: [...srchSel], u: srchUnit ? 1 : 0 })); }catch(e){}
 }
+function srchAllOn(){ return srchUnit && srchSel.size === SRCH_KINDS.length; }
+function srchEmpty(){ return !srchUnit && !srchSel.size; }
+function srchChipOn(k){ return k === 'all' ? srchAllOn() : k === 'unit' ? srchUnit : srchSel.has(k); }
 function srchChipsSync(){
-  const all = srchSel.size === SRCH_KINDS.length;
   document.querySelectorAll('.srch-chips .chip-preset').forEach(b => {
-    const k = b.dataset.sk;
-    b.classList.toggle('on', k === 'all' ? all && !srchUnit
-      : k === 'unit' ? srchUnit : srchSel.has(k));
+    b.classList.toggle('on', srchChipOn(b.dataset.sk));
   });
+  const x = document.querySelector('.srch-chips .srch-clear');
+  if (x) x.disabled = srchEmpty();
 }
 function srchDocNo(kind, x){
   if (kind === 'job') return docNo('inv', x);
@@ -12254,26 +12306,26 @@ function srchRows(q){
      задач в Magnolia Vinings (MGV). */
   const cxN = id => { const c = cxById(id); return c ? ((c.abbr || '') + ' ' + (c.name || '')) : ''; };
   const out = { jobs: [], pk: [], props: [], reps: [], cx: [] };
-  /* v1.08.35/49: набор видов складывается; 'unit' — режим совпадения
-     только по номеру юнита внутри выбранных видов. */
-  const S = srchSel && srchSel.size ? srchSel : new Set(SRCH_KINDS);
+  /* v1.08.35/49/58: набор видов складывается; «Юнит» — добавочное поле:
+     включён — документ находится и по номеру юнита, выключен — только по
+     номеру документа, комплексу и заметке. Пустой выбор — ничего не ищем. */
+  if (srchEmpty()) return { jobs: [], pk: [], props: [], reps: [], cx: [], none: true };
+  const S = srchSel;
   const U = !!srchUnit;
+  const unit = x => U && has(x.unit_number);
   if (S.has('job')) liveJobs().forEach(j => {
-    if (U ? has(j.unit_number)
-          : (has(j.unit_number) || has(docNo('inv', j)) || has(cxN(j.complex_id)) || has(j.note))) out.jobs.push(j);
+    if (unit(j) || has(docNo('inv', j)) || has(cxN(j.complex_id)) || has(j.note)) out.jobs.push(j);
   });
   if (S.has('pk')) (state.data.placements || []).forEach(p => {
-    if (U ? has(p.unit_number) : (has(p.unit_number) || has(cxN(p.complex_id)))) out.pk.push(p);
+    if (unit(p) || has(cxN(p.complex_id))) out.pk.push(p);
   });
   if (S.has('prop')) (state.data.proposals || []).forEach(p => {
-    if (U ? has(p.unit_number)
-          : (has(p.unit_number) || has('prop-' + (p.no ?? '')) || has(cxN(p.complex_id)))) out.props.push(p);
+    if (unit(p) || has('prop-' + (p.no ?? '')) || has(cxN(p.complex_id))) out.props.push(p);
   });
   if (S.has('rep')) (state.data.repairs || []).forEach(r => {
-    if (U ? has(r.unit_number)
-          : (has(r.unit_number) || has('rep-' + (r.no ?? '')) || has(cxN(r.complex_id)))) out.reps.push(r);
+    if (unit(r) || has('rep-' + (r.no ?? '')) || has(cxN(r.complex_id))) out.reps.push(r);
   });
-  if (S.has('cx') && !U) (state.data.complexes || []).forEach(c => {
+  if (S.has('cx')) (state.data.complexes || []).forEach(c => {
     if (has(c.name) || has(c.abbr) || has(c.address)) out.cx.push(c);
   });
   const lim = a => a.slice(0, 12);
@@ -12302,7 +12354,8 @@ function srchRender(){
   const box = $('#srch-res'); if (!box) return;
   const q = ($('#srch-q') || {}).value || '';
   const r = srchRows(q);
-  if (!r){ box.innerHTML = `<div class="tiny" style="padding:8px 2px">${t('srch_hint')}</div>`; return; }
+  if (!r){ box.innerHTML = `<div class="tiny" style="padding:8px 2px">${t('srch_type_hint')}</div>`; return; }   // v1.08.58: подсказка «что ищем» уже написана выше — не дублируем
+  if (r.none){ box.innerHTML = `<div class="tiny" style="padding:8px 2px">${t('srch_none_sel')}</div>`; return; }
   const grp = (title, arr, f) => arr.length ? `<div class="srch-grp">${title} · ${arr.length}</div>` + arr.map(f).join('') : '';
   const html =
     grp(t('srch_jobs'), r.jobs, x => srchLine('job', x)) +
@@ -12315,12 +12368,12 @@ function srchRender(){
 }
 function searchOpen(){
   srchLoadSel();
-  const all = srchSel.size === SRCH_KINDS.length;
-  const onCls = k => k === 'all' ? (all && !srchUnit) : k === 'unit' ? srchUnit : srchSel.has(k);
   const chips = [['all', t('srch_f_all')], ['unit', t('srch_f_unit')], ['job', t('srch_jobs')],
     ['pk', t('srch_pk')], ['prop', t('srch_props')], ['rep', t('srch_reps')], ['cx', t('srch_cx')]]
-    .map(([k, l]) => `<button type="button" class="chip-preset ${onCls(k) ? 'on' : ''}"
-      data-sk="${k}" onclick="App.srchChip('${k}')">${l}</button>`).join('');
+    .map(([k, l]) => `<button type="button" class="chip-preset ${srchChipOn(k) ? 'on' : ''}"
+      data-sk="${k}" onclick="App.srchChip('${k}')">${l}</button>`
+      + (k === 'all' ? `<button type="button" class="chip-preset srch-clear" ${srchEmpty() ? 'disabled' : ''}
+      title="${t('srch_clear')}" aria-label="${t('srch_clear')}" onclick="App.srchChip('none')">${ic('close')}</button>` : '')).join('');
   openModal(`
     ${modalHead(t('srch_btn'), 'search')}
     <input id="srch-q" placeholder="${t('srch_ph')}" autocomplete="off" oninput="App.searchType()">
@@ -18286,19 +18339,31 @@ function mqMini(show){
   document.body.classList.add('has-mq-mini');
   if (!el){
     el = document.createElement('div');
-    el.id = 'mq-mini'; el.className = 'mq-mini';
-    el.onclick = () => { mqMini(false); App.mediaQueueModal(); };
+    el.id = 'mq-mini'; el.className = 'mq-mini'; el.setAttribute('role', 'status');
+    /* v1.08.57: как у модалок — крестик закрывает, тап по остальному открывает журнал целиком */
+    el.onclick = (e) => {
+      if (e.target && e.target.closest && e.target.closest('.mq-mini-c')){ e.stopPropagation(); mqMini(false); return; }
+      mqMini(false); App.mediaQueueModal();
+    };
     document.body.appendChild(el);
   }
   const tail = mqLogLines.slice(-3).map(l => {
     const p = splitMark(l.text);
     return `<div class="mq-l ${l.cls}"><span class="m">${p.icon}${p.icon ? ' ' : ''}${p.text}</span></div>`;
   }).join('');
-  el.innerHTML = `<div class="mq-mini-h">${mqStateHtml()}
-      <span class="mq-mini-x">${t('mq_mini_open')}</span></div>${tail}`;
+  const st = mqState();
+  el.innerHTML = `<div class="mq-mini-h">${ic(st.icon, 'color:' + st.color)}<span class="mq-mini-t">${esc(st.text)}</span>
+      <button type="button" class="mq-mini-x">${t('mq_mini_open')}</button>
+      <button type="button" class="mq-mini-c" aria-label="${t('close')}" title="${t('close')}">${ic('close')}</button></div>
+    <div class="mq-mini-b">${tail || `<div class="mq-l dim">${t('mq_l_wait')}</div>`}</div>`;
+  try{ document.body.style.setProperty('--mqh', (el.offsetHeight + 12) + 'px'); }catch(e){}   // v1.08.57: тосты — ниже/выше полоски
   clearTimeout(_mqMiniTimer);
   _mqMiniTimer = setTimeout(() => { if (!_mediaBusy) mqMini(false); }, 6000);
 }
+/* v1.08.57: Esc закрывает полоску, как и любую модалку (когда модалки нет) */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && $('#mq-mini') && !$('#overlay')) mqMini(false);
+});
 function mqLogPaint(){
   const box = $('#mq-log'); if (!box) return;
   box.innerHTML = mqLogLines.length
