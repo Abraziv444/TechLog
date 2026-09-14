@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.72';
+const APP_VERSION = '1.08.73';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -892,6 +892,7 @@ const I18N = {
     gd_photo_note: 'Съёмка раскладывается по контрагенту, комплексу и юниту — месяца в этом пути нет.',
     gd_paths_old: 'Схема показана по старой media-health. Передеплойте функцию — карточка покажет фактическую раскладку.',
     media_title: 'Фото и видео', media_photo: 'Фото', media_video: 'Видео',
+    media_photo_w: 'фото', media_video_w: 'видео', media_file_w: 'файл(ов)',   // v1.08.73
     media_sb_only: 'Фото и видео работают только с подключённым Supabase',
     media_vlong: 'Видео длиннее 90 сек — снимите короче',
     media_limit: 'Лимит: {P} фото и {V} видео на документ',
@@ -910,16 +911,37 @@ const I18N = {
     /* v1.07.90: на части телефонов «Фото» без capture открывает системный
        выбор картинок вообще без камеры — теперь камера вызывается кнопкой */
     media_cam: 'Камера', media_lib: 'Родная камера',
-    media_cam_hint: 'Быстрый вызов камеры: один кадр, служебный режим — без HDR и ночной съёмки',
+    media_cam_hint: 'Камера внутри приложения: страница не уходит в фон и телефон её не выгружает; серия кадров, вспышка, зум. Без HDR и ночного режима',
     media_lib_hint: 'Системный выбор: родная камера со всеми режимами (HDR, ночной, зум) или уже снятые кадры — можно несколько сразу',
-    pick_lost: 'Телефон выгрузил приложение, пока работала камера — кадр не доехал. Документ открыт заново; снимите ещё раз или снимите телефоном и передайте кнопкой «Родная камера».',
+    pick_lost: 'Телефон выгрузил приложение, пока работала камера телефона — кадр не доехал. Документ открыт заново. Без выгрузки снимает кнопка «Камера» (съёмка внутри приложения); родной камерой — снимите как обычно и поделитесь кадрами в TechLog.',
+    /* v1.08.73: камера внутри приложения */
+    cam_in_title: 'Съёмка', cam_in_done: 'Готово', cam_in_shot: 'Снимок', cam_in_rec: 'Запись', cam_in_stop: 'Стоп',
+    cam_in_torch: 'Вспышка', cam_in_flip: 'Сменить камеру', cam_in_zoom: 'Зум',
+    cam_in_left: 'ещё {N}', cam_in_full: 'Лимит кадров в документе исчерпан — «Готово»',
+    cam_in_taking: 'кадр…', cam_in_wait: 'открываю камеру…',
+    cam_in_no: 'Камера в приложении недоступна ({E}) — открываю камеру телефона',
+    cam_in_denied: 'Доступ к камере запрещён: разрешите камеру для TechLog в настройках браузера (замок в адресной строке → Разрешения) или снимайте кнопкой «Родная камера»',
+    cam_in_vid_no: 'Запись видео в браузере недоступна ({E}) — открываю камеру телефона',
+    cam_in_rec_hint: 'до {N} с · остановится сама',
+    cam_mode_app: 'В приложении',
+    cam_mode_app_h: 'Камера открывается внутри приложения: страница не уходит в фон, и телефон её не выгружает — кадр не пропадёт. Серия кадров, вспышка, зум, видео до 90 с (H.264, без пережатия перед отправкой). HDR и ночного режима нет — для них кнопка «Родная камера».',
+    cam_mode_inapp: 'камера в приложении — без выгрузки страницы',
+    /* v1.08.73: файлы, которыми поделились из галереи или камеры телефона */
+    share_title: 'Файлы из телефона', share_q: 'Куда положить: {N}?',
+    share_recent: 'открыт недавно', share_pick: 'Или выберите документ',
+    share_drop: 'Не сохранять', share_done: 'принято файлов: {N}',
+    share_none: 'Нет документа, куда положить файлы — откройте инвойс и поделитесь ещё раз',
+    share_hint: 'Снимите камерой телефона как обычно, затем в галерее «Поделиться» → TechLog: кадры попадут в открытый документ. Это надёжнее камеры через системный выбор — приложение не ждёт в фоне и не выгружается.',
+    intake_rest: 'кадры не пропали: восстановлено {N}',
+    mv_dl_pct: 'загрузка {P}%', mv_dl_mb: '{A} из {B} МБ',
+    mq_l_vid_codec: 'ролик {N} МБ не проходит лимит, а пережать его телефон не смог ({E}). Снимите видео кнопкой «Видео» (в приложении, H.264) или выключите HEVC в настройках камеры телефона',
     cam_native_btn: 'Резкость как у родной камеры',
     cam_native_h: 'Одним нажатием: съёмка — родной камерой, файл уходит на Диск как есть, без уменьшения и пережатия. Байт в байт то, что снял телефон. Весит больше, зато резкость ровно та же.',
     cam_usm: 'Подрезкость после уменьшения',
     cam_usm_h: 'Любое уменьшение съедает микроконтраст, и кадр кажется мягче оригинала. Слабое нерезкое маскирование возвращает его. При качестве «Оригинал» не применяется — там кадр не уменьшается вовсе.',
     cam_native_done: 'Съёмка — родной камерой, файл без пережатия',
     cam_hdr_t: 'HDR и ночная съёмка',
-    cam_hdr_h: 'HDR, ночной режим и склейку кадров делает само приложение камеры телефона — включить их из браузера нельзя, такого веб-интерфейса не существует. Работают они, когда снимок делается родной камерой: кнопка «Родная камера» в документе или обычная съёмка телефоном, а потом передача кадров той же кнопкой. Кнопка «Камера» вызывает камеру напрямую и быстро, но телефон включает служебный режим — часть обработки в нём выключена.',
+    cam_hdr_h: 'HDR, ночной режим и склейку кадров делает само приложение камеры телефона — включить их из браузера нельзя, такого веб-интерфейса не существует. Работают они, когда снимок делается родной камерой: кнопка «Родная камера» в документе или обычная съёмка телефоном, а потом «Поделиться» → TechLog из галереи. Кнопка «Камера» снимает внутри приложения — быстро и без выгрузки страницы, но без HDR.',
     cam_small: 'Телефон отдал мелкий кадр ({MP} Мп) — снимок будет мягким. Снимайте через «Галерея» родной камерой или включите «Полная» в «Настройки» → «Съёмка».',
     cam_mode_now: 'Съёмка сейчас',
     cam_mode_soft: 'прямой вызов камеры — кадр мягче',
@@ -930,8 +952,8 @@ const I18N = {
     cam_nocam_hint: 'На некоторых телефонах системный выбор картинок открывается без камеры. Кнопка «Камера» вызывает её напрямую; поведение кнопки исправлено — теперь она сразу открывает камеру. Вернуть выбор из галереи можно в «Настройки» → «Съёмка».',
     cam_switched: 'Камера теперь открывается сразу',
     cam_mode_lbl: 'Как открывать камеру',
-    cam_mode_full: 'Полная', cam_mode_quick: 'Быстрая',
-    cam_mode_full_h: 'Открывается родное приложение камеры со всеми режимами — HDR, ночной, зум. Можно снять серию и отдать все кадры разом. Именно так снимки получаются резкими в полутьме.',
+    cam_mode_full: 'Родная', cam_mode_quick: 'Быстрая',
+    cam_mode_full_h: 'Открывается родное приложение камеры со всеми режимами — HDR, ночной, зум. Можно снять серию и отдать все кадры разом. Именно так снимки получаются резкими в полутьме. Минус: приложение ждёт в фоне, и телефон может его выгрузить — тогда кадр не доедет.',
     cam_mode_quick_h: 'Камера открывается сразу, одним касанием, но в служебном режиме: часть обработки телефон выключает, снимки бледнее и мягче.',
     cam_q_lbl: 'Качество снимка',
     cam_q_eco: 'Экономно', cam_q_std: 'Обычное', cam_q_hi: 'Высокое', cam_q_orig: 'Оригинал',
@@ -1909,6 +1931,7 @@ const I18N = {
     gd_photo_note: 'Photos and videos are filed by counterparty, complex and unit — there is no month in that path.',
     gd_paths_old: 'The scheme comes from an older media-health. Redeploy the function to see the actual layout.',
     media_title: 'Photos & video', media_photo: 'Photo', media_video: 'Video',
+    media_photo_w: 'photo(s)', media_video_w: 'video(s)', media_file_w: 'file(s)',   // v1.08.73
     media_sb_only: 'Media requires Supabase connection',
     media_vlong: 'Video longer than 90s — please retake',
     media_limit: 'Limit: {P} photos & {V} videos per document',
@@ -1925,16 +1948,37 @@ const I18N = {
     mt_prep: 'preparing shot',
     cam_card: 'Camera',
     media_cam: 'Camera', media_lib: 'Native camera',
-    media_cam_hint: 'Quick camera call: one frame, capture-intent mode — no HDR or night',
+    media_cam_hint: 'In-app camera: the page never goes to the background, so the phone cannot unload it; burst, torch, zoom. No HDR or night mode',
     media_lib_hint: 'System chooser: the phone camera with every mode (HDR, night, zoom) or shots you already took — several at once',
-    pick_lost: 'The phone unloaded the app while the camera was running — the frame did not make it back. The document is open again; take the shot once more, or shoot with the phone and hand it over with «Native camera».',
+    pick_lost: 'The phone unloaded the app while its camera app was running — the frame did not make it back. The document is open again. «Camera» (in-app capture) shoots without unloading; with the native camera, shoot as usual and share the frames to TechLog.',
+    /* v1.08.73: in-app camera */
+    cam_in_title: 'Capture', cam_in_done: 'Done', cam_in_shot: 'Shot', cam_in_rec: 'Record', cam_in_stop: 'Stop',
+    cam_in_torch: 'Torch', cam_in_flip: 'Switch camera', cam_in_zoom: 'Zoom',
+    cam_in_left: '{N} left', cam_in_full: 'Frame limit for this document reached — «Done»',
+    cam_in_taking: 'shot…', cam_in_wait: 'opening camera…',
+    cam_in_no: 'In-app camera unavailable ({E}) — opening the phone camera',
+    cam_in_denied: 'Camera access denied: allow the camera for TechLog in the browser settings (lock icon in the address bar → Permissions) or use «Native camera»',
+    cam_in_vid_no: 'Video recording in the browser is unavailable ({E}) — opening the phone camera',
+    cam_in_rec_hint: 'up to {N} s · stops by itself',
+    cam_mode_app: 'In-app',
+    cam_mode_app_h: 'The camera opens inside the app: the page never goes to the background and the phone cannot unload it — no frame is lost. Burst, torch, zoom, video up to 90 s (H.264, no recompression before upload). No HDR or night mode — use «Native camera» for those.',
+    cam_mode_inapp: 'in-app camera — no page unloading',
+    /* v1.08.73: files shared from the phone gallery or camera */
+    share_title: 'Files from the phone', share_q: 'Where to put: {N}?',
+    share_recent: 'opened recently', share_pick: 'Or pick a document',
+    share_drop: 'Discard', share_done: 'files accepted: {N}',
+    share_none: 'No document to put the files in — open an invoice and share again',
+    share_hint: 'Shoot with the phone camera as usual, then in the gallery «Share» → TechLog: the frames land in the open document. Safer than the camera via the system chooser — the app is not waiting in the background and cannot be unloaded.',
+    intake_rest: 'frames kept: {N} restored',
+    mv_dl_pct: 'loading {P}%', mv_dl_mb: '{A} of {B} MB',
+    mq_l_vid_codec: 'the {N} MB clip exceeds the limit and the phone could not shrink it ({E}). Record with the «Video» button (in-app, H.264) or turn HEVC off in the phone camera settings',
     cam_native_btn: 'Sharpness like the native camera',
     cam_native_h: 'One tap: shoot with the native camera and send the file to Drive as is — no resize, no recompression. Byte for byte what the phone shot. Heavier, but exactly as sharp.',
     cam_usm: 'Sharpen after downscale',
     cam_usm_h: 'Any downscale eats micro-contrast and the frame looks softer than the original. A light unsharp mask brings it back. Not applied at «Original» quality — nothing is resized there.',
     cam_native_done: 'Native camera, file sent without recompression',
     cam_hdr_t: 'HDR and night mode',
-    cam_hdr_h: 'HDR, night mode and multi-frame merging are done by the phone camera app itself — a browser cannot switch them on, no such web API exists. They work when the shot is taken by the native camera: the «Native camera» button in a document, or shooting with the phone and handing the frames over with the same button. The «Camera» button calls the camera directly and fast, but the phone turns on capture-intent mode, where part of the processing is off.',
+    cam_hdr_h: 'HDR, night mode and multi-frame merging are done by the phone camera app itself — a browser cannot switch them on, no such web API exists. They work when the shot is taken by the native camera: the «Native camera» button in a document, or shooting with the phone and then «Share» → TechLog from the gallery. The «Camera» button shoots inside the app — fast and without page unloading, but without HDR.',
     cam_small: 'The phone returned a small frame ({MP} MP) — the shot will be soft. Use «Gallery» with the native camera or switch to «Full» in Settings → Capture.',
     cam_mode_now: 'Capture now',
     cam_mode_soft: 'direct camera call — softer frame',
@@ -1945,8 +1989,8 @@ const I18N = {
     cam_nocam_hint: 'On some phones the system picker opens without a camera at all. The «Camera» button calls it directly; the button is fixed now — it opens the camera right away. Gallery picking comes back in Settings → Capture.',
     cam_switched: 'The camera now opens right away',
     cam_mode_lbl: 'How the camera opens',
-    cam_mode_full: 'Full', cam_mode_quick: 'Quick',
-    cam_mode_full_h: 'Opens the phone’s own camera app with every mode — HDR, night, zoom. Shoot a series and hand over all frames at once.',
+    cam_mode_full: 'Native', cam_mode_quick: 'Quick',
+    cam_mode_full_h: 'Opens the phone’s own camera app with every mode — HDR, night, zoom. Shoot a series and hand over all frames at once. Downside: the app waits in the background and the phone may unload it — then the frame is lost.',
     cam_mode_quick_h: 'Camera opens in one tap, but in capture-intent mode: the phone disables part of its processing, so shots look flatter and softer.',
     cam_q_lbl: 'Photo quality',
     cam_q_eco: 'Light', cam_q_std: 'Normal', cam_q_hi: 'High', cam_q_orig: 'Original',
@@ -4598,6 +4642,7 @@ const IC = {
   /* v1.07.65: добор набора — заменяем эмодзи на рисованные иконки везде,
      где они были элементом интерфейса (кнопки, заголовки, статусы). */
   camera: '<path d="M3.8 8.2h3.1l1.4-2.4h7.4l1.4 2.4h3.1a1.6 1.6 0 0 1 1.6 1.6v8a1.6 1.6 0 0 1-1.6 1.6H3.8a1.6 1.6 0 0 1-1.6-1.6v-8a1.6 1.6 0 0 1 1.6-1.6z"/><circle cx="12" cy="13.4" r="3.5"/>',
+  bolt: '<path d="M13.2 2.6 5.4 13.4h5.4l-1.2 8 7.8-10.8h-5.4z"/>',   /* v1.08.73: вспышка камеры в приложении */
   video: '<rect x="2.6" y="6.4" width="12.6" height="11.2" rx="2"/><path d="M15.2 11.1 20.9 8v8l-5.7-3.1z"/>',
   link: '<path d="M10.2 13.4a3.7 3.7 0 0 0 5.5.4l2.5-2.5a3.7 3.7 0 0 0-5.2-5.2l-1.4 1.4"/><path d="M13.8 10.6a3.7 3.7 0 0 0-5.5-.4l-2.5 2.5a3.7 3.7 0 0 0 5.2 5.2l1.4-1.4"/>',
   eye_off: '<path d="M4.2 4.4 19.8 20"/><path d="M9.7 9.8a3.2 3.2 0 0 0 4.5 4.5"/><path d="M6.6 6.8C4.5 8.1 2.9 9.9 2 12c1.9 4 5.6 6.4 10 6.4 1.6 0 3.2-.3 4.6-.9"/><path d="M19.3 16C20.5 15 21.4 13.6 22 12c-1.9-4-5.6-6.4-10-6.4-.7 0-1.3.05-2 .16"/>',
@@ -7089,6 +7134,7 @@ function openJob(id){
   jobDraft.shared_with_helpers = !!jobDraft.shared_with_helpers;   // v1.07.10
   state.screen = 'job'; state.jobId = id; render();
   pageScrollTo(0);
+  shareTargetMark('job', id);                    // v1.08.73: адресат для «Поделиться → TechLog»
 }
 
 /* =====================================================================
@@ -9993,6 +10039,11 @@ const App = {
   srchTab(v){ srchTabSet(v); },                                    // v1.08.49
   printBtn(v){ printBtnSet(v); }, jobPrint(id){ jobPrintQuick(id); }, gdFullTest,   // v1.08.71
   regress(){ regressRun(); },                                                          // v1.08.72
+  /* v1.08.73: камера в приложении */
+  cam: { open: camInOpen, close(){ camInClose(); }, shot(){ camInShot(); }, torch(){ camInTorch(); },
+         flip(){ camInFlip(); }, zoom(z, b){ camInZoom(z, b); }, st(){ return CAMIN; }, can: camInCan,
+         recover: intakeRecover, shareModal: shareIntakeModal,
+         intakeAll: () => intakeAll(), intakeDel: id => intakeDel(id), intakePut: r => intakePut(r) },
   copyDl(v){ mCopyDlSet(v); },                                     // v1.08.47
   vidTest: mVidTest,                                               // v1.08.47
   /* v1.08.47: крючки для автотестов — политика доставки без сети */
@@ -10548,6 +10599,8 @@ function initBackGuard(){
   try{ history.pushState({ tl: 1 }, ''); }catch(e){ return; }
   window.addEventListener('popstate', async () => {
     const rearm = () => { try{ history.pushState({ tl: 1 }, ''); }catch(e){} };
+    if (CAMIN.el){ camInClose(); rearm(); return; }                 // v1.08.73: «назад» закрывает камеру
+    if (document.getElementById('mviewer')){ mvClose(); rearm(); return; }
     if (document.getElementById('overlay')){ closeModal(); rearm(); return; }
     if (state.user && state.screen === 'job' && jobDraft){
       rearm();
@@ -10584,8 +10637,10 @@ function canonUrl(loc){
   try {
     const canon = (typeof navigator === 'undefined' || navigator.onLine) ? canonUrl(location) : null;
     if (canon){ location.replace(canon); return; }   // v1.08.44: старый адрес → домен
+    /* v1.08.73: пришли через «Поделиться → TechLog» — service worker уже положил
+       файлы в приёмник; служебный параметр из адреса убираем */
+    try{ if (/[?&]share=1/.test(location.search)) history.replaceState(null, '', location.pathname); }catch(e){}
     applyPopPos();                 // v1.07.83: место всплывашек — до первого тоста
-    setTimeout(() => { try{ pickRestore(); }catch(e){ dlog('⛔ pickRestore:', e); } }, 900);
     setTimeout(() => { try{ metricsBoot(); }catch(e){} }, 1500);   // v1.08.09
     initSW();
     initBackGuard();
@@ -10608,6 +10663,10 @@ function canonUrl(loc){
     if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
     if (!state.user) await tvResume();     // v1.08.37: телевизор переживает перезагрузку страницы
     render();
+    /* v1.08.73: возврат в документ после выгрузки и доразбор приёмника — только
+       когда данные уже загружены (раньше запускалось через 900 мс от старта,
+       и при медленной сети документ ещё не был известен) */
+    if (state.user) setTimeout(() => { pickRestore().catch(e => dlog('⛔ pickRestore:', e)); }, 400);
     if (state.user) checkPickupBanner(true);
     setInterval(() => checkForUpdate('таймер 10 мин'), 10 * 60 * 1000);
     /* v1.07.83: раз в минуту смотрим на часы; сама проверка переводов
@@ -13700,7 +13759,7 @@ async function runDiagnostics(){
     /* инвойсы и файлы на Диске */
     const byKind = (k) => media.filter(m => m.kind === k).length;
     /* v1.07.91: последние снимки — размер и вес, чтобы «мыло» было видно в отчёте */
-    put(`${mark(true)} съёмка: ${camMode() === 'quick' ? 'прямой вызов камеры (кадр мягче)' : 'родная камера'} · качество ${camQual()} (${(M_QP[camQual()] || {}).w || 'оригинал'} px, q ${(M_QP[camQual()] || {}).q || '—'}) · предупреждение о смазе ${camSharpOn() ? 'вкл' : 'выкл'}`);
+    put(`${mark(true)} съёмка: ${camMode() === 'quick' ? 'прямой вызов камеры (кадр мягче)' : camMode() === 'app' ? 'камера в приложении' + (camInCan() ? '' : ' (недоступна → камера телефона)') : 'родная камера'} · качество ${camQual()} (${(M_QP[camQual()] || {}).w || 'оригинал'} px, q ${(M_QP[camQual()] || {}).q || '—'}) · предупреждение о смазе ${camSharpOn() ? 'вкл' : 'выкл'}`);
     put(`${mark(true)} файлы на Диске по базе: фото ${byKind('photo')} · видео ${byKind('video')} · вложения ${byKind('file')} · PDF-инвойсы ${byKind('invoice')}`);
     const noPdf = live.filter(j => !media.some(m => m.job_id === j.id && m.kind === 'invoice')).length;
     put(`${mark(true)} задач без PDF-инвойса на Диске: ${noPdf} из ${live.length}`);
@@ -16166,6 +16225,7 @@ function openRepair(id, src){
     repDraft.items = repDraft.items || []; repDraft.materials = repDraft.materials || [];
     repDraft.helper_ids = repDraft.helper_ids || []; repDraft.hist = repDraft.hist || [];
     repDraft.photos = repPhotos(repDraft);
+    shareTargetMark('rep', id);                  // v1.08.73
   } else {
     if (!repCanCreate()){ toast('⛔ ' + t('rep_no_create'), 'err'); return; }
     repDraft = repNew(src);
@@ -17188,6 +17248,9 @@ self.onmessage = function(ev){
         if (!vTrk) return die(new Error('no video track'));
         dur = Math.max(0.5, (info.duration || vTrk.movie_duration || 0)
           / (info.timescale || 1000));
+        /* v1.08.73: у фрагментированного mp4 (запись в браузере) mvhd.duration
+           бывает 0 — берём длительность, которую измерил главный поток */
+        if (dur <= 0.6 && target.dur > 0.6) dur = target.dur;
         vTotal = vTrk.nb_samples || 1;
         fps = Math.min(60, Math.max(10, Math.round(vTotal / dur))) || 30;
         kfEvery = Math.max(10, Math.round(fps * 2));
@@ -17310,6 +17373,12 @@ self.onmessage = function(ev){
           }
           if (aTotal && aDone >= aTotal) finishA();
         }
+        /* v1.08.73: mp4box держит разобранные сэмплы в памяти, пока их не
+           отпустить — на 200-мегабайтном ролике память воркера росла до
+           размера файла, и телефон выгружал страницу целиком (та самая
+           «перезагрузка при отправке видео»). Декодер и муксер данные уже
+           скопировали — отпускаем сразу. */
+        try{ mp4.releaseUsedSamples(id, samples[samples.length - 1].number + 1); }catch(e){}
       }catch(e){ die(e); }
     };
 
@@ -17418,7 +17487,7 @@ async function mVidShrink(it, onPct){
           return stop({ blob: new Blob([m.buf], { type: 'video/mp4' }) });
         stop({ err: 'empty' });
       };
-      w.postMessage({ blob: it.blob, target: mVidTarget() });
+      w.postMessage({ blob: it.blob, target: Object.assign({ dur: +it.dur || 0 }, mVidTarget()) });
     });
   }catch(e){ return { err: String(e.message || e) }; }
 }
@@ -17430,7 +17499,18 @@ const mediaFN = () => (CFG.SUPABASE_URL || '') + '/functions/v1';
    это в общие настройки организации незачем. */
 function camGet(k, def){ try{ const v = localStorage.getItem('techlog_cam_' + k); return v === null ? def : v; }catch(e){ return def; } }
 function camSet(k, v){ try{ localStorage.setItem('techlog_cam_' + k, v); }catch(e){} }
-function camMode(){ return camGet('mode', 'full') === 'quick' ? 'quick' : 'full'; }
+/* v1.08.73: три режима — 'app' (камера внутри приложения, по умолчанию: страница
+   не уходит в фон и не выгружается), 'full' (родная камера через системный
+   выбор), 'quick' (capture — служебный режим). Старое значение 'full'/'quick'
+   на устройстве уважается как есть. */
+function camMode(){ const v = camGet('mode', 'app'); return v === 'quick' || v === 'full' ? v : 'app'; }
+/* Камера в приложении возможна: getUserMedia есть и страница в защищённом
+   контексте (https или localhost — иначе браузер API не отдаёт). */
+function camInCan(){
+  try{ return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+         && (window.isSecureContext !== false) && typeof MediaStream !== 'undefined'; }
+  catch(e){ return false; }
+}
 function camQual(){ const v = camGet('q', M_QDEF); return M_QP[v] ? v : M_QDEF; }
 function camSharpOn(){ return camGet('sharp', '1') !== '0'; }
 function camUsmOn(){ return camGet('usm', '1') !== '0'; }
@@ -17445,23 +17525,44 @@ async function mediaJwt(){
 }
 /* ---------- IndexedDB-очередь ---------- */
 let _mdbP = null;
+const MDB_VER = 2;                     // v1.08.73: outbox + intake
 function mdb(){
   if (typeof indexedDB === 'undefined') return Promise.reject(new Error('no idb'));
   if (_mdbP) return _mdbP;
   _mdbP = new Promise((res, rej) => {
-    const r = indexedDB.open('tl-media', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('outbox', { keyPath: 'qid' });
-    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    /* v1.08.73: версия 2 — второе хранилище intake: сырые файлы сразу после
+       выбора/съёмки, ДО обработки (см. mediaTakeFiles). То же хранилище
+       наполняет service worker, когда файлами поделились из галереи. */
+    const r = indexedDB.open('tl-media', MDB_VER);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      if (!d.objectStoreNames.contains('outbox')) d.createObjectStore('outbox', { keyPath: 'qid' });
+      if (!d.objectStoreNames.contains('intake')) d.createObjectStore('intake', { keyPath: 'iid' });
+    };
+    r.onsuccess = () => {
+      const d = r.result;
+      /* другая вкладка/воркер поднимает версию — отпускаем соединение */
+      d.onversionchange = () => { try{ d.close(); }catch(e){} _mdbP = null; };
+      res(d);
+    };
+    r.onerror = () => rej(r.error);
+    r.onblocked = () => rej(new Error('idb blocked'));
   });
   return _mdbP;
 }
-const mtx = (mode, fn) => mdb().then(d => new Promise((res, rej) => {
-  const t = d.transaction('outbox', mode); const out = fn(t.objectStore('outbox'));
+const mtxIn = (store, mode, fn) => mdb().then(d => new Promise((res, rej) => {
+  const t = d.transaction(store, mode); const out = fn(t.objectStore(store));
   t.oncomplete = () => res(out && out.result !== undefined ? out.result : out);
   t.onerror = () => rej(t.error);
 }));
+const mtx = (mode, fn) => mtxIn('outbox', mode, fn);
 const mQPut = it => mtx('readwrite', s => s.put(it)).catch(() => {});
 const mQDelIdb = qid => mtx('readwrite', s => s.delete(qid)).catch(() => {});
+/* v1.08.73: приёмник сырых файлов. Запись — один файл; живёт, пока файл не
+   разобран в очередь (или не отброшен). Переживает выгрузку страницы. */
+const intakePut = it => mtxIn('intake', 'readwrite', s => s.put(it)).catch(e => { dlog('⚠ intake put:', e); });
+const intakeDel = iid => mtxIn('intake', 'readwrite', s => s.delete(iid)).catch(() => {});
+const intakeAll = () => mtxIn('intake', 'readonly', s => s.getAll()).catch(() => []);
 
 async function initMedia(){
   try{ mediaQ = (await mtx('readonly', s => s.getAll())) || []; }catch(e){ mediaQ = []; }
@@ -17592,16 +17693,28 @@ onmessage = async (e) => {
     let k = d.maxW ? Math.min(1, d.maxW / Math.max(iw, ih)) : 1;
     if (k > 0.9) k = 1;
     const tw = Math.max(1, Math.round(iw * k)), th = Math.max(1, Math.round(ih * k));
-    const big = down(bmp, iw, ih, tw, th);
+    let big = down(bmp, iw, ih, tw, th);
     if (bmp.close) bmp.close();
     /* подрезкость — только если кадр реально уменьшали */
     if (d.usm && (tw < iw || th < ih)) usm(big, d.usm);
+    /* v1.08.73: доворот кадра камеры в приложении */
+    let ow = tw, oh = th;
+    if (d.rot === 90 || d.rot === 270){
+      ow = th; oh = tw;
+      const rc = mk(ow, oh), rx = rc.getContext('2d');
+      rx.translate(ow / 2, oh / 2); rx.rotate(d.rot * Math.PI / 180); rx.drawImage(big, -tw / 2, -th / 2);
+      big = rc;
+    } else if (d.rot === 180){
+      const rc = mk(ow, oh), rx = rc.getContext('2d');
+      rx.translate(ow / 2, oh / 2); rx.rotate(Math.PI); rx.drawImage(big, -tw / 2, -th / 2);
+      big = rc;
+    }
     const sc = d.sharp ? sharpOf(big) : null;
     const blob = d.keep ? null : await big.convertToBlob({ type: 'image/jpeg', quality: d.q });
-    const kt = Math.min(1, d.thumbW / Math.max(tw, th));
-    const thumb = await down(big, tw, th, Math.max(1, Math.round(tw * kt)),
-      Math.max(1, Math.round(th * kt))).convertToBlob({ type: 'image/jpeg', quality: d.thq });
-    postMessage({ rid, ok: true, blob, thumb, iw, ih, w: tw, h: th, sharp: sc });
+    const kt = Math.min(1, d.thumbW / Math.max(ow, oh));
+    const thumb = await down(big, ow, oh, Math.max(1, Math.round(ow * kt)),
+      Math.max(1, Math.round(oh * kt))).convertToBlob({ type: 'image/jpeg', quality: d.thq });
+    postMessage({ rid, ok: true, blob, thumb, iw, ih, w: ow, h: oh, sharp: sc });
   }catch(err){ postMessage({ rid, ok: false, err: String((err && err.message) || err) }); }
 };
 `;
@@ -17698,32 +17811,44 @@ async function mPrepMain(file, o){
   let k = o.maxW ? Math.min(1, o.maxW / Math.max(iw, ih)) : 1;
   if (k > 0.9) k = 1;                                   // v1.07.93: см. воркер
   const tw = Math.max(1, Math.round(iw * k)), th = Math.max(1, Math.round(ih * k));
-  const big = mDown2(src, iw, ih, tw, th);
+  let big = mDown2(src, iw, ih, tw, th);
   if (bmp && bmp.close) bmp.close();
   if (o.usm && (tw < iw || th < ih)) mUsm2(big, o.usm);  // подрезкость после уменьшения
+  let ow = tw, oh = th;
+  if (o.rot === 90 || o.rot === 270 || o.rot === 180){       // v1.08.73: доворот
+    if (o.rot !== 180){ ow = th; oh = tw; }
+    const rc = document.createElement('canvas'); rc.width = ow; rc.height = oh;
+    const rx = rc.getContext('2d');
+    rx.translate(ow / 2, oh / 2); rx.rotate(o.rot * Math.PI / 180); rx.drawImage(big, -tw / 2, -th / 2);
+    big = rc;
+  }
   let sharp = null;
   if (o.sharp) try{
-    const ss = Math.min(1, 200 / Math.max(tw, th));
-    const sw = Math.max(8, Math.round(tw * ss)), shh = Math.max(8, Math.round(th * ss));
+    const ss = Math.min(1, 200 / Math.max(ow, oh));
+    const sw = Math.max(8, Math.round(ow * ss)), shh = Math.max(8, Math.round(oh * ss));
     const sc = mPaint2(sw, shh, big, sw, shh);
     sharp = SHARP_CALC(sc.getContext('2d').getImageData(0, 0, sw, shh).data, sw, shh);
   }catch(e){}
   const blob = o.keep ? null : await mToBlob(big, o.q);
-  const kt = Math.min(1, o.thumbW / Math.max(tw, th));
-  const thumb = await mToBlob(mDown2(big, tw, th, Math.max(1, Math.round(tw * kt)),
-    Math.max(1, Math.round(th * kt))), o.thq);
-  return { blob, thumb, iw, ih, w: tw, h: th, sharp };
+  const kt = Math.min(1, o.thumbW / Math.max(ow, oh));
+  const thumb = await mToBlob(mDown2(big, ow, oh, Math.max(1, Math.round(ow * kt)),
+    Math.max(1, Math.round(oh * kt))), o.thq);
+  return { blob, thumb, iw, ih, w: ow, h: oh, sharp };
 }
 /* Готовит снимок к отправке. Возвращает null, если браузер файл не открыл
    (HEIC на Android) — вызывающий тогда отправит его как документ, с родным
    расширением: сервер именует съёмку строго «.jpg», подложить туда чужие
    байты нельзя. */
-async function mPrepPhoto(f){
+async function mPrepPhoto(f, ex){
   const qn = camQual(), qp = M_QP[qn];
   const isJpg = /^image\/jpe?g$/i.test(f.type || '');
-  const keep = qn === 'orig' && isJpg && f.size <= M_ORIG_MAX;
+  /* v1.08.73: rot — доворот кадра камеры в приложении (телефон держали
+     боком, а экран зафиксирован портретом); повёрнутый кадр всегда
+     пересобирается, «оригинал байт в байт» тут невозможен */
+  const rot = (ex && ex.rot) ? ((+ex.rot % 360) + 360) % 360 : 0;
+  const keep = qn === 'orig' && isJpg && f.size <= M_ORIG_MAX && !rot;
   const o = { maxW: keep ? 0 : (qp.w || 3000), q: qp.q || 0.92,
-              thumbW: M_THUMBW, thq: M_THQ, sharp: camSharpOn(), keep,
+              thumbW: M_THUMBW, thq: M_THQ, sharp: camSharpOn(), keep, rot,
               usm: camUsmOn() ? M_USM : 0 };      // v1.07.93: подрезкость после уменьшения
   let r = null;
   try{ r = await mPrepWorker(f, o); }
@@ -17737,7 +17862,7 @@ async function mPrepPhoto(f){
      всё равно пережимался в JPEG поверх JPEG (второе сжатие поверх первого),
      и оригинал оставляли только если пережатие вышло тяжелее. Именно это и
      подмыливало снимки с телефонов, которые сами отдают некрупный кадр. */
-  const same = r.iw === r.w && r.ih === r.h;
+  const same = r.iw === r.w && r.ih === r.h && !rot;
   const orig = keep || !r.blob || (same && isJpg);
   const mp = (r.iw * r.ih) / 1e6;
   dlog('media: кадр ' + r.iw + '×' + r.ih + ' (' + mp.toFixed(1) + ' Мп, ' + Math.round(f.size / 1024)
@@ -17749,30 +17874,58 @@ async function mPrepPhoto(f){
   return { blob: orig ? f : r.blob, thumb: r.thumb, mime: 'image/jpeg',
            blur: !!(camSharpOn() && sh && sh.gStd >= M_BLUR_CONTRAST && sh.ratio < M_BLUR_RATIO) };
 }
+/* v1.08.73: у обоих помощников появился таймаут — на телефоне <video> может
+   так и не выстрелить loadedmetadata/loadeddata (кодек HEVC без аппаратного
+   декодера, экономия трафика, preload проигнорирован), и тогда «Видео»
+   молча висело с плиткой-заглушкой: ролик не вставал в очередь вовсе. Теперь
+   длительность 0 / превью нет — ролик всё равно уходит в очередь. */
+const M_VMETA_MS = 8000, M_VTHUMB_MS = 12000;
 const mVideoDur = f => new Promise(res => {
   const u = URL.createObjectURL(f), v = document.createElement('video');
-  v.preload = 'metadata'; v.src = u;
-  v.onloadedmetadata = () => { URL.revokeObjectURL(u); res(v.duration || 0); };
-  v.onerror = () => { URL.revokeObjectURL(u); res(0); };
+  let done = false;
+  const fin = d => { if (done) return; done = true; clearTimeout(tm);
+    try{ v.removeAttribute('src'); v.load(); }catch(e){} URL.revokeObjectURL(u); res(d); };
+  const tm = setTimeout(() => fin(0), M_VMETA_MS);
+  v.preload = 'metadata'; v.muted = true; v.playsInline = true; v.src = u;
+  v.onloadedmetadata = () => fin(isFinite(v.duration) ? (v.duration || 0) : 0);
+  v.onerror = () => fin(0);
+  try{ v.load(); }catch(e){}
 });
 const mVideoThumb = f => new Promise(res => {
   const u = URL.createObjectURL(f), v = document.createElement('video');
-  v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = u;
-  v.onloadeddata = () => { try{
+  let done = false;
+  const fin = b => { if (done) return; done = true; clearTimeout(tm);
+    try{ v.removeAttribute('src'); v.load(); }catch(e){} URL.revokeObjectURL(u); res(b); };
+  const tm = setTimeout(() => fin(null), M_VTHUMB_MS);
+  const draw = () => { try{
+    if (!v.videoWidth) return false;
     const k = Math.min(1, M_THUMBW / Math.max(v.videoWidth || 1, v.videoHeight || 1));
     const c = document.createElement('canvas');
     c.width = Math.max(1, Math.round((v.videoWidth || 320) * k));
     c.height = Math.max(1, Math.round((v.videoHeight || 240) * k));
     c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
-    c.toBlob(b => { URL.revokeObjectURL(u); res(b); }, 'image/jpeg', M_THQ);
-  }catch(e){ URL.revokeObjectURL(u); res(null); } };
-  v.onerror = () => { URL.revokeObjectURL(u); res(null); };
+    c.toBlob(b => fin(b), 'image/jpeg', M_THQ);
+    return true;
+  }catch(e){ fin(null); return true; } };
+  v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = u;
+  /* кадр не с нуля (первый кадр телефонного ролика часто чёрный): после
+     метаданных отматываем на полсекунды и ждём seeked; если seek не
+     сработал — берём loadeddata как раньше */
+  let sought = false;
+  v.onloadedmetadata = () => { try{
+    const d = isFinite(v.duration) ? v.duration : 0;
+    if (d > 0.6){ sought = true; v.currentTime = Math.min(0.5, d / 2); }
+  }catch(e){} };
+  v.onseeked = () => { if (!draw()) sought = false; };
+  v.onloadeddata = () => { if (!sought) draw(); };
+  v.onerror = () => fin(null);
+  try{ v.load(); }catch(e){}
 });
 /* ---------- съёмка ---------- */
 /* v1.07.76: один путь для съёмки и для вложения — из файла делаем элемент
    очереди. Фото сжимаем и делаем превью, видео проверяем по длительности,
    документ уходит как есть, без превью. */
-async function mediaEnqueueFile(jobId, f, kind, doc = 'job'){
+async function mediaEnqueueFile(jobId, f, kind, doc = 'job', ex){
   const lim = mediaLimits();
   const rows = (state.data.media || []).filter(m => mOwnMatch(m, jobId, doc) && m.kind === kind);
   const loc = mediaQ.filter(x => x.doc === doc && mOwnId(x) === jobId && x.kind === kind);
@@ -17786,7 +17939,7 @@ async function mediaEnqueueFile(jobId, f, kind, doc = 'job'){
   }
   let blob, thumb = null, mime, durV = 0;
   if (kind === 'photo'){
-    const p = await mPrepPhoto(f);
+    const p = await mPrepPhoto(f, ex);
     if (!p){                       /* браузер не открыл файл — уводим в документы */
       toast('⚠ ' + t('media_heic'), 'err');
       return mediaEnqueueFile(jobId, f, 'file', doc);
@@ -17794,7 +17947,7 @@ async function mediaEnqueueFile(jobId, f, kind, doc = 'job'){
     blob = p.blob; thumb = p.thumb; mime = p.mime;
     if (p.blur) toast('⚠ ' + t('media_blur'), 'err');
   } else if (kind === 'video'){
-    const dur = await mVideoDur(f);
+    const dur = (await mVideoDur(f)) || (ex && +ex.dur) || 0;   // v1.08.73: запись в приложении знает длину сама
     if (dur > M_VMAX + 2){ toast('⚠ ' + t('media_vlong'), 'err'); return false; }
     blob = f; thumb = await mVideoThumb(f).catch(() => null); mime = f.type || 'video/mp4';
     durV = Math.round(dur) || 0;                 // v1.08.47: таймаут сжатия считается от длины
@@ -17828,13 +17981,28 @@ function mediaFree(jobId, kind, doc = 'job'){
    чтобы не съесть память на слабом телефоне. */
 async function mediaTakeFiles(jobId, files, kind, opts){
   const doc = (opts && opts.doc) || 'job';
-  if (!files.length) return;
+  if (!files.length) return 0;
   mPrepBusy(jobId, files.length);
-  let added = 0;
+  /* v1.08.73: сырой файл — сразу в IndexedDB (intake), и только потом
+     разбор: декодирование 12-мегапиксельного кадра — самый прожорливый
+     момент, и если телефон выгрузит страницу на нём, при следующем запуске
+     intakeRecover() доразберёт файл из хранилища. Запись — до обработки,
+     удаление — сразу после (в очередь встал или отброшен по лимиту). */
+  const iids = (opts && opts.iids) || [];
+  if (!iids.length){
+    for (const f of files){
+      const iid = uid(); iids.push(iid);
+      await intakePut({ iid, doc, job_id: doc === 'rep' ? null : jobId, repair_id: doc === 'rep' ? jobId : null,
+        kind: kind || mKindOf(f), file: f, name: f.name || '', type: f.type || '',
+        cam: !!(opts && opts.cam), rot: (opts && opts.rot) || 0, at: Date.now() });
+    }
+  }
+  let added = 0, i = 0;
   try{
     for (const f of files){
+      const iid = iids[i++];
       try{
-        if (await mediaEnqueueFile(jobId, f, kind || mKindOf(f), doc)){
+        if (await mediaEnqueueFile(jobId, f, kind || mKindOf(f), doc, { rot: (opts && opts.rot) || 0, dur: (opts && opts.dur) || 0 })){
           added++;
           /* v1.08.47: снятое капчей (сразу камера) в галерею на многих
              телефонах НЕ попадает — единственный экземпляр жил бы в очереди.
@@ -17843,14 +18011,49 @@ async function mediaTakeFiles(jobId, files, kind, opts){
         }
       }
       catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+      if (iid) await intakeDel(iid);
       mPrepBusy(jobId, -1);
     }
   } finally { if (mPrepN.has(jobId)) mPrepN.delete(jobId); }
-  if (!added){ mediaStripRefresh(jobId); return; }
+  if (!added){ mediaStripRefresh(jobId); return 0; }
   navigator.vibrate?.(15);
   mediaStripRefresh(jobId);
   mediaBgPop();
   render(); mediaFlush();
+  return added;
+}
+/* v1.08.73: доразбор приёмника при запуске — файлы, которые не успели встать
+   в очередь (страница выгрузилась на обработке), и файлы, которыми
+   поделились из галереи (их положил service worker без адресата).
+   Возвращает число восстановленных «адресных» файлов. */
+async function intakeRecover(){
+  let rows = [];
+  try{ rows = (await intakeAll()) || []; }catch(e){ return 0; }
+  if (!rows.length) return 0;
+  const edge = Date.now() - 3 * 864e5;                        // забытое старше трёх дней
+  const shared = [], byDoc = new Map();
+  for (const r of rows){
+    if (!r || !r.file || (+r.at || 0) < edge){ if (r) await intakeDel(r.iid); continue; }
+    if (r.src === 'share' && !r.job_id && !r.repair_id){ shared.push(r); continue; }
+    const id = r.repair_id || r.job_id; if (!id){ await intakeDel(r.iid); continue; }
+    const key = (r.doc || 'job') + ':' + id;
+    if (!byDoc.has(key)) byDoc.set(key, { id, doc: r.doc || 'job', rows: [] });
+    byDoc.get(key).rows.push(r);
+  }
+  let restored = 0;
+  for (const g of byDoc.values()){
+    const exists = g.doc === 'rep' ? (state.data.repairs || []).some(x => x.id === g.id)
+                                   : (state.data.jobs || []).some(x => x.id === g.id);
+    if (!exists) continue;                        // документ ещё не приехал — подождём следующего запуска
+    const files = g.rows.map(r => r.file instanceof File ? r.file
+      : new File([r.file], r.name || 'file', { type: r.type || r.file.type || '' }));
+    dlog('intake: доразбираю ' + files.length + ' файл(ов) для ' + g.doc + ' ' + g.id);
+    const k = await mediaTakeFiles(g.id, files, null, { doc: g.doc, iids: g.rows.map(r => r.iid), cam: g.rows.some(r => r.cam), rot: g.rows[0].rot || 0 });
+    restored += k || 0;
+  }
+  if (restored) toast('♻ ' + t('intake_rest').replace('{N}', restored), 'inf');
+  if (shared.length) shareIntakeModal(shared);
+  return restored;
 }
 /* Скрепка: файлы с телефона и с компьютера — без камеры, можно несколько */
 function mediaAttach(jobId, doc){
@@ -17894,6 +18097,15 @@ function mediaPick(jobId, kind, src, doc){
   const left = mediaFree(jobId, kind, doc || 'job');
   if (left <= 0){
     toast('⚠ ' + t('media_limit').replace('{P}', lim.photo).replace('{V}', lim.video), 'err'); return; }
+  /* v1.08.73: «Камера» и (в режиме «В приложении») «Видео» — камера ВНУТРИ
+     приложения: страница не уходит в фон, телефон её не выгружает, кадр не
+     теряется. Если камеру браузер не отдал — тем же нажатием открывается
+     камера телефона, как раньше. */
+  if (src === 'cam' || (src !== 'lib' && camMode() === 'app')){
+    if (camInCan() && !CAMIN.fallback){ camInOpen(jobId, kind, doc || 'job'); return; }
+    if (src !== 'cam') src = 'cam';
+  }
+  mediaLighten();                                  // перед уходом в фон — освободить память
   const inp = document.createElement('input');
   inp.type = 'file';
   /* v1.07.92: HDR и ночной режим — это функции САМОГО приложения камеры,
@@ -17946,6 +18158,17 @@ function mediaPick(jobId, kind, src, doc){
    документ и честно говорим, что кадр не доехал. */
 let _pickInp = null;
 const LS_PICK = 'techlog_pick';
+/* v1.08.73: перед тем как страница уйдёт в фон ради камеры телефона, отдаём
+   всё тяжёлое: оригиналы из просмотрщика (до 8 файлов, ролики по 100 МБ),
+   локальные ссылки, открытый просмотрщик и учебник во фрейме. Чем меньше
+   страница весит, тем реже Android выгружает её, пока снимает камера. */
+function mediaLighten(){
+  try{ mvClose(); }catch(e){}
+  try{ for (const [, u] of mvCache) { try{ URL.revokeObjectURL(u); }catch(e){} } mvCache.clear(); }catch(e){}
+  try{ for (const [, u] of mvLocalUrls) { try{ URL.revokeObjectURL(u); }catch(e){} } mvLocalUrls.clear(); }catch(e){}
+  try{ document.querySelectorAll('iframe.study-frame, #study-read iframe').forEach(f => { f.src = 'about:blank'; }); }catch(e){}
+  try{ if (typeof saveFlush === 'function') saveFlush(); }catch(e){}
+}
 function pickMark(jobId, kind){
   try{ localStorage.setItem(LS_PICK, JSON.stringify({ job: jobId, kind, ts: Date.now() })); }catch(e){}
 }
@@ -17959,16 +18182,406 @@ function pickPending(){
   }catch(e){ return null; }
 }
 /* Вызывается на старте: вернуть человека в документ и объяснить пропажу */
-function pickRestore(){
+async function pickRestore(){
+  /* v1.08.73: сначала приёмник — файлы, что успели прийти, но не разобраны */
+  let restored = 0;
+  try{ restored = await intakeRecover(); }catch(e){ dlog('⛔ intakeRecover:', e); }
   const v = pickPending(); if (!v) return;
   pickDone();
   const j = (state.data.jobs || []).find(x => x.id === v.job);
   if (!j) return;
   dlog('съёмка: страница была выгружена во время съёмки, возвращаю документ');
+  if (state.screen !== 'job' || state.jobId !== v.job) openJob(v.job);
+  if (restored) return;                         // кадры на месте — пугать нечем
   healthBump('shot_lost');
-  openJob(v.job);
   setTimeout(() => toast('⚠ ' + t('pick_lost'), 'err'), 600);
 }
+/* =====================================================================
+   v1.08.73 · КАМЕРА В ПРИЛОЖЕНИИ
+   ---------------------------------------------------------------------
+   Причина. Кнопки «Камера»/«Родная камера» уводили страницу в фон: пока
+   снимает приложение камеры телефона, Android вправе выгрузить вкладку —
+   и на возврате TechLog поднимался заново, а кадр из выбора файлов
+   пропадал (тот самый «телефон перезагружает страницу»). Из веб-страницы
+   запретить выгрузку нельзя. Единственный способ не терять кадр — не
+   уходить в фон: камера открывается ПОВЕРХ приложения через getUserMedia,
+   снимок делается ImageCapture.takePhoto() (полное разрешение матрицы,
+   как у capture-режима) либо кадром с потока, и сразу встаёт в очередь
+   тем же путём, что и прежде (сжатие, превью, «копия в Загрузки»).
+   Видео пишет MediaRecorder (H.264 mp4, 1080p ≈ 4 Мбит/с, не дольше
+   M_VMAX) — такой ролик проходит лимит сервера без пережатия.
+   Ориентация: экран приложения зафиксирован портретом, поэтому в
+   полноэкранном режиме просим screen.orientation.lock('any') — тогда
+   превью и кадр поворачиваются сами; где lock не дают, наклон телефона
+   читается из акселерометра и кадр доворачивается при обработке (rot).
+   HDR и ночного режима у такой камеры нет — для них «Родная камера».
+   ===================================================================== */
+const CAMIN = { el: null, stream: null, track: null, jobId: null, kind: 'photo', doc: 'job',
+  shots: 0, facing: 'environment', torch: false, zoomCap: null, busy: false,
+  rec: null, recParts: [], recT0: 0, recTimer: null, fallback: false, rot: 0, motionOn: false,
+  locked: false, left: 0 };
+const CAMIN_PHOTO_TO = 7000;                      // takePhoto: ждём не дольше, потом кадр с потока
+function camInStrCancel(){
+  try{ if (CAMIN.stream) CAMIN.stream.getTracks().forEach(tr => { try{ tr.stop(); }catch(e){} }); }catch(e){}
+  CAMIN.stream = null; CAMIN.track = null; CAMIN.zoomCap = null;
+  const v = CAMIN.el && CAMIN.el.querySelector('video');
+  if (v){ try{ v.srcObject = null; }catch(e){} }
+}
+function camInMsg(txt, cls){
+  const m = CAMIN.el && CAMIN.el.querySelector('.camin-msg'); if (!m) return;
+  m.textContent = txt || ''; m.className = 'camin-msg' + (cls ? ' ' + cls : '');
+}
+function camInTitle(){
+  const j = CAMIN.doc === 'rep' ? (state.data.repairs || []).find(x => x.id === CAMIN.jobId)
+                                 : (state.data.jobs || []).find(x => x.id === CAMIN.jobId);
+  const cx = j ? cxById(j.complex_id) : null;
+  const unit = j && j.unit_number ? ' · Unit ' + j.unit_number : '';
+  return (cx ? (cx.abbr || cx.name || '') : t('cam_in_title')) + unit;
+}
+function camInCount(){
+  const lim = mediaLimits();
+  const max = CAMIN.kind === 'video' ? lim.video : lim.photo;
+  const b = CAMIN.el && CAMIN.el.querySelector('.camin-cnt');
+  if (b) b.textContent = CAMIN.shots + '/' + max;
+  const left = CAMIN.left;
+  const sh = CAMIN.el && CAMIN.el.querySelector('.camin-shutter');
+  if (sh) sh.disabled = left <= 0 || CAMIN.busy;
+  const lf = CAMIN.el && CAMIN.el.querySelector('.camin-left');
+  if (lf) lf.textContent = left <= 0 ? t('cam_in_full')
+    : (CAMIN.kind === 'video' ? t('cam_in_rec_hint').replace('{N}', M_VMAX) + ' · ' : '') + t('cam_in_left').replace('{N}', left);
+}
+/* Онлайн-наклон телефона по акселерометру: |x| больше |y| — телефон лежит
+   боком. x > 0 — повёрнут против часовой (верх слева) → кадр надо довернуть
+   по часовой (+90). Только когда экран сам не поворачивается (нет lock). */
+function camInMotion(e){
+  try{
+    const a = e.accelerationIncludingGravity; if (!a) return;
+    const x = +a.x || 0, y = +a.y || 0;
+    CAMIN.rot = (Math.abs(x) > Math.abs(y) && Math.abs(x) > 4) ? (x > 0 ? 90 : -90) : 0;
+  }catch(e2){}
+}
+async function camInStart(){
+  const v = CAMIN.el.querySelector('video');
+  const isVid = CAMIN.kind === 'video';
+  const cons = isVid
+    ? { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }, audio: true }
+    : { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: 3264 }, height: { ideal: 2448 } }, audio: false };
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia(cons); }
+  catch(e){
+    /* упрощённые условия: старые телефоны не любят width/height/audio */
+    if (e && (e.name === 'OverconstrainedError' || e.name === 'NotReadableError' || e.name === 'TypeError'))
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: CAMIN.facing } }, audio: isVid });
+    else throw e;
+  }
+  if (!CAMIN.el){ stream.getTracks().forEach(tr => tr.stop()); return; }
+  CAMIN.stream = stream; CAMIN.track = stream.getVideoTracks()[0] || null;
+  v.srcObject = stream; v.muted = true;
+  try{ await v.play(); }catch(e){}
+  /* возможности дорожки: вспышка и зум */
+  let cap = {};
+  try{ cap = CAMIN.track.getCapabilities ? CAMIN.track.getCapabilities() : {}; }catch(e){ cap = {}; }
+  const tb = CAMIN.el.querySelector('.camin-torch');
+  if (tb) tb.style.display = cap.torch ? '' : 'none';
+  const zb = CAMIN.el.querySelector('.camin-zoom');
+  if (zb){
+    if (cap.zoom && cap.zoom.max > (cap.zoom.min || 1) * 1.4){
+      CAMIN.zoomCap = cap.zoom;
+      const mn = cap.zoom.min || 1, mx = cap.zoom.max;
+      const steps = [mn, Math.min(mx, mn * 2), Math.min(mx, mn * 3)].filter((z, i, a) => a.indexOf(z) === i);
+      zb.innerHTML = steps.map(z => `<button type="button" class="${z === mn ? 'on' : ''}" data-z="${z}" onclick="App.cam.zoom(${z}, this)">${(z / mn).toFixed(z / mn % 1 ? 1 : 0)}×</button>`).join('');
+      zb.style.display = '';
+    } else zb.style.display = 'none';
+  }
+  const fb = CAMIN.el.querySelector('.camin-flip');
+  if (fb){
+    try{
+      const devs = await navigator.mediaDevices.enumerateDevices();
+      fb.style.display = devs.filter(d => d.kind === 'videoinput').length > 1 ? '' : 'none';
+    }catch(e){ fb.style.display = 'none'; }
+  }
+  if (CAMIN.torch && cap.torch) camInTorch(true, true);
+  camInMsg('');
+  camInCount();
+}
+function camInOpen(jobId, kind, doc){
+  if (CAMIN.el) camInClose(true);
+  CAMIN.jobId = jobId; CAMIN.kind = kind === 'video' ? 'video' : 'photo'; CAMIN.doc = doc || 'job';
+  CAMIN.shots = 0; CAMIN.busy = false; CAMIN.rot = 0; CAMIN.recParts = []; CAMIN.rec = null;
+  CAMIN.left = mediaFree(jobId, CAMIN.kind, CAMIN.doc);
+  const isVid = CAMIN.kind === 'video';
+  const el = document.createElement('div'); el.id = 'camin'; el.className = 'camin' + (isVid ? ' vid' : '');
+  el.innerHTML = `
+    <video autoplay playsinline muted></video>
+    <div class="camin-flash"></div>
+    <div class="camin-top">
+      <button type="button" class="camin-btn" title="${t('cam_in_done')}" onclick="App.cam.close()">${ic('close')}</button>
+      <div class="camin-title">${esc(camInTitle())}</div>
+      <button type="button" class="camin-btn camin-torch" style="display:none" title="${t('cam_in_torch')}" onclick="App.cam.torch()">${ic('bolt')}</button>
+      <button type="button" class="camin-btn camin-flip" style="display:none" title="${t('cam_in_flip')}" onclick="App.cam.flip()">${ic('refresh')}</button>
+    </div>
+    <div class="camin-msg wait">${t('cam_in_wait')}</div>
+    ${isVid ? `<div class="camin-timer" style="display:none">0:00</div>` : ''}
+    <div class="camin-zoom" style="display:none"></div>
+    <div class="camin-bot">
+      <div class="camin-last"><img alt=""><b class="camin-cnt">0</b></div>
+      <button type="button" class="camin-shutter ${isVid ? 'rec' : ''}" title="${isVid ? t('cam_in_rec') : t('cam_in_shot')}" onclick="App.cam.shot()"></button>
+      <button type="button" class="btn btn-green sm camin-done" onclick="App.cam.close()">${ic('check')} ${t('cam_in_done')}</button>
+    </div>
+    <div class="camin-left tiny">${isVid ? t('cam_in_rec_hint').replace('{N}', M_VMAX) : ''}</div>`;
+  document.body.appendChild(el); CAMIN.el = el;
+  document.documentElement.classList.add('tl-camin');
+  /* полный экран + поворот «как держишь»: без него страница зафиксирована
+     портретом (манифест), и боковой кадр приходил бы лежачим */
+  CAMIN.locked = false;
+  (async () => {
+    try{
+      if (el.requestFullscreen && !IS_IOS) await el.requestFullscreen({ navigationUI: 'hide' });
+      if (screen.orientation && screen.orientation.lock){ await screen.orientation.lock('any'); CAMIN.locked = true; }
+    }catch(e){ CAMIN.locked = false; }
+    if (!CAMIN.locked && typeof DeviceMotionEvent !== 'undefined' && !IS_IOS){
+      try{ addEventListener('devicemotion', camInMotion); CAMIN.motionOn = true; }catch(e){}
+    }
+  })();
+  camInCount();
+  CAMIN._vis = () => { if (!CAMIN.el) return;
+    if (document.hidden){ if (CAMIN.rec) camInRecStop(); camInStrCancel(); }
+    else if (!CAMIN.stream) camInStart().catch(e => camInFail(e)); };
+  document.addEventListener('visibilitychange', CAMIN._vis);
+  CAMIN._key = e => { if (e.key === 'Escape') camInClose(); else if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); camInShot(); } };
+  document.addEventListener('keydown', CAMIN._key);
+  camInStart().catch(e => camInFail(e));
+}
+/* Камеру не дали — тем же нажатием открываем камеру телефона, как раньше */
+function camInFail(e){
+  const name = (e && e.name) || String(e && e.message || e || '?');
+  dlog('камера в приложении: ' + name + ' → камера телефона');
+  const jobId = CAMIN.jobId, kind = CAMIN.kind, doc = CAMIN.doc;
+  camInClose(true);
+  const denied = /NotAllowed|Permission|Security/i.test(name);
+  if (denied) toast('⚠ ' + t('cam_in_denied'), 'err');
+  else toast('⚠ ' + t(kind === 'video' ? 'cam_in_vid_no' : 'cam_in_no').replace('{E}', name.slice(0, 40)), 'inf');
+  CAMIN.fallback = true;                        // до перезапуска — сразу камера телефона
+  try{ mediaPick(jobId, kind, 'cam', doc); }catch(e2){}
+}
+function camInClose(silent){
+  if (CAMIN.rec){ camInRecStop(); }
+  camInStrCancel();
+  if (CAMIN.motionOn){ try{ removeEventListener('devicemotion', camInMotion); }catch(e){} CAMIN.motionOn = false; }
+  if (CAMIN._vis){ document.removeEventListener('visibilitychange', CAMIN._vis); CAMIN._vis = null; }
+  if (CAMIN._key){ document.removeEventListener('keydown', CAMIN._key); CAMIN._key = null; }
+  try{ if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }catch(e){}
+  try{ if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {}); }catch(e){}
+  if (CAMIN.el){ try{ CAMIN.el.remove(); }catch(e){} }
+  CAMIN.el = null; CAMIN.locked = false;
+  document.documentElement.classList.remove('tl-camin');
+  if (!silent && CAMIN.shots) navigator.vibrate?.(10);
+}
+async function camInTorch(on, quiet){
+  if (!CAMIN.track) return;
+  const want = on == null ? !CAMIN.torch : !!on;
+  try{ await CAMIN.track.applyConstraints({ advanced: [{ torch: want }] }); CAMIN.torch = want; }
+  catch(e){ if (!quiet) dlog('вспышка:', e); }
+  const tb = CAMIN.el && CAMIN.el.querySelector('.camin-torch');
+  if (tb) tb.classList.toggle('on', CAMIN.torch);
+}
+async function camInZoom(z, btn){
+  if (!CAMIN.track || !CAMIN.zoomCap) return;
+  try{ await CAMIN.track.applyConstraints({ advanced: [{ zoom: z }] }); }catch(e){ dlog('зум:', e); return; }
+  const zb = CAMIN.el && CAMIN.el.querySelector('.camin-zoom');
+  if (zb) zb.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+}
+async function camInFlip(){
+  if (CAMIN.busy || CAMIN.rec) return;
+  CAMIN.facing = CAMIN.facing === 'environment' ? 'user' : 'environment';
+  camInStrCancel(); camInMsg(t('cam_in_wait'), 'wait');
+  try{ await camInStart(); }catch(e){ camInFail(e); }
+}
+/* Снимок: ImageCapture.takePhoto (полное разрешение), иначе кадр с потока */
+async function camInGrab(){
+  const v = CAMIN.el.querySelector('video');
+  const rot = CAMIN.locked ? 0 : CAMIN.rot;
+  let blob = null;
+  if (typeof ImageCapture === 'function' && CAMIN.track){
+    try{
+      const cap = new ImageCapture(CAMIN.track);
+      let ps = {};
+      try{
+        const pc = await cap.getPhotoCapabilities();
+        if (pc && pc.imageWidth && pc.imageHeight && pc.imageWidth.max && pc.imageHeight.max){
+          /* не выше 4032 по длинной стороне — дальше только память и время,
+             кадр всё равно уменьшится до качества из настроек */
+          const k = Math.min(1, 4032 / Math.max(pc.imageWidth.max, pc.imageHeight.max));
+          ps = { imageWidth: Math.round(pc.imageWidth.max * k), imageHeight: Math.round(pc.imageHeight.max * k) };
+        }
+      }catch(e){}
+      blob = await Promise.race([
+        cap.takePhoto(ps).catch(() => cap.takePhoto()),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('takePhoto timeout')), CAMIN_PHOTO_TO)) ]);
+      if (blob && blob.size < 2048) blob = null;
+    }catch(e){ dlog('takePhoto:', e && e.message || e); blob = null; }
+  }
+  if (!blob){
+    const w = v.videoWidth || 1280, h = v.videoHeight || 960;
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d').drawImage(v, 0, 0, w, h);
+    blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.95));
+  }
+  if (!blob) throw new Error('empty frame');
+  return { blob, rot };
+}
+async function camInShot(){
+  if (!CAMIN.el || CAMIN.busy) return;
+  if (CAMIN.kind === 'video'){ if (CAMIN.rec) camInRecStop(); else camInRecStart(); return; }
+  if (!CAMIN.stream){ camInMsg(t('cam_in_wait'), 'wait'); return; }
+  if (CAMIN.left <= 0){ camInMsg(t('cam_in_full'), 'err'); return; }
+  CAMIN.busy = true; camInCount();
+  const fl = CAMIN.el.querySelector('.camin-flash');
+  if (fl){ fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go'); }
+  camInMsg(t('cam_in_taking'), 'wait');
+  try{
+    const { blob, rot } = await camInGrab();
+    const d = new Date(), z = n => String(n).padStart(2, '0');
+    const name = 'TL_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + '.jpg';
+    const f = new File([blob], name, { type: 'image/jpeg' });
+    CAMIN.shots++; CAMIN.left--;
+    const im = CAMIN.el.querySelector('.camin-last img');
+    if (im){ try{ const u = URL.createObjectURL(blob); im.onload = () => URL.revokeObjectURL(u); im.src = u; }catch(e){} }
+    navigator.vibrate?.(12);
+    camInMsg('');
+    /* в очередь — не дожидаясь обработки: можно снимать дальше */
+    mediaTakeFiles(CAMIN.jobId, [f], 'photo', { cam: true, doc: CAMIN.doc, rot })
+      .catch(e => dlog('⛔ кадр в очередь:', e));
+  }catch(e){
+    camInMsg(String(e && e.message || e).slice(0, 60), 'err');
+  }
+  CAMIN.busy = false; camInCount();
+}
+/* ---- видео ---- */
+function camInMime(){
+  const list = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4',
+                'video/webm;codecs=h264,opus', 'video/webm;codecs=vp9,opus', 'video/webm'];
+  return list.find(m => { try{ return MediaRecorder.isTypeSupported(m); }catch(e){ return false; } }) || '';
+}
+function camInRecStart(){
+  if (!CAMIN.stream || CAMIN.rec) return;
+  if (CAMIN.left <= 0){ camInMsg(t('cam_in_full'), 'err'); return; }
+  if (typeof MediaRecorder === 'undefined'){ camInFail(new Error('MediaRecorder')); return; }
+  const mime = camInMime();
+  let rec;
+  try{
+    rec = new MediaRecorder(CAMIN.stream, Object.assign({ videoBitsPerSecond: mVidTarget().vbr, audioBitsPerSecond: 96000 },
+      mime ? { mimeType: mime } : {}));
+  }catch(e){ camInFail(e); return; }
+  CAMIN.rec = rec; CAMIN.recParts = []; CAMIN.recT0 = Date.now();
+  rec.ondataavailable = e => { if (e.data && e.data.size) CAMIN.recParts.push(e.data); };
+  rec.onerror = e => { dlog('запись:', e); camInRecStop(); };
+  rec.onstop = () => camInRecDone(rec);
+  try{ rec.start(1000); }catch(e){ CAMIN.rec = null; camInFail(e); return; }
+  const sh = CAMIN.el.querySelector('.camin-shutter'); if (sh) sh.classList.add('on');
+  const tmEl = CAMIN.el.querySelector('.camin-timer'); if (tmEl) tmEl.style.display = '';
+  camInMsg('');
+  const tick = () => {
+    if (!CAMIN.rec) return;
+    const sec = Math.floor((Date.now() - CAMIN.recT0) / 1000);
+    if (tmEl) tmEl.textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0') + ' / ' + Math.floor(M_VMAX / 60) + ':' + String(M_VMAX % 60).padStart(2, '0');
+    if (sec >= M_VMAX){ camInRecStop(); return; }
+    CAMIN.recTimer = setTimeout(tick, 250);
+  };
+  tick();
+}
+function camInRecStop(){
+  const rec = CAMIN.rec; if (!rec) return;
+  clearTimeout(CAMIN.recTimer); CAMIN.recTimer = null;
+  try{ if (rec.state !== 'inactive') rec.stop(); else camInRecDone(rec); }catch(e){ camInRecDone(rec); }
+}
+function camInRecDone(rec){
+  if (CAMIN.rec !== rec) return;
+  CAMIN.rec = null;
+  const parts = CAMIN.recParts; CAMIN.recParts = [];
+  const sh = CAMIN.el && CAMIN.el.querySelector('.camin-shutter'); if (sh) sh.classList.remove('on');
+  const tmEl = CAMIN.el && CAMIN.el.querySelector('.camin-timer'); if (tmEl) tmEl.style.display = 'none';
+  const dur = Math.round((Date.now() - CAMIN.recT0) / 1000);
+  const type = rec.mimeType || parts[0] && parts[0].type || 'video/webm';
+  const blob = new Blob(parts, { type });
+  if (!blob.size || dur < 1){ camInMsg('⚠ 0 s', 'err'); return; }
+  const ext = /mp4/.test(type) ? 'mp4' : 'webm';
+  const d = new Date(), z = n => String(n).padStart(2, '0');
+  const name = 'TL_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + '.' + ext;
+  const f = new File([blob], name, { type });
+  CAMIN.shots++; CAMIN.left--;
+  navigator.vibrate?.(12);
+  camInCount();
+  const jobId = CAMIN.jobId, doc = CAMIN.doc;
+  mediaTakeFiles(jobId, [f], 'video', { cam: true, doc, dur }).catch(e => dlog('⛔ ролик в очередь:', e));
+  if (CAMIN.left <= 0) camInClose();
+}
+
+/* =====================================================================
+   v1.08.73 · ФАЙЛЫ, КОТОРЫМИ ПОДЕЛИЛИСЬ ИЗ ТЕЛЕФОНА (Web Share Target)
+   Снял родной камерой → в галерее «Поделиться» → TechLog. Service worker
+   принимает POST и кладёт файлы в intake без адресата; здесь спрашиваем,
+   в какой документ их положить: первым — документ, открытый последним.
+   ===================================================================== */
+const LS_SHARE_LAST = 'techlog_share_last';
+function shareTargetMark(doc, id){
+  try{ localStorage.setItem(LS_SHARE_LAST, JSON.stringify({ doc, id, ts: Date.now() })); }catch(e){}
+}
+function shareTargetLast(){
+  try{
+    const v = JSON.parse(localStorage.getItem(LS_SHARE_LAST) || 'null');
+    if (!v || !v.id || Date.now() - (+v.ts || 0) > 12 * 3600e3) return null;
+    return v;
+  }catch(e){ return null; }
+}
+function shareDocLabel(doc, j){
+  const cx = cxById(j.complex_id) || {};
+  const no = doc === 'rep' ? (j.doc_no || 'REP') : (j.doc_no || j.invoice_no || '');
+  return `${fmtDMY(j.date || '')} · ${esc(cx.abbr || cx.name || '')}${j.unit_number ? ' · Unit ' + esc(j.unit_number) : ''}${no ? ' · ' + esc(String(no)) : ''}`;
+}
+function shareIntakeModal(rows){
+  if (!rows || !rows.length) return;
+  const nP = rows.filter(r => /^image\//.test(r.type || '')).length,
+        nV = rows.filter(r => /^video\//.test(r.type || '')).length,
+        nF = rows.length - nP - nV;
+  const what = [nP ? nP + ' ' + t('media_photo_w') : '', nV ? nV + ' ' + t('media_video_w') : '', nF ? nF + ' ' + t('media_file_w') : '']
+    .filter(Boolean).join(' · ');
+  const last = shareTargetLast();
+  const mine = j => isManager() || j.technician_id === state.user.id || isJobSharedWithMe(j);
+  const cands = [];
+  if (last){
+    const j = last.doc === 'rep' ? (state.data.repairs || []).find(x => x.id === last.id)
+                                 : (state.data.jobs || []).find(x => x.id === last.id);
+    if (j) cands.push({ doc: last.doc, id: j.id, lbl: shareDocLabel(last.doc, j), recent: true });
+  }
+  const today = todayISO(), y = addDaysISO(today, -1);
+  (state.data.jobs || []).filter(j => !j.archived_at && (j.date === today || j.date === y) && mine(j))
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    .forEach(j => { if (!cands.some(c => c.id === j.id)) cands.push({ doc: 'job', id: j.id, lbl: shareDocLabel('job', j) }); });
+  const html = `
+    ${modalHead(t('share_title'), 'share')}
+    <div class="ask-text">${t('share_q').replace('{N}', what || rows.length)}</div>
+    ${cands.length ? `<div class="share-list">${cands.map((c, i) => `
+      <button type="button" class="btn ${c.recent ? 'btn-green' : 'btn-ghost'} share-doc" data-i="${i}">
+        ${ic(c.doc === 'rep' ? 'tool' : 'file')} ${c.lbl}${c.recent ? ` <span class="tiny">· ${t('share_recent')}</span>` : ''}</button>`).join('')}</div>`
+      : `<div class="tiny ask-note">${t('share_none')}</div>`}
+    <div class="ask-btns"><button type="button" class="btn btn-ghost" id="share-drop">${ic('trash')} ${t('share_drop')}</button></div>`;
+  openModal(html);
+  const done = async (c) => {
+    closeModal();
+    if (!c){ for (const r of rows) await intakeDel(r.iid); return; }
+    const files = rows.map(r => r.file instanceof File ? r.file
+      : new File([r.file], r.name || 'file', { type: r.type || (r.file && r.file.type) || '' }));
+    for (const r of rows){ r.job_id = c.doc === 'rep' ? null : c.id; r.repair_id = c.doc === 'rep' ? c.id : null; r.doc = c.doc; await intakePut(r); }
+    if (c.doc === 'rep'){ if (typeof openRepair === 'function') openRepair(c.id); }
+    else openJob(c.id);
+    const k = await mediaTakeFiles(c.id, files, null, { doc: c.doc, iids: rows.map(r => r.iid) });
+    toast('✓ ' + t('share_done').replace('{N}', k || 0));
+  };
+  document.querySelectorAll('.share-doc').forEach(b => { b.onclick = () => done(cands[+b.getAttribute('data-i')]); });
+  const dr = $('#share-drop'); if (dr) dr.onclick = () => done(null);
+}
+
 /* v1.07.95: зависшие записи очереди — те, что лежат больше недели или
    сорвались пять раз подряд. Раньше их можно было убрать только по одной. */
 const MQ_STUCK_DAYS = 7, MQ_STUCK_TRIES = 5;
@@ -18095,6 +18708,7 @@ async function mediaFlush(verbose){
       /* v1.08.47: видео не «залипает» после пяти срывов — прямая сессия
          возобновляемая, ролик пробуется на каждом фоновом проходе. */
       if (!verbose && it.kind !== 'video' && (it.attempts || 0) >= 5) continue;
+      if (!verbose && it.kind === 'video' && it.shrFail && (it.attempts || 0) >= 3) continue;   // v1.08.73
       const tag = `${esc(mqLabel(it))} ${idx}/${list.length}`;
       const lid = lg(`⬆ ${tag} …`, 'dim');
       let stage = 'mq_st_begin';                 // v1.07.69: этап видно в ошибке
@@ -18120,6 +18734,7 @@ async function mediaFlush(verbose){
             it.shr = 'orig'; delete it.forceShr; await mQPut(it);
             lg(`🗜 ${tag} — ${t('mq_l_shr_skip')}`, 'dim', lid);
           } else {
+            if (it.forceShr) it.shrFail = String(sr && sr.err || '?');   // v1.08.73
             it.shr = 'orig'; delete it.forceShr; await mQPut(it);
             lg(`⚠ ${tag} — ${t('mq_l_shr_no')}${sr && sr.err ? ' (' + esc(String(sr.err).slice(0, 60)) + ')' : ''}`, 'warn', lid);
           }
@@ -18132,6 +18747,14 @@ async function mediaFlush(verbose){
               /* v1.08.47: сервер не принял размер — ролик НЕ выбрасываем:
                  помечаем «сжать принудительно», на следующем проходе он
                  пережмётся и уйдёт. Оригинал в галерее/«Загрузках». */
+              /* v1.08.73: если сжатие уже пробовали принудительно и оно не
+                 вышло (кодек телефона не декодируется — HEVC), крутить ролик
+                 по кругу бессмысленно: говорим причину и ждём кнопки. */
+              if (it.shrFail){
+                lg(`⛔ ${tag} — ${t('mq_l_vid_codec').replace('{N}', Math.round(it.blob.size / 1048576)).replace('{E}', esc(String(it.shrFail).slice(0, 60)))}`, 'err', lid);
+                it.error = 'TOO_BIG'; it.attempts = (it.attempts || 0) + 1; await mQPut(it);
+                res.fail++; continue;
+              }
               lg(`⚠ ${tag} — ${t('mq_l_vid_big').replace('{N}', Math.round(it.blob.size / 1048576))}`, 'warn', lid);
               it.forceShr = 1; it.shr = 0; it.error = 'TOO_BIG'; await mQPut(it);
               res.fail++; continue;
@@ -18306,7 +18929,7 @@ function mediaStripHtml(jobId, doc = 'job'){
       ${_mediaJustDone.has(m.id) ? `<span class="mdone" title="${t('mt_done')}">${ic('check')}</span>` : ''}
       ${m.kind === 'invoice' ? `<span class="mfile">${ic('pdf')}<b>PDF</b></span>`
         : m.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(m.file_name))}</b></span>`
-        : `<img data-thumb="${m.thumb_path || ''}" width="72" height="72" alt="">`}
+        : `<span class="mfile mvph">${ic(m.kind === 'video' ? 'video' : 'image')}</span><img data-thumb="${m.thumb_path || ''}" data-kind="${m.kind}" width="72" height="72" alt="">`}
       ${m.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
       ${m.status !== 'ready' ? `<span class="mst">${ic('clock')}</span>` : ''}
       ${isAdmin() ? `<span class="mx" title="${t('media_del_q')}" onclick="event.stopPropagation();App.mediaDelete('${m.id}')">${ic('close')}</span>` : ''}
@@ -18321,7 +18944,8 @@ function mediaStripHtml(jobId, doc = 'job'){
       onclick="${err ? `App.mqRetry()` : `App.mediaOpenLocal('${x.qid}')`}">
       ${x.kind === 'invoice' ? `<span class="mfile">${ic('pdf')}<b>PDF</b></span>`
         : x.kind === 'file' ? `<span class="mfile">${ic('note')}<b>${esc(mFileTail(x.name || ''))}</b></span>`
-        : `<img src="${mqThumbUrl(x)}" width="72" height="72" alt="">`}
+        : x.thumb ? `<img src="${mqThumbUrl(x)}" width="72" height="72" alt="">`
+        : `<span class="mfile mvph">${ic(x.kind === 'video' ? 'video' : 'image')}<b>${x.kind === 'video' ? (x.dur ? x.dur + 's' : 'MP4') : 'JPG'}</b></span>`}
       ${x.kind === 'video' ? `<span class="mvid">${ic('play')}</span>` : ''}
       ${err ? `<span class="mst">${ic('warn')}</span>`
             : `<span class="mspin" style="--p:${Math.max(8, Math.min(100, pct))}%;--c:${mSpinColor(pct)}"></span>`}
@@ -18347,7 +18971,7 @@ function mediaStripHtml(jobId, doc = 'job'){
       ${lim.video ? `<button type="button" class="btn btn-ghost sm" onclick="App.mediaPick('${jobId}','video',null,'${doc}')">${ic('video')} ${t('media_video')}</button>` : ''}
     </div>
     <div class="tiny" style="margin-top:6px">${t('cam_mode_now')}:
-      <b class="${camMode() === 'quick' ? 'gd-low' : 'gd-ok'}">${camMode() === 'quick' ? t('cam_mode_soft') : t('cam_mode_best')}</b>
+      <b class="${camMode() === 'quick' ? 'gd-low' : 'gd-ok'}">${camMode() === 'quick' ? t('cam_mode_soft') : camMode() === 'app' ? t('cam_mode_inapp') : t('cam_mode_best')}</b>
       · ${t('cam_quality_now')}: ${t('cam_q_' + camQual())}
       ${camMode() === 'quick' ? `<button type="button" class="btn btn-ghost sm" style="margin-top:4px"
         onclick="App.camMode('full')">${ic('camera')} ${t('cam_switch_best')}</button>` : ''}</div>
@@ -18371,8 +18995,9 @@ async function mediaHydrate(){
     if (mediaThumbCache.has(p)){ img.src = mediaThumbCache.get(p); continue; }
     try{
       const { data } = await state.sb.storage.from('media-thumbs').download(p);
-      if (data){ const u = URL.createObjectURL(data); mediaThumbCache.set(p, u); img.src = u; }
-    }catch(e){}
+      if (data && data.size){ const u = URL.createObjectURL(data); mediaThumbCache.set(p, u); img.src = u; }
+      else img.classList.add('nothumb');          // v1.08.73: остаётся значок вида файла
+    }catch(e){ img.classList.add('nothumb'); }
   }
 }
 /* =====================================================================
@@ -18391,13 +19016,32 @@ function mvCachePut(id, url){
     mvCache.delete(k); try{ URL.revokeObjectURL(v); }catch(e){}
   }
 }
-async function mvFetch(id){
+async function mvFetch(id, onPct){
   if (mvCache.has(id)) return mvCache.get(id);
   const token = await mediaJwt();
   const r = await fetch(mediaFN() + '/media-view?id=' + encodeURIComponent(id),
     { headers: { Authorization: 'Bearer ' + token } });
   if (!r.ok) throw new Error('HTTP ' + r.status);
-  const u = URL.createObjectURL(await r.blob());
+  /* v1.08.73: ролик на десятки мегабайт качается заметное время — показываем
+     проценты, а не «Загрузка…» без движения; крупный файл (видео) в кеше
+     соседей не держим — иначе несколько роликов съедали память страницы. */
+  const total = +(r.headers.get('Content-Length') || 0);
+  const type = r.headers.get('Content-Type') || '';
+  let blob;
+  if (r.body && r.body.getReader && onPct){
+    const rd = r.body.getReader(), parts = []; let got = 0;
+    for(;;){
+      const { done, value } = await rd.read();
+      if (done) break;
+      parts.push(value); got += value.byteLength;
+      try{ onPct(total ? Math.min(99, Math.round(got * 100 / total)) : -1, got, total); }catch(e){}
+    }
+    blob = new Blob(parts, { type });
+  } else blob = await r.blob();
+  const u = URL.createObjectURL(blob);
+  if (blob.size > 12 * 1024 * 1024){                 // крупное — только текущий
+    for (const [k, v] of [...mvCache.entries()]){ if (k !== id){ mvCache.delete(k); try{ URL.revokeObjectURL(v); }catch(e){} } }
+  }
   mvCachePut(id, u);
   return u;
 }
@@ -18466,7 +19110,13 @@ async function mvShow(){
   if (!stage) return;
   stage.innerHTML = `<div class="mv-wait">${t('mv_load')}</div>`;
   try{
-    const url = cur.local ? mvLocalUrl(cur.local) : await mvFetch(cur.id);
+    const onPct = (p, got, total) => {                       // v1.08.73
+      const w = stage.querySelector('.mv-wait'); if (!w) return;
+      w.textContent = p >= 0 ? t('mv_dl_pct').replace('{P}', p)
+        + (total > 2e6 ? ' · ' + t('mv_dl_mb').replace('{A}', (got / 1048576).toFixed(1)).replace('{B}', (total / 1048576).toFixed(1)) : '')
+        : t('mv_load') + ' ' + (got / 1048576).toFixed(1) + ' MB';
+    };
+    const url = cur.local ? mvLocalUrl(cur.local) : await mvFetch(cur.id, onPct);
     if (!_mv || _mv.list[_mv.idx] !== cur) return;              // успели пролистать
     stage.innerHTML = cur.kind === 'video'
       ? `<video src="${url}" controls playsinline autoplay></video>`
@@ -18476,7 +19126,7 @@ async function mvShow(){
         : `<img src="${url}" alt="" ondblclick="this.classList.toggle('zoom')">`;
     if (many) [1, -1].forEach(d => {                            // соседние — заранее
       const nx = _mv.list[(_mv.idx + d + _mv.list.length) % _mv.list.length];
-      if (nx && !nx.local) mvFetch(nx.id).catch(() => {});
+      if (nx && !nx.local && nx.kind !== 'video') mvFetch(nx.id).catch(() => {});   // v1.08.73: ролики — только по клику
     });
   }catch(e){
     stage.innerHTML = `<div class="mv-wait err">${esc(t('media_open_err'))} · ${esc(String(e.message || e))}</div>`;
@@ -19604,11 +20254,16 @@ function camCardHtml(){
     <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('cam_card')}</div>
     <div class="cam-set">
       <b>${t('cam_mode_lbl')}</b>
-      <div class="tiny">${md === 'quick' ? t('cam_mode_quick_h') : t('cam_mode_full_h')}</div>
-      <div class="lang-seg cam-seg">
+      <div class="tiny">${md === 'quick' ? t('cam_mode_quick_h') : md === 'app' ? t('cam_mode_app_h') : t('cam_mode_full_h')}</div>
+      <div class="lang-seg cam-seg cam-mode">
+        ${seg(md, 'app', t('cam_mode_app'), 'camMode')}
         ${seg(md, 'full', t('cam_mode_full'), 'camMode')}
         ${seg(md, 'quick', t('cam_mode_quick'), 'camMode')}
       </div>
+    </div>
+    <div class="cam-set">
+      <b>${ic('share')} ${t('share_title')}</b>
+      <div class="tiny">${t('share_hint')}</div>
     </div>
     <div class="cam-set">
       <b>${t('cam_q_lbl')}</b>

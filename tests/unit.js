@@ -385,7 +385,7 @@ console.log('\n— HDR и ночная съёмка (v1.07.92) —');
   t('обход включён только у «Родной камеры»', /src === 'lib' \? 'image\/\*' \+ NAT_EXTRA : 'image\/\*'/.test(src));
   t('кнопка переименована', T.DICT.ru.media_lib === 'Родная камера');
   t('в подсказке сказано про HDR и ночной', /HDR, ночной, зум/.test(T.DICT.ru.media_lib_hint));
-  t('у быстрой кнопки честная подсказка', /без HDR и ночной/.test(T.DICT.ru.media_cam_hint));
+  t('у кнопки «Камера» честная подсказка (без HDR)', /без HDR/i.test(T.DICT.ru.media_cam_hint));
   t('раздел про HDR в настройках', /cam_hdr_t/.test(src) && /cam_hdr_h/.test(src));
   t('ключи в обоих языках', ['cam_hdr_t','cam_hdr_h','media_lib','media_cam_hint','media_lib_hint']
     .every(k => (k in T.DICT.ru) && (k in T.DICT.en)));
@@ -410,7 +410,7 @@ console.log('\n— снимок не пропадает (v1.07.94) —');
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
   t('поле выбора живёт в разметке', /document\.body\.appendChild\(inp\);\s*\n\s*_pickInp = inp;/.test(src));
   t('метка о начатой съёмке', /function pickMark/.test(src) && /LS_PICK = 'techlog_pick'/.test(src));
-  t('возврат в документ на старте', /function pickRestore/.test(src) && /pickRestore\(\); \}catch/.test(src));
+  t('возврат в документ на старте', /async function pickRestore/.test(src) && /pickRestore\(\)\.catch/.test(src));
   t('метка живёт 15 минут', /15 \* 60000/.test(src));
   t('метка снимается при приёме файла', /inp\.onchange = \(\) => \{\s*\n\s*pickDone\(\);/.test(src));
   t('подрезкость идёт полосами', (src.match(/BAND = 256/g) || []).length === 2);
@@ -1353,7 +1353,7 @@ console.log('\n— v1.08.48: медиа у ремонта, ТВ-уборка, м
     && src.includes("doc === 'rep' ? m.repair_id === id : m.job_id === id"));
   t('полоса медиа и сборщики принимают doc',
     src.includes("function mediaStripHtml(jobId, doc = 'job')")
-    && src.includes("function mediaEnqueueFile(jobId, f, kind, doc = 'job')")
+    && src.includes("function mediaEnqueueFile(jobId, f, kind, doc = 'job', ex)")
     && src.includes("function mediaPick(jobId, kind, src, doc)"));
   t('форма ремонта: свой медиа-блок и кнопка чека',
     src.includes("mediaStripHtml(r.id, 'rep')")
@@ -1705,6 +1705,45 @@ console.log('\n— v1.08.51: учёба —');
   t('справка экрана S.study на двух языках и карточка настроек',
     src.includes('S.study = H(') && src.includes("fold('study', t('st_card'), 'grad', studyCardHtml())")
     && src.includes("App.studyAccess('${uid_}', this.checked)"));
+
+  console.log('\n— v1.08.73: камера в приложении, приёмник, «Поделиться», видео —');
+  t('v1.08.73: ключи RU/EN на месте', ['cam_in_title', 'cam_in_done', 'cam_in_torch', 'cam_in_no', 'cam_in_denied', 'cam_in_vid_no', 'cam_in_rec_hint',
+      'cam_mode_app', 'cam_mode_app_h', 'cam_mode_inapp', 'share_title', 'share_q', 'share_recent', 'share_drop', 'share_done', 'share_none', 'share_hint',
+      'intake_rest', 'mv_dl_pct', 'mv_dl_mb', 'mq_l_vid_codec', 'media_photo_w', 'media_video_w', 'media_file_w']
+    .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
+  t('v1.08.73: режим камеры по умолчанию «в приложении», старые значения full/quick уважаются',
+    src.includes("function camMode(){ const v = camGet('mode', 'app'); return v === 'quick' || v === 'full' ? v : 'app'; }") && src.includes('function camInCan()'));
+  t('v1.08.73: «Камера» и (в режиме app) «Видео» → камера в приложении, иначе как раньше; перед камерой телефона — разгрузка памяти',
+    src.includes("if (src === 'cam' || (src !== 'lib' && camMode() === 'app')){") && src.includes("if (camInCan() && !CAMIN.fallback){ camInOpen(jobId, kind, doc || 'job'); return; }")
+    && src.includes('mediaLighten();') && src.includes('function mediaLighten(){'));
+  t('v1.08.73: IndexedDB v2 — хранилища outbox и intake, onversionchange; приёмник пишется до обработки и чистится после',
+    src.includes('const MDB_VER = 2;') && src.includes("if (!d.objectStoreNames.contains('intake')) d.createObjectStore('intake', { keyPath: 'iid' });")
+    && src.includes('d.onversionchange = ') && /await intakePut\(\{ iid, doc/.test(src) && src.includes('if (iid) await intakeDel(iid);') && src.includes('async function intakeRecover(){'));
+  t('v1.08.73: доразбор приёмника — после загрузки данных, кадры восстановлены → без «кадр не доехал»',
+    src.includes("setTimeout(() => { pickRestore().catch(e => dlog('⛔ pickRestore:', e)); }, 400);") && src.includes('if (restored) return;'));
+  t('v1.08.73: модуль камеры — takePhoto с таймаутом и кадр с потока, вспышка, зум, смена, видео MediaRecorder ≤ M_VMAX, «назад» закрывает',
+    src.includes('async function camInGrab(){') && src.includes("new Error('takePhoto timeout')") && src.includes('async function camInTorch(') && src.includes('async function camInZoom(')
+    && src.includes('function camInRecStart(){') && src.includes('if (sec >= M_VMAX){ camInRecStop(); return; }') && src.includes('if (CAMIN.el){ camInClose(); rearm(); return; }'));
+  t('v1.08.73: поворот — orientation.lock(\'any\') в полном экране, иначе акселерометр → rot в обработке (воркер и запасной путь)',
+    src.includes("await screen.orientation.lock('any'); CAMIN.locked = true;") && src.includes("addEventListener('devicemotion', camInMotion)")
+    && src.includes('if (d.rot === 90 || d.rot === 270){') && src.includes("if (o.rot === 90 || o.rot === 270 || o.rot === 180){") && src.includes('const keep = qn === \'orig\' && isJpg && f.size <= M_ORIG_MAX && !rot;'));
+  t('v1.08.73: «Поделиться» — метка последнего документа, модалка выбора, ?share=1 убирается из адреса',
+    src.includes("shareTargetMark('job', id);") && src.includes("shareTargetMark('rep', id);") && src.includes('function shareIntakeModal(rows){') && src.includes("if (/[?&]share=1/.test(location.search)) history.replaceState"));
+  t('v1.08.73: манифест — share_target POST multipart files=media, launch_handler navigate-existing',
+    (() => { const m = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
+      return m.share_target && m.share_target.method === 'POST' && m.share_target.action === './share-target' && m.share_target.params.files[0].name === 'media' && m.launch_handler.client_mode === 'navigate-existing'; })());
+  t('v1.08.73: sw — POST ./share-target → tl-media/intake (версия 2) → редирект на index.html?share=1',
+    sw.includes("url.pathname.endsWith('/share-target')") && sw.includes('const MDB_VER = 2;') && sw.includes("createObjectStore('intake', { keyPath: 'iid' })") && sw.includes("index.html?share=1&n="));
+  t('v1.08.73: видео — таймауты dur/thumb, кадр с 0,5 с, воркер отпускает сэмплы, длительность из очереди, честная причина при 413 без сжатия',
+    src.includes('const M_VMETA_MS = 8000, M_VTHUMB_MS = 12000;') && src.includes('v.currentTime = Math.min(0.5, d / 2);')
+    && src.includes('mp4.releaseUsedSamples(id, samples[samples.length - 1].number + 1)') && src.includes('if (dur <= 0.6 && target.dur > 0.6) dur = target.dur;')
+    && src.includes("if (it.shrFail){") && src.includes("if (it.forceShr) it.shrFail = String(sr && sr.err || '?');"));
+  t('v1.08.73: плитка без превью — значок вида файла; просмотрщик с процентами, ролики соседей не подгружаются',
+    src.includes('<span class="mfile mvph">') && css.includes('.mth img[data-thumb].nothumb{display:none}') && src.includes('async function mvFetch(id, onPct){')
+    && src.includes("if (nx && !nx.local && nx.kind !== 'video') mvFetch(nx.id)"));
+  t('v1.08.73: карточка «Съёмка» — три режима и подсказка «Поделиться»; стили камеры',
+    src.includes("${seg(md, 'app', t('cam_mode_app'), 'camMode')}") && src.includes("<b>${ic('share')} ${t('share_title')}</b>")
+    && css.includes('.camin{position:fixed;inset:0;z-index:10000') && css.includes('html.tl-camin #toasts{z-index:10001}') && css.includes('@media (orientation:landscape){'));
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
