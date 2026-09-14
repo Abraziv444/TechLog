@@ -21,6 +21,10 @@
 | `section-2-en.html` | Раздел 2 “Fire and Smoke Restoration Technology”, 67 стр., английский | ~2,8 МБ |
 | `section-3-ru.html` | Раздел 3 «Устранение и контроль запахов», 54 стр., русский | ~1,8 МБ |
 | `section-3-en.html` | Раздел 3 “Odor Removal and Control”, 54 стр., английский | ~1,8 МБ |
+| `section-4-ru.html` | Раздел 4 «Устранение плесени и микробов», 86 стр., русский | ~4,0 МБ |
+| `section-4-en.html` | Раздел 4 “Microbial Remediation”, 86 стр., английский | ~4,0 МБ |
+| `section-5-ru.html` | Раздел 5 «Уборка мест происшествий», 52 стр., русский | ~1,5 МБ |
+| `section-5-en.html` | Раздел 5 “Trauma Scene Cleanup”, 52 стр., английский | ~1,5 МБ |
 | `section-8.html` | образец простой html-страницы (одна на оба языка) | 5 КБ |
 | `tools/` | конвертер PDF → учебник, см. ниже | |
 

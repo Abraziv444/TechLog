@@ -275,6 +275,37 @@ def img_data(doc, xref, w_pt, h_pt, ppt, quality, cache):
     return cache[key]
 
 
+def inline_img(block, info, quality):
+    """Встроенная (inline) картинка без xref — Chrome так рисует, например,
+    точечные отточия оглавления: картинка на всю страницу + маска, видна
+    только полоска. Склеиваем с маской, вырезаем видимую часть, кладём на место."""
+    m = info['transform']
+    if abs(m[1]) > 1e-6 or abs(m[2]) > 1e-6 or m[0] <= 0 or m[3] <= 0:
+        return None
+    im = Image.open(io.BytesIO(block['image'])).convert('RGB')
+    if block.get('mask'):
+        mk = Image.open(io.BytesIO(block['mask'])).convert('L')
+        if mk.size != im.size:
+            mk = mk.resize(im.size)
+        im.putalpha(mk)
+    sx, sy = im.width / m[0], im.height / m[3]         # пикселей на пункт
+    bx0, by0, bx1, by1 = block['bbox']                  # видимая область (после клипа)
+    px0 = max(0, int((bx0 - m[4]) * sx) - 1)
+    py0 = max(0, int((by0 - m[5]) * sy) - 1)
+    px1 = min(im.width, int((bx1 - m[4]) * sx) + 2)
+    py1 = min(im.height, int((by1 - m[5]) * sy) + 2)
+    if px1 <= px0 or py1 <= py0:
+        return None
+    crop = im.crop((px0, py0, px1, py1))
+    b = io.BytesIO()
+    if crop.mode == 'RGBA' or crop.width * crop.height < 40000:
+        crop.save(b, 'WEBP', lossless=True, method=6)
+    else:
+        crop.save(b, 'WEBP', quality=quality, method=6)
+    uri = 'data:image/webp;base64,%s' % base64.b64encode(b.getvalue()).decode()
+    return (m[4] + px0 / sx, m[5] + py0 / sy, crop.width / sx, crop.height / sy, uri, b.tell())
+
+
 # ------------------------------------------------------------- векторы ------
 def draw_path(dr):
     """Путь PDF → атрибут d для SVG."""
@@ -385,9 +416,23 @@ def build_page(doc, page, res, metrics, charsets, ppt, quality, icache, stats):
     flush()
 
     # 2. картинки
-    for info in page.get_image_info(xrefs=True):
+    infos = page.get_image_info(xrefs=True)
+    inline = {}
+    if any(not i.get('xref') for i in infos):
+        inline = {b['number']: b for b in page.get_text('dict')['blocks'] if b.get('type') == 1}
+    for info in infos:
         xref = info.get('xref') or 0
         if not xref:
+            blk = inline.get(info.get('number'))
+            r = inline_img(blk, info, quality) if blk else None
+            if r:
+                parts.append('<image x="%s" y="%s" width="%s" height="%s" '
+                             'preserveAspectRatio="none" href="%s"/>'
+                             % (num(r[0]), num(r[1]), num(r[2]), num(r[3]), r[4]))
+                stats['img'] += 1
+                stats['imgb'] += r[5]
+            else:
+                sys.stderr.write('стр. %d: встроенная картинка пропущена\n' % (page.number + 1))
             continue
         m = info['transform']
         bb = info['bbox']
