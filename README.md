@@ -712,10 +712,11 @@ icons/                — иконки приложения
 dictionary/index.json — каталог учебных разделов (8 шт.: цвет, название, файл теста, файл учебника) — v1.08.51
 dictionary/tests/     — JSON-тесты по разделам (section-N.json), SCHEMA.md — единый формат, template.json — образец, tools/normalize-quiz.py — конвертер/проверка
 dictionary/books/     — учебники разделов (section-N-ru.html / -en.html, .pdf), README.md — правила и сборка, section-8.html — образец;
+                        tests/books-overlap.js — обход всех страниц всех учебников: пересечения текста с картинками, линиями и текстом
                         tools/pdf2book.py + viewer.html — конвертер папки PDF в единый HTML-учебник с просмотрщиком
 tests/v1_08_51.js     — автотест «Учёбы» (Playwright, демо-режим)
 tests/study.sql       — автотест базы для учёбы (BEGIN…ROLLBACK, безопасен на любой базе)
-tests/ui-check.js     — автотест интерфейса и прокрутки (тот же движок, что у кнопки диагностики)
+tests/ui-check.js     — автотест интерфейса и прокрутки (тот же движок, что у кнопки диагностики); с 1.08.68 — плюс учёба: тест и учебник каждого раздела
 tests/ui-matrix.js    — прогон по 24 экранам: телефоны, планшеты, мониторы; отчёт в tests/out/
 tests/scroll-regress.js — автотест: перенос карточек, доска, переключение режимов
 tests/README.md       — как запускать тесты

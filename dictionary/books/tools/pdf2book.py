@@ -458,17 +458,20 @@ def build_page(doc, page, res, metrics, charsets, ppt, quality, icache, stats):
 
     # 3. текст
     head = []
-    td = page.get_text('dict', flags=pymupdf.TEXTFLAGS_DICT & ~pymupdf.TEXT_PRESERVE_IMAGES)
+    td = page.get_text('rawdict', flags=pymupdf.TEXTFLAGS_DICT & ~pymupdf.TEXT_PRESERVE_IMAGES)
     for blk in td['blocks']:
         if blk.get('type') != 0:
             continue
         for line in blk['lines']:
             dx, dy = line['dir']
             first = True
-            for sp in line['spans']:
-                txt = sp['text']
+            spans = line['spans']
+            for si, sp in enumerate(spans):
+                chars = sp.get('chars') or []
+                txt = ''.join(c['c'] for c in chars)
                 if not txt or not txt.strip():
                     continue
+                is_t3 = sp['font'].startswith('Type3')
                 name = res.name(sp['font'])
                 fam, weight, style = style_of(name)
                 if sp['flags'] & 16:
@@ -484,6 +487,28 @@ def build_page(doc, page, res, metrics, charsets, ppt, quality, icache, stats):
                 bb = sp['bbox']
                 target = abs((bb[2] - bb[0]) * dx) + abs((bb[3] - bb[1]) * dy)
                 natural = metrics[key].width(txt, size)
+                if is_t3:
+                    # У Type3-шрифтов MuPDF считает bbox символа по FontBBox, а не по
+                    # ширине глифа: последний знак «вылезает» на 5–8 pt, и весь фрагмент
+                    # получал лишнюю ширину — соседи наезжали друг на друга. Берём
+                    # расстояние между началами первого и последнего знака (оно точное)
+                    # плюс ширину последнего знака в пропорции нашего шрифта.
+                    if len(chars) >= 2:
+                        o0, o1 = chars[0]['origin'], chars[-1]['origin']
+                        known = abs((o1[0] - o0[0]) * dx) + abs((o1[1] - o0[1]) * dy)
+                        nat_known = metrics[key].width(txt[:-1], size)
+                        if known > 0.1 and nat_known > 0.1:
+                            target = known + metrics[key].width(txt[-1], size) * (known / nat_known)
+                    else:
+                        target = 0          # одиночный знак — естественная ширина
+                # Самое точное — начало следующего фрагмента той же строки, если он
+                # стоит вплотную (лигатуры «ff», «fi» MuPDF разворачивает в два знака и
+                # второму даёт вымышленное начало — только сосед показывает, где
+                # фрагмент кончается на самом деле)
+                if abs(dx - 1) < 1e-6 and si + 1 < len(spans):
+                    nx = spans[si + 1]['origin'][0]
+                    if bb[0] + 0.3 * size <= nx <= bb[2] + 0.6:
+                        target = nx - ox
                 a = ['<text class="%s%s" ' % (CLS[key], ' n' if first else '')]
                 first = False
                 if abs(dx - 1) > 1e-6 or abs(dy) > 1e-6:
@@ -507,8 +532,9 @@ def build_page(doc, page, res, metrics, charsets, ppt, quality, icache, stats):
                 a.append('>%s</text>' % esc(txt))
                 parts.append(''.join(a))
                 stats['span'] += 1
-                if sp['color'] == 0xffffff and any(b.x0 <= ox <= b.x1 and b.y0 <= oy <= b.y1
-                                                    for b in bands):
+                # заголовок раздела — любой текст внутри полосы колонтитула (обычно белый;
+                # в исходниках встречается и тёмный по ошибке — пункт оглавления всё равно нужен)
+                if any(b.x0 <= ox <= b.x1 and b.y0 <= oy <= b.y1 for b in bands):
                     head.append((ox, txt.strip()))
 
     head.sort()

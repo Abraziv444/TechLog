@@ -3,7 +3,10 @@
    ---------------------------------------------------------------------
    Гоняет тот же движок, что и кнопка «Диагностика интерфейса» в
    приложении (window.UIDiag), по всем экранам и в двух режимах —
-   телефон и ПК. Валит сборку, если:
+   телефон и ПК; v1.08.68: плюс учёба — у каждого раздела 1–8 карточка,
+   окно запуска теста, первый вопрос с ответом и учебник в рамке
+   (просмотрщик отрисовал страницы, тулбар и страница в границах рамки,
+   оглавление не пустое). Валит сборку, если:
      • появился блокирующий (не passive) слушатель wheel/touchmove
        на window или document — из-за таких прокрутка ждёт главный поток;
      • любая проверка вернула ошибку (перекрытия, вылет за край,
@@ -91,6 +94,81 @@ const SOFT = ['contrast', 'hit', 'clip'];
         warns += c.items.length;
         c.items.slice(0, 2).forEach(i => console.log(`      ⚠️  ${c.title}: ${i.msg}`));
       });
+    }
+
+    /* --- 3. учёба: карточка, тест и учебник каждого раздела (v1.08.68) --- */
+    const diag = async (label) => {
+      const r = await page.evaluate(() => window.UIDiag.json());
+      const bad = r.checks.filter(c => c.level === 'err' && !SOFT.includes(c.id));
+      const hard = bad.reduce((a, c) => a + c.items.filter(i => i.level === 'err').length, 0);
+      bad.forEach(c => { fails++; c.items.filter(i => i.level === 'err').slice(0, 3)
+        .forEach(i => console.log(`      ⛔ ${label} · ${c.title}: ${i.msg}`)); });
+      return hard;
+    };
+    console.log('  — учёба: разделы 1–8, тест и книга каждого —');
+    await page.evaluate(() => window.App.go('study')); await page.waitForTimeout(1500);
+    const secIds = await page.evaluate(() => [...document.querySelectorAll('.st-chip .st-chip-no')].map(e => e.textContent.trim()));
+    for (const id of secIds) {
+      let hard = 0, note = [];
+      await page.evaluate(i => window.App.studySel(i), id); await page.waitForTimeout(900);
+      hard += await diag(`раздел ${id}`);
+      const btn = await page.evaluate(() => ({
+        test: !document.querySelector('.st-sec button[onclick*="studyStart"]').disabled,
+        book: !document.querySelector('.st-sec button[onclick*="studyRead"]').disabled }));
+      /* тест: окно запуска → первый вопрос → ответ и проверка → сброс */
+      if (btn.test) {
+        await page.evaluate(i => window.App.studyStart(i), id); await page.waitForTimeout(500);
+        hard += await diag(`раздел ${id} · запуск теста`);
+        await page.evaluate(i => { window.App.closeModal(); window.App.studyBegin(i); }, id); await page.waitForTimeout(500);
+        const q = await page.evaluate(() => ({ run: !!document.querySelector('.st-run'), opts: document.querySelectorAll('.st-opt').length,
+          txt: (document.querySelector('.st-q') || document.querySelector('.st-run') || {}).textContent || '' }));
+        if (!q.run || q.opts < 2) { fails++; hard++; console.log(`      ⛔ раздел ${id}: тест не открылся (вопрос ${q.run}, вариантов ${q.opts})`); }
+        else {
+          hard += await diag(`раздел ${id} · вопрос`);
+          await page.evaluate(() => document.querySelector('.st-opt').click()); await page.waitForTimeout(200);
+          await page.evaluate(() => window.App.studyCheck()); await page.waitForTimeout(400);
+          hard += await diag(`раздел ${id} · проверка ответа`);
+        }
+        await page.evaluate(() => window.App.studyDrop()); await page.waitForTimeout(300);
+        note.push('тест');
+      } else note.push('теста нет');
+      /* книга: рамка, просмотрщик внутри, тулбар и страница в границах рамки */
+      if (btn.book) {
+        await page.evaluate(i => window.App.studyRead(i), id);
+        let fr = null;
+        for (let k = 0; k < 80 && !fr; k++) { await page.waitForTimeout(250); fr = page.frames().find(f => /dictionary\/books\//.test(f.url())); }
+        if (!fr) { fails++; hard++; console.log(`      ⛔ раздел ${id}: рамка учебника не появилась`); }
+        else {
+          const isViewer = await fr.evaluate(() => !!document.getElementById('bk'));
+          if (isViewer) {
+            await fr.waitForFunction(() => document.querySelectorAll('#inner .pg[data-on] svg').length > 0, null, { timeout: 40000 }).catch(() => {});
+            await fr.waitForTimeout(500);
+            const v = await fr.evaluate(() => {
+              const tb = document.getElementById('tb'), doc = document.getElementById('doc'), pg = document.querySelector('#inner .pg');
+              const tbKids = [...tb.querySelectorAll('button,input,#ttl')].filter(e => getComputedStyle(e).display !== 'none');
+              const cut = tbKids.filter(e => { const r = e.getBoundingClientRect(); return r.right > innerWidth + 1 || r.left < -1; }).length;
+              return { pages: document.querySelectorAll('#inner .pg').length, mounted: document.querySelectorAll('#inner .pg[data-on] svg').length,
+                tot: document.getElementById('pgtot').textContent.trim(), cut, tbOver: tb.scrollWidth > tb.clientWidth + 1,
+                pgW: pg ? pg.getBoundingClientRect().width : 0, docW: doc.clientWidth, fit: document.getElementById('bfit').classList.contains('on'),
+                toc: document.querySelectorAll('#btoc .toci').length, text: document.querySelectorAll('#inner .pg svg text').length };
+            });
+            const probs = [];
+            if (!v.pages || !v.mounted || !v.text) probs.push(`страницы не отрисовались (${v.mounted}/${v.pages}, текстов ${v.text})`);
+            if (v.cut || v.tbOver) probs.push(`тулбар не влезает: обрезано кнопок ${v.cut}, overflow ${v.tbOver}`);
+            if (v.fit && v.pgW > v.docW + 1) probs.push(`страница шире рамки при «по ширине» (${Math.round(v.pgW)} > ${v.docW})`);
+            if (v.toc < 2) probs.push(`оглавление пустое (${v.toc})`);
+            if (probs.length) { fails += probs.length; hard += probs.length; probs.forEach(x => console.log(`      ⛔ раздел ${id} · книга: ${x}`)); }
+            note.push(`книга ${v.pages} стр.`);
+          } else {
+            const ok = await fr.evaluate(() => document.body && document.body.textContent.trim().length > 50);
+            if (!ok) { fails++; hard++; console.log(`      ⛔ раздел ${id}: страница учебника пустая`); }
+            note.push('книга (html)');
+          }
+          hard += await diag(`раздел ${id} · чтение`);
+        }
+        await page.evaluate(() => window.App.studyReadClose()); await page.waitForTimeout(400);
+      } else note.push('книги нет');
+      console.log(`  ${hard ? '⛔' : '✓'} учёба/${id}   дефектов ${hard} · ${note.join(' · ')}`);
     }
 
     if (errors.length) {

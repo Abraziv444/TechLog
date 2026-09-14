@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.64';
+const APP_VERSION = '1.08.68';
 const DB_SQL_FILE = 'full-install-1_08_51.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -178,6 +178,7 @@ const I18N = {
     logout: 'Выйти', version: 'Версия приложения', updated_to: 'Приложение обновлено до версии',
     update_after_form: 'Есть обновление — применю после закрытия формы',
     upd_check: 'Проверить обновления', upd_last: 'проверено',
+    ver_android_note: 'Версия приложения — здесь и в шапке. В «Настройки Android → Приложения» показывается номер обёртки Chrome (WebAPK), он не связан с версией TechLog и не управляется с сайта.',
     login_title: 'Вход в TechLog', demo_note: 'Демо-режим: Supabase не настроен (config.js). Данные хранятся локально.',
     email: 'Email', password: 'Пароль', sign_in: 'Войти', sign_up: 'Регистрация',
     display_name: 'Имя (для документов)', have_acc: 'Уже есть аккаунт? Войти', no_acc: 'Нет аккаунта? Регистрация',
@@ -1123,7 +1124,7 @@ const I18N = {
     st_result: 'Результат', st_passed: 'Зачёт', st_failed: 'Не сдан', st_correct: 'верных', st_wrong: 'неверных', st_skipped: 'пропущено',
     st_time: 'Время', st_avg_q: 'на вопрос', st_review: 'Разбор', st_again: 'Ещё раз', st_your: 'ваш ответ', st_hint_used: 'с подсказкой',
     st_only_wrong: 'Только ошибки', st_all_right: 'Ошибок нет', st_section: 'Раздел', st_p: 'стр.',
-    st_read_done: 'Готово', st_open_tab: 'Открыть в новой вкладке',
+    st_read_done: 'Готово', st_open_tab: 'Открыть в новой вкладке', st_read_switch: 'Другой раздел',
     st_read_hint: 'Время чтения считается, пока страница открыта; при выходе оно попадёт в вашу статистику.',
     st_read_saved: 'Чтение записано', st_reading: 'чтение',
     st_resume_t: 'Незавершённый тест', st_resume: 'Продолжить',
@@ -1193,6 +1194,7 @@ const I18N = {
     logout: 'Log out', version: 'App version', updated_to: 'App updated to version',
     update_after_form: 'Update ready — will apply after you close the form',
     upd_check: 'Check for updates',
+    ver_android_note: 'The app version is shown here and in the header. “Android Settings → Apps” shows the Chrome wrapper (WebAPK) number, which is unrelated to the TechLog version and cannot be set from the site.',
     upd_applying: 'Updating the app…', upd_hard: 'Clearing cache and reloading…',
     upd_last: 'checked',
     login_title: 'Sign in to TechLog', demo_note: 'Demo mode: Supabase is not configured (config.js). Data is stored locally.',
@@ -2130,7 +2132,7 @@ const I18N = {
     st_result: 'Result', st_passed: 'Passed', st_failed: 'Not passed', st_correct: 'correct', st_wrong: 'wrong', st_skipped: 'skipped',
     st_time: 'Time', st_avg_q: 'per question', st_review: 'Review', st_again: 'Try again', st_your: 'your answer', st_hint_used: 'hint used',
     st_only_wrong: 'Mistakes only', st_all_right: 'No mistakes', st_section: 'Section', st_p: 'p.',
-    st_read_done: 'Done', st_open_tab: 'Open in a new tab',
+    st_read_done: 'Done', st_open_tab: 'Open in a new tab', st_read_switch: 'Another section',
     st_read_hint: 'Reading time counts while the page is open; it goes to your statistics when you leave.',
     st_read_saved: 'Reading recorded', st_reading: 'reading',
     st_resume_t: 'Unfinished test', st_resume: 'Continue',
@@ -3274,16 +3276,23 @@ function pendingApplyLocal(data){
      перехватывается подсказкой. Инвойс, задача, фото/видео, пикап,
      пропозал, ремонт — работают как обычно.
    ===================================================================== */
-const NET = { srv: true, ping: null, fails: 0, at: 0, busy: false, timer: null, toastAt: 0, saveToastAt: 0, offAt: 0 };
+const NET = { srv: true, ping: null, fails: 0, at: 0, busy: false, timer: null, toastAt: 0, saveToastAt: 0, offAt: 0, slowN: 0, hist: [] };
 const NET_PING_MS = 30000, NET_RETRY_MS = 8000, NET_TIMEOUT_MS = 8000;
 const NET_SLOW_MS = 500;   // v1.08.45: пинг ≥ 500 мс — статус «нестабильно» (оранжевый)
+const NET_CONFIRM_MS = 3000;   // v1.08.68: медленный пинг перепроверяется через 3 с
 /* «связи нет» = браузер офлайн ИЛИ сервер молчит (два пинга подряд) */
 function netOff(){ return !navigator.onLine || !NET.srv; }
 function netState(){
   if (!navigator.onLine) return 'off';
   if (!NET.srv) return 'warn';
-  /* v1.08.45: третий статус «нестабильно» — сервер отвечает, но пинг улетает */
-  return (NET.ping != null && NET.ping >= NET_SLOW_MS) ? 'slow' : 'on';
+  /* v1.08.45: третий статус «нестабильно» — сервер отвечает, но пинг улетает.
+     v1.08.68: только по ДВУМ медленным пингам подряд. Одиночный медленный
+     замер — почти всегда не сеть, а холодный старт: первый запрос после
+     запуска или после сна телефона тянет DNS + TLS + пробуждение радио и
+     легко уходит за 500 мс, хотя сама связь в порядке; раньше бейдж на
+     30 с уходил в оранжевый «нестабильно». Теперь после медленного пинга
+     через 3 с идёт контрольный по уже тёплому соединению. */
+  return NET.slowN >= 2 ? 'slow' : 'on';
 }
 function isNetErr(e){
   const m = String((e && e.message) || e || '');
@@ -3316,16 +3325,23 @@ async function netPing(){
 function netSchedule(){
   clearTimeout(NET.timer);
   if (document.visibilityState === 'hidden') return;
-  NET.timer = setTimeout(netPing, (navigator.onLine && NET.srv) ? NET_PING_MS : NET_RETRY_MS);
+  const quick = NET.slowN === 1 && navigator.onLine && NET.srv;   // v1.08.68: контрольный пинг после медленного
+  NET.timer = setTimeout(netPing, !(navigator.onLine && NET.srv) ? NET_RETRY_MS : quick ? NET_CONFIRM_MS : NET_PING_MS);
 }
 /* ok=true — сервер ответил (ms — пинг, undefined — не трогать);
    ok=false — сбой: второй подряд (или браузер офлайн) гасит srv. */
 function netSet(ok, ms){
   const before = netOff();
-  if (ok){ NET.srv = true; NET.fails = 0; if (ms != null) NET.ping = ms; NET.at = Date.now(); }
+  if (ok){
+    NET.srv = true; NET.fails = 0; NET.at = Date.now();
+    if (ms != null){
+      NET.ping = ms; NET.hist = NET.hist.concat(ms).slice(-5);
+      NET.slowN = ms >= NET_SLOW_MS ? NET.slowN + 1 : 0;
+    }
+  }
   else {
     NET.fails++;
-    if (!navigator.onLine || NET.fails >= 2){ NET.srv = false; NET.ping = null; }
+    if (!navigator.onLine || NET.fails >= 2){ NET.srv = false; NET.ping = null; NET.slowN = 0; }
     /* первый сбой (обычно — запись упала на ходу): быстрый контрольный пинг */
     else if (!NET.busy){ clearTimeout(NET.timer); NET.timer = setTimeout(netPing, 2000); }
   }
@@ -6091,7 +6107,7 @@ function sectionFaqHtml(key){
       <li><b>Перед тестом</b> выбирается режим: <b>Обучение</b> — разбор сразу после каждого ответа; <b>Экзамен</b> — только ответы, разбор в итогах. Число вопросов (все или часть) и перемешивание.</li>
       <li><b>В тесте</b>: варианты нумерованы — в вопросах вида «верны 1 и 3» речь именно об этих номерах. «Подсказка» — намёк до ответа (отмечается в результате). Вопрос с несколькими верными ответами помечен — отмечайте все. Таймер идёт, пока экран открыт; свернули приложение — счёт стоит. Незавершённый тест переживает перезагрузку — на экране появится «Продолжить».</li>
       <li><b>Итог</b> — модалка с процентом, зачёт/не сдан по порогу (по умолчанию 70 %, админ меняет в Настройках), число верных и неверных, время и среднее на вопрос. <b>Разбор</b> — каждый вопрос с вашим ответом, верным, объяснениями и ссылкой на раздел и страницы; галочка «Только ошибки».</li>
-      <li><b>Книга</b> — учебник раздела открывается внутри приложения; время чтения засекается и попадает в статистику. «Готово» — закрыть и записать.</li>
+      <li><b>Книга</b> — учебник раздела открывается внутри приложения; время чтения засекается и попадает в статистику. Над книгой: стрелка «назад» (то же, что «Готово» — закрыть и записать) и список разделов — можно перейти к другому учебнику, не выходя из чтения. Внутри книги свои оглавление, миниатюры, поиск и масштаб.</li>
       <li><b>Мои результаты</b> — прямо под кнопками, по выбранному разделу: попытки, лучший и последний результат, время тестов и чтения, последние попытки (у каждой — «глазик» разбора). Ниже — <b>Общий прогресс</b> по всем разделам и лучший результат по каждому.</li>
       <li><b>Статистика</b> (админ) — в самом низу экрана: все сотрудники за период (7д/30д/90д/всё, фильтр по сотруднику и разделу) — тесты, сдано, ответов, доля верных и неверных, время тестов и чтения; строка сотрудника раскрывается по разделам и попыткам; выгрузка CSV.</li>
       <li><b>Доступ</b>: Настройки → «Учёба» — общий выключатель, «Всем» или «По списку» (тот же флажок в карточке сотрудника в Штате), порог зачёта. Сам сотрудник может убрать кнопку из меню галочкой «Показывать «Учёбу» в меню».</li>
@@ -6104,7 +6120,7 @@ function sectionFaqHtml(key){
       <li><b>Before a test</b> pick the mode: <b>Learning</b> — the explanation right after each answer; <b>Exam</b> — answers only, explanations in the results. Number of questions (all or a part) and shuffling.</li>
       <li><b>During the test</b>: options are numbered — questions like “1 and 3 are correct” refer to those numbers. “Hint” gives a nudge before answering (marked in the result). A question with several correct answers is flagged — mark all of them. The timer runs while the screen is open; minimising the app pauses it. An unfinished test survives a reload — “Continue” appears on the screen.</li>
       <li><b>Result</b> — a modal with the percentage, passed / not passed against the pass mark (70 % by default, the admin changes it in Settings), correct and wrong counts, time and average per question. <b>Review</b> — every question with your answer, the right one, explanations and a reference to the section and pages; a “Mistakes only” tick.</li>
-      <li><b>Book</b> — the section's textbook opens inside the app; reading time is measured and goes to the statistics. “Done” closes and records it.</li>
+      <li><b>Book</b> — the section's textbook opens inside the app; reading time is measured and goes to the statistics. Above the book: a back arrow (same as “Done” — close and record) and a section list to jump to another textbook without leaving the reader. The book has its own contents, thumbnails, search and zoom.</li>
       <li><b>My results</b> — right under the buttons, for the selected section: attempts, best and last score, test and reading time, recent attempts (an “eye” opens the review). Below — <b>Overall progress</b> across all sections and the best score per section.</li>
       <li><b>Statistics</b> (admin) — at the bottom of the screen: all staff for a period (7d/30d/90d/all, filters by employee and section) — tests, passed, answers, share of correct and wrong, test and reading time; an employee row expands into sections and attempts; CSV export.</li>
       <li><b>Access</b>: Settings → “Study” — the master switch, “Everyone” or “By list” (the same flag is in the employee card in Staff), the pass mark. An employee can remove the button from the menu with “Show “Study” in the menu”.</li>
@@ -8625,7 +8641,8 @@ function viewSettings(){
       <div class="d">${t('install_where_win')}</div></div></div>
     ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">${ic('download')} ${t('install_app')}</button>` : ''}
     <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b>
-      <div class="d">TechLog v${APP_VERSION}${state.lastUpdCheck ? ' · ' + t('upd_last') + ' ' + state.lastUpdCheck : ''}${state.updAvail ? ' · ' + ic('upload') + ' ' + t('upd_found') + ': ' + state.updAvail : ''}</div></div>
+      <div class="d">TechLog v${APP_VERSION}${state.lastUpdCheck ? ' · ' + t('upd_last') + ' ' + state.lastUpdCheck : ''}${state.updAvail ? ' · ' + ic('upload') + ' ' + t('upd_found') + ': ' + state.updAvail : ''}</div>
+      ${/android/i.test(navigator.userAgent) ? `<div class="tiny">${t('ver_android_note')}</div>` : ''}</div>
       <button class="btn btn-ghost sm" onclick="App.updCheck()">${ic('refresh')} ${t('upd_check')}</button></div>
   </div>
 
@@ -9368,6 +9385,16 @@ function studyReadOpen(secId){
   render();
   audit('study_read', 'study', STUDY.read.id, { sec: +secId, file, phase: 'open' });
 }
+/* v1.08.67: переключение раздела прямо над книгой — текущее чтение закрывается
+   (время ≥5 с записывается), открывается книга выбранного раздела, чип раздела
+   на экране «Учёба» переставляется */
+async function studyReadSwitch(id){
+  id = +id; const s = studySec(id);
+  if (!s || !studyBook(s) || (STUDY.read && STUDY.read.sec === id)) return;
+  await studyReadClose(true);
+  STUDY.sel = id; try{ localStorage.setItem('techlog_study_sec', String(id)); }catch(e){}
+  studyReadOpen(id);
+}
 async function studyReadClose(silent){
   const rd = STUDY.read; if (!rd) return;
   stClockPause(rd.clock);
@@ -9390,10 +9417,14 @@ function studyReadHtml(){
     : ext === 'md' || ext === 'txt'
     ? `<iframe class="st-frame" src="${url}" sandbox="" title="${esc(L(s.title))}"></iframe>`
     : `<iframe class="st-frame" src="${url}" sandbox="allow-same-origin allow-scripts allow-popups" allow="fullscreen" allowfullscreen title="${esc(L(s.title))}"></iframe>`;   // v1.08.60: allow-scripts — листалка внутри книги
+  /* v1.08.67: стрелка «назад» слева и выбор другого раздела вместо статичного заголовка */
+  const opts = studySections().filter(x => studyHas(studyBook(x)))
+    .map(x => `<option value="${x.id}" ${+x.id === rd.sec ? 'selected' : ''}>${x.id} · ${esc(L(x.title))}</option>`).join('');
   return `<div class="st-read">
     <div class="st-read-h">
+      <button class="icon-btn st-read-back" onclick="App.studyReadClose()" title="${t('back')}" aria-label="${t('back')}">${ic('arr_l')}</button>
       <span class="st-sec-dot" style="background:${s.color || STUDY_COLORS[(rd.sec - 1) % 8]}"></span>
-      <b class="grow">${esc(L(s.title))}</b>
+      <select class="st-read-sel" title="${t('st_read_switch')}" aria-label="${t('st_read_switch')}" onchange="App.studyReadSwitch(this.value)">${opts}</select>
       <span class="st-timer" title="${t('st_read_time')}">${ic('clock')} <span id="st-timer">${fmtMsShort(stClockMs(rd.clock))}</span></span>
       <a class="icon-btn" href="${url}" target="_blank" rel="noopener" title="${t('st_open_tab')}" aria-label="${t('st_open_tab')}">${ic('share')}</a>
       <button class="btn btn-ghost sm" onclick="App.studyReadClose()">${ic('close')} ${t('st_read_done')}</button>
@@ -9660,6 +9691,7 @@ const App = {
   studyDrop(){ STUDY.run = null; studyRunSave(); render(); },
   studyRead(sec){ studyReadOpen(sec); },
   studyReadClose(){ studyReadClose(false); },
+  studyReadSwitch(id){ studyReadSwitch(id); },
   studyOnlyWrong(v, sessId){ STUDY.mine.onlyWrong = !!v; studySessReview(sessId); },
   studyStatSet(k, v){ STUDY.stat[k] = k === 'sec' ? +v : v; render(); },
   studyStatOpen(uid_){ STUDY.stat.open[uid_] = !STUDY.stat.open[uid_]; render(); },
@@ -13610,7 +13642,7 @@ function faqHtml(){
     <div class="faq-example">${faqDayCardsExample()}</div>
     <p>Reading the sample: <b>7 jobs</b> are planned — Steam Clean 4, Air Duct 2, Vetvag 1. <b>8 equipment units</b> to collect — 5 blowers (BLW), 2 dehumidifiers (DHM) and 1 air scrubber (SCR) — and one pickup is already overdue. The numbers come from the same lists shown below on the screen: flip the strip to another day and the cards recalculate; for managers they respect the Mine/All filter.</p>
     <h4>${ic('refresh')} Sync, offline & updates</h4>
-    <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android and iPhone (see the iPhone section below), works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode. <b>Offline mode (v1.08.38):</b> the connection badge in the header (left of the role) shows the state — green “NN ms” is the server ping, orange “unstable” means ping of 500 ms and up, red “offline” means no network, yellow “no server” means the network is up but Supabase is not answering; tapping it opens the “Connection check” window with a per-service check (internet, Google Drive, maps; admin and manager also see Bouncie, GitHub and Cloudflare). Invoices, tasks, photos and videos, pickups, proposals and repairs keep working without a connection: every write is queued on the device and sent automatically when the network returns, followed by a silent sync. Buttons that need a live server (sync, sign-in, approvals via RPC, stock operations, staff, Drive, backups, push, 2FA, TV, Bouncie, translation, routes) turn faded and show a hint instead of acting.</p>
+    <p>Data lives in <b>Supabase</b>; the ${ic('refresh')} button in the header syncs manually, the last sync time is under Settings. The app is a <b>PWA</b>: installable on Android and iPhone (see the iPhone section below), works offline from cache, checks <i>version.json</i> on launch and updates itself (if an invoice form is open, the update waits until it’s closed). With an empty <i>config.js</i> it runs in a local demo mode. <b>Offline mode (v1.08.38):</b> the connection badge in the header (left of the role) shows the state — green “NN ms” is the server ping, orange “unstable” means two consecutive pings of 500 ms and up (a single slow reading right after launch or after the phone slept is a cold connection and is re-checked 3 s later), red “offline” means no network, yellow “no server” means the network is up but Supabase is not answering; tapping it opens the “Connection check” window with a per-service check (internet, Google Drive, maps; admin and manager also see Bouncie, GitHub and Cloudflare). Invoices, tasks, photos and videos, pickups, proposals and repairs keep working without a connection: every write is queued on the device and sent automatically when the network returns, followed by a silent sync. Buttons that need a live server (sync, sign-in, approvals via RPC, stock operations, staff, Drive, backups, push, 2FA, TV, Bouncie, translation, routes) turn faded and show a hint instead of acting.</p>
     <h4>${ic('phone')} iPhone & iPad (iOS)</h4>
     <p><b>Install:</b> in Safari tap <b>Share → “Add to Home Screen”</b> — unlike Android there is no automatic prompt, so the app shows its own banner with step-by-step instructions on the Home screen (and a button in Settings). Sign in again after installing: the Home-Screen app has <b>its own storage</b>, separate from the Safari tab. Installing is worth it: Safari wipes a site’s local data (session, offline cache, an unsaved draft) after <b>7 days</b> of using the browser without visiting the site, while the installed app keeps them for as long as you use it; don’t work in Private Browsing — nothing there survives closing the tab. <b>Routes</b> open in <b>Apple Maps</b>: the multi-stop “Day route” needs iOS 18.4+, older systems open only the final stop — a limitation of Apple’s URL scheme; if you prefer Google Maps, switch in Settings → “Navigation app”. <b>PDF invoices</b> (single and batch) go through the system <b>Share sheet</b> — “Save to Files”, AirDrop or mail; inside an installed web-app this is the only reliable way. <b>Dictation:</b> the in-app mic button is hidden on iOS — use the <b>🎤 key on the keyboard</b>, it types RU and EN into any field; the “Translate to EN” button works as usual. <b>Minimizing is safe:</b> iOS freezes background apps aggressively, so every save goes into a queue and is re-sent automatically when you return to the app, the network comes back or a sync runs — the queue counter shows in Settings and Diagnostics. There is no vibration feedback — iOS doesn’t allow it for web apps.</p>
     <h4>${ic('map')} Map</h4>
@@ -13669,7 +13701,7 @@ function faqHtml(){
     <h4>${ic('camera')} Фото и видео задач</h4>
     <p>В карточке задачи есть блок <b>«Фото и видео»</b>: съёмка идёт прямо из приложения, фото сжимается до 1920 px, видео принимается длиной до 90 секунд. Рядом с заголовком счётчик — сколько уже прикреплено из лимита. <b>Лимиты задаёт администратор</b>: «Настройки» → «Лимиты фото и видео на документ», два степпера (по умолчанию <b>10 фото и 2 видео</b>; фото 1–50, видео 0–10). Лимит общий для всех документов, его проверяет сервер — из браузера обойти нельзя; при значении «видео 0» кнопка съёмки видео пропадает, а уже загруженные файлы сверх нового лимита остаются на месте. Файлы уходят в архив на <b>Google Диске</b> фирмы (миниатюры — в базе), раскладываются по папкам вида <i>2026-09</i>. Без сети всё копится в очереди на телефоне и уходит само при появлении связи: «Настройки» → «Неотправленные фото и видео» — там сводка по документам, журнал отправки построчно и кнопки «Повторить отправку» / «Проверка соединения». Когда на Диске остаётся <b>менее 15 % свободного места</b>, админ и менеджер видят красный баннер на главной; тот же показатель считается при «Тесте соединения» в настройках Диска и обновляется сам при загрузке файлов.</p>
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
-    <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим. <b>Офлайн-режим (v1.08.38):</b> бейдж связи в шапке (слева от роли) показывает состояние — зелёный «NN мс» — пинг до сервера, оранжевый «нестабильно» — пинг от 500 мс, красный «офлайн» — нет сети, жёлтый «нет сервера» — сеть есть, а Supabase не отвечает; нажатие открывает окно «Проверка связи» с построчной проверкой сервисов (интернет, Google Диск, карты; админу и менеджеру — ещё Bouncie, GitHub и Cloudflare). Инвойсы, задачи, фото и видео, пикапы, пропозалы и ремонты работают без связи: каждая запись ложится в очередь на устройстве и уходит сама, когда сеть вернётся, следом идёт тихий синк. Кнопки, которым нужен живой сервер (синхронизация, вход, апрувы через RPC, склад, штат, Диск, бэкапы, пуши, 2FA, ТВ, Bouncie, перевод, маршруты), становятся блеклыми и вместо действия показывают подсказку.</p>
+    <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим. <b>Офлайн-режим (v1.08.38):</b> бейдж связи в шапке (слева от роли) показывает состояние — зелёный «NN мс» — пинг до сервера, оранжевый «нестабильно» — два пинга подряд от 500 мс (одиночный медленный замер после запуска или сна телефона — это холодное соединение, он перепроверяется через 3 с), красный «офлайн» — нет сети, жёлтый «нет сервера» — сеть есть, а Supabase не отвечает; нажатие открывает окно «Проверка связи» с построчной проверкой сервисов (интернет, Google Диск, карты; админу и менеджеру — ещё Bouncie, GitHub и Cloudflare). Инвойсы, задачи, фото и видео, пикапы, пропозалы и ремонты работают без связи: каждая запись ложится в очередь на устройстве и уходит сама, когда сеть вернётся, следом идёт тихий синк. Кнопки, которым нужен живой сервер (синхронизация, вход, апрувы через RPC, склад, штат, Диск, бэкапы, пуши, 2FA, ТВ, Bouncie, перевод, маршруты), становятся блеклыми и вместо действия показывают подсказку.</p>
     <h4>${ic('phone')} iPhone и iPad (iOS)</h4>
     <p><b>Установка:</b> в Safari «Поделиться» → <b>«На экран “Домой”»</b> — автоматической подсказки, как на Android, здесь нет, поэтому приложение само показывает баннер с пошаговой инструкцией на главном экране (и кнопку в Настройках). После установки войдите заново: у приложения на «Домой» <b>своё хранилище</b>, отдельное от вкладки Safari. Ставить стоит: вкладка Safari стирает локальные данные сайта (сессию, офлайн-кеш, несохранённый черновик) после <b>7 дней</b> пользования браузером без захода в TechLog, а установленное приложение хранит их, пока вы им пользуетесь; в приватном режиме не работайте — там ничего не переживает закрытия вкладки. <b>Маршруты</b> открываются в <b>Картах Apple</b>: мультиточечный «Маршрут дня» — с iOS 18.4, более старые системы откроют только конечную точку — это ограничение URL-схемы Apple; привычнее Google Maps — переключите в Настройках → «Навигатор». <b>PDF-инвойсы</b> (одиночные и пакетные) уходят через системное окно <b>«Поделиться»</b> — «Сохранить в Файлы», AirDrop, почта; в установленном веб-приложении это единственный надёжный путь. <b>Диктовка:</b> своя кнопка микрофона на iOS скрыта — используйте <b>🎤 на клавиатуре</b> iPhone, она печатает RU и EN в любое поле; кнопка «Перевести на EN» работает как обычно. <b>Сворачивать не страшно:</b> iOS жёстко замораживает фоновые приложения, поэтому каждое сохранение попадает в очередь и досылается само при возврате в приложение, появлении сети или синхронизации — счётчик очереди виден в Настройках и Диагностике. Вибрации нет — iOS не даёт её веб-приложениям.</p>
     <h4>${ic('map')} Карта</h4>

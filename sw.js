@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.08.64';
+const VERSION = '1.08.68';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -24,6 +24,7 @@ const ASSETS = [
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
   './icons/favicon-64.png',
+  './icons/apple-touch-icon-180.png',
   './dictionary/index.json'
 ];
 

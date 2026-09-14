@@ -2487,6 +2487,9 @@ html.tl-offline .net-login-note{ display:flex }
 .st-verdict{ margin-top:10px;font-weight:900;font-size:1rem;display:flex;align-items:center;gap:6px }
 .st-verdict.ok{ color:var(--green) } .st-verdict.bad{ color:var(--red) }
 .st-ex{ margin-top:6px;padding:8px 12px;border-radius:var(--r-sm);background:var(--panel-2);font-weight:600 }
+/* v1.08.68: длинные слова и ссылки в вопросах, вариантах и пояснениях при крупном шрифте (×1.6)
+   растягивали страницу вширь — нашёл ui-check по разделам 3 и 5; переносим внутри слова */
+.st-run, .st-run .st-q, .st-opt .grow, .st-ex, .st-ref{ overflow-wrap:anywhere;word-break:break-word;min-width:0 }
 .st-ex .ic{ width:16px;height:16px;vertical-align:-3px }
 .st-ref{ margin-top:4px } .st-ref .ic{ width:14px;height:14px;vertical-align:-2px }
 .st-run-btns{ margin-top:12px } .st-run-btns .btn-green{ flex:2 1 160px }
@@ -2515,6 +2518,11 @@ html.tl-offline .net-login-note{ display:flex }
 .st-read{ display:flex;flex-direction:column }
 .st-read-h{ display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px } .st-read-h .grow{ min-width:0 }
 .st-read-h a.icon-btn{ display:inline-grid;place-items:center }
+/* v1.08.67: стрелка «назад» и выбор раздела над книгой */
+.st-read-h .st-read-back{ width:36px;height:36px;border-radius:12px;color:var(--dim) }
+.st-read-h .st-read-sel{ flex:1 1 150px;min-width:0;width:auto;padding:7px 30px 7px 10px;font-weight:900;font-size:.95rem;
+  appearance:none;-webkit-appearance:none;background:var(--panel-2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238AA0AB' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 8px center/16px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis }
 .st-frame{ width:100%;height:calc(100dvh - 240px);min-height:380px;border:2px solid var(--line);border-radius:var(--r-sm);background:#fff }
 .st-sels{ display:grid;gap:6px;grid-template-columns:minmax(0,1fr);margin-top:6px } .st-sels select{ min-width:0 }
 

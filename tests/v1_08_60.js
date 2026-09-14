@@ -28,9 +28,20 @@ function t(name, cond, note){
     await p.evaluate(() => window.App.go('study')); await p.waitForTimeout(1600);
     const c1 = await p.evaluate(() => { window.App.studySel('1'); const b = document.querySelector('.st-sec button[onclick*="studyRead"]'); return { dis: b.disabled, sub: (document.querySelector('.st-sec .tiny') || {}).textContent || '' }; });
     t('раздел 1: кнопка «Книга» активна, в подписи «книга»', !c1.dis && /книга/.test(c1.sub), JSON.stringify(c1));
+    const all = await p.evaluate(() => [...document.querySelectorAll('.st-chip')].map(c => c.querySelector('.st-chip-no').textContent));
+    for (const n of ['2','3','4','5','6','7']){ await p.evaluate(k => window.App.studySel(k), n); await p.waitForTimeout(700); }
+    const dis = await p.evaluate(() => [...Array(8).keys()].map(i => { window.App.studySel(String(i + 1)); return document.querySelector('.st-sec button[onclick*="studyRead"]').disabled; }));
+    t('v1.08.66: «Книга» активна у всех восьми разделов (1–7 из PDF, 8 — образец)', all.length === 8 && dis.every(d => !d), JSON.stringify(dis));
+    await p.evaluate(() => window.App.studySel('7')); await p.waitForTimeout(900);
+    await p.evaluate(() => window.App.studyRead('7')); await p.waitForTimeout(500);
+    const s7 = await p.evaluate(() => document.querySelector('.st-frame').getAttribute('src'));
+    t('v1.08.66: раздел 7 — открывается section-7-ru.html', /books\/section-7-ru\.html$/.test(s7), s7);
+    await p.evaluate(() => window.App.studyReadClose()); await p.waitForTimeout(300);
     await p.evaluate(() => window.App.studySel('6')); await p.waitForTimeout(900);
-    const c2 = await p.evaluate(() => ({ dis: document.querySelector('.st-sec button[onclick*="studyRead"]').disabled, sub: (document.querySelector('.st-sec .tiny') || {}).textContent || '' }));
-    t('раздел 6: файлов книги нет (ни ru, ни en) — кнопка гаснет, «книги пока нет»', c2.dis && /книги пока нет/.test(c2.sub), JSON.stringify(c2));
+    await p.evaluate(() => window.App.studyRead('6')); await p.waitForTimeout(500);
+    const s6 = await p.evaluate(() => document.querySelector('.st-frame').getAttribute('src'));
+    t('v1.08.65: раздел 6 — открывается section-6-ru.html', /books\/section-6-ru\.html$/.test(s6), s6);
+    await p.evaluate(() => window.App.studyReadClose()); await p.waitForTimeout(300);
     await p.evaluate(() => window.App.studySel('5')); await p.waitForTimeout(900);
     await p.evaluate(() => window.App.studyRead('5')); await p.waitForTimeout(500);
     const s5 = await p.evaluate(() => document.querySelector('.st-frame').getAttribute('src'));
@@ -62,7 +73,14 @@ function t(name, cond, note){
     await p.evaluate(() => window.App.studyRead('1')); await p.waitForTimeout(600);
     const rd = await p.evaluate(() => { const f = document.querySelector('.st-frame'); return { src: f.getAttribute('src'), sandbox: f.getAttribute('sandbox'), allow: f.getAttribute('allow') }; });
     t('RU: открывается section-1-ru.html, рамка с allow-scripts и fullscreen', /books\/section-1-ru\.html$/.test(rd.src) && /allow-scripts/.test(rd.sandbox) && /allow-same-origin/.test(rd.sandbox) && rd.allow === 'fullscreen', JSON.stringify(rd));
-    await p.evaluate(() => window.App.studyReadClose()); await p.waitForTimeout(300);
+    const hd = await p.evaluate(() => ({ back: !!document.querySelector('.st-read-h .st-read-back'), sel: [...document.querySelectorAll('.st-read-h .st-read-sel option')].map(o => o.value), cur: document.querySelector('.st-read-h .st-read-sel').value, done: !!document.querySelector('.st-read-h button[onclick*="studyReadClose"]:not(.st-read-back)') }));
+    t('v1.08.67: над книгой стрелка «назад», список разделов с учебниками (1–8), выбран текущий, «Готово» на месте', hd.back && hd.sel.join(',') === '1,2,3,4,5,6,7,8' && hd.cur === '1' && hd.done, JSON.stringify(hd));
+    await p.evaluate(() => { const s = document.querySelector('.st-read-h .st-read-sel'); s.value = '3'; s.dispatchEvent(new Event('change')); }); await p.waitForTimeout(900);
+    const sw = await p.evaluate(() => ({ src: document.querySelector('.st-frame').getAttribute('src'), sel: document.querySelector('.st-read-h .st-read-sel').value, chip: localStorage.getItem('techlog_study_sec') }));
+    t('v1.08.67: выбор раздела 3 в списке открывает section-3-ru.html и переставляет чип', /books\/section-3-ru\.html$/.test(sw.src) && sw.sel === '3' && sw.chip === '3', JSON.stringify(sw));
+    await p.evaluate(() => document.querySelector('.st-read-h .st-read-back').click()); await p.waitForTimeout(400);
+    t('v1.08.67: стрелка «назад» закрывает книгу, на экране выбран раздел 3', !(await p.$('.st-frame')) && (await p.evaluate(() => document.querySelector('.st-chip.on .st-chip-no').textContent)) === '3');
+    await p.evaluate(() => window.App.studySel('1')); await p.waitForTimeout(300);
     await p.evaluate(() => window.App.setLang('en')); await p.waitForTimeout(300);
     await p.evaluate(() => window.App.studyRead('1')); await p.waitForTimeout(600);
     const en = await p.evaluate(() => document.querySelector('.st-frame').getAttribute('src'));

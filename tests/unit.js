@@ -1089,10 +1089,17 @@ console.log('\n— офлайн-режим: пометка кнопок и со�
   T.netSet(true, 42);
   t('успешный пинг 42 мс — онлайн, пилюля «42 мс»', !T.netOff() && T.netPillText() === '42 мс');
   T.netSet(true, 640);
-  t('v1.08.45: пинг 640 мс — статус «нестабильно», не офлайн', !T.netOff() && T.netState() === 'slow'
+  t('v1.08.68: одиночный медленный пинг 640 мс — ещё «on» (холодный старт), ждём контрольный', !T.netOff() && T.netState() === 'on' && T.NET.slowN === 1);
+  T.netSet(true, 90);
+  t('v1.08.68: контрольный 90 мс — счётчик сброшен, «on»', T.netState() === 'on' && T.NET.slowN === 0);
+  T.netSet(true, 640); T.netSet(true, 710);
+  t('v1.08.45/68: два медленных пинга подряд — статус «нестабильно», не офлайн', !T.netOff() && T.netState() === 'slow'
     && T.netPillText() === T.DICT.ru.net_unst);
   T.netSet(true, 120);
   t('v1.08.45: пинг вернулся к 120 мс — снова «on»', T.netState() === 'on' && T.netPillText() === '120 мс');
+  T.netSet(false); T.netSet(false);
+  t('v1.08.68: провал пинга сбрасывает счётчик медленных', T.NET.slowN === 0 && T.netOff());
+  T.netSet(true, 50);
   t('select снова активен, tl-offline снят', d.querySelector('#s1').disabled === false && !w.document.documentElement.classList.contains('tl-offline'));
   d.remove();
 }
@@ -1456,7 +1463,7 @@ console.log('\n— v1.08.51: учёба —');
   t('v1.08.60: index.json — у разделов 1–7 книга {ru,en}, файлы раздела 1 в сборке',
     (() => { const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'dictionary/index.json'), 'utf8'));
       return j.sections.filter(s => s.id <= 7).every(s => s.book && s.book.ru === `books/section-${s.id}-ru.html` && s.book.en === `books/section-${s.id}-en.html`)
-        && [1, 2, 3, 4, 5].every(n => fs.existsSync(path.join(ROOT, `dictionary/books/section-${n}-ru.html`)) && fs.existsSync(path.join(ROOT, `dictionary/books/section-${n}-en.html`))); })());
+        && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(path.join(ROOT, `dictionary/books/section-${n}-ru.html`)) && fs.existsSync(path.join(ROOT, `dictionary/books/section-${n}-en.html`))); })());
   t('v1.08.61: учебник раздела 2 — 67 страниц, титулы i–iii, оглавление с главами, RU/EN',
     (() => { const ru = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-2-ru.html'), 'utf8'), en = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-2-en.html'), 'utf8');
       const pg = (h) => { const m = h.match(/"pages":(\d+)/); return m ? +m[1] : 0; };
@@ -1478,6 +1485,16 @@ console.log('\n— v1.08.51: учёба —');
       const pg = (h) => { const m = h.match(/"pages":(\d+)/); return m ? +m[1] : 0; };
       return pg(ru) === 52 && pg(en) === 52 && ru.includes('"labels":["i","ii","iii","iv","1"') && ru.includes('"t":"Очистка и обеззараживание"')
         && en.includes('"t":"Cleaning and Decontamination"') && ru.includes('"section":5') && ru.includes('"color":"#8AA0AB"'); })());
+  t('v1.08.65: учебник раздела 6 — 76 страниц, титулы i–iv, главы 1–8, RU/EN',
+    (() => { const ru = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-6-ru.html'), 'utf8'), en = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-6-en.html'), 'utf8');
+      const pg = (h) => { const m = h.match(/"pages":(\d+)/); return m ? +m[1] : 0; };
+      return pg(ru) === 76 && pg(en) === 76 && ru.includes('"labels":["i","ii","iii","iv","1"') && ru.includes('"t":"Выведение пятен"')
+        && en.includes('"t":"Spotting"') && ru.includes('"section":6') && ru.includes('"color":"#9A5A22"'); })());
+  t('v1.08.66: учебник раздела 7 — 78 страниц, титулы i–iv, главы 1–9, «Содержание» в оглавлении несмотря на тёмный текст, RU/EN',
+    (() => { const ru = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-7-ru.html'), 'utf8'), en = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-7-en.html'), 'utf8');
+      const pg = (h) => { const m = h.match(/"pages":(\d+)/); return m ? +m[1] : 0; };
+      return pg(ru) === 78 && pg(en) === 78 && ru.includes('"labels":["i","ii","iii","iv","1"') && ru.includes('"t":"Содержание"') && ru.includes('"t":"Природа ковра"')
+        && en.includes('"t":"The Nature of Carpet"') && ru.includes('"section":7') && ru.includes('"color":"#2F5FD0"'); })());
   t('v1.08.60: учебник раздела 1 — 173 страницы, шрифты и картинки внутри, RU/EN',
     (() => { const ru = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-1-ru.html'), 'utf8'), en = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-1-en.html'), 'utf8');
       const pg = (h) => { const m = h.match(/"pages":(\d+)/); return m ? +m[1] : 0; };
