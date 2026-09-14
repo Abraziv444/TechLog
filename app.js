@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.73';
+const APP_VERSION = '1.08.74';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -933,6 +933,15 @@ const I18N = {
     share_none: 'Нет документа, куда положить файлы — откройте инвойс и поделитесь ещё раз',
     share_hint: 'Снимите камерой телефона как обычно, затем в галерее «Поделиться» → TechLog: кадры попадут в открытый документ. Это надёжнее камеры через системный выбор — приложение не ждёт в фоне и не выгружается.',
     intake_rest: 'кадры не пропали: восстановлено {N}',
+    /* v1.08.74: тест съёмки */
+    ct_btn: 'Тест съёмки: фото и видео', ct_running: 'Идёт тест съёмки…',
+    ct_hint: 'Сквозная проверка камеры в приложении на живых данных от вашего имени: создаёт инвойс Unit CAMTEST на сегодня, открывает камеру и снимает 2 кадра и 4-секундный ролик (держите телефон — снимает то, что перед объективом), проверяет миниатюры в документе, сохраняет и выходит, открывает документ заново, следит за фоновой отправкой на Диск с полным журналом, проверяет миниатюры с сервера и открывает фото и видео с Диска, затем удаляет инвойс. В демо-режиме отправка пропускается. Подробный отчёт можно скопировать или сохранить в .txt.',
+    ct_copy: 'Копировать отчёт', ct_save: 'Сохранить .txt', ct_saved: 'отчёт сохранён: {N}',
+    ct_done: 'тест съёмки: {N} из {T} шагов', ct_wait: 'ожидание', ct_demo: 'демо-режим — пропущено',
+    ct_s_env: 'Окружение', ct_s_job: 'Инвойс CAMTEST', ct_s_open: 'Документ открыт', ct_s_photo: 'Камера: 2 кадра',
+    ct_s_prep: 'Обработка фото и очередь', ct_s_video: 'Камера: видео 4 с', ct_s_thumbs: 'Миниатюры в документе',
+    ct_s_save: 'Сохранить и выйти', ct_s_reopen: 'Документ заново', ct_s_send: 'Фоновая отправка на Диск',
+    ct_s_srv: 'Миниатюры с сервера', ct_s_view: 'Просмотр фото и видео с Диска', ct_s_del: 'Удаление инвойса', ct_s_clean: 'Уборка',
     mv_dl_pct: 'загрузка {P}%', mv_dl_mb: '{A} из {B} МБ',
     mq_l_vid_codec: 'ролик {N} МБ не проходит лимит, а пережать его телефон не смог ({E}). Снимите видео кнопкой «Видео» (в приложении, H.264) или выключите HEVC в настройках камеры телефона',
     cam_native_btn: 'Резкость как у родной камеры',
@@ -1970,6 +1979,15 @@ const I18N = {
     share_none: 'No document to put the files in — open an invoice and share again',
     share_hint: 'Shoot with the phone camera as usual, then in the gallery «Share» → TechLog: the frames land in the open document. Safer than the camera via the system chooser — the app is not waiting in the background and cannot be unloaded.',
     intake_rest: 'frames kept: {N} restored',
+    /* v1.08.74: camera self-test */
+    ct_btn: 'Camera test: photo and video', ct_running: 'Camera test running…',
+    ct_hint: 'End-to-end check of the in-app camera on live data under your name: creates a Unit CAMTEST invoice for today, opens the camera and takes 2 shots and a 4-second clip (hold the phone — it records what is in front of the lens), checks the thumbnails in the document, saves and exits, reopens the document, follows the background upload to Drive with the full log, checks the thumbnails from the server and opens the photo and the video from Drive, then deletes the invoice. In demo mode the upload is skipped. The detailed report can be copied or saved as .txt.',
+    ct_copy: 'Copy report', ct_save: 'Save .txt', ct_saved: 'report saved: {N}',
+    ct_done: 'camera test: {N} of {T} steps', ct_wait: 'waiting', ct_demo: 'demo mode — skipped',
+    ct_s_env: 'Environment', ct_s_job: 'CAMTEST invoice', ct_s_open: 'Document opened', ct_s_photo: 'Camera: 2 shots',
+    ct_s_prep: 'Photo processing and queue', ct_s_video: 'Camera: 4-s video', ct_s_thumbs: 'Thumbnails in the document',
+    ct_s_save: 'Save and exit', ct_s_reopen: 'Document reopened', ct_s_send: 'Background upload to Drive',
+    ct_s_srv: 'Thumbnails from the server', ct_s_view: 'Viewing the photo and the video from Drive', ct_s_del: 'Deleting the invoice', ct_s_clean: 'Cleanup',
     mv_dl_pct: 'loading {P}%', mv_dl_mb: '{A} of {B} MB',
     mq_l_vid_codec: 'the {N} MB clip exceeds the limit and the phone could not shrink it ({E}). Record with the «Video» button (in-app, H.264) or turn HEVC off in the phone camera settings',
     cam_native_btn: 'Sharpness like the native camera',
@@ -10039,6 +10057,7 @@ const App = {
   srchTab(v){ srchTabSet(v); },                                    // v1.08.49
   printBtn(v){ printBtnSet(v); }, jobPrint(id){ jobPrintQuick(id); }, gdFullTest,   // v1.08.71
   regress(){ regressRun(); },                                                          // v1.08.72
+  camTest(){ camTestRun(); }, camTestCopy(){ ctCopy(); }, camTestSave(){ ctSave(); }, camTestState(){ return CT; },   // v1.08.74
   /* v1.08.73: камера в приложении */
   cam: { open: camInOpen, close(){ camInClose(); }, shot(){ camInShot(); }, torch(){ camInTorch(); },
          flip(){ camInFlip(); }, zoom(z, b){ camInZoom(z, b); }, st(){ return CAMIN; }, can: camInCan,
@@ -17871,7 +17890,8 @@ async function mPrepPhoto(f, ex){
   /* маленький кадр = телефон снимал в служебном режиме или ужал сам:
      виноват не сервис, и человеку стоит об этом сказать сразу */
   if (mp < M_SMALL_MP) toast('⚠ ' + t('cam_small').replace('{MP}', mp.toFixed(1)), 'err');
-  return { blob: orig ? f : r.blob, thumb: r.thumb, mime: 'image/jpeg',
+  return { blob: orig ? f : r.blob, thumb: r.thumb, mime: 'image/jpeg', w: r.w, h: r.h, iw: r.iw, ih: r.ih, orig, small: mp < M_SMALL_MP,
+           sharp: sh && sh.ratio != null ? Math.round(sh.ratio * 100) / 100 : null,     // v1.08.74: для отчёта теста съёмки
            blur: !!(camSharpOn() && sh && sh.gStd >= M_BLUR_CONTRAST && sh.ratio < M_BLUR_RATIO) };
 }
 /* v1.08.73: у обоих помощников появился таймаут — на телефоне <video> может
@@ -17945,6 +17965,7 @@ async function mediaEnqueueFile(jobId, f, kind, doc = 'job', ex){
       return mediaEnqueueFile(jobId, f, 'file', doc);
     }
     blob = p.blob; thumb = p.thumb; mime = p.mime;
+    ex = Object.assign({}, ex || {}, { w: p.w, h: p.h, iw: p.iw, ih: p.ih, orig: !!p.orig, small: !!p.small, sharp: p.sharp, src_size: f.size });   // v1.08.74
     if (p.blur) toast('⚠ ' + t('media_blur'), 'err');
   } else if (kind === 'video'){
     const dur = (await mVideoDur(f)) || (ex && +ex.dur) || 0;   // v1.08.73: запись в приложении знает длину сама
@@ -17959,6 +17980,7 @@ async function mediaEnqueueFile(jobId, f, kind, doc = 'job', ex){
     job_id: doc === 'rep' ? null : jobId, repair_id: doc === 'rep' ? jobId : null,
     kind, mime, blob, thumb, dur: durV,
     name: f.name || '', state: 'new', attempts: 0, at: Date.now() };
+  if (kind === 'photo' && ex && ex.w){ it.w = ex.w; it.h = ex.h; it.iw = ex.iw; it.ih = ex.ih; it.orig = ex.orig; it.small = ex.small; it.sharp = ex.sharp; it.src_size = ex.src_size; }   // v1.08.74
   mediaQ.push(it); await mQPut(it);
   return true;
 }
@@ -18219,7 +18241,7 @@ async function pickRestore(){
 const CAMIN = { el: null, stream: null, track: null, jobId: null, kind: 'photo', doc: 'job',
   shots: 0, facing: 'environment', torch: false, zoomCap: null, busy: false,
   rec: null, recParts: [], recT0: 0, recTimer: null, fallback: false, rot: 0, motionOn: false,
-  locked: false, left: 0 };
+  locked: false, left: 0, last: null, noAudio: false, noFallback: false, ready: null, _res: null, _rej: null };
 const CAMIN_PHOTO_TO = 7000;                      // takePhoto: ждём не дольше, потом кадр с потока
 function camInStrCancel(){
   try{ if (CAMIN.stream) CAMIN.stream.getTracks().forEach(tr => { try{ tr.stop(); }catch(e){} }); }catch(e){}
@@ -18267,11 +18289,17 @@ async function camInStart(){
     ? { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }, audio: true }
     : { video: { facingMode: { ideal: CAMIN.facing }, width: { ideal: 3264 }, height: { ideal: 2448 } }, audio: false };
   let stream;
+  CAMIN.noAudio = false;
   try{ stream = await navigator.mediaDevices.getUserMedia(cons); }
   catch(e){
     /* упрощённые условия: старые телефоны не любят width/height/audio */
     if (e && (e.name === 'OverconstrainedError' || e.name === 'NotReadableError' || e.name === 'TypeError'))
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: CAMIN.facing } }, audio: isVid });
+    else if (isVid && e && e.name === 'NotAllowedError'){
+      /* v1.08.74: микрофон не дали, а камеру — может быть: пишем без звука */
+      stream = await navigator.mediaDevices.getUserMedia({ video: cons.video, audio: false });
+      CAMIN.noAudio = true;
+    }
     else throw e;
   }
   if (!CAMIN.el){ stream.getTracks().forEach(tr => tr.stop()); return; }
@@ -18303,11 +18331,15 @@ async function camInStart(){
   if (CAMIN.torch && cap.torch) camInTorch(true, true);
   camInMsg('');
   camInCount();
+  if (CAMIN._res){ CAMIN._res(true); CAMIN._res = CAMIN._rej = null; }
 }
 function camInOpen(jobId, kind, doc){
   if (CAMIN.el) camInClose(true);
   CAMIN.jobId = jobId; CAMIN.kind = kind === 'video' ? 'video' : 'photo'; CAMIN.doc = doc || 'job';
-  CAMIN.shots = 0; CAMIN.busy = false; CAMIN.rot = 0; CAMIN.recParts = []; CAMIN.rec = null;
+  CAMIN.shots = 0; CAMIN.busy = false; CAMIN.rot = 0; CAMIN.recParts = []; CAMIN.rec = null; CAMIN.last = null;
+  /* v1.08.74: промис «камера запустилась / не запустилась» — для теста съёмки */
+  CAMIN.ready = new Promise((res, rej) => { CAMIN._res = res; CAMIN._rej = rej; });
+  CAMIN.ready.catch(() => {});
   CAMIN.left = mediaFree(jobId, CAMIN.kind, CAMIN.doc);
   const isVid = CAMIN.kind === 'video';
   const el = document.createElement('div'); el.id = 'camin'; el.className = 'camin' + (isVid ? ' vid' : '');
@@ -18351,13 +18383,16 @@ function camInOpen(jobId, kind, doc){
   CAMIN._key = e => { if (e.key === 'Escape') camInClose(); else if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); camInShot(); } };
   document.addEventListener('keydown', CAMIN._key);
   camInStart().catch(e => camInFail(e));
+  return CAMIN.ready;
 }
 /* Камеру не дали — тем же нажатием открываем камеру телефона, как раньше */
 function camInFail(e){
   const name = (e && e.name) || String(e && e.message || e || '?');
   dlog('камера в приложении: ' + name + ' → камера телефона');
   const jobId = CAMIN.jobId, kind = CAMIN.kind, doc = CAMIN.doc;
+  if (CAMIN._rej){ CAMIN._rej(e instanceof Error ? e : new Error(name)); CAMIN._res = CAMIN._rej = null; }
   camInClose(true);
+  if (CAMIN.noFallback) return;                  // v1.08.74: тест съёмки — без камеры телефона
   const denied = /NotAllowed|Permission|Security/i.test(name);
   if (denied) toast('⚠ ' + t('cam_in_denied'), 'err');
   else toast('⚠ ' + t(kind === 'video' ? 'cam_in_vid_no' : 'cam_in_no').replace('{E}', name.slice(0, 40)), 'inf');
@@ -18401,7 +18436,7 @@ async function camInFlip(){
 async function camInGrab(){
   const v = CAMIN.el.querySelector('video');
   const rot = CAMIN.locked ? 0 : CAMIN.rot;
-  let blob = null;
+  let blob = null, used = 'frame';
   if (typeof ImageCapture === 'function' && CAMIN.track){
     try{
       const cap = new ImageCapture(CAMIN.track);
@@ -18419,6 +18454,7 @@ async function camInGrab(){
         cap.takePhoto(ps).catch(() => cap.takePhoto()),
         new Promise((_, rej) => setTimeout(() => rej(new Error('takePhoto timeout')), CAMIN_PHOTO_TO)) ]);
       if (blob && blob.size < 2048) blob = null;
+      if (blob) used = 'takePhoto';
     }catch(e){ dlog('takePhoto:', e && e.message || e); blob = null; }
   }
   if (!blob){
@@ -18428,7 +18464,7 @@ async function camInGrab(){
     blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.95));
   }
   if (!blob) throw new Error('empty frame');
-  return { blob, rot };
+  return { blob, rot, src: used };
 }
 async function camInShot(){
   if (!CAMIN.el || CAMIN.busy) return;
@@ -18440,11 +18476,12 @@ async function camInShot(){
   if (fl){ fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go'); }
   camInMsg(t('cam_in_taking'), 'wait');
   try{
-    const { blob, rot } = await camInGrab();
+    const { blob, rot, src } = await camInGrab();
     const d = new Date(), z = n => String(n).padStart(2, '0');
-    const name = 'TL_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + '.jpg';
+    const name = 'TL_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + (CAMIN.shots ? '_' + (CAMIN.shots + 1) : '') + '.jpg';
     const f = new File([blob], name, { type: 'image/jpeg' });
     CAMIN.shots++; CAMIN.left--;
+    CAMIN.last = { size: blob.size, name, src, rot, at: Date.now() };   // v1.08.74: для отчёта
     const im = CAMIN.el.querySelector('.camin-last img');
     if (im){ try{ const u = URL.createObjectURL(blob); im.onload = () => URL.revokeObjectURL(u); im.src = u; }catch(e){} }
     navigator.vibrate?.(12);
@@ -18510,11 +18547,339 @@ function camInRecDone(rec){
   const name = 'TL_' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + z(d.getSeconds()) + '.' + ext;
   const f = new File([blob], name, { type });
   CAMIN.shots++; CAMIN.left--;
+  CAMIN.last = { size: blob.size, name, src: 'rec', dur, at: Date.now() };   // v1.08.74
   navigator.vibrate?.(12);
   camInCount();
   const jobId = CAMIN.jobId, doc = CAMIN.doc;
   mediaTakeFiles(jobId, [f], 'video', { cam: true, doc, dur }).catch(e => dlog('⛔ ролик в очередь:', e));
   if (CAMIN.left <= 0) camInClose();
+}
+
+/* =====================================================================
+   v1.08.74 · ТЕСТ СЪЁМКИ — сквозная проверка камеры в приложении на
+   живых данных от вашего имени: инвойс → камера (2 кадра) → видео (4 с)
+   → миниатюры в документе → сохранить и выйти → документ заново →
+   фоновая отправка на Диск с полным журналом → миниатюры с сервера →
+   просмотр фото и видео → удаление. Подробный отчёт копируется или
+   сохраняется в .txt. Кнопка — Настройки → Съёмка (администратор).
+   ===================================================================== */
+const CT = { busy: false, rows: [], lines: [], txt: '', t0: 0 };
+function ctStamp(){
+  const d = new Date(), z = (n, k = 2) => String(n).padStart(k, '0');
+  return `${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}.${z(d.getMilliseconds(), 3)}`;
+}
+const ctMB = b => (b / 1048576).toFixed(2) + ' МБ';
+const ctKB = b => b >= 1048576 ? ctMB(b) : Math.round(b / 1024) + ' КБ';
+function ctOutHtml(){
+  return CT.rows.join('') + (CT.lines.length
+    ? `<div id="ct-log" class="ct-log">${CT.lines.map(l => `<div class="${l.cls}">${l.time} ${esc(l.text)}</div>`).join('')}</div>` : '');
+}
+function ctPaint(){
+  const o = $('#ct-out'); if (o){ o.innerHTML = ctOutHtml(); const lg = $('#ct-log'); if (lg) lg.scrollTop = lg.scrollHeight; }
+  const b = $('#ct-btn'); if (b){ b.disabled = CT.busy; b.innerHTML = ic('play') + ' ' + (CT.busy ? t('ct_running') : t('ct_btn')); }
+  const a = $('#ct-acts'); if (a) a.style.display = CT.txt && !CT.busy ? '' : 'none';
+}
+function ctLine(text, cls){
+  const l = { time: ctStamp(), text, cls: cls || '' };
+  CT.lines.push(l);
+  const el = $('#ct-log');
+  if (el){ el.insertAdjacentHTML('beforeend', `<div class="${l.cls}">${l.time} ${esc(text)}</div>`); el.scrollTop = el.scrollHeight; }
+  else ctPaint();
+}
+function ctReportTxt(steps){
+  const hdr = [
+    `TechLog ${APP_VERSION} — тест съёмки (фото + видео)`,
+    `${new Date().toLocaleString()} · ${(state.user && (state.user.display_name || state.user.login)) || '—'} (${(state.user && state.user.role) || '—'})`,
+    `${navigator.userAgent}`,
+    ''
+  ];
+  const body = CT.lines.map(l => `${l.time}  ${l.text}`);
+  const tail = ['', '— шаги —'].concat(steps.map(s => `${s.ok === null ? '…' : s.ok ? '✓' : '✗'} ${s.name} — ${s.ms} мс${s.extra ? ' · ' + s.extra : ''}`));
+  return hdr.concat(body, tail).join('\n');
+}
+async function ctCopy(){
+  if (!CT.txt) return;
+  try{ await navigator.clipboard.writeText(CT.txt); toast('✓ ' + t('copied')); }
+  catch(e){
+    try{
+      const ta = document.createElement('textarea'); ta.value = CT.txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('✓ ' + t('copied'));
+    }catch(e2){ toast('⛔ ' + (e2.message || e2), 'err'); }
+  }
+}
+function ctSave(){
+  if (!CT.txt) return;
+  const d = new Date(), z = n => String(n).padStart(2, '0');
+  const name = `techlog-camtest-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}_${z(d.getHours())}-${z(d.getMinutes())}.txt`;
+  const f = new File([CT.txt], name, { type: 'text/plain' });
+  try{
+    const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 8000);
+    toast('✓ ' + t('ct_saved').replace('{N}', name));
+  }catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+}
+async function camTestRun(){
+  if (CT.busy || !isAdmin()) return;
+  if (!camInCan()){ toast('⚠ ' + t('cam_in_denied'), 'err'); return; }
+  CT.busy = true; CT.rows = []; CT.lines = []; CT.txt = ''; CT.t0 = performance.now();
+  const steps = [];
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const until = async (fn, sec, what) => {
+    const a = performance.now();
+    for (let i = 0; i < sec * 4; i++){ const v = fn(); if (v) return v; await wait(250); }
+    throw new Error((what || t('ct_wait')) + ' — ' + Math.round((performance.now() - a) / 1000) + ' с');
+  };
+  const step = async (name, fn) => {
+    const i = steps.push({ name, ok: null, ms: 0, extra: '' }) - 1;
+    const a = performance.now();
+    CT.rows[i] = `<div>… ${esc(name)}</div>`; ctPaint();
+    ctLine(`▶ ${name}`, 'b');
+    try{ const r = await fn(); steps[i].ok = true; steps[i].extra = (r && r.note) || ''; if (steps[i].extra) ctLine('   ' + steps[i].extra); }
+    catch(e){ steps[i].ok = false; steps[i].extra = errStr(e); ctLine('   ✗ ' + steps[i].extra, 'err'); }
+    steps[i].ms = Math.round(performance.now() - a);
+    CT.rows[i] = `<div>${steps[i].ok ? ic('check', 'color:var(--green)') : ic('warn', 'color:var(--red)')} ${esc(name)} — ${steps[i].ms} мс${steps[i].extra ? ' · ' + esc(steps[i].extra) : ''}</div>`;
+    ctPaint();
+    if (!steps[i].ok) throw new Error(name);
+  };
+  const qOf = id => mediaQ.filter(x => (x.doc || 'job') === 'job' && x.job_id === id);
+  const screen0 = state.screen;
+  const confirm0 = window.confirm; window.confirm = () => true;
+  const quiet0 = localStorage.getItem('techlog_mq_quiet');
+  let jobId = null, srvRows = [];
+  ctPaint();
+  CAMIN.noFallback = true;
+  const bgPop0 = _mqBgPopShown; _mqBgPopShown = true;      // подсказка «загрузка идёт в фоне» тесту не нужна
+  try{
+    await step(t('ct_s_env'), async () => {
+      let est = null; try{ est = await navigator.storage.estimate(); }catch(e){}
+      const conn = navigator.connection || {};
+      const isPc = document.documentElement.classList.contains('tl-desktop');
+      ctLine(`   приложение ${APP_VERSION} · ${isPc ? 'ПК' : 'телефон'} · ${matchMedia('(display-mode: standalone)').matches ? 'установлено (ярлык)' : 'во вкладке браузера'} · SW: ${navigator.serviceWorker && navigator.serviceWorker.controller ? 'есть' : 'нет'}`);
+      ctLine(`   экран ${screen.width}×${screen.height} @${devicePixelRatio} · память ${navigator.deviceMemory || '?'} ГБ · ядер ${navigator.hardwareConcurrency || '?'} · сеть ${navigator.onLine ? 'онлайн' : 'офлайн'}${conn.effectiveType ? ' ' + conn.effectiveType : ''}${conn.downlink ? ' ' + conn.downlink + ' Мбит/с' : ''}`);
+      if (est) ctLine(`   хранилище: занято ${ctMB(est.usage || 0)} из ${ctMB(est.quota || 0)}`);
+      ctLine(`   сервер: ${HAS_SB ? 'Supabase' : 'демо (отправка пропускается)'} · роль ${state.user.role} · очередь до теста: ${mediaQ.length}`);
+      ctLine(`   съёмка: режим «${camMode()}» · качество «${camQual()}» (${(M_QP[camQual()] || {}).w || 'ориг'} px) · резкость ${camSharpOn() ? 'вкл' : 'выкл'} · копия в Загрузки ${mCopyDl() ? 'вкл' : 'выкл'}`);
+      const vt = mVidTarget();
+      ctLine(`   видео при отправке: «${mVidMode()}» (${vt.h}p, ${(vt.vbr / 1e6).toFixed(1)} Мбит/с) · пережатие в браузере: ${mVidCan() ? 'доступно' : 'недоступно'} · MediaRecorder: ${typeof MediaRecorder !== 'undefined' ? (camInMime() || 'без явного формата') : 'нет'}`);
+      ctLine(`   API: getUserMedia ${camInCan() ? 'есть' : 'нет'} · ImageCapture ${typeof ImageCapture === 'function' ? 'есть' : 'нет (кадр с потока)'} · secureContext ${window.isSecureContext} · orientation.lock ${screen.orientation && screen.orientation.lock ? 'есть' : 'нет'}`);
+      return { note: (isPc ? 'ПК' : 'телефон') + ' · ' + (HAS_SB ? 'Supabase' : 'демо') + ' · ' + camMode() + '/' + camQual() };
+    });
+    await step(t('ct_s_job'), async () => {
+      const cx = (state.data.complexes || [])[0], wt = (state.data.work_types || [])[0];
+      if (!cx || !wt) throw new Error('нет комплексов или видов работ');
+      const fd = Object.assign(emptyFormData(), { selftest: true, vacant: true });
+      jobId = uid();
+      jobDraft = { id: jobId, date: todayISO(), counterparty_id: cx.counterparty_id || null, complex_id: cx.id, unit_number: 'CAMTEST',
+        has_proposal: false, proposal_id: null, work_type_id: wt.id, technician_id: state.user.id,
+        technician_name: shortName(state.user.display_name || ''), helper_ids: [], shared_with_helpers: false, priority: false,
+        sort_order: 999, status: 'draft', note: 'TechLog camera test ' + new Date().toISOString().slice(0, 16).replace('T', ' '),
+        form_data: fd, total: 0, approved_total: null, approved_by: null, approved_at: null,
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      state.jobId = jobId;
+      await saveJob(false);
+      jobDraft = null;
+      const j = jobById(jobId); if (!j) throw new Error('инвойс не сохранился');
+      ctLine(`   инвойс ${jobId} · ${cx.abbr || cx.name} · Unit CAMTEST · ${fmtDMY(j.date)}`);
+      return { note: 'Unit CAMTEST · ' + fmtDMY(j.date) };
+    });
+    await step(t('ct_s_open'), async () => {
+      openJob(jobId); await wait(300);
+      const card = document.querySelector('.media-card'); if (!card) throw new Error('полосы «Фото и видео» нет в документе');
+      const n = card.querySelectorAll('.mth').length;
+      ctLine(`   документ открыт, полоса «Фото и видео»: плиток ${n}, лимит фото ${mediaFree(jobId, 'photo', 'job')}, видео ${mediaFree(jobId, 'video', 'job')}`);
+      return { note: 'плиток ' + n };
+    });
+    await step(t('ct_s_photo'), async () => {
+      const a = performance.now();
+      await camInOpen(jobId, 'photo', 'job');
+      const v = document.querySelector('#camin video');
+      await until(() => v && v.videoWidth > 0, 15, 'превью камеры не запустилось');
+      const st = CAMIN.track && CAMIN.track.getSettings ? CAMIN.track.getSettings() : {};
+      let cap = {}; try{ cap = CAMIN.track.getCapabilities ? CAMIN.track.getCapabilities() : {}; }catch(e){}
+      ctLine(`   камера открылась за ${Math.round(performance.now() - a)} мс: поток ${st.width || v.videoWidth}×${st.height || v.videoHeight}${st.frameRate ? ' @' + Math.round(st.frameRate) : ''} · ${st.facingMode || '?'} · ${st.deviceId ? 'устройство ' + String(st.deviceId).slice(0, 8) + '…' : ''}`);
+      ctLine(`   возможности: вспышка ${cap.torch ? 'есть' : 'нет'} · зум ${cap.zoom ? cap.zoom.min + '–' + cap.zoom.max : 'нет'} · фокус ${(cap.focusMode || []).join('/') || '—'} · полный экран ${document.fullscreenElement ? 'да' : 'нет'} · поворот экрана ${CAMIN.locked ? 'разблокирован (lock any)' : 'по акселерометру (rot=' + CAMIN.rot + ')'}`);
+      if (typeof ImageCapture === 'function'){
+        try{ const pc = await new ImageCapture(CAMIN.track).getPhotoCapabilities();
+          ctLine(`   takePhoto: до ${pc.imageWidth ? pc.imageWidth.max : '?'}×${pc.imageHeight ? pc.imageHeight.max : '?'} · режимы вспышки ${(pc.fillLightMode || []).join('/') || '—'}`);
+        }catch(e){ ctLine('   takePhoto: возможности не прочитались (' + errStr(e) + ')'); }
+      }
+      const sizes = [];
+      for (let k = 1; k <= 2; k++){
+        const b = performance.now();
+        await camInShot();
+        await until(() => !CAMIN.busy, 20, 'кадр ' + k + ' не снялся');
+        const L = CAMIN.last || {};
+        sizes.push(L.size || 0);
+        ctLine(`   кадр ${k}: ${Math.round(performance.now() - b)} мс · ${L.src === 'takePhoto' ? 'takePhoto' : 'кадр с потока'} · ${ctKB(L.size || 0)} · ${L.name || ''}`);
+        await wait(400);
+      }
+      if (CAMIN.shots !== 2) throw new Error('снято ' + CAMIN.shots + ' из 2');
+      camInClose(true);
+      return { note: '2 кадра · ' + sizes.map(ctKB).join(' + ') };
+    });
+    await step(t('ct_s_prep'), async () => {
+      const a = performance.now();
+      await until(() => qOf(jobId).filter(x => x.kind === 'photo').length >= 2 && !(mPrepN.get(jobId) > 0), 60, 'фото не встали в очередь');
+      const ph = qOf(jobId).filter(x => x.kind === 'photo');
+      ph.forEach((x, i) => ctLine(`   фото ${i + 1}: ${x.name} · ${x.w}×${x.h} · ${ctKB(x.blob ? x.blob.size : 0)}${x.orig ? ' (оригинал)' : ' (пережато)'} · превью ${x.thumb ? ctKB(x.thumb.size) : 'нет'}${x.sharp != null ? ' · резкость ' + x.sharp : ''}${x.small ? ' · мелкий кадр' : ''}`));
+      return { note: ph.length + ' фото за ' + Math.round(performance.now() - a) + ' мс' };
+    });
+    await step(t('ct_s_video'), async () => {
+      if (typeof MediaRecorder === 'undefined') return { note: 'браузер не записывает видео — пропущено' };
+      const a = performance.now();
+      await camInOpen(jobId, 'video', 'job');
+      const v = document.querySelector('#camin video');
+      await until(() => v && v.videoWidth > 0, 15, 'превью камеры (видео) не запустилось');
+      const st = CAMIN.track && CAMIN.track.getSettings ? CAMIN.track.getSettings() : {};
+      ctLine(`   камера (видео) за ${Math.round(performance.now() - a)} мс: поток ${st.width || v.videoWidth}×${st.height || v.videoHeight}${st.frameRate ? ' @' + Math.round(st.frameRate) : ''} · звук ${CAMIN.noAudio ? 'нет (микрофон не дали)' : (CAMIN.stream && CAMIN.stream.getAudioTracks().length ? 'есть' : 'нет')} · формат ${camInMime() || 'по умолчанию'}`);
+      camInRecStart();
+      await until(() => !!CAMIN.rec, 5, 'запись не началась');
+      const b = performance.now();
+      await wait(4000);
+      camInRecStop();
+      await until(() => !CAMIN.rec, 10, 'запись не остановилась');
+      ctLine(`   записано ${Math.round((performance.now() - b) / 100) / 10} с · ${CAMIN.last ? ctKB(CAMIN.last.size) + ' · ' + (CAMIN.last.name || '') : ''}`);
+      camInClose(true);
+      await until(() => qOf(jobId).some(x => x.kind === 'video') && !(mPrepN.get(jobId) > 0), 60, 'ролик не встал в очередь');
+      const x = qOf(jobId).find(y => y.kind === 'video');
+      ctLine(`   ролик в очереди: ${x.name} · ${x.mime} · ${ctMB(x.blob.size)} · длительность ${x.dur || '?'} с · превью ${x.thumb ? ctKB(x.thumb.size) : 'нет (значок)'}`);
+      return { note: ctMB(x.blob.size) + ' · ' + (x.dur || '?') + ' с' };
+    });
+    await step(t('ct_s_thumbs'), async () => {
+      await wait(300);
+      const tiles = [...document.querySelectorAll('.media-card .mth.loc')];
+      const ph = tiles.filter(el => !el.querySelector('.mvid')), vd = tiles.filter(el => el.querySelector('.mvid'));
+      const imgOk = ph.filter(el => { const im = el.querySelector('img'); return im && /^blob:/.test(im.getAttribute('src') || ''); }).length;
+      const vOk = vd.filter(el => { const im = el.querySelector('img'); return (im && /^blob:/.test(im.getAttribute('src') || '')) || el.querySelector('.mvph'); }).length;
+      const head = (document.querySelector('.media-card') || {}).textContent || '';
+      ctLine(`   плиток в документе: ${tiles.length} (фото ${ph.length}, видео ${vd.length}) · миниатюры фото ${imgOk}/${ph.length} · видео ${vOk}/${vd.length} · заголовок: ${head.slice(0, 40).replace(/\s+/g, ' ')}`);
+      const needV = qOf(jobId).some(x => x.kind === 'video') ? 1 : 0;
+      if (ph.length < 2 || imgOk < 2) throw new Error('миниатюры фото: ' + imgOk + ' из 2');
+      if (vd.length < needV || vOk < needV) throw new Error('плитка видео не показана');
+      return { note: tiles.length + ' плиток, миниатюры на месте' };
+    });
+    await step(t('ct_s_save'), async () => {
+      await saveJob(false); jobDraft = null;
+      const j = jobById(jobId); if (!j) throw new Error('инвойс пропал после сохранения');
+      state.screen = 'home'; state.jobId = null; render(); await wait(300);
+      if (state.screen !== 'home') throw new Error('не вышли на главную');
+      ctLine(`   сохранено · выход на главную · очередь документа: ${qOf(jobId).length} файл(ов) в IndexedDB`);
+      return { note: 'сохранено, вышли' };
+    });
+    await step(t('ct_s_reopen'), async () => {
+      openJob(jobId); await wait(400);
+      const tiles = document.querySelectorAll('.media-card .mth.loc').length;
+      const ok = [...document.querySelectorAll('.media-card .mth.loc img')].filter(im => /^blob:/.test(im.getAttribute('src') || '')).length;
+      ctLine(`   документ открыт заново: плиток ${tiles}, миниатюр из очереди ${ok}`);
+      const need = qOf(jobId).length;
+      if (tiles < need) throw new Error('плиток ' + tiles + ', а в очереди ' + need);
+      state.screen = 'home'; state.jobId = null; jobDraft = null; render(); await wait(200);
+      return { note: 'плиток ' + tiles + ' — на месте' };
+    });
+    await step(t('ct_s_send'), async () => {
+      if (!HAS_SB) return { note: t('ct_demo') };
+      localStorage.setItem('techlog_mq_quiet', '1');
+      const seen = new Map(mqLogLines.map(l => [l.id, l.text]));
+      const items = qOf(jobId).length;
+      const a = performance.now();
+      ctLine(`   к отправке: ${items} файл(ов) · ${ctMB(qOf(jobId).reduce((s, x) => s + (x.blob ? x.blob.size : 0), 0))} · соединение ${navigator.onLine ? 'есть' : 'нет'}`);
+      mediaFlush(true).catch(e => ctLine('   ⛔ отправка: ' + errStr(e), 'err'));
+      let lastN = -1;
+      for (let i = 0; i < 360 * 2; i++){
+        for (const l of mqLogLines){
+          if (seen.get(l.id) !== l.text){ seen.set(l.id, l.text); ctLine('   журнал: ' + l.text.replace(/<[^>]+>/g, ''), l.cls === 'err' ? 'err' : ''); }
+        }
+        const left = qOf(jobId);
+        if (left.length !== lastN){ lastN = left.length; ctLine(`   в очереди осталось ${left.length}${left.length ? ': ' + left.map(x => x.kind + (x.attempts ? ' (попыток ' + x.attempts + ')' : '') + (x.error ? ' ⛔' + x.error : '')).join(', ') : ''}`); }
+        if (!left.length) break;
+        if (!_mediaBusy && left.length && i % 60 === 59){ ctLine('   очередь стоит — запускаю отправку ещё раз'); mediaFlush(true).catch(() => {}); }
+        await wait(500);
+      }
+      const left = qOf(jobId);
+      if (left.length) throw new Error('не отправлено ' + left.length + ' из ' + items + ' за ' + Math.round((performance.now() - a) / 1000) + ' с: ' + left.map(x => x.kind + ' ' + (x.error || '')).join(', '));
+      try{ await syncNow(true); }catch(e){}
+      srvRows = (state.data.media || []).filter(m => m.job_id === jobId);
+      srvRows.forEach(m => ctLine(`   на сервере: ${m.kind} · ${m.file_name || ''} · ${ctKB(+m.size_bytes || 0)} · ${m.mime || ''} · ${m.status || ''} · drive ${m.drive_file_id ? String(m.drive_file_id).slice(0, 10) + '…' : 'нет'} · превью ${m.thumb_path ? 'есть' : 'нет'}`));
+      if (srvRows.length < items) throw new Error('на сервере ' + srvRows.length + ' из ' + items);
+      return { note: items + ' файл(ов) за ' + Math.round((performance.now() - a) / 1000) + ' с' };
+    });
+    await step(t('ct_s_srv'), async () => {
+      if (!HAS_SB) return { note: t('ct_demo') };
+      const a = performance.now();
+      openJob(jobId); await wait(300);
+      const imgs = () => [...document.querySelectorAll('.media-card .mth img[data-thumb]')];
+      await until(() => imgs().length && imgs().every(im => /^blob:/.test(im.getAttribute('src') || '') || im.classList.contains('nothumb')), 30, 'миниатюры с сервера не загрузились');
+      const got = imgs().filter(im => /^blob:/.test(im.getAttribute('src') || '')).length, no = imgs().filter(im => im.classList.contains('nothumb')).length;
+      ctLine(`   плиток с сервера ${imgs().length}: миниатюр загружено ${got}, без превью ${no} · ${Math.round(performance.now() - a)} мс`);
+      state.screen = 'home'; state.jobId = null; jobDraft = null; render(); await wait(200);
+      if (got < 2) throw new Error('миниатюр с сервера ' + got);
+      return { note: got + ' миниатюр за ' + Math.round(performance.now() - a) + ' мс' };
+    });
+    await step(t('ct_s_view'), async () => {
+      if (!HAS_SB) return { note: t('ct_demo') };
+      const notes = [];
+      const ph = srvRows.find(m => m.kind === 'photo'), vd = srvRows.find(m => m.kind === 'video');
+      if (ph){
+        const a = performance.now();
+        const u = await mvFetch(ph.id);
+        const im = new Image(); im.src = u; await im.decode();
+        ctLine(`   фото с Диска: ${im.naturalWidth}×${im.naturalHeight} за ${Math.round(performance.now() - a)} мс`);
+        notes.push('фото ' + im.naturalWidth + '×' + im.naturalHeight);
+      }
+      if (vd){
+        const a = performance.now(); let got = 0;
+        const u = await mvFetch(vd.id, (p, g) => { got = g; });
+        const dl = Math.round(performance.now() - a);
+        const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.preload = 'metadata'; v.src = u;
+        const meta = await new Promise(res => { const tm = setTimeout(() => res(null), 15000);
+          v.onloadedmetadata = () => { clearTimeout(tm); res({ w: v.videoWidth, h: v.videoHeight, d: v.duration }); };
+          v.onerror = () => { clearTimeout(tm); res(null); }; try{ v.load(); }catch(e){} });
+        try{ v.removeAttribute('src'); v.load(); }catch(e){}
+        if (!meta) throw new Error('видео скачалось (' + ctMB(got) + ', ' + dl + ' мс), но не открывается в <video>');
+        ctLine(`   видео с Диска: ${ctMB(got)} за ${dl} мс · ${meta.w}×${meta.h} · ${isFinite(meta.d) ? meta.d.toFixed(1) + ' с' : 'длительность неизвестна'} — открывается`);
+        notes.push('видео ' + meta.w + '×' + meta.h);
+      }
+      mediaLighten();
+      return { note: notes.join(' · ') || 'нечего смотреть' };
+    });
+    await step(t('ct_s_del'), async () => {
+      await archiveDoc('job', jobId); await purgeDoc('job', jobId);
+      if (jobById(jobId)) throw new Error('инвойс остался');
+      const loc = (state.data.media || []).filter(m => m.job_id === jobId).length + qOf(jobId).length;
+      if (loc) throw new Error('локально осталось ' + loc);
+      if (HAS_SB && state.sb){
+        const m = await state.sb.from('media').select('id').eq('job_id', jobId);
+        const jj = await state.sb.from('jobs').select('id').eq('id', jobId);
+        if ((m.data || []).length || (jj.data || []).length) throw new Error('на сервере: media ' + (m.data || []).length + ', jobs ' + (jj.data || []).length);
+      }
+      ctLine('   инвойс CAMTEST и его файлы удалены' + (HAS_SB ? ' (файлы — в корзину Диска)' : ''));
+      jobId = null;
+      return { note: 'удалено' };
+    });
+  }catch(e){ /* шаг уже записан */ }
+  if (jobId){
+    await step(t('ct_s_clean'), async () => {
+      try{ if (CAMIN.el) camInClose(true); }catch(e){}
+      const notes = [];
+      try{ if (jobById(jobId)){ await archiveDoc('job', jobId); await purgeDoc('job', jobId); notes.push('инвойс удалён'); } }catch(e){ notes.push('инвойс: ' + errStr(e)); }
+      return { note: notes.join(', ') || 'ничего не осталось' };
+    }).catch(() => {});
+  }
+  CAMIN.noFallback = false; _mqBgPopShown = bgPop0;
+  try{ const bp = $('#mq-bgpop'); if (bp) bp.remove(); }catch(e){}
+  window.confirm = confirm0;
+  if (quiet0 === null) localStorage.removeItem('techlog_mq_quiet'); else localStorage.setItem('techlog_mq_quiet', quiet0);
+  CT.busy = false;
+  state.screen = screen0 || 'settings'; state.jobId = null; jobDraft = null;
+  const okN = steps.filter(x => x.ok).length, total = Math.round((performance.now() - CT.t0) / 1000);
+  ctLine(`${okN === steps.length ? '✓' : '⚠'} ${t('ct_done').replace('{N}', okN).replace('{T}', steps.length)} · ${total} с`, 'b');
+  CT.txt = ctReportTxt(steps);
+  CT.rows.push(`<div style="margin-top:6px;font-weight:900">${okN === steps.length ? '✓' : '⚠'} ${t('ct_done').replace('{N}', okN).replace('{T}', steps.length)} · ${total} с</div>`);
+  dlog('тест съёмки: ' + okN + '/' + steps.length + ' · ' + steps.map(x => x.name + ' ' + (x.ok ? 'ok' : 'FAIL' + (x.extra ? ' (' + x.extra + ')' : ''))).join(' · '));
+  toast((okN === steps.length ? '✓ ' : '⚠ ') + t('ct_done').replace('{N}', okN).replace('{T}', steps.length), okN === steps.length ? undefined : 'err');
+  render();
+  try{ if (HAS_SB) await syncNow(true); }catch(e){}
 }
 
 /* =====================================================================
@@ -20265,6 +20630,16 @@ function camCardHtml(){
       <b>${ic('share')} ${t('share_title')}</b>
       <div class="tiny">${t('share_hint')}</div>
     </div>
+    ${isAdmin() ? `<div class="cam-set" id="ct-card">
+      <b>${ic('flask')} ${t('ct_btn')}</b>
+      <div class="tiny">${t('ct_hint')}</div>
+      <button class="btn btn-green" style="margin-top:8px" id="ct-btn" onclick="App.camTest()" ${CT.busy ? 'disabled' : ''}>${ic('play')} ${CT.busy ? t('ct_running') : t('ct_btn')}</button>
+      <div id="ct-out" class="tiny" style="margin-top:8px">${ctOutHtml()}</div>
+      <div id="ct-acts" class="ct-acts" style="${CT.txt && !CT.busy ? '' : 'display:none'}">
+        <button class="btn btn-blue sm" onclick="App.camTestCopy()">${ic('copy')} ${t('ct_copy')}</button>
+        <button class="btn btn-ghost sm" onclick="App.camTestSave()">${ic('save')} ${t('ct_save')}</button>
+      </div>
+    </div>` : ''}
     <div class="cam-set">
       <b>${t('cam_q_lbl')}</b>
       <div class="tiny">${t('cam_q_' + q + '_h')}</div>

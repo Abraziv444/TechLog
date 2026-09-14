@@ -2658,3 +2658,10 @@ html.tl-camin #toasts{z-index:10001}
 .share-list .btn{justify-content:flex-start;text-align:left;white-space:normal;line-height:1.25}
 /* v1.08.73: три режима камеры — «В приложении» не обрезать многоточием */
 .lang-seg.cam-seg.cam-mode button{white-space:normal;line-height:1.15;padding:8px 4px;font-size:.78rem}
+/* v1.08.74: тест съёмки — журнал и кнопки отчёта */
+.ct-log{max-height:260px;overflow:auto;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+  padding:6px 8px;margin:6px 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.68rem;line-height:1.35;
+  white-space:pre-wrap;word-break:break-word}
+.ct-log .b{font-weight:900;color:var(--text)}
+.ct-log .err{color:var(--red)}
+.ct-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}

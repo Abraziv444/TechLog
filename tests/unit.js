@@ -1744,6 +1744,21 @@ console.log('\n— v1.08.51: учёба —');
   t('v1.08.73: карточка «Съёмка» — три режима и подсказка «Поделиться»; стили камеры',
     src.includes("${seg(md, 'app', t('cam_mode_app'), 'camMode')}") && src.includes("<b>${ic('share')} ${t('share_title')}</b>")
     && css.includes('.camin{position:fixed;inset:0;z-index:10000') && css.includes('html.tl-camin #toasts{z-index:10001}') && css.includes('@media (orientation:landscape){'));
+
+  console.log('\n— v1.08.74: тест съёмки —');
+  t('v1.08.74: ключи RU/EN', ['ct_btn', 'ct_running', 'ct_hint', 'ct_copy', 'ct_save', 'ct_saved', 'ct_done', 'ct_wait', 'ct_demo', 'ct_s_env', 'ct_s_job', 'ct_s_open', 'ct_s_photo',
+      'ct_s_prep', 'ct_s_video', 'ct_s_thumbs', 'ct_s_save', 'ct_s_reopen', 'ct_s_send', 'ct_s_srv', 'ct_s_view', 'ct_s_del', 'ct_s_clean']
+    .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
+  t('v1.08.74: кнопка в карточке «Съёмка» (админ), отчёт, копирование и .txt', src.includes('id="ct-btn" onclick="App.camTest()"') && src.includes('App.camTestCopy()') && src.includes('App.camTestSave()')
+    && src.includes('async function camTestRun(){') && src.includes('function ctReportTxt(steps){') && src.includes("name = `techlog-camtest-") && src.includes('navigator.clipboard.writeText(CT.txt)'));
+  t('v1.08.74: шаги — окружение, инвойс, камера, обработка, видео, миниатюры, сохранить/выйти, заново, отправка с журналом, сервер, просмотр, удаление, уборка',
+    ['ct_s_env', 'ct_s_job', 'ct_s_open', 'ct_s_photo', 'ct_s_prep', 'ct_s_video', 'ct_s_thumbs', 'ct_s_save', 'ct_s_reopen', 'ct_s_send', 'ct_s_srv', 'ct_s_view', 'ct_s_del', 'ct_s_clean']
+      .every(k => src.includes(`await step(t('${k}')`)) && src.includes("ctLine('   журнал: ' + l.text.replace(/<[^>]+>/g, '')") && src.includes('mvFetch(vd.id, (p, g) => { got = g; })'));
+  t('v1.08.74: камера — промис готовности, без ухода в камеру телефона под тестом, видео без звука при запрете микрофона, сведения о кадре',
+    src.includes('CAMIN.ready = new Promise((res, rej) => { CAMIN._res = res; CAMIN._rej = rej; });') && src.includes('if (CAMIN.noFallback) return;')
+    && src.includes('CAMIN.noAudio = true;') && src.includes('CAMIN.last = { size: blob.size, name, src, rot, at: Date.now() };')
+    && src.includes('it.w = ex.w; it.h = ex.h; it.iw = ex.iw; it.ih = ex.ih; it.orig = ex.orig; it.small = ex.small; it.sharp = ex.sharp;'));
+  t('v1.08.74: стили журнала теста', css.includes('.ct-log{max-height:260px') && css.includes('.ct-acts{display:flex'));
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
