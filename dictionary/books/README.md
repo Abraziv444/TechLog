@@ -19,6 +19,8 @@
 | `section-1-en.html` | Раздел 1 “Water Damage Restoration”, 173 стр., английский | ~7,9 МБ |
 | `section-2-ru.html` | Раздел 2 «Восстановление после пожара и копоти», 67 стр., русский | ~2,8 МБ |
 | `section-2-en.html` | Раздел 2 “Fire and Smoke Restoration Technology”, 67 стр., английский | ~2,8 МБ |
+| `section-3-ru.html` | Раздел 3 «Устранение и контроль запахов», 54 стр., русский | ~1,8 МБ |
+| `section-3-en.html` | Раздел 3 “Odor Removal and Control”, 54 стр., английский | ~1,8 МБ |
 | `section-8.html` | образец простой html-страницы (одна на оба языка) | 5 КБ |
 | `tools/` | конвертер PDF → учебник, см. ниже | |
 

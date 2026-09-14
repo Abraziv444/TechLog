@@ -28,9 +28,14 @@ function t(name, cond, note){
     await p.evaluate(() => window.App.go('study')); await p.waitForTimeout(1600);
     const c1 = await p.evaluate(() => { window.App.studySel('1'); const b = document.querySelector('.st-sec button[onclick*="studyRead"]'); return { dis: b.disabled, sub: (document.querySelector('.st-sec .tiny') || {}).textContent || '' }; });
     t('раздел 1: кнопка «Книга» активна, в подписи «книга»', !c1.dis && /книга/.test(c1.sub), JSON.stringify(c1));
-    await p.evaluate(() => window.App.studySel('3')); await p.waitForTimeout(900);
+    await p.evaluate(() => window.App.studySel('4')); await p.waitForTimeout(900);
     const c2 = await p.evaluate(() => ({ dis: document.querySelector('.st-sec button[onclick*="studyRead"]').disabled, sub: (document.querySelector('.st-sec .tiny') || {}).textContent || '' }));
-    t('раздел 3: файлов книги нет (ни ru, ни en) — кнопка гаснет, «книги пока нет»', c2.dis && /книги пока нет/.test(c2.sub), JSON.stringify(c2));
+    t('раздел 4: файлов книги нет (ни ru, ни en) — кнопка гаснет, «книги пока нет»', c2.dis && /книги пока нет/.test(c2.sub), JSON.stringify(c2));
+    await p.evaluate(() => window.App.studySel('3')); await p.waitForTimeout(900);
+    await p.evaluate(() => window.App.studyRead('3')); await p.waitForTimeout(500);
+    const s3 = await p.evaluate(() => document.querySelector('.st-frame').getAttribute('src'));
+    t('v1.08.62: раздел 3 — открывается section-3-ru.html', /books\/section-3-ru\.html$/.test(s3), s3);
+    await p.evaluate(() => window.App.studyReadClose()); await p.waitForTimeout(300);
     await p.evaluate(() => window.App.studySel('2')); await p.waitForTimeout(900);
     const c3 = await p.evaluate(() => ({ dis: document.querySelector('.st-sec button[onclick*="studyRead"]').disabled }));
     await p.evaluate(() => window.App.studyRead('2')); await p.waitForTimeout(500);
