@@ -1642,6 +1642,13 @@ console.log('\n— v1.08.51: учёба —');
     css.includes('.st-opt.ok{') && css.includes('.st-ring{') && css.includes('.st-frame{') && css.includes('.st-kpi{'));
   t('service worker: index.json в прекэше, dictionary/ — stale-while-revalidate',
     sw.includes("'./dictionary/index.json'") && sw.includes("url.pathname.includes('/dictionary/')") && /VERSION = '1\.08\.(5[1-9]|[6-9]\d)'/.test(sw));
+  t('v1.08.69: карта — помощник перевода называется LOC, function L на верхнем уровне нет (иначе подменяется window.L Leaflet)',
+    src.includes('function LOC(o){') && !/^function L\(/m.test(src) && !/^(const|let|var) L\b/m.test(src) && src.includes('L.map(') && src.includes('LOC(s.title)'));
+  t('v1.08.69: телефон — прокручивается #app, документ стоит; ПК не тронут',
+    css.includes('html:not(.tl-desktop) body{ height:100%;min-height:0;overflow:hidden') && css.includes('html:not(.tl-desktop) #app{') && css.includes('overflow-y:auto;overflow-x:hidden')
+    && src.includes('function scrollHost()') && src.includes('function pageScrollTo(y, smooth)') && !/window\.scrollTo\(0, 0\)/.test(src));
+  t('v1.08.69: пилюля связи не переносится и не сжимается',
+    css.includes('.net-pill{ flex:0 0 auto;white-space:nowrap !important') && css.includes('button.btn:has(> .net-pill){ flex-wrap:wrap }'));
   t('v1.08.60: sw — под ключ оболочки только сама оболочка; учебник во фрейме идёт веткой dictionary/',
     sw.includes("req.mode === 'navigate' && !url.pathname.includes('/dictionary/')") && sw.includes("const shell = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html')"));
   t('справка экрана S.study на двух языках и карточка настроек',

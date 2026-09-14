@@ -230,18 +230,30 @@
     return false;
   }
   function inView(r) { return r.b > 0 && r.t < innerHeight && r.r > 0 && r.l < innerWidth; }
+  /* v1.08.69: на телефоне прокручивается #app, а не окно — все проходы по
+     странице идут через эти помощники (на ПК — окно, как раньше) */
+  function scroller() {
+    var a = document.getElementById('app');
+    if (!a || document.documentElement.classList.contains('tl-desktop')) return null;
+    var o = getComputedStyle(a).overflowY;
+    return (o === 'auto' || o === 'scroll') ? a : null;
+  }
+  function scY() { var s = scroller(); return s ? s.scrollTop : window.scrollY; }
+  function scTo(y) { var s = scroller(); if (s) s.scrollTop = y; else window.scrollTo(0, y); }
+  function scH() { var s = scroller(); return s ? s.scrollHeight : document.documentElement.scrollHeight; }
+  function scMax() { var s = scroller(); return s ? Math.max(0, s.scrollHeight - s.clientHeight) : Math.max(0, document.documentElement.scrollHeight - innerHeight); }
 
   /* прогон по всей странице экранами: fn(видимые сейчас цели) */
   function sweep(targets, fn) {
-    var y0 = window.scrollY, step = Math.max(200, innerHeight - 80);
-    var max = Math.max(0, document.documentElement.scrollHeight - innerHeight);
+    var y0 = scY(), step = Math.max(200, innerHeight - 80);
+    var max = scMax();
     for (var y = 0; ; y += step) {
-      window.scrollTo(0, Math.min(y, max));
+      scTo(Math.min(y, max));
       var here = targets.filter(function (el) { return inView(box(el)); });
       if (here.length) fn(here);
       if (y >= max) break;
     }
-    window.scrollTo(0, y0);
+    scTo(y0);
   }
 
   /* --- 1. перекрытие интерактивных элементов --------------------------- */
@@ -432,7 +444,7 @@
 
   /* --- 6. перекрытие нижней панелью в самом низу страницы -------------- */
   function checkBars() {
-    var items = [], y0 = window.scrollY;
+    var items = [], y0 = scY();
     /* v1.07.83: содержимое модалки лежит в слое над шапкой и нижней панелью
        (overlay z-index 1100 против 45 и 40) — сравнивать их рамки бессмысленно,
        иначе высокое окно каждый раз «уходит под шапку». */
@@ -459,7 +471,7 @@
        доскроллить, значит элемент недоступен навсегда */
     var bar = document.querySelector('.tabbar');
     if (bar) {
-      window.scrollTo(0, document.documentElement.scrollHeight);
+      scTo(scH());
       var br = box(bar);
       hits().forEach(function (el) {
         if (items.length > 8 || bar.contains(el) || inOverlay(el) || clipped(el)) return;
@@ -471,7 +483,7 @@
     /* верх страницы: то же самое для липкой шапки */
     var top = document.querySelector('.topbar');
     if (top) {
-      window.scrollTo(0, 0);
+      scTo(0);
       var tr = box(top);
       hits().forEach(function (el) {
         if (items.length > 12 || top.contains(el) || inOverlay(el) || clipped(el)) return;
@@ -480,7 +492,7 @@
           items.push({ level: 'err', msg: 'недоступно под шапкой: ' + pathOf(el), el: el });
       });
     }
-    window.scrollTo(0, y0);
+    scTo(y0);
     return mk('bars', T('c_bars'), items);
   }
 
@@ -588,10 +600,10 @@
           el: null
         });
       });
-      var nodes = qsa('#app *').length, h = document.documentElement.scrollHeight;
+      var nodes = qsa('#app *').length, h = scH();
       if (nodes > 2500) items.push({ level: 'warn', msg: 'узлов в #app: ' + nodes + ' — тяжёлая страница', el: null });
 
-      var y0 = window.scrollY, frames = [], last = performance.now(), i = 0;
+      var y0 = scY(), frames = [], last = performance.now(), i = 0;
       LONG.length = 0;                       // считаем только то, что случилось во время замера
       /* v1.07.83: открыта модалка — страница под ней и не должна прокручиваться,
          замер плавности там показывал случайные числа */
@@ -671,7 +683,7 @@
       var heap0 = 0; try { heap0 = (performance.memory || {}).usedJSHeapSize || 0; } catch (e) {}
       var t0 = performance.now();
 
-      var canScroll = document.documentElement.scrollHeight - innerHeight > 120;
+      var canScroll = scMax() > 120;
       if (!canScroll) { finish(); return; }
 
       var pass = 0, passStats = [];
@@ -679,13 +691,13 @@
       function runPass() {
         i = 0; frames = []; last = performance.now();
         SCROLL_WIN.push({ n: 'проход ' + (pass + 1), a: performance.now(), b: 0 });
-        window.scrollTo(0, 0);
+        scTo(0);
         requestAnimationFrame(function tick(now) {
           frames.push(now - last); last = now;
           window.scrollBy(0, 36);
           if (++i < 45) requestAnimationFrame(tick);
           else {
-            window.scrollTo(0, y0);
+            scTo(y0);
             var f = frames.slice(3).sort(function (a, b) { return a - b; });
             SCROLL_WIN[SCROLL_WIN.length - 1].b = performance.now();
             passStats.push({ med: f[Math.floor(f.length / 2)] || 0,
@@ -704,13 +716,13 @@
         var ghost = document.createElement('div');
         var wasLong = LONG.length;
         try {
-          ghost.style.cssText = 'height:' + document.documentElement.scrollHeight + 'px';
+          ghost.style.cssText = 'height:' + scH() + 'px';
           document.body.appendChild(ghost);
           if (app) app.style.display = 'none';
         } catch (e) {}
         var cf = [], cl = performance.now(), ci = 0;
         SCROLL_WIN.push({ n: 'контроль', a: performance.now(), b: 0 });
-        window.scrollTo(0, 0);
+        scTo(0);
         requestAnimationFrame(function tick(now) {
           cf.push(now - cl); cl = now;
           window.scrollBy(0, 36);
@@ -718,7 +730,7 @@
           else {
             SCROLL_WIN[SCROLL_WIN.length - 1].b = performance.now();
             try { if (app) app.style.display = ''; ghost.remove(); } catch (e) {}
-            window.scrollTo(0, y0);
+            scTo(y0);
             var s2 = cf.slice(3).sort(function (a, b) { return a - b; });
             items.push({ level: 'ok', msg: 'контрольный проход (содержимое спрятано): медиана ' +
               (s2[Math.floor(s2.length / 2)] || 0).toFixed(1) + ' мс, p95 ' +

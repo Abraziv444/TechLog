@@ -27,6 +27,21 @@ body{
   padding-bottom:calc(72px + env(safe-area-inset-bottom));
 }
 #app{max-width:560px;margin:0 auto;padding:12px 12px 8px}
+/* v1.08.69: телефон — прокручивается #app, документ стоит. Пока скроллился
+   документ, Chrome/Safari на каждом свайпе прятали и показывали адресную
+   строку, нижняя панель приложения прыгала вслед за ней, а на Android поверх
+   меню выезжала панель браузера. Теперь высота окна постоянна, меню внизу
+   стоит намертво. На ПК (html.tl-desktop) раскладка прежняя — там нечему
+   прыгать. Отступ снизу (под меню) переехал с body на #app; на планшете
+   контент центрируется через боковые отступы, а не через ширину блока —
+   иначе за краями блока прокрутка не ловится. */
+html:not(.tl-desktop){ height:100% }
+html:not(.tl-desktop) body{ height:100%;min-height:0;overflow:hidden;padding-bottom:0;overscroll-behavior:none }
+html:not(.tl-desktop) #app{
+  height:100%;max-width:none;margin:0;box-sizing:border-box;
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:12px max(12px, calc((100% - 536px) / 2)) calc(80px + env(safe-area-inset-bottom));
+}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 input,select,textarea{
   font:inherit;color:var(--text);
@@ -2213,6 +2228,11 @@ button.net-pill::after{ content:"";position:absolute;left:-2px;right:-2px;top:-4
 .net-pill.warn{ color:var(--yellow);border-color:var(--yellow) }
 .net-pill.warn::before{ background:var(--yellow) }
 .net-pill.slow{ color:var(--orange);border-color:var(--orange) }
+/* v1.08.69: пилюля никогда не переносится и не сжимается — «нестабильно»
+   писалось буквами в столбик, когда соседи по строке отбирали ширину */
+.net-pill{ flex:0 0 auto;white-space:nowrap !important;word-break:normal;overflow-wrap:normal;writing-mode:horizontal-tb;max-width:100% }
+.btn .net-pill{ flex:0 0 auto;min-width:0 }
+button.btn:has(> .net-pill){ flex-wrap:wrap }
 .net-pill.slow::before{ background:var(--orange);box-shadow:0 0 5px var(--orange) }
 @media (max-width:380px){ .net-pill{ font-size:.5rem;padding:1px 5px;gap:3px;min-width:86px } }
 /* v1.08.50: номер машины = присланный руль с цифрой внутри.

@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.68';
+const APP_VERSION = '1.08.69';
 const DB_SQL_FILE = 'full-install-1_08_51.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -5175,9 +5175,9 @@ function render(){
   /* v1.08.46: перерисовка ТОГО ЖЕ экрана (фото легло в очередь, тумблер,
      автообновление) не должна швырять страницу вверх — возвращаем прокрутку.
      Смена экрана — как раньше, с чистого верха. */
-  const _keepY = _rLastScr === state.screen ? (window.scrollY || 0) : 0;
+  const _keepY = _rLastScr === state.screen ? pageScrollY() : 0;
   perf('отрисовка ' + state.screen, () => { app.innerHTML = viewHeader() + body + viewTabbar(); });
-  if (_keepY) window.scrollTo(0, _keepY);
+  if (_keepY) pageScrollTo(_keepY);
   _rLastScr = state.screen;
   if (!$('#overlay') && app.inert) modalTrap(false);   // v1.07.83: страховка от «залипшего» inert
   /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
@@ -5208,6 +5208,23 @@ function render(){
   if (window.__tlRender.length > 20) window.__tlRender.shift();
 }
 
+/* v1.08.69: в мобильном режиме прокручивается не документ, а #app —
+   документ стоит на месте, поэтому адресная строка и нижняя панель браузера
+   больше не выезжают при прокрутке, а нижнее меню приложения не прыгает.
+   Все переходы «наверх» и запоминание позиции идут через эти функции;
+   на ПК (html.tl-desktop) прокручивается по-прежнему окно. */
+function scrollHost(){
+  const a = document.getElementById('app');
+  return (a && !document.documentElement.classList.contains('tl-desktop')) ? a : null;
+}
+function pageScrollY(){ const h = scrollHost(); return h ? h.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0); }
+function pageScrollTo(y, smooth){
+  const h = scrollHost();
+  try{
+    if (h) h.scrollTo({ top: y, behavior: smooth ? 'smooth' : 'auto' });
+    else window.scrollTo({ top: y, behavior: smooth ? 'smooth' : 'auto' });
+  }catch(e){ if (h) h.scrollTop = y; else window.scrollTo(0, y); }
+}
 function viewHeader(){
   const u = state.user;
   const org = (state.data && state.data.org_settings) || {};
@@ -6883,7 +6900,7 @@ function jobClone(srcId){
   state.screen = 'job'; state.jobId = jobDraft.id;
   audit('job_clone', 'job', srcId, { unit: j.unit_number });
   toast('✓ ' + t('tpl_created') + ' — ' + fmtDMY(date), 'inf');
-  render(); window.scrollTo(0, 0);
+  render(); pageScrollTo(0);
 }
 /* перенос дня: черновики и несобранные пикапы разом (дождь). Только админ:
    RLS не даст менеджеру переписывать чужие строки, а частичный перенос
@@ -6945,7 +6962,7 @@ function openJob(id){
   jobDraft.helper_ids = jobDraft.helper_ids || [];
   jobDraft.shared_with_helpers = !!jobDraft.shared_with_helpers;   // v1.07.10
   state.screen = 'job'; state.jobId = id; render();
-  window.scrollTo(0,0);
+  pageScrollTo(0);
 }
 
 /* =====================================================================
@@ -8948,7 +8965,10 @@ async function studyAccessSet(uid_, v){
 }
 /* ---------- локализация текстов теста ---------- */
 function stLang(){ return state.lang || 'ru'; }   // v1.08.56: язык теста = язык интерфейса (Настройки)
-function L(o){
+/* v1.08.69: было L(o) — объявление function L на верхнем уровне подменяло window.L,
+   которым Leaflet отдаёт карту (скрипт карты грузится раньше app.js) — с v1.08.51
+   карта апарт-комплексов и карта дня не открывались: «L.map is not a function» */
+function LOC(o){
   if (o == null) return '';
   if (typeof o === 'string') return o;
   const l = stLang();
@@ -8993,7 +9013,7 @@ function studySelId(){
   STUDY.sel = id; return id;
 }
 function studySelSet(id){ STUDY.sel = +id; try{ localStorage.setItem('techlog_study_sec', String(+id)); }catch(e){} render(); }
-function studyShort(s){ return L(s.short) || (t('st_section') + ' ' + s.id); }
+function studyShort(s){ return LOC(s.short) || (t('st_section') + ' ' + s.id); }
 async function studyCatLoad(force){
   if (STUDY.catBusy || (!force && STUDY.cat && Date.now() - STUDY.catAt < 300000)) return;
   STUDY.catBusy = true;
@@ -9208,8 +9228,8 @@ function studyStartModal(secId){
   const st = STUDY._start = STUDY._start || { mode: 'learn', count: 0, shuffle: q.meta.shuffle_questions };
   const seg = (grp, val, lbl) => `<button class="${st[grp] === val ? 'on' : ''}" onclick="App.studyStartOpt('${grp}','${val}','${secId}')">${lbl}</button>`;
   openModal(`
-    ${modalHead(L(s.title), 'grad')}
-    <div class="tiny" style="margin-bottom:8px">${esc(L(q.meta.title))}${q.meta.source.book ? ` · ${esc(q.meta.source.book)}` : ''}${q.meta.source.pages ? ` · ${t('st_pages')} ${esc(String(q.meta.source.pages))}` : ''}</div>
+    ${modalHead(LOC(s.title), 'grad')}
+    <div class="tiny" style="margin-bottom:8px">${esc(LOC(q.meta.title))}${q.meta.source.book ? ` · ${esc(q.meta.source.book)}` : ''}${q.meta.source.pages ? ` · ${t('st_pages')} ${esc(String(q.meta.source.pages))}` : ''}</div>
     <div class="st-start-row"><b>${t('st_mode')}</b> ${tipQ('st_mode_tip')}
       <div class="lang-seg cam-seg">${seg('mode', 'learn', t('st_mode_learn'))}${seg('mode', 'exam', t('st_mode_exam'))}</div></div>
     <div class="st-start-row"><b>${t('st_count')}</b>
@@ -9271,7 +9291,7 @@ function studyNext(){
   if (r.i >= r.order.length - 1){ studyFinish(); return; }
   r.i++; r.pick = []; r.checked = false; r.hintOn = false; r.qclock = stClockNew();
   studyRunSave(); render();
-  try{ window.scrollTo(0, 0); }catch(e){}
+  try{ pageScrollTo(0); }catch(e){}
 }
 async function studyAbortAsk(){
   const r = STUDY.run; if (!r) return;
@@ -9312,7 +9332,7 @@ function studyResultModal(row){
     <text x="60" y="66" text-anchor="middle" font-size="26" font-weight="900" fill="var(--text)">${pct}%</text></svg>`;
   openModal(`
     ${modalHead(t('st_result'), 'grad')}
-    <div class="tiny" style="margin-bottom:6px">${s ? esc(L(s.title)) : ''} · ${fmtDMY(String(row.started_at).slice(0, 10))}</div>
+    <div class="tiny" style="margin-bottom:6px">${s ? esc(LOC(s.title)) : ''} · ${fmtDMY(String(row.started_at).slice(0, 10))}</div>
     <div class="st-res">${ring}
       <div class="st-res-txt">
         <div class="st-res-verdict" style="color:${col}">${row.passed ? ic('check') + ' ' + t('st_passed') : ic('close') + ' ' + t('st_failed')}</div>
@@ -9349,20 +9369,20 @@ async function studySessReview(id){
     const opts = qq.options.map(o => {
       const isC = qq.correct.includes(o.id), isP = picked.includes(o.id);
       const cls = isC ? 'ok' : (isP ? 'bad' : '');
-      const ex = (isP || isC) && o.explanation ? `<div class="st-opt-ex">${esc(L(o.explanation))}${o.pages && o.pages.length ? ` <span class="tiny">(${t('st_p')} ${esc(o.pages.join(', '))})</span>` : ''}</div>` : '';
-      return `<div class="st-rv-opt ${cls}"><span class="st-opt-id">${esc(o.id)}</span><div class="grow">${esc(L(o.text))}${isP ? ` <span class="chip ${a.ok ? 'ok' : 'bad'}">${t('st_your')}</span>` : ''}${isC && !isP ? ` <span class="chip ok">${t('st_right')}</span>` : ''}${ex}</div></div>`;
+      const ex = (isP || isC) && o.explanation ? `<div class="st-opt-ex">${esc(LOC(o.explanation))}${o.pages && o.pages.length ? ` <span class="tiny">(${t('st_p')} ${esc(o.pages.join(', '))})</span>` : ''}</div>` : '';
+      return `<div class="st-rv-opt ${cls}"><span class="st-opt-id">${esc(o.id)}</span><div class="grow">${esc(LOC(o.text))}${isP ? ` <span class="chip ${a.ok ? 'ok' : 'bad'}">${t('st_your')}</span>` : ''}${isC && !isP ? ` <span class="chip ok">${t('st_right')}</span>` : ''}${ex}</div></div>`;
     }).join('');
     return `<div class="st-rv ${a.ok ? 'ok' : 'bad'}">
-      <div class="st-rv-h"><span class="st-qn">${n + 1}</span> ${a.ok ? ic('check', 'color:var(--green)') : ic('close', 'color:var(--red)')} <b>${esc(L(qq.question))}</b></div>
+      <div class="st-rv-h"><span class="st-qn">${n + 1}</span> ${a.ok ? ic('check', 'color:var(--green)') : ic('close', 'color:var(--red)')} <b>${esc(LOC(qq.question))}</b></div>
       ${opts}
-      ${qq.explanation ? `<div class="st-ex">${ic('book')} ${esc(L(qq.explanation))}</div>` : ''}
+      ${qq.explanation ? `<div class="st-ex">${ic('book')} ${esc(LOC(qq.explanation))}</div>` : ''}
       ${studyRefHtml(qq)}
       <div class="tiny">${t('st_time')}: ${fmtMs(a.ms)}${a.hint ? ' · ' + t('st_hint_used') : ''}</div>
     </div>`;
   }).join('');
   openModal(`
     ${modalHead(t('st_review'), 'grad')}
-    <div class="tiny" style="margin-bottom:6px">${s ? esc(L(s.title)) : ''} · ${fmtDMY(String(row.started_at).slice(0, 10))}${who} ·
+    <div class="tiny" style="margin-bottom:6px">${s ? esc(LOC(s.title)) : ''} · ${fmtDMY(String(row.started_at).slice(0, 10))}${who} ·
       <b style="color:${row.passed ? 'var(--green)' : 'var(--red)'}">${row.score_pct}%</b> · ${row.correct}/${row.total} · ${fmtMs(row.duration_ms)}</div>
     <div class="st-rv-tools">
       <label class="chk-line"><input type="checkbox" ${only ? 'checked' : ''} onchange="App.studyOnlyWrong(this.checked,'${row.id}')"> ${t('st_only_wrong')}</label>
@@ -9372,9 +9392,9 @@ async function studySessReview(id){
 function studyRefHtml(q){
   const r = q.ref || {}; const parts = [];
   if (r.section != null) parts.push(t('st_section') + ' ' + esc(String(r.section)));
-  if (r.chapter) parts.push(esc(L(r.chapter)));
+  if (r.chapter) parts.push(esc(LOC(r.chapter)));
   if (r.pages && r.pages.length) parts.push(t('st_p') + ' ' + esc(r.pages.join(', ')));
-  if (!parts.length && r.text) parts.push(esc(L(r.text)));
+  if (!parts.length && r.text) parts.push(esc(LOC(r.text)));
   return parts.length ? `<div class="tiny st-ref">${ic('book')} ${parts.join(' · ')}</div>` : '';
 }
 /* ---------- чтение учебника ---------- */
@@ -9413,13 +9433,13 @@ function studyReadHtml(){
   const url = STUDY_DIR + rd.file;
   const ext = (rd.file.split('.').pop() || '').toLowerCase();
   const frame = ext === 'pdf'
-    ? `<iframe class="st-frame" src="${url}" title="${esc(L(s.title))}"></iframe>`
+    ? `<iframe class="st-frame" src="${url}" title="${esc(LOC(s.title))}"></iframe>`
     : ext === 'md' || ext === 'txt'
-    ? `<iframe class="st-frame" src="${url}" sandbox="" title="${esc(L(s.title))}"></iframe>`
-    : `<iframe class="st-frame" src="${url}" sandbox="allow-same-origin allow-scripts allow-popups" allow="fullscreen" allowfullscreen title="${esc(L(s.title))}"></iframe>`;   // v1.08.60: allow-scripts — листалка внутри книги
+    ? `<iframe class="st-frame" src="${url}" sandbox="" title="${esc(LOC(s.title))}"></iframe>`
+    : `<iframe class="st-frame" src="${url}" sandbox="allow-same-origin allow-scripts allow-popups" allow="fullscreen" allowfullscreen title="${esc(LOC(s.title))}"></iframe>`;   // v1.08.60: allow-scripts — листалка внутри книги
   /* v1.08.67: стрелка «назад» слева и выбор другого раздела вместо статичного заголовка */
   const opts = studySections().filter(x => studyHas(studyBook(x)))
-    .map(x => `<option value="${x.id}" ${+x.id === rd.sec ? 'selected' : ''}>${x.id} · ${esc(L(x.title))}</option>`).join('');
+    .map(x => `<option value="${x.id}" ${+x.id === rd.sec ? 'selected' : ''}>${x.id} · ${esc(LOC(x.title))}</option>`).join('');
   return `<div class="st-read">
     <div class="st-read-h">
       <button class="icon-btn st-read-back" onclick="App.studyReadClose()" title="${t('back')}" aria-label="${t('back')}">${ic('arr_l')}</button>
@@ -9451,12 +9471,12 @@ function studyChipsHtml(){
   const sel = studySelId();
   return `<div class="st-chips">` + studySections().map(s => {
     const col = s.color || STUDY_COLORS[(s.id - 1) % 8];
-    return `<button class="st-chip ${+s.id === sel ? 'on' : ''}" style="--sc:${col}" onclick="App.studySel('${s.id}')" title="${esc(L(s.title))}">
+    return `<button class="st-chip ${+s.id === sel ? 'on' : ''}" style="--sc:${col}" onclick="App.studySel('${s.id}')" title="${esc(LOC(s.title))}">
       <span class="st-chip-no" style="color:${textColorFor(col)}">${s.id}</span><span class="st-chip-t">${esc(studyShort(s))}</span></button>`;
   }).join('') + `</div>`;
 }
 function studyResumeHtml(){
-  return STUDY.run ? `<div class="card st-resume"><div class="grow"><b>${t('st_resume_t')}</b><div class="tiny">${esc(L((studySec(STUDY.run.sec) || {}).title))} · ${STUDY.run.i + 1}/${STUDY.run.order.length}</div></div>
+  return STUDY.run ? `<div class="card st-resume"><div class="grow"><b>${t('st_resume_t')}</b><div class="tiny">${esc(LOC((studySec(STUDY.run.sec) || {}).title))} · ${STUDY.run.i + 1}/${STUDY.run.order.length}</div></div>
       <button class="btn btn-green sm" onclick="App.studyResume()">${ic('play')} ${t('st_resume')}</button>
       <button class="btn btn-ghost sm" onclick="App.studyDrop()">${ic('trash')}</button></div>` : '';
 }
@@ -9467,10 +9487,10 @@ function studySecCardHtml(){
   const qn = q && q.questions ? q.questions.length : null;
   const col = s.color || STUDY_COLORS[(s.id - 1) % 8];
   const err = q && q.err ? `<div class="tiny" style="color:var(--red)">${esc(q.err)}</div>` : '';
-  const sub = [s.tab ? esc(L(s.tab)) : '', qn != null ? qn + ' ' + t('st_q_short') : (testOk ? t('st_test_has') : t('st_no_test')), bookOk ? t('st_book_has') : t('st_no_book')].filter(Boolean).join(' · ');
+  const sub = [s.tab ? esc(LOC(s.tab)) : '', qn != null ? qn + ' ' + t('st_q_short') : (testOk ? t('st_test_has') : t('st_no_test')), bookOk ? t('st_book_has') : t('st_no_book')].filter(Boolean).join(' · ');
   return `<div class="card st-sec" style="--sc:${col}">
     <div class="st-sec-h"><span class="st-sec-no" style="color:${textColorFor(col)}">${s.id}</span>
-      <div class="grow"><b>${esc(L(s.title))}</b><div class="tiny">${sub}</div>${err}</div></div>
+      <div class="grow"><b>${esc(LOC(s.title))}</b><div class="tiny">${sub}</div>${err}</div></div>
     <div class="st-btns st-sec-btns">
       <button class="btn btn-green" ${testOk && !STUDY.busy[s.id] ? '' : 'disabled'} onclick="App.studyStart('${s.id}')">${STUDY.busy[s.id] ? '…' : ic('play') + ' ' + t('st_test')}</button>
       <button class="btn btn-blue" ${bookOk ? '' : 'disabled'} onclick="App.studyRead('${s.id}')">${ic('book')} ${t('st_book')}</button>
@@ -9535,32 +9555,32 @@ function studyRunHtml(){
   const n = r.order.length, done = Object.keys(r.answers).length;
   const a = r.answers[q.id];
   const asset = q.asset && qz.assets[q.asset];
-  const assetHtml = asset ? `<figure class="st-asset">${asset.type === 'svg' ? asset.svg : `<img src="${esc(STUDY_DIR + 'tests/' + asset.src)}" alt="${esc(L(asset.alt || asset.caption || asset.title))}">`}${asset.caption || asset.title ? `<figcaption class="tiny">${esc(L(asset.caption || asset.title))}</figcaption>` : ''}</figure>` : '';
+  const assetHtml = asset ? `<figure class="st-asset">${asset.type === 'svg' ? asset.svg : `<img src="${esc(STUDY_DIR + 'tests/' + asset.src)}" alt="${esc(LOC(asset.alt || asset.caption || asset.title))}">`}${asset.caption || asset.title ? `<figcaption class="tiny">${esc(LOC(asset.caption || asset.title))}</figcaption>` : ''}</figure>` : '';
   const opts = q.options.map(o => {
     const on = r.pick.includes(o.id);
     let cls = on ? 'on' : '';
     if (r.checked){ if (q.correct.includes(o.id)) cls += ' ok'; else if (on) cls += ' bad'; }
     const ex = r.checked && (on || q.correct.includes(o.id)) && o.explanation
-      ? `<div class="st-opt-ex">${esc(L(o.explanation))}${o.pages && o.pages.length ? ` <span class="tiny">(${t('st_p')} ${esc(o.pages.join(', '))})</span>` : ''}</div>` : '';
+      ? `<div class="st-opt-ex">${esc(LOC(o.explanation))}${o.pages && o.pages.length ? ` <span class="tiny">(${t('st_p')} ${esc(o.pages.join(', '))})</span>` : ''}</div>` : '';
     return `<button type="button" class="st-opt ${cls}" ${r.checked ? 'disabled' : ''} onclick="App.studyPick('${esc(o.id)}')">
-      <span class="st-opt-id">${esc(o.id)}</span><span class="grow">${esc(L(o.text))}${ex}</span>${on ? ic('check') : ''}</button>`;
+      <span class="st-opt-id">${esc(o.id)}</span><span class="grow">${esc(LOC(o.text))}${ex}</span>${on ? ic('check') : ''}</button>`;
   }).join('');
   const verdict = r.checked ? `<div class="st-verdict ${a && a.ok ? 'ok' : 'bad'}">${a && a.ok ? ic('check') + ' ' + t('st_right') : ic('close') + ' ' + t('st_wrong_a') + ': ' + esc(q.correct.join(', '))}</div>
-    ${q.explanation ? `<div class="st-ex">${ic('book')} ${esc(L(q.explanation))}</div>` : ''}${studyRefHtml(q)}` : '';
+    ${q.explanation ? `<div class="st-ex">${ic('book')} ${esc(LOC(q.explanation))}</div>` : ''}${studyRefHtml(q)}` : '';
   const pct = Math.round(done * 100 / n);
   const secCol = s.color || STUDY_COLORS[(r.sec - 1) % 8];
   return `<div class="card st-run" style="--sc:${secCol}">
     <div class="st-run-h">
       <span class="st-sec-no" style="color:${textColorFor(secCol)}">${r.sec}</span>
-      <div class="grow"><b>${esc(L(s.title))}</b><div class="tiny">${t('st_q')} ${r.i + 1} / ${n}${q.topic ? ' · ' + esc(L(q.topic)) : ''} · ${r.mode === 'exam' ? t('st_mode_exam') : t('st_mode_learn')}</div></div>
+      <div class="grow"><b>${esc(LOC(s.title))}</b><div class="tiny">${t('st_q')} ${r.i + 1} / ${n}${q.topic ? ' · ' + esc(LOC(q.topic)) : ''} · ${r.mode === 'exam' ? t('st_mode_exam') : t('st_mode_learn')}</div></div>
       <span class="st-timer">${ic('clock')} <span id="st-timer">${fmtMsShort(stClockMs(r.clock))}</span></span>
     </div>
     <div class="st-prog"><span style="width:${pct}%"></span></div>
-    <div class="st-qtext">${esc(L(q.question))}</div>
+    <div class="st-qtext">${esc(LOC(q.question))}</div>
     ${q.type === 'multi' ? `<div class="tiny st-multi">${ic('layers')} ${t('st_multi')}</div>` : ''}
     ${assetHtml}
     <div class="st-opts">${opts}</div>
-    ${r.hintOn && q.hint ? `<div class="st-hint">${ic('help')} ${esc(L(q.hint))}</div>` : ''}
+    ${r.hintOn && q.hint ? `<div class="st-hint">${ic('help')} ${esc(LOC(q.hint))}</div>` : ''}
     ${verdict}
     <div class="st-btns st-run-btns">
       ${!r.checked && q.hint ? `<button class="btn btn-ghost sm" onclick="App.studyHint()">${ic('help')} ${r.hintOn ? t('st_hint_hide') : t('st_hint')}</button>` : ''}
@@ -9577,12 +9597,12 @@ function studySessRow(s, withName){
   const when = fmtDMY(String(s.started_at).slice(0, 10)) + ' ' + fmtHM(s.started_at);
   if (s.kind === 'read'){
     return `<div class="rowline st-srow"><span class="st-sec-dot" style="background:${col}"></span>
-      <div class="grow"><b>${ic('book')} ${esc(L(sec.title) || (t('st_section') + ' ' + s.section))}</b>
+      <div class="grow"><b>${ic('book')} ${esc(LOC(sec.title) || (t('st_section') + ' ' + s.section))}</b>
         <div class="tiny">${when}${withName ? ' · ' + esc(shortName(profName(s.user_id))) : ''} · ${t('st_reading')}</div></div>
       <span class="chip">${fmtMs(s.duration_ms)}</span></div>`;
   }
   return `<div class="rowline st-srow"><span class="st-sec-dot" style="background:${col}"></span>
-    <div class="grow"><b>${esc(L(sec.title) || (t('st_section') + ' ' + s.section))}</b>
+    <div class="grow"><b>${esc(LOC(sec.title) || (t('st_section') + ' ' + s.section))}</b>
       <div class="tiny">${when}${withName ? ' · ' + esc(shortName(profName(s.user_id))) : ''} · ${s.correct}/${s.total} · ${fmtMs(s.duration_ms)} · ${s.mode === 'exam' ? t('st_mode_exam') : t('st_mode_learn')}</div></div>
     <span class="chip ${s.passed ? 'ok' : 'bad'}">${s.score_pct ?? 0}%</span>
     <button class="btn btn-ghost sm" onclick="App.studySessReview('${s.id}')">${ic('eye')}</button></div>`;
@@ -9596,7 +9616,7 @@ function studyStatHtml(){
   const chips = [['7', t('stat_7d')], ['30', t('stat_30d')], ['90', t('stat_90d')], ['0', t('st_all_time')]].map(([v, l]) =>
     `<button class="chip ${f.period === v ? 'ok' : ''}" onclick="App.studyStatSet('period','${v}')">${l}</button>`).join('');
   const profs = (state.data.profiles || []).slice().sort((a, b) => a.display_name.localeCompare(b.display_name));
-  const secOpts = `<option value="0">${t('st_all_sections')}</option>` + studySections().map(s => `<option value="${s.id}" ${+f.sec === +s.id ? 'selected' : ''}>${s.id} · ${esc(L(s.title))}</option>`).join('');
+  const secOpts = `<option value="0">${t('st_all_sections')}</option>` + studySections().map(s => `<option value="${s.id}" ${+f.sec === +s.id ? 'selected' : ''}>${s.id} · ${esc(LOC(s.title))}</option>`).join('');
   const usrOpts = `<option value="">${t('jr_all_staff')}</option>` + profs.map(p => `<option value="${p.id}" ${f.user === p.id ? 'selected' : ''}>${esc(p.display_name)}</option>`).join('');
   const tests = list.filter(s => s.kind === 'test'), reads = list.filter(s => s.kind === 'read');
   const ans = tests.reduce((a, s) => a + (+s.answered || 0), 0), ok = tests.reduce((a, s) => a + (+s.correct || 0), 0), wr = tests.reduce((a, s) => a + (+s.wrong || 0), 0);
@@ -9627,7 +9647,7 @@ function studyStatHtml(){
     const secRows = Object.keys(u.secs).sort((a, b) => +a - +b).map(k => {
       const sc = u.secs[k], s = studySec(k) || {};
       return `<div class="st-secline"><span class="st-sec-dot" style="background:${s.color || STUDY_COLORS[(k - 1) % 8]}"></span>
-        <div class="grow"><b>${k} · ${esc(L(s.title) || '')}</b><div class="tiny">${sc.tests ? `${t('st_tests')}: ${sc.tests} · ${t('st_best')}: ${sc.best}% · ${t('st_correct')}: ${sc.ans ? Math.round(sc.ok * 100 / sc.ans) : 0}% (${sc.ok}/${sc.ans}) · ${fmtMs(sc.testMs)}` : ''}${sc.readMs ? `${sc.tests ? ' · ' : ''}${t('st_reading')}: ${fmtMs(sc.readMs)}` : ''}</div></div></div>`;
+        <div class="grow"><b>${k} · ${esc(LOC(s.title) || '')}</b><div class="tiny">${sc.tests ? `${t('st_tests')}: ${sc.tests} · ${t('st_best')}: ${sc.best}% · ${t('st_correct')}: ${sc.ans ? Math.round(sc.ok * 100 / sc.ans) : 0}% (${sc.ok}/${sc.ans}) · ${fmtMs(sc.testMs)}` : ''}${sc.readMs ? `${sc.tests ? ' · ' : ''}${t('st_reading')}: ${fmtMs(sc.readMs)}` : ''}</div></div></div>`;
     }).join('');
     const sess = open ? `<div class="st-sess">${u.rows.slice().sort((a, b) => String(b.started_at).localeCompare(String(a.started_at))).slice(0, 100).map(s => studySessRow(s, false)).join('')}</div>` : '';
     return `<div class="st-urow ${open ? 'open' : ''}">
@@ -9842,7 +9862,7 @@ const App = {
   },
   mapToggleDay(v){ state.mapDay = v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
   mapSetDate(v){ state.mapDate = v; render(); },
-  mapFocus(lat,lng){ if (mapObj){ mapObj.setView([lat,lng], 15); window.scrollTo({top:0,behavior:'smooth'}); } },
+  mapFocus(lat,lng){ if (mapObj){ mapObj.setView([lat,lng], 15); pageScrollTo(0, true); } },
   mapRoute,
   geocodeCx, gmapsCx,
   dictToggle, dictLang(l){ state.dictLang = l; localStorage.setItem('techlog_dictlang', l); document.querySelectorAll('.dict-row .lang-seg button').forEach(b=>b.classList.toggle('on', b.textContent === (l==='ru-RU'?'RU':'EN'))); },
@@ -14342,9 +14362,9 @@ function prioMenu(id){
    человек терял место в списке. Запоминаем прокрутку и возвращаем её сразу
    после отрисовки, до того как браузер покажет кадр. */
 function renderKeep(){
-  const y = window.scrollY || document.documentElement.scrollTop || 0;
+  const y = pageScrollY();
   render();
-  requestAnimationFrame(() => window.scrollTo(0, y));
+  requestAnimationFrame(() => pageScrollTo(y));
 }
 async function prioSet(id, kind){
   const j = state.data.jobs.find(x => x.id === id); if (!j || !canPrio(j)) return;
@@ -15927,7 +15947,7 @@ function openRepair(id, src){
     repDraft = repNew(src);
     repHistAdd(repDraft, 'created');
   }
-  state.screen = 'repairs'; render(); window.scrollTo(0, 0);
+  state.screen = 'repairs'; render(); pageScrollTo(0);
 }
 function newRepairFromJob(jobId){ openRepair(null, { job: jobId }); }
 function newRepairFromProp(propId){ openRepair(null, { prop: propId }); }
