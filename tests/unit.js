@@ -355,8 +355,8 @@ console.log('\n— камера на любом телефоне (v1.07.90) —'
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
   t('mediaPick принимает источник', /function mediaPick\(jobId, kind, src, doc\)/.test(src));
   t('«Камера» — всегда capture', /src === 'cam' \|\| \(src !== 'lib' && camMode\(\) === 'quick'\)/.test(src));
-  t('кнопки «Камера» и «Галерея» в карточке', /'photo','cam'/.test(src) && /'photo','lib'/.test(src));
-  t('кнопка «Камера не открылась?»', /App\.camFix\(\)/.test(src) && /cam_nocam/.test(src));
+  t('в карточке одна кнопка «Фото» и «Видео» (v1.08.79), выбор из галереи остался для «Забрать кадры»', /App\.mediaShoot\('\$\{jobId\}','photo','\$\{doc\}'\)/.test(src) && /mediaPick\(jobId, kind, 'lib', doc \|\| 'job'\)/.test(src));
+  t('«Камера не открылась?» из документа убрана, крючок camFix остался', /camFix\(\)\{/.test(src) && !/onclick="App\.camFix\(\)"/.test(src));
   t('ключи в обоих языках', ['media_cam','media_lib','cam_nocam','cam_nocam_hint','cam_switched']
     .every(k => (k in T.DICT.ru) && (k in T.DICT.en)));
   const ud = fs.readFileSync(ROOT + '/uidiag.js', 'utf8');
@@ -1357,7 +1357,7 @@ console.log('\n— v1.08.48: медиа у ремонта, ТВ-уборка, м
     && src.includes("function mediaPick(jobId, kind, src, doc)"));
   t('форма ремонта: свой медиа-блок и кнопка чека',
     src.includes("mediaStripHtml(r.id, 'rep')")
-    && src.includes("App.mediaPick('${r.id}','photo','cam','rep')"));
+    && src.includes("App.mediaShoot('${r.id}','photo','rep')"));
   t('кнопки сметы переименованы, «+строка» осталась',
     src.includes("t('rep_add_work')") && src.includes("t('rep_add_mat')")
     && (src.match(/t\('prop_add_row'\)/g) || []).length >= 2);
@@ -1711,8 +1711,8 @@ console.log('\n— v1.08.51: учёба —');
       'cam_mode_app', 'cam_mode_app_h', 'cam_mode_inapp', 'share_title', 'share_q', 'share_recent', 'share_drop', 'share_done', 'share_none', 'share_hint',
       'intake_rest', 'mv_dl_pct', 'mv_dl_mb', 'mq_l_vid_codec', 'media_photo_w', 'media_video_w', 'media_file_w']
     .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
-  t('v1.08.73: режим камеры по умолчанию «в приложении», старые значения full/quick уважаются',
-    src.includes("function camMode(){ const v = camGet('mode', 'app'); return v === 'quick' || v === 'full' ? v : 'app'; }") && src.includes('function camInCan()'));
+  t('v1.08.73/79: режим камеры выводится из способа аккаунта; quick — только запасной путь',
+    src.includes("return camWay() === 'phone' ? 'full' : 'app';") && src.includes('function camInCan()') && src.includes('function camWay(){'));
   t('v1.08.73: «Камера» и (в режиме app) «Видео» → камера в приложении, иначе как раньше; перед камерой телефона — разгрузка памяти',
     src.includes("if (src === 'cam' || (src !== 'lib' && camMode() === 'app')){") && src.includes("if (camInCan() && !CAMIN.fallback){ camInOpen(jobId, kind, doc || 'job'); return; }")
     && src.includes('mediaLighten();') && src.includes('function mediaLighten(){'));
@@ -1731,7 +1731,7 @@ console.log('\n— v1.08.51: учёба —');
     src.includes("shareTargetMark('job', id);") && src.includes("shareTargetMark('rep', id);") && src.includes('function shareIntakeModal(rows){') && src.includes("if (/[?&]share=1/.test(location.search)) history.replaceState"));
   t('v1.08.73: манифест — share_target POST multipart files=media, launch_handler navigate-existing',
     (() => { const m = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
-      return m.share_target && m.share_target.method === 'POST' && m.share_target.action === './share-target' && m.share_target.params.files[0].name === 'media' && m.launch_handler.client_mode === 'navigate-existing'; })());
+      return m.share_target && m.share_target.method === 'POST' && m.share_target.action === './share-target' && m.share_target.params.files[0].name === 'media' && Array.isArray(m.launch_handler.client_mode) && m.launch_handler.client_mode[0] === 'focus-existing'; })());
   t('v1.08.73: sw — POST ./share-target → tl-media/intake (версия 2) → редирект на index.html?share=1',
     sw.includes("url.pathname.endsWith('/share-target')") && sw.includes('const MDB_VER = 2;') && sw.includes("createObjectStore('intake', { keyPath: 'iid' })") && sw.includes("index.html?share=1&n="));
   t('v1.08.73: видео — таймауты dur/thumb, кадр с 0,5 с, воркер отпускает сэмплы, длительность из очереди, честная причина при 413 без сжатия',
@@ -1741,8 +1741,8 @@ console.log('\n— v1.08.51: учёба —');
   t('v1.08.73: плитка без превью — значок вида файла; просмотрщик с процентами, ролики соседей не подгружаются',
     src.includes('<span class="mfile mvph">') && css.includes('.mth img[data-thumb].nothumb{display:none}') && src.includes('async function mvFetch(id, onPct){')
     && src.includes("if (nx && !nx.local && nx.kind !== 'video') mvFetch(nx.id)"));
-  t('v1.08.73: карточка «Съёмка» — три режима и подсказка «Поделиться»; стили камеры',
-    src.includes("${seg(md, 'app', t('cam_mode_app'), 'camMode')}") && src.includes("<b>${ic('share')} ${t('share_title')}</b>")
+  t('v1.08.73/79: карточка «Съёмка» — Способ 1/2 и подсказка «Поделиться»; стили камеры',
+    src.includes("${seg(camWay(), 'app', t('way1'), 'camWay')}") && src.includes("${seg(camWay(), 'phone', t('way2'), 'camWay')}") && src.includes("<b>${ic('share')} ${t('share_title')}</b>")
     && css.includes('.camin{position:fixed;inset:0;z-index:10000') && css.includes('html.tl-camin #toasts{z-index:10001}') && css.includes('@media (orientation:landscape){'));
 
   console.log('\n— v1.08.74: тест съёмки —');
@@ -1794,6 +1794,53 @@ console.log('\n— v1.08.51: учёба —');
   t('v1.08.77: портретное видео — цель и правило «уже компактный» по короткой стороне; «не меньше оригинала» в журнал',
     src.includes('var k = Math.min(1, target.h / Math.min(dw, dh));') && src.includes("if (Math.min(dw, dh) <= target.h + 8 && /^avc1/.test(vTrk.codec)")
     && src.includes("} else if (sr && sr.blob){") && src.includes("t('mq_l_shr_bigger')"));
+  console.log('\n— v1.08.78: профиль телефона, серия, 480p —');
+  t('v1.08.78: ключи RU/EN', ['cp_v_chip_fast', 'cp_v_vid_load', 'cp_v_vid_ok', 'cp_prof_t', 'cp_prof_photo', 'cp_prof_video', 'cp_prof_reco_slow', 'cp_prof_reco_ok', 'cam_in_queued']
+    .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]) && T.DICT.ru.vid_480 === '480p' && T.DICT.en.vid_480 === '480p');
+  t('v1.08.78: вердикт видео отдельно, профиль телефона в карточке и .txt, кадры видео-сессии из отметок',
+    src.includes("if (soft) key = 'soft'; else if (mf && mf.avg < 45) key = 'vid_load'; else key = 'vid_ok';") && src.includes('function camPerfProfile(){') && src.includes('<div class="cp-prof">')
+    && src.includes("const nShots = s.marks.filter(m => m.kind === 'takePhoto' || m.kind === 'frame' || m.kind === 'rec').length;"));
+  t('v1.08.78: затвор во время снимка ставит кадр в очередь; кольцо ожидания; кнопка не блокируется',
+    src.includes("if (CAMIN.kind === 'photo' && !CAMIN.queued && CAMIN.left > 1){ CAMIN.queued = true;") && src.includes("if (CAMIN.queued && CAMIN.el){ CAMIN.queued = false; setTimeout(() => camInShot(), 30); }")
+    && src.includes("if (sh) sh.disabled = left <= 0;") && css.includes('.camin-shutter.busy::after'));
+  t('v1.08.78: 480p в пресете и целях, запись 2-секундными кусками, плашка молчит при записи',
+    src.includes("m === '480' ? { h: 480, vbr: 1200000 }") && src.includes("${seg(mVidMode(), '480', t('vid_480'), 'vidMode')}") && src.includes('rec.start(2000);') && src.includes('if (CAMIN.rec) return;                                           // v1.08.78'));
+  console.log('\n— v1.08.79: Способ 1 / Способ 2 —');
+  t('v1.08.79: ключи RU/EN', ['way_lbl', 'way1', 'way2', 'way1_t', 'way2_t', 'way1_h', 'way2_h', 'way2_banner_t', 'way2_banner_h', 'way2_take', 'way2_take_v', 'way2_hide', 'way2_no_intent', 'way2_ios', 'share_direct']
+    .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
+  t('v1.08.79: способ — личная настройка в profiles.push_prefs.cam_way с кэшем в localStorage, сохраняется upsert-ом профиля',
+    src.includes("const pv = state.user && state.user.push_prefs && state.user.push_prefs.cam_way;") && src.includes("localStorage.setItem('techlog_cam_way', v)") && src.includes("if (HAS_SB) await dbUpsert('profiles', { ...me, push_prefs: prefs });"));
+  t('v1.08.79: mediaShoot — Способ 1 → камера в приложении, Способ 2 → intent камеры телефона (STILL_IMAGE_CAMERA / VIDEO_CAMERA), не Android → системный выбор',
+    src.includes("function mediaShoot(jobId, kind, doc){") && src.includes("if (camWay() === 'phone'){ if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; } phoneCamLaunch(jobId, kind, doc); return; }")
+    && src.includes("'intent:#Intent;action=android.media.action.' + (kind === 'video' ? 'VIDEO_CAMERA' : 'STILL_IMAGE_CAMERA') + ';end'") && src.includes("if (!isAndroid || IS_IOS){"));
+  t('v1.08.79: баннер Способа 2 в документе с «Забрать кадры», снимается, когда кадры дошли',
+    src.includes('function way2BannerHtml(jobId, doc){') && src.includes('${way2BannerHtml(jobId, doc)}') && src.includes("{ const m = way2Mark(); if (m && m.id === jobId) way2Set(null); }") && css.includes('.way2-banner{'));
+  t('v1.08.79: «Поделиться» без перезагрузки — launchQueue + focus-existing; в открытый документ кладётся без вопроса',
+    src.includes('function initLaunchQueue(){') && src.includes('window.launchQueue.setConsumer(params => {') && src.includes("if (m && openDoc && openDoc.id === m.id){") && src.includes("t('share_direct')"));
+  console.log('\n— v1.08.80: журнал Способа 2, тест Способа 2 —');
+  t('v1.08.80: ключи RU/EN', ['w2_title', 'w2_none', 'w2_s_launch', 'w2_s_away', 'w2_s_alive', 'w2_s_reload', 'w2_s_via_picker', 'w2_s_via_share', 'w2_s_files', 'ct2_btn', 'ct2_hint', 'ct2_p_photo', 'ct2_p_video', 'ct2_p_save',
+      'ct2_resumed', 'ct2_s_alive_save', 'ct2_alive_no', 'ct2_alive_yes', 'ct2_timeout', 'ct2_aborted'].every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
+  t('v1.08.80: журнал Способа 2 — сессия при запуске, фон/возврат, перезапуск при старте, путь возврата picker/share, в метриках и в журнале теста',
+    src.includes('function w2Begin(jobId, doc, kind){') && src.includes('function w2Vis(){') && src.includes('function w2Init(){') && src.includes("w2Files(jobId, [...inp.files], 'picker')")
+    && src.includes("w2Files(m.id, files, 'share');") && src.includes('<div class="cp-prof" id="w2-log">') && src.includes("L.push('', `--- ${t('w2_title')} ---`);"));
+  t('v1.08.80: общие шаги тестов вынесены (ctStepJob/Send/Srv/View/Del) и используются обоими тестами',
+    ['ctStepJob', 'ctStepSend', 'ctStepSrv', 'ctStepView', 'ctStepDel'].every(f => src.includes('async function ' + f + '(')) && src.includes("await ctStepJob('способ 1')") && src.includes("await ctStepJob('способ 2')"));
+  t('v1.08.80: тест Способа 2 — состояние в localStorage, порядок фаз, ожидание пользователя 5 мин с «Прервать», продолжение после перезапуска, шаг «дожила до сохранения», hook в saveJob',
+    src.includes("const LS_CT2 = 'techlog_ct2', CT2_USER_SEC = 300;") && src.includes("const CT2_ORDER = ['job', 'photo-launch', 'photo-wait'") && src.includes('async function ct2WaitUser(text, fn, sec){')
+    && src.includes('function ct2Resume(){') && src.includes("setTimeout(() => { try{ ct2Resume(); }") && src.includes("await run('alive-save', t('ct2_s_alive_save')") && src.includes("CT2.st.phase === 'save-wait') CT2.saved = Date.now();")
+    && src.includes("if (p && !p.finished && c.kind === 'camtest2') return;") && src.includes('id="ct2-btn" onclick="App.camTest2()"') && css.includes('.ct2-bar{position:fixed'));
+  console.log('\n— v1.08.81: автосохранение, живая модалка, отчёт всегда —');
+  t('v1.08.81: ключи RU/EN', ['ct_live_send', 'ct_live_hide', 'ct_live_continue', 'ct2_live_resume', 'ct2_no_user'].every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]) && /автоматически/.test(T.DICT.ru.ct2_s_save));
+  t('v1.08.81: тест Способа 2 сохраняет сам (saveJob(false) в шаге save-wait), живая модалка на отправке, «заглушка» после перезапуска с «Продолжить», продолжить некому → отчёт всё равно',
+    src.includes("await jobOpen(); ct2BarHide();\n      await saveJob(false); jobDraft = null;") && src.includes("ctLiveOpen(t('ct2_btn'), t('ct_live_send'));") && src.includes("ctLiveOpen(t('ct2_btn'), t('ct2_live_resume').replace('{S}', (r && r.label) || CT2.st.phase), manual ? 'continue' : '');")
+    && src.includes("text: '⛔ ' + t('ct2_no_user')") && !src.includes("ct2WaitUser(t('ct2_p_save')"));
+  t('v1.08.81: живая модалка — открытие, дописывание строк из ctLine, превращение в отчёт с кнопками; обычный тест тоже', src.includes('function ctLiveOpen(title, sub, mode){') && src.includes('ctLiveAppend(l);') && src.includes('function ctLiveDone(){')
+    && src.includes("ctLiveOpen(t('ct_btn'), t('ct_live_send'));") && (src.match(/setTimeout\(ctLiveDone, 300\);/g) || []).length === 2 && css.includes('.ct-live{max-height:42vh'));
+  console.log('\n— v1.08.82: объём автоматического прогона —');
+  t('v1.08.82: 3 кадра и 2 ролика по 3 с в автоматическом тесте, названия шагов с количеством, проверки по фактическим числам',
+    src.includes('const CT_PHOTOS = 3, CT_VIDEOS = 2, CT_VSEC = 3;') && src.includes("const nPh = Math.min(CT_PHOTOS, mediaFree(jobId, 'photo', 'job')), nVd = Math.min(CT_VIDEOS, mediaFree(jobId, 'video', 'job'));")
+    && src.includes("for (let k = 1; k <= nVd; k++){") && src.includes("await wait(CT_VSEC * 1000);") && src.includes("ctStepSrv(jobId, nPh)") && /ct_s_photo: 'Камера: \{N\} кадра\(ов\)'/.test(src)
+    && src.includes("if (ph.length < needP || imgOk < needP) throw new Error('миниатюры фото: ' + imgOk + ' из ' + needP);"));
   t('v1.08.77: mfa null-guard, bouncie «не настроено» один раз без ⛔',
     src.includes("const f = ((data && data.totp) || []).find(x => x.status === 'verified');") && src.includes("if (/BN_NOT_CONFIGURED/.test(BN.err)){ if (!BN.notedOff){"));
   console.log('\n— v1.08.76: журнал теста целиком —');
@@ -1811,7 +1858,7 @@ console.log('\n— v1.08.51: учёба —');
     src.includes("tlogStart('camtest', t('ct_btn'));") && src.includes("tlogStart('regress', t('rg_btn'));") && src.includes('function tlogInit(){') && src.includes('try{ tlogInit(); }catch(e){}')
     && src.includes('function logSave(){') && src.includes('App.logSave()') && css.includes('.tl-acts{display:flex'));
   t('v1.08.75: вердикт софт/камера/железо, плашка, карточка в настройках с копированием, шаг в тесте съёмки',
-    src.includes('function camPerfVerdict(s){') && src.includes("if (soft) key = 'soft'; else if (hal) key = 'hal'; else if (chip) key = 'chip'; else if (weak) key = 'weak';")
+    src.includes('function camPerfVerdict(s){') && src.includes("} else if (soft) key = 'soft'; else if (hal) key = 'hal'; else if (chip) key = (s.prevMode === 'fast' ? 'chip_fast' : 'chip'); else if (weak) key = 'weak';")
     && src.includes('function camPerfLive(){') && src.includes('function camPerfCardHtml(){') && src.includes('App.camPerfCopy()') && src.includes("await step(t('ct_s_perf')")
     && src.includes('${camPerfCardHtml()}') && css.includes('.camin-perf{position:absolute') && css.includes('.cp-last{white-space:pre-wrap'));
 }

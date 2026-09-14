@@ -33,10 +33,10 @@ const intake = p => p.evaluate(async () => (await window.App.cam.intakeAll()).ma
     t('режим камеры по умолчанию — «В приложении», камера доступна', await p.evaluate(() => localStorage.getItem('techlog_cam_mode') === null && window.App.cam.can()));
     const jobId = await firstJob(p);
     await p.evaluate(id => window.App.openJob(id), jobId); await p.waitForTimeout(500);
-    t('в полосе документа кнопки «Камера» · «Родная камера» · «Видео»', await p.evaluate(() => {
+    t('в полосе документа кнопки «Фото» · «Видео» (v1.08.79 — способ решает настройка аккаунта)', await p.evaluate(() => {
       const b = [...document.querySelectorAll('.media-card .btn')].map(x => x.textContent.trim());
-      return b.some(x => /^Камера/.test(x)) && b.some(x => /Родная камера/.test(x)) && b.some(x => /Видео/.test(x)); }));
-    t('подпись «съёмка сейчас: камера в приложении»', await p.evaluate(() => /камера в приложении/.test(document.querySelector('.media-card').textContent)));
+      return b.some(x => /^Фото$/.test(x)) && b.some(x => /^Видео$/.test(x)) && !b.some(x => /Родная камера/.test(x)); }));
+    t('подсказка кнопки «Фото» — «Способ 1 — камера в приложении»', await p.evaluate(() => /Способ 1/.test(document.querySelector('.media-card .mshoot').title)));
     await p.evaluate(id => window.App.cam.open(id, 'photo', 'job'), jobId);
     await p.waitForFunction(() => { const v = document.querySelector('#camin video'); return v && v.srcObject && v.videoWidth > 0; }, null, { timeout: 15000 });
     t('оверлей камеры открыт, поток идёт, шапка с адресом документа', await p.evaluate(() => {
@@ -49,7 +49,7 @@ const intake = p => p.evaluate(async () => (await window.App.cam.intakeAll()).ma
     t('затвор — крупная цель (≥ 60 px)', shSize[0] >= 60 && shSize[1] >= 60, shSize.join('×'));
     await p.evaluate(() => window.App.cam.shot());
     await p.waitForFunction(() => !window.App.cam.st().busy, null, { timeout: 15000 });
-    t('второе нажатие во время съёмки не создаёт двойной кадр (busy)', await p.evaluate(() => { const s = window.App.cam.st(); s.busy = true; window.App.cam.shot(); s.busy = false; return s.shots === 1; }));
+    t('второе нажатие во время съёмки не создаёт двойной кадр сразу — ставит его в очередь (v1.08.78)', await p.evaluate(() => { const s = window.App.cam.st(); s.busy = true; window.App.cam.shot(); const r = s.shots === 1 && s.queued === true; s.busy = false; s.queued = false; return r; }));
     await p.evaluate(() => window.App.cam.shot());
     await p.waitForFunction(() => !window.App.cam.st().busy, null, { timeout: 15000 });
     await p.waitForTimeout(2500);
@@ -144,9 +144,10 @@ const intake = p => p.evaluate(async () => (await window.App.cam.intakeAll()).ma
     console.log('— настройки «Съёмка» —');
     await p.evaluate(() => { window.App.go('settings'); const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}'); if (f.cam !== 1) window.App.foldToggle('cam'); }); await p.waitForTimeout(400);
     const seg = await p.evaluate(() => { const b = [...document.querySelectorAll('.cam-seg button')].map(x => x.textContent.trim()); return b; });
-    t('три режима камеры: В приложении · Родная · Быстрая; и подсказка «Поделиться»', seg.includes('В приложении') && seg.includes('Родная') && seg.includes('Быстрая') && await p.evaluate(() => /Поделиться/.test(document.body.textContent)), seg.join(' | '));
-    await p.evaluate(() => window.App.camMode('full')); await p.waitForTimeout(200);
-    t('режим переключается и сохраняется на устройстве', await p.evaluate(() => localStorage.getItem('techlog_cam_mode') === 'full' && document.querySelector('.cam-seg button.on').textContent.trim() === 'Родная'));
+    t('способы съёмки: Способ 1 · Способ 2; и подсказка «Поделиться»', seg.includes('Способ 1') && seg.includes('Способ 2') && await p.evaluate(() => /Поделиться/.test(document.body.textContent)), seg.join(' | '));
+    await p.evaluate(() => window.App.camWay('phone')); await p.waitForTimeout(400);
+    t('способ переключается и сохраняется', await p.evaluate(() => localStorage.getItem('techlog_cam_way') === 'phone' && document.querySelector('#cam-way button.on').textContent.trim() === 'Способ 2'));
+    await p.evaluate(() => window.App.camWay('app')); await p.waitForTimeout(300);
     await p.close();
   }
 
@@ -168,7 +169,7 @@ const intake = p => p.evaluate(async () => (await window.App.cam.intakeAll()).ma
     const fs = require('fs'), path = require('path');
     const root = path.join(__dirname, '..');
     const man = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
-    t('манифест: share_target (POST multipart, files=media) и launch_handler', man.share_target && man.share_target.method === 'POST' && man.share_target.params.files[0].name === 'media' && man.launch_handler && man.launch_handler.client_mode === 'navigate-existing');
+    t('манифест: share_target (POST multipart, files=media) и launch_handler', man.share_target && man.share_target.method === 'POST' && man.share_target.params.files[0].name === 'media' && man.launch_handler && (man.launch_handler.client_mode === 'navigate-existing' || (Array.isArray(man.launch_handler.client_mode) && man.launch_handler.client_mode.includes('navigate-existing'))));
     const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
     t('sw.js: обработчик POST share-target пишет в tl-media/intake', /share-target/.test(sw) && /createObjectStore\('intake'/.test(sw) && /MDB_VER = 2/.test(sw));
     const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');

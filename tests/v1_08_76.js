@@ -31,7 +31,7 @@ function t(name, cond, note){
   t('во время теста журнал уже в localStorage: kind camtest, не завершён, строки пишутся', mid && mid.kind === 'camtest' && !mid.finished && mid.lines.length > 5, mid && JSON.stringify({ k: mid.kind, n: mid.lines.length }));
   await p.waitForFunction(() => !window.App.camTestState().busy, null, { timeout: 180000 }); await p.waitForTimeout(800);
   const modal = await p.evaluate(() => { const o = document.getElementById('overlay'); if (!o) return null;
-    return { title: o.querySelector('h3').textContent, btns: [...o.querySelectorAll('.tl-acts .btn')].map(b => b.textContent.trim()), head: (o.querySelector('.ask-text') || {}).textContent || '' }; });
+    return { title: o.querySelector('h3').textContent, btns: [...o.querySelectorAll('.tl-acts .btn')].map(b => b.textContent.trim()), head: (o.querySelector('.ask-text') || o.querySelector('#ct-live-sub') || {}).textContent || '' }; });
   t('по завершении — модалка «Тест завершён» с кнопками Скачать / Копировать / Показать и сводкой', modal && /Тест завершён/.test(modal.title) && modal.btns.some(b => /Скачать/.test(b)) && modal.btns.some(b => /Копировать/.test(b)) && modal.btns.some(b => /Показать/.test(b)) && /из \d+ шагов/.test(modal.head), JSON.stringify(modal));
   const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }), p.evaluate(() => window.App.tlogSave())]);
   const body = require('fs').readFileSync(await dl.path(), 'utf8');
