@@ -1,8 +1,8 @@
 {
   "schema": "techlog-study",
   "schema_version": 1,
-  "updated": "2026-09-13",
-  "note": "Каталог учебных разделов. title — полное название, short — подпись на чипе сверху экрана «Учёба», test — файл теста (dictionary/tests/…), book — книга (dictionary/books/…, .html или .pdf). Файла нет — кнопка гаснет. Добавили файл — просто впишите имя сюда.",
+  "updated": "2026-09-14",
+  "note": "Каталог учебных разделов. title — полное название, short — подпись на чипе сверху экрана «Учёба», test — файл теста (dictionary/tests/…), book — книга (dictionary/books/…, .html или .pdf): строка — один файл на оба языка, либо {\"ru\": …, \"en\": …} — какую открыть, решает язык интерфейса в Настройках. Файла нет — кнопка гаснет. Добавили файл — просто впишите имя сюда.",
   "sections": [
     {
       "id": 1,
@@ -20,7 +20,10 @@
         "en": "Water"
       },
       "test": "tests/section-1.json",
-      "book": "books/section-1.html"
+      "book": {
+        "ru": "books/section-1-ru.html",
+        "en": "books/section-1-en.html"
+      }
     },
     {
       "id": 2,
@@ -38,7 +41,10 @@
         "en": "Fire"
       },
       "test": "tests/section-2.json",
-      "book": "books/section-2.html"
+      "book": {
+        "ru": "books/section-2-ru.html",
+        "en": "books/section-2-en.html"
+      }
     },
     {
       "id": 3,
@@ -56,7 +62,10 @@
         "en": "Odor"
       },
       "test": "tests/section-3.json",
-      "book": "books/section-3.html"
+      "book": {
+        "ru": "books/section-3-ru.html",
+        "en": "books/section-3-en.html"
+      }
     },
     {
       "id": 4,
@@ -74,7 +83,10 @@
         "en": "Mold"
       },
       "test": "tests/section-4.json",
-      "book": "books/section-4.html"
+      "book": {
+        "ru": "books/section-4-ru.html",
+        "en": "books/section-4-en.html"
+      }
     },
     {
       "id": 5,
@@ -92,7 +104,10 @@
         "en": "Trauma"
       },
       "test": "tests/section-5.json",
-      "book": "books/section-5.html"
+      "book": {
+        "ru": "books/section-5-ru.html",
+        "en": "books/section-5-en.html"
+      }
     },
     {
       "id": 6,
@@ -110,7 +125,10 @@
         "en": "Upholstery"
       },
       "test": "tests/section-6.json",
-      "book": "books/section-6.html"
+      "book": {
+        "ru": "books/section-6-ru.html",
+        "en": "books/section-6-en.html"
+      }
     },
     {
       "id": 7,
@@ -128,7 +146,10 @@
         "en": "Carpet"
       },
       "test": "tests/section-7.json",
-      "book": "books/section-7.html"
+      "book": {
+        "ru": "books/section-7-ru.html",
+        "en": "books/section-7-en.html"
+      }
     },
     {
       "id": 8,

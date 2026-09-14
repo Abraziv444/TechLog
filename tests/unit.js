@@ -51,7 +51,8 @@ const expose = `;window.__T = {
   /* v1.08.40: переводы */
   sectionFaqHtml, faqHtml, viewHeader, viewLogin, viewStats, SECTION_HELP, chainCardBody, tvAgo, gdInvPathSample,
   /* v1.08.51: учёба */
-  STUDY, qzNorm, studyAllowedFor, studyMenuOn, studySections, studyDefaultCat, studySecStat, fmtMs, BK_TABLES
+  STUDY, qzNorm, studyAllowedFor, studyMenuOn, studySections, studyDefaultCat, studySecStat, fmtMs, BK_TABLES,
+  studyBook, studyBookAll
 };`;
 
 try {
@@ -1440,7 +1441,27 @@ console.log('\n— v1.08.51: учёба —');
     T.TABLES.includes('study_sessions') && T.BK_TABLES.includes('study_sessions')
     && T.DB_NEED_COLS.some(c => c[0] === 'study_sessions') && T.DB_NEED_COLS.some(c => c[0] === 'profiles' && c[1] === 'study_access'));
   t('каталог: 8 разделов по умолчанию, тест, учебник и короткая подпись у каждого',
-    T.studyDefaultCat().sections.length === 8 && T.studyDefaultCat().sections.every(s => /^tests\/section-\d\.json$/.test(s.test) && /^books\/section-\d\.html$/.test(s.book) && s.short && s.short.ru && s.short.en));
+    T.studyDefaultCat().sections.length === 8 && T.studyDefaultCat().sections.every(s => /^tests\/section-\d\.json$/.test(s.test)
+      && (typeof s.book === 'string' ? /^books\/section-\d\.html$/.test(s.book) : /^books\/section-\d-ru\.html$/.test(s.book.ru) && /^books\/section-\d-en\.html$/.test(s.book.en))
+      && s.short && s.short.ru && s.short.en));
+  /* v1.08.60: книга на двух языках — выбор по языку интерфейса, строка по-прежнему работает */
+  t('v1.08.60: studyBook/studyBookAll — {ru,en} по языку, строка как есть, пусто без книги',
+    (() => { const s1 = { book: { ru: 'books/a-ru.html', en: 'books/a-en.html' } }, s2 = { book: 'books/x.html' }, s3 = { book: { en: 'books/b-en.html' } };
+      const L0 = T.state.lang; T.state.lang = 'en'; const e1 = T.studyBook(s1); T.state.lang = 'ru'; const r1 = T.studyBook(s1), r3 = T.studyBook(s3); T.state.lang = L0;
+      return e1 === 'books/a-en.html' && r1 === 'books/a-ru.html' && r3 === 'books/b-en.html' && T.studyBook(s2) === 'books/x.html' && T.studyBook({}) === ''
+        && T.studyBookAll(s1).length === 2 && T.studyBookAll(s2).length === 1 && T.studyBookAll({}).length === 0; })());
+  t('v1.08.60: рамка html-учебника с allow-scripts и полным экраном; кнопка «Книга» смотрит на studyBook',
+    src.includes('sandbox="allow-same-origin allow-scripts allow-popups" allow="fullscreen"') && src.includes('bookOk = studyHas(studyBook(s))')
+    && src.includes('[s.test].concat(studyBookAll(s))'));
+  t('v1.08.60: index.json — у разделов 1–7 книга {ru,en}, файлы раздела 1 в сборке',
+    (() => { const j = JSON.parse(fs.readFileSync(path.join(ROOT, 'dictionary/index.json'), 'utf8'));
+      return j.sections.filter(s => s.id <= 7).every(s => s.book && s.book.ru === `books/section-${s.id}-ru.html` && s.book.en === `books/section-${s.id}-en.html`)
+        && fs.existsSync(path.join(ROOT, 'dictionary/books/section-1-ru.html')) && fs.existsSync(path.join(ROOT, 'dictionary/books/section-1-en.html')); })());
+  t('v1.08.60: учебник раздела 1 — 173 страницы, шрифты и картинки внутри, RU/EN',
+    (() => { const ru = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-1-ru.html'), 'utf8'), en = fs.readFileSync(path.join(ROOT, 'dictionary/books/section-1-en.html'), 'utf8');
+      const pg = (h) => { const m = h.match(/"pages":(\d+)/); return m ? +m[1] : 0; };
+      return pg(ru) === 173 && pg(en) === 173 && ru.includes('font-family:BkSe') && ru.includes('data:image/webp;base64,') && ru.includes('"lang":"ru"') && en.includes('"lang":"en"')
+        && ru.includes('Оглавление') && en.includes('Contents'); })());
   t('v1.08.56: экран без вкладок — чипы, две кнопки, результаты и статистика на экране; языка в тесте нет',
     src.includes('function studyChipsHtml') && src.includes('function studyResultsHtml') && src.includes('function studyOverallHtml')
     && !src.includes('STUDY.tab') && !src.includes('studyLang') && src.includes("function stLang(){ return state.lang || 'ru'; }")
@@ -1582,7 +1603,9 @@ console.log('\n— v1.08.51: учёба —');
   t('CSS: стили теста, вариантов, кольца результата, рамки учебника',
     css.includes('.st-opt.ok{') && css.includes('.st-ring{') && css.includes('.st-frame{') && css.includes('.st-kpi{'));
   t('service worker: index.json в прекэше, dictionary/ — stale-while-revalidate',
-    sw.includes("'./dictionary/index.json'") && sw.includes("url.pathname.includes('/dictionary/')") && /VERSION = '1\.08\.5[1-9]'/.test(sw));
+    sw.includes("'./dictionary/index.json'") && sw.includes("url.pathname.includes('/dictionary/')") && /VERSION = '1\.08\.(5[1-9]|[6-9]\d)'/.test(sw));
+  t('v1.08.60: sw — под ключ оболочки только сама оболочка; учебник во фрейме идёт веткой dictionary/',
+    sw.includes("req.mode === 'navigate' && !url.pathname.includes('/dictionary/')") && sw.includes("const shell = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html')"));
   t('справка экрана S.study на двух языках и карточка настроек',
     src.includes('S.study = H(') && src.includes("fold('study', t('st_card'), 'grad', studyCardHtml())")
     && src.includes("App.studyAccess('${uid_}', this.checked)"));

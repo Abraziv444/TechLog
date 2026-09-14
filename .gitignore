@@ -1,3 +1,6 @@
 # результаты прогонов тестов — не в репозиторий
 tests/out/
 node_modules/
+# шрифты конвертера учебников качаются сами (dictionary/books/tools/pdf2book.py)
+dictionary/books/tools/fonts/*.ttf
+__pycache__/

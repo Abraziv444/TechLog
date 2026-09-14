@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.59';
+const APP_VERSION = '1.08.60';
 const DB_SQL_FILE = 'full-install-1_08_51.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -8949,7 +8949,22 @@ function studyDefaultCat(){
     ['Чистка ковров', 'Carpet Cleaning', 'Ковры', 'Carpet'],
     ['Раздел 8 — учебные материалы', 'Section 8 — study materials', 'Материалы', 'Materials']];
   return { sections: names.map(([ru, en, sru, sen], i) => ({ id: i + 1, color: STUDY_COLORS[i], title: { ru, en }, short: { ru: sru, en: sen },
-    test: 'tests/section-' + (i + 1) + '.json', book: 'books/section-' + (i + 1) + '.html' })) };
+    test: 'tests/section-' + (i + 1) + '.json',
+    book: i < 7 ? { ru: 'books/section-' + (i + 1) + '-ru.html', en: 'books/section-' + (i + 1) + '-en.html' } : 'books/section-' + (i + 1) + '.html' })) };
+}
+/* v1.08.60: книга раздела может быть на двух языках — book: {ru, en}; берём язык
+   интерфейса (Настройки), нет своего — любой имеющийся. Строка — как раньше. */
+function studyBookAll(s){
+  const b = s && s.book;
+  if (!b) return [];
+  if (typeof b === 'string') return [b];
+  return ['ru', 'en'].map(k => b[k]).filter(f => typeof f === 'string' && f);
+}
+function studyBook(s){
+  const b = s && s.book;
+  if (!b) return '';
+  if (typeof b === 'string') return b;
+  return b[stLang()] || b.ru || b.en || '';
 }
 function studySections(){ return ((STUDY.cat || studyDefaultCat()).sections || []).filter(s => s && s.id); }
 function studySec(id){ return studySections().find(s => +s.id === +id); }
@@ -8980,7 +8995,7 @@ async function studyCatLoad(force){
 function studyProbe(){
   if (netOff() || !navigator.onLine) return;
   studySections().forEach(s => {
-    [s.test, s.book].forEach(f => {
+    [s.test].concat(studyBookAll(s)).forEach(f => {
       if (!f || f in STUDY.exists) return;
       STUDY.exists[f] = null;
       fetch(STUDY_DIR + f, { method: 'HEAD', cache: 'no-cache' }).then(r => {
@@ -9347,11 +9362,11 @@ function studyRefHtml(q){
 }
 /* ---------- чтение учебника ---------- */
 function studyReadOpen(secId){
-  const s = studySec(secId); if (!s || !s.book) return;
+  const s = studySec(secId), file = studyBook(s); if (!s || !file) return;
   if (STUDY.read) studyReadClose(true);
-  STUDY.read = { id: uid(), sec: +secId, file: s.book, started_at: new Date().toISOString(), clock: stClockNew() };
+  STUDY.read = { id: uid(), sec: +secId, file, started_at: new Date().toISOString(), clock: stClockNew() };
   render();
-  audit('study_read', 'study', STUDY.read.id, { sec: +secId, file: s.book, phase: 'open' });
+  audit('study_read', 'study', STUDY.read.id, { sec: +secId, file, phase: 'open' });
 }
 async function studyReadClose(silent){
   const rd = STUDY.read; if (!rd) return;
@@ -9374,7 +9389,7 @@ function studyReadHtml(){
     ? `<iframe class="st-frame" src="${url}" title="${esc(L(s.title))}"></iframe>`
     : ext === 'md' || ext === 'txt'
     ? `<iframe class="st-frame" src="${url}" sandbox="" title="${esc(L(s.title))}"></iframe>`
-    : `<iframe class="st-frame" src="${url}" sandbox="allow-same-origin allow-popups" title="${esc(L(s.title))}"></iframe>`;
+    : `<iframe class="st-frame" src="${url}" sandbox="allow-same-origin allow-scripts allow-popups" allow="fullscreen" allowfullscreen title="${esc(L(s.title))}"></iframe>`;   // v1.08.60: allow-scripts — листалка внутри книги
   return `<div class="st-read">
     <div class="st-read-h">
       <span class="st-sec-dot" style="background:${s.color || STUDY_COLORS[(rd.sec - 1) % 8]}"></span>
@@ -9417,7 +9432,7 @@ function studyResumeHtml(){
 function studySecCardHtml(){
   const s = studySec(studySelId()); if (!s) return '';
   const q = STUDY.quiz[s.id];
-  const testOk = studyHas(s.test), bookOk = studyHas(s.book);
+  const testOk = studyHas(s.test), bookOk = studyHas(studyBook(s));
   const qn = q && q.questions ? q.questions.length : null;
   const col = s.color || STUDY_COLORS[(s.id - 1) % 8];
   const err = q && q.err ? `<div class="tiny" style="color:var(--red)">${esc(q.err)}</div>` : '';

@@ -38,7 +38,7 @@
 - Тест: режим «Обучение» (разбор сразу) или «Экзамен» (разбор в итогах), число вопросов, язык RU/EN, перемешивание, подсказки, схемы, таймер активного времени, восстановление после перезагрузки, модалка результатов и разбор с фильтром «Только ошибки».
 - Материалы: учебник раздела (html/pdf) открывается внутри приложения, время чтения считается.
 - Доступ: Настройки → «Учёба» — личная галочка «Показывать в меню», у админа «Учёба включена», «Всем / По списку», порог зачёта; флажок «Учёба доступна» и в ⚙️ сотрудника.
-- **Файлы**: `dictionary/index.json` (каталог разделов), `dictionary/tests/section-N.json` (единый формат — `dictionary/tests/SCHEMA.md`, образец `template.json`, конвертер и проверка `tools/normalize-quiz.py`; в сборке разделы 3, 5, 7), `dictionary/books/section-N.html|pdf` (учебники; `section-8.html` — образец). Положили файл — раздел работает без правки кода.
+- **Файлы**: `dictionary/index.json` (каталог разделов), `dictionary/tests/section-N.json` (единый формат — `dictionary/tests/SCHEMA.md`, образец `template.json`, конвертер и проверка `tools/normalize-quiz.py`; в сборке разделы 3, 5, 7), `dictionary/books/section-N-ru.html` / `section-N-en.html` (учебники на двух языках — какую открыть, решает язык интерфейса; в сборке раздел 1, 173 стр., точная копия вёрстки PDF со своим просмотрщиком: оглавление, миниатюры, поиск, масштаб, листание; собираются из PDF одной командой `dictionary/books/tools/pdf2book.py`; `section-8.html` — образец простой страницы). Положили файл — раздел работает без правки кода.
 - **Установка**: `supabase/update-to-1_08_51.sql` (или `full-install-1_08_51.sql`) — таблица `study_sessions`, колонки `org_settings.study_*` и `profiles.study_access/study_off`; опубликовать сборку вместе с папкой `dictionary/`. Edge Functions не менялись. Автотесты: `tests/v1_08_51.js` (Playwright), `tests/study.sql` (RLS и восстановление).
 
 ### Новое в v1.08.50 — фирменный руль у номера машины
@@ -711,7 +711,8 @@ terms.html            — условия использования (RU/EN); т�
 icons/                — иконки приложения
 dictionary/index.json — каталог учебных разделов (8 шт.: цвет, название, файл теста, файл учебника) — v1.08.51
 dictionary/tests/     — JSON-тесты по разделам (section-N.json), SCHEMA.md — единый формат, template.json — образец, tools/normalize-quiz.py — конвертер/проверка
-dictionary/books/     — учебники разделов (section-N.html или .pdf), README.md — правила, section-8.html — образец
+dictionary/books/     — учебники разделов (section-N-ru.html / -en.html, .pdf), README.md — правила и сборка, section-8.html — образец;
+                        tools/pdf2book.py + viewer.html — конвертер папки PDF в единый HTML-учебник с просмотрщиком
 tests/v1_08_51.js     — автотест «Учёбы» (Playwright, демо-режим)
 tests/study.sql       — автотест базы для учёбы (BEGIN…ROLLBACK, безопасен на любой базе)
 tests/ui-check.js     — автотест интерфейса и прокрутки (тот же движок, что у кнопки диагностики)

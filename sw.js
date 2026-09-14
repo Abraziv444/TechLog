@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.08.59';
+const VERSION = '1.08.60';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -62,14 +62,22 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Навигация: network-first, офлайн — из кеша
-  if (req.mode === 'navigate') {
+  // Навигация: network-first, офлайн — из кеша.
+  // v1.08.60: под ключ './index.html' кладём только саму оболочку. Раньше сюда
+  // попадала любая навигация — в том числе учебник, открытый во <iframe>, и
+  // privacy/terms — и офлайн вместо приложения мог подняться учебник.
+  // Учебники (dictionary/) обслуживает своя ветка ниже.
+  if (req.mode === 'navigate' && !url.pathname.includes('/dictionary/')) {
+    const shell = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
+    const key = shell ? './index.html' : req;
     e.respondWith(
       fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put('./index.html', copy)).catch(() => {});
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(key, copy)).catch(() => {});
+        }
         return res;
-      }).catch(() => caches.match('./index.html'))
+      }).catch(() => caches.match(key).then((hit) => hit || (shell ? undefined : caches.match('./index.html'))))
     );
     return;
   }
