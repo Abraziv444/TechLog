@@ -52,7 +52,9 @@ const expose = `;window.__T = {
   sectionFaqHtml, faqHtml, viewHeader, viewLogin, viewStats, SECTION_HELP, chainCardBody, tvAgo, gdInvPathSample,
   /* v1.08.51: учёба */
   STUDY, qzNorm, studyAllowedFor, studyMenuOn, studySections, studyDefaultCat, studySecStat, fmtMs, BK_TABLES,
-  studyBook, studyBookAll, stComboRefs, stViewBuild, stOpts, stCorrect, biText, mediaLocked, canArchDoc, printBtnOn
+  studyBook, studyBookAll, stComboRefs, stViewBuild, stOpts, stCorrect, biText, mediaLocked, canArchDoc, printBtnOn,
+  /* v1.08.84 */
+  invTail, drawInvoiceCont, techFullNamesFor, invCutLine
 };`;
 
 try {
@@ -1841,6 +1843,28 @@ console.log('\n— v1.08.51: учёба —');
     src.includes('const CT_PHOTOS = 3, CT_VIDEOS = 2, CT_VSEC = 3;') && src.includes("const nPh = Math.min(CT_PHOTOS, mediaFree(jobId, 'photo', 'job')), nVd = Math.min(CT_VIDEOS, mediaFree(jobId, 'video', 'job'));")
     && src.includes("for (let k = 1; k <= nVd; k++){") && src.includes("await wait(CT_VSEC * 1000);") && src.includes("ctStepSrv(jobId, nPh)") && /ct_s_photo: 'Камера: \{N\} кадра\(ов\)'/.test(src)
     && src.includes("if (r.ph < needP || r.phOk < needP) throw new Error('миниатюры фото: ' + r.phOk + ' из ' + needP);"));
+  console.log('\n— v1.08.84: одиночный инвойс — альбомный лист, лист-продолжение —');
+  t('v1.08.84: одиночный PDF на альбомном Letter, бланк в (0,0), линия отреза, разбор хвоста и лист справа',
+    /function buildInvoicePdfDoc\(quiet, jobArg\)\{[\s\S]*?orientation: 'landscape', unit: 'mm', format: 'letter'[\s\S]*?invCutLine\(doc\);\s*const cont = invTail\(doc, j\);\s*drawInvoiceVert\(doc, j, 0, 0, cont\);\s*if \(cont\.any\) drawInvoiceCont\(doc, j, cont, INV_W, 0\);/.test(src)
+    && !src.includes('const left = (215.9 - INV_W) / 2'));
+  t('v1.08.84: invTail/drawInvoiceCont/techFullNamesFor/invCutLine есть; бланк принимает cont и ставит пометки «see attached sheet»',
+    src.includes('function invTail(doc, j){') && src.includes('function drawInvoiceCont(doc, j, cont, left, top){') && src.includes('function techFullNamesFor(j){') && src.includes('function invCutLine(doc){')
+    && src.includes('function drawInvoiceVert(doc, j, left, top, cont){') && src.includes("const SEE = 'see attached sheet';") && src.includes("if (noteOver) nl[1] = '(continued - ' + SEE + ')';")
+    && src.includes("txt(othOver ? fitW(s1, C2 - 1 - (L+26)) : s1.slice(0,46), L+26, ry+3.2)") && src.includes("if (exList.length > 1 || exOver){"));
+  t('v1.08.84: лист-продолжение — шапка с номером/датой/сотрудниками, разделы с AMOUNT и подытогом, перенос на новые страницы по две колонки',
+    src.includes("txt('INVOICE ATTACHMENT' + (contd ? ' (cont.)' : '')") && src.includes("txt('Technician(s):', L+2, y)") && src.includes("section('OTHER SERVICES', true);") && src.includes("section('ADDITIONAL WORKS & PURCHASES', true);")
+    && src.includes("section('NOTES', false);") && src.includes("subtotal('Subtotal:'") && src.includes("if (colX + INV_W + 1 < PW){ colX += INV_W; }") && src.includes("else { doc.addPage(); colX = 0; invCutLine(doc); }"));
+  t('v1.08.84: пакетный отчёт — линия отреза через invCutLine, бланк без cont (старое поведение)', src.includes('if (pos === 0) invCutLine(doc);\n    drawInvoiceVert(doc, j, pos * INV_W, 0);'));
+  { /* живой прогон разбора хвоста на фиктивном doc: ширины считаем по длине строки */
+    const mk = () => ({ setFont(){}, setFontSize(){}, getTextWidth: s => String(s).length * 1.2, splitTextToSize: (s, w) => { const out = []; let cur = ''; String(s).split(' ').forEach(x => { if ((cur + ' ' + x).length * 1.2 > w && cur){ out.push(cur); cur = x; } else cur = cur ? cur + ' ' + x : x; }); if (cur) out.push(cur); return out; } });
+    const jb = { note: '', note_en: 'short', form_data: Object.assign(T.emptyFormData(), { others: [{ desc: 'a', amount: 1 }, { desc: 'b', amount: 2 }], extra: [] }) };
+    const a = T.invTail(mk(), jb);
+    const jb2 = { note: '', note_en: 'short', form_data: Object.assign(T.emptyFormData(), { others: [{ desc: 'a', amount: 1 }, { desc: 'b', amount: 2 }, { desc: 'c', amount: 3 }], extra: [] }) };
+    const b = T.invTail(mk(), jb2);
+    const jb3 = { note: '', note_en: Array.from({ length: 80 }, () => 'word').join(' '), form_data: T.emptyFormData() };
+    const c = T.invTail(mk(), jb3);
+    t('v1.08.84: invTail — 2 короткие строки не переносятся, 3 строки или длинная заметка уходят на лист', !a.any && b.othOver && b.any && !b.noteOver && c.noteOver && !c.othOver && c.any && c.noteLines.length > 2);
+  }
   console.log('\n— v1.08.83: копировать всегда, плитки локально+сервер —');
   t('v1.08.83: в живой модалке кнопки Копировать/Скачать с первой секунды', src.includes("const copyBtns = `<button class=\"btn btn-blue sm\" onclick=\"App.tlogCopy()\">") && src.includes("`${copyBtns}<button class=\"btn btn-ghost sm\" onclick=\"App.ctLiveHide()\">"));
   t('v1.08.83: плитки считаются локально + с сервера, в обоих тестах', src.includes('function ctTiles(){') && src.includes('async function ctTilesCheck(jobId, needP, needV){') && src.includes("ctTilesCheck(jobId, nPh, nVd)") && src.includes("ctTilesCheck(st.jobId, 2, 1)")

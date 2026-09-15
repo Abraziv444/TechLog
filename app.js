@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.83';
+const APP_VERSION = '1.08.84';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -9014,13 +9014,16 @@ function buildInvoicePdfDoc(quiet, jobArg){
     if (iss.length){ toast('⚠ ' + t('pdf_blocked') + ': ' + iss.map(k=>t('issue_'+k)).join(', '), 'err'); return null; }
   }
   const { jsPDF } = window.jspdf;
-  // v1.07.06: одиночный инвойс — тот же ВЕРТИКАЛЬНЫЙ бланк, по центру портретного Letter
-  const doc = pdfLatinize(new jsPDF({ unit: 'mm', format: 'letter' }));   // 215.9 × 279.4
-  const left = (215.9 - INV_W) / 2, top = (279.4 - INV_H) / 2;
-  doc.setLineDashPattern([2,2],0); doc.setDrawColor(190);
-  doc.rect(left, top, INV_W, INV_H);                                 // контур половинки-бланка (линия отреза)
-  doc.setDrawColor(0); doc.setLineDashPattern([],0);
-  drawInvoiceVert(doc, j, left, top);
+  /* v1.08.84: одиночный инвойс — АЛЬБОМНЫЙ Letter, тот же вертикальный
+     бланк прижат к левому краю (как первая половинка пакетного отчёта);
+     правая половина — под лист-продолжение (drawInvoiceCont), если
+     «хвост» бланка (Other services, доп. работы, заметка) не помещается.
+     До 1.08.83 бланк стоял по центру портретного листа. */
+  const doc = pdfLatinize(new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' }));   // 279.4 × 215.9
+  invCutLine(doc);
+  const cont = invTail(doc, j);
+  drawInvoiceVert(doc, j, 0, 0, cont);
+  if (cont.any) drawInvoiceCont(doc, j, cont, INV_W, 0);
   return doc;
 }
 /* =====================================================================
@@ -13042,7 +13045,15 @@ function viewInvoicesReport(){
    и в пакетном отчёте (два бланка рядом, вертикальная линия отреза).
    ===================================================================== */
 const INV_W = 139.7, INV_H = 215.9;
-function drawInvoiceVert(doc, j, left, top){
+/* пунктирная линия отреза между половинками альбомного листа */
+function invCutLine(doc){
+  doc.setLineDashPattern([2,2],0); doc.setDrawColor(150);
+  doc.line(INV_W, 5, INV_W, INV_H - 5);
+  doc.setDrawColor(0); doc.setLineDashPattern([],0);
+}
+/* cont — разбор «хвоста» из invTail (v1.08.84) или ничего: тогда, как
+   раньше, длинные строки просто обрезаются (пакетный отчёт) */
+function drawInvoiceVert(doc, j, left, top, cont){
   const fd = Object.assign(emptyFormData(), j.form_data || {});
   const cp = cpById(j.counterparty_id) || {name:''};
   const cx = cxById(j.complex_id) || {name:'', address:''};
@@ -13217,17 +13228,30 @@ function drawInvoiceVert(doc, j, left, top){
   radio(x+19, ry+6.3, fd.pad.all_unit); txt('All Unit', x+21, ry+7.2);
   amt(sec.pad, ry+3.4);
 
-  /* OTHER SERVICES: строки переносим, ширина узкая */
+  /* OTHER SERVICES: строки переносим, ширина узкая.
+     v1.08.84: если cont говорит, что часть не помещается, в бланке остаётся
+     первая строка (обрезанная по ширине с «...») и пометка «see attached
+     sheet», полный список уходит на лист-продолжение; суммы в колонке
+     AMOUNT сходятся: первая строка — своя сумма, пометка — сумма остальных */
+  const SEE = 'see attached sheet';
+  const fitW = (s, w) => { s = String(s || ''); if (doc.getTextWidth(s) <= w) return s;
+    while (s.length && doc.getTextWidth(s + '...') > w) s = s.slice(0, -1); return s.replace(/\s+$/, '') + '...'; };
+  const more = (k, w) => fitW(k > 0 ? '+' + k + ' more line' + (k > 1 ? 's' : '') + ' - ' + SEE : 'full text - ' + SEE, w);
   const oth = (fd.others||[]).filter(o => (o.desc && o.desc.trim()) || +o.amount > 0);
+  const othOver = !!(cont && cont.othOver);
   ry = row(4.8);
   F('bold',6.4); txt('OTHER SERVICES:', L+1.3, ry+3.2);
-  if (oth[0]){ F('bolditalic',6.2); txt(enText(oth[0].desc, oth[0].desc_en).slice(0,46), L+26, ry+3.2); amt(+oth[0].amount||0, ry+3.2); }
+  if (oth[0]){ F('bolditalic',6.2); const s1 = enText(oth[0].desc, oth[0].desc_en);
+    txt(othOver ? fitW(s1, C2 - 1 - (L+26)) : s1.slice(0,46), L+26, ry+3.2); amt(+oth[0].amount||0, ry+3.2); }
   doc.setLineWidth(.15); line(L+25, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
   const rest = oth.slice(1);
   const exList = (fd.extra||[]);
-  if (rest.length || !exList.length){
+  if (rest.length || othOver || !exList.length){
     ry = row(4.8);
-    if (rest.length){
+    if (othOver){
+      F('bolditalic',6.2); txt(more(rest.length, C2 - 1 - (L+2)), L+2, ry+3.2);
+      amt(rest.reduce((s,o)=>s+(+o.amount||0),0), ry+3.2);
+    } else if (rest.length){
       F('bolditalic',6.2);
       txt(rest.map(o=>enText(o.desc, o.desc_en)).filter(Boolean).join(' · ').slice(0,58), L+2, ry+3.2);
       amt(rest.reduce((s,o)=>s+(+o.amount||0),0), ry+3.2);
@@ -13235,21 +13259,26 @@ function drawInvoiceVert(doc, j, left, top){
     doc.setLineWidth(.15); line(L+1.3, ry+3.9, C2-1, ry+3.9); doc.setLineWidth(.2);
   }
   if (exList.length){
+    const exOver = !!(cont && cont.exOver);
     const head = exList[0];
     ry = row(4.6);
-    F('bolditalic',6.1); txt(extraItemTextEn(head).slice(0,60), L+2, ry+3.1);
+    F('bolditalic',6.1); const e1 = extraItemTextEn(head);
+    txt(exOver ? fitW(e1, C2 - 1 - (L+2)) : e1.slice(0,60), L+2, ry+3.1);
     amt(extraLineTotal(head), ry+3.1);
-    if (exList.length > 1){
+    if (exList.length > 1 || exOver){
       ry = row(4.6);
-      const tail = exList.slice(1);
+      const exRest = exList.slice(1);
       F('bolditalic',6);
-      txt(tail.map(extraItemTextEn).join(' · ').slice(0,62), L+2, ry+3.1);
-      amt(tail.reduce((s,it)=>s+extraLineTotal(it),0), ry+3.1);
+      txt(exOver ? more(exRest.length, C2 - 1 - (L+2)) : exRest.map(extraItemTextEn).join(' · ').slice(0,62), L+2, ry+3.1);
+      amt(exRest.reduce((s,it)=>s+extraLineTotal(it),0), ry+3.1);
     }
   }
 
   if (noteEn){
+    const noteOver = !!(cont && cont.noteOver);
+    F('bolditalic',6);                          /* тот же шрифт, что при разборе в invTail */
     const nl = doc.splitTextToSize(noteEn.replace(/\s+/g,' '), W - 16).slice(0,2);
+    if (noteOver) nl[1] = '(continued - ' + SEE + ')';
     ry = row(2.2 + nl.length*2.8 + 1.6);
     F('bold',6.2); txt('NOTES:', L+1.3, ry+3.1);
     F('bolditalic',6);
@@ -13279,6 +13308,124 @@ function drawInvoiceVert(doc, j, left, top){
   txt('SIGNATURE:', L+2, y+2.2); line(L+18, y+2.8, R-2, y+2.8); doc.setLineDashPattern([],0);
 }
 
+/* =====================================================================
+   v1.08.84: ЛИСТ-ПРОДОЛЖЕНИЕ ИНВОЙСА (правая половина альбомного листа).
+   Бланк вмещает две строки Other services, две строки доп. работ и две
+   строки заметки. Всё, что не влезает, уходит на лист-продолжение: рамка
+   с минимумом реквизитов (номер документа, дата, фамилии и имена
+   сотрудников) и полными списками — каждая строка со своей суммой,
+   подытог по разделу, заметка целиком. Уходят только разделы, которые
+   не поместились; остальное остаётся в бланке как есть. Если и правой
+   половины мало, продолжение переходит на следующие страницы (по две
+   колонки-половинки на лист, с повтором шапки).
+   ===================================================================== */
+function techFullNamesFor(j){
+  const ids = [j.technician_id, ...(j.helper_ids||[])].filter(Boolean);
+  const names = ids.map(id => { const pr = state.data.profiles.find(p=>p.id===id); return pr ? String(pr.display_name||'').trim() : null; }).filter(Boolean);
+  return names.length ? names.join(', ') : String(j.technician_name||'');
+}
+/* разбор «хвоста»: те же колонки и шрифты, что в drawInvoiceVert */
+function invTail(doc, j){
+  const fd = Object.assign(emptyFormData(), j.form_data || {});
+  const F = (st,sz)=>{ doc.setFont('helvetica',st); doc.setFontSize(sz); };
+  const tw = s => doc.getTextWidth(String(s || ''));
+  const W = INV_W - 12, C2 = W - 15;                 // отступы от L, как в бланке
+  const oth = (fd.others||[]).filter(o => (o.desc && o.desc.trim()) || +o.amount > 0)
+    .map(o => ({ text: enText(o.desc, o.desc_en), amount: +o.amount || 0 }));
+  const ex = (fd.extra||[]).map(it => ({ text: extraItemTextEn(it), amount: extraLineTotal(it) }));
+  const noteEn = enText(j.note, j.note_en).replace(/\s+/g,' ').trim();
+  F('bolditalic',6.2);
+  const othOver = oth.length > 2 || (oth.length > 0 && tw(oth[0].text) > C2 - 1 - 26)
+    || (oth.length > 1 && tw(oth.slice(1).map(o=>o.text).filter(Boolean).join(' · ')) > C2 - 1 - 2);
+  F('bolditalic',6.1);
+  const exOver = ex.length > 2 || (ex.length > 0 && tw(ex[0].text) > C2 - 1 - 2)
+    || (ex.length > 1 && tw(ex.slice(1).map(x=>x.text).join(' · ')) > C2 - 1 - 2);
+  F('bolditalic',6);
+  const noteLines = noteEn ? doc.splitTextToSize(noteEn, W - 16) : [];
+  const noteOver = noteLines.length > 2;
+  return { oth, ex, noteEn, noteLines, othOver, exOver, noteOver, any: othOver || exOver || noteOver };
+}
+function drawInvoiceCont(doc, j, cont, left, top){
+  const org = state.data.org_settings;
+  const F = (st,sz)=>{ doc.setFont('helvetica',st); doc.setFontSize(sz); };
+  const txt = (s,x,y,o)=>doc.text(String(s??''),x,y,o);
+  const line = (a,b,c,d)=>doc.line(a,b,c,d);
+  const money2 = v => String(Math.round(v*100)/100);
+  const no = docNo('job', j) || '-';
+  const names = techFullNamesFor(j) || '-';
+  const PW = doc.internal.pageSize.getWidth();
+  const BOT = top + INV_H - 8;                       // нижняя граница колонки
+  let colX = left, L, R, W, frameTop, y;
+  doc.setLineWidth(.2);
+  /* шапка колонки: заголовок + реквизиты; повторяется в каждой колонке */
+  const head = (contd) => {
+    L = colX + 6; R = colX + INV_W - 6; W = R - L;
+    frameTop = top + 6; y = frameTop + 5.4;
+    F('bold',10); txt('INVOICE ATTACHMENT' + (contd ? ' (cont.)' : ''), L + W/2, y, {align:'center'});
+    y += 3.8;
+    F('normal',5.6); txt('Notes and additional services - continuation of the invoice form', L + W/2, y, {align:'center'});
+    y += 5.2;
+    F('bold',6.8); txt('Invoice #:', L+2, y); F('bold',7.2); txt(no, L+16, y);
+    F('bold',6.8); txt('Date:', L+76, y); F('bold',7.2); txt(fmtUS(j.date), L+84, y);
+    y += 4.4;
+    F('bold',6.8); txt('Technician(s):', L+2, y); F('bold',7.2);
+    const nl = doc.splitTextToSize(names, W - 24).slice(0, 2);
+    nl.forEach((s, i) => txt(s, L+22, y + i*3.4));
+    y += 2 + nl.length*3.4 - 1.4;
+    doc.setLineWidth(.35); line(L, y, R, y); doc.setLineWidth(.2);
+    y += 0.6;
+  };
+  const closeFrame = () => { doc.setLineWidth(.35); doc.rect(L, frameTop, W, Math.max(y + 2, frameTop + 40) - frameTop); doc.setLineWidth(.2); };
+  const nextCol = () => {
+    closeFrame();
+    if (colX + INV_W + 1 < PW){ colX += INV_W; }
+    else { doc.addPage(); colX = 0; invCutLine(doc); }
+    head(true);
+  };
+  const ensure = (h) => { if (y + h > BOT) nextCol(); };
+  const section = (title, withAmt) => {
+    ensure(4.6 + 3.2);
+    doc.setFillColor(235,235,235); doc.rect(L, y, W, 4.6, 'F');
+    F('bold',6.6); txt(title, L+2, y+3.2);
+    if (withAmt) txt('AMOUNT', R-2, y+3.2, {align:'right'});
+    y += 4.6; line(L, y, R, y); y += 0.6;
+  };
+  const item = (k, text, amount) => {
+    F('bolditalic',6.2);
+    const ls = doc.splitTextToSize(String(text || '-').replace(/\s+/g,' ') || '-', W - 26);
+    ls.forEach((s, i) => {
+      ensure(3.2);
+      if (i === 0){ F('bold',6.2); txt(k + '.', L+2, y+2.6); if (amount > 0) txt(money2(amount), R-2, y+2.6, {align:'right'}); }
+      F('bolditalic',6.2); txt(s, L+7, y+2.6);
+      y += 3;
+    });
+    y += 0.6; doc.setLineWidth(.12); doc.setDrawColor(170); line(L+7, y, R-2, y); doc.setDrawColor(0); doc.setLineWidth(.2); y += 0.6;
+  };
+  const subtotal = (label, v) => { ensure(4.6); F('bold',6.4); txt(label, R-22, y+3, {align:'right'}); txt(money2(v), R-2, y+3, {align:'right'}); y += 5; };
+  const para = (text) => {
+    F('bolditalic',6.2);
+    doc.splitTextToSize(String(text||''), W - 5).forEach(s => { ensure(3.2); F('bolditalic',6.2); txt(s, L+2.5, y+2.6); y += 3; });   /* шрифт заново: шапка новой колонки его меняет */
+    y += 1.2;
+  };
+
+  head(false);
+  if (cont.othOver){
+    section('OTHER SERVICES', true);
+    cont.oth.forEach((o, i) => item(i + 1, o.text, o.amount));
+    subtotal('Subtotal:', cont.oth.reduce((s, o) => s + o.amount, 0));
+  }
+  if (cont.exOver){
+    section('ADDITIONAL WORKS & PURCHASES', true);
+    cont.ex.forEach((e, i) => item(i + 1, e.text, e.amount));
+    subtotal('Subtotal:', cont.ex.reduce((s, e) => s + e.amount, 0));
+  }
+  if (cont.noteOver){
+    section('NOTES', false);
+    para(cont.noteEn);
+  }
+  closeFrame();
+}
+
 function buildBatchDoc(){
   if (!window.jspdf){ toast('jsPDF not loaded', 'err'); return null; }
   const all = repJobs();
@@ -13292,11 +13439,7 @@ function buildBatchDoc(){
   js.forEach((j, i) => {
     const pos = i % 2;
     if (i > 0 && pos === 0) doc.addPage();
-    if (pos === 0){
-      doc.setLineDashPattern([2,2],0); doc.setDrawColor(150);
-      doc.line(INV_W, 5, INV_W, INV_H - 5);
-      doc.setDrawColor(0); doc.setLineDashPattern([],0);
-    }
+    if (pos === 0) invCutLine(doc);
     drawInvoiceVert(doc, j, pos * INV_W, 0);
   });
   doc._cnt = js.length; doc._skipped = skipped;
