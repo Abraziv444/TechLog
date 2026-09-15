@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.84';
+const APP_VERSION = '1.08.85';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -203,6 +203,8 @@ const I18N = {
     net_went_off: 'Связь пропала: записи копятся на устройстве, серверные функции временно недоступны',
     net_went_on: 'Связь восстановлена',
     net_login_off: 'Нет связи — вход возможен только при подключении к интернету',
+    login_kicked: 'Сессию завершил сервер (не кнопка «Выйти»). Причина записана в Журнал событий (Настройки → Диагностика).',
+    login_kicked_doc: 'Сессию завершил сервер (не кнопка «Выйти»). Правки документа Unit {U} сохранены на устройстве — откроются после входа. Причина — в Журнале событий (Настройки → Диагностика).',
     net_queue: 'в очереди', net_q_rows: 'зап.', net_q_media: 'файл.',
     net_jr_local: 'офлайн — показаны записи только с этого устройства',
     inv_sec_open_all: 'Развернуть все', inv_sec_fold_empty: 'Свернуть пустые',
@@ -1328,6 +1330,8 @@ const I18N = {
     net_went_off: 'Connection lost: writes are queued on the device, server functions are paused',
     net_went_on: 'Connection restored',
     net_login_off: 'No connection — signing in needs the internet',
+    login_kicked: 'The server ended the session (not the Sign out button). The reason is in the event log (Settings → Diagnostics).',
+    login_kicked_doc: 'The server ended the session (not the Sign out button). Your edits to Unit {U} are saved on this device and will reopen after signing in. The reason is in the event log (Settings → Diagnostics).',
     net_queue: 'queued', net_q_rows: 'rows', net_q_media: 'files',
     net_jr_local: 'offline — showing entries from this device only',
     inv_sec_open_all: 'Expand all', inv_sec_fold_empty: 'Collapse empty',
@@ -4110,6 +4114,7 @@ async function syncNow(silent){
     const meProf = state.user && (state.data.profiles||[]).find(p => p.id === state.user.id);
     if (meProf && meProf.blocked){
       dlog('sync: текущий пользователь заблокирован — выход');
+      AUTHX.byApp = 'пользователь заблокирован';
       if (HAS_SB){ try{ await state.sb.auth.signOut(); }catch(e){} }
       else localStorage.removeItem(LS_SESSION);
       state.user = null; state.screen = 'login';
@@ -4386,16 +4391,103 @@ async function initAuth(){
     }
     return;
   }
-  state.sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY);
+  state.sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { global: { fetch: sbFetch } });   // v1.08.85
   const { data: { session } } = await state.sb.auth.getSession();
   if (session){ try{ await afterSbLogin(session); }catch(e){ dlog('⛔ afterSbLogin(init):', e); } }
   state.sb.auth.onAuthStateChange((ev, s) => {
     dlog('auth: событие', ev);
-    if (!s && state.user){ state.user = null; state.screen = 'login'; render(); }
+    if (!s && state.user){
+      authSignedOutLog();                          // v1.08.85: причина и контекст — в журнал
+      if (!AUTHX.byUser && !AUTHX.byApp) authKeepDraft();
+      AUTHX.byUser = false; AUTHX.byApp = '';
+      state.user = null; state.screen = 'login'; render();
+    }
     else if (s && !state.user && !loginInFlight){
       afterSbLogin(s).then(()=>{ render(); checkPickupBanner(true); }).catch(e => dlog('⛔ onAuthStateChange:', e));
     }
   });
+}
+/* =====================================================================
+   v1.08.85: ПОЧЕМУ РАЗЛОГИНИЛО. supabase-js отдаёт в onAuthStateChange
+   только имя события — причина SIGNED_OUT в нём не видна. Три источника:
+   (а) сервер отклонил обновление сессии (refresh-токен удалён «Выйти
+   везде», сменой пароля, настройками Supabase; либо использован повторно —
+   та же сессия в другом окне), (б) выход в другой вкладке этого браузера
+   (supabase-js рассылает событие по вкладкам), (в) кнопка «Выйти».
+   Оборачиваем fetch клиента: ответы auth/v1/token и auth/v1/logout с кодом
+   ошибки уходят в журнал, а строка SIGNED_OUT получает контекст (экран,
+   видимость вкладки, черновик, инициатор). Черновик открытого документа
+   при чужом разлогине сохраняется на устройстве и открывается после входа.
+   ===================================================================== */
+const AUTHX = { byUser: false, byApp: '', lastFail: null, lastRefreshOk: 0, kicked: null };
+const AUTH_WHY = {
+  refresh_token_not_found: 'сессия удалена на сервере — «Выйти везде» в Штате, смена пароля/2FA или настройки Supabase (single session, time-box, inactivity)',
+  session_not_found:       'сессия удалена на сервере — «Выйти везде» в Штате, смена пароля/2FA или настройки Supabase (single session, time-box, inactivity)',
+  refresh_token_already_used: 'refresh-токен использован повторно — та же сессия обновилась в другом окне/вкладке, Supabase отозвал всю цепочку',
+  invalid_grant: 'сервер не принял refresh-токен',
+  bad_jwt: 'ключ подписи JWT изменён в Supabase — все сессии недействительны'
+};
+function authWhy(code){ const w = AUTH_WHY[String(code || '').toLowerCase()]; return w ? ' — ' + w : ''; }
+function sbFetch(input, init){
+  const url = typeof input === 'string' ? input : ((input && input.url) || '');
+  const p = window.fetch(input, init);
+  if (!/\/auth\/v1\/(token|logout)/.test(url)) return p;
+  return p.then(r => {
+    try{
+      const grant = (url.match(/grant_type=([a-z_]+)/) || [])[1] || (/\/logout/.test(url) ? 'logout' : 'token');
+      if (r.ok){
+        if (grant === 'refresh_token') AUTHX.lastRefreshOk = Date.now();
+        if (grant === 'logout') dlog('auth: logout отправлен на сервер (' + (AUTHX.byUser ? 'кнопка «Выйти»' : (AUTHX.byApp || 'не кнопка')) + ')');
+        return r;
+      }
+      const fail = (b) => {
+        const code = String((b && (b.error_code || b.code || b.error || b.error_description)) || '');
+        const msg = String((b && (b.msg || b.message || b.error_description)) || '');
+        AUTHX.lastFail = { ts: Date.now(), grant, status: r.status, code, msg };
+        dlog('⛔ auth: сервер отклонил ' + grant + ' — HTTP ' + r.status + (code ? ' · ' + code : '') + (msg && msg !== code ? ' · ' + msg : '') + authWhy(code));
+      };
+      r.clone().json().then(fail).catch(() => fail(null));
+    }catch(e){}
+    return r;
+  });
+}
+function authSignedOutLog(){
+  try{
+    const lf = AUTHX.lastFail && Date.now() - AUTHX.lastFail.ts < 180000 ? AUTHX.lastFail : null;
+    const who = AUTHX.byUser ? 'кнопка «Выйти»'
+      : AUTHX.byApp ? 'приложение: ' + AUTHX.byApp
+      : lf ? 'сервер отклонил ' + lf.grant + ' (HTTP ' + lf.status + (lf.code ? ' · ' + lf.code : '') + ')' + authWhy(lf.code)
+      : 'без отказа сервера в этой вкладке — выход в другой вкладке этого браузера или сброс сессии на сервере';
+    const since = AUTHX.lastRefreshOk ? Math.round((Date.now() - AUTHX.lastRefreshOk) / 60000) + ' мин назад' : 'в этой вкладке не было';
+    dlog('auth: SIGNED_OUT · ' + who + ' · экран ' + state.screen + ' · вкладка ' + document.visibilityState
+      + ' · последнее успешное обновление сессии ' + since + ' · черновик документа ' + (jobDraft ? 'есть (Unit ' + (jobDraft.unit_number || '—') + ')' : 'нет'));
+  }catch(e){}
+}
+/* черновик открытого инвойса — на устройство, с пометкой «после чужого разлогина» */
+function authKeepDraft(){
+  try{
+    if (state.screen === 'job' && jobDraft){
+      clearTimeout(autosaveT);
+      localStorage.setItem('techlog_draft', JSON.stringify({ id: jobDraft.id, ts: Date.now(), draft: jobDraft, relogin: true }));
+      AUTHX.kicked = { unit: jobDraft.unit_number || '', doc: true };
+    } else AUTHX.kicked = { unit: '', doc: false };
+  }catch(e){}
+}
+/* после входа: документ, который редактировали в момент разлогина, открывается сам */
+function authRestoreDraft(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem('techlog_draft') || 'null'); }catch(e){}
+  AUTHX.kicked = null;
+  if (!saved || !saved.relogin || !saved.draft) return false;
+  try{ localStorage.setItem('techlog_draft', JSON.stringify({ id: saved.id, ts: saved.ts, draft: saved.draft })); }catch(e){}
+  const j = (state.data.jobs || []).find(x => x.id === saved.id);
+  if (j){ openJob(saved.id); return true; }               // существующий документ: openJob сам подхватит черновик, если он новее
+  jobDraft = saved.draft;                                  // новый, ещё не сохранённый документ
+  jobDraft.form_data = Object.assign(emptyFormData(), jobDraft.form_data || {});
+  state.screen = 'job'; state.jobId = jobDraft.id;
+  toast('♻ ' + t('draft_restored'), 'inf');
+  dlog('auth: после входа восстановлен несохранённый документ Unit ' + (jobDraft.unit_number || '—'));
+  return true;
 }
 let loginInFlight = false;
 async function afterSbLogin(session){
@@ -4411,6 +4503,7 @@ async function afterSbLogin(session){
     } catch(e){ dlog('⛔ профиль exception:', e); }
     if (prof && prof.blocked){
       dlog('auth: профиль заблокирован — выходим');
+      AUTHX.byApp = 'профиль заблокирован';
       try{ await state.sb.auth.signOut(); }catch(e){}
       state.user = null; state.screen = 'login';
       toast('⛔ ' + t('blocked_msg'), 'err');
@@ -4427,6 +4520,7 @@ async function afterSbLogin(session){
     state.screen = 'home';
     if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
     await syncNow(true);
+    try{ authRestoreDraft(); }catch(e){ dlog('⛔ authRestoreDraft:', e); }   // v1.08.85
   } finally {
     loginInFlight = false;
     mfaRefresh().catch(()=>{}); pbCurrentSub().catch(()=>{});   // v1.08.33: статусы 2FA и пуш-подписки
@@ -4525,6 +4619,7 @@ async function sbSignUp(login, pass, name, invite){
 }
 function logout(){
   dictStop();
+  AUTHX.byUser = true;                                     // v1.08.85: чтобы журнал не списал выход на сервер
   if (HAS_SB && state.sb) state.sb.auth.signOut();
   localStorage.removeItem(LS_SESSION);
   state.user = null; state.screen = 'login'; render();
@@ -7174,6 +7269,7 @@ function viewLogin(){
     <div class="tiny">${t('app_sub')} ${APP_VERSION}</div>
     <hr class="sep">
     <div class="net-login-note" id="net-login-note">${ic('wifi')} ${t('net_login_off')}</div>
+    ${AUTHX.kicked ? `<div class="net-login-note kicked">${ic('warn')} ${AUTHX.kicked.doc ? t('login_kicked_doc').replace('{U}', esc(AUTHX.kicked.unit || '—')) : t('login_kicked')}</div>` : ''}
     <div id="auth-signin">
       <div class="form-row"><input id="li-login" placeholder="${t('login')}" autocomplete="username" autocapitalize="none"
           autofocus enterkeyhint="go" onkeydown="App.enterKey(event,'in')"></div>
@@ -13971,6 +14067,7 @@ async function runDiagnostics(){
     try{
       const { data: { session } } = await state.sb.auth.getSession();
       put(`${mark(true)} сессия: ${session ? 'активна (uid ' + session.user.id.slice(0,8) + '…, ' + (session.user.email||'') + ')' : 'нет (не выполнен вход)'}`);
+      if (AUTHX.lastFail){ const f = AUTHX.lastFail; put(`⚠ последний отказ auth-сервера: ${f.grant} · HTTP ${f.status}${f.code ? ' · ' + f.code : ''}${f.msg && f.msg !== f.code ? ' · ' + f.msg : ''}${authWhy(f.code)} · ${new Date(f.ts).toLocaleTimeString()}`); }   // v1.08.85
     }catch(e){ put(`${mark(false)} getSession: ${errStr(e)}`); }
 
     // таблицы (главный признак невыполненного schema.sql)

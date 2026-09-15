@@ -2336,6 +2336,8 @@ html.tl-offline .net-need:active{ transform:none !important }
   border:2px solid var(--red);border-radius:12px;background:rgba(255,75,75,.08);
   color:var(--red);padding:8px 10px;font-size:.8rem;font-weight:700;margin-bottom:12px }
 html.tl-offline .net-login-note{ display:flex }
+/* v1.08.85: сессию завершил сервер — жёлтая плашка на экране входа */
+.net-login-note.kicked{ display:flex;border-color:var(--yellow);color:var(--yellow);background:rgba(255,200,0,.08) }
 
 /* =====================================================================
    v1.08.38: разделы инвойса — спойлеры. Пустая секция свёрнута до

@@ -54,7 +54,10 @@ const expose = `;window.__T = {
   STUDY, qzNorm, studyAllowedFor, studyMenuOn, studySections, studyDefaultCat, studySecStat, fmtMs, BK_TABLES,
   studyBook, studyBookAll, stComboRefs, stViewBuild, stOpts, stCorrect, biText, mediaLocked, canArchDoc, printBtnOn,
   /* v1.08.84 */
-  invTail, drawInvoiceCont, techFullNamesFor, invCutLine
+  invTail, drawInvoiceCont, techFullNamesFor, invCutLine,
+  /* v1.08.85 */
+  AUTHX, sbFetch, authWhy, authSignedOutLog, authKeepDraft, authRestoreDraft, viewLogin,
+  setJobDraft: d => { jobDraft = d; }, getJobDraft: () => jobDraft, setScreen: s => { state.screen = s; }
 };`;
 
 try {
@@ -1843,6 +1846,45 @@ console.log('\n— v1.08.51: учёба —');
     src.includes('const CT_PHOTOS = 3, CT_VIDEOS = 2, CT_VSEC = 3;') && src.includes("const nPh = Math.min(CT_PHOTOS, mediaFree(jobId, 'photo', 'job')), nVd = Math.min(CT_VIDEOS, mediaFree(jobId, 'video', 'job'));")
     && src.includes("for (let k = 1; k <= nVd; k++){") && src.includes("await wait(CT_VSEC * 1000);") && src.includes("ctStepSrv(jobId, nPh)") && /ct_s_photo: 'Камера: \{N\} кадра\(ов\)'/.test(src)
     && src.includes("if (r.ph < needP || r.phOk < needP) throw new Error('миниатюры фото: ' + r.phOk + ' из ' + needP);"));
+  console.log('\n— v1.08.85: почему разлогинило, черновик переживает чужой разлогин —');
+  t('v1.08.85: клиент Supabase создаётся с обёрткой fetch, SIGNED_OUT логируется с контекстом, черновик сохраняется',
+    src.includes("createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { global: { fetch: sbFetch } })") && src.includes('authSignedOutLog();') && src.includes('if (!AUTHX.byUser && !AUTHX.byApp) authKeepDraft();')
+    && src.includes("try{ authRestoreDraft(); }catch(e){ dlog('⛔ authRestoreDraft:', e); }") && src.includes('AUTHX.byUser = true;') && src.includes("AUTHX.byApp = 'пользователь заблокирован';"));
+  t('v1.08.85: плашка на экране входа и строка в диагностике',
+    src.includes("${AUTHX.kicked ? `<div class=\"net-login-note kicked\">") && src.includes("if (AUTHX.lastFail){ const f = AUTHX.lastFail; put(`⚠ последний отказ auth-сервера:") && css.includes('.net-login-note.kicked{ display:flex'));
+  { /* живой прогон: отказ refresh пишется в AUTHX.lastFail с расшифровкой */
+    const fetch0 = w.fetch;
+    const fake = (status, body) => ({ ok: status < 300, status, clone(){ return this; }, json(){ return Promise.resolve(body); } });
+    w.fetch = (u) => Promise.resolve(/refresh_token/.test(u) ? fake(400, { error_code: 'refresh_token_already_used', msg: 'Invalid Refresh Token: Already Used' }) : fake(200, {}));
+    T.AUTHX.lastFail = null;
+    const runs = [
+      T.sbFetch('https://x.supabase.co/auth/v1/token?grant_type=refresh_token'),
+      T.sbFetch('https://x.supabase.co/rest/v1/jobs'),
+    ];
+    await Promise.all(runs); await new Promise(r => setTimeout(r, 30));
+    {
+      const f = T.AUTHX.lastFail;
+      t('v1.08.85: sbFetch — отказ refresh_token попал в AUTHX.lastFail с кодом и расшифровкой',
+        f && f.grant === 'refresh_token' && f.status === 400 && f.code === 'refresh_token_already_used' && /другом окне/.test(T.authWhy(f.code)), JSON.stringify(f));
+      w.fetch = fetch0;
+      /* черновик: чужой разлогин на экране документа → localStorage с пометкой → после входа документ открыт заново */
+      T.setScreen('job'); T.setJobDraft({ id: 'zz-new', unit_number: '12B', form_data: {}, helper_ids: [] });
+      T.authKeepDraft();
+      let saved = null; try{ saved = JSON.parse(w.localStorage.getItem('techlog_draft')); }catch(e){}
+      t('v1.08.85: authKeepDraft — черновик в localStorage с relogin, плашка знает Unit', saved && saved.relogin === true && saved.id === 'zz-new' && T.AUTHX.kicked && T.AUTHX.kicked.doc && T.AUTHX.kicked.unit === '12B');
+      t('v1.08.85: плашка входа с Unit есть в Supabase-ветке viewLogin (в демо-ветке её нет — там нет сервера), тексты ru/en',
+        /kicked\.doc \? t\('login_kicked_doc'\)\.replace\('\{U\}'/.test(src) && T.DICT.ru.login_kicked_doc.includes('{U}') && T.DICT.en.login_kicked_doc.includes('{U}'));
+      T.setScreen('login'); T.setJobDraft(null);
+      T.state.user = { id: 'demo-admin', role: 'admin' }; T.state.data.jobs = T.state.data.jobs || [];
+      const ok2 = T.authRestoreDraft();
+      let saved2 = null; try{ saved2 = JSON.parse(w.localStorage.getItem('techlog_draft')); }catch(e){}
+      t('v1.08.85: authRestoreDraft — новый документ открыт заново, пометка снята, плашка убрана',
+        ok2 && T.getJobDraft() && T.getJobDraft().id === 'zz-new' && T.state.screen === 'job' && saved2 && !saved2.relogin && T.AUTHX.kicked === null);
+      T.authSignedOutLog();   // не должно бросать
+      t('v1.08.85: authSignedOutLog не падает', true);
+      w.localStorage.removeItem('techlog_draft'); T.setJobDraft(null); T.setScreen('home');
+    }
+  }
   console.log('\n— v1.08.84: одиночный инвойс — альбомный лист, лист-продолжение —');
   t('v1.08.84: одиночный PDF на альбомном Letter, бланк в (0,0), линия отреза, разбор хвоста и лист справа',
     /function buildInvoicePdfDoc\(quiet, jobArg\)\{[\s\S]*?orientation: 'landscape', unit: 'mm', format: 'letter'[\s\S]*?invCutLine\(doc\);\s*const cont = invTail\(doc, j\);\s*drawInvoiceVert\(doc, j, 0, 0, cont\);\s*if \(cont\.any\) drawInvoiceCont\(doc, j, cont, INV_W, 0\);/.test(src)
