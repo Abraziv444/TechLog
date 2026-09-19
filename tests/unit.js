@@ -1599,6 +1599,26 @@ console.log('\n— v1.08.51: учёба —');
     && src.includes('App.trSelAll(1)') && src.includes('function trFiltered(list){') && src.includes('async function trRunSel(){')
     && src.includes('async function trRunList(list, silent){') && css.includes('.rowline.tr-row-doc')
     && ['tr_sel_all', 'tr_sel_none', 'tr_f_who', 'tr_f_cp', 'tr_f_cx', 'tr_open_doc'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
+  t('v1.08.93: окно кода 2FA не обойти — подложка и стрелка «назад» вызывают отмену входа, отмена выходит и локально',
+    /function openModal\(html, opt\)\{/.test(src)
+    && src.includes("const bye = (opt && typeof opt.onClose === 'function') ? opt.onClose : closeModal;")
+    && src.includes("if (bx) bx.onclick = (e) => { e.preventDefault(); e.stopPropagation(); opt.onClose(); };")
+    && src.includes('{ onClose: () => mfaLoginCancel() });')
+    && src.includes("await state.sb.auth.signOut({ scope: 'local' });"));
+  t('v1.08.94: во всех трёх окнах кода 2FA — общий ввод с Enter, только цифры, без maxlength',
+    src.includes('function mfaCodeInput(go){') && (src.match(/\$\{mfaCodeInput\(/g) || []).length === 3
+    && !/id="mfa-code"[^>]*maxlength/.test(src)
+    && src.includes("onkeydown=\"if(event.key==='Enter'){event.preventDefault();${go}}\"")
+    && src.includes('enterkeyhint="go"') && /mfaCodeInput\(`App\.mfaVerifyEnroll/.test(src)
+    && src.includes("mfaCodeInput('App.mfaDisableGo()')") && src.includes("mfaCodeInput('App.mfaLoginVerify()')"));
+  t('v1.08.95: «Настройки документов» — печать и поиск ушли из «Подсказок», общий доступ/аренда/лимиты внутри секции, отступы у галочек',
+    src.includes("${fold('docs', t('docs_set_card'), 'clipboard', docsCardHtml())}")
+    && !/function popCardHtml\(\)\{[\s\S]*?\n\}/.exec(src)[0].match(/App\.printBtn|App\.srchTab|App\.searchOpen/)
+    && src.includes('return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml();')
+    && !src.includes("fold('mlim'") && (src.match(/id="org-shared"/g) || []).length === 1
+    && (src.match(/orgStepperHtml\('default_rent_days'/g) || []).length === 1
+    && css.includes('.set-opts{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;margin:10px 0}')
+    && ['docs_set_card', 'docs_my_title'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')

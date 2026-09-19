@@ -37,13 +37,13 @@ function t(name, cond, note){
   {
     await p.evaluate(() => { window.App.go('settings');
       const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}');
-      if (!f.pop) window.App.foldToggle('pop'); });
+      if (!f.docs) window.App.foldToggle('docs'); });   // v1.08.95: переехало из «Подсказок»
     await p.waitForTimeout(600);
     const has = await p.evaluate(() => ({
       chk: !!document.querySelector('#app input[onchange*="srchTab"]'),
       open: !!document.querySelector('#app button[onclick="App.searchOpen()"]'),
     }));
-    t('в «Подсказках» есть галочка и запасная кнопка «Открыть поиск»',
+    t('в «Настройках документов» есть галочка и запасная кнопка «Открыть поиск»',
       has.chk && has.open, JSON.stringify(has));
 
     await p.evaluate(() => {

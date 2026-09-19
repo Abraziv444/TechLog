@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.92';
+const APP_VERSION = '1.08.95';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -686,7 +686,8 @@ const I18N = {
     ext_rules_hint: 'Количество можно только уменьшить — продлеваем не больше, чем стоит у клиента; остаток забирается в срок. Продление — максимум {N} дн. за раз.',
     ext_max_note: 'макс {N}', restore_pk: 'Вернуть в аренду', restored: 'Возвращено в аренду',
     mgr_approve_chk: 'Менеджер может ставить апрув инвойсов',
-    eq_settings_title: 'Оборудование и документы',
+    eq_settings_title: 'Аренда оборудования и права',
+    docs_set_card: 'Настройки документов', docs_my_title: 'Карточка работы и поиск',
     def_days_lbl: 'Аренда по умолчанию, дн.', max_ext_lbl: 'Максимум продления, дн.',
     lock_days_lbl: 'Блокировать правку старше, дн. (0 — выкл)',
     lock_hint: 'Документы старше срока техник менять не может — только менеджер или админ.',
@@ -1835,7 +1836,8 @@ const I18N = {
     ext_rules_hint: 'Quantity can only be reduced — you extend no more than what is on site; the rest is picked up on time. Extension — max {N} days at once.',
     ext_max_note: 'max {N}', restore_pk: 'Return to rental', restored: 'Returned to rental',
     mgr_approve_chk: 'Manager can approve invoices',
-    eq_settings_title: 'Equipment & documents',
+    eq_settings_title: 'Equipment rental & permissions',
+    docs_set_card: 'Document settings', docs_my_title: 'Job card & search',
     def_days_lbl: 'Default rental, days', max_ext_lbl: 'Max extension, days',
     lock_days_lbl: 'Lock editing older than, days (0 — off)',
     lock_hint: 'Techs cannot edit documents older than this — only manager or admin.',
@@ -2962,6 +2964,17 @@ function mfaQrHtml(qr){
   if (/^(data:|https?:)/i.test(raw)) return `<div class="mfa-qr"><img src="${esc(raw)}" alt="QR"></div>`;
   return '';
 }
+/* v1.08.94: поле кода — Enter подтверждает (на телефоне это кнопка «Готово»
+   с подписью «Enter/Go»), лишние символы в поле не попадают. Три места ввода
+   кода: включение, отключение и вход. maxlength не ставим: он режет ВСТАВКУ
+   до шести знаков вместе с пробелами («123 456» → «123 45»), лишнее убирает
+   обработчик ввода. */
+function mfaCodeInput(go){
+  return `<input id="mfa-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
+    enterkeyhint="go" placeholder="123456"
+    oninput="this.value=this.value.replace(/\\D/g,'').slice(0,6)"
+    onkeydown="if(event.key==='Enter'){event.preventDefault();${go}}">`;
+}
 function mfaCopySecret(){
   const sec = MFA._secret || '';
   if (!sec) return;
@@ -3012,7 +3025,7 @@ async function mfaEnroll(){
       </div>
       <div class="tiny" style="margin-bottom:8px">${t('mfa_manual')}</div>
       <label>${t('mfa_code')}</label>
-      <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+      ${mfaCodeInput(`App.mfaVerifyEnroll('${data.id}')`)}
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
         <button class="btn btn-green" onclick="App.mfaVerifyEnroll('${data.id}')">${t('mfa_confirm')}</button>
@@ -3050,7 +3063,7 @@ function mfaDisableModal(){
   openModal(`
     ${modalHead(t('mfa_dis_t'), 'key')}
     <div class="tiny" style="margin-bottom:8px">${t('mfa_dis_code')}</div>
-    <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+    ${mfaCodeInput('App.mfaDisableGo()')}
     <div class="tiny" style="margin-top:8px">${t('mfa_lost')}</div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
@@ -3104,12 +3117,12 @@ function mfaLoginModal(session){
   openModal(`
     ${modalHead(t('sec_card'), 'key')}
     <div class="mfa-login tiny" style="margin-bottom:8px">${t('mfa_gate')}</div>
-    <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+    ${mfaCodeInput('App.mfaLoginVerify()')}
     <div class="tiny" style="margin-top:8px">${t('mfa_lost')}</div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="App.mfaLoginCancel()">${t('cancel')}</button>
       <button class="btn btn-green" onclick="App.mfaLoginVerify()">${t('mfa_confirm')}</button>
-    </div>`);
+    </div>`, { onClose: () => mfaLoginCancel() });
   setTimeout(()=>{ const i=$('#mfa-code'); if(i) i.focus(); }, 50);
 }
 /* «Отмена» на этом окне = отказ от входа: сессию без кода не оставляем */
@@ -3117,6 +3130,10 @@ async function mfaLoginCancel(){
   closeModal();
   MFA.gating = false; MFA._pending = null;
   AUTHX.byUser = true;
+  dlog('auth: вход отменён на шаге 2FA — сессия завершена');
+  /* сессию убираем и локально: без сети signOut не доходит до сервера, а
+     полусессия в браузере не должна пережить отмену */
+  try{ await state.sb.auth.signOut({ scope: 'local' }); }catch(e){}
   try{ await state.sb.auth.signOut(); }catch(e){}
   state.user = null; state.screen = 'login'; render();
 }
@@ -3233,16 +3250,75 @@ function popCardHtml(){
       <input type="checkbox" id="mq-quiet-chk" ${mqQuiet() ? 'checked' : ''} onchange="App.mqQuiet(this.checked)"> ${t('mq_quiet')}
     </label>
     <div class="tiny">${t('mq_quiet_h')}</div>
-    <label class="opt ${srchTabOn() ? 'on' : ''}" style="margin-top:10px">
-      <input type="checkbox" ${srchTabOn() ? 'checked' : ''} onchange="App.srchTab(this.checked)"> ${t('srch_tab_chk')}
-    </label>
-    <div class="tiny">${t('srch_tab_hint').replace('${ic}', ic('search'))}</div>
-    <label class="opt ${printBtnOn() ? 'on' : ''}" style="margin-top:10px">
-      <input type="checkbox" ${printBtnOn() ? 'checked' : ''} onchange="App.printBtn(this.checked)"> ${t('print_btn_chk')}
-    </label>
-    <div class="tiny">${t('print_btn_hint')}</div>
-    <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.searchOpen()">${ic('search')} ${t('srch_open_here')}</button>
   </div>`;
+}
+/* =====================================================================
+   v1.08.95 · «НАСТРОЙКИ ДОКУМЕНТОВ» — ОДНА СКЛАДНАЯ СЕКЦИЯ.
+   Раньше кнопка печати инвойса на карточке и поиск лежали во «Всплывающих
+   подсказках», а общий доступ, аренда оборудования с правами и лимиты
+   фото/видео — отдельными карточками внизу настроек. Теперь всё про
+   документы в одном спойлере: личная часть (видят все) и командная (админ).
+   ===================================================================== */
+function docsMyCardHtml(){
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('printer')} ${t('docs_my_title')}</div>
+    <div class="set-opt">
+      <label class="opt ${printBtnOn() ? 'on' : ''}">
+        <input type="checkbox" ${printBtnOn() ? 'checked' : ''} onchange="App.printBtn(this.checked)"> ${t('print_btn_chk')}
+      </label>
+      <div class="tiny">${t('print_btn_hint')}</div>
+    </div>
+    <div class="set-opt">
+      <label class="opt ${srchTabOn() ? 'on' : ''}">
+        <input type="checkbox" ${srchTabOn() ? 'checked' : ''} onchange="App.srchTab(this.checked)"> ${t('srch_tab_chk')}
+      </label>
+      <div class="tiny">${t('srch_tab_hint').replace('${ic}', ic('search'))}</div>
+    </div>
+    <div class="set-btns">
+      <button class="btn btn-ghost sm" onclick="App.searchOpen()">${ic('search')} ${t('srch_open_here')}</button>
+    </div>
+  </div>`;
+}
+function docsSharedCardHtml(){
+  if (!isAdmin()) return '';
+  const org = state.data.org_settings || {};
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('share')} ${t('shared_set_title')}</div>
+    <div class="set-opts">
+      <label class="opt ${org.allow_shared_jobs!==false?'on':''}">
+        <input type="checkbox" id="org-shared" ${org.allow_shared_jobs!==false?'checked':''} onchange="App.setSharedJobs(this.checked)"> ${t('shared_set_chk')}
+      </label>
+      <label class="opt ${org.manager_can_reorder?'on':''}">
+        <input type="checkbox" ${org.manager_can_reorder?'checked':''} onchange="App.setMgrReorder(this.checked)"> ${t('mgr_reorder_chk')}
+      </label>
+    </div>
+    <div class="tiny">${t('shared_set_hint')}</div>
+  </div>`;
+}
+function docsEquipCardHtml(){
+  if (!isAdmin()) return '';
+  const org = state.data.org_settings || {};
+  return `<div class="card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('box')} ${t('eq_settings_title')}</div>
+    <div class="qty-line"><span class="name">${t('def_days_lbl')}</span>
+      ${orgStepperHtml('default_rent_days', org.default_rent_days ?? 3, 1, 30)}</div>
+    <div class="qty-line"><span class="name">${t('max_ext_lbl')}</span>
+      ${orgStepperHtml('max_extend_days', org.max_extend_days ?? 3, 1, 30)}</div>
+    <div class="set-opts">
+      <label class="opt ${org.manager_can_approve?'on':''}">
+        <input type="checkbox" ${org.manager_can_approve?'checked':''} onchange="App.setOrgFlag('manager_can_approve', this.checked)"> ${t('mgr_approve_chk')}</label>
+      <label class="opt ${org.stock_visible_all!==false?'on':''}">
+        <input type="checkbox" ${org.stock_visible_all!==false?'checked':''} onchange="App.setOrgFlag('stock_visible_all', this.checked)"> ${t('stock_vis_chk')}</label>
+      <label class="opt ${org.allow_tech_proposal_flag!==false?'on':''}">
+        <input type="checkbox" ${org.allow_tech_proposal_flag!==false?'checked':''} onchange="App.setOrgFlag('allow_tech_proposal_flag', this.checked)"> ${t('allow_prop_chk')}</label>
+    </div>
+    <div class="qty-line"><span class="name">${t('lock_days_lbl')}</span>
+      ${orgStepperHtml('edit_lock_days', org.edit_lock_days ?? 0, 0, 60)}</div>
+    <div class="tiny">${t('lock_hint')}</div>
+  </div>`;
+}
+function docsCardHtml(){
+  return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml();
 }
 /* v1.08.08: «Обновите БД» без объяснений пугает и ничего не говорит о том,
    ЧТО делать. Показываем тост с кнопкой, которая открывает пошаговую
@@ -6886,8 +6962,9 @@ function sectionFaqHtml(key){
       <li><b>${t('abk_card')}</b> (админ, v1.08.33): полный SQL-дамп (включая пользователей и секреты) в папку «TechLog Backups» вашего Drive, 8 копий. «${t('abk_now')}» или автоматически при входе админа раз в 7 дней. Восстановление: чистая база → full-install → файл бэкапа.</li>
       <li><b>Доска</b> — минимум сотрудников на экране (степпер «Авто ↔ 3…12», личная, в профиле).</li>
       <li><b>Профиль</b>: имя в документах, смена пароля, язык RU/EN, навигатор (Авто/Apple/Google).</li>
-      <li><b>Оборудование и документы</b> (админ): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старше N дней (0 — выкл; заблокированные документы открываются на просмотр).</li>
-      <li><b>Лимиты фото и видео на документ</b> (админ): степперы «Фото на документ» (1–50) и «Видео на документ» (0–10), по умолчанию <b>10 и 2</b>. Лимит един для всех документов и проверяется сервером при загрузке — из браузера его не обойти. Уже загруженные сверх нового лимита файлы остаются, добавить больше нельзя; «видео 0» убирает кнопку съёмки видео из карточки задачи.</li>
+      <li><b>${t('docs_set_card')}</b> (v1.08.95) — всё про документы в одной складной секции. Личное (у каждого своё): кнопка печати инвойса на карточке, кнопка поиска в нижней панели телефона и «Открыть поиск». Для админа там же: общий доступ к документам для коворкеров, аренда оборудования и права, лимиты фото и видео.</li>
+      <li><b>Аренда оборудования и права</b> (админ, в «Настройках документов»): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старше N дней (0 — выкл; заблокированные документы открываются на просмотр).</li>
+      <li><b>Лимиты фото и видео на документ</b> (админ, в «Настройках документов»): степперы «Фото на документ» (1–50) и «Видео на документ» (0–10), по умолчанию <b>10 и 2</b>. Лимит един для всех документов и проверяется сервером при загрузке — из браузера его не обойти. Уже загруженные сверх нового лимита файлы остаются, добавить больше нельзя; «видео 0» убирает кнопку съёмки видео из карточки задачи.</li>
       <li><b>Фото и видео → Google Drive</b>: ключи OAuth архивного аккаунта. В поле «ID папки» можно вставить <b>ссылку целиком</b> — приложение само возьмёт ID. Сохранённые ключи карточка показывает в режиме просмотра: Client ID и папка — открыто, секрет и токен — звёздочками, ${ic('eye')} показывает значение (запрашивается с сервера отдельно), ${ic('copy')} копирует, ${ic('pencil')} включает правку. «Тест соединения» проверяет доступ, аккаунт, <b>свободное место</b> и запись в папку.</li>
       <li><b>Место на Диске</b>: если свободно меньше 15 %, админ и менеджер видят красный баннер на главной. Показатель снимается при тесте подключения и сам обновляется при загрузке файлов (не чаще раза в 6 часов).</li>
       <li><b>Приглашение</b> (админ): код регистрации сотрудников.</li>
@@ -6905,8 +6982,9 @@ function sectionFaqHtml(key){
       <li><b>${t('abk_card')}</b> (admin, v1.08.33): a full SQL dump (users and secrets included) into the "TechLog Backups" folder of your Drive, 8 copies. "${t('abk_now')}" or automatically on admin sign-in every 7 days. Restore: clean database → full-install → the backup file.</li>
       <li><b>Board</b> — minimum staff visible (the "Auto ↔ 3…12" stepper, personal, in the profile).</li>
       <li><b>Profile</b>: the name on documents, password change, RU/EN language, navigator (Auto/Apple/Google).</li>
-      <li><b>Equipment and documents</b> (admin): default rental and maximum extension (steppers 1–30), the manager/worker permission checkboxes, the edit lock for documents older than N days (0 — off; locked documents open read-only).</li>
-      <li><b>Photo and video limits per document</b> (admin): the "Photos per document" (1–50) and "Videos per document" (0–10) steppers, defaults <b>10 and 2</b>. The limit is the same for every document and is checked by the server on upload — it cannot be bypassed from the browser. Files already uploaded above a new limit stay, but no more can be added; "videos 0" removes the video button from the job card.</li>
+      <li><b>${t('docs_set_card')}</b> (v1.08.95) — everything about documents in one collapsible section. Personal (each person has their own): the invoice print button on the card, the search button in the phone's bottom bar and "Open search". For the admin, also there: shared document access for coworkers, equipment rental & permissions, photo and video limits.</li>
+      <li><b>Equipment rental & permissions</b> (admin, in "Document settings"): default rental and maximum extension (steppers 1–30), the manager/worker permission checkboxes, the edit lock for documents older than N days (0 — off; locked documents open read-only).</li>
+      <li><b>Photo and video limits per document</b> (admin, in "Document settings"): the "Photos per document" (1–50) and "Videos per document" (0–10) steppers, defaults <b>10 and 2</b>. The limit is the same for every document and is checked by the server on upload — it cannot be bypassed from the browser. Files already uploaded above a new limit stay, but no more can be added; "videos 0" removes the video button from the job card.</li>
       <li><b>Photos and video → Google Drive</b>: the OAuth keys of the archive account. You can paste the <b>whole link</b> into the "Folder ID" field — the app extracts the ID itself. Saved keys are shown in view mode: the Client ID and folder — in the open, the secret and token — as asterisks; ${ic('eye')} reveals the value (requested from the server separately), ${ic('copy')} copies, ${ic('pencil')} enables editing. "${t('gd_test')}" checks access, the account, the <b>free space</b> and writing into the folder.</li>
       <li><b>Drive space</b>: when less than 15 % is free, the admin and managers see a red banner on Home. The value is taken during the connection test and refreshes by itself on file uploads (no more than once every 6 hours).</li>
       <li><b>Invite</b> (admin): the staff registration code.</li>
@@ -7123,12 +7201,21 @@ document.addEventListener('change', e => {
   if (e.target && e.target.tagName === 'SELECT') selxApply();
 }, true);
 
-function openModal(html){
+/* v1.08.93: у окна может быть СВОЙ выход. Передайте { onClose }, и подложка
+   вместе со стрелкой «назад» вызовут его вместо простого закрытия — так окно
+   ввода кода 2FA нельзя обойти, ткнув мимо него (это и был способ войти без
+   кода: окно закрывалось, а сессия оставалась). */
+function openModal(html, opt){
   closeModal();
   const ov = document.createElement('div');
   ov.className = 'overlay'; ov.id = 'overlay';
   ov.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${html}</div>`;
-  ov.addEventListener('click', e => { if (e.target === ov) closeModal(); });
+  const bye = (opt && typeof opt.onClose === 'function') ? opt.onClose : closeModal;
+  ov.addEventListener('click', e => { if (e.target === ov) bye(); });
+  if (opt && typeof opt.onClose === 'function'){
+    const bx = ov.querySelector('.back-x');
+    if (bx) bx.onclick = (e) => { e.preventDefault(); e.stopPropagation(); opt.onClose(); };
+  }
   document.body.appendChild(ov);
   modalTrap(true);
   netMark(ov);                                           // v1.08.38
@@ -9457,6 +9544,7 @@ function viewSettings(){
   </div>
 
   ${fold('num', t('no_card'), 'receipt', numberingCardHtml())}
+  ${fold('docs', t('docs_set_card'), 'clipboard', docsCardHtml())}
   ${fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml())}
   ${fold('push', t('push_card'), 'bell', pbCardHtml())}
   ${fold('sec', t('sec_card'), 'key', secCardHtml())}
@@ -9487,33 +9575,6 @@ function viewSettings(){
     <div class="tiny">${t('org_legal_h')}</div>
     <button class="btn btn-blue sm" style="margin-top:8px" onclick="App.saveOrg()">${t('save')}</button>
   </div>
-  <div class="card">
-    <div style="font-weight:900;margin-bottom:6px">${ic('share')} ${t('shared_set_title')}</div>
-    <label class="opt ${org.allow_shared_jobs!==false?'on':''}">
-      <input type="checkbox" id="org-shared" ${org.allow_shared_jobs!==false?'checked':''} onchange="App.setSharedJobs(this.checked)"> ${t('shared_set_chk')}
-    </label>
-    <label class="opt ${org.manager_can_reorder?'on':''}">
-      <input type="checkbox" ${org.manager_can_reorder?'checked':''} onchange="App.setMgrReorder(this.checked)"> ${t('mgr_reorder_chk')}
-    </label>
-    <div class="tiny" style="margin-top:6px">${t('shared_set_hint')}</div>
-  </div>
-  <div class="card">
-    <div style="font-weight:900;margin-bottom:6px">${ic('box')} ${t('eq_settings_title')}</div>
-    <div class="qty-line"><span class="name">${t('def_days_lbl')}</span>
-      ${orgStepperHtml('default_rent_days', org.default_rent_days ?? 3, 1, 30)}</div>
-    <div class="qty-line"><span class="name">${t('max_ext_lbl')}</span>
-      ${orgStepperHtml('max_extend_days', org.max_extend_days ?? 3, 1, 30)}</div>
-    <label class="opt ${org.manager_can_approve?'on':''}">
-      <input type="checkbox" ${org.manager_can_approve?'checked':''} onchange="App.setOrgFlag('manager_can_approve', this.checked)"> ${t('mgr_approve_chk')}</label>
-    <label class="opt ${org.stock_visible_all!==false?'on':''}">
-      <input type="checkbox" ${org.stock_visible_all!==false?'checked':''} onchange="App.setOrgFlag('stock_visible_all', this.checked)"> ${t('stock_vis_chk')}</label>
-    <label class="opt ${org.allow_tech_proposal_flag!==false?'on':''}">
-      <input type="checkbox" ${org.allow_tech_proposal_flag!==false?'checked':''} onchange="App.setOrgFlag('allow_tech_proposal_flag', this.checked)"> ${t('allow_prop_chk')}</label>
-    <div class="qty-line"><span class="name">${t('lock_days_lbl')}</span>
-      ${orgStepperHtml('edit_lock_days', org.edit_lock_days ?? 0, 0, 60)}</div>
-    <div class="tiny">${t('lock_hint')}</div>
-  </div>
-  ${fold('mlim', t('media_lim_card'), 'clip', mediaLimitsCardHtml())}
   ${fold('gd', t('gd_card'), 'folder', mediaSettingsCardHtml())}
   ${fold('bn', t('bn_card'), 'car', bnCardHtml())}
   ${fold('tvs', t('tvs_card'), 'tv', tvSessionsCardHtml())}
@@ -14838,7 +14899,7 @@ function faqHtml(){
     <h4>${ic('chart')} Statistics</h4>
     <p>The Stats tab: period chips (today/7/30 days or custom), Mine/All, big totals (jobs, revenue, approved, pickups) and a per-day bar chart.</p>
     <h4>${ic('camera')} Job photos & video</h4>
-    <p>Each job card has a <b>Photos & video</b> block: shoot from the app, photos are downscaled to 1920 px, videos are capped at 90 seconds, and the counter shows how many of the allowed files are attached. The <b>admin sets the limits</b> in Settings → “Photo & video limits per document” (defaults <b>10 photos and 2 videos</b>; photos 1–50, videos 0–10); the server enforces them, and videos = 0 hides the video button. Files go to the company <b>Google Drive</b> archive in monthly folders, thumbnails stay in the database. Offline, everything queues on the phone and uploads automatically — see Settings → “Unsent photos & videos” for the per-document summary, the line-by-line upload log, “Retry upload” and “Connection check”. When Drive drops below <b>15 % free space</b>, admins and managers get a red banner on Home; the same figure is measured by the Drive connection test and refreshed automatically as files upload.</p>
+    <p>Each job card has a <b>Photos & video</b> block: shoot from the app, photos are downscaled to 1920 px, videos are capped at 90 seconds, and the counter shows how many of the allowed files are attached. The <b>admin sets the limits</b> in Settings → “Document settings” → “Photo, video & attachment limits per document” (defaults <b>10 photos and 2 videos</b>; photos 1–50, videos 0–10); the server enforces them, and videos = 0 hides the video button. Files go to the company <b>Google Drive</b> archive in monthly folders, thumbnails stay in the database. Offline, everything queues on the phone and uploads automatically — see Settings → “Unsent photos & videos” for the per-document summary, the line-by-line upload log, “Retry upload” and “Connection check”. When Drive drops below <b>15 % free space</b>, admins and managers get a red banner on Home; the same figure is measured by the Drive connection test and refreshed automatically as files upload.</p>
     <h4>${ic('mic')} Notes, dictation & translation</h4>
     <p>Every job and pickup has a note. The ${ic('mic')} microphone dictates in RU or EN (Chrome/Android; on iPhone — the 🎤 key on the keyboard, see the iPhone section), text is editable by hand, and the note prints on the PDF as the <b>NOTES</b> line. One tap translates a Russian note to English.</p>
     <h4>${ic('wrench')} Account, settings & service</h4>
@@ -14887,7 +14948,7 @@ function faqHtml(){
     <div class="faq-example">${faqDayCardsExample()}</div>
     <p>Читаем пример: на день запланировано <b>7 задач</b> — Steam Clean 4, Air Duct 2, Vetvag 1. Забрать нужно <b>8 единиц оборудования</b> — 5 блоуэров (BLW), 2 осушителя (DHM) и 1 скруббер (SCR), при этом один пикап уже просрочен. Цифры считаются по тем же спискам, что показаны ниже на экране: листаете ленту на другой день — карточки пересчитываются, а у менеджера они подчиняются фильтру «Мои/Все».</p>
     <h4>${ic('camera')} Фото и видео задач</h4>
-    <p>В карточке задачи есть блок <b>«Фото и видео»</b>: съёмка идёт прямо из приложения, фото сжимается до 1920 px, видео принимается длиной до 90 секунд. Рядом с заголовком счётчик — сколько уже прикреплено из лимита. <b>Лимиты задаёт администратор</b>: «Настройки» → «Лимиты фото и видео на документ», два степпера (по умолчанию <b>10 фото и 2 видео</b>; фото 1–50, видео 0–10). Лимит общий для всех документов, его проверяет сервер — из браузера обойти нельзя; при значении «видео 0» кнопка съёмки видео пропадает, а уже загруженные файлы сверх нового лимита остаются на месте. Файлы уходят в архив на <b>Google Диске</b> фирмы (миниатюры — в базе), раскладываются по папкам вида <i>2026-09</i>. Без сети всё копится в очереди на телефоне и уходит само при появлении связи: «Настройки» → «Неотправленные фото и видео» — там сводка по документам, журнал отправки построчно и кнопки «Повторить отправку» / «Проверка соединения». Когда на Диске остаётся <b>менее 15 % свободного места</b>, админ и менеджер видят красный баннер на главной; тот же показатель считается при «Тесте соединения» в настройках Диска и обновляется сам при загрузке файлов.</p>
+    <p>В карточке задачи есть блок <b>«Фото и видео»</b>: съёмка идёт прямо из приложения, фото сжимается до 1920 px, видео принимается длиной до 90 секунд. Рядом с заголовком счётчик — сколько уже прикреплено из лимита. <b>Лимиты задаёт администратор</b>: «Настройки» → «Настройки документов» → «Лимиты фото, видео и вложений на документ», два степпера (по умолчанию <b>10 фото и 2 видео</b>; фото 1–50, видео 0–10). Лимит общий для всех документов, его проверяет сервер — из браузера обойти нельзя; при значении «видео 0» кнопка съёмки видео пропадает, а уже загруженные файлы сверх нового лимита остаются на месте. Файлы уходят в архив на <b>Google Диске</b> фирмы (миниатюры — в базе), раскладываются по папкам вида <i>2026-09</i>. Без сети всё копится в очереди на телефоне и уходит само при появлении связи: «Настройки» → «Неотправленные фото и видео» — там сводка по документам, журнал отправки построчно и кнопки «Повторить отправку» / «Проверка соединения». Когда на Диске остаётся <b>менее 15 % свободного места</b>, админ и менеджер видят красный баннер на главной; тот же показатель считается при «Тесте соединения» в настройках Диска и обновляется сам при загрузке файлов.</p>
     <h4>${ic('refresh')} Синхронизация, офлайн и обновления</h4>
     <p>Данные живут в <b>Supabase</b>; кнопка ${ic('refresh')} в шапке синхронизирует вручную, время последней синхронизации — в «Настройках». Приложение — <b>PWA</b>: ставится на Android и iPhone (см. раздел про iPhone ниже), работает офлайн из кеша, при запуске проверяет <i>version.json</i> и обновляется само (если открыта форма инвойса — обновление подождёт её закрытия). С пустым <i>config.js</i> работает локальный демо-режим. <b>Офлайн-режим (v1.08.38):</b> бейдж связи в шапке (слева от роли) показывает состояние — зелёный «NN мс» — пинг до сервера, оранжевый «нестабильно» — два пинга подряд от 500 мс (одиночный медленный замер после запуска или сна телефона — это холодное соединение, он перепроверяется через 3 с), красный «офлайн» — нет сети, жёлтый «нет сервера» — сеть есть, а Supabase не отвечает; нажатие открывает окно «Проверка связи» с построчной проверкой сервисов (интернет, Google Диск, карты; админу и менеджеру — ещё Bouncie, GitHub и Cloudflare). Инвойсы, задачи, фото и видео, пикапы, пропозалы и ремонты работают без связи: каждая запись ложится в очередь на устройстве и уходит сама, когда сеть вернётся, следом идёт тихий синк. Кнопки, которым нужен живой сервер (синхронизация, вход, апрувы через RPC, склад, штат, Диск, бэкапы, пуши, 2FA, ТВ, Bouncie, перевод, маршруты), становятся блеклыми и вместо действия показывают подсказку.</p>
     <h4>${ic('phone')} iPhone и iPad (iOS)</h4>
