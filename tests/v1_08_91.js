@@ -16,7 +16,7 @@ async function boot(br, vp, mode){
   await p.evaluate((m) => { localStorage.clear();
     localStorage.setItem('techlog_session_v1', 'demo-admin');
     localStorage.setItem('techlog_view_mode', m);
-    localStorage.setItem('techlog_fold', '{"num":1}'); }, mode);
+    localStorage.setItem('techlog_fold', '{"docs":1,"num":1}'); }, mode);   // v1.08.97: «Нумерация» — подраздел «Настроек документов»
   await p.reload(); await p.waitForTimeout(1500);
   await p.evaluate(() => window.App.go('settings')); await p.waitForTimeout(600);
   return p;

@@ -85,7 +85,8 @@ const gaps = (p) => p.evaluate(() => {
       mlim: !!document.querySelector('.fold-h[onclick="App.foldToggle(\'mlim\')"]'),
       dupPrint: document.querySelectorAll('input[onchange="App.printBtn(this.checked)"]').length,
       order: (() => { const hs = [...document.querySelectorAll('#app .fold-h')].map(h => (h.getAttribute('onclick') || '').replace(/.*'(\w+)'.*/, '$1'));
-        return hs.indexOf('docs') === hs.indexOf('num') + 1; })()
+        /* v1.08.97: «Нумерация» — подраздел внутри «Настроек документов» */
+        return hs.indexOf('docs') >= 0 && hs.indexOf('num') > hs.indexOf('docs'); })()
     }));
     t('вне секции копий не осталось, отдельной складки «Лимиты» нет, секция сразу после «Нумерации»',
       !outside.shared && !outside.rent && !outside.mlim && outside.dupPrint === 1 && outside.order, JSON.stringify(outside));

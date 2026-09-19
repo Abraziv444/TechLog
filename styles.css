@@ -1878,7 +1878,7 @@ select:disabled{opacity:.55;cursor:default}
   cursor:pointer;text-align:left;
 }
 .fold-h .grow{flex:1;min-width:0;overflow-wrap:anywhere}
-.fold.on .fold-h{border-radius:16px 16px 0 0;border-bottom-color:transparent}
+.fold.on > .fold-h{border-radius:16px 16px 0 0;border-bottom-color:transparent}   /* v1.08.96: > — не задевать вложенные */
 .fold-b{border:2px solid var(--line);border-top:0;border-radius:0 0 16px 16px;padding:2px 8px 8px}
 .fold-b > .card{margin:6px 0;border:0}
 
@@ -2768,3 +2768,14 @@ html.tl-desktop .ct2-bar{left:auto;right:24px;bottom:24px;max-width:420px}
 #app.scr-settings .card .set-opts > .opt,
 #app.scr-settings .card .set-opt > .opt{margin:0}
 #app.scr-settings .card .qty-line + .qty-line{margin-top:6px}
+
+/* ============ v1.08.96: раздел «Диагностика» — вложенные спойлеры ============
+   Подразделы внутри спойлера: компактнее и на тон светлее основного, чтобы
+   было видно, что это часть раздела, а не отдельная секция настроек. */
+.fold-b > .fold-sub{margin:6px 0}
+.fold-sub > .fold-h{padding:10px 12px;border-radius:12px;font-size:.92em;background:var(--black-chip, var(--panel))}
+.fold-sub.on > .fold-h{border-radius:12px 12px 0 0}
+.fold-sub > .fold-b{border-radius:0 0 12px 12px;padding:2px 6px 6px}
+.fold-sub > .fold-b > .card{margin:4px 0}
+#dg-net .set-btns{margin-top:10px}
+#dg-net .tiny + .tiny{margin-top:2px}

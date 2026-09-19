@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.95';
-const DB_SQL_FILE = 'full-install-1_08_71.sql';
+const APP_VERSION = '1.08.97';
+const DB_SQL_FILE = 'full-install-1_08_97.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -233,7 +233,7 @@ const I18N = {
     push_t_sub_no: 'нет — нажмите «Включить на устройстве» (серверные уведомления без неё не придут; показ на этом устройстве проверить можно)',
     push_t_tail: 'Уведомления не появились на экране? Проверьте режим «Не беспокоить», экономию заряда и разрешения TechLog в настройках телефона. На iPhone уведомления работают только у приложения, добавленного на экран «Домой».',
     push_test_doc: 'взят ваш документ',
-    sync_tip: 'Обмен данными между этим устройством и сервером: наверх уходит всё, что вы создали и правили (в том числе офлайн — из очереди записей), вниз приходят чужие правки: задачи, пикапы, документы, справочники, настройки организации. Обычно идёт сам — при запуске, возврате в приложение и после сохранения; кнопка нужна, если кажется, что данные устарели, или после долгого офлайна. Фото и видео идут своей очередью — её показывает карточка «Все фото и видео отправлены».',
+    sync_tip: 'Обмен данными между этим устройством и сервером: наверх уходит всё, что вы создали и правили (в том числе офлайн — из очереди записей), вниз приходят чужие правки: задачи, пикапы, документы, справочники, настройки организации. Идёт сам — при запуске, при возврате в приложение, после сохранения и когда появляется связь после офлайна. Фото и видео идут своей очередью — её показывает карточка «Все фото и видео отправлены».',
     sync_what: 'Данные устройства ⇄ сервер: задачи, пикапы, документы, справочники',
     push_on_dev: 'Включить на устройстве', push_off_dev: 'Отключить на устройстве',
     push_state_on: 'уведомления включены', push_state_off: 'выключены',
@@ -413,6 +413,7 @@ const I18N = {
     pdf_blocked: 'PDF недоступен — заполните', batch_skipped: 'пропущено (не заполнены поля)',
     diag: 'Диагностика', diag_copy: 'Скопировать отчёт', diag_running: 'Проверяю…',
     ui_card: 'Диагностика интерфейса', ui_run: 'Проверить этот экран',
+    dgs_card: 'Диагностика', dg_net_title: 'Связь и журналы', dg_ui: 'Интерфейс',
     ui_chk: 'Кнопка проверки на всех экранах',
     ui_hint: 'Ищет перекрытия и налезание блоков, вылет за край экрана, обрезанный текст, мелкие кнопки, слабый контраст, битые обработчики и подтормаживание прокрутки. Отчёт можно скопировать или скачать файлом.',
     ui_keys: 'Горячие клавиши: Ctrl+Alt+D',
@@ -1147,7 +1148,7 @@ const I18N = {
     bk_secrets_warn: 'в файле токены — храните бережно!',
     bk_new_proj: 'Как восстановиться в новый проект Supabase',
     prop_qty: 'Кол-во', prop_code: 'Код', prop_complete: 'Выполнить до (Complete By)',
-    diag_card: 'Диагностика', diag_run: 'Запустить все тесты',
+    diag_card: 'Тесты и регресс', diag_run: 'Запустить все тесты',
     rg_btn: 'Регресс основных функций', rg_hint: 'Сквозной сценарий на живых данных от вашего имени: инвойс на вчера с заполнением, фото + видео + документ в очередь и на Диск, пикап на сегодня, документ работ с двумя строками, «Забрать» на главной, удаление инвойса за вчера и проверка, что фото и видео удалены. Всё пробное помечено Unit TEST и в конце убирается; работает и на телефоне, и на ПК, и в демо-режиме (там отправка на Диск пропускается).',
     rg_job: 'инвойс на вчера: создание и заполнение', rg_media: 'фото, видео, документ → очередь', rg_send: 'отправка на Диск', rg_pk: 'пикап на сегодня создан', rg_rep: 'документ работ: две строки', rg_home: 'главная: пикап виден', rg_take: 'кнопка «Забрать»', rg_yest: 'вчера: инвойс виден', rg_del: 'удаление инвойса', rg_gone: 'фото и видео удалены', rg_clean: 'уборка остатков', rg_done: 'регресс: {N} из {T} шагов', rg_demo: 'демо-режим — отправка пропущена, файлы в очереди', rg_running: 'идёт регресс…', rg_wait: 'очередь не опустела за 120 с',
     diag_net: 'Интернет', diag_db: 'База данных', diag_auth: 'Сессия входа',
@@ -1393,7 +1394,7 @@ const I18N = {
     push_t_sub_no: 'none — press «Enable on this device» (server notifications will not arrive without it; showing on this device can still be checked)',
     push_t_tail: 'Nothing appeared on screen? Check Do Not Disturb, battery saver and the TechLog permissions in your phone settings. On iPhone notifications only work for an app added to the Home screen.',
     push_test_doc: 'your document is used',
-    sync_tip: 'Data exchange between this device and the server: everything you created or edited goes up (including offline work from the write queue), other people’s changes come down: jobs, pickups, documents, directories, organization settings. It normally runs by itself — on start, on returning to the app and after saving; the button is for when data looks stale or after a long time offline. Photos and videos have their own queue — see the «All photos and videos sent» card.',
+    sync_tip: 'Data exchange between this device and the server: everything you created or edited goes up (including offline work from the write queue), other people’s changes come down: jobs, pickups, documents, directories, organization settings. It runs by itself — on start, on returning to the app, after saving and when the connection comes back after being offline. Photos and videos have their own queue — see the «All photos and videos sent» card.',
     sync_what: 'Device data ⇄ server: jobs, pickups, documents, directories',
     push_on_dev: 'Enable on this device', push_off_dev: 'Disable on this device',
     push_state_on: 'notifications are on', push_state_off: 'off',
@@ -1570,6 +1571,7 @@ const I18N = {
     pdf_blocked: 'PDF blocked — fill in', batch_skipped: 'skipped (missing required fields)',
     diag: 'Diagnostics', diag_copy: 'Copy report', diag_running: 'Checking…',
     ui_card: 'Interface diagnostics', ui_run: 'Check this screen',
+    dgs_card: 'Diagnostics', dg_net_title: 'Connection & logs', dg_ui: 'Interface',
     ui_chk: 'Show the check button on every screen',
     ui_hint: 'Finds overlapping and colliding blocks, overflow past the screen edge, clipped text, small tap targets, weak contrast, broken handlers and scrolling jank. The report can be copied or downloaded.',
     ui_keys: 'Shortcut: Ctrl+Alt+D',
@@ -2295,7 +2297,7 @@ const I18N = {
     bk_secrets_warn: 'file contains tokens — store safely!',
     bk_new_proj: 'How to restore into a fresh Supabase project',
     prop_qty: 'Qty', prop_code: 'Item', prop_complete: 'Complete By',
-    diag_card: 'Diagnostics', diag_run: 'Run all tests',
+    diag_card: 'Tests & regression', diag_run: 'Run all tests',
     rg_btn: 'Regression of core functions', rg_hint: 'End-to-end scenario on live data under your name: yesterday’s invoice with fields filled, photo + video + document queued and sent to Drive, today’s pickup, a repair document with two lines, “Pick up” on Home, deleting yesterday’s invoice and checking the photo and video are gone. Everything is marked Unit TEST and removed at the end; works on the phone, on the PC and in demo mode (there the Drive upload is skipped).',
     rg_job: 'yesterday’s invoice: create and fill', rg_media: 'photo, video, document → queue', rg_send: 'sending to Drive', rg_pk: 'today’s pickup created', rg_rep: 'repair document: two lines', rg_home: 'Home: pickup visible', rg_take: '“Pick up” button', rg_yest: 'yesterday: invoice visible', rg_del: 'deleting the invoice', rg_gone: 'photo and video deleted', rg_clean: 'cleaning leftovers', rg_done: 'regression: {N} of {T} steps', rg_demo: 'demo mode — upload skipped, files queued', rg_running: 'regression running…', rg_wait: 'the queue did not empty in 120 s',
     diag_net: 'Internet', diag_db: 'Database', diag_auth: 'Auth session',
@@ -2680,10 +2682,10 @@ function foldSet(k, v){
     m[k] = v ? 1 : 0; localStorage.setItem(LS_FOLD, JSON.stringify(m));
   }catch(e){}
 }
-function fold(key, label, iconName, html){
+function fold(key, label, iconName, html, sub){
   if (!html) return '';
   const on = foldOpen(key);
-  return `<div class="fold ${on ? 'on' : ''}">
+  return `<div class="fold${sub ? ' fold-sub' : ''} ${on ? 'on' : ''}">
     <button class="fold-h" onclick="App.foldToggle('${key}')" aria-expanded="${on}">
       ${ic(iconName)} <span class="grow">${esc(label)}</span> ${ic(on ? 'chev_u' : 'chev_d')}</button>
     ${on ? `<div class="fold-b">${html}</div>` : ''}
@@ -3318,7 +3320,39 @@ function docsEquipCardHtml(){
   </div>`;
 }
 function docsCardHtml(){
-  return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml();
+  return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml()
+    + fold('num', t('no_card'), 'receipt', numberingCardHtml(), true)      // v1.08.97: подраздел (админ)
+    + fold('org', t('org'), 'building', orgCardHtml(), true);               // v1.08.97: подраздел (админ + бухгалтер)
+}
+/* v1.08.97 · «Организация (для PDF)» — подраздел «Настроек документов».
+   Видят и правят админ и бухгалтер. Бухгалтеру сервер разрешает менять
+   только эти поля (политики org_settings_acc_* + триггер
+   org_settings_acc_guard в update-to-1_08_97.sql): остальные колонки
+   строки настроек он молча возвращает к текущим значениям. */
+function orgCardHtml(){
+  if (!isAdmin() && !isAcc()) return '';
+  const org = state.data.org_settings || {};
+  return `<div class="card" id="org-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('building')} ${t('org')}</div>
+    <div class="form-row"><span class="lbl">${t('org_name')}</span><input id="org-name" value="${esc(org.company_name)}"></div>
+    <div class="form-row"><span class="lbl">${t('org_short')}</span><input id="org-short" value="${esc(org.company_short)}"></div>
+    <div class="form-row"><span class="lbl">${t('org_assoc')}</span><input id="org-assoc" value="${esc(org.assoc_line)}"></div>
+    <div class="grid-3">
+      <input id="org-a1" value="${esc(org.addr1)}"><input id="org-a2" value="${esc(org.addr2)}"><input id="org-a3" value="${esc(org.addr3)}">
+    </div>
+    <div class="form-row"><span class="lbl">${t('org_voice')}</span>
+      <input id="org-voice" placeholder="404-555-0100" value="${esc(org.voice_line || '')}"></div>
+    <div class="form-row"><span class="lbl">${t('org_fax')}</span>
+      <input id="org-fax" placeholder="404-555-0101" value="${esc(org.fax_line || '')}"></div>
+    <div class="tiny">${t('org_voice_h')}</div>
+    <div class="form-row"><span class="lbl">${t('org_ship')}</span>
+      <input id="org-ship" placeholder="Airborne" value="${esc(org.ship_method || '')}"></div>
+    <div class="form-row"><span class="lbl">${t('org_legal')}</span>
+      <textarea id="org-legal" rows="4" style="width:100%"
+        placeholder="${esc(LEGAL_DEF)}">${esc(org.legal_note || '')}</textarea></div>
+    <div class="tiny">${t('org_legal_h')}</div>
+    <button class="btn btn-blue sm" style="margin-top:8px" onclick="App.saveOrg()">${t('save')}</button>
+  </div>`;
 }
 /* v1.08.08: «Обновите БД» без объяснений пугает и ничего не говорит о том,
    ЧТО делать. Показываем тост с кнопкой, которая открывает пошаговую
@@ -4670,20 +4704,28 @@ async function dbSaveOrg(org){
   state.data.org_settings = org; saveLocal();
   if (HAS_SB) {
     /* v1.08.38: настройки тоже через очередь — в офлайне не теряются */
-    if (netOff()){ pendingAdd('upsert', 'org_settings', org); netSavedOffline('org_settings'); return; }
+    if (netOff()){ pendingAdd('upsert', 'org_settings', org); netSavedOffline('org_settings'); return true; }
     const { error } = await state.sb.from('org_settings').upsert(org);
-    if (error && isNetErr(error)){ pendingAdd('upsert', 'org_settings', org); netSet(false); netSavedOffline('org_settings'); return; }
+    if (error && isNetErr(error)){ pendingAdd('upsert', 'org_settings', org); netSet(false); netSavedOffline('org_settings'); return true; }
+    /* v1.08.97: бухгалтер правит «Организацию (для PDF)»; без update-to-1_08_97.sql
+       база его не пускает (RLS) — вместо сырой ошибки подсказка про апдейт БД */
+    if (error && isAcc() && (String(error.code) === '42501' || /row-level security/i.test(error.message || ''))){
+      dlog('⛔ org_settings: бухгалтеру запись закрыта — нужен update-to-1_08_97.sql');
+      dbUpdateToast(); return false;
+    }
     if (error){
       // v1.07.10: БД без новой колонки — сохраняем остальное и подсказываем выполнить апдейт
       const miss = missingColumnOf(error);
       if (miss && Object.prototype.hasOwnProperty.call(org, miss)){
         const clean = { ...org }; delete clean[miss];
         const r2 = await Promise.resolve(state.sb.from('org_settings').upsert(clean)).catch(e2 => ({ error: e2 }));
-        if (!r2.error){ dbUpdateToast(); return; }
+        if (!r2.error){ dbUpdateToast(); return true; }
       }
       toast(t('sync_err') + ': ' + error.message, 'err');
+      return false;
     }
   }
+  return true;
 }
 
 /* ---------------- Роли ---------------- */
@@ -6962,7 +7004,7 @@ function sectionFaqHtml(key){
       <li><b>${t('abk_card')}</b> (админ, v1.08.33): полный SQL-дамп (включая пользователей и секреты) в папку «TechLog Backups» вашего Drive, 8 копий. «${t('abk_now')}» или автоматически при входе админа раз в 7 дней. Восстановление: чистая база → full-install → файл бэкапа.</li>
       <li><b>Доска</b> — минимум сотрудников на экране (степпер «Авто ↔ 3…12», личная, в профиле).</li>
       <li><b>Профиль</b>: имя в документах, смена пароля, язык RU/EN, навигатор (Авто/Apple/Google).</li>
-      <li><b>${t('docs_set_card')}</b> (v1.08.95) — всё про документы в одной складной секции. Личное (у каждого своё): кнопка печати инвойса на карточке, кнопка поиска в нижней панели телефона и «Открыть поиск». Для админа там же: общий доступ к документам для коворкеров, аренда оборудования и права, лимиты фото и видео.</li>
+      <li><b>${t('docs_set_card')}</b> (v1.08.95) — всё про документы в одной складной секции. Личное (у каждого своё): кнопка печати инвойса на карточке, кнопка поиска в нижней панели телефона и «Открыть поиск». Для админа там же: общий доступ к документам для коворкеров, аренда оборудования и права, лимиты фото и видео и подраздел «${t('no_card')}». Подраздел «${t('org')}» (v1.08.97) — реквизиты для бланков PDF: название, адрес, телефон и факс, способ доставки, приписка внизу бланка; доступен админу и бухгалтеру (бухгалтер меняет только эти поля).</li>
       <li><b>Аренда оборудования и права</b> (админ, в «Настройках документов»): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старше N дней (0 — выкл; заблокированные документы открываются на просмотр).</li>
       <li><b>Лимиты фото и видео на документ</b> (админ, в «Настройках документов»): степперы «Фото на документ» (1–50) и «Видео на документ» (0–10), по умолчанию <b>10 и 2</b>. Лимит един для всех документов и проверяется сервером при загрузке — из браузера его не обойти. Уже загруженные сверх нового лимита файлы остаются, добавить больше нельзя; «видео 0» убирает кнопку съёмки видео из карточки задачи.</li>
       <li><b>Фото и видео → Google Drive</b>: ключи OAuth архивного аккаунта. В поле «ID папки» можно вставить <b>ссылку целиком</b> — приложение само возьмёт ID. Сохранённые ключи карточка показывает в режиме просмотра: Client ID и папка — открыто, секрет и токен — звёздочками, ${ic('eye')} показывает значение (запрашивается с сервера отдельно), ${ic('copy')} копирует, ${ic('pencil')} включает правку. «Тест соединения» проверяет доступ, аккаунт, <b>свободное место</b> и запись в папку.</li>
@@ -6970,7 +7012,7 @@ function sectionFaqHtml(key){
       <li><b>Приглашение</b> (админ): код регистрации сотрудников.</li>
       <li><b>Проверить обновления</b> — применяет новую версию сразу; клик по названию TechLog в шапке делает то же.</li>
       <li><b>${ic('save')} Бэкап данных</b> (админ): выгрузка всех таблиц, учёток (bcrypt-хэши) и — по галочке — секретов в один JSON; загрузка идёт построчно, дубли отсекает база, ошибки видно в экранном логе с выгрузкой в .txt. Журналы выгружаются, но обратно кнопкой не заливаются.</li>
-      <li><b>Диагностика</b>: самоотчёт и проверка таблиц/функций БД — при ошибке подсказывает нужный SQL-файл.</li>
+      <li><b>${t('dgs_card')}</b> (v1.08.96) — всё техническое в одном спойлере. Сверху «${t('dg_net_title')}»: когда была синхронизация (идёт сама, отдельной кнопки больше нет), «${t('net_check_btn')}», «${t('diag')}» — самоотчёт, «${t('log_title')}» и у админа «${t('db_diag')}» — при ошибке подсказывает нужный SQL-файл. Ниже подразделы: «${t('dg_ui')}» (перекрытия, обрезанный текст, мелкие кнопки), у админа — «${t('diag_card')}», «${t('bk_card')}» и «${t('abk_card')}».</li>
       <li><b>${ic('upload')} Неотправленные фото и видео</b>: сводка по документам, журнал отправки на пять строк и кнопки «Повторить отправку» / «Проверка соединения» — во время работы одной вторая заблокирована.</li>
     </ul>`,
   `
@@ -6982,7 +7024,7 @@ function sectionFaqHtml(key){
       <li><b>${t('abk_card')}</b> (admin, v1.08.33): a full SQL dump (users and secrets included) into the "TechLog Backups" folder of your Drive, 8 copies. "${t('abk_now')}" or automatically on admin sign-in every 7 days. Restore: clean database → full-install → the backup file.</li>
       <li><b>Board</b> — minimum staff visible (the "Auto ↔ 3…12" stepper, personal, in the profile).</li>
       <li><b>Profile</b>: the name on documents, password change, RU/EN language, navigator (Auto/Apple/Google).</li>
-      <li><b>${t('docs_set_card')}</b> (v1.08.95) — everything about documents in one collapsible section. Personal (each person has their own): the invoice print button on the card, the search button in the phone's bottom bar and "Open search". For the admin, also there: shared document access for coworkers, equipment rental & permissions, photo and video limits.</li>
+      <li><b>${t('docs_set_card')}</b> (v1.08.95) — everything about documents in one collapsible section. Personal (each person has their own): the invoice print button on the card, the search button in the phone's bottom bar and "Open search". For the admin, also there: shared document access for coworkers, equipment rental & permissions, photo and video limits and the "${t('no_card')}" subsection. The "${t('org')}" subsection (v1.08.97) holds the details printed on PDF forms: name, address, phone and fax, shipping method, the note at the bottom of the form; available to the admin and the accountant (the accountant can change only these fields).</li>
       <li><b>Equipment rental & permissions</b> (admin, in "Document settings"): default rental and maximum extension (steppers 1–30), the manager/worker permission checkboxes, the edit lock for documents older than N days (0 — off; locked documents open read-only).</li>
       <li><b>Photo and video limits per document</b> (admin, in "Document settings"): the "Photos per document" (1–50) and "Videos per document" (0–10) steppers, defaults <b>10 and 2</b>. The limit is the same for every document and is checked by the server on upload — it cannot be bypassed from the browser. Files already uploaded above a new limit stay, but no more can be added; "videos 0" removes the video button from the job card.</li>
       <li><b>Photos and video → Google Drive</b>: the OAuth keys of the archive account. You can paste the <b>whole link</b> into the "Folder ID" field — the app extracts the ID itself. Saved keys are shown in view mode: the Client ID and folder — in the open, the secret and token — as asterisks; ${ic('eye')} reveals the value (requested from the server separately), ${ic('copy')} copies, ${ic('pencil')} enables editing. "${t('gd_test')}" checks access, the account, the <b>free space</b> and writing into the folder.</li>
@@ -6990,7 +7032,7 @@ function sectionFaqHtml(key){
       <li><b>Invite</b> (admin): the staff registration code.</li>
       <li><b>${t('upd_check')}</b> — applies the new version at once; a click on the TechLog name in the header does the same.</li>
       <li><b>${ic('save')} Data backup</b> (admin): exports every table, the accounts (bcrypt hashes) and — with the checkbox — the secrets into one JSON; the import goes row by row, duplicates are rejected by the database, errors are visible in the on-screen log with a .txt export. Journals are exported but are not loaded back by the button.</li>
-      <li><b>Diagnostics</b>: a self-report and a check of the DB tables/functions — on an error it names the SQL file to run.</li>
+      <li><b>${t('dgs_card')}</b> (v1.08.96) — everything technical in one collapsible section. On top, “${t('dg_net_title')}”: when data last synced (it runs by itself, there is no separate button any more), “${t('net_check_btn')}”, “${t('diag')}” — a self-report, “${t('log_title')}” and, for the admin, “${t('db_diag')}” — on an error it names the SQL file to run. Below are subsections: “${t('dg_ui')}” (overlaps, clipped text, small buttons) and, for the admin, “${t('diag_card')}”, “${t('bk_card')}” and “${t('abk_card')}”.</li>
       <li><b>${ic('upload')} Unsent photos and video</b>: a summary by document, a five-line send log and the "Retry sending" / "Connection check" buttons — while one runs, the other is disabled.</li>
     </ul>`);
 
@@ -9525,25 +9567,6 @@ function viewSettings(){
     <div class="fs-demo">${t('font_demo')}: <b>Unit 916 · Riverstone · ${money(1240)}</b></div>
   </div>
 
-  <div class="card" style="border-color:var(--green)">
-    <div class="settings-row" style="border:none">
-      <div class="grow" style="flex:1">
-        <b>${ic('refresh')} ${t('sync')} ${tipQ('sync_tip')}</b>
-        <div class="d">${t('sync_what')}</div>
-        <div class="d">${t('synced')}: ${state.lastSync || t('never')} · ${HAS_SB?'Supabase':'DEMO / localStorage'}</div>
-        ${SYNC_ERRORS.length ? `<div class="d" style="color:var(--red)">${ic('warn')} ${SYNC_ERRORS.length} ${t('tables_failed')}: ${SYNC_ERRORS.map(x=>x.tb).join(', ')}</div>` : ''}
-        ${WRITE_ERRORS.length ? `<div class="d" style="color:var(--yellow)">${ic('pencil')} ${t('write_err')}: ${WRITE_ERRORS.length}</div>` : ''}
-        ${pendingLoad().length ? `<div class="d" style="color:var(--yellow)">${ic('clock')} ${t('pending_writes')}: ${pendingLoad().length}</div>` : ''}
-      </div>
-      <button class="btn btn-green sm" onclick="App.sync()">${t('sync')}</button>
-    </div>
-    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.netModal()">${ic('wifi')} ${t('net_check_btn')} · ${netPillHtml()}</button>
-    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.diag()">${ic('steth')} ${t('diag')}</button>
-    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.showLog()">${ic('receipt')} ${t('log_title')}</button>
-    ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
-  </div>
-
-  ${fold('num', t('no_card'), 'receipt', numberingCardHtml())}
   ${fold('docs', t('docs_set_card'), 'clipboard', docsCardHtml())}
   ${fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml())}
   ${fold('push', t('push_card'), 'bell', pbCardHtml())}
@@ -9551,38 +9574,14 @@ function viewSettings(){
   ${fold('pop', t('pop_card'), 'bell', popCardHtml())}
   ${fold('cam', t('cam_card'), 'camera', camCardHtml())}
   ${isAcc() ? '' : fold('study', t('st_card'), 'grad', studyCardHtml())}
-  ${fold('uid', t('ui_card'), 'steth', uiDiagCardHtml())}
+  ${fold('dgs', t('dgs_card'), 'steth', dgsCardHtml())}
 
   ${isAdmin() ? `
-  <div class="card">
-    <div style="font-weight:900;margin-bottom:6px">${ic('building')} ${t('org')}</div>
-    <div class="form-row"><span class="lbl">${t('org_name')}</span><input id="org-name" value="${esc(org.company_name)}"></div>
-    <div class="form-row"><span class="lbl">${t('org_short')}</span><input id="org-short" value="${esc(org.company_short)}"></div>
-    <div class="form-row"><span class="lbl">${t('org_assoc')}</span><input id="org-assoc" value="${esc(org.assoc_line)}"></div>
-    <div class="grid-3">
-      <input id="org-a1" value="${esc(org.addr1)}"><input id="org-a2" value="${esc(org.addr2)}"><input id="org-a3" value="${esc(org.addr3)}">
-    </div>
-    <div class="form-row"><span class="lbl">${t('org_voice')}</span>
-      <input id="org-voice" placeholder="404-555-0100" value="${esc(org.voice_line || '')}"></div>
-    <div class="form-row"><span class="lbl">${t('org_fax')}</span>
-      <input id="org-fax" placeholder="404-555-0101" value="${esc(org.fax_line || '')}"></div>
-    <div class="tiny">${t('org_voice_h')}</div>
-    <div class="form-row"><span class="lbl">${t('org_ship')}</span>
-      <input id="org-ship" placeholder="Airborne" value="${esc(org.ship_method || '')}"></div>
-    <div class="form-row"><span class="lbl">${t('org_legal')}</span>
-      <textarea id="org-legal" rows="4" style="width:100%"
-        placeholder="${esc(LEGAL_DEF)}">${esc(org.legal_note || '')}</textarea></div>
-    <div class="tiny">${t('org_legal_h')}</div>
-    <button class="btn btn-blue sm" style="margin-top:8px" onclick="App.saveOrg()">${t('save')}</button>
-  </div>
   ${fold('gd', t('gd_card'), 'folder', mediaSettingsCardHtml())}
   ${fold('bn', t('bn_card'), 'car', bnCardHtml())}
   ${fold('tvs', t('tvs_card'), 'tv', tvSessionsCardHtml())}
   ${fold('tvc', t('tvc_card'), 'tv', tvCfgCardHtml())}
   ${fold('feat', t('feat_card'), 'gear', featCardHtml())}
-  ${fold('bkp', t('bk_card'), 'save', backupCardHtml())}
-  ${fold('abk', t('abk_card'), 'save', abkCardHtml())}
-  ${fold('diag', t('diag_card'), 'steth', diagCardHtml())}
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
     <div class="tiny" style="margin-bottom:8px">${t('invite_hint')}</div>
@@ -11097,6 +11096,7 @@ const App = {
     toast('✓ ' + t('saved'));
   },
   saveOrg(){
+    if ((!isAdmin() && !isAcc()) || !$('#org-name')) return;   // v1.08.97: админ и бухгалтер, форма на экране
     const org = { ...state.data.org_settings,
       company_name: $('#org-name').value.trim(), company_short: $('#org-short').value.trim(),
       assoc_line: $('#org-assoc').value.trim(),
@@ -11105,7 +11105,7 @@ const App = {
       voice_line: (($('#org-voice') || {}).value || '').trim(),   // v1.07.95
       fax_line:   (($('#org-fax')   || {}).value || '').trim(),
       addr1: $('#org-a1').value.trim(), addr2: $('#org-a2').value.trim(), addr3: $('#org-a3').value.trim() };
-    dbSaveOrg(org); toast('✓ ' + t('saved'));
+    return dbSaveOrg(org).then(ok => { if (ok !== false) toast('✓ ' + t('saved')); return ok; });
   },
   setSharedJobs(v){
     // v1.07.10: админ включает/выключает общий доступ к документам для всей команды
@@ -22658,6 +22658,39 @@ function camCardHtml(){
     </label>
     <div class="tiny" style="margin-top:6px">${t('cam_hint')}</div>
   </div>`;
+}
+/* =====================================================================
+   v1.08.96 · РАЗДЕЛ «ДИАГНОСТИКА» — всё техническое в одном спойлере.
+   Сверху «Связь и журналы» (было в карточке синхронизации: статус обмена,
+   «Проверить связь», «Диагностика», «Журнал событий», «Диагностика БД»),
+   ниже подразделы-спойлеры: Интерфейс; у админа — Тесты и регресс, Бэкап
+   данных, Автобэкап. Кнопка «Синхронизировать» убрана по просьбе владельца
+   (обмен идёт сам; App.sync оставлен для внутренних вызовов).
+   Ключи вложенных спойлеров прежние (uid/diag/bkp/abk) — их состояние
+   раскрытия сохраняется.
+   ===================================================================== */
+function dgsNetCardHtml(){
+  return `<div class="card" id="dg-net">
+    <div style="font-weight:900;margin-bottom:6px">${ic('wifi')} ${t('dg_net_title')}</div>
+    <div class="tiny">${ic('refresh')} ${t('synced')}: <b>${state.lastSync || t('never')}</b> · ${HAS_SB?'Supabase':'DEMO / localStorage'} ${tipQ('sync_tip')}</div>
+    ${SYNC_ERRORS.length ? `<div class="tiny" style="color:var(--red)">${ic('warn')} ${SYNC_ERRORS.length} ${t('tables_failed')}: ${SYNC_ERRORS.map(x=>x.tb).join(', ')}</div>` : ''}
+    ${WRITE_ERRORS.length ? `<div class="tiny" style="color:var(--yellow)">${ic('pencil')} ${t('write_err')}: ${WRITE_ERRORS.length}</div>` : ''}
+    ${pendingLoad().length ? `<div class="tiny" style="color:var(--yellow)">${ic('clock')} ${t('pending_writes')}: ${pendingLoad().length}</div>` : ''}
+    <div class="set-btns">
+      <button class="btn btn-ghost sm" onclick="App.netModal()">${ic('wifi')} ${t('net_check_btn')} · ${netPillHtml()}</button>
+      <button class="btn btn-ghost sm" onclick="App.diag()">${ic('steth')} ${t('diag')}</button>
+      <button class="btn btn-ghost sm" onclick="App.showLog()">${ic('receipt')} ${t('log_title')}</button>
+      ${isAdmin() ? `<button class="btn btn-blue sm" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
+    </div>
+  </div>`;
+}
+function dgsCardHtml(){
+  const adm = isAdmin();
+  return dgsNetCardHtml()
+    + fold('uid', t('dg_ui'), 'layers', uiDiagCardHtml(), true)
+    + (adm ? fold('diag', t('diag_card'), 'flask', diagCardHtml(), true)
+           + fold('bkp', t('bk_card'), 'save', backupCardHtml(), true)
+           + fold('abk', t('abk_card'), 'save', abkCardHtml(), true) : '');
 }
 function uiDiagCardHtml(){
   const on = (() => { try { return localStorage.getItem('techlog_uidiag') === '1'; } catch(e){ return false; } })();

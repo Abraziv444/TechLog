@@ -21,7 +21,7 @@ function t(name, cond, note){
     await p.evaluate(m => { localStorage.clear(); localStorage.setItem('techlog_session_v1', 'demo-admin'); localStorage.setItem('techlog_view_mode', m); }, mode);
     await p.reload(); await p.waitForTimeout(1500);
     const before = await p.evaluate(() => { const st = JSON.parse(localStorage.getItem('techlog_state_v1')); return { jobs: st.jobs.length, reps: (st.repairs || []).length, pl: st.placements.length }; });
-    await p.evaluate(() => { window.App.go('settings'); const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}'); if (!f.diag) window.App.foldToggle('diag'); }); await p.waitForTimeout(400);
+    await p.evaluate(() => { window.App.go('settings'); const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}'); if (!f.dgs) window.App.foldToggle('dgs'); if (!f.diag) window.App.foldToggle('diag'); });   // v1.08.96: подраздел «Диагностики» await p.waitForTimeout(400);
     t('кнопка «Регресс основных функций» в карточке диагностики', !!(await p.$('#rg-btn')));
     await p.evaluate(() => window.App.regress());
     await p.waitForTimeout(300);

@@ -1146,8 +1146,11 @@ console.log('\n— офлайн-запись в режиме Supabase (v1.08.38)
   if (!w2.navigator.vibrate) w2.navigator.vibrate = () => {};
   const calls = [];
   let netDown = true;
+  let rlsOrg = false;                                   // v1.08.97: база без update-to-1_08_97 не пускает бухгалтера
   const resp = (op, table, payload) => {
     calls.push(op + ':' + table);
+    if (rlsOrg && op === 'upsert' && table === 'org_settings')
+      return Promise.resolve({ error: { code: '42501', message: 'new row violates row-level security policy for table "org_settings"' } });
     return netDown ? Promise.resolve({ error: { message: 'TypeError: Failed to fetch' } }) : Promise.resolve({ data: null, error: null });
   };
   const from = (table) => ({
@@ -1204,6 +1207,26 @@ console.log('\n— офлайн-запись в режиме Supabase (v1.08.38)
       await S.dbUpsert('jobs', { id: 'j11', unit_number: '11', form_data: {} });
       t('второй сбой подряд — «нет сервера», обе записи в очереди', S.netOff() && S.pendingLoad().length === 2);
       t('на сервер ходили только два раза (третьего вызова без сети нет)', calls.length === 2, calls.join(','));
+      S.pendingSave([]);
+      /* v1.08.97: бухгалтер сохраняет «Организацию (для PDF)» */
+      netDown = false; S.NET.srv = true; S.NET.fails = 0;
+      S.setUser({ id: 'u2', role: 'accountant', display_name: 'Acc', login: 'acc' });
+      rlsOrg = true; calls.length = 0;
+      w2.document.querySelectorAll('#toasts .toast').forEach(x => x.remove());
+      const accOld = await S.dbSaveOrg({ id: 'org', company_name: 'ACC' });
+      const tx = [...w2.document.querySelectorAll('#toasts .toast')].map(x => x.textContent).join(' | ');
+      t('v1.08.97: бухгалтер, база без апдейта — «Обновите БД» с файлом, не сырая ошибка, в очередь не легло',
+        accOld === false && /Обновите БД/.test(tx) && tx.includes(S.DB_SQL_FILE || 'full-install-1_08_97.sql') && !/row-level security/.test(tx)
+        && S.pendingLoad().length === 0 && calls.join(',') === 'upsert:org_settings', JSON.stringify({ accOld, tx, calls }));
+      rlsOrg = false;
+      const accNew = await S.dbSaveOrg({ id: 'org', company_name: 'ACC2' });
+      t('v1.08.97: бухгалтер, база обновлена — сохранение проходит (true)', accNew === true && S.state.data.org_settings.company_name === 'ACC2', accNew);
+      S.setUser({ id: 'u1', role: 'admin', display_name: 'Test', login: 'test' });
+      rlsOrg = true;
+      const admErr = await S.dbSaveOrg({ id: 'org', company_name: 'ADM' });
+      const tx2 = [...w2.document.querySelectorAll('#toasts .toast')].map(x => x.textContent).join(' | ');
+      t('v1.08.97: у админа та же ошибка — как раньше, обычный тост ошибки (false)', admErr === false && /row-level security/.test(tx2), tx2);
+      rlsOrg = false;
       S.pendingSave([]);
     };
     run().catch(e => t('SB-сценарий выполнился без исключений', false, e && e.stack || e)).then(finish);
@@ -1341,7 +1364,7 @@ console.log('\n— v1.08.48: медиа у ремонта, ТВ-уборка, м
   const com = fs.readFileSync(ROOT + '/supabase/functions/media-commit/index.ts', 'utf8');
   const del = fs.readFileSync(ROOT + '/supabase/functions/media-delete/index.ts', 'utf8');
   t('SQL-комплект 1.08.48 на месте (DB_SQL_FILE двинулся дальше)',
-    /DB_SQL_FILE = 'full-install-1_08_(51|70|71)\.sql'/.test(src)
+    /DB_SQL_FILE = 'full-install-1_08_(51|70|71|97)\.sql'/.test(src)
     && fs.existsSync(ROOT + '/supabase/update-to-1_08_48.sql'));
   t('SQL: ровно один владелец медиа + права ремонта + tv_cleanup',
     sql.includes('media_owner_one') && sql.includes('can_view_repair')
@@ -1441,7 +1464,7 @@ console.log('\n— v1.08.51: учёба —');
   const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
   const sw  = fs.readFileSync(ROOT + '/sw.js', 'utf8');
   t('SQL-комплект 1.08.51 на месте (DB_SQL_FILE двинулся на 1.08.70)',
-    /DB_SQL_FILE = 'full-install-1_08_(51|70|71)\.sql'/.test(src)
+    /DB_SQL_FILE = 'full-install-1_08_(51|70|71|97)\.sql'/.test(src)
     && fs.existsSync(ROOT + '/supabase/update-to-1_08_51.sql') && fs.existsSync(ROOT + '/supabase/full-install-1_08_51.sql'));
   const sql = fs.readFileSync(ROOT + '/supabase/update-to-1_08_51.sql', 'utf8');
   t('SQL: study_sessions с RLS, колонки доступа, study_access под защитой guard, восстановление',
@@ -1553,7 +1576,7 @@ console.log('\n— v1.08.51: учёба —');
     src.includes('async function runDiagnostics(onLine){') && src.includes('try{ if (onLine) onLine(s); }catch(e){}')
     && /async function showDiagnostics\(\)\{\s*\/\* сначала окно/.test(src) && src.includes('<pre class="diag-pre" id="diag-pre">')
     && src.includes('id="diag-copy" disabled') && css.includes('min-height:min(52vh, 320px)')
-    && src.includes("${t('sync')} ${tipQ('sync_tip')}") && src.includes("${t('sync_what')}")
+    && src.includes("${t('synced')}: <b>${state.lastSync || t('never')}</b> · ${HAS_SB?'Supabase':'DEMO / localStorage'} ${tipQ('sync_tip')}")   /* v1.08.96: без кнопки, в «Диагностике» */
     && src.includes("push_card: 'Push уведомления'") && src.includes("push_card: 'Push notifications'")
     && src.includes('async function pushTest(){') && src.includes('function pushTestKinds(){') && src.includes('function pushTestItem(kind){')
     && src.includes('reg.showNotification(it.title, {') && src.includes("tag: 'techlog-test-' + k") && src.includes('App.pushTest()')
@@ -1614,11 +1637,35 @@ console.log('\n— v1.08.51: учёба —');
   t('v1.08.95: «Настройки документов» — печать и поиск ушли из «Подсказок», общий доступ/аренда/лимиты внутри секции, отступы у галочек',
     src.includes("${fold('docs', t('docs_set_card'), 'clipboard', docsCardHtml())}")
     && !/function popCardHtml\(\)\{[\s\S]*?\n\}/.exec(src)[0].match(/App\.printBtn|App\.srchTab|App\.searchOpen/)
-    && src.includes('return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml();')
+    && src.includes('return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml()')
     && !src.includes("fold('mlim'") && (src.match(/id="org-shared"/g) || []).length === 1
     && (src.match(/orgStepperHtml\('default_rent_days'/g) || []).length === 1
     && css.includes('.set-opts{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;margin:10px 0}')
     && ['docs_set_card', 'docs_my_title'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
+  t('v1.08.96: раздел «Диагностика» — связь и журналы сверху, подразделы Интерфейс / Тесты / Бэкап / Автобэкап, кнопки «Синхронизировать» нет',
+    src.includes("${fold('dgs', t('dgs_card'), 'steth', dgsCardHtml())}")
+    && !src.includes('onclick="App.sync()"') && src.includes("sync(){ syncNow(false);")
+    && src.includes("+ fold('uid', t('dg_ui'), 'layers', uiDiagCardHtml(), true)")
+    && src.includes("(adm ? fold('diag', t('diag_card'), 'flask', diagCardHtml(), true)")
+    && src.includes("+ fold('bkp', t('bk_card'), 'save', backupCardHtml(), true)")
+    && src.includes("+ fold('abk', t('abk_card'), 'save', abkCardHtml(), true) : '')")
+    && (src.match(/fold\('(uid|diag|bkp|abk)'/g) || []).length === 4
+    && src.includes('function fold(key, label, iconName, html, sub){')
+    && css.includes('.fold.on > .fold-h{') && !css.includes('.fold.on .fold-h{') && css.includes('.fold-sub > .fold-h{')
+    && !/кнопка нужна, если кажется|the button is for when data looks stale/.test(src)
+    && ['dgs_card', 'dg_net_title', 'dg_ui'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
+  t('v1.08.97: «Нумерация» и «Организация (для PDF)» — подразделы «Настроек документов»; организация — админ и бухгалтер; SQL-комплект 1.08.97',
+    src.includes("+ fold('num', t('no_card'), 'receipt', numberingCardHtml(), true)")
+    && src.includes("+ fold('org', t('org'), 'building', orgCardHtml(), true);")
+    && !src.includes("${fold('num', t('no_card'), 'receipt', numberingCardHtml())}")
+    && (src.match(/id="org-name"/g) || []).length === 1 && /function orgCardHtml\(\)\{\s*if \(!isAdmin\(\) && !isAcc\(\)\) return '';/.test(src)
+    && src.includes("if ((!isAdmin() && !isAcc()) || !$('#org-name')) return;   // v1.08.97: админ и бухгалтер, форма на экране")
+    && T.DB_SQL_FILE === 'full-install-1_08_97.sql'
+    && (() => { const u = fs.readFileSync(ROOT + '/supabase/update-to-1_08_97.sql', 'utf8'), f = fs.readFileSync(ROOT + '/supabase/full-install-1_08_97.sql', 'utf8');
+         return [u, f].every(x => x.includes('create policy org_settings_acc_upd') && x.includes('create policy org_settings_acc_ins')
+           && x.includes("with check (public.my_role() = 'accountant' and id = 'org')") && x.includes('create trigger org_settings_acc_guard_tg before update on public.org_settings')
+           && x.includes("'voice_line','fax_line','ship_method','legal_note']") && x.includes('схема соответствует v1.08.97'))
+           && f.includes('create table if not exists public.org_settings') && fs.existsSync(ROOT + '/tests/org-acc.sql'); })());
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')
@@ -1797,7 +1844,7 @@ console.log('\n— v1.08.51: учёба —');
         j.questions.forEach(q => { n++; const v = T.stViewBuild(q); if (v){ ok++; if (v.correct.length > 1) multi++; } }); }
       return n === 1747 && ok === n && multi > 400; })());
   t('v1.08.70: галочка админа «перемешивать варианты», колонка org_settings.study_shuffle в update-to и full-install, DB_NEED_COLS',
-    src.includes("setOrgFlag('study_shuffle', this.checked)") && src.includes("['org_settings',  'study_shuffle']") && /^full-install-1_08_7\d\.sql$/.test(T.DB_SQL_FILE)
+    src.includes("setOrgFlag('study_shuffle', this.checked)") && src.includes("['org_settings',  'study_shuffle']") && /^full-install-1_08_(7\d|9\d)\.sql$/.test(T.DB_SQL_FILE)
     && fs.readFileSync(path.join(ROOT, 'supabase/update-to-1_08_70.sql'), 'utf8').includes('study_shuffle boolean not null default true')
     && fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_08_70.sql'), 'utf8').includes('study_shuffle boolean not null default true'));
   t('v1.08.69: карта — помощник перевода называется LOC, function L на верхнем уровне нет (иначе подменяется window.L Leaflet)',

@@ -113,8 +113,11 @@ const stubRoutes = async (p) => {
   await p.evaluate(() => { window.App.closeModal(); window.App.go('settings'); });
   await p.waitForTimeout(400);
   await p.evaluate(() => {
+    /* v1.08.97: «Нумерация» — подраздел «Настроек документов» */
+    const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}');
+    if (!f.docs) window.App.foldToggle('docs');
     const b = [...document.querySelectorAll('.fold-h')].find(x => /Нумерация документов/.test(x.textContent || ''));
-    if (b) b.click();
+    if (b && !b.closest('.fold').classList.contains('on')) b.click();
   });
   await p.waitForTimeout(300);
   t('в карточке нумерации есть кнопка «?»',
@@ -132,9 +135,10 @@ const stubRoutes = async (p) => {
   console.log('— диагностика: внешние сервисы (демо) —');
   await p.evaluate(() => { window.App.closeModal(); });
   await p.evaluate(() => {
-    const b = [...document.querySelectorAll('.fold-h')].find(x =>
-      /Диагностика/.test(x.textContent || '') && !/интерфейса/.test(x.textContent || ''));
-    if (b) b.click();
+    /* v1.08.96: «Тесты и регресс» — подраздел «Диагностики» */
+    const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}');
+    if (!f.dgs) window.App.foldToggle('dgs');
+    if (!f.diag) window.App.foldToggle('diag');
   });
   await p.waitForTimeout(300);
   await p.evaluate(() => window.App.runDiag());

@@ -48,22 +48,23 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
   t('состояние: онлайн', await p.evaluate(() => window.App.netState() === 'on' && !window.App.netOff()));
 
   console.log('— 2. серверные кнопки помечены —');
-  await p.evaluate(() => window.App.go('settings')); await p.waitForTimeout(400);
+  /* v1.08.96: кнопка «Синхронизировать» убрана, «Проверить связь»/«Диагностика» — в спойлере «Диагностика» */
+  await p.evaluate(() => { window.App.go('settings'); const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}'); if (!f.dgs) window.App.foldToggle('dgs'); }); await p.waitForTimeout(400);
   const marks = await p.evaluate(() => ({
-    sync: !!document.querySelector('[onclick="App.sync()"].net-need'),
+    sync: !document.querySelector('[onclick="App.sync()"]'),
     upd: !!document.querySelector('[onclick*="updCheck"].net-need'),
     logout: !!document.querySelector('[onclick*="App.logout"].net-need'),
     diagFree: !!document.querySelector('[onclick="App.diag()"]') && !document.querySelector('[onclick="App.diag()"].net-need'),
     pillFree: !document.querySelector('.net-pill.net-need'),
     offlineCls: document.documentElement.classList.contains('tl-offline'),
   }));
-  t('«Синхронизация» помечена .net-need', marks.sync);
+  t('кнопки «Синхронизировать» в настройках нет (v1.08.96)', marks.sync);
   t('«Проверить обновление» помечена', marks.upd);
   t('«Выйти» помечена', marks.logout);
   t('«Диагностика» — нет (работает без сети)', marks.diagFree);
   t('сама пилюля не помечена', marks.pillFree);
   /* v1.08.88: кнопка открывает ту же модалку, что бейдж в шапке (App.netModal) */
-  t('в карточке синхронизации есть «Проверить связь» с живой пилюлей', await p.evaluate(() =>
+  t('в «Диагностике» есть «Проверить связь» с живой пилюлей', await p.evaluate(() =>
     !!document.querySelector('[onclick="App.netModal()"] .net-pill') && !document.querySelector('[onclick="App.netModal()"].net-need')));
   t('при сети класса tl-offline нет', !marks.offlineCls);
 
@@ -74,19 +75,19 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
     cls: document.documentElement.classList.contains('tl-offline'),
     pill: (document.querySelector('.topbar .net-pill') || {}).className,
     txt: (document.querySelector('.topbar .net-pill') || {}).textContent,
-    dim: +getComputedStyle(document.querySelector('[onclick="App.sync()"]')).opacity < 0.6,
+    dim: +getComputedStyle(document.querySelector('[onclick="App.updCheck()"]')).opacity < 0.6,
     st: window.App.netState(),
   }));
   t('html.tl-offline выставлен', off.cls, JSON.stringify(off));
   t('пилюля красная «офлайн»', /\boff\b/.test(off.pill || '') && /офлайн/.test(off.txt || ''), off.txt);
   t('серверная кнопка блеклая (opacity < .6)', off.dim);
   /* клик по блеклой кнопке: обработчик не вызывается, вместо него подсказка */
-  await p.evaluate(() => { window.__sync = 0; const o = window.App.sync; window.App.sync = () => { window.__sync++; }; window.__syncOrig = o; });
-  await p.locator('[onclick="App.sync()"]').click({ force: true });
+  await p.evaluate(() => { window.__sync = 0; const o = window.App.updCheck; window.App.updCheck = () => { window.__sync++; }; window.__syncOrig = o; });
+  await p.locator('[onclick="App.updCheck()"]').click({ force: true });
   await p.waitForTimeout(300);
   const blocked = await p.evaluate(() => ({ calls: window.__sync,
     toast: [...document.querySelectorAll('#toasts .toast')].some(x => /Нет связи/.test(x.textContent)) }));
-  t('клик перехвачен — App.sync не вызван', blocked.calls === 0, 'calls=' + blocked.calls);
+  t('клик перехвачен — App.updCheck не вызван', blocked.calls === 0, 'calls=' + blocked.calls);
   t('показана подсказка «Нет связи…»', blocked.toast);
 
   /* обычные функции живы: создать задачу самому себе и сохранить работу */
@@ -127,10 +128,10 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
   t('tl-offline снят, состояние «on»', !back.cls && back.st === 'on', JSON.stringify(back));
   t('пилюля снова показывает пинг', /^\d+ мс$/.test((back.txt || '').trim()), back.txt);
   await p.evaluate(() => window.App.go('settings')); await p.waitForTimeout(300);
-  await p.locator('[onclick="App.sync()"]').click();
+  await p.locator('[onclick="App.updCheck()"]').click();
   await p.waitForTimeout(200);
-  t('после возврата сети клик доходит до App.sync', await p.evaluate(() => window.__sync === 1));
-  await p.evaluate(() => { window.App.sync = window.__syncOrig; });
+  t('после возврата сети клик доходит до App.updCheck', await p.evaluate(() => window.__sync === 1));
+  await p.evaluate(() => { window.App.updCheck = window.__syncOrig; });
 
   console.log('— 5. спойлеры инвойса —');
   const ids = await p.evaluate(() => {

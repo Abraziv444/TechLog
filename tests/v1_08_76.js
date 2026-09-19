@@ -42,7 +42,7 @@ function t(name, cond, note){
   await p.evaluate(() => window.App.closeModal()); await p.waitForTimeout(300);
 
   console.log('— блок в карточках, копирование, показ —');
-  await p.evaluate(() => { window.App.go('settings'); const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}'); if (f.diag !== 1) window.App.foldToggle('diag'); }); await p.waitForTimeout(400);
+  await p.evaluate(() => { window.App.go('settings'); const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}'); if (f.dgs !== 1) window.App.foldToggle('dgs'); if (f.diag !== 1) window.App.foldToggle('diag'); });   // v1.08.96 await p.waitForTimeout(400);
   const card = await p.evaluate(() => { const els = [...document.querySelectorAll('#tl-last')]; return { n: els.length, txt: els[0] ? els[0].textContent : '', btns: els[0] ? [...els[0].querySelectorAll('.btn')].map(b => b.textContent.trim()) : [] }; });
   t('блок «Журнал последнего теста» в карточке «Съёмка» и в «Диагностике» (2 шт.), со сводкой и кнопками', card.n === 2 && /Журнал последнего теста/.test(card.txt) && /Тест съёмки/.test(card.txt) && /из \d+ шагов/.test(card.txt) && card.btns.length >= 3, JSON.stringify(card));
   await p.evaluate(() => window.App.tlogCopy()); await p.waitForTimeout(300);

@@ -57,17 +57,20 @@ async function boot(br, mode, noSw){
     await p.close();
   }
 
-  console.log('— карточка синхронизации объясняет, что с чем —');
+  console.log('— статус синхронизации объяснён (v1.08.96: «Связь и журналы» в «Диагностике», без кнопки) —');
   {
     const p = await boot(br, 'desktop');
+    await p.evaluate(() => { const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}'); if (!f.dgs) window.App.foldToggle('dgs'); });
+    await p.waitForTimeout(400);
     const c = await p.evaluate(() => {
-      const card = [...document.querySelectorAll('#app .card')].find(x => /App\.sync\(\)/.test(x.innerHTML));
+      const card = document.querySelector('#dg-net');
       const q = card && card.querySelector('.tipq');
-      return { q: !!q, oc: q && q.getAttribute('onclick'), what: /Данные устройства ⇄ сервер/.test(card.textContent) };
+      return { q: !!q, oc: q && q.getAttribute('onclick'), st: !!card && /Синхронизировано/.test(card.textContent),
+        noBtn: !document.querySelector('[onclick="App.sync()"]') };
     });
-    t('у заголовка «Синхронизировать» есть «?» с объяснением', c.q && /toastInfo\('sync_tip'\)/.test(c.oc), JSON.stringify(c));
-    t('под заголовком — строка «Данные устройства ⇄ сервер…»', c.what, JSON.stringify(c));
-    await p.evaluate(() => [...document.querySelectorAll('#app .card')].find(x => /App\.sync\(\)/.test(x.innerHTML)).querySelector('.tipq').click());
+    t('у строки «Синхронизировано» есть «?» с объяснением', c.q && /toastInfo\('sync_tip'\)/.test(c.oc), JSON.stringify(c));
+    t('кнопки «Синхронизировать» нет, статус на месте', c.noBtn && c.st, JSON.stringify(c));
+    await p.evaluate(() => document.querySelector('#dg-net .tipq').click());
     await p.waitForTimeout(300);
     t('«?» показывает подсказку про обмен данными', await p.evaluate(() => [...document.querySelectorAll('#toasts .toast')].some(x => /наверх уходит всё, что вы создали/.test(x.textContent))));
     await p.close();
