@@ -629,7 +629,7 @@ html.tl-pop-side #toasts{left:auto;right:12px;align-items:flex-end}
 .diag-pre{
   background:var(--card); border:2px solid var(--line); border-radius:12px;
   padding:10px 12px; font-size:.66rem; line-height:1.45; color:var(--text);
-  white-space:pre-wrap; word-break:break-word; max-height:52vh; overflow:auto;
+  white-space:pre-wrap; word-break:break-word; max-height:52vh; min-height:min(52vh, 320px); overflow:auto;   /* v1.08.90: пустое окно — того же размера, что заполненное */
   font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   margin-bottom:12px;
 }

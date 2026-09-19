@@ -1547,6 +1547,20 @@ console.log('\n— v1.08.51: учёба —');
     && src.includes("window.addEventListener('tl:viewmode', () => { try { fontSyncPref(); render(); }")
     && src.includes("${t('font_title')} ${tipQ('font_hint')}") && !/<div class="d">\$\{t\('font_hint'\)\}<\/div>/.test(src)
     && ['font_mode_ph', 'font_mode_pc'].every(k => (src.match(new RegExp('\\b' + k + ': \'', 'g')) || []).length === 2));
+  t('v1.08.90: диагностика стримит строки в уже открытое окно, синхронизация объяснена, push-раздел с проверкой',
+    src.includes('async function runDiagnostics(onLine){') && src.includes('try{ if (onLine) onLine(s); }catch(e){}')
+    && /async function showDiagnostics\(\)\{\s*\/\* сначала окно/.test(src) && src.includes('<pre class="diag-pre" id="diag-pre">')
+    && src.includes('id="diag-copy" disabled') && css.includes('min-height:min(52vh, 320px)')
+    && src.includes("${t('sync')} ${tipQ('sync_tip')}") && src.includes("${t('sync_what')}")
+    && src.includes("push_card: 'Push уведомления'") && src.includes("push_card: 'Push notifications'")
+    && src.includes('async function pushTest(){') && src.includes('function pushTestKinds(){') && src.includes('function pushTestItem(kind){')
+    && src.includes('reg.showNotification(it.title, {') && src.includes("tag: 'techlog-test-' + k") && src.includes('App.pushTest()')
+    && ['push_test', 'push_test_hint', 'push_s_perm', 'push_s_sub', 'push_s_srv', 'push_s_fn', 'push_t_done', 'push_t_tail', 'sync_tip', 'sync_what'].every(k => (src.match(new RegExp('\\b' + k + ': \'', 'g')) || []).length === 2));
+  t('v1.08.91: справка по нумерации — тот же noHelpHtml() под спойлером в карточке, модалка по «?» на месте',
+    src.includes("${fold('nohelp', t('no_help_open'), 'help', noHelpHtml())}")
+    && /function numberingCardHtml\(\)\{[\s\S]*App\.noHelp\(\)[\s\S]*fold\('nohelp'/.test(src)
+    && src.includes("noHelp(){ openModal(modalHead(t('no_help_t'), 'receipt') + noHelpHtml()); }")
+    && (src.match(/\bno_help_open: '/g) || []).length === 2);
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')

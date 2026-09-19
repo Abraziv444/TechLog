@@ -117,7 +117,7 @@
   html.tl-desktop.tl-pop-side #toasts{ left:auto; right:20px; align-items:flex-end; }
 
   /* ---------- Диагностика: длиннее лог ---------- */
-  html.tl-desktop .diag-pre{ max-height:62vh; }
+  html.tl-desktop .diag-pre{ max-height:62vh; min-height:min(62vh, 420px); }
 
   /* ---------- Ховеры для мыши (на тачах не мешают) ---------- */
   @media (hover:hover){

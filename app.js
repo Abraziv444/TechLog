@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.89';
+const APP_VERSION = '1.08.91';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -221,7 +221,20 @@ const I18N = {
     demo_sb_only: 'В демо недоступно — работает только с Supabase',
     feat_card: 'Функции',
     /* ---- v1.08.33: пуши, время, безопасность, поиск, шаблоны ---- */
-    push_card: 'Уведомления', push_dev: 'На этом устройстве',
+    push_card: 'Push уведомления', push_dev: 'На этом устройстве',
+    push_test: 'Проверить работу уведомлений', push_test_h: 'Проверка уведомлений',
+    push_test_hint: 'Приложение пришлёт на это устройство по одному уведомлению каждого отмеченного вида — с настоящим номером документа из ваших. Так видно, показывает ли телефон уведомления вообще (разрешение, «Не беспокоить», режим экономии) и что будет написано в шторке.',
+    push_s_sup: 'Поддержка браузером', push_s_perm: 'Разрешение на уведомления',
+    push_s_sw: 'Service worker', push_s_sub: 'Подписка этого устройства',
+    push_s_srv: 'Подписка на сервере', push_s_fn: 'Сервис уведомлений (push)',
+    push_s_send: 'Показ уведомлений', push_t_done: 'Показано уведомлений: {N}',
+    push_t_none: 'Не отмечено ни одного вида — отметьте галочки выше',
+    push_t_perm_no: 'запрещены в настройках браузера — разрешите их для сайта и повторите',
+    push_t_sub_no: 'нет — нажмите «Включить на устройстве» (серверные уведомления без неё не придут; показ на этом устройстве проверить можно)',
+    push_t_tail: 'Уведомления не появились на экране? Проверьте режим «Не беспокоить», экономию заряда и разрешения TechLog в настройках телефона. На iPhone уведомления работают только у приложения, добавленного на экран «Домой».',
+    push_test_doc: 'взят ваш документ',
+    sync_tip: 'Обмен данными между этим устройством и сервером: наверх уходит всё, что вы создали и правили (в том числе офлайн — из очереди записей), вниз приходят чужие правки: задачи, пикапы, документы, справочники, настройки организации. Обычно идёт сам — при запуске, возврате в приложение и после сохранения; кнопка нужна, если кажется, что данные устарели, или после долгого офлайна. Фото и видео идут своей очередью — её показывает карточка «Все фото и видео отправлены».',
+    sync_what: 'Данные устройства ⇄ сервер: задачи, пикапы, документы, справочники',
     push_on_dev: 'Включить на устройстве', push_off_dev: 'Отключить на устройстве',
     push_state_on: 'уведомления включены', push_state_off: 'выключены',
     push_denied: 'Запрещены в браузере — разрешите в настройках сайта',
@@ -549,6 +562,7 @@ const I18N = {
     no_t_TECH: 'инициалы сотрудника', no_t_WT: 'вид задачи', no_t_SEQ: 'порядковый номер',
     no_t_NAME: 'название', no_t_KIND: 'вид файла',
     no_help_t: 'Нумерация — справка',
+    no_help_open: 'Справка: кусочки и их значения сейчас',
     no_help_doc: 'Кусочки номера документа и их значения сейчас',
     no_help_file: 'Кусочки имени файла и их значения сейчас',
     no_help_ex: 'Пример',
@@ -1358,7 +1372,20 @@ const I18N = {
     demo_sb_only: 'Not available in the demo — Supabase only',
     feat_card: 'Features',
     /* ---- v1.08.33 ---- */
-    push_card: 'Notifications', push_dev: 'On this device',
+    push_card: 'Push notifications', push_dev: 'On this device',
+    push_test: 'Test notifications', push_test_h: 'Notification check',
+    push_test_hint: 'The app will send this device one notification of every ticked kind — with a real document number of yours. This shows whether the phone displays notifications at all (permission, Do Not Disturb, battery saver) and what the text will look like.',
+    push_s_sup: 'Browser support', push_s_perm: 'Notification permission',
+    push_s_sw: 'Service worker', push_s_sub: 'Subscription on this device',
+    push_s_srv: 'Subscription on the server', push_s_fn: 'Push service',
+    push_s_send: 'Showing notifications', push_t_done: 'Notifications shown: {N}',
+    push_t_none: 'No kinds ticked — tick the boxes above',
+    push_t_perm_no: 'blocked in browser settings — allow them for this site and try again',
+    push_t_sub_no: 'none — press «Enable on this device» (server notifications will not arrive without it; showing on this device can still be checked)',
+    push_t_tail: 'Nothing appeared on screen? Check Do Not Disturb, battery saver and the TechLog permissions in your phone settings. On iPhone notifications only work for an app added to the Home screen.',
+    push_test_doc: 'your document is used',
+    sync_tip: 'Data exchange between this device and the server: everything you created or edited goes up (including offline work from the write queue), other people’s changes come down: jobs, pickups, documents, directories, organization settings. It normally runs by itself — on start, on returning to the app and after saving; the button is for when data looks stale or after a long time offline. Photos and videos have their own queue — see the «All photos and videos sent» card.',
+    sync_what: 'Device data ⇄ server: jobs, pickups, documents, directories',
     push_on_dev: 'Enable on this device', push_off_dev: 'Disable on this device',
     push_state_on: 'notifications are on', push_state_off: 'off',
     push_denied: 'Blocked by the browser — allow them in site settings',
@@ -1678,6 +1705,7 @@ const I18N = {
     no_t_TECH: 'staff initials', no_t_WT: 'work type', no_t_SEQ: 'sequential number',
     no_t_NAME: 'name', no_t_KIND: 'file kind',
     no_help_t: 'Numbering — help',
+    no_help_open: 'Help: pieces and their current values',
     no_help_doc: 'Document number pieces and their current values',
     no_help_file: 'File name pieces and their current values',
     no_help_ex: 'Example',
@@ -2585,6 +2613,10 @@ function numberingCardHtml(){
     <div class="qty-line" style="margin-top:8px"><span class="name">${t('no_pad_lbl')}</span>
       ${orgStepperHtml('doc_no_pad', docPad(), 1, 9)}</div>
     <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.noReset()">${ic('refresh')} ${t('no_reset')}</button>
+    ${/* v1.08.91: та же справка, что в «?», — прямо в карточке под спойлером:
+         раскрыл и настраиваешь конструктор, глядя на значения кусочков.
+         Модалка по «?» осталась как была. */''}
+    ${fold('nohelp', t('no_help_open'), 'help', noHelpHtml())}
   </div>`;
 }
 /* v1.08.35: справка конструктора — что за кусочки, живые значения на
@@ -2741,8 +2773,128 @@ function pbCardHtml(){
       : `<button class="btn btn-green sm" ${denied?'disabled':''} onclick="App.pbSub()">${ic('bell')} ${t('push_on_dev')}</button>`}
     ${isIOS && !standalone ? `<div class="tiny" style="margin-top:6px">${t('push_ios_hint')}</div>` : ''}
     <div style="font-weight:800;margin:10px 0 4px">${t('push_kinds')}</div>
-    ${rows}`}
+    ${rows}
+    <button class="btn btn-blue sm" style="margin-top:10px" onclick="App.pushTest()">${ic('bell')} ${t('push_test')}</button>
+    <div class="tiny">${t('push_test_hint')}</div>`}
   </div>`;
+}
+/* =====================================================================
+   v1.08.90 · «ПРОВЕРИТЬ РАБОТУ УВЕДОМЛЕНИЙ»
+   Уведомление приходит само только по событию (назначили задачу, сняли
+   апрув), и проверить «а вообще телефон их показывает?» было нечем.
+   Кнопка проходит всю цепочку — поддержка, разрешение, service worker,
+   подписка на устройстве и на сервере, живая push-функция — и показывает
+   на этом устройстве по одному уведомлению каждого отмеченного вида,
+   с НАСТОЯЩИМ номером документа из доступных пользователю (клик по
+   уведомлению открывает приложение, как у обычного пуша).
+   ===================================================================== */
+function pushTestKinds(){
+  const kinds = ['job', 'pickup', 'approve', 'overdue', 'reset'];
+  if (bnVisible()) kinds.push('bn_alert');
+  if (isAdmin() || (state.user && state.user.bn_service === true)) kinds.push('bn_service');
+  return kinds.filter(k => pbPref(k));
+}
+/* случайный документ, который человек и правда видит */
+function pushTestPick(kind){
+  const rnd = (a) => a.length ? a[Math.floor(Math.random() * a.length)] : null;
+  if (kind === 'pickup' || kind === 'overdue'){
+    const today = todayISO();
+    const ps = (visiblePlacements() || []).filter(pkPending);
+    const p = rnd(kind === 'overdue' ? (ps.filter(x => x.due_date < today).length ? ps.filter(x => x.due_date < today) : ps) : ps);
+    if (!p) return null;
+    const cx = cxById(p.complex_id) || {};
+    return { body: `${cx.abbr || cx.name || '—'} · Unit ${p.unit_number || '—'} · ${fmtDMY(p.due_date)}`, no: pickNo(p) || '' };
+  }
+  const js = visibleJobs() || [];
+  const j = rnd(kind === 'approve' ? (js.filter(x => x.status === 'approved').length ? js.filter(x => x.status === 'approved') : js) : js);
+  if (!j) return null;
+  const cx = cxById(j.complex_id) || {};
+  return { body: `${cx.abbr || cx.name || '—'} · Unit ${j.unit_number || '—'} · ${fmtDMY(j.date)}`, no: docNo('job', j) || '' };
+}
+function pushTestItem(kind){
+  const d = pushTestPick(kind);
+  const base = t('push_k_' + kind);
+  if (kind === 'bn_alert' || kind === 'bn_service'){
+    const vs = bnVehicles();
+    const v = vs.length ? vs[Math.floor(Math.random() * vs.length)] : null;
+    const nm = v ? [v.make || '', v.car_no ? '#' + v.car_no : ''].filter(Boolean).join(' · ') : '';
+    return { title: base, body: nm || 'TechLog', doc: '' };
+  }
+  if (!d) return { title: base, body: 'TechLog', doc: '' };
+  return { title: base, body: d.body + (d.no ? ' · ' + d.no : ''), doc: d.no };
+}
+let _pushTestRun = false;
+async function pushTest(){
+  const log = [];
+  const paint = () => { const b = $('#pt-log'); if (!b) return;
+    b.innerHTML = log.map(l => `<div class="mq-l ${l.cls}"><span class="m">${esc(l.txt)}</span></div>`).join('');
+    b.scrollTop = b.scrollHeight; };
+  const line = (txt, cls) => { log.push({ txt, cls: cls || 'dim' }); paint(); return log.length - 1; };
+  const set = (i, txt, cls) => { log[i] = { txt, cls: cls || '' }; paint(); };
+  openModal(`
+    ${modalHead(t('push_test_h'), 'bell')}
+    <div class="mq-log net-log" id="pt-log"></div>
+    <button class="btn btn-blue" id="pt-run" style="margin-top:10px" disabled onclick="App.pushTest()">${ic('bell')} ${t('push_test')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
+  `);
+  if (_pushTestRun) return;
+  _pushTestRun = true;
+  let shown = 0;
+  try{
+    const i1 = line(t('push_s_sup') + ' …');
+    if (!pbSupported()){ set(i1, '✗ ' + t('push_s_sup') + ' — ' + t('push_unsupported'), 'err'); return; }
+    set(i1, '✓ ' + t('push_s_sup'), 'ok');
+    const i2 = line(t('push_s_perm') + ' …');
+    let perm = Notification.permission;
+    if (perm === 'default'){ try{ perm = await Notification.requestPermission(); }catch(e){} }
+    if (perm !== 'granted'){ set(i2, '✗ ' + t('push_s_perm') + ' — ' + t('push_t_perm_no'), 'err'); return; }
+    set(i2, '✓ ' + t('push_s_perm'), 'ok');
+    const i3 = line(t('push_s_sw') + ' …');
+    let reg = null;
+    try{ reg = await navigator.serviceWorker.ready; }catch(e){}
+    if (!reg){ set(i3, '✗ ' + t('push_s_sw') + ' — ' + t('net_l_fail'), 'err'); return; }
+    set(i3, '✓ ' + t('push_s_sw'), 'ok');
+    const i4 = line(t('push_s_sub') + ' …');
+    const sub = await pbCurrentSub();
+    set(i4, (sub ? '✓ ' : '⚠ ') + t('push_s_sub') + (sub ? '' : ' — ' + t('push_t_sub_no')), sub ? 'ok' : 'warn');
+    if (HAS_SB && sub){
+      const i5 = line(t('push_s_srv') + ' …');
+      try{
+        const { data, error } = await state.sb.from('push_subs').select('id').eq('endpoint', sub.endpoint).limit(1);
+        if (error) throw error;
+        set(i5, ((data || []).length ? '✓ ' : '⚠ ') + t('push_s_srv') + ((data || []).length ? '' : ' — ' + t('push_t_sub_no')), (data || []).length ? 'ok' : 'warn');
+      }catch(e){ set(i5, '⚠ ' + t('push_s_srv') + ' — ' + errStr(e), 'warn'); }
+    }
+    if (HAS_SB){
+      const i6 = line(t('push_s_fn') + ' …');
+      try{
+        const j = await pbFetch('?ping=1');
+        set(i6, '✓ ' + t('push_s_fn') + (j && j.ver ? ' — v' + j.ver : ''), 'ok');
+      }catch(e){ set(i6, '⚠ ' + t('push_s_fn') + ' — ' + (/404|Failed to fetch/.test(String(e)) ? t('push_need_deploy') : errStr(e)), 'warn'); }
+    }
+    const kinds = pushTestKinds();
+    if (!kinds.length){ line('⚠ ' + t('push_t_none'), 'warn'); return; }
+    line('— ' + t('push_s_send') + ' —');
+    for (const k of kinds){
+      const it = pushTestItem(k);
+      const i = line(t('push_k_' + k) + ' …');
+      try{
+        await reg.showNotification(it.title, {
+          body: it.body, icon: './icons/icon-192.png', badge: './icons/icon-192.png',
+          tag: 'techlog-test-' + k, renotify: true, data: { url: './' } });
+        shown++;
+        set(i, `✓ ${it.title} — ${it.body}` + (it.doc ? ' · ' + t('push_test_doc') : ''), 'ok');
+      }catch(e){ set(i, '✗ ' + t('push_k_' + k) + ' — ' + errStr(e), 'err'); }
+      await new Promise(r => setTimeout(r, 500));
+    }
+    line('✓ ' + t('push_t_done').replace('{N}', shown), 'ok');
+    line(t('push_t_tail'), 'dim');
+    dlog('проверка уведомлений: показано ' + shown + ' из ' + kinds.length + ' (' + kinds.join(', ') + ')');
+  }catch(e){ line('⛔ ' + errStr(e), 'err'); dlog('⛔ pushTest:', e); }
+  finally{
+    _pushTestRun = false;
+    const b = $('#pt-run'); if (b) b.disabled = false;
+  }
 }
 async function pbPrefSet(k, v){
   const me = state.data.profiles.find(p => p.id === state.user.id); if (!me) return;
@@ -9165,7 +9317,8 @@ function viewSettings(){
   <div class="card" style="border-color:var(--green)">
     <div class="settings-row" style="border:none">
       <div class="grow" style="flex:1">
-        <b>${ic('refresh')} ${t('sync')}</b>
+        <b>${ic('refresh')} ${t('sync')} ${tipQ('sync_tip')}</b>
+        <div class="d">${t('sync_what')}</div>
         <div class="d">${t('synced')}: ${state.lastSync || t('never')} · ${HAS_SB?'Supabase':'DEMO / localStorage'}</div>
         ${SYNC_ERRORS.length ? `<div class="d" style="color:var(--red)">${ic('warn')} ${SYNC_ERRORS.length} ${t('tables_failed')}: ${SYNC_ERRORS.map(x=>x.tb).join(', ')}</div>` : ''}
         ${WRITE_ERRORS.length ? `<div class="d" style="color:var(--yellow)">${ic('pencil')} ${t('write_err')}: ${WRITE_ERRORS.length}</div>` : ''}
@@ -10420,7 +10573,7 @@ const App = {
   accStaffOpen(id){ const f = accF(); f.staffOpen[id] = !f.staffOpen[id]; render(); },
   accType, accMark, accMarkAll, accSaveRates, accMapSet, accMapReset, accDoc, accPdf, accPdfBatch, accCsv,
   /* v1.08.38: офлайн-режим и спойлеры инвойса */
-  netCheck, netModal, netRunChecks, netCopy, netOff, netState: () => netState(), invSecAll, invSecToggle, jrArchive, staffName, tvCleanup,
+  netCheck, netModal, netRunChecks, netCopy, netOff, pushTest, netState: () => netState(), invSecAll, invSecToggle, jrArchive, staffName, tvCleanup,
   /* v1.08.37: режим телевизора */
   tvStart, tvCancel, tvNewCode, tvFsGo, tvFsExit,
   tvListRefresh, tvApprove, tvDeny, tvRevoke,
@@ -14191,9 +14344,12 @@ function copyCxAddr(cxId){
 /* =====================================================================
    ДИАГНОСТИКА: активные проверки сервера + отчёт в консоль и на экран
    ===================================================================== */
-async function runDiagnostics(){
+async function runDiagnostics(onLine){
   const L = [];
-  const put = (s) => { L.push(s); };
+  /* v1.08.90: строки отдаются наружу по мере готовности — модалка открывается
+     сразу и наполняется на глазах (раньше она ждала конца всех проверок,
+     секунд пять, и казалось, что кнопка не сработала) */
+  const put = (s) => { L.push(s); try{ if (onLine) onLine(s); }catch(e){} };
   const mark = (ok) => ok ? '✅' : '⛔';
   const now = new Date();
   put(`TechLog v${APP_VERSION} · ${now.toLocaleDateString()} ${now.toLocaleTimeString()} (${now.toISOString()})`);
@@ -14373,16 +14529,25 @@ async function runDiagnostics(){
 }
 
 async function showDiagnostics(){
-  toast('🩺 ' + t('diag_running'), 'inf');
-  let report = '';
-  try{ report = await runDiagnostics(); }
-  catch(e){ report = '⛔ Диагностика упала: ' + errStr(e); dlog(report); }
+  /* сначала окно — потом проверки: реакция мгновенная, строки дописываются */
   openModal(`
     ${modalHead(t('diag'), 'steth')}
-    <pre class="diag-pre">${esc(report)}</pre>
-    <button class="btn btn-blue" onclick="App.copyDiag()">${ic('clipboard')} ${t('diag_copy')}</button>
+    <pre class="diag-pre" id="diag-pre">${esc(t('diag_running'))}</pre>
+    <button class="btn btn-blue" id="diag-copy" disabled onclick="App.copyDiag()">${ic('clipboard')} ${t('diag_copy')}</button>
     <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
   `);
+  let txt = '';
+  const onLine = (line) => {
+    txt += (txt ? '\n' : '') + line;
+    const pre = $('#diag-pre'); if (!pre) return;
+    pre.textContent = txt;
+    pre.scrollTop = pre.scrollHeight;
+  };
+  let report = '';
+  try{ report = await runDiagnostics(onLine); }
+  catch(e){ report = txt + '\n⛔ Диагностика упала: ' + errStr(e); dlog(report); onLine('⛔ ' + errStr(e)); }
+  const pre = $('#diag-pre'); if (pre) pre.textContent = report;
+  const cp = $('#diag-copy'); if (cp) cp.disabled = false;
   window.__lastDiag = report;
 }
 function copyDiag(){
