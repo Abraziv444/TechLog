@@ -104,6 +104,10 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
 
   const set = await p.evaluate(async () => {
     window.App.go('settings'); await new Promise(r => setTimeout(r, 300));
+    /* v1.08.98: карточка — подраздел «Интеграций» */
+    const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}');
+    if (!f.intg) window.App.foldToggle('intg');
+    await new Promise(r => setTimeout(r, 200));
     return { card: /GPS-трекинг Bouncie|Bouncie GPS tracking/.test(document.body.innerHTML) };
   });
   t('карточка Bouncie в настройках админа', set.card);

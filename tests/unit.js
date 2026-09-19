@@ -1666,6 +1666,20 @@ console.log('\n— v1.08.51: учёба —');
            && x.includes("with check (public.my_role() = 'accountant' and id = 'org')") && x.includes('create trigger org_settings_acc_guard_tg before update on public.org_settings')
            && x.includes("'voice_line','fax_line','ship_method','legal_note']") && x.includes('схема соответствует v1.08.97'))
            && f.includes('create table if not exists public.org_settings') && fs.existsSync(ROOT + '/tests/org-acc.sql'); })());
+  t('v1.08.98: раздел «Интеграции» — «Настройка Google Drive» и «GPS-трекинг Bouncie» подразделами, у Bouncie своя подпись Redirect URI',
+    src.includes("${fold('intg', t('intg_card'), 'link', intgCardHtml())}")
+    && src.includes("return fold('gd', t('gd_card'), 'folder', mediaSettingsCardHtml(), true)")
+    && src.includes("+ fold('bn', t('bn_card'), 'car', bnCardHtml(), true);")
+    && (src.match(/fold\('(gd|bn)'/g) || []).length === 2
+    && src.includes("gd_card: 'Настройка Google Drive'") && src.includes("gd_card: 'Google Drive settings'")
+    && /function bnCardHtml\(\)\{[\s\S]*?\n\}/.exec(src)[0].split("t('bn_redirect')").length === 3
+    && !/function bnCardHtml\(\)\{[\s\S]*?\n\}/.exec(src)[0].includes("t('gd_redirect')")
+    && ['intg_card', 'bn_redirect'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
+  t('v1.08.99: «ТВ-экраны» — первая карточка «Режима телевизора», список грузится при раскрытом tvc, подсказка на ТВ ведёт по новому пути',
+    src.includes("${fold('tvc', t('tvc_card'), 'tv', tvModeHtml())}") && !src.includes("fold('tvs'")
+    && /function tvModeHtml\(\)\{\s*return `<div class="card" id="tvs-card">[\s\S]*?\$\{tvSessionsCardHtml\(\)\}[\s\S]*?<div class="card" id="tvc-card">\$\{tvCfgCardHtml\(\)\}<\/div>`;/.test(src)
+    && src.includes("if (!HAS_SB || !isAdmin() || !foldOpen('tvc')) return;") && !src.includes("foldOpen('tvs')")
+    && src.includes("Настройки → «Режим телевизора» → «ТВ-экраны»") && src.includes("Settings → “TV mode” → “TV screens”"));
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')

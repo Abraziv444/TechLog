@@ -1191,7 +1191,7 @@
          Раньше и то и другое уходило в отчёт предупреждением. */
       /* v1.08.97: «Нумерация» — подраздел «Настроек документов»: при свёрнутом
          родителе её заголовка нет вовсе — это тоже «не разворачивали» */
-      var FOLD_PARENT = { num: 'docs', org: 'docs', uid: 'dgs', diag: 'dgs', bkp: 'dgs', abk: 'dgs' };
+      var FOLD_PARENT = { num: 'docs', org: 'docs', uid: 'dgs', diag: 'dgs', bkp: 'dgs', abk: 'dgs', gd: 'intg', bn: 'intg' };   // v1.08.98: Интеграции
       var foldShut = function (key) {
         if (document.querySelector('.fold:not(.on) [onclick*="foldToggle(\'' + key + '\')"]')) return true;
         var par = FOLD_PARENT[key];

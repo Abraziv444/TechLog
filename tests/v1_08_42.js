@@ -29,9 +29,10 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
   await p.evaluate(() => window.App.go('settings'));
   await p.waitForTimeout(400);
   await p.evaluate(() => {
-    const b = [...document.querySelectorAll('.fold-h')]
-      .find(x => /Google Drive/.test(x.textContent || ''));
-    if (b) b.click();
+    /* v1.08.98: «Настройка Google Drive» — подраздел «Интеграций» */
+    const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}');
+    if (!f.intg) window.App.foldToggle('intg');
+    if (!f.gd) window.App.foldToggle('gd');
   });
   await p.waitForTimeout(300);
 

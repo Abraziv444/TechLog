@@ -73,13 +73,14 @@ const ok = (c, m) => { if (!c) throw new Error('FAIL: ' + m); console.log('OK:',
   await p.waitForTimeout(400);
   await p.evaluate(() => App.go('settings'));
   await p.waitForTimeout(400);
-  await p.evaluate(() => App.foldToggle('tvs'));
-  await p.waitForTimeout(300);
-  const tvsTxt = await p.locator('.fold.on .fold-b').first().innerText();
-  ok(/supabase/i.test(tvsTxt), 'карточка «ТВ-экраны» в демо честно говорит про Supabase');
-  await p.evaluate(() => App.foldToggle('tvs'));
+  /* v1.08.99: «ТВ-экраны» — первая карточка раздела «Режим телевизора» */
   await p.evaluate(() => App.foldToggle('tvc'));
   await p.waitForTimeout(300);
+  const tvsTxt = await p.locator('.fold.on .fold-b #tvs-card').first().innerText();
+  ok(/supabase/i.test(tvsTxt), 'карточка «ТВ-экраны» в демо честно говорит про Supabase');
+  ok(await p.evaluate(() => { const b = document.querySelector('#tvs-card').parentElement;
+    return b.classList.contains('fold-b') && b.firstElementChild.id === 'tvs-card' && !document.querySelector('.fold-h[onclick="App.foldToggle(\'tvs\')"]'); }),
+    '«ТВ-экраны» — в самом начале «Режима телевизора», отдельного спойлера нет');
   ok(await p.locator('.tvz-zone').count() === 2, 'конструктор: две зоны раскладки');
   ok(await p.locator('.tvz-item').count() === 5, 'конструктор: пять блоков');
   ok(await p.locator('.chk-line input').count() >= 7, 'семь чекбоксов «что показывать»');

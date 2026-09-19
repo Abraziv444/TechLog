@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.97';
+const APP_VERSION = '1.08.99';
 const DB_SQL_FILE = 'full-install-1_08_97.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -447,7 +447,7 @@ const I18N = {
     veh_hint: 'VIN и IMEI вводятся один раз — вручную или кнопкой импорта — хранятся в базе и дальше просто отображаются. Порядковый номер синхронизируется с профилем водителя: это тот же номер, что в регистре техники «Моя машина №N».',
     veh_no_driver_l: 'без водителя',
     map_cars: 'Машины', map_cars_all: 'Все',
-    bn_off_admin: 'Bouncie не настроен — Настройки → GPS-трекинг Bouncie',
+    bn_off_admin: 'Bouncie не настроен — Настройки → Интеграции → GPS-трекинг Bouncie',
     bn_no_cars: 'Справочник «Автомобили» пуст — заполните его или нажмите «Импорт из Bouncie» (Справочники → Автомобили)',
     bn_stat_title: 'Пробег за сегодня', bn_stat_total: 'Итого',
     bn_upd: 'обновлено', bn_route_hint: 'пунктир — примерный маршрут по прямой',
@@ -459,7 +459,7 @@ const I18N = {
     /* v1.08.37: режим телевизора */
     tv_btn: 'Режим телевизора',
     tv_wait_t: 'Код авторизации',
-    tv_wait_hint: 'В приложении: Настройки → «ТВ-экраны» → сверьте код и нажмите «Авторизовать ТВ».',
+    tv_wait_hint: 'В приложении: Настройки → «Режим телевизора» → «ТВ-экраны» → сверьте код и нажмите «Авторизовать ТВ».',
     tv_wait_wait: 'Ожидание подтверждения…',
     tv_wait_nocode: 'Сессия ждёт подтверждения. Код показан при первом запросе; если он утерян — получите новый.',
     tv_newcode: 'Получить новый код', tv_cancel: 'Отмена',
@@ -1077,11 +1077,11 @@ const I18N = {
     cam_sharp_chk: 'Предупреждать о смазанных снимках',
     cam_hint: 'Настройки личные и действуют только на этом телефоне. Кадр готовится в фоне, поэтому приложение больше не подвисает после снимка.',
     media_not_cfg: 'Google Drive не настроен — фото сохранятся и уйдут после настройки (Настройки → Фото и видео)',
-    gd_card: 'Фото и видео → Google Drive',
+    gd_card: 'Настройка Google Drive', intg_card: 'Интеграции',
     gd_intro: 'Логин и пароль Google сюда не вводятся — это небезопасно и не нужно. Приложение работает по ключам OAuth: введите три значения ниже, нажмите «Подключить Google» и подтвердите доступ на странице самого Google. Токен доступа сервер сохранит сам.',
     gd_cid: 'Client ID', gd_secret: 'Client Secret', gd_folder: 'ID папки на Диске',
     gd_save: 'Сохранить ключи', gd_connect: 'Подключить Google', gd_test: 'Тест соединения',
-    gd_redirect: 'Redirect URI — вставьте в Google Console',
+    gd_redirect: 'Redirect URI — вставьте в Google Console', bn_redirect: 'Redirect URI — вставьте на портале Bouncie',
     gd_saved: 'Ключи сохранены', gd_need_cid: 'Сначала введите Client ID',
     gd_token: 'Токен доступа (refresh)', gd_none: 'не задано',
     gd_edit: 'Изменить ключи', gd_edit_off: 'Отменить правку',
@@ -1605,7 +1605,7 @@ const I18N = {
     veh_hint: 'VIN and IMEI are entered once — by hand or via import — stored in the database and simply displayed after that. The car number syncs with the driver profile: it is the same number as in the equipment register "My car #N".',
     veh_no_driver_l: 'no driver',
     map_cars: 'Cars', map_cars_all: 'All',
-    bn_off_admin: 'Bouncie is not configured — Settings → Bouncie GPS tracking',
+    bn_off_admin: 'Bouncie is not configured — Settings → Integrations → Bouncie GPS tracking',
     bn_no_cars: 'The Vehicles directory is empty — fill it in or tap "Import from Bouncie" (Directories → Vehicles)',
     bn_stat_title: 'Driven today', bn_stat_total: 'Total',
     bn_upd: 'updated', bn_route_hint: 'dashed line — approximate straight-line route',
@@ -1617,7 +1617,7 @@ const I18N = {
     /* v1.08.37: TV mode */
     tv_btn: 'TV mode',
     tv_wait_t: 'Authorization code',
-    tv_wait_hint: 'In the app: Settings → “TV screens” → check the code and tap “Authorize TV”.',
+    tv_wait_hint: 'In the app: Settings → “TV mode” → “TV screens” → check the code and tap “Authorize TV”.',
     tv_wait_wait: 'Waiting for approval…',
     tv_wait_nocode: 'The session is waiting for approval. The code was shown on first request; if lost — get a new one.',
     tv_newcode: 'Get a new code', tv_cancel: 'Cancel',
@@ -2226,11 +2226,11 @@ const I18N = {
     cam_sharp_chk: 'Warn about blurry shots',
     cam_hint: 'These settings are personal and apply to this phone only. Frames are prepared in the background, so the app no longer freezes after a shot.',
     media_not_cfg: 'Google Drive is not configured — photos are queued and will upload after setup (Settings → Photos & video)',
-    gd_card: 'Photos & video → Google Drive',
+    gd_card: 'Google Drive settings', intg_card: 'Integrations',
     gd_intro: 'Do NOT enter your Google login/password here — not needed and unsafe. The app uses OAuth keys: fill three values below, press “Connect Google” and confirm on Google’s own page. The server stores the token itself.',
     gd_cid: 'Client ID', gd_secret: 'Client Secret', gd_folder: 'Drive folder ID',
     gd_save: 'Save keys', gd_connect: 'Connect Google', gd_test: 'Test connection',
-    gd_redirect: 'Redirect URI — paste into Google Console',
+    gd_redirect: 'Redirect URI — paste into Google Console', bn_redirect: 'Redirect URI — paste into the Bouncie portal',
     gd_saved: 'Keys saved', gd_need_cid: 'Enter Client ID first',
     gd_token: 'Access token (refresh)', gd_none: 'not set',
     gd_edit: 'Edit keys', gd_edit_off: 'Cancel editing',
@@ -3323,6 +3323,14 @@ function docsCardHtml(){
   return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml()
     + fold('num', t('no_card'), 'receipt', numberingCardHtml(), true)      // v1.08.97: подраздел (админ)
     + fold('org', t('org'), 'building', orgCardHtml(), true);               // v1.08.97: подраздел (админ + бухгалтер)
+}
+/* v1.08.98 · раздел «Интеграции» (админ): подразделы «Настройка Google Drive»
+   (бывшая «Фото и видео → Google Drive») и «GPS-трекинг Bouncie». Ключи
+   складок прежние (gd, bn) — состояние раскрытия сохраняется. */
+function intgCardHtml(){
+  if (!isAdmin()) return '';
+  return fold('gd', t('gd_card'), 'folder', mediaSettingsCardHtml(), true)
+    + fold('bn', t('bn_card'), 'car', bnCardHtml(), true);
 }
 /* v1.08.97 · «Организация (для PDF)» — подраздел «Настроек документов».
    Видят и правят админ и бухгалтер. Бухгалтеру сервер разрешает менять
@@ -7007,7 +7015,8 @@ function sectionFaqHtml(key){
       <li><b>${t('docs_set_card')}</b> (v1.08.95) — всё про документы в одной складной секции. Личное (у каждого своё): кнопка печати инвойса на карточке, кнопка поиска в нижней панели телефона и «Открыть поиск». Для админа там же: общий доступ к документам для коворкеров, аренда оборудования и права, лимиты фото и видео и подраздел «${t('no_card')}». Подраздел «${t('org')}» (v1.08.97) — реквизиты для бланков PDF: название, адрес, телефон и факс, способ доставки, приписка внизу бланка; доступен админу и бухгалтеру (бухгалтер меняет только эти поля).</li>
       <li><b>Аренда оборудования и права</b> (админ, в «Настройках документов»): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старше N дней (0 — выкл; заблокированные документы открываются на просмотр).</li>
       <li><b>Лимиты фото и видео на документ</b> (админ, в «Настройках документов»): степперы «Фото на документ» (1–50) и «Видео на документ» (0–10), по умолчанию <b>10 и 2</b>. Лимит един для всех документов и проверяется сервером при загрузке — из браузера его не обойти. Уже загруженные сверх нового лимита файлы остаются, добавить больше нельзя; «видео 0» убирает кнопку съёмки видео из карточки задачи.</li>
-      <li><b>Фото и видео → Google Drive</b>: ключи OAuth архивного аккаунта. В поле «ID папки» можно вставить <b>ссылку целиком</b> — приложение само возьмёт ID. Сохранённые ключи карточка показывает в режиме просмотра: Client ID и папка — открыто, секрет и токен — звёздочками, ${ic('eye')} показывает значение (запрашивается с сервера отдельно), ${ic('copy')} копирует, ${ic('pencil')} включает правку. «Тест соединения» проверяет доступ, аккаунт, <b>свободное место</b> и запись в папку.</li>
+      <li><b>${t('intg_card')}</b> (админ, v1.08.98) — подразделы «${t('gd_card')}» и «${t('bn_card')}».</li>
+      <li><b>${t('gd_card')}</b> (в «${t('intg_card')}»): ключи OAuth архивного аккаунта для фото, видео, инвойсов и вложений. В поле «ID папки» можно вставить <b>ссылку целиком</b> — приложение само возьмёт ID. Сохранённые ключи карточка показывает в режиме просмотра: Client ID и папка — открыто, секрет и токен — звёздочками, ${ic('eye')} показывает значение (запрашивается с сервера отдельно), ${ic('copy')} копирует, ${ic('pencil')} включает правку. «Тест соединения» проверяет доступ, аккаунт, <b>свободное место</b> и запись в папку.</li>
       <li><b>Место на Диске</b>: если свободно меньше 15 %, админ и менеджер видят красный баннер на главной. Показатель снимается при тесте подключения и сам обновляется при загрузке файлов (не чаще раза в 6 часов).</li>
       <li><b>Приглашение</b> (админ): код регистрации сотрудников.</li>
       <li><b>Проверить обновления</b> — применяет новую версию сразу; клик по названию TechLog в шапке делает то же.</li>
@@ -7027,7 +7036,8 @@ function sectionFaqHtml(key){
       <li><b>${t('docs_set_card')}</b> (v1.08.95) — everything about documents in one collapsible section. Personal (each person has their own): the invoice print button on the card, the search button in the phone's bottom bar and "Open search". For the admin, also there: shared document access for coworkers, equipment rental & permissions, photo and video limits and the "${t('no_card')}" subsection. The "${t('org')}" subsection (v1.08.97) holds the details printed on PDF forms: name, address, phone and fax, shipping method, the note at the bottom of the form; available to the admin and the accountant (the accountant can change only these fields).</li>
       <li><b>Equipment rental & permissions</b> (admin, in "Document settings"): default rental and maximum extension (steppers 1–30), the manager/worker permission checkboxes, the edit lock for documents older than N days (0 — off; locked documents open read-only).</li>
       <li><b>Photo and video limits per document</b> (admin, in "Document settings"): the "Photos per document" (1–50) and "Videos per document" (0–10) steppers, defaults <b>10 and 2</b>. The limit is the same for every document and is checked by the server on upload — it cannot be bypassed from the browser. Files already uploaded above a new limit stay, but no more can be added; "videos 0" removes the video button from the job card.</li>
-      <li><b>Photos and video → Google Drive</b>: the OAuth keys of the archive account. You can paste the <b>whole link</b> into the "Folder ID" field — the app extracts the ID itself. Saved keys are shown in view mode: the Client ID and folder — in the open, the secret and token — as asterisks; ${ic('eye')} reveals the value (requested from the server separately), ${ic('copy')} copies, ${ic('pencil')} enables editing. "${t('gd_test')}" checks access, the account, the <b>free space</b> and writing into the folder.</li>
+      <li><b>${t('intg_card')}</b> (admin, v1.08.98) — the “${t('gd_card')}” and “${t('bn_card')}” subsections.</li>
+      <li><b>${t('gd_card')}</b> (in “${t('intg_card')}”): the OAuth keys of the archive account for photos, video, invoices and attachments. You can paste the <b>whole link</b> into the "Folder ID" field — the app extracts the ID itself. Saved keys are shown in view mode: the Client ID and folder — in the open, the secret and token — as asterisks; ${ic('eye')} reveals the value (requested from the server separately), ${ic('copy')} copies, ${ic('pencil')} enables editing. "${t('gd_test')}" checks access, the account, the <b>free space</b> and writing into the folder.</li>
       <li><b>Drive space</b>: when less than 15 % is free, the admin and managers see a red banner on Home. The value is taken during the connection test and refreshes by itself on file uploads (no more than once every 6 hours).</li>
       <li><b>Invite</b> (admin): the staff registration code.</li>
       <li><b>${t('upd_check')}</b> — applies the new version at once; a click on the TechLog name in the header does the same.</li>
@@ -9577,10 +9587,8 @@ function viewSettings(){
   ${fold('dgs', t('dgs_card'), 'steth', dgsCardHtml())}
 
   ${isAdmin() ? `
-  ${fold('gd', t('gd_card'), 'folder', mediaSettingsCardHtml())}
-  ${fold('bn', t('bn_card'), 'car', bnCardHtml())}
-  ${fold('tvs', t('tvs_card'), 'tv', tvSessionsCardHtml())}
-  ${fold('tvc', t('tvc_card'), 'tv', tvCfgCardHtml())}
+  ${fold('intg', t('intg_card'), 'link', intgCardHtml())}
+  ${fold('tvc', t('tvc_card'), 'tv', tvModeHtml())}
   ${fold('feat', t('feat_card'), 'gear', featCardHtml())}
   <div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
@@ -11484,7 +11492,7 @@ function canonUrl(loc){
    Экран для офисного телевизора: карта дня + карточки + сотрудники +
    графики. Телевизор НЕ входит в аккаунт: кнопка «Режим телевизора» на
    экране входа создаёт сессию (RPC tv_request) и показывает 4-значный
-   код; админ в Настройках → «ТВ-экраны» жмёт «Авторизовать ТВ»
+   код; админ в Настройках → «Режим телевизора» → «ТВ-экраны» жмёт «Авторизовать ТВ»
    (tv_decide), после чего телевизор раз в TV_FEED_MS получает готовый
    набор данных одним RPC tv_feed и раз в TV_BN_MS — машины через
    Edge Function bouncie (?tv=1 + заголовок x-tv-key; ответ без IMEI).
@@ -12065,8 +12073,18 @@ function tvSessionsCardHtml(){
       <span></span>
     </div>`;
 }
+/* v1.08.99: «ТВ-экраны» (сессии телевизоров) — первая карточка раздела
+   «Режим телевизора», отдельного спойлера больше нет. Список подтягивается,
+   когда раскрыт «Режим телевизора». */
+function tvModeHtml(){
+  return `<div class="card" id="tvs-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('tv')} ${t('tvs_card')}</div>
+    ${tvSessionsCardHtml()}
+  </div>
+  <div class="card" id="tvc-card">${tvCfgCardHtml()}</div>`;
+}
 function tvSettingsAfter(){
-  if (!HAS_SB || !isAdmin() || !foldOpen('tvs')) return;
+  if (!HAS_SB || !isAdmin() || !foldOpen('tvc')) return;
   if (Date.now() - TVS.at < 10000) return;
   tvListRefresh(true);
 }
@@ -12143,8 +12161,7 @@ function tvCfgCardHtml(){
     : t('tvc_rule_manual');
   const chk = (key, label) => `<label class="chk-line"><input type="checkbox" ${cfg[key] ? 'checked' : ''}
       onchange="App.tvcFlag('${key}', this.checked)"> ${label}</label>`;
-  return `
-  <div style="font-weight:900;margin-bottom:4px">${t('tvc_show')}</div>
+  return `<div style="font-weight:900;margin-bottom:4px">${t('tvc_show')}</div>
   ${chk('map', t('tvc_map'))}
   ${chk('cardJobs', t('tvc_cjobs'))}
   ${chk('cardPk', t('tvc_cpk'))}
@@ -12819,7 +12836,7 @@ function bnCardHtml(){
     <div class="tiny" style="margin-bottom:8px">${t('bn_intro')}</div>
     ${row(t('bn_cid'), `<input id="bn-cid" autocomplete="off" value="${esc(bnCfg.client_id || '')}">`)}
     ${row(t('bn_secret'), `<input id="bn-sec" type="password" autocomplete="new-password">`)}
-    ${row(t('gd_redirect'), ro(redirect))}
+    ${row(t('bn_redirect'), ro(redirect))}
     <div class="btn-rowpp" style="margin:8px 0 0">
       <button class="btn btn-ghost" onclick="App.bnSaveKeys()">${t('bn_save')}</button>
       <button class="btn btn-blue" onclick="App.bnConnect()">${ic('link')} ${t('bn_connect')}</button>
@@ -12828,7 +12845,7 @@ function bnCardHtml(){
     ${row(t('bn_secret'), ro(bnShow.sec ? bnCfg.secret : (bnCfg.has_secret ? '••••••••••••' : ''))
       + `<button class="icon-btn sm" title="${bnShow.sec ? t('gd_hide') : t('gd_show')}"
            onclick="App.bnReveal()">${ic(bnShow.sec ? 'eye_off' : 'eye')}</button>`)}
-    ${row(t('gd_redirect'), ro(redirect))}
+    ${row(t('bn_redirect'), ro(redirect))}
     <button class="btn btn-blue" style="margin-top:8px" onclick="App.bnConnect()">${ic('link')} ${t('bn_connect')}</button>`;
   return `<div class="card" id="bn-card">
     <div class="gd-head">
@@ -22244,7 +22261,7 @@ function mediaSettingsCardHtml(){
     <button class="btn btn-blue" style="margin-top:8px" onclick="App.mediaConnect()">${ic('link')} ${t('gd_connect')}</button>`;
   return `<div class="card" id="gd-card">
     <div class="gd-head">
-      <div style="font-weight:900;flex:1">${ic('camera')} ${t('gd_card')}</div>
+      <div style="font-weight:900;flex:1">${ic('folder')} ${t('gd_card')}</div>
       ${gdHasKeys() ? `<button class="icon-btn sm" title="${edit ? t('gd_edit_off') : t('gd_edit')}"
         onclick="App.gdToggleEdit()">${ic(edit ? 'close' : 'pencil')}</button>` : ''}
     </div>
