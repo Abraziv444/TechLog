@@ -102,6 +102,9 @@
   /* ---------- Модалки: шире и просторнее ---------- */
   html.tl-desktop .overlay{ padding:28px; }
   html.tl-desktop .modal{ max-width:680px; padding:18px 20px; }
+  /* v1.08.87: мини-карточки пикапов на ПК — в две колонки */
+  html.tl-desktop .pkm-list{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  html.tl-desktop .pkm-list > .pkm-card:only-child{ grid-column:1 / -1; }
 
   /* ---------- Формы: сетки плотнее используют ширину ---------- */
   html.tl-desktop .grid-2{ grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
@@ -123,6 +126,9 @@
       transition:border-color .12s;
     }
     html.tl-desktop .day-cell:hover{ border-color:var(--dim,#8AA0AB); }
+    /* v1.08.87: кликабельные плашки и мини-карточки пикапов */
+    html.tl-desktop .banner.clicky:hover{ filter:brightness(1.18); }
+    html.tl-desktop .pkm-card:hover{ border-color:var(--blue,#1CB0F6); }
     html.tl-desktop .btn:hover{ filter:brightness(1.06); }
     html.tl-desktop .tab:hover{ color:var(--text,#F1F7FB); background:rgba(255,255,255,.05); }
     html.tl-desktop .tab.active:hover{ color:var(--blue,#1CB0F6); background:rgba(28,176,246,.1); }
@@ -717,10 +723,12 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
      (bottom:66px). В ПК-режиме панель — слева, и полоса висела в пустоте. */
   /* v1.08.57: положение — только ПАРОЙ top/bottom, иначе блок растягивался
      на весь экран при настройке «сбоку» (top от styles.css + bottom отсюда). */
-  html.tl-desktop .mq-mini{ left:auto; right:16px; width:min(480px, 44vw); max-width:480px; margin:0; }
-  html.tl-desktop.tl-pop-bottom .mq-mini{ top:auto; bottom:calc(16px + env(safe-area-inset-bottom)); }
-  html.tl-desktop.tl-pop-top .mq-mini,
-  html.tl-desktop.tl-pop-side .mq-mini{ bottom:auto; top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px); }
+  /* v1.08.86: полоска лежит внутри #toasts и стоит там же, где тосты: «сверху» и
+     «снизу» — по центру, «сбоку» — у правого края. Раньше на ПК она при любой
+     настройке была прибита к правому краю. Здесь — только ширина и запасное
+     правило «сбоку» с тем же отступом, что у #toasts. */
+  html.tl-desktop .mq-mini{ width:min(480px, 44vw); }
+  html.tl-desktop.tl-pop-side .mq-mini{ right:16px; width:min(480px, 44vw); }
   html.tl-desktop .prop-wrap{display:block;max-width:780px;margin:0 auto}
 }
 

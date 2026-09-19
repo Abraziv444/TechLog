@@ -25,7 +25,8 @@ const geom = (p) => p.evaluate(() => {
   const el = document.querySelector('#mq-mini'); if (!el) return null;
   const r = el.getBoundingClientRect();
   return { top: Math.round(r.top), bot: Math.round(innerHeight - r.bottom), h: Math.round(r.height), w: Math.round(r.width),
-    right: Math.round(innerWidth - r.right), H: innerHeight, W: innerWidth,
+    right: Math.round(innerWidth - r.right), left: Math.round(r.left), H: innerHeight, W: innerWidth,
+    inToasts: !!el.closest('#toasts'),
     title: (el.querySelector('.mq-mini-t') || {}).textContent || '', x: !!el.querySelector('.mq-mini-c'), more: !!el.querySelector('.mq-mini-x'),
     radius: getComputedStyle(el).borderRadius, bg: getComputedStyle(el).backgroundColor, body: !!el.querySelector('.mq-mini-b') };
 });
@@ -39,7 +40,7 @@ const geom = (p) => p.evaluate(() => {
     const g = await geom(p);
     t('полоска показана: заголовок состояния, крестик, «подробнее», журнал', g && /отправлены/.test(g.title) && g.x && g.more && g.body, JSON.stringify(g));
     t('оформление как у модалки: радиус 20px, фон панели', g && g.radius === '20px' && g.bg === 'rgb(23, 35, 42)', g && (g.radius + ' ' + g.bg));
-    t('«сверху»: у верха под шапкой, высота < 200', g && g.top > 40 && g.top < g.H / 3 && g.h < 200, JSON.stringify(g));
+    t('«сверху»: у верха по центру, в контейнере тостов, высота < 200 (v1.08.86)', g && g.inToasts && g.top >= 0 && g.top < g.H / 3 && g.h < 200 && Math.abs(g.left - g.right) <= 2, JSON.stringify(g));
     await p.evaluate(() => document.querySelector('#mq-mini .mq-mini-c').click()); await p.waitForTimeout(150);
     t('крестик закрывает полоску (модалка не открылась)', !(await p.$('#mq-mini')) && !(await p.$('#overlay')));
     await p.evaluate(() => window.App.mqMini(true)); await p.waitForTimeout(150);
@@ -72,11 +73,11 @@ const geom = (p) => p.evaluate(() => {
     await p.evaluate(() => { localStorage.setItem('techlog_pop_pos', 'bottom'); }); await p.reload(); await p.waitForTimeout(1300);
     await p.evaluate(() => window.App.mqMini(true)); await p.waitForTimeout(250);
     const gb = await geom(p);
-    t('«снизу» на ПК: справа снизу, высота < 200', gb && gb.right < 60 && gb.bot >= 0 && gb.bot < gb.H / 3 && gb.h < 200, JSON.stringify(gb));
+    t('«снизу» на ПК: снизу по центру — как тосты, высота < 200 (v1.08.86)', gb && gb.inToasts && Math.abs(gb.left - gb.right) <= 2 && gb.bot >= 0 && gb.bot < gb.H / 3 && gb.h < 200, JSON.stringify(gb));
     await p.evaluate(() => { localStorage.setItem('techlog_pop_pos', 'top'); }); await p.reload(); await p.waitForTimeout(1300);
     await p.evaluate(() => window.App.mqMini(true)); await p.waitForTimeout(250);
     const gt = await geom(p);
-    t('«сверху» на ПК: справа сверху, высота < 200', gt && gt.right < 60 && gt.top > 40 && gt.top < gt.H / 3 && gt.h < 200, JSON.stringify(gt));
+    t('«сверху» на ПК: сверху по центру — как тосты, высота < 200 (v1.08.86)', gt && gt.inToasts && Math.abs(gt.left - gt.right) <= 2 && gt.top > 40 && gt.top < gt.H / 3 && gt.h < 200, JSON.stringify(gt));
     await p.close();
   }
 

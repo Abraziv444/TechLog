@@ -1512,11 +1512,27 @@ console.log('\n— v1.08.51: учёба —');
   const idx = JSON.parse(fs.readFileSync(ROOT + '/dictionary/index.json', 'utf8'));
   t('v1.08.56: index.json — у всех восьми разделов short на двух языках', idx.sections.every(s => s.short && s.short.ru && s.short.en));
   const dcss = fs.readFileSync(ROOT + '/desktop.css', 'utf8');
-  t('v1.08.57: полоска отправки — top/bottom всегда парой, крестик и «подробнее», max-height, тосты отодвигаются',
-    css.includes('.mq-mini{position:fixed;left:8px;right:8px;top:auto;') && css.includes('html.tl-pop-top .mq-mini, html.tl-pop-side .mq-mini{ bottom:auto;')
-    && css.includes('max-height:min(40dvh,240px)') && dcss.includes('html.tl-desktop.tl-pop-bottom .mq-mini{ top:auto;') && dcss.includes('html.tl-desktop.tl-pop-side .mq-mini{ bottom:auto;')
-    && !/html\.tl-desktop \.mq-mini\{[^}]*bottom:/.test(dcss) && css.includes('html.tl-pop-side body.has-mq-mini #toasts')
-    && src.includes('class="mq-mini-c"') && src.includes("e.target.closest('.mq-mini-c')") && src.includes("e.key === 'Escape' && $('#mq-mini')"));
+  t('v1.08.57/86: полоска отправки — крестик и «подробнее», max-height; место и центровка — от #toasts, своих координат внутри него нет',
+    css.includes('#toasts > .mq-mini, #toasts > .mq-pop{position:static;transform:none;margin:0;')
+    && css.includes('max-height:min(40dvh,240px)') && !css.includes('has-mq-mini') && !css.includes('--mqh')
+    && !/html\.tl-desktop \.mq-mini\{[^}]*(left|right|top|bottom):/.test(dcss)
+    && css.includes('body:has(> .overlay) #toasts > .mq-mini')
+    && src.includes('class="mq-mini-c"') && src.includes("e.target.closest('.mq-mini-c')") && src.includes("e.key === 'Escape' && $('#mq-mini')")
+    && src.includes('popHost(el, true);') && (src.match(/popHost\(el\);/g) || []).length === 3);
+  t('v1.08.86: «только при ошибке» — настройка аккаунта (push_prefs.mq_quiet), тесты в неё не пишут, галочка в «Всплывающих подсказках»',
+    src.includes('state.user.push_prefs.mq_quiet') && src.includes('function mqQuietSyncPref')
+    && (src.match(/localStorage\.setItem\('techlog_mq_quiet'/g) || []).length === 2
+    && !src.includes("localStorage.removeItem('techlog_mq_quiet')") && src.includes('_mqQuietForce = true;')
+    && (src.match(/_mqQuietForce = false;/g) || []).length === 3
+    && /function popCardHtml\(\)\{[\s\S]*?App\.mqQuiet\(this\.checked\)[\s\S]*?App\.srchTab/.test(src)
+    && !/function mediaQueueCardHtml\(\)\{[\s\S]*?App\.mqQuiet[\s\S]*?\nfunction mediaQueueModal/.test(src));
+  t('v1.08.87: кликабельные плашки — cursor:pointer у .banner.clicky, «Пикап сегодня» открывает pkDueModal, ключи RU/EN, набор строк как у myDueCount',
+    css.includes('.banner.clicky{cursor:pointer;') && dcss.includes('html.tl-desktop .banner.clicky:hover') && dcss.includes('html.tl-desktop .pkm-list{ grid-template-columns:repeat(2')
+    && src.includes('class="banner b-pk clicky ${over?\'b-red\':\'\'}" role="button" tabindex="0"') && src.includes('onclick="App.pkDueModal()"')
+    && src.includes('function pkDueModal(){') && src.includes('function pkDueOpen(jobId, ev){') && src.includes('function bannerKey(e){')
+    && src.includes('pickupModal, pkDueModal, pkDueOpen, bannerKey,')
+    && (src.match(/\(p\.technician_id === state\.user\.id \|\| isPlacementSharedWithMe\(p\)\) && pkPending\(p\)/g) || []).length === 2
+    && ['pkd_title', 'pkd_today', 'pkd_over', 'pkd_addr', 'pkd_units', 'pkd_days', 'pkd_open', 'pkd_hint', 'pkd_empty', 'pkd_banner_open'].every(k => (src.match(new RegExp('\\b' + k + ': \'', 'g')) || []).length === 2));
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')

@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.85';
+const APP_VERSION = '1.08.87';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -163,6 +163,10 @@ const I18N = {
     pdf: 'Скачать PDF инвойс', due: 'вывоз', overdue: 'просрочен',
     pick_up: 'Забрать', picked: 'Забрано', pickup_confirm: 'Отметить оборудование как вывезенное?',
     banner_pickups: 'Пикап сегодня', banner_overdue: 'просрочено',
+    pkd_title: 'Пикапы: сегодня и просроченные', pkd_today: 'Сегодня', pkd_over: 'Просрочено',
+    pkd_addr: 'адресов', pkd_units: 'единиц', pkd_days: 'дн.', pkd_open: 'Открыть пикап',
+    pkd_hint: 'Ваши пикапы и те, которыми с вами поделились. Нажмите карточку — откроется пикап: что и где стоит, «Забрать», продление. Компас — маршрут до комплекса.',
+    pkd_empty: 'Пикапов на сегодня и просроченных нет', pkd_banner_open: 'Показать, где какие пикапы',
     report_title: 'Отчёт по пикапам', report_date: 'На дату', copy_report: 'Скопировать отчёт',
     copied: 'Скопировано', nothing_due: 'Пикапов на эту дату нет', incl_overdue: 'включая просроченные',
     dirs: 'Справочники',
@@ -719,7 +723,7 @@ const I18N = {
     mq_title: 'Неотправленные фото и видео', mq_check: 'Проверить неотправленные',
     mq_retry: 'Повторить отправку', mq_ping: 'Проверка соединения',
     mq_quiet: 'Показывать полоску отправки только при ошибке',
-    mq_quiet_h: 'Личная настройка этого устройства. Снята — полоска всплывает после каждой отправки, в том числе когда всё прошло. Поставлена — приложение проверяет отправку молча и покажет полоску, только если что-то не ушло.',
+    mq_quiet_h: 'Личная настройка аккаунта: хранится в профиле и действует на всех ваших устройствах — на телефоне, на ПК, в ярлыке и во вкладке. Снята — полоска отправки фото и видео всплывает после каждой отправки, в том числе когда всё прошло. Поставлена — приложение проверяет отправку молча и покажет полоску, только если что-то не ушло. Полоска появляется там же, где остальные подсказки.',
     mq_clean: 'Убрать зависшие',
     mq_clean_q: 'Убрать из очереди {N} зависших файл(ов)? Это записи, которые лежат больше недели или сорвались пять раз подряд. Сами снимки останутся в галерее телефона.',
     mq_clean_none: 'Зависших записей нет',
@@ -1288,6 +1292,10 @@ const I18N = {
     pdf: 'Download PDF invoice', due: 'pickup', overdue: 'overdue',
     pick_up: 'Pick up', picked: 'Picked up', pickup_confirm: 'Mark this equipment as picked up?',
     banner_pickups: 'Pickup today', banner_overdue: 'overdue',
+    pkd_title: 'Pickups: today and overdue', pkd_today: 'Today', pkd_over: 'Overdue',
+    pkd_addr: 'addresses', pkd_units: 'units', pkd_days: 'd', pkd_open: 'Open pickup',
+    pkd_hint: 'Your pickups and the ones shared with you. Tap a card to open the pickup: what stands where, “Pick up”, extension. The compass opens the route to the complex.',
+    pkd_empty: 'No pickups due today or overdue', pkd_banner_open: 'Show which pickups are where',
     report_title: 'Pickups report', report_date: 'For date', copy_report: 'Copy report',
     copied: 'Copied', nothing_due: 'No pickups for this date', incl_overdue: 'including overdue',
     dirs: 'Directory',
@@ -1838,7 +1846,7 @@ const I18N = {
     mq_title: 'Unsent photos & videos', mq_check: 'Check unsent',
     mq_retry: 'Retry upload', mq_ping: 'Connection check',
     mq_quiet: 'Show the upload bar only on errors',
-    mq_quiet_h: 'Personal setting of this device. Unchecked — the bar pops up after every upload, including successful ones. Checked — the app checks quietly and shows the bar only if something failed.',
+    mq_quiet_h: 'Personal account setting: stored in your profile and applies on all your devices — phone, PC, installed shortcut and browser tab. Unchecked — the photo/video upload bar pops up after every upload, including successful ones. Checked — the app checks quietly and shows the bar only if something failed. The bar appears in the same place as other pop-ups.',
     mq_clean: 'Clear stuck',
     mq_clean_q: 'Remove {N} stuck file(s) from the queue? These are entries older than a week or failed five times in a row. The shots stay in the phone gallery.',
     mq_clean_none: 'No stuck entries',
@@ -2904,6 +2912,10 @@ function popCardHtml(){
       ${seg('top', t('pop_top'))}${seg('bottom', t('pop_bottom'))}${seg('side', t('pop_side'))}
     </div>
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.popDemo()">${ic('bell')} ${t('pop_demo')}</button>
+    <label class="opt ${mqQuiet() ? 'on' : ''}" style="margin-top:10px">
+      <input type="checkbox" id="mq-quiet-chk" ${mqQuiet() ? 'checked' : ''} onchange="App.mqQuiet(this.checked)"> ${t('mq_quiet')}
+    </label>
+    <div class="tiny">${t('mq_quiet_h')}</div>
     <label class="opt ${srchTabOn() ? 'on' : ''}" style="margin-top:10px">
       <input type="checkbox" ${srchTabOn() ? 'checked' : ''} onchange="App.srchTab(this.checked)"> ${t('srch_tab_chk')}
     </label>
@@ -3187,7 +3199,8 @@ async function gdCycle(){
 function dbUpdateToast(){
   toast('⚠ ' + t('db_needs_update'), 'err');
   try{
-    const box = $('#toasts'); const el = box && box.lastElementChild;
+    const box = $('#toasts'); const all = box ? box.querySelectorAll('.toast') : [];
+    const el = all.length ? all[all.length - 1] : null;      // v1.08.86: в #toasts живут и поповеры
     if (!el) return;
     const b = document.createElement('button');
     b.className = 'btn btn-ghost sm';
@@ -4520,6 +4533,7 @@ async function afterSbLogin(session){
     state.screen = 'home';
     if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
     await syncNow(true);
+    mqQuietSyncPref();                                                      // v1.08.86
     try{ authRestoreDraft(); }catch(e){ dlog('⛔ authRestoreDraft:', e); }   // v1.08.85
   } finally {
     loginInFlight = false;
@@ -4533,6 +4547,7 @@ function demoLogin(id){
   if (u.blocked){ toast('⛔ ' + t('blocked_msg'), 'err'); return; }
   state.user = u; localStorage.setItem(LS_SESSION, id);
   state.screen = 'home'; state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate);
+  mqQuietSyncPref();                                                        // v1.08.86
   render(); checkPickupBanner(true);
 }
 const LOGIN_RE = /^[a-z0-9_.-]{3,32}$/;
@@ -5888,13 +5903,13 @@ function viewHome(){
   const { due, over } = myDueCount();
 
   const banner = (due+over) > 0 ? `
-    <div class="banner ${over?'b-red':''}" role="status">${ic('bell')}
-      <div>${t('banner_pickups')}: <b>${due}</b>${over?` · ${t('banner_overdue')}: <b>${over}</b> <span class="info-i" title="${t('overdue_hint')}" onclick="event.stopPropagation();App.toastInfo('overdue_hint')">ⓘ</span>`:''}</div>
+    <div class="banner b-pk clicky ${over?'b-red':''}" role="button" tabindex="0" title="${t('pkd_banner_open')}" onclick="App.pkDueModal()" onkeydown="App.bannerKey(event)">${ic('bell')}
+      <div class="grow">${t('banner_pickups')}: <b>${due}</b>${over?` · ${t('banner_overdue')}: <b>${over}</b> <span class="info-i" title="${t('overdue_hint')}" onclick="event.stopPropagation();App.toastInfo('overdue_hint')">ⓘ</span>`:''}</div>${ic('chev_r')}
     </div>` : '';
   /* v1.08.46: жёлтая карточка «Ждут апрува» — вход в единое место решений */
   const apvN = apvCan() ? apvCollect().n : 0;
   const apvBanner = apvN > 0 ? `
-    <div class="banner b-apv clicky" role="button" tabindex="0" onclick="App.go('approvals')">${ic('check')}
+    <div class="banner b-apv clicky" role="button" tabindex="0" onclick="App.go('approvals')" onkeydown="App.bannerKey(event)">${ic('check')}
       <div class="grow">${t('apv_banner').replace('{N}', '<b>' + apvN + '</b>')}</div>${ic('chev_r')}
     </div>` : '';
 
@@ -7059,6 +7074,82 @@ function pickupModal(jobId, dateISO, ev){
       <button class="btn btn-ghost" onclick="App.jobHistory('${jobId}')">${ic('clock')} ${t('job_history')}</button>
     </div>
   `);
+}
+
+/* v1.08.87: плашка «Пикап сегодня · просрочено» кликабельна — модалка с
+   мини-карточками: где (комплекс, юнит, адрес), что стоит (техника по типам),
+   срок и на сколько дней просрочено, чей пикап. Набор строк тот же, что
+   считает плашка (myDueCount): свои и те, которыми поделились. */
+function pkDueRows(){
+  const today = todayISO();
+  const mine = (state.data.placements || []).filter(p => (p.technician_id === state.user.id || isPlacementSharedWithMe(p)) && pkPending(p));
+  return { today, due: mine.filter(p => p.due_date === today), over: mine.filter(p => p.due_date < today) };
+}
+function pkDueGroups(rows, byDue){
+  const g = {};
+  rows.forEach(p => { (g[p.job_id] = g[p.job_id] || []).push(p); });
+  const nm = (l) => ((cxById(l[0].complex_id) || {}).name || '') + ' ' + String(l[0].unit_number || '');
+  const minDue = (l) => l.reduce((m, p) => p.due_date < m ? p.due_date : m, l[0].due_date);
+  return Object.entries(g).sort((a, b) => {
+    if (byDue){ const d = minDue(a[1]).localeCompare(minDue(b[1])); if (d) return d; }
+    return nm(a[1]).localeCompare(nm(b[1]), undefined, { numeric: true });
+  });
+}
+function pkDueCardHtml(jobId, list, today){
+  const p0 = list[0];
+  const cx = cxById(p0.complex_id) || { id: p0.complex_id, name: '?', address: '' };
+  const due = list.reduce((m, p) => p.due_date < m ? p.due_date : m, p0.due_date);
+  const days = due < today ? Math.round((Date.parse(today) - Date.parse(due)) / 86400000) : 0;
+  const agg = {};
+  list.forEach(p => { agg[p.equipment_type_id] = (agg[p.equipment_type_id] || 0) + (+p.qty || 0); });
+  const eq = Object.entries(agg).map(([etId, q]) => {
+    const et = etById(etId) || { color: '#888', abbr: '?' };
+    return `<span class="pkm-eq" style="background:${et.color};color:${textColorFor(et.color)}" title="${esc(et.name || et.abbr)}">${esc(et.abbr)} <b>${q}</b></span>`;
+  }).join('');
+  const who = [...new Set(list.map(p => p.technician_id))].filter(id => id && (id !== state.user.id || isManager())).map(id => esc(profName(id))).join(', ');
+  const note = (jobById(jobId) || {}).note;
+  return `<div class="pkm-card${days ? ' od' : ''}" role="button" tabindex="0" data-job="${jobId}" aria-label="${t('pkd_open')}: ${esc(cx.name)} · Unit ${esc(p0.unit_number || '—')}"
+      onclick="App.pkDueOpen('${jobId}',event)" onkeydown="App.bannerKey(event)">
+    <div class="pkm-top">
+      <div class="pkm-t">${esc(cx.name)} · <span class="tail">Unit ${esc(p0.unit_number || '—')}</span></div>
+      <button type="button" class="btn btn-ghost sm" title="${t('navigate')}" aria-label="${t('navigate')}" onclick="event.stopPropagation();App.navToCx('${p0.complex_id}')">${ic('compass')}</button>
+    </div>
+    ${cx.address ? `<div class="pkm-a">${esc(cx.address)}</div>` : ''}
+    <div class="pkm-e">${eq}</div>
+    <div class="pkm-s">${t('due')}: ${fmtDMY(due)}${days ? ` <span class="chip bad">${t('overdue')} · ${days} ${t('pkd_days')}</span>` : ''}${list.some(p => p.ext_of) ? ` <span class="chip info">${t('ext_chip')}</span>` : ''}${who ? ' · ' + who : ''}</div>
+    ${note ? `<div class="pkm-s note-line">${ic('note')} ${esc(note)}</div>` : ''}
+  </div>`;
+}
+function pkDueModal(){
+  if (!state.user || !state.data) return;
+  const { today, due, over } = pkDueRows();
+  const sec = (title, cls, rows, byDue) => {
+    if (!rows.length) return '';
+    const groups = pkDueGroups(rows, byDue);
+    const units = rows.reduce((s, p) => s + (+p.qty || 0), 0);
+    return `<div class="pkm-h ${cls}"><b>${title}</b> <span class="hint">${rows.length}</span>
+        <span class="pkm-sub">${t('pkd_addr')}: ${groups.length} · ${t('pkd_units')}: ${units}</span></div>
+      <div class="pkm-list">${groups.map(([jobId, list]) => pkDueCardHtml(jobId, list, today)).join('')}</div>`;
+  };
+  openModal(`
+    ${modalHead(t('pkd_title'), 'bell')}
+    <div class="tiny" style="margin:-4px 0 8px">${t('pkd_hint')}</div>
+    ${(due.length + over.length) ? '' : `<div class="list-empty">${t('pkd_empty')}</div>`}
+    ${sec(t('pkd_today'), 'td', due, false)}
+    ${sec(t('pkd_over'), 'od', over, true)}
+  `);
+}
+/* карточка → обычная модалка пикапа; её «назад» возвращает к списку */
+function pkDueOpen(jobId, ev){
+  if (ev && ev.target && ev.target.closest && ev.target.closest('button,a')) return;
+  pickupModal(jobId, todayISO());
+  const bx = $('#overlay .back-x');
+  if (bx && $('#overlay .modal')) bx.onclick = (e) => { e.stopPropagation(); pkDueModal(); };
+}
+/* Enter/пробел на плашках и карточках с role="button" */
+function bannerKey(e){
+  if (e.target !== e.currentTarget) return;
+  if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); e.currentTarget.click(); }
 }
 
 /* ---------- Продление аренды ---------- */
@@ -10275,7 +10366,7 @@ const App = {
     if (inp){ inp.blur(); inp.setAttribute('inputmode', unitKb()); inp.focus(); }
   },
   mediaQueueModal, mqPing, mqRetry, plHours,
-  mqMini(v){ mqMini(!!v); },   // v1.08.57: ручка для диагностики и тестов
+  mqMini(v){ _mqMiniMute = false; mqMini(!!v); },   // v1.08.57: ручка для диагностики и тестов
   /* v1.07.67: диагностика интерфейса (движок — uidiag.js) */
   uiDiagRun(){
     if (window.UIDiag) window.UIDiag.open();
@@ -10417,7 +10508,7 @@ const App = {
   fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} render(); },
   fontSet(v){ try{ if (window.TLUI) TLUI.fontSet(v); }catch(e){} render(); },
   mapSearch: mapSearchRun, mapPick: mapPickRun, addCxFromMap: addCxModal, saveCxFromMap: saveCxFromMapRun, closeModal, sectionFaq: sectionFaqOpen,
-  pickupModal, extendModal, extMode, extDays, extQty, extApply, jobHistory, pickupOne,
+  pickupModal, pkDueModal, pkDueOpen, bannerKey, extendModal, extMode, extDays, extQty, extApply, jobHistory, pickupOne,
   searchInput, searchKindSet, searchClear, searchOpenPk, logoHome, checkVerClick,
   jumpToday(){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); render(); },
   setRole, staffVis, saveVis, staffBlock, staffPassModal, staffSetPass,
@@ -10927,7 +11018,7 @@ function canonUrl(loc){
       }catch(e){}
     }
     await initAuth();
-    if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
+    if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); mqQuietSyncPref(); }
     if (!state.user) await tvResume();     // v1.08.37: телевизор переживает перезагрузку страницы
     render();
     /* v1.08.73: возврат в документ после выгрузки и доразбор приёмника — только
@@ -14693,7 +14784,7 @@ function trPop(n){
       <button class="btn btn-ghost sm" onclick="document.getElementById('tr-pop').remove()">${t('tr_later')}</button>
       <button class="btn btn-blue sm" onclick="document.getElementById('tr-pop').remove();App.trPendingModal()">${t('tr_run')}</button>
     </div>`;
-  document.body.appendChild(el);
+  popHost(el);
   setTimeout(() => { const q = document.getElementById('tr-pop'); if (q) q.remove(); }, 30000);
 }
 function trPendingModal(){
@@ -19720,7 +19811,7 @@ async function ctStepJob(tag){
 }
 async function ctStepSend(jobId){
   if (!HAS_SB) return { note: t('ct_demo'), rows: [] };
-  localStorage.setItem('techlog_mq_quiet', '1');
+  _mqQuietForce = true;                                  // v1.08.86: настройку пользователя тест не трогает
   const seen = new Map(mqLogLines.map(l => [l.id, l.text]));
   const items = ctQOf(jobId).length;
   const a = performance.now();
@@ -19821,7 +19912,6 @@ async function camTestRun(){
   const qOf = ctQOf;
   const screen0 = state.screen;
   const confirm0 = window.confirm; window.confirm = () => true;
-  const quiet0 = localStorage.getItem('techlog_mq_quiet');
   let jobId = null, srvRows = [];
   ctPaint();
   CAMIN.noFallback = true;
@@ -19956,7 +20046,7 @@ async function camTestRun(){
   CAMIN.noFallback = false; _mqBgPopShown = bgPop0;
   try{ const bp = $('#mq-bgpop'); if (bp) bp.remove(); }catch(e){}
   window.confirm = confirm0;
-  if (quiet0 === null) localStorage.removeItem('techlog_mq_quiet'); else localStorage.setItem('techlog_mq_quiet', quiet0);
+  _mqQuietForce = false;
   CT.busy = false;
   state.screen = screen0 || 'settings'; state.jobId = null; jobDraft = null;
   const okN = steps.filter(x => x.ok).length, total = Math.round((performance.now() - CT.t0) / 1000);
@@ -20050,7 +20140,6 @@ async function camTest2Run(resume){
   CT2.running = true; CT.busy = true; CT2.abort = false; CT2.saved = 0;
   const st = CT2.st;
   const confirm0 = window.confirm; window.confirm = () => true;
-  const quiet0 = localStorage.getItem('techlog_mq_quiet');
   const steps = st.steps;
   const step = async (name, phase, fn) => {
     st.phase = phase; st.phaseLabel = name; ct2Save();
@@ -20131,7 +20220,7 @@ async function camTest2Run(resume){
   }
   ct2BarHide();
   window.confirm = confirm0;
-  if (quiet0 === null) localStorage.removeItem('techlog_mq_quiet'); else localStorage.setItem('techlog_mq_quiet', quiet0);
+  _mqQuietForce = false;
   const okN = steps.filter(x => x.ok).length;
   st.finished = new Date().toISOString(); CT2.st = null; ct2Save();
   CT2.running = false; CT.busy = false;
@@ -20366,7 +20455,7 @@ async function mediaFlush(verbose){
   if (_mediaBusy){ lg('⏳ ' + t('mq_l_busy'), 'warn'); mediaBadge(); return res; }
   if (!HAS_SB || !state.user){ lg('⛔ ' + t('mq_l_nosb'), 'err'); mediaBadge(); return res; }
   if (netOff()){ lg('🔴 ' + t('mq_l_off'), 'err'); mediaBadge(); return res; }   // v1.08.38: и «нет сервера» тоже
-  _mediaBusy = true;
+  _mediaBusy = true; _mqMiniMute = false;
   try{
     const list = [...mediaQ].sort((a, b) => a.at - b.at);
     let idx = 0;
@@ -20943,11 +21032,61 @@ function mqLog(text, cls, id){
 /* v1.07.72: мини-журнал отправки — три последние строки над таббаром.
    Показывается, пока идёт отправка, и гаснет через несколько секунд. */
 let _mqMiniTimer = null;
+/* v1.08.86: полоска отправки и поповеры (очередь, перевод, «загрузка в фоне»)
+   живут в ТОМ ЖЕ контейнере, что и тосты (#toasts): одно место, одна центровка,
+   одни правила «сверху · снизу · сбоку» на телефоне и на ПК — и друг на друга
+   они больше не ложатся, а встают стопкой. Полоска — первой, поповеры — за ней,
+   тосты — в конце. */
+function popHost(el, first){
+  const box = $('#toasts') || document.body;
+  if (first){ box.insertBefore(el, box.firstChild); return; }
+  const tst = box.querySelector('.toast');
+  if (tst && tst.parentNode === box) box.insertBefore(el, tst); else box.appendChild(el);
+}
+/* крестик (и Esc) гасят полоску до конца текущей отправки — иначе каждая новая
+   строка журнала поднимала бы её снова; ошибка полоску вернёт */
+let _mqMiniMute = false;
 /* v1.08.21: полоска отправки всплывала при каждом заходе, даже когда всё
    давно отправлено. Личная галочка «показывать только при ошибке» гасит её
    для спокойных строк: проверка идёт как прежде, просто молча. */
-function mqQuiet(){ try{ return localStorage.getItem('techlog_mq_quiet') === '1'; }catch(e){ return false; } }
-function mqQuietSet(v){ try{ localStorage.setItem('techlog_mq_quiet', v ? '1' : '0'); }catch(e){} }
+/* v1.08.86: галочка «сбрасывалась»: она жила только в localStorage одного
+   браузера — на другом телефоне, на ПК, после очистки данных сайта её не было,
+   а тесты съёмки на время прогона переписывали её сами. Теперь это личная
+   настройка АККАУНТА (profiles.push_prefs.mq_quiet — как «Способ съёмки»),
+   localStorage — только кэш для офлайна и демо; тесты настройку не трогают,
+   на время прогона у них флаг в памяти. */
+let _mqQuietForce = false;
+function mqQuiet(){
+  if (_mqQuietForce) return true;
+  try{
+    const pv = state.user && state.user.push_prefs && state.user.push_prefs.mq_quiet;
+    if (pv === true || pv === false) return pv;
+    return localStorage.getItem('techlog_mq_quiet') === '1';
+  }catch(e){ return false; }
+}
+async function mqQuietSet(v){
+  v = !!v;
+  try{ localStorage.setItem('techlog_mq_quiet', v ? '1' : '0'); }catch(e){}
+  try{
+    if (state.user){
+      const me = (state.data.profiles || []).find(p => p.id === state.user.id);
+      const prefs = { ...((me && me.push_prefs) || {}), ...(state.user.push_prefs || {}), mq_quiet: v };
+      state.user.push_prefs = prefs;
+      if (me){ me.push_prefs = prefs; if (HAS_SB) await dbUpsert('profiles', { ...me, push_prefs: prefs }); else saveLocalNow(); }
+    }
+  }catch(e){ dlog('⚠ mq_quiet:', e); }
+  dlog('полоска отправки: ' + (v ? 'только при ошибке' : 'после каждой отправки') + ' (настройка аккаунта)');
+}
+/* после входа: профиль → кэш устройства; если в профиле ещё пусто, а на этом
+   устройстве галочка стояла — один раз переносим её в профиль */
+function mqQuietSyncPref(){
+  try{
+    if (!state.user) return;
+    const pv = state.user.push_prefs && state.user.push_prefs.mq_quiet;
+    if (pv === true || pv === false){ localStorage.setItem('techlog_mq_quiet', pv ? '1' : '0'); return; }
+    if (localStorage.getItem('techlog_mq_quiet') === '1') mqQuietSet(true);
+  }catch(e){}
+}
 function mqLastBad(){
   const last = mqLogLines.slice(-3);
   return last.some(l => /err|warn/.test(l.cls || '')) || mediaQ.some(x => (+x.attempts || 0) > 0);
@@ -20955,22 +21094,21 @@ function mqLastBad(){
 function mqMini(show){
   /* тихий режим: показываем только когда есть что чинить */
   if (show && mqQuiet() && !mqLastBad()) return;
+  if (show && _mqMiniMute && !mqLastBad()) return;        // закрыта крестиком — молчим до следующей отправки
   let el = $('#mq-mini');
   if (!show){
     if (el) el.remove();
-    document.body.classList.remove('has-mq-mini');
     return;
   }
-  document.body.classList.add('has-mq-mini');
   if (!el){
     el = document.createElement('div');
     el.id = 'mq-mini'; el.className = 'mq-mini'; el.setAttribute('role', 'status');
     /* v1.08.57: как у модалок — крестик закрывает, тап по остальному открывает журнал целиком */
     el.onclick = (e) => {
-      if (e.target && e.target.closest && e.target.closest('.mq-mini-c')){ e.stopPropagation(); mqMini(false); return; }
+      if (e.target && e.target.closest && e.target.closest('.mq-mini-c')){ e.stopPropagation(); _mqMiniMute = true; mqMini(false); return; }
       mqMini(false); App.mediaQueueModal();
     };
-    document.body.appendChild(el);
+    popHost(el, true);
   }
   const tail = mqLogLines.slice(-3).map(l => {
     const p = splitMark(l.text);
@@ -20981,13 +21119,12 @@ function mqMini(show){
       <button type="button" class="mq-mini-x">${t('mq_mini_open')}</button>
       <button type="button" class="mq-mini-c" aria-label="${t('close')}" title="${t('close')}">${ic('close')}</button></div>
     <div class="mq-mini-b">${tail || `<div class="mq-l dim">${t('mq_l_wait')}</div>`}</div>`;
-  try{ document.body.style.setProperty('--mqh', (el.offsetHeight + 12) + 'px'); }catch(e){}   // v1.08.57: тосты — ниже/выше полоски
   clearTimeout(_mqMiniTimer);
   _mqMiniTimer = setTimeout(() => { if (!_mediaBusy) mqMini(false); }, 6000);
 }
 /* v1.08.57: Esc закрывает полоску, как и любую модалку (когда модалки нет) */
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && $('#mq-mini') && !$('#overlay')) mqMini(false);
+  if (e.key === 'Escape' && $('#mq-mini') && !$('#overlay')){ _mqMiniMute = true; mqMini(false); }
 });
 function mqLogPaint(){
   const box = $('#mq-log'); if (!box) return;
@@ -21031,7 +21168,7 @@ function mediaStartPop(){
         <button class="btn btn-ghost sm" onclick="document.getElementById('mq-pop').remove()">${t('mq_later')}</button>
         <button class="btn btn-blue sm" onclick="document.getElementById('mq-pop').remove();App.mediaQueueModal()">${t('mq_check')}</button>
       </div>`;
-    document.body.appendChild(el);
+    popHost(el);
     setTimeout(() => { const q = document.getElementById('mq-pop'); if (q) q.remove(); }, 30000);
   }, 800);
   setTimeout(() => clearInterval(tick), 60000);
@@ -21050,7 +21187,7 @@ function mediaBgPop(){
     <div class="btn-rowpp" style="margin-top:8px">
       <button class="btn btn-blue sm" onclick="document.getElementById('mq-bgpop').remove()">${t('mt_bg_ok')}</button>
     </div>`;
-  document.body.appendChild(el);
+  popHost(el);
   setTimeout(() => { const q = $('#mq-bgpop'); if (q) q.remove(); }, 9000);
 }
 function mediaQueueCardHtml(){
@@ -21062,9 +21199,6 @@ function mediaQueueCardHtml(){
       ? `<div class="tiny" style="margin-bottom:8px">${t('mq_empty')}</div>`
       : `<div class="tiny" style="margin-bottom:8px">${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')} · ${t('mq_pending')}</div>`}
     <button class="btn ${st.key === 'ok' ? 'btn-ghost' : 'btn-blue'}" onclick="App.mediaQueueModal()">${st.key === 'ok' ? t('mq_open') : t('mq_check')}</button>
-    <label class="opt ${mqQuiet() ? 'on' : ''}" style="margin-top:8px">
-      <input type="checkbox" ${mqQuiet() ? 'checked' : ''} onchange="App.mqQuiet(this.checked)"> ${t('mq_quiet')}</label>
-    <div class="tiny">${t('mq_quiet_h')}</div>
   </div>`;
 }
 function mediaQueueModal(){

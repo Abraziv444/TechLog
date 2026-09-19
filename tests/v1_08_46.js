@@ -233,8 +233,8 @@ function t(name, cond, note){
       el.remove();
       return { top, bot, h: innerHeight };
     });
-    t('«сверху» — полоска стоит у верха, под шапкой',
-      pos.top.top > 40 && pos.top.top < pos.h / 3, JSON.stringify(pos.top));
+    t('«сверху» — полоска стоит у верха, там же, где тосты (v1.08.86)',
+      pos.top.top >= 0 && pos.top.top < pos.h / 3, JSON.stringify(pos.top));
     t('«снизу» — полоска стоит у низа, над панелью',
       pos.bot.bot > 40 && pos.bot.bot < pos.h / 3, JSON.stringify(pos.bot));
   }

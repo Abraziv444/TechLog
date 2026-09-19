@@ -278,6 +278,34 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   display:flex;gap:10px;align-items:center;color:var(--green);font-weight:800
 }
 .banner.b-red{border-color:var(--red);background:rgba(255,75,75,.08);color:var(--red)}
+/* v1.08.87: кликабельные плашки («Ждут апрува», «Пикап сегодня») — рука при
+   наведении, отклик на нажатие, рамка фокуса; .grow отдаёт стрелке правый край */
+.banner.clicky{cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;transition:filter .12s,transform .06s}
+.banner.clicky:active{transform:scale(.995);filter:brightness(1.15)}
+.banner.clicky:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.banner.clicky > .grow{flex:1;min-width:0}
+.banner.clicky > .ic:last-child{flex:0 0 auto;opacity:.85}
+.banner.b-pk .info-i{cursor:help}
+/* мини-карточки пикапов в модалке */
+.pkm-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:12px 0 6px;font-size:.95rem}
+.pkm-h.od b{color:var(--red)} .pkm-h.td b{color:var(--green)}
+.pkm-h .pkm-sub{margin-left:auto;font-size:.74rem;font-weight:700;color:var(--dim)}
+.pkm-list{display:grid;grid-template-columns:1fr;gap:8px}
+.pkm-card{border:2px solid var(--line);border-left:5px solid var(--green);border-radius:14px;background:var(--panel-2);
+  padding:8px 10px;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent;transition:border-color .12s}
+.pkm-card.od{border-left-color:var(--red)}
+.pkm-card:active{filter:brightness(1.12)}
+.pkm-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.pkm-top{display:flex;align-items:flex-start;gap:8px}
+.pkm-t{flex:1;min-width:0;font-weight:900;font-size:.92rem;overflow-wrap:anywhere}
+.pkm-t .tail{white-space:nowrap}
+.pkm-top .btn{flex:0 0 auto;min-width:40px;min-height:40px}
+.pkm-a{font-size:.76rem;font-weight:600;color:var(--dim);margin:-6px 48px 6px 0;overflow-wrap:anywhere}
+.pkm-e{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.pkm-eq{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:.72rem;font-weight:900;
+  border:2px solid rgba(255,255,255,.18);white-space:nowrap}
+.pkm-s{font-size:.78rem;font-weight:700;color:var(--dim);overflow-wrap:anywhere}
+.pkm-s .chip{margin-left:2px}
 /* v1.07.23: баннер установки на iOS и шаги в модалке */
 .banner.a2hs{border-color:var(--blue);background:rgba(28,176,246,.08);color:var(--text)}
 .banner.a2hs .grow{flex:1;min-width:0}
@@ -1457,11 +1485,23 @@ html.tl-pop-side .mq-pop{left:auto;right:12px;transform:none}
    Положение задаётся ПАРОЙ top/bottom в каждом правиле: раньше «сбоку»
    ставило top, а ПК-правило добавляло bottom — блок растягивался на всю
    высоту экрана пустой панелью. max-height — страховка от того же. */
-.mq-mini{position:fixed;left:8px;right:8px;top:auto;z-index:60;
-  bottom:calc(66px + env(safe-area-inset-bottom));
+/* v1.08.86: полоска — такой же поповер, как тост: живёт ВНУТРИ #toasts и берёт
+   его место и центровку во всех режимах (сверху · снизу · сбоку, телефон и ПК).
+   Своих top/bottom/left/right у неё там нет вовсе. Правило с position:fixed —
+   запасное, на случай если контейнера нет: те же координаты, что у #toasts. */
+.mq-mini{position:fixed;left:0;right:0;margin:0 auto;z-index:1200;
+  top:var(--pop-top,calc(env(safe-area-inset-top,0px) + 10px));bottom:auto;
+  width:min(480px,calc(100vw - 16px));box-sizing:border-box;
   background:var(--panel);border:2px solid var(--line);border-radius:20px;
-  padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:480px;margin:0 auto;
-  max-height:min(40dvh,240px);overflow:hidden;cursor:pointer}
+  padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.45);
+  max-height:min(40dvh,240px);overflow:hidden;cursor:pointer;pointer-events:auto;
+  animation:pop .18s ease-out}
+#toasts > .mq-mini, #toasts > .mq-pop{position:static;transform:none;margin:0;flex:0 0 auto;pointer-events:auto}
+#toasts > .mq-pop{animation:pop .18s ease-out}
+/* под открытой модалкой и под камерой в приложении полоска и поповеры не видны —
+   как и раньше, когда они лежали под подложкой; тосты остаются поверх */
+body:has(> .overlay) #toasts > .mq-mini, body:has(> .overlay) #toasts > .mq-pop,
+html.tl-camin #toasts > .mq-mini, html.tl-camin #toasts > .mq-pop{display:none}
 .mq-mini .mq-mini-h{display:flex;align-items:center;gap:8px;font-weight:900;font-size:.92rem;color:var(--text);margin-bottom:6px;min-width:0}
 .mq-mini .mq-mini-h > span:first-child{ display:contents }
 .mq-mini .mq-mini-h .ic{width:18px;height:18px;flex:0 0 auto}
@@ -1477,16 +1517,11 @@ html.tl-pop-side .mq-pop{left:auto;right:12px;transform:none}
 /* v1.08.46: полоска отправки — тоже «поповер» и слушает общую настройку:
    «сверху» (по умолчанию) — под шапкой, «снизу» — над таббаром, «сбоку» —
    справа сверху узкой колонкой. */
-html.tl-pop-top .mq-mini, html.tl-pop-side .mq-mini{ bottom:auto; top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px) }
-html.tl-pop-side .mq-mini{ left:auto; right:12px; max-width:340px; margin:0 }
+html.tl-pop-bottom .mq-mini{ top:auto; bottom:calc(env(safe-area-inset-bottom,0px) + 82px) }
+html.tl-pop-side .mq-mini{ left:auto; right:12px; margin:0; width:min(340px,calc(100vw - 24px)) }
 .mq-mini .ok{color:var(--green-hi)} .mq-mini .err{color:var(--red)}
-/* пока мини-журнал на экране, тосты отодвигаются от него: «снизу» — выше
-   полоски, «сверху»/«сбоку» — ниже неё (v1.08.57: раньше в этих двух режимах
-   тост-баннер «Пикап сегодня» ложился прямо на кнопки полоски). Высоту
-   полоски пишет mqMini() в --mqh. */
-html.tl-pop-bottom body.has-mq-mini #toasts{bottom:calc(env(safe-area-inset-bottom,0px) + 82px + var(--mqh, 96px))}
-html.tl-pop-top body.has-mq-mini #toasts,
-html.tl-pop-side body.has-mq-mini #toasts{top:calc(var(--tbh, 72px) + env(safe-area-inset-top, 0px) + 8px + var(--mqh, 96px))}
+/* v1.08.86: тосты и полоска — в одной стопке (#toasts, flex-колонка), поэтому
+   отодвигать тосты от полоски отдельной переменной больше не нужно. */
 .mq-mini .warn{color:var(--yellow)} .mq-mini .dim{color:var(--dim)}
 .banner .grow{flex:1;min-width:0;font-weight:800}
 .pk-line{flex-wrap:wrap}
