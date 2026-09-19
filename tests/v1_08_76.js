@@ -37,8 +37,8 @@ function t(name, cond, note){
   const body = require('fs').readFileSync(await dl.path(), 'utf8');
   t('«Скачать .txt» из модалки: techlog-camtest-дата.txt', /^techlog-camtest-\d{4}-\d\d-\d\d_\d\d-\d\d\.txt$/.test(dl.suggestedFilename()), dl.suggestedFilename());
   t('файл целиком: шапка, журнал теста с мс, шаги, метрики отклика камеры, журнал приложения',
-    /^TechLog 1\.08\.\d+ — Тест съёмки/.test(body) && /--- журнал теста ---\n\d\d:\d\d:\d\d\.\d{3}  ▶ Окружение/.test(body) && /--- шаги ---\n✓ Окружение — \d+ ms/.test(body)
-    && /--- метрики отклика камеры/.test(body) && /Съёмка: Фото/.test(body) && /--- журнал приложения/.test(body) && /\[TechLog 1\.08\.\d+ /.test(body) && /dlog: /.test(body), body.slice(0, 300));
+    /^TechLog 1\.\d\d\.\d+ — Тест съёмки/.test(body) && /--- журнал теста ---\n\d\d:\d\d:\d\d\.\d{3}  ▶ Окружение/.test(body) && /--- шаги ---\n✓ Окружение — \d+ ms/.test(body)
+    && /--- метрики отклика камеры/.test(body) && /Съёмка: Фото/.test(body) && /--- журнал приложения/.test(body) && /\[TechLog 1\.\d\d\.\d+ /.test(body) && /dlog: /.test(body), body.slice(0, 300));
   await p.evaluate(() => window.App.closeModal()); await p.waitForTimeout(300);
 
   console.log('— блок в карточках, копирование, показ —');
@@ -73,7 +73,7 @@ function t(name, cond, note){
   t('в модалке журнала событий есть «Скачать .txt»', await p.evaluate(() => { const o = document.getElementById('overlay'); return !!o && [...o.querySelectorAll('.btn')].some(b => /Скачать \.txt/.test(b.textContent)); }));
   const [dl2] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }), p.evaluate(() => window.App.logSave())]);
   const body2 = require('fs').readFileSync(await dl2.path(), 'utf8');
-  t('скачивается techlog-log-дата.txt с журналом приложения', /^techlog-log-\d{4}-\d\d-\d\d_\d\d-\d\d\.txt$/.test(dl2.suggestedFilename()) && /\[TechLog 1\.08\.\d+ /.test(body2) && body2.split('\n').length > 20, dl2.suggestedFilename());
+  t('скачивается techlog-log-дата.txt с журналом приложения', /^techlog-log-\d{4}-\d\d-\d\d_\d\d-\d\d\.txt$/.test(dl2.suggestedFilename()) && /\[TechLog 1\.\d\d\.\d+ /.test(body2) && body2.split('\n').length > 20, dl2.suggestedFilename());
   await p.evaluate(() => window.App.closeModal());
 
   t('ошибок JS нет', errs.length === 0, errs.join(' | '));

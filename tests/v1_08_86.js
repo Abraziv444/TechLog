@@ -53,7 +53,7 @@ const pair = (p) => p.evaluate(async () => {
   console.log('— настройка: профиль, кэш, перенос, очистка ключа —');
   {
     const p = await boot(br, { width: 414, height: 850 }, 'mobile', 'top');
-    await p.evaluate(() => { window.App.go('settings'); window.App.foldToggle('pop'); }); await p.waitForTimeout(400);
+    await p.evaluate(() => { window.App.go('settings'); window.App.foldToggle('push'); }); await p.waitForTimeout(400);   // v1.09.00: «Push уведомления и подсказки»
     const where = await p.evaluate(() => {
       const chk = document.querySelector('#mq-quiet-chk');
       const cards = [...document.querySelectorAll('#app .card')];

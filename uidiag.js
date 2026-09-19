@@ -1200,7 +1200,7 @@
       var gdRO = function () { return !!document.querySelector('#gd-card [onclick*="gdToggleEdit"]'); };
       [['num', '[onclick*="noAddTok"]', 'конструктор нумерации'],
        ['tr',  '[onclick*="App.trRun"]', 'карточка переводов'],
-       ['pop', '[onclick*="App.popPos"]', 'место всплывашек'],
+       ['push', '[onclick*="App.popPos"]', 'место всплывашек'],   // v1.09.00: подсказки — в разделе «Push уведомления и подсказки»
        ['gd',  '#gd-inv', 'папка для инвойсов'],
        ['gd',  '[onclick*="gd_inv_tech_tip"]', 'галочка «инвойсы по папкам сотрудников»']
       ].forEach(function (p) {

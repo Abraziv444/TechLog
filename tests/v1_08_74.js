@@ -48,7 +48,7 @@ function t(name, cond, note){
   t('состав шагов по порядку', names.every((n, i) => res.rows[i] && res.rows[i].includes(n)), res.rows.slice(0, 14).join(' | '));
   t('демо: отправка, миниатюры с сервера и просмотр помечены «пропущено»', res.rows.filter(r => /демо-режим — пропущено/.test(r)).length === 3);
   t('журнал: окружение (версия, телефон, демо, API), поток камеры, два кадра с размером, ролик в очереди, миниатюры, очередь в IndexedDB',
-    /приложение 1\.08\.\d+ · телефон/.test(res.log) && /сервер: демо/.test(res.log) && /API: getUserMedia есть/.test(res.log)
+    /приложение 1\.\d\d\.\d+ · телефон/.test(res.log) && /сервер: демо/.test(res.log) && /API: getUserMedia есть/.test(res.log)
     && /камера открылась за \d+ мс: поток \d+×\d+/.test(res.log) && /кадр 1: \d+ мс · (takePhoto|кадр с потока) · \d+ КБ · TL_/.test(res.log) && /кадр 2: /.test(res.log) && /кадр 3: /.test(res.log)
     && /фото 1: TL_\S+ · \d+×\d+ · \d+ КБ \((оригинал|пережато)\) · превью \d+ КБ/.test(res.log)
     && /ролик 1 в очереди: TL_\S+\.(mp4|webm) · video\/\S+ · [\d.]+ МБ · длительность \d+ с/.test(res.log) && /ролик 2 в очереди: /.test(res.log)
@@ -69,7 +69,7 @@ function t(name, cond, note){
   await p.evaluate(() => window.App.camTestCopy()); await p.waitForTimeout(300);
   const clip = await p.evaluate(async () => { try{ return await navigator.clipboard.readText(); }catch(e){ return 'ERR ' + e; } });
   t('буфер обмена: заголовок с версией и пользователем, строки с временем, блок «— шаги —»',
-    /^TechLog 1\.08\.\d+ — Тест съёмки/.test(clip) && /\n\d\d:\d\d:\d\d\.\d{3}  ▶ Окружение/.test(clip) && /--- шаги ---\n✓ Окружение — \d+ ms/.test(clip) && clip.split('\n').length > 40, clip.slice(0, 200));
+    /^TechLog 1\.\d\d\.\d+ — Тест съёмки/.test(clip) && /\n\d\d:\d\d:\d\d\.\d{3}  ▶ Окружение/.test(clip) && /--- шаги ---\n✓ Окружение — \d+ ms/.test(clip) && clip.split('\n').length > 40, clip.slice(0, 200));
   const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }), p.evaluate(() => window.App.camTestSave())]);
   const fname = dl.suggestedFilename();
   const path = await dl.path(); const body = require('fs').readFileSync(path, 'utf8');

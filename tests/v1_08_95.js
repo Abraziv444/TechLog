@@ -66,8 +66,8 @@ const gaps = (p) => p.evaluate(() => {
 
   console.log('— админ, ПК —');
   {
-    const p = await boot(br, 'demo-admin', 'desktop', 1280, 900, ['pop', 'docs']);
-    const pop = await foldInfo(p, 'pop'), docs = await foldInfo(p, 'docs');
+    const p = await boot(br, 'demo-admin', 'desktop', 1280, 900, ['push', 'docs']);
+    const pop = await foldInfo(p, 'push'), docs = await foldInfo(p, 'docs');   // v1.09.00: подсказки — в «Push уведомления и подсказки»
     t('«Всплывающие подсказки»: нет кнопки печати, поиска и «Открыть поиск»',
       pop && pop.open && !pop.print && !pop.srch && !pop.open_srch, JSON.stringify(pop));
     t('секция «Настройки документов» есть и открыта',

@@ -56,7 +56,7 @@ const logOf = (p) => p.evaluate(() => {
     /* 4. копирование лога */
     await p.evaluate(() => document.querySelector('#overlay .btn-ghost').click()); await p.waitForTimeout(400);
     const clip = await p.evaluate(() => navigator.clipboard.readText().catch(() => ''));
-    t('«Копировать лог» кладёт в буфер весь журнал с версией и адресом', /TechLog v1\.08\.\d+/.test(clip) && /Проверка связи/.test(clip) && /cloudflare\.com/i.test(clip), JSON.stringify((clip || '').slice(0, 120)));
+    t('«Копировать лог» кладёт в буфер весь журнал с версией и адресом', /TechLog v1\.\d\d\.\d+/.test(clip) && /Проверка связи/.test(clip) && /cloudflare\.com/i.test(clip), JSON.stringify((clip || '').slice(0, 120)));
     await p.close();
   }
   console.log('\nИтого: ' + ok + ' ок, ' + bad + ' провал(ов)');

@@ -49,7 +49,7 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
 
   console.log('— 2. серверные кнопки помечены —');
   /* v1.08.96: кнопка «Синхронизировать» убрана, «Проверить связь»/«Диагностика» — в спойлере «Диагностика» */
-  await p.evaluate(() => { window.App.go('settings'); const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}'); if (!f.dgs) window.App.foldToggle('dgs'); }); await p.waitForTimeout(400);
+  await p.evaluate(() => { window.App.go('settings'); const f = JSON.parse(localStorage.getItem('techlog_fold') || '{}'); if (!f.dgs) window.App.foldToggle('dgs'); if (!f.misc) window.App.foldToggle('misc'); }); await p.waitForTimeout(400);   // v1.09.00: «Проверить обновления» — в «Прочих функциях»
   const marks = await p.evaluate(() => ({
     sync: !document.querySelector('[onclick="App.sync()"]'),
     upd: !!document.querySelector('[onclick*="updCheck"].net-need'),

@@ -59,7 +59,10 @@ const expose = `;window.__T = {
   AUTHX, sbFetch, authWhy, authSignedOutLog, authKeepDraft, authRestoreDraft, viewLogin,
   /* v1.08.92 */
   mfaQrHtml, mfaUri, mfaNeedsCode, MFA, trPending, trFiltered, trSelSet, TRF, trWhoOf, trCpOf,
-  setJobDraft: d => { jobDraft = d; }, getJobDraft: () => jobDraft, setScreen: s => { state.screen = s; }
+  setJobDraft: d => { jobDraft = d; }, getJobDraft: () => jobDraft, setScreen: s => { state.screen = s; },
+  /* v1.09.01: справочник трекеров Bouncie */
+  TRK, bnDevices, bnDevByImei, bnDevActive, bnDevLabel, bnDevCar, bnDevNeedSync, bnDevNorm, bnDevApplyLocal, bnDevSync,
+  dirTrackers, vehTrackerLine, vehTrackerSelHtml, vehDevPick, isAdmin
 };`;
 
 try {
@@ -1364,7 +1367,7 @@ console.log('\n— v1.08.48: медиа у ремонта, ТВ-уборка, м
   const com = fs.readFileSync(ROOT + '/supabase/functions/media-commit/index.ts', 'utf8');
   const del = fs.readFileSync(ROOT + '/supabase/functions/media-delete/index.ts', 'utf8');
   t('SQL-комплект 1.08.48 на месте (DB_SQL_FILE двинулся дальше)',
-    /DB_SQL_FILE = 'full-install-1_08_(51|70|71|97)\.sql'/.test(src)
+    /DB_SQL_FILE = 'full-install-1_0(8_(51|70|71|97)|9_\d\d)\.sql'/.test(src)
     && fs.existsSync(ROOT + '/supabase/update-to-1_08_48.sql'));
   t('SQL: ровно один владелец медиа + права ремонта + tv_cleanup',
     sql.includes('media_owner_one') && sql.includes('can_view_repair')
@@ -1464,7 +1467,7 @@ console.log('\n— v1.08.51: учёба —');
   const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
   const sw  = fs.readFileSync(ROOT + '/sw.js', 'utf8');
   t('SQL-комплект 1.08.51 на месте (DB_SQL_FILE двинулся на 1.08.70)',
-    /DB_SQL_FILE = 'full-install-1_08_(51|70|71|97)\.sql'/.test(src)
+    /DB_SQL_FILE = 'full-install-1_0(8_(51|70|71|97)|9_\d\d)\.sql'/.test(src)
     && fs.existsSync(ROOT + '/supabase/update-to-1_08_51.sql') && fs.existsSync(ROOT + '/supabase/full-install-1_08_51.sql'));
   const sql = fs.readFileSync(ROOT + '/supabase/update-to-1_08_51.sql', 'utf8');
   t('SQL: study_sessions с RLS, колонки доступа, study_access под защитой guard, восстановление',
@@ -1660,7 +1663,7 @@ console.log('\n— v1.08.51: учёба —');
     && !src.includes("${fold('num', t('no_card'), 'receipt', numberingCardHtml())}")
     && (src.match(/id="org-name"/g) || []).length === 1 && /function orgCardHtml\(\)\{\s*if \(!isAdmin\(\) && !isAcc\(\)\) return '';/.test(src)
     && src.includes("if ((!isAdmin() && !isAcc()) || !$('#org-name')) return;   // v1.08.97: админ и бухгалтер, форма на экране")
-    && T.DB_SQL_FILE === 'full-install-1_08_97.sql'
+    && /^full-install-1_0(8_97|9_\d\d)\.sql$/.test(T.DB_SQL_FILE)   /* v1.09.01: комплект двинулся дальше */
     && (() => { const u = fs.readFileSync(ROOT + '/supabase/update-to-1_08_97.sql', 'utf8'), f = fs.readFileSync(ROOT + '/supabase/full-install-1_08_97.sql', 'utf8');
          return [u, f].every(x => x.includes('create policy org_settings_acc_upd') && x.includes('create policy org_settings_acc_ins')
            && x.includes("with check (public.my_role() = 'accountant' and id = 'org')") && x.includes('create trigger org_settings_acc_guard_tg before update on public.org_settings')
@@ -1680,6 +1683,13 @@ console.log('\n— v1.08.51: учёба —');
     && /function tvModeHtml\(\)\{\s*return `<div class="card" id="tvs-card">[\s\S]*?\$\{tvSessionsCardHtml\(\)\}[\s\S]*?<div class="card" id="tvc-card">\$\{tvCfgCardHtml\(\)\}<\/div>`;/.test(src)
     && src.includes("if (!HAS_SB || !isAdmin() || !foldOpen('tvc')) return;") && !src.includes("foldOpen('tvs')")
     && src.includes("Настройки → «Режим телевизора» → «ТВ-экраны»") && src.includes("Settings → “TV mode” → “TV screens”"));
+  t('v1.09.00: «Push уведомления и подсказки» одним разделом; «Прочие функции» (Функции, Код приглашения, PWA) — последний раздел перед «Выйти»',
+    src.includes("${fold('push', t('push_pop_card'), 'bell', pbCardHtml() + popCardHtml())}") && !src.includes("fold('pop'")
+    && !src.includes("fold('feat'") && src.includes("${fold('misc', t('misc_card'), 'gear', miscCardHtml())}\n\n  <button class=\"btn btn-red\" onclick=\"App.logout()\">")
+    && src.includes("return (isAdmin() ? featCardHtml() + inviteCardHtml() : '') + pwaCardHtml();")
+    && (src.match(/onclick="App\.inviteSave\(\)"/g) || []).length === 1 && (src.match(/onclick="App\.updCheck\(\)"/g) || []).length === 1
+    && /function inviteCardHtml\(\)\{\s*if \(!isAdmin\(\)\) return '';/.test(src)
+    && ['misc_card', 'push_pop_card'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')
@@ -1809,7 +1819,7 @@ console.log('\n— v1.08.51: учёба —');
   t('CSS: стили теста, вариантов, кольца результата, рамки учебника',
     css.includes('.st-opt.ok{') && css.includes('.st-ring{') && css.includes('.st-frame{') && css.includes('.st-kpi{'));
   t('service worker: index.json в прекэше, dictionary/ — stale-while-revalidate',
-    sw.includes("'./dictionary/index.json'") && sw.includes("url.pathname.includes('/dictionary/')") && /VERSION = '1\.08\.(5[1-9]|[6-9]\d)'/.test(sw));
+    sw.includes("'./dictionary/index.json'") && sw.includes("url.pathname.includes('/dictionary/')") && /VERSION = '1\.(08\.(5[1-9]|[6-9]\d)|(09|[1-9]\d)\.\d\d)'/.test(sw));   /* v1.09.00: номер версии перешёл на 1.09 */
   t('v1.08.72: встроенный регресс — функция regressRun, кнопка в диагностике, десять шагов и уборка остатков',
     src.includes('async function regressRun()') && src.includes("App.regress()") && src.includes("t('rg_clean')")
     && ['rg_job','rg_media','rg_send','rg_pk','rg_rep','rg_home','rg_take','rg_yest','rg_del','rg_gone'].every(k => src.includes("t('" + k + "')")) && src.includes('window.confirm = confirm0'));
@@ -1858,7 +1868,7 @@ console.log('\n— v1.08.51: учёба —');
         j.questions.forEach(q => { n++; const v = T.stViewBuild(q); if (v){ ok++; if (v.correct.length > 1) multi++; } }); }
       return n === 1747 && ok === n && multi > 400; })());
   t('v1.08.70: галочка админа «перемешивать варианты», колонка org_settings.study_shuffle в update-to и full-install, DB_NEED_COLS',
-    src.includes("setOrgFlag('study_shuffle', this.checked)") && src.includes("['org_settings',  'study_shuffle']") && /^full-install-1_08_(7\d|9\d)\.sql$/.test(T.DB_SQL_FILE)
+    src.includes("setOrgFlag('study_shuffle', this.checked)") && src.includes("['org_settings',  'study_shuffle']") && /^full-install-1_0(8_(7\d|9\d)|9_\d\d)\.sql$/.test(T.DB_SQL_FILE)
     && fs.readFileSync(path.join(ROOT, 'supabase/update-to-1_08_70.sql'), 'utf8').includes('study_shuffle boolean not null default true')
     && fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_08_70.sql'), 'utf8').includes('study_shuffle boolean not null default true'));
   t('v1.08.69: карта — помощник перевода называется LOC, function L на верхнем уровне нет (иначе подменяется window.L Leaflet)',
@@ -2094,6 +2104,121 @@ console.log('\n— v1.08.51: учёба —');
     src.includes('function camPerfVerdict(s){') && src.includes("} else if (soft) key = 'soft'; else if (hal) key = 'hal'; else if (chip) key = (s.prevMode === 'fast' ? 'chip_fast' : 'chip'); else if (weak) key = 'weak';")
     && src.includes('function camPerfLive(){') && src.includes('function camPerfCardHtml(){') && src.includes('App.camPerfCopy()') && src.includes("await step(t('ct_s_perf')")
     && src.includes('${camPerfCardHtml()}') && css.includes('.camin-perf{position:absolute') && css.includes('.cp-last{white-space:pre-wrap'));
+}
+
+console.log('\n— v1.09.01: справочник «Трекеры Bouncie» —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  const upd = fs.readFileSync(ROOT + '/supabase/update-to-1_09_01.sql', 'utf8');
+  const full = fs.readFileSync(ROOT + '/supabase/full-install-1_09_01.sql', 'utf8');
+  t('v1.09.01: версии (app = sw = version.json = 1.09.01), DB_SQL_FILE = full-install-1_09_01.sql, комплект SQL и тесты на месте',
+    T.APP_VERSION === '1.09.01' && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.01'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.01'
+    && fs.existsSync(ROOT + '/tests/bn-devices.sql') && fs.existsSync(ROOT + '/tests/v1_09_01.js'));
+  t('v1.09.01: ключи RU/EN справочника трекеров и карточки машины',
+    ['d_trackers', 'trk_hint', 'trk_sync', 'trk_syncing', 'trk_all', 'trk_active', 'trk_inactive', 'trk_st_active', 'trk_st_inactive', 'trk_none', 'trk_none_f',
+     'trk_car', 'trk_free', 'trk_seen', 'trk_gone', 'trk_checked', 'trk_never', 'trk_done', 'trk_added', 'trk_back', 'trk_off', 'trk_empty', 'trk_car_inactive',
+     'trk_no_dev', 'trk_inactive_pick', 'trk_taken', 'trk_bad_list', 'veh_tracker', 'veh_no_tracker', 'veh_no_tracker_l', 'veh_trk_hint', 'veh_trk_empty', 'act_bn_dev_sync']
+    .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]) && !/IMEI/.test(T.DICT.ru.veh_hint) && !/IMEI/.test(T.DICT.en.veh_hint));
+  t('v1.09.01: таблица bn_devices в TABLES, DB_NEED_COLS и RPC bn_devices_sync в диагностике, действие bn_dev_sync в журнале системы',
+    T.TABLES.includes('bn_devices') && T.DB_NEED_COLS.some(x => x[0] === 'bn_devices' && x[1] === 'checked_at') && T.DB_NEED_RPCS.includes('bn_devices_sync')
+    && src.includes("'bn_dev_sync'];         // v1.09.01") && src.includes("audit('bn_dev_sync', 'bn_device', 'sync',"));
+  t('v1.09.01: вкладка «Трекеры Bouncie» только у админа, после «Автомобили»; карточка машины — выпадающий список трекеров вместо поля IMEI',
+    src.includes("['trackers', t('d_trackers'), isAdmin()],   // v1.09.01") && src.includes("vehicles: dirVehicles, trackers: dirTrackers,")
+    && src.includes('${vehTrackerSelHtml(v)}') && !src.includes('<input id="veh-imei"') && src.includes('onchange="App.vehDevPick(this.value)"')
+    && src.includes("trkSync(){ bnDevSync(false); }, trkFilter(v){ state.trkFilter = v; render(); }")
+    && css.includes('.trk-dot.on{ color:var(--green)') && css.includes('.lang-seg.trk-seg button{ flex:1 1 0'));
+  t('v1.09.01: автосверка — при смене состава приборов в фоновом опросе и при открытии вкладки; пустой список не гасит статусы',
+    src.includes("if (bnDevNeedSync(j.vehicles)) bnDevSync(true, j.vehicles);") && src.includes("if (!TRK.busy && bnDevNeedSync(null)) setTimeout(() => bnDevSync(true), 0);")
+    && src.includes("if (norm.length) for (let i = 0; i < arr.length; i++){") && src.includes("if (auto && BN.off) return null;"));
+  t('v1.09.01: импорт машин сначала сверяет справочник; vehicle_save — понятные ошибки NO_DEVICE / DEVICE_INACTIVE / DEVICE_TAKEN',
+    src.includes("const res = await bnDevSync(false);\n  if (!res || res.empty) return;\n  let added = 0, upd = 0;\n  for (const d of bnDevices().filter(bnDevActive)){")
+    && src.includes(": /NO_DEVICE|vehicles_imei_fk/.test(s) ? t('trk_no_dev')") && src.includes(": /DEVICE_INACTIVE/.test(s) ? t('trk_inactive_pick')")
+    && src.includes(": /DEVICE_TAKEN|vehicles_imei_ux/.test(s) ? t('trk_taken')"));
+  t('v1.09.01: SQL — bn_devices с RLS (select только админ), FK vehicles_imei_fk, bn_dev_norm, bn_devices_sync, перенос IMEI, проверки vehicle_save, самопроверка; backup дампит bn_devices до vehicles',
+    [upd, full].every(x => x.includes('create table if not exists public.bn_devices (') && x.includes("constraint bn_devices_status_ck check (status in ('active','inactive'))")
+      && x.includes("create policy bn_devices_sel on public.bn_devices for select to authenticated\n  using (public.my_role() = 'admin');")
+      && x.includes("foreign key (imei) references public.bn_devices (imei) on update cascade;") && x.includes('create or replace function public.bn_dev_norm(p_list jsonb)')
+      && x.includes('create or replace function public.bn_devices_sync(p_list jsonb)') && x.includes("update public.bn_devices d set status = 'inactive', inactive_at = v_now, checked_at = v_now")
+      && x.includes("if not found then raise exception 'NO_DEVICE'; end if;") && x.includes("raise exception 'DEVICE_INACTIVE'") && x.includes("raise exception 'DEVICE_TAKEN'")
+      && x.includes('insert into public.bn_devices (imei, make, first_seen_at)') && x.includes('схема соответствует v1.09.01'))
+    && full.includes('create table if not exists public.vehicles (') && !full.includes('Самопроверка v1.08.97 (')
+    && (() => { const bk = fs.readFileSync(ROOT + '/supabase/functions/backup/index.ts', 'utf8'); return bk.indexOf('"bn_devices"') > 0 && bk.indexOf('"bn_devices"') < bk.indexOf('"vehicles"') && bk.includes('const BK_VER = "1.09.01";'); })()
+    && fs.readFileSync(ROOT + '/supabase/functions-dashboard/backup/index.ts', 'utf8').includes('"bn_devices"'));
+  /* разбор ответа Bouncie — то же, что bn_dev_norm в базе */
+  const raw = [
+    { imei: '359999000000001', vin: '1ftbw2cm5mka10001', nickName: 'Van 1', model: { make: 'Ford', name: 'Transit', year: 2021 },
+      stats: { lastUpdated: '2026-09-19T12:00:00.000Z', odometer: 45678.4, location: { lat: 33.88, lon: -84.46, heading: 90, address: '3200 Cumberland Blvd' } } },
+    { imei: '35-9999-0000-00002', nickName: 'Van 2', model: { make: 'RAM', name: 'ProMaster', year: '2020' }, stats: { lastUpdated: 'n/a', location: { lat: '33.9', lon: -84.5 } } },
+    { imei: '359999000000003', nickName: 'Old', stats: { lastUpdated: '2026-09-18T08:00:00Z' } },
+    { imei: '359999000000003', nickName: 'Van 3', model: { make: 'Chevrolet', name: 'Express', year: 2019 }, stats: { lastUpdated: '2026-09-19T09:30:00Z' } },
+    { vin: 'NOIMEI' }, { imei: 'abc' }, { imei: '123' }, 'string', 42, null ];
+  const norm = T.bnDevNorm(raw);
+  const n1 = norm.find(d => d.imei === '359999000000001'), n2 = norm.find(d => d.imei === '359999000000002'), n3 = norm.find(d => d.imei === '359999000000003');
+  t('v1.09.01: bnDevNorm — 3 прибора из мусора, IMEI только цифрами, VIN в верхнем регистре, год строкой принят, кривые дата/широта → null, дубль → свежий',
+    norm.length === 3 && n1.vin === '1FTBW2CM5MKA10001' && n1.make === 'Ford' && n1.model === 'Transit' && n1.year === 2021 && n1.lat === 33.88 && n1.lng === -84.46
+    && n1.address === '3200 Cumberland Blvd' && n1.odometer === 45678.4 && n1.reported_at === '2026-09-19T12:00:00.000Z'
+    && n2.year === 2020 && n2.reported_at === null && n2.lat === null && n2.lng === -84.5 && n2.vin === null
+    && n3.nickname === 'Van 3' && n3.make === 'Chevrolet' && T.bnDevNorm('nope').length === 0);
+  /* локальное зеркало сверки: новые / пропавшие → неактивен / вернувшиеся / пустой список */
+  const prevUser = T.state.user, prevData = T.state.data;
+  T.state.user = { id: 'u1', role: 'admin', display_name: 'Adm', login: 'adm' };
+  T.state.data = { ...(prevData || {}), bn_devices: [], vehicles: [], profiles: [] };
+  const r1 = T.bnDevApplyLocal(raw);
+  const d2 = () => T.bnDevices().find(d => d.imei === '359999000000002');
+  t('v1.09.01: bnDevApplyLocal — первая сверка: added 3, все активны, checked_at/last_seen_at выставлены',
+    r1.total === 3 && r1.added === 3 && r1.back === 0 && r1.off === 0 && !r1.empty && r1.active === 3
+    && T.bnDevices().length === 3 && T.bnDevices().every(d => T.bnDevActive(d) && d.checked_at && d.last_seen_at && d.first_seen_at && d.id));
+  const firstSeen = d2().first_seen_at;
+  const r2 = T.bnDevApplyLocal([{ imei: '359999000000001' }, { imei: '359999000000003', nickName: 'Van 3' }]);
+  t('v1.09.01: пропавший прибор — off 1, status inactive с датой, строка и её данные на месте; частичный ответ не затирает марку/VIN',
+    r2.off === 1 && r2.added === 0 && r2.back === 0 && T.bnDevices().length === 3 && d2().status === 'inactive' && d2().inactive_at && d2().nickname === 'Van 2' && d2().lng === -84.5
+    && T.bnDevices().find(d => d.imei === '359999000000001').vin === '1FTBW2CM5MKA10001' && T.bnDevices().find(d => d.imei === '359999000000001').make === 'Ford');
+  const r3 = T.bnDevApplyLocal(raw);
+  t('v1.09.01: вернувшийся прибор — back 1, снова активен, inactive_at сброшен, first_seen_at прежний',
+    r3.back === 1 && r3.off === 0 && d2().status === 'active' && d2().inactive_at === null && d2().first_seen_at === firstSeen);
+  const arrBefore = T.bnDevices();
+  const r4 = T.bnDevApplyLocal([]);
+  t('v1.09.01: пустой список — empty, статусы не тронуты, массив заменён, а не изменён на месте',
+    r4.empty && r4.off === 0 && r4.total === 0 && T.bnDevices().every(T.bnDevActive) && T.bnDevices() !== arrBefore);
+  /* когда сверять самим */
+  T.TRK.at = 0;
+  T.state.data.bn_devices.forEach(d => { d.checked_at = new Date().toISOString(); });
+  t('v1.09.01: bnDevNeedSync — тот же состав: нет; другой состав или новый прибор: да; пустой список: нет; 15 минут прошло: да; не админ: нет',
+    T.bnDevNeedSync(raw) === false && T.bnDevNeedSync([{ imei: '359999000000001' }]) === true && T.bnDevNeedSync([...raw, { imei: '359999000000009' }]) === true
+    && T.bnDevNeedSync([]) === false && T.bnDevNeedSync(null) === false
+    && (() => { T.TRK.at = Date.now() - 16 * 60 * 1000; const r = T.bnDevNeedSync(null); T.TRK.at = 0; return r === true; })()
+    && (() => { T.state.user.role = 'manager'; const r = T.bnDevNeedSync([{ imei: '1' }]); T.state.user.role = 'admin'; return r === false; })());
+  /* карточка машины и строка списка */
+  T.state.data.vehicles = [{ id: 'v1', make: 'Ford Transit', vin: '', imei: '359999000000001', car_no: 1, driver_id: null },
+                           { id: 'v2', make: 'Old car', vin: '', imei: '359999000000077', car_no: 2, driver_id: null }];
+  T.bnDevApplyLocal([{ imei: '359999000000001', nickName: 'Van 1' }, { imei: '359999000000003', nickName: 'Van 3' }]);   // Van 2 → неактивен
+  const selNew = T.vehTrackerSelHtml({ id: null, imei: '' });
+  const selV1 = T.vehTrackerSelHtml({ id: 'v1', imei: '359999000000001' });
+  const selV2 = T.vehTrackerSelHtml({ id: 'v2', imei: '359999000000077' });
+  t('v1.09.01: список трекеров новой машины — без неактивного Van 2, занятый Van 1 disabled с №1, Van 3 доступен',
+    !/Van 2/.test(selNew) && /<option value="359999000000001" disabled>Van 1 · 359999000000001 · №1<\/option>/.test(selNew)
+    && /<option value="359999000000003">Van 3 · 359999000000003<\/option>/.test(selNew) && /<option value="">/.test(selNew) && !/disabled>\s*<option value=""/.test(selNew));
+  t('v1.09.01: у машины свой трекер выбран и не disabled; IMEI вне справочника остаётся выбранным с пометкой «?»',
+    /<option value="359999000000001" selected>Van 1/.test(selV1) && /<option value="359999000000077" selected>IMEI 359999000000077 · \?<\/option>/.test(selV2));
+  T.state.data.vehicles.push({ id: 'v3', make: 'RAM', vin: '', imei: '359999000000002', car_no: 3, driver_id: null });
+  const selV3 = T.vehTrackerSelHtml({ id: 'v3', imei: '359999000000002' });
+  t('v1.09.01: свой неактивный трекер виден в списке с пометкой «неактивен»; строка машины — чип ⚠ неактивен / «?» вне справочника / имя прибора',
+    /<option value="359999000000002" selected>Van 2 · 359999000000002 · (неактивен|inactive)<\/option>/.test(selV3)
+    && /chip bad/.test(T.vehTrackerLine({ imei: '359999000000002' })) && /chip warn/.test(T.vehTrackerLine({ imei: '359999000000077' }))
+    && /Van 1 \(IMEI 359999000000001\)/.test(T.vehTrackerLine({ imei: '359999000000001' })) && !/chip/.test(T.vehTrackerLine({ imei: '359999000000001' }))
+    && (T.vehTrackerLine({ imei: '' }) === T.DICT.ru.veh_no_tracker_l || T.vehTrackerLine({ imei: '' }) === T.DICT.en.veh_no_tracker_l));
+  /* справочник: строки, счётчики, фильтр, кнопка, время сверки */
+  T.state.screen = 'dirs'; T.state.trkFilter = 'all'; T.TRK.at = Date.now();
+  const html = T.dirTrackers();
+  T.state.trkFilter = 'inactive'; const htmlOff = T.dirTrackers(); T.state.trkFilter = 'all';
+  t('v1.09.01: dirTrackers — 3 строки, сегмент «Все · 3 / Активные · 2 / Неактивные · 1», активные первыми, кнопка сверки, ⚠ у неактивного с машиной, фильтр «Неактивные» → 1',
+    (html.match(/class="rowline trk-row/g) || []).length === 3 && (html.match(/trk-row off"/g) || []).length === 1
+    && / · 3<\/button>/.test(html) && / · 2<\/button>/.test(html) && / · 1<\/button>/.test(html)
+    && html.indexOf('data-imei="359999000000001"') < html.indexOf('data-imei="359999000000002"') && /id="trk-sync"/.test(html) && /App\.trkSync\(\)/.test(html)
+    && /chip warn/.test(html) && (htmlOff.match(/class="rowline trk-row/g) || []).length === 1 && /data-imei="359999000000002"/.test(htmlOff));
+  T.state.user = prevUser; T.state.data = prevData;
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);

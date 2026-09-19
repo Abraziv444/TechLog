@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.99';
-const DB_SQL_FILE = 'full-install-1_08_97.sql';
+const APP_VERSION = '1.09.01';
+const DB_SQL_FILE = 'full-install-1_09_01.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -219,7 +219,7 @@ const I18N = {
     not_selected: 'Не выбрано', aux_take_hint: 'нажмите то, что нужно взять',
     back_exit_hint: 'Чтобы выйти из приложения, нажмите «назад» ещё раз',
     demo_sb_only: 'В демо недоступно — работает только с Supabase',
-    feat_card: 'Функции',
+    feat_card: 'Функции', misc_card: 'Прочие функции', push_pop_card: 'Push уведомления и подсказки',
     /* ---- v1.08.33: пуши, время, безопасность, поиск, шаблоны ---- */
     push_card: 'Push уведомления', push_dev: 'На этом устройстве',
     push_test: 'Проверить работу уведомлений', push_test_h: 'Проверка уведомлений',
@@ -444,7 +444,7 @@ const I18N = {
     veh_saved: 'Автомобиль сохранён', veh_deleted: 'Автомобиль удалён',
     veh_del_q: 'Удалить автомобиль из справочника? Трекинг Bouncie это не затронет.',
     veh_no_taken: 'Номер уже занят другой машиной', veh_bad_no: 'Номер должен быть от 1 до 99',
-    veh_hint: 'VIN и IMEI вводятся один раз — вручную или кнопкой импорта — хранятся в базе и дальше просто отображаются. Порядковый номер синхронизируется с профилем водителя: это тот же номер, что в регистре техники «Моя машина №N».',
+    veh_hint: 'VIN вводится вручную или подставляется из трекера; трекер выбирается из справочника «Трекеры Bouncie» (по нему машина видна на карте). Порядковый номер синхронизируется с профилем водителя: это тот же номер, что в регистре техники «Моя машина №N».',
     veh_no_driver_l: 'без водителя',
     map_cars: 'Машины', map_cars_all: 'Все',
     bn_off_admin: 'Bouncie не настроен — Настройки → Интеграции → GPS-трекинг Bouncie',
@@ -456,6 +456,28 @@ const I18N = {
     bn_dot_go: 'Сотрудник едет сюда', bn_dot_site: 'Сотрудник на месте',
     bn_trips: 'поездок', bn_nav_to_car: 'Маршрут к машине',
     bn_card: 'GPS-трекинг Bouncie',
+    /* v1.09.01: справочник «Трекеры Bouncie» */
+    d_trackers: 'Трекеры Bouncie',
+    trk_hint: 'Приборы из аккаунта Bouncie. Сверка добавляет новые трекеры, а пропавшие из Bouncie помечает «неактивен» — из базы они не удаляются. Машине трекер выбирается в её карточке (Справочники → Автомобили); именно по нему машина видна на карте.',
+    trk_sync: 'Синхронизировать с Bouncie', trk_syncing: 'Сверяю…',
+    trk_all: 'Все', trk_active: 'Активные', trk_inactive: 'Неактивные',
+    trk_st_active: 'активен', trk_st_inactive: 'неактивен',
+    trk_none: 'Трекеров в справочнике нет — нажмите «Синхронизировать с Bouncie».',
+    trk_none_f: 'В этом фильтре трекеров нет',
+    trk_car: 'Машина', trk_free: 'не привязан к машине',
+    trk_seen: 'на связи', trk_gone: 'пропал из Bouncie', trk_checked: 'последняя сверка',
+    trk_never: 'ещё не сверялся',
+    trk_done: 'Сверка выполнена', trk_added: 'новых', trk_back: 'вернулись', trk_off: 'стали неактивными',
+    trk_empty: 'Bouncie вернул пустой список — статусы не менялись',
+    trk_car_inactive: 'Трекер этой машины неактивен (удалён из Bouncie) — выберите другой в карточке машины',
+    trk_no_dev: 'Трекера нет в справочнике — сначала «Синхронизировать с Bouncie»',
+    trk_inactive_pick: 'Этот трекер неактивен — выберите активный',
+    trk_taken: 'Этот трекер уже стоит на другой машине',
+    trk_bad_list: 'Bouncie вернул не список машин',
+    veh_tracker: 'Трекер Bouncie', veh_no_tracker: '— без трекера —', veh_no_tracker_l: 'без трекера',
+    veh_trk_hint: 'Трекер выбирается из справочника «Трекеры Bouncie» — по нему машина видна на карте. Неактивные (удалённые из Bouncie) в списке не предлагаются, занятые другой машиной — недоступны; пустые VIN и марка подставляются из трекера.',
+    veh_trk_empty: 'Справочник трекеров пуст — Справочники → «Трекеры Bouncie» → «Синхронизировать с Bouncie»',
+    act_bn_dev_sync: 'сверка трекеров Bouncie',
     /* v1.08.37: режим телевизора */
     tv_btn: 'Режим телевизора',
     tv_wait_t: 'Код авторизации',
@@ -1380,7 +1402,7 @@ const I18N = {
     select: '— select —', install_hint: 'Browser menu → "Install app" / "Add to Home screen"',
     tab_map: 'Map', tab_reports: 'Reports',
     demo_sb_only: 'Not available in the demo — Supabase only',
-    feat_card: 'Features',
+    feat_card: 'Features', misc_card: 'Other features', push_pop_card: 'Push notifications & pop-ups',
     /* ---- v1.08.33 ---- */
     push_card: 'Push notifications', push_dev: 'On this device',
     push_test: 'Test notifications', push_test_h: 'Notification check',
@@ -1602,7 +1624,7 @@ const I18N = {
     veh_saved: 'Vehicle saved', veh_deleted: 'Vehicle deleted',
     veh_del_q: 'Remove the vehicle from the directory? Bouncie tracking is not affected.',
     veh_no_taken: 'This number is taken by another vehicle', veh_bad_no: 'Number must be 1 to 99',
-    veh_hint: 'VIN and IMEI are entered once — by hand or via import — stored in the database and simply displayed after that. The car number syncs with the driver profile: it is the same number as in the equipment register "My car #N".',
+    veh_hint: 'The VIN is typed in or filled from the tracker; the tracker is picked from the "Bouncie trackers" directory (it is what shows the vehicle on the map). The car number syncs with the driver profile: it is the same number as in the equipment register "My car #N".',
     veh_no_driver_l: 'no driver',
     map_cars: 'Cars', map_cars_all: 'All',
     bn_off_admin: 'Bouncie is not configured — Settings → Integrations → Bouncie GPS tracking',
@@ -1614,6 +1636,28 @@ const I18N = {
     bn_dot_go: 'The employee is heading here', bn_dot_site: 'The employee is on site',
     bn_trips: 'trips', bn_nav_to_car: 'Route to the car',
     bn_card: 'Bouncie GPS tracking',
+    /* v1.09.01: Bouncie trackers directory */
+    d_trackers: 'Bouncie trackers',
+    trk_hint: 'Devices from the Bouncie account. Sync adds new trackers and marks those gone from Bouncie as "inactive" — nothing is deleted from the database. A vehicle picks its tracker in its own card (Directory → Vehicles); that tracker is what shows the vehicle on the map.',
+    trk_sync: 'Sync with Bouncie', trk_syncing: 'Syncing…',
+    trk_all: 'All', trk_active: 'Active', trk_inactive: 'Inactive',
+    trk_st_active: 'active', trk_st_inactive: 'inactive',
+    trk_none: 'No trackers in the directory yet — tap "Sync with Bouncie".',
+    trk_none_f: 'No trackers match this filter',
+    trk_car: 'Vehicle', trk_free: 'not assigned to a vehicle',
+    trk_seen: 'reported', trk_gone: 'gone from Bouncie', trk_checked: 'last sync',
+    trk_never: 'not synced yet',
+    trk_done: 'Sync complete', trk_added: 'new', trk_back: 'back', trk_off: 'now inactive',
+    trk_empty: 'Bouncie returned an empty list — statuses left unchanged',
+    trk_car_inactive: 'The tracker of this vehicle is inactive (removed from Bouncie) — pick another one in the vehicle card',
+    trk_no_dev: 'The tracker is not in the directory — "Sync with Bouncie" first',
+    trk_inactive_pick: 'This tracker is inactive — pick an active one',
+    trk_taken: 'This tracker is already on another vehicle',
+    trk_bad_list: 'Bouncie did not return a vehicle list',
+    veh_tracker: 'Bouncie tracker', veh_no_tracker: '— no tracker —', veh_no_tracker_l: 'no tracker',
+    veh_trk_hint: 'The tracker comes from the "Bouncie trackers" directory — it is what shows the vehicle on the map. Inactive ones (removed from Bouncie) are not offered and ones on another vehicle are disabled; an empty VIN and make are filled from the tracker.',
+    veh_trk_empty: 'The trackers directory is empty — Directory → "Bouncie trackers" → "Sync with Bouncie"',
+    act_bn_dev_sync: 'Bouncie trackers sync',
     /* v1.08.37: TV mode */
     tv_btn: 'TV mode',
     tv_wait_t: 'Authorization code',
@@ -2449,6 +2493,7 @@ const state = {
   lang: localStorage.getItem('techlog_lang') || 'ru',
   screen: 'login',            // login | home | job | report | dirs | settings
   dirTab: 'counterparties',
+  trkFilter: 'all',           // v1.09.01: фильтр справочника трекеров: all | active | inactive
   repTab: 'invoices',
   repFrom: null, repTo: null, repStatus: 'all', repCp: '',
   statFrom: null, statTo: null, statMine: true,
@@ -3165,12 +3210,46 @@ function tipQ(key){
 }
 
 /* v1.08.33: карточка «Функции» — включаемые возможности организации */
+/* =====================================================================
+   v1.09.00 · РАЗДЕЛ «ПРОЧИЕ ФУНКЦИИ» — в самом низу Настроек, перед «Выйти».
+   Админу: «Функции» (шаблоны и перенос дня, напоминание о старых кодах,
+   сессии для менеджера) и «Код приглашения»; всем — «PWA» (установка,
+   версия, «Проверить обновления»).
+   ===================================================================== */
+function miscCardHtml(){
+  return (isAdmin() ? featCardHtml() + inviteCardHtml() : '') + pwaCardHtml();
+}
+function inviteCardHtml(){
+  if (!isAdmin()) return '';
+  return `<div class="card" id="inv-card">
+  <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
+  <div class="tiny" style="margin-bottom:8px">${t('invite_hint')}</div>
+  <div class="form-row"><span class="lbl">${t('invite_new_lbl')}</span>
+    <input id="inv-code" autocomplete="off" autocapitalize="none" spellcheck="false" ${HAS_SB?'':'disabled'}></div>
+  ${HAS_SB ? '' : `<div class="tiny" style="margin:-4px 0 8px">${t('demo_only_sb')}</div>`}
+  <button class="btn btn-blue sm" onclick="App.inviteSave()" ${HAS_SB?'':'disabled'}>${t('save')}</button>
+</div>`;
+}
+function pwaCardHtml(){
+  return `<div class="card" id="pwa-card">
+  <div class="settings-row"><div class="grow" style="flex:1"><b>${ic('phone')} PWA</b>
+    <div class="d">${isStandalone() ? ic('check', 'color:var(--green)') + ' ' + t('already_installed') : t('install_hint')}</div>
+    ${IS_IOS && !isStandalone() ? `<div class="d">${ic('phone')} ${t('install_ios_hint')}</div><button class="btn btn-blue sm" style="margin-top:6px" onclick="App.a2hsModal()">${ic('phone')} ${t('a2hs_how')}</button>` : ''}
+    <div class="d">${t('install_where_win')}</div></div></div>
+  ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">${ic('download')} ${t('install_app')}</button>` : ''}
+  <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b>
+    <div class="d">TechLog v${APP_VERSION}${state.lastUpdCheck ? ' · ' + t('upd_last') + ' ' + state.lastUpdCheck : ''}${state.updAvail ? ' · ' + ic('upload') + ' ' + t('upd_found') + ': ' + state.updAvail : ''}</div>
+    ${/android/i.test(navigator.userAgent) ? `<div class="tiny">${t('ver_android_note')}</div>` : ''}</div>
+    <button class="btn btn-ghost sm" onclick="App.updCheck()">${ic('refresh')} ${t('upd_check')}</button></div>
+</div>`;
+}
 function featCardHtml(){
   const org = state.data.org_settings || {};
   const chk = (key, on, label, tip) => `
     <label class="chk-line"><input type="checkbox" ${on?'checked':''}
       onchange="App.setOrgFlag('${key}', this.checked)"> ${label} ${tip ? tipQ(tip) : ''}</label>`;
-  return `<div class="card">
+  return `<div class="card" id="feat-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('gear')} ${t('feat_card')}</div>
     ${chk('tpl_on', org.tpl_on !== false, t('tpl_on_lbl'), 'tpl_tip')}
     ${chk('code_remind', org.code_remind === true, t('code_remind_lbl'), 'code_tip')}
     <div class="form-row" style="margin:2px 0 6px"><span class="lbl">${t('code_months')}</span>
@@ -3814,6 +3893,20 @@ function seedDemoData(){
       mil: true },                                                                     // v1.08.33: чип Check Engine
     { id: uid(), make: 'Chevrolet Express 2019', vin: '1GCWGAFG4K1100003', imei: '350000000000003', car_no: 3, driver_id: 'demo-admin',   created_at: '2026-04-01T09:00:00Z' },
   ];
+  /* v1.09.01: справочник трекеров — три на машинах, один свободный и один
+     пропавший из Bouncie (неактивен, не удалён) */
+  const bn_devices = [
+    { id: uid(), imei: '350000000000001', vin: '1FTBW2CM5MKA10001', nickname: 'Van 1', make: 'Ford', model: 'Transit', year: 2021,
+      status: 'active', first_seen_at: '2026-04-01T09:00:00Z', last_seen_at: null, inactive_at: null, checked_at: null, reported_at: null, odometer: 45678 },
+    { id: uid(), imei: '350000000000002', vin: '3C6TRVDG8LE100002', nickname: 'Van 2', make: 'RAM', model: 'ProMaster', year: 2020,
+      status: 'active', first_seen_at: '2026-04-01T09:00:00Z', last_seen_at: null, inactive_at: null, checked_at: null, reported_at: null, odometer: 46878 },
+    { id: uid(), imei: '350000000000003', vin: '1GCWGAFG4K1100003', nickname: 'Van 3', make: 'Chevrolet', model: 'Express', year: 2019,
+      status: 'active', first_seen_at: '2026-04-01T09:00:00Z', last_seen_at: null, inactive_at: null, checked_at: null, reported_at: null, odometer: 48078 },
+    { id: uid(), imei: '350000000000005', vin: '1N6BF0KM5KN800005', nickname: 'Spare', make: 'Nissan', model: 'NV200', year: 2019,
+      status: 'active', first_seen_at: '2026-06-10T09:00:00Z', last_seen_at: null, inactive_at: null, checked_at: null, reported_at: null, odometer: 61200 },
+    { id: uid(), imei: '350000000000004', vin: null, nickname: 'Old unit', make: 'Ford', model: 'E-350', year: 2012,
+      status: 'inactive', first_seen_at: '2026-04-01T09:00:00Z', last_seen_at: '2026-08-02T14:00:00Z', inactive_at: '2026-08-03T09:00:00Z', checked_at: null, reported_at: '2026-08-02T13:40:00Z', odometer: 188400 },
+  ];
   const cp1 = { id: uid(), name: 'Magnolia Group',  abbr: 'MG', notes: '' };
   const cp2 = { id: uid(), name: 'Cascade Living',  abbr: 'CL', notes: '' };
   const cp3 = { id: uid(), name: 'Peachtree RE',    abbr: 'PT', notes: '' };
@@ -3863,7 +3956,7 @@ function seedDemoData(){
   const data = {
     profiles, counterparties, complexes, counterparty_prices, equipment_stock: [], proposals: [], repairs: [], stock_daily: [], ext_requests: [], media: [], hidden_staff: [], code_requests: [], complex_code_history: [],
     acc_settings: [],   // v1.08.39
-    jobs: [job1, job2], placements, vehicles, ...cat,
+    jobs: [job1, job2], placements, vehicles, bn_devices, ...cat,   // v1.09.01: + трекеры
     /* v1.08.33: журнал времени — вкладка «Отчёты → Время» живёт в демо */
     site_visits: (() => {
       const day = todayISO();
@@ -4442,6 +4535,7 @@ function netInit(){
    приложение падало уже в бою. Список ниже держим рядом с DB_SQL_FILE:
    пополняется вместе с каждой миграцией. */
 const DB_NEED_COLS = [
+  ['bn_devices',    'checked_at'],   // v1.09.01: справочник трекеров Bouncie
   ['org_settings',  'study_shuffle'],// v1.08.70
   ['org_settings',  'media_lock_approved'],// v1.08.71
   ['profiles',      'board_cols'],
@@ -4503,9 +4597,10 @@ const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'admin_sessions', 'admin_kill_sessions',        // v1.08.33
                       'admin_last_seen', 'vehicle_service_set',
   'tv_list', 'tv_decide', 'tv_cleanup',       // v1.08.33 · v1.08.48
-  'acc_doc_mark'];              // v1.08.39
+  'acc_doc_mark',               // v1.08.39
+  'bn_devices_sync'];           // v1.09.01
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings','study_sessions'];   // v1.08.51: + сессии учёбы (RLS: свои; админ — все)   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings','study_sessions','bn_devices'];   // v1.09.01: + справочник трекеров Bouncie (RLS: только админ)   // v1.08.51: + сессии учёбы (RLS: свои; админ — все)   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)
 
 function emptyData(){
   const d = { org_settings: {
@@ -5844,7 +5939,8 @@ const JR_TECH_ACTIONS = ['user_register','user_create','user_block','user_unbloc
   'password_change','password_reset','car_no_set','org_toggle','org_set','stock_set',
   'equip_take','equip_return','equip_repair','equip_repair_back','equip_intake','equip_writeoff',   // v1.08.27
   'backup_export','backup_restore',
-  'veh_save','veh_del'];   // v1.08.32
+  'veh_save','veh_del',   // v1.08.32
+  'bn_dev_sync'];         // v1.09.01
 const JR_TECH_SET = new Set(JR_TECH_ACTIONS);
 
 async function loadJournal(reset){
@@ -6918,7 +7014,7 @@ function sectionFaqHtml(key){
   S.dirs = H(`
     <h4>${ic('book')} Справочник</h4>
     <ul>
-      <li>Вкладки: Сотрудники (админ), Контрагенты, Комплексы, Виды задач, Оборудование, Доп. снаряжение, PRICE, Доп. работы, Размеры, Продукты.</li>
+      <li>Вкладки: Сотрудники (админ), Автомобили и Трекеры Bouncie (админ), Контрагенты, Комплексы, Виды задач, Оборудование, Доп. снаряжение, PRICE, Доп. работы, Размеры, Продукты.</li>
       <li><b>Комплексы</b> сгруппированы по владельцам; группа «Без владельца» и «⏳ Временный владелец» помечены ${faqTriDemo()} — таким нужно назначить контрагента.</li>
       <li>${ic('book')} у комплекса — история кодов доступа; ${ic('pencil')} — редактирование (менеджер+).</li>
       <li>Оборудование: ${faqEqLegend()} — эти же коды и цвета на бейджах пикапов.</li>
@@ -6927,11 +7023,12 @@ function sectionFaqHtml(key){
       <li><b>Склад</b> переехал в отдельную вкладку внизу: наличие по типам и «Моя машина», кнопки «Взять» / «Сдать» / «В ремонт», у админа — «Поступление» и «Списание». Аренда, «забрал» и «вернул на склад» двигают оборудование сами.</li>
       <li><b>Штат</b> (v1.08.33): ${ic('gear')} у сотрудника — «был(а) в сети», доступы Bouncie (трекер / пуши ТО / трек дня — включение доступа само включает человеку пуши), журнал времени (свой; чей ещё видит: нет / всех / список) и активные <b>сессии</b> с кнопкой «${t('st_kill')}» (сессии видит админ; менеджер — если включено в «Функциях»).</li>
       <li><b>Автомобили</b> (v1.08.33): чипы ⚠ Check Engine и 🔻 топлива, поле «${t('veh_service')}» — за 500 mi до порога уходит пуш; кнопка ${ic('map')} — трек дня на карте. Жёлтая метка «🟡 код N мес» у комплексов — включается в «Функциях».</li>
+      <li><b>${t('d_trackers')}</b> (v1.09.01): приборы из аккаунта Bouncie. «${t('trk_sync')}» добавляет новые трекеры, пропавшие из Bouncie помечает «${t('trk_st_inactive')}» (с датой; из базы не удаляются), вернувшиеся снова делает активными; пустой ответ Bouncie статусы не меняет. Сверка идёт и сама: при открытии вкладки, при смене состава приборов в фоновом опросе карты, не реже раза в 15 минут. Фильтр «${t('trk_all')} / ${t('trk_active')} / ${t('trk_inactive')}», у каждого трекера — машина, дата связи или дата ухода из Bouncie, пробег. В карточке машины трекер выбирается из этого списка (занятые другой машиной недоступны, неактивные не предлагаются) — по нему машина и видна на карте; ⚠ у машины — её трекер стал неактивным, выберите другой.</li>
     </ul>`,
   `
     <h4>${ic('book')} Directory</h4>
     <ul>
-      <li>Tabs: Staff (admin), Counterparties, Complexes, Work types, Equipment, Extra gear, PRICE, Extra works, Sizes, Products.</li>
+      <li>Tabs: Staff (admin), Vehicles and Bouncie trackers (admin), Counterparties, Complexes, Work types, Equipment, Extra gear, PRICE, Extra works, Sizes, Products.</li>
       <li><b>Complexes</b> are grouped by owner; the "No owner" group and "⏳ Temporary owner" are flagged ${faqTriDemo()} — those need a counterparty assigned.</li>
       <li>${ic('book')} on a complex — the access-code history; ${ic('pencil')} — editing (manager+).</li>
       <li>Equipment: ${faqEqLegend()} — the same codes and colors as on the pickup badges.</li>
@@ -6940,6 +7037,7 @@ function sectionFaqHtml(key){
       <li><b>${t('tab_stock')}</b> moved to its own bottom tab: totals by type and "My car", the "Take" / "Hand in" / "To repair" buttons, for the admin — "Intake" and "Write-off". Rentals, "picked up" and "returned to stock" move the equipment by themselves.</li>
       <li><b>Staff</b> (v1.08.33): ${ic('gear')} on an employee — "last seen", Bouncie access (tracker / service pushes / day track — granting access also turns on that person's pushes), the time log (own; who else sees it: no one / everyone / list) and active <b>sessions</b> with the "${t('st_kill')}" button (the admin sees sessions; a manager — if enabled under "Features").</li>
       <li><b>${t('d_vehicles')}</b> (v1.08.33): the ⚠ Check Engine and 🔻 fuel chips, the "${t('veh_service')}" field — a push goes out 500 mi before the threshold; the ${ic('map')} button — the day track on the map. The yellow "🟡 code N mo" chip on complexes is enabled under "Features".</li>
+      <li><b>${t('d_trackers')}</b> (v1.09.01): devices from the Bouncie account. "${t('trk_sync')}" adds new trackers, marks those gone from Bouncie as "${t('trk_st_inactive')}" (with the date; nothing is deleted from the database) and re-activates the ones that came back; an empty Bouncie reply leaves statuses untouched. Sync also runs by itself: when the tab opens, when the background map poll brings a different set of devices, and at least every 15 minutes. The "${t('trk_all')} / ${t('trk_active')} / ${t('trk_inactive')}" filter; each tracker shows its vehicle, the last report time or the date it left Bouncie, and the odometer. In the vehicle card the tracker is picked from this list (ones on another vehicle are disabled, inactive ones are not offered) — that is what shows the vehicle on the map; ⚠ on a vehicle means its tracker went inactive — pick another one.</li>
     </ul>`);
 
   S.archive = H(`
@@ -7006,9 +7104,11 @@ function sectionFaqHtml(key){
   S.settings = H(`
     <h4>${ic('gear')} Настройки</h4>
     <ul>
+      <li><b>${t('push_pop_card')}</b> (v1.09.00) — один раздел: Push-уведомления этого устройства и всплывающие подсказки (где показывать, полоска отправки).</li>
       <li><b>${t('push_card')}</b> (v1.08.33): кнопка подписывает ЭТО устройство (нажмите на каждом телефоне/ПК); галочки — что присылать: задача, пикап, апрув, просрочка, снятие апрува, плюс ошибки машин и ТО при доступе. iPhone: сначала «На экран Домой» (iOS 16.4+). Доставка идёт, пока кто-то из фирмы онлайн; после действий уходит сразу.</li>
       <li><b>${t('sec_card')}</b> (v1.08.33): необязательная 2FA (TOTP) — QR в приложение-аутентификатор, код из 6 цифр; при входе после пароля спросим код. Отключается в любой момент (потребуется код).</li>
-      <li><b>${t('feat_card')}</b> (админ, v1.08.33): шаблоны и перенос дня, напоминание о старых кодах (порог в месяцах), сессии для менеджера.</li>
+      <li><b>${t('misc_card')}</b> (v1.09.00) — в самом низу, перед «Выйти»: «${t('feat_card')}» и «${t('invite_set_title')}» (админ), «PWA» с версией и «${t('upd_check')}» (все).</li>
+      <li><b>${t('feat_card')}</b> (админ, v1.08.33, в «${t('misc_card')}»): шаблоны и перенос дня, напоминание о старых кодах (порог в месяцах), сессии для менеджера.</li>
       <li><b>${t('abk_card')}</b> (админ, v1.08.33): полный SQL-дамп (включая пользователей и секреты) в папку «TechLog Backups» вашего Drive, 8 копий. «${t('abk_now')}» или автоматически при входе админа раз в 7 дней. Восстановление: чистая база → full-install → файл бэкапа.</li>
       <li><b>Доска</b> — минимум сотрудников на экране (степпер «Авто ↔ 3…12», личная, в профиле).</li>
       <li><b>Профиль</b>: имя в документах, смена пароля, язык RU/EN, навигатор (Авто/Apple/Google).</li>
@@ -7027,9 +7127,11 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('gear')} Settings</h4>
     <ul>
+      <li><b>${t('push_pop_card')}</b> (v1.09.00) — one section: this device's push notifications and the pop-up messages (where to show them, the upload bar).</li>
       <li><b>${t('push_card')}</b> (v1.08.33): the button subscribes THIS device (press it on every phone/PC); the checkboxes pick what to send: task, pickup, approval, overdue, approval reset, plus vehicle alerts and service when you have access. iPhone: "Add to Home Screen" first (iOS 16.4+). Delivery runs while someone from the company is online; after an action it goes out at once.</li>
       <li><b>${t('sec_card')}</b> (v1.08.33): optional 2FA (TOTP) — a QR code for an authenticator app, a 6-digit code; at sign-in we ask for the code after the password. Can be turned off at any time (a code is required).</li>
-      <li><b>${t('feat_card')}</b> (admin, v1.08.33): templates and day move, the stale-code reminder (threshold in months), sessions for the manager.</li>
+      <li><b>${t('misc_card')}</b> (v1.09.00) — at the very bottom, above “Sign out”: “${t('feat_card')}” and “${t('invite_set_title')}” (admin), “PWA” with the version and “${t('upd_check')}” (everyone).</li>
+      <li><b>${t('feat_card')}</b> (admin, v1.08.33, in “${t('misc_card')}”): templates and day move, the stale-code reminder (threshold in months), sessions for the manager.</li>
       <li><b>${t('abk_card')}</b> (admin, v1.08.33): a full SQL dump (users and secrets included) into the "TechLog Backups" folder of your Drive, 8 copies. "${t('abk_now')}" or automatically on admin sign-in every 7 days. Restore: clean database → full-install → the backup file.</li>
       <li><b>Board</b> — minimum staff visible (the "Auto ↔ 3…12" stepper, personal, in the profile).</li>
       <li><b>Profile</b>: the name on documents, password change, RU/EN language, navigator (Auto/Apple/Google).</li>
@@ -9046,6 +9148,7 @@ function viewDirs(){
     ['price', t('d_price'), true],
     ['staff', t('d_staff'), isAdmin()],
     ['vehicles', t('d_vehicles'), isAdmin()],   // v1.08.32
+    ['trackers', t('d_trackers'), isAdmin()],   // v1.09.01
     ['counterparties', t('d_counterparties'), isAdmin()],
     ['complexes', t('d_complexes'), true],
     ['worktypes', t('d_worktypes'), isAdmin()],
@@ -9062,7 +9165,7 @@ function viewDirs(){
     `<button class="tabbtn ${state.dirTab===id?'active':''}" onclick="App.dirTab('${id}')">${l}</button>`).join('') + `</div>
     <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="next">${ic('chev_r')}</button>
   </div>`;
-  const body = { staff: dirStaff, vehicles: dirVehicles, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
+  const body = { staff: dirStaff, vehicles: dirVehicles, trackers: dirTrackers, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
                  equipment: dirEquipment, aux: dirAux, price: dirPrice,
                  extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts }[state.dirTab]();
   /* v1.07.78: карусель кнопок уезжает вбок, и после выбора было не видно,
@@ -9579,9 +9682,8 @@ function viewSettings(){
 
   ${fold('docs', t('docs_set_card'), 'clipboard', docsCardHtml())}
   ${fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml())}
-  ${fold('push', t('push_card'), 'bell', pbCardHtml())}
+  ${fold('push', t('push_pop_card'), 'bell', pbCardHtml() + popCardHtml())}
   ${fold('sec', t('sec_card'), 'key', secCardHtml())}
-  ${fold('pop', t('pop_card'), 'bell', popCardHtml())}
   ${fold('cam', t('cam_card'), 'camera', camCardHtml())}
   ${isAcc() ? '' : fold('study', t('st_card'), 'grad', studyCardHtml())}
   ${fold('dgs', t('dgs_card'), 'steth', dgsCardHtml())}
@@ -9589,27 +9691,9 @@ function viewSettings(){
   ${isAdmin() ? `
   ${fold('intg', t('intg_card'), 'link', intgCardHtml())}
   ${fold('tvc', t('tvc_card'), 'tv', tvModeHtml())}
-  ${fold('feat', t('feat_card'), 'gear', featCardHtml())}
-  <div class="card">
-    <div style="font-weight:900;margin-bottom:6px">${ic('mail')} ${t('invite_set_title')}</div>
-    <div class="tiny" style="margin-bottom:8px">${t('invite_hint')}</div>
-    <div class="form-row"><span class="lbl">${t('invite_new_lbl')}</span>
-      <input id="inv-code" autocomplete="off" autocapitalize="none" spellcheck="false" ${HAS_SB?'':'disabled'}></div>
-    ${HAS_SB ? '' : `<div class="tiny" style="margin:-4px 0 8px">${t('demo_only_sb')}</div>`}
-    <button class="btn btn-blue sm" onclick="App.inviteSave()" ${HAS_SB?'':'disabled'}>${t('save')}</button>
-  </div>` : ''}
+  ` : ''}
 
-  <div class="card">
-    <div class="settings-row"><div class="grow" style="flex:1"><b>${ic('phone')} PWA</b>
-      <div class="d">${isStandalone() ? ic('check', 'color:var(--green)') + ' ' + t('already_installed') : t('install_hint')}</div>
-      ${IS_IOS && !isStandalone() ? `<div class="d">${ic('phone')} ${t('install_ios_hint')}</div><button class="btn btn-blue sm" style="margin-top:6px" onclick="App.a2hsModal()">${ic('phone')} ${t('a2hs_how')}</button>` : ''}
-      <div class="d">${t('install_where_win')}</div></div></div>
-    ${!isStandalone() ? `<button id="pwa-install-btn" class="btn btn-blue sm" style="${pwaPrompt?'':'display:none'};margin-top:6px" onclick="App.installPwa()">${ic('download')} ${t('install_app')}</button>` : ''}
-    <div class="settings-row"><div class="grow" style="flex:1"><b>${t('version')}</b>
-      <div class="d">TechLog v${APP_VERSION}${state.lastUpdCheck ? ' · ' + t('upd_last') + ' ' + state.lastUpdCheck : ''}${state.updAvail ? ' · ' + ic('upload') + ' ' + t('upd_found') + ': ' + state.updAvail : ''}</div>
-      ${/android/i.test(navigator.userAgent) ? `<div class="tiny">${t('ver_android_note')}</div>` : ''}</div>
-      <button class="btn btn-ghost sm" onclick="App.updCheck()">${ic('refresh')} ${t('upd_check')}</button></div>
-  </div>
+  ${fold('misc', t('misc_card'), 'gear', miscCardHtml())}
 
   <button class="btn btn-red" onclick="App.logout()">${ic('close')} ${t('logout')}</button>
   ${viewFooter()}`;
@@ -11014,7 +11098,12 @@ const App = {
   mapMode(v){ state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
   /* v1.08.32: машины Bouncie и справочник «Автомобили» */
   bnToggleCar, bnCarsAll, bnFocusCar, bnSaveKeys, bnConnect, bnTest, bnReveal, bnToggleEdit,
-  vehModal, vehSave, vehDel, vehImport,
+  vehModal, vehSave, vehDel, vehImport, vehDevPick,
+  trkSync(){ bnDevSync(false); }, trkFilter(v){ state.trkFilter = v; render(); },   // v1.09.01
+  /* v1.09.01: крючки для автотестов (демо): список Bouncie демо-парка, сверка со своим списком, машины */
+  _bnDemoList(){ return bnDemoList(); },
+  _bnDevSync(auto, list){ return bnDevSync(!!auto, list); },
+  _vehicles(){ return bnVehicles(); },
   showLog: showLogModal, copyLog, clearLog, logSave, logShare,                                     // v1.08.76
   tlogSave(){ tlogSave(); }, tlogCopy(){ tlogCopy(); }, tlogShare(){ tlogShare(); }, tlogShow(){ tlogShow(); }, tlogGet(){ return tlogGet(); },
   jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
@@ -12481,7 +12570,8 @@ function bnDayWindow(){
 }
 /* ---- демо-режим: синтетика, чтобы карта и точки жили без сервера ---- */
 function bnDemoFill(){
-  const vs = bnVehicles().filter(v => v.imei);
+  /* v1.09.01: машина с неактивным трекером — как в Bouncie: её в ответе нет */
+  const vs = bnVehicles().filter(v => v.imei && (d => !d || bnDevActive(d))(bnDevByImei(v.imei)));
   const cxs = (state.data.complexes || []).filter(c => c.lat != null && c.lng != null);
   if (!vs.length || !cxs.length){ BN.vs = []; BN.stats = null; return; }
   const iso = todayISO(), at = new Date().toISOString(), cars = {};
@@ -12497,8 +12587,10 @@ function bnDemoFill(){
       run = true; spd = 34;
     } else if (dest && dest.pt) pos = dest.pt;   // остальные с задачами — «на месте»
     cars[v.imei] = { mi: Math.round((12.4 + i * 7.3) * 10) / 10, min: 62 + i * 21, n: 3 + i, lastEnd: o, lastAt: at };
-    return { imei: String(v.imei), vin: v.vin || '', nickName: '',
-      model: { make: (v.make || 'Car').split(' ')[0], name: '', year: 2022 },
+    const dv = bnDevByImei(v.imei);                // v1.09.01: имя/модель — как в справочнике трекеров
+    return { imei: String(v.imei), vin: (dv && dv.vin) || v.vin || '', nickName: dv ? (dv.nickname || '') : '',
+      model: dv ? { make: dv.make || '', name: dv.model || '', year: dv.year || null }
+                : { make: (v.make || 'Car').split(' ')[0], name: '', year: 2022 },
       stats: { isRunning: run, speed: spd, fuelLevel: 62 - i * 9, odometer: 45678 + i * 1200,
         lastUpdated: at, location: { lat: pos.lat, lon: pos.lng, heading: 135, address: '' } } };
   });
@@ -12517,7 +12609,9 @@ async function bnPollTick(force){
   if (force || now - BN.at > BN_V_MS){
     BN.at = now;                                   // до запроса — защита от параллельных тиков
     const j = await bnFetch('?vehicles=1');
-    if (j && j.vehicles){ BN.vs = j.vehicles; dirty = true; }
+    if (j && j.vehicles){ BN.vs = j.vehicles; dirty = true;
+      if (bnDevNeedSync(j.vehicles)) bnDevSync(true, j.vehicles);   // v1.09.01: состав приборов изменился или прошло 15 минут
+    }
   }
   if (force || now - BN.statsAt > BN_S_MS){
     BN.statsAt = now;
@@ -12863,13 +12957,13 @@ function bnCardHtml(){
         3. Скопируйте Client ID и Client Secret в поля → «${t('bn_save')}».<br>
         4. «${t('bn_connect')}» → войдите под аккаунтом Bouncie фирмы и разрешите доступ — токены сервер сохранит сам.<br>
         5. Разверните Edge Function <b>bouncie</b> (supabase/functions-dashboard/bouncie: index.ts + google.ts).<br>
-        6. Машины: Справочники → «${t('d_vehicles')}» → «${t('veh_import')}»; назначьте водителей — и они появятся на карте.` : `
+        6. Трекеры: Справочники → «${t('d_trackers')}» → «${t('trk_sync')}». Машины: Справочники → «${t('d_vehicles')}» → «${t('veh_import')}» или выберите трекер в карточке машины; назначьте водителей — и они появятся на карте.` : `
         1. bouncie.dev → Developer Portal → create an application (Application).<br>
         2. Paste the address from the field above into Redirect URIs — exactly, character for character.<br>
         3. Copy the Client ID and Client Secret into the fields → "${t('bn_save')}".<br>
         4. "${t('bn_connect')}" → sign in with the company's Bouncie account and allow access — the server stores the tokens itself.<br>
         5. Deploy the Edge Function <b>bouncie</b> (supabase/functions-dashboard/bouncie: index.ts + google.ts).<br>
-        6. Vehicles: Directory → "${t('d_vehicles')}" → "${t('veh_import')}"; assign drivers — and they appear on the map.`}
+        6. Trackers: Directory → "${t('d_trackers')}" → "${t('trk_sync')}". Vehicles: Directory → "${t('d_vehicles')}" → "${t('veh_import')}" or pick a tracker in the vehicle card; assign drivers — and they appear on the map.`}
       </div>
     </details>
   </div>`;
@@ -12927,6 +13021,216 @@ async function bnReveal(){
   }
   bnShow.sec = !bnShow.sec; render();
 }
+/* =====================================================================
+   v1.09.01: СПРАВОЧНИК «ТРЕКЕРЫ BOUNCIE»
+   Приборы из аккаунта Bouncie живут в bn_devices. Сверка (RPC
+   bn_devices_sync) добавляет новые, пропавшие из Bouncie помечает
+   «неактивен» — не удаляет, — а вернувшиеся снова делает активными.
+   Машина выбирает трекер из этого справочника (vehicles.imei →
+   bn_devices.imei), и именно по нему она видна на карте. Автосверка у
+   админа: при открытии вкладки, когда фоновый опрос карты принёс другой
+   состав приборов, и не реже раза в 15 минут. Пустой ответ Bouncie
+   статусы не трогает — сбой API не «гасит» весь автопарк.
+   ===================================================================== */
+const TRK_SYNC_MS = 15 * 60 * 1000;
+const TRK = { busy: false, at: 0, last: null };
+function bnDevices(){ return (state.data && state.data.bn_devices) || []; }
+function bnDevByImei(imei){ imei = String(imei || ''); return bnDevices().find(d => String(d.imei) === imei) || null; }
+function bnDevActive(d){ return !!d && d.status !== 'inactive'; }
+function bnDevCarName(d){ return [d.make, d.model, d.year].filter(Boolean).join(' '); }
+function bnDevLabel(d){ if (!d) return ''; return d.nickname || bnDevCarName(d) || ('IMEI ' + d.imei); }
+function bnDevCar(d){ return bnVehicles().find(v => v.imei && String(v.imei) === String(d.imei)) || null; }
+/* когда сверять самим: состав активных в справочнике ≠ список Bouncie
+   или с последней сверки прошло 15 минут */
+function bnDevNeedSync(list){
+  if (!isAdmin()) return false;
+  const last = TRK.at || bnDevices().reduce((m, d) => Math.max(m, Date.parse(d.checked_at || '') || 0), 0);
+  if (Date.now() - last > TRK_SYNC_MS) return true;
+  if (!Array.isArray(list)) return false;
+  const live = new Set(bnDevNorm(list).map(d => d.imei));   // тот же разбор, что и в сверке
+  if (!live.size) return false;
+  const act = new Set(bnDevices().filter(bnDevActive).map(d => String(d.imei)));
+  if (live.size !== act.size) return true;
+  for (const i of live) if (!act.has(i)) return true;
+  return false;
+}
+/* разбор ответа /v1/vehicles — то же, что bn_dev_norm в базе: IMEI только
+   цифрами, дубли схлопываются (свежий побеждает), мусор отбрасывается */
+function bnDevNorm(list){
+  const out = {}, num = x => (typeof x === 'number' && isFinite(x)) ? x : null;
+  for (const x of (Array.isArray(list) ? list : [])){
+    if (!x || typeof x !== 'object') continue;
+    const imei = String(x.imei || '').replace(/\D/g, '');
+    if (imei.length < 8 || imei.length > 20) continue;
+    const st = x.stats || {}, loc = st.location || {}, md = x.model || {};
+    const rep = st.lastUpdated && !isNaN(Date.parse(st.lastUpdated)) ? new Date(st.lastUpdated).toISOString() : null;
+    const d = { imei, vin: String(x.vin || '').trim().toUpperCase().slice(0, 32) || null,
+      nickname: String(x.nickName || x.nickname || '').trim().slice(0, 80),
+      make: String(md.make || '').trim().slice(0, 60), model: String(md.name || '').trim().slice(0, 60),
+      year: /^\d{4}$/.test(String(md.year ?? '')) ? +md.year : null,
+      reported_at: rep, lat: num(loc.lat), lng: num(loc.lon ?? loc.lng),
+      address: String(loc.address || '').trim().slice(0, 200) || null, odometer: num(st.odometer) };
+    const prev = out[imei];
+    if (!prev || (d.reported_at || '') > (prev.reported_at || '')) out[imei] = d;
+  }
+  return Object.values(out);
+}
+/* локальное зеркало bn_devices_sync: демо-режим и мгновенный кэш.
+   Возвращает ту же сводку, что и RPC: total / added / back / off / empty. */
+function bnDevApplyLocal(list){
+  const now = new Date().toISOString();
+  const norm = bnDevNorm(list);
+  const arr = bnDevices().slice();
+  const res = { total: norm.length, added: 0, back: 0, off: 0, empty: !norm.length, at: now };
+  const live = new Set(norm.map(d => d.imei));
+  for (const n of norm){
+    const i = arr.findIndex(d => String(d.imei) === n.imei);
+    if (i < 0){
+      res.added++;
+      arr.push({ id: uid(), ...n, status: 'active', first_seen_at: now, last_seen_at: now, inactive_at: null, checked_at: now });
+      continue;
+    }
+    const d = arr[i];
+    if (d.status === 'inactive') res.back++;
+    arr[i] = { ...d, vin: n.vin || d.vin || null, nickname: n.nickname, make: n.make || d.make || '', model: n.model || d.model || '',
+      year: n.year ?? d.year ?? null, status: 'active', inactive_at: null, last_seen_at: now, checked_at: now,
+      reported_at: n.reported_at || d.reported_at || null, lat: n.lat ?? d.lat ?? null, lng: n.lng ?? d.lng ?? null,
+      address: n.address || d.address || null, odometer: n.odometer ?? d.odometer ?? null };
+  }
+  if (norm.length) for (let i = 0; i < arr.length; i++){
+    const d = arr[i];
+    if (bnDevActive(d) && !live.has(String(d.imei))){ res.off++; arr[i] = { ...d, status: 'inactive', inactive_at: now, checked_at: now }; }
+    else if (d.checked_at !== now) arr[i] = { ...d, checked_at: now };
+  }
+  res.active = arr.filter(bnDevActive).length; res.inactive = arr.length - res.active;
+  state.data.bn_devices = arr;                    // новый массив, не правка на месте
+  saveLocal();
+  return res;
+}
+/* демо: «аккаунт Bouncie» = машины демо-парка (bnDemoFill) плюс активные
+   трекеры справочника без машины — стоят у первого комплекса */
+function bnDemoList(){
+  bnDemoFill();
+  const out = (BN.vs || []).map(x => JSON.parse(JSON.stringify(x)));
+  const have = new Set(out.map(x => String(x.imei)));
+  const cx = (state.data.complexes || []).find(c => c.lat != null && c.lng != null);
+  for (const d of bnDevices().filter(bnDevActive)){
+    if (have.has(String(d.imei))) continue;
+    out.push({ imei: String(d.imei), vin: d.vin || '', nickName: d.nickname || '',
+      model: { make: d.make || '', name: d.model || '', year: d.year || null },
+      stats: { isRunning: false, speed: 0, fuelLevel: 55, odometer: d.odometer || 0, lastUpdated: new Date().toISOString(),
+        location: cx ? { lat: +cx.lat, lon: +cx.lng, heading: 0, address: cx.address || '' } : null } });
+  }
+  return out;
+}
+/* сверка: список Bouncie → RPC (или локальное зеркало) → свежая таблица.
+   auto — тихий режим без тостов (фоновый опрос, открытие вкладки). */
+async function bnDevSync(auto, list){
+  if (!isAdmin() || TRK.busy) return null;
+  TRK.busy = true; TRK.at = Date.now();            // и при неудаче — не долбим сервер
+  const btn = $('#trk-sync'); if (btn){ btn.disabled = true; btn.textContent = t('trk_syncing'); }
+  let res = null;
+  try{
+    if (!HAS_SB){
+      if (!list) list = bnDemoList();
+      res = bnDevApplyLocal(list);
+    } else {
+      if (!list){
+        if (auto && BN.off) return null;           // не настроено — только по кнопке
+        BN.off = false;
+        const j = await bnFetch('?vehicles=1');
+        if (!j || !j.vehicles){ if (!auto) toast('⛔ Bouncie: ' + (BN.err || t('trk_bad_list')), 'err'); return null; }
+        list = j.vehicles; BN.vs = j.vehicles; BN.at = Date.now();
+      }
+      const { data, error } = await state.sb.rpc('bn_devices_sync', { p_list: Array.isArray(list) ? list : [] });
+      if (error){ dlog('⛔ bn_devices_sync:', error); if (!auto) toast('⛔ ' + rpcFail(error, 'bn_devices_sync'), 'err'); return null; }
+      res = data || {};
+      const r2 = await Promise.resolve(state.sb.from('bn_devices').select('*')).catch(e => ({ error: e }));
+      if (!r2.error && r2.data){ state.data.bn_devices = r2.data; saveLocal(); }
+      else bnDevApplyLocal(list);                  // таблицу не отдали — зеркалим локально
+    }
+    TRK.last = res;
+    if (res.added || res.back || res.off)
+      audit('bn_dev_sync', 'bn_device', 'sync', { total: res.total, added: res.added, back: res.back, off: res.off });
+    if (!auto){
+      if (res.empty) toast('⚠ ' + t('trk_empty'), 'err');
+      else toast(`✓ ${t('trk_done')}: ${t('trk_added')} ${res.added} · ${t('trk_back')} ${res.back} · ${t('trk_off')} ${res.off}`);
+    }
+    return res;
+  }catch(e){ dlog('⛔ bnDevSync:', e); if (!auto) toast('⛔ ' + errStr(e), 'err'); return null; }
+  finally{
+    TRK.busy = false;
+    if (state.screen === 'dirs' && (state.dirTab === 'trackers' || state.dirTab === 'vehicles')) render();
+    else { const b = $('#trk-sync'); if (b){ b.disabled = false; b.innerHTML = ic('refresh') + ' ' + t('trk_sync'); } }
+  }
+}
+function trkWhen(iso){
+  if (!iso) return '—';
+  const d = new Date(iso); if (isNaN(d)) return '—';
+  return fmtDMY(String(iso).slice(0, 10)) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function dirTrackers(){
+  if (!isAdmin()) return '';
+  if (!TRK.busy && bnDevNeedSync(null)) setTimeout(() => bnDevSync(true), 0);   // открыли вкладку — сверим
+  const all = bnDevices().slice();
+  const nAct = all.filter(bnDevActive).length, nOff = all.length - nAct;
+  const f = state.trkFilter || 'all';
+  const list = all.filter(d => f === 'all' || (f === 'active') === bnDevActive(d))
+    .sort((a, b) => (bnDevActive(b) - bnDevActive(a)) || bnDevLabel(a).localeCompare(bnDevLabel(b)));
+  const seg = (k, l, n) => `<button type="button" class="${f === k ? 'on' : ''}" onclick="App.trkFilter('${k}')">${l} · ${n}</button>`;
+  const lastChk = all.reduce((m, d) => (d.checked_at && (!m || d.checked_at > m)) ? d.checked_at : m, '');
+  const rows = list.map(d => {
+    const on = bnDevActive(d), car = bnDevCar(d);
+    const carL = car
+      ? `<b>№${car.car_no ?? '·'}</b> · ${esc(car.make || '—')}${car.driver_id ? ' · ' + esc(shortName(profName(car.driver_id))) : ''}`
+      : `<span style="color:var(--dim-2)">${t('trk_free')}</span>`;
+    const carName = bnDevCarName(d);
+    return `<div class="rowline trk-row${on ? '' : ' off'}" data-imei="${esc(String(d.imei))}">
+      <span class="trk-dot${on ? ' on' : ''}" title="${on ? t('trk_st_active') : t('trk_st_inactive')}">${ic('car')}</span>
+      <div class="grow"><b>${esc(bnDevLabel(d))}</b> <span class="chip ${on ? 'ok' : 'bad'}">${on ? t('trk_st_active') : t('trk_st_inactive')}</span>${
+        car && !on ? ` <span class="chip warn" title="${t('trk_car_inactive')}">⚠ ${t('trk_car').toLowerCase()}</span>` : ''}
+        <div class="tiny">IMEI ${esc(String(d.imei))}${d.vin ? ' · VIN ' + esc(d.vin) : ''}${d.nickname && carName ? ' · ' + esc(carName) : ''}</div>
+        <div class="tiny">${t('trk_car')}: ${carL}</div>
+        <div class="tiny">${on ? `${t('trk_seen')}: ${trkWhen(d.reported_at)}` : `${t('trk_gone')}: ${trkWhen(d.inactive_at)}`}${
+          d.odometer != null ? ` · ${Math.round(+d.odometer)} ${t('bn_mi')}` : ''}</div>
+      </div>
+      ${car ? `<button class="btn btn-ghost sm" onclick="App.vehModal('${car.id}')">${t('edit')}</button>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="tiny" style="margin-bottom:8px">${t('trk_hint')}</div>
+    <div class="lang-seg seg-full trk-seg" style="margin-bottom:8px">${seg('all', t('trk_all'), all.length)}${seg('active', t('trk_active'), nAct)}${seg('inactive', t('trk_inactive'), nOff)}</div>
+    <div class="card" id="trk-list">${rows || `<div class="list-empty">${all.length ? t('trk_none_f') : t('trk_none')}</div>`}</div>
+    <button id="trk-sync" class="btn btn-blue" onclick="App.trkSync()" ${TRK.busy ? 'disabled' : ''}>${TRK.busy ? t('trk_syncing') : ic('refresh') + ' ' + t('trk_sync')}</button>
+    <div class="tiny" style="margin-top:6px;color:var(--dim)">${t('trk_checked')}: ${lastChk ? trkWhen(lastChk) : t('trk_never')}</div>`;
+}
+/* v1.09.01: трекер машины — строка в списке и выпадающий список в карточке */
+function vehTrackerLine(v){
+  if (!v.imei) return `${t('veh_no_tracker_l')}`;
+  const d = bnDevByImei(v.imei);
+  if (!d) return `IMEI ${esc(String(v.imei))} <span class="chip warn" title="${t('trk_no_dev')}">?</span>`;
+  return `${esc(bnDevLabel(d))} (IMEI ${esc(String(d.imei))})${bnDevActive(d) ? '' : ` <span class="chip bad" title="${t('trk_car_inactive')}">⚠ ${t('trk_st_inactive')}</span>`}`;
+}
+function vehTrackerSelHtml(v){
+  const cur = String(v.imei || '');
+  const devs = bnDevices().slice().sort((a, b) => (bnDevActive(b) - bnDevActive(a)) || bnDevLabel(a).localeCompare(bnDevLabel(b)));
+  let opts = devs.filter(d => bnDevActive(d) || String(d.imei) === cur).map(d => {
+    const imei = String(d.imei), car = bnDevCar(d), mine = imei === cur;
+    const taken = !!(car && car.id !== v.id);
+    const lbl = bnDevLabel(d) + ' · ' + imei + (bnDevActive(d) ? '' : ' · ' + t('trk_st_inactive'))
+      + (taken ? ' · №' + (car.car_no ?? '·') : '');
+    return `<option value="${esc(imei)}"${mine ? ' selected' : ''}${taken ? ' disabled' : ''}>${esc(lbl)}</option>`;
+  }).join('');
+  if (cur && !bnDevByImei(cur))                    // трекер есть у машины, но в справочнике его нет — не терять
+    opts = `<option value="${esc(cur)}" selected>IMEI ${esc(cur)} · ?</option>` + opts;
+  return `<select id="veh-imei" onchange="App.vehDevPick(this.value)"${devs.length || cur ? '' : ' disabled'}>
+      <option value="">${t('veh_no_tracker')}</option>${opts}</select>`;
+}
+function vehDevPick(imei){
+  const d = bnDevByImei(imei); if (!d) return;
+  const vin = $('#veh-vin'), mk = $('#veh-make');
+  if (vin && !vin.value.trim() && d.vin) vin.value = d.vin;
+  if (mk && !mk.value.trim()){ const nm = bnDevCarName(d) || d.nickname; if (nm) mk.value = nm; }
+}
 /* ---- справочник «Автомобили» (админ) ---- */
 function vehFreeNo(exceptId){
   const used = new Set(bnVehicles().filter(v => v.id !== exceptId && v.car_no != null).map(v => +v.car_no));
@@ -12940,7 +13244,8 @@ function dirVehicles(){
       <span class="carno-dot" title="${t('car_no')}">${carNoSvg(v.car_no)}</span>
       <div class="grow"><b>${esc(v.make || '—')}</b>${v.mil ? ` <span class="chip bad">⚠ ${t('veh_mil')}</span>` : ''}${v.fuel_low ? ` <span class="chip bad">🔻 ${t('veh_fuel_low')}</span>` : ''}
         <div class="tiny">${v.driver_id ? ic('crew') + ' ' + esc(profName(v.driver_id)) : t('veh_no_driver_l')}</div>
-        <div class="tiny">VIN ${esc(v.vin || '—')} · IMEI ${esc(v.imei || '—')}</div>
+        <div class="tiny">VIN ${esc(v.vin || '—')}</div>
+        <div class="tiny">${ic('car')} ${vehTrackerLine(v)}</div>
         ${vehServiceLine(v) ? `<div class="tiny">${vehServiceLine(v)}</div>` : ''}</div>
       ${bnCanTrack() && v.imei ? `<button class="icon-btn" title="${t('veh_track')}" onclick="App.bnTrack('${esc(String(v.imei))}')">${ic('map')}</button>` : ''}
       <button class="btn btn-ghost sm" onclick="App.vehModal('${v.id}')">${t('edit')}</button>
@@ -12964,8 +13269,9 @@ function vehModal(id){
       <input id="veh-no" inputmode="numeric" value="${v.car_no ?? ''}"></div>
     <div class="form-row"><span class="lbl">${t('veh_vin')}</span>
       <input id="veh-vin" autocomplete="off" maxlength="17" placeholder="1FTBW2CM…" value="${esc(v.vin || '')}"></div>
-    <div class="form-row"><span class="lbl">${t('veh_imei')}</span>
-      <input id="veh-imei" inputmode="numeric" maxlength="15" placeholder="123456789012345" value="${esc(v.imei || '')}"></div>
+    <div class="form-row"><span class="lbl">${t('veh_tracker')} ${tipQ('veh_trk_hint')}</span>
+      ${vehTrackerSelHtml(v)}</div>
+    ${bnDevices().length ? '' : `<div class="tiny" style="margin:-4px 0 8px">${ic('warn')} ${t('veh_trk_empty')}</div>`}
     <div class="form-row"><span class="lbl">${t('veh_driver')}</span>
       <select id="veh-driver">
         <option value="">${t('veh_no_driver')}</option>
@@ -13013,6 +13319,13 @@ async function vehSave(id){
     toast('⚠ ' + t('veh_no_taken'), 'err'); return;
   }
   const prev = bnVehicles().find(v => v.id === id);
+  /* v1.09.01: трекер — из справочника; свой ставший неактивным не блокирует правку */
+  if (imei){
+    const d = bnDevByImei(imei), same = !!(prev && String(prev.imei) === imei);
+    if (!d && !same){ toast('⚠ ' + t('trk_no_dev'), 'err'); return; }
+    if (d && !bnDevActive(d) && !same){ toast('⚠ ' + t('trk_inactive_pick'), 'err'); return; }
+    if (bnVehicles().some(v => v.id !== id && String(v.imei) === imei)){ toast('⚠ ' + t('trk_taken'), 'err'); return; }
+  }
   let vid = id || uid();
   if (HAS_SB){
     const { data, error } = await state.sb.rpc('vehicle_save', {
@@ -13020,7 +13333,10 @@ async function vehSave(id){
     if (error){
       const s = errStr(error);
       const nice = /CAR_NO_TAKEN/.test(s) ? t('veh_no_taken')
-                 : /BAD_CAR_NO/.test(s) ? t('veh_bad_no') : rpcFail(error, 'vehicle_save');
+                 : /BAD_CAR_NO/.test(s) ? t('veh_bad_no')
+                 : /NO_DEVICE|vehicles_imei_fk/.test(s) ? t('trk_no_dev')      // v1.09.01
+                 : /DEVICE_INACTIVE/.test(s) ? t('trk_inactive_pick')
+                 : /DEVICE_TAKEN|vehicles_imei_ux/.test(s) ? t('trk_taken') : rpcFail(error, 'vehicle_save');
       toast('⛔ ' + nice, 'err'); return;
     }
     if (data) vid = data;
@@ -13054,18 +13370,18 @@ async function vehDel(id){
 }
 async function vehImport(){
   if (!isAdmin()) return;
-  BN.off = false;
-  const j = await bnFetch('?vehicles=1');
-  if (!j || !j.vehicles){ toast('⛔ Bouncie: ' + (BN.err || '—'), 'err'); return; }
+  if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
+  /* v1.09.01: сначала сверяем справочник трекеров — машина ссылается на него */
+  const res = await bnDevSync(false);
+  if (!res || res.empty) return;
   let added = 0, upd = 0;
-  for (const bv of j.vehicles){
-    const imei = String(bv.imei || '').replace(/\D/g, ''); if (!imei) continue;
-    const mk = [bv.model && bv.model.make, bv.model && bv.model.name, bv.model && bv.model.year]
-      .filter(Boolean).join(' ') || bv.nickName || 'Car';
+  for (const d of bnDevices().filter(bnDevActive)){
+    const imei = String(d.imei);
+    const mk = bnDevCarName(d) || d.nickname || 'Car';
     const ex = bnVehicles().find(v => String(v.imei) === imei);
     const row = ex
-      ? { id: ex.id, make: ex.make || mk, vin: bv.vin || ex.vin || '', car_no: ex.car_no ?? vehFreeNo(ex.id), driver: ex.driver_id || null }
-      : { id: null, make: mk, vin: bv.vin || '', car_no: vehFreeNo(null), driver: null };
+      ? { id: ex.id, make: ex.make || mk, vin: d.vin || ex.vin || '', car_no: ex.car_no ?? vehFreeNo(ex.id), driver: ex.driver_id || null }
+      : { id: null, make: mk, vin: d.vin || '', car_no: vehFreeNo(null), driver: null };
     const { data, error } = await state.sb.rpc('vehicle_save', {
       p_id: row.id, p_make: row.make, p_vin: row.vin, p_imei: imei,
       p_car_no: row.car_no, p_driver: row.driver });
@@ -14927,6 +15243,7 @@ function faqHtml(){
       <li><b>1.08.30</b> — document chains: proposal ↔ job ↔ pickups ↔ repair, chain button in the doc header.</li>
       <li><b>1.08.31</b> — roles/blocking moved to server rules: instant and admin-only.</li>
       <li><b>1.08.32</b> — Bouncie GPS: cars on the map, "driving → where, % left", daily mileage; Vehicles directory.</li>
+      <li><b>1.09.01</b> — <b>Bouncie trackers</b> directory (Directory → "${t('d_trackers')}"): sync with the Bouncie account, devices gone from Bouncie become "inactive" instead of being deleted; a vehicle picks its tracker from the directory and shows on the map by it. SQL: supabase/update-to-1_09_01.sql.</li>
       <li><b>1.08.33</b> — <b>push notifications</b> (job, pickup, approval, overdue — checkboxes in Settings); <b>time-on-site log</b> (Reports → Time); <b>route optimization</b> on the day map; global ${ic('search')} <b>search</b> in the header; "Create same" and "Move day"; <b>2FA</b>; sessions & last-seen (Staff ${ic('gear')}); SQL auto-backup to Drive; Check Engine/fuel/service and per-car <b>day track</b>. Tracker, service and track access is now granted per person (Staff → ${ic('gear')}); workers have no tracker by default.</li>
     </ul>`;
   return `
@@ -14984,6 +15301,7 @@ function faqHtml(){
       <li><b>1.08.30</b> — связки документов: пропозал ↔ задача ↔ пикапы ↔ ремонт, кнопка-цепочка в шапке документа.</li>
       <li><b>1.08.31</b> — роли и блокировки наведены на серверные правила: смена роли/блокировка — мгновенно и только у админа.</li>
       <li><b>1.08.32</b> — GPS-трекинг Bouncie: машины на карте, «едет → куда, осталось %», пробег за день; справочник «Автомобили».</li>
+      <li><b>1.09.01</b> — справочник <b>«${t('d_trackers')}»</b> (Справочники): сверка с аккаунтом Bouncie, пропавшие из Bouncie приборы помечаются «неактивен», а не удаляются; машина выбирает трекер из справочника и по нему видна на карте. SQL: supabase/update-to-1_09_01.sql.</li>
       <li><b>1.08.33</b> — <b>пуш-уведомления</b> (задача, пикап, апрув, просрочка — галочки в Настройках); <b>журнал времени на объектах</b> (Отчёты → «Время»); <b>оптимизация маршрута</b> на карте дня; <b>глобальный поиск</b> ${ic('search')} в шапке; «Создать такую же» и «Перенос дня»; <b>2FA</b>; сессии и «был(а) в сети» (Штат ${ic('gear')}); автобэкап SQL в Drive; Check Engine/топливо/ТО и <b>трек дня</b> по машинам. Доступ к трекеру, ТО и трекам админ теперь выдаёт персонально (Штат → ${ic('gear')}); воркерам по умолчанию трекер закрыт.</li>
     </ul>`;
 }

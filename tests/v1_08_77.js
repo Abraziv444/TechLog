@@ -64,7 +64,7 @@ const openCam = async (p, jobId, kind) => {
   t('у метрик — Скачать .txt и Копировать', await p.evaluate(() => { const c = document.querySelector('#cp-card'); const b = [...c.querySelectorAll('.btn')].map(x => x.textContent.trim()); return b.some(x => /Скачать \.txt/.test(x)) && b.some(x => /Копировать метрики/.test(x)); }));
   const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }), p.evaluate(() => window.App.camPerfSave())]);
   const body = require('fs').readFileSync(await dl.path(), 'utf8');
-  t('techlog-cam-metrics-дата.txt: шапка с версией, две последние сессии', /^techlog-cam-metrics-\d{4}-\d\d-\d\d_\d\d-\d\d\.txt$/.test(dl.suggestedFilename()) && /^TechLog 1\.08\.\d+ — Метрики отклика камеры/.test(body) && (body.match(/Съёмка: /g) || []).length === 2, dl.suggestedFilename());
+  t('techlog-cam-metrics-дата.txt: шапка с версией, две последние сессии', /^techlog-cam-metrics-\d{4}-\d\d-\d\d_\d\d-\d\d\.txt$/.test(dl.suggestedFilename()) && /^TechLog 1\.\d\d\.\d+ — Метрики отклика камеры/.test(body) && (body.match(/Съёмка: /g) || []).length === 2, dl.suggestedFilename());
   t('ручные тапы по затвору — в сводке цифры, а не «нет тапов»', /тап→обработчик: \d+ \/ \d+ \/ \d+ ms/.test(body.split('Съёмка: Видео')[1] || ''), (body.split('Съёмка: Видео')[1] || '').split('\n')[3]);
 
   console.log('— тест съёмки: «нет — снимки программные» —');

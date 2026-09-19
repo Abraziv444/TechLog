@@ -2779,3 +2779,11 @@ html.tl-desktop .ct2-bar{left:auto;right:24px;bottom:24px;max-width:420px}
 .fold-sub > .fold-b > .card{margin:4px 0}
 #dg-net .set-btns{margin-top:10px}
 #dg-net .tiny + .tiny{margin-top:2px}
+
+/* ============ v1.09.01: справочник «Трекеры Bouncie» ============ */
+.trk-dot{ display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto;
+  width:38px; height:38px; border-radius:12px; border:2px solid var(--line);
+  background:var(--panel-2); color:var(--dim-2) }
+.trk-dot.on{ color:var(--green); border-color:var(--green) }
+.trk-row.off .grow b{ color:var(--dim) }
+.lang-seg.trk-seg button{ flex:1 1 0; min-width:0; font-size:.74rem; padding:8px 4px; white-space:nowrap }

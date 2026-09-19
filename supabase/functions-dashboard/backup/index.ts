@@ -19,13 +19,16 @@ import { svc, userClient, CORS, jres, driveToken, driveConfig, monthFolder } fro
                 x-cron-key = app_secrets.push_cron_key;
      ?list=1  — последние копии в папке (имя · дата · размер), админ.
 
+   v1.09.01 · в дамп добавлена таблица bn_devices (справочник трекеров
+   Bouncie) — перед vehicles, потому что vehicles.imei ссылается на неё.
+
    v1.08.46 · POST {action:"journal", name, text} — кладёт текстовый
    .log-архив журнала в <корень вложений>/journals (создаёт папку при
    отсутствии; корень вложений — org_settings.gd_files_folder, при пустом
    значении — папка Files внутри корневой gd_folder_id). Права: админ.
    ===================================================================== */
 
-const BK_VER = "1.08.46";
+const BK_VER = "1.09.01";
 type Sb = ReturnType<typeof svc>;
 
 const TABLES = [
@@ -35,6 +38,7 @@ const TABLES = [
   "counterparty_prices", "org_settings", "proposals", "jobs", "placements",
   "ext_requests", "repairs", "code_requests", "complex_code_history",
   "hidden_staff", "media", "stock_daily", "equip_moves",
+  "bn_devices",                                     /* v1.09.01: справочник трекеров — до vehicles (FK vehicles.imei) */
   "vehicles", "site_visits", "push_subs", "tech_log", "audit_log",
 ];
 
