@@ -8,7 +8,8 @@
 
      1) размер шрифта — личная настройка каждого участника (админ,
         менеджер, работник) в шагах 85…150 %; применяется до первого
-        рендера, чтобы не было скачка вёрстки;
+        рендера, чтобы не было скачка вёрстки; с v1.08.89 своё значение
+        у телефонного режима и у ПК-режима (app.js хранит оба в профиле);
      2) выпадающие списки — свой список вместо системного для всех
         <select>, в стиле приложения (как .combo-list и календарь);
      3) календарь для input[type=date] — раньше был только в ПК-режиме
@@ -35,17 +36,45 @@
   /* ===================================================================
      1 · РАЗМЕР ШРИФТА
      Базовые 16px из :root множатся на выбранный процент. Вся вёрстка
-     построена на rem, поэтому меняется весь интерфейс разом — и в
-     мобильном режиме, и в ПК, для любой роли. Значение личное и живёт
-     на устройстве (у одного техника телефон, у другого — планшет).
+     построена на rem, поэтому меняется весь интерфейс разом, для любой роли.
+     v1.08.89: у телефонного режима и у ПК-режима СВОЙ процент — на
+     маленьком экране крупнее, на мониторе обычный, и одно другое больше
+     не сбивает. Ключ выбирается по текущему режиму (тот же расчёт, что в
+     viewmode.js и vmCur() в app.js); старое общее значение становится
+     стартовым для ПК-ключа, пока его не трогали. Привязку к аккаунту
+     (profiles.push_prefs.font_pct / font_pct_pc) делает app.js, здесь —
+     кэш устройства, который применяется до первого рендера.
      =================================================================== */
   var FONT_STEPS = [85, 92, 100, 110, 122, 135, 150];
-  var FONT_KEY = 'techlog_font_pct';
+  var FONT_KEY = 'techlog_font_pct';          // телефонный режим (историческое имя)
+  var FONT_KEY_PC = 'techlog_font_pct_pc';    // ПК-режим
 
-  function fontPct() {
-    var v = parseInt(LS.get(FONT_KEY, '100'), 10);
+  function fontMode() {
+    var m = LS.get('techlog_view_mode', null);
+    if (m === 'desktop' || m === 'mobile') return m;
+    try {
+      if (window.matchMedia('(hover:hover) and (pointer:fine)').matches
+          && window.innerWidth >= 1024) return 'desktop';
+    } catch (e) {}
+    return 'mobile';
+  }
+  function fontKey() { return fontMode() === 'desktop' ? FONT_KEY_PC : FONT_KEY; }
+  function fontClamp(v) {
     if (!isFinite(v)) v = 100;
     return Math.max(FONT_STEPS[0], Math.min(FONT_STEPS[FONT_STEPS.length - 1], v));
+  }
+  /* разовый перенос: до 1.08.89 процент был один на оба режима — отдаём его
+     ПК-ключу СТАРТОВЫМ значением ровно один раз, дальше ключи независимы
+     (иначе смена размера на телефоне снова «протекала» бы в ПК-режим) */
+  (function () {
+    if (LS.get('techlog_font_v2', null) === '1') return;
+    var old = LS.get(FONT_KEY, null);
+    if (old !== null && LS.get(FONT_KEY_PC, null) === null) LS.set(FONT_KEY_PC, old);
+    LS.set('techlog_font_v2', '1');
+  })();
+  function fontPct() {
+    var raw = LS.get(fontKey(), null);
+    return fontClamp(parseInt(raw === null ? '100' : raw, 10));
   }
   function fontApply(pct) {
     try {
@@ -66,7 +95,7 @@
     var best = FONT_STEPS[0];
     for (var i = 0; i < FONT_STEPS.length; i++)
       if (Math.abs(FONT_STEPS[i] - v) < Math.abs(best - v)) best = FONT_STEPS[i];
-    LS.set(FONT_KEY, String(best));
+    LS.set(fontKey(), String(best));
     fontApply(best);
     try { window.dispatchEvent(new CustomEvent('tl-font', { detail: { pct: best } })); } catch (e) {}
     return best;
@@ -78,6 +107,8 @@
     return fontSet(FONT_STEPS[i]);
   }
   fontApply(fontPct());                       // до первого рендера приложения
+  /* смена режима «Телефон ⇄ ПК» — сразу свой размер этого режима */
+  try { window.addEventListener('tl:viewmode', function () { fontApply(fontPct()); }); } catch (e) {}
 
   /* Ctrl/⌘ + «+» / «−» / «0» — привычные горячие клавиши в ПК-режиме */
   document.addEventListener('keydown', function (e) {
@@ -324,6 +355,7 @@
   window.TLUI = {
     FONT_STEPS: FONT_STEPS,
     fontPct: fontPct,
+    fontMode: fontMode,
     fontSet: fontSet,
     fontStep: fontStep,
     closeAll: function () { ddClose(); calClose(); }

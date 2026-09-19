@@ -1538,6 +1538,15 @@ console.log('\n— v1.08.51: учёба —');
     && src.includes("await netLine(t('net_l_dom').replace('{H}', CANON_HOST)") && src.includes('function netImgProbe(url){') && src.includes('function netCopy(){')
     && src.includes("netLogSet(el, `⚠ ${t('net_l_cf')} — ${t('net_l_blocked')}`, 'warn')")
     && ['net_l_dom', 'net_l_blocked', 'net_cf_note', 'net_copy'].every(k => (src.match(new RegExp('\\b' + k + ': \'', 'g')) || []).length === 2));
+  const uijs = fs.readFileSync(ROOT + '/ui.js', 'utf8');
+  t('v1.08.89: свой размер шрифта у режимов «Телефон» и «ПК», настройка аккаунта, описание — в «?»',
+    uijs.includes("var FONT_KEY_PC = 'techlog_font_pct_pc';") && uijs.includes('function fontMode()') && uijs.includes('LS.set(fontKey(), String(best));')
+    && uijs.includes("LS.get('techlog_font_v2', null) === '1'") && uijs.includes('fontMode: fontMode,')
+    && src.includes("function fontPrefKey(){ return fontMode() === 'desktop' ? 'font_pct_pc' : 'font_pct'; }")
+    && src.includes('function fontSyncPref(){') && src.includes('fontSavePref(); render();')
+    && src.includes("window.addEventListener('tl:viewmode', () => { try { fontSyncPref(); render(); }")
+    && src.includes("${t('font_title')} ${tipQ('font_hint')}") && !/<div class="d">\$\{t\('font_hint'\)\}<\/div>/.test(src)
+    && ['font_mode_ph', 'font_mode_pc'].every(k => (src.match(new RegExp('\\b' + k + ': \'', 'g')) || []).length === 2));
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')

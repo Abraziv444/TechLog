@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.88';
+const APP_VERSION = '1.08.89';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -828,7 +828,8 @@ const I18N = {
     doc_close: 'Закрыть', doc_unsaved_t: 'Несохранённые изменения',
     doc_unsaved: 'В документе есть правки, которые ещё не сохранены.',
     doc_save_close: 'Сохранить и закрыть', doc_close_nosave: 'Закрыть без сохранения',
-    font_title: 'Размер шрифта', font_hint: 'Личная настройка: меняет весь интерфейс на этом устройстве — и на телефоне, и на компьютере.',
+    font_title: 'Размер шрифта', font_hint: 'Личная настройка аккаунта, своя для каждого режима: размер, выбранный в режиме «Телефон», не меняет размер в режиме «ПК» и наоборот. Значение хранится в профиле — на другом телефоне или другом компьютере подхватится само. Меняет весь интерфейс: списки, документы, кнопки.',
+    font_mode_ph: 'сейчас: режим «Телефон»', font_mode_pc: 'сейчас: режим «ПК»',
     font_reset: 'Обычный', font_demo: 'Так будет выглядеть текст',
     mq_all_ok: 'Все фото и видео отправлены', mq_sending: 'Идёт отправка фото и видео',
     mq_pending: 'Ждут отправки', mq_open: 'Открыть',
@@ -1954,7 +1955,8 @@ const I18N = {
     doc_close: 'Close', doc_unsaved_t: 'Unsaved changes',
     doc_unsaved: 'This document has edits that are not saved yet.',
     doc_save_close: 'Save and close', doc_close_nosave: 'Close without saving',
-    font_title: 'Font size', font_hint: 'Personal setting: changes the whole interface on this device — phone and desktop alike.',
+    font_title: 'Font size', font_hint: 'Personal account setting, separate for each mode: the size chosen in «Phone» mode does not change the size in «PC» mode and vice versa. The value lives in your profile, so another phone or another computer picks it up. It changes the whole interface: lists, documents, buttons.',
+    font_mode_ph: 'now: «Phone» mode', font_mode_pc: 'now: «PC» mode',
     font_reset: 'Normal', font_demo: 'This is how text will look',
     mq_all_ok: 'All photos and videos uploaded', mq_sending: 'Uploading photos and videos',
     mq_pending: 'Waiting to upload', mq_open: 'Open',
@@ -2446,6 +2448,40 @@ function shortName(full){
 }
 /* v1.07.78: размер шрифта живёт в ui.js (он общий для телефона и ПК) */
 function fontPct(){ try{ return window.TLUI ? TLUI.fontPct() : 100; }catch(e){ return 100; } }
+/* v1.08.89: размер шрифта — личная настройка АККАУНТА, своя для каждого режима:
+   в профиле два поля (push_prefs.font_pct — телефонный режим, font_pct_pc — ПК),
+   на устройстве остаётся кэш (ui.js применяет его до первого рендера и в офлайне).
+   Раньше значение жило только в localStorage и было общим на оба режима: выставил
+   крупный шрифт на телефоне — он же появлялся в ПК-режиме, и наоборот. */
+function fontMode(){ try{ return window.TLUI && TLUI.fontMode ? TLUI.fontMode() : vmCur(); }catch(e){ return 'mobile'; } }
+function fontPrefKey(){ return fontMode() === 'desktop' ? 'font_pct_pc' : 'font_pct'; }
+let _fontSaveT = null;
+function fontSavePref(){
+  clearTimeout(_fontSaveT);
+  _fontSaveT = setTimeout(async () => {
+    try{
+      if (!state.user) return;
+      const k = fontPrefKey(), v = fontPct();
+      const me = (state.data.profiles || []).find(p => p.id === state.user.id);
+      const prefs = { ...((me && me.push_prefs) || {}), ...(state.user.push_prefs || {}), [k]: v };
+      if (((state.user.push_prefs || {})[k]) === v && me && (me.push_prefs || {})[k] === v) return;
+      state.user.push_prefs = prefs;
+      if (me){ me.push_prefs = prefs; if (HAS_SB) await dbUpsert('profiles', { ...me, push_prefs: prefs }); else saveLocalNow(); }
+      dlog('шрифт: ' + v + '% · ' + (k === 'font_pct_pc' ? 'режим ПК' : 'режим телефона') + ' (настройка аккаунта)');
+    }catch(e){ dlog('⚠ font_pct:', e); }
+  }, 700);
+}
+/* после входа и при смене режима: профиль → устройство; если в профиле для
+   этого режима пусто, а на устройстве размер уже выбран — переносим его туда */
+function fontSyncPref(){
+  try{
+    if (!state.user || !window.TLUI) return;
+    const k = fontPrefKey();
+    const pv = +((state.user.push_prefs || {})[k]);
+    if (pv >= 85 && pv <= 150){ if (fontPct() !== pv){ TLUI.fontSet(pv); render(); } return; }
+    if (fontPct() !== 100) fontSavePref();
+  }catch(e){}
+}
 
 function techNamesFor(j){
   const ids = [j.technician_id, ...(j.helper_ids||[])].filter(Boolean);
@@ -4582,6 +4618,7 @@ async function afterSbLogin(session){
     if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
     await syncNow(true);
     mqQuietSyncPref();                                                      // v1.08.86
+    fontSyncPref();                                                         // v1.08.89
     try{ authRestoreDraft(); }catch(e){ dlog('⛔ authRestoreDraft:', e); }   // v1.08.85
   } finally {
     loginInFlight = false;
@@ -4595,7 +4632,7 @@ function demoLogin(id){
   if (u.blocked){ toast('⛔ ' + t('blocked_msg'), 'err'); return; }
   state.user = u; localStorage.setItem(LS_SESSION, id);
   state.screen = 'home'; state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate);
-  mqQuietSyncPref();                                                        // v1.08.86
+  mqQuietSyncPref(); fontSyncPref();                                        // v1.08.86 / v1.08.89
   render(); checkPickupBanner(true);
 }
 const LOGIN_RE = /^[a-z0-9_.-]{3,32}$/;
@@ -9109,8 +9146,8 @@ function viewSettings(){
       </div>
     </div>
     <div class="settings-row">
-      <div class="grow" style="flex:1"><b>${ic('font')} ${t('font_title')}</b>
-        <div class="d">${t('font_hint')}</div></div>
+      <div class="grow" style="flex:1"><b>${ic('font')} ${t('font_title')} ${tipQ('font_hint')}</b>
+        <div class="d">${fontMode() === 'desktop' ? t('font_mode_pc') : t('font_mode_ph')}</div></div>
       <div class="fs-row">
         <span class="fs-a sm">A</span>
         <span class="stepper set-step">
@@ -10553,8 +10590,8 @@ const App = {
     jobDraft.technician_name = pr ? shortName(pr.display_name) : '';
     autosaveDraft(); render();
   },
-  fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} render(); },
-  fontSet(v){ try{ if (window.TLUI) TLUI.fontSet(v); }catch(e){} render(); },
+  fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} fontSavePref(); render(); },
+  fontSet(v){ try{ if (window.TLUI) TLUI.fontSet(v); }catch(e){} fontSavePref(); render(); },
   mapSearch: mapSearchRun, mapPick: mapPickRun, addCxFromMap: addCxModal, saveCxFromMap: saveCxFromMapRun, closeModal, sectionFaq: sectionFaqOpen,
   pickupModal, pkDueModal, pkDueOpen, bannerKey, extendModal, extMode, extDays, extQty, extApply, jobHistory, pickupOne,
   searchInput, searchKindSet, searchClear, searchOpenPk, logoHome, checkVerClick,
@@ -10843,7 +10880,7 @@ window.App = App;
 
 /* v1.07.40: любое изменение режима (в т.ч. пилюлей на экране логина или из
    консоли) освежает разметку — подсветка кнопок в шапке не «залипает». */
-window.addEventListener('tl:viewmode', () => { try { render(); } catch(e){} });
+window.addEventListener('tl:viewmode', () => { try { fontSyncPref(); render(); } catch(e){} });   // v1.08.89: у каждого режима свой размер шрифта
 
 /* =====================================================================
    v1.07.48: ДОСКА — инертная прокрутка колёсиком и «схватить-и-тянуть».
@@ -11066,7 +11103,7 @@ function canonUrl(loc){
       }catch(e){}
     }
     await initAuth();
-    if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); mqQuietSyncPref(); }
+    if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); mqQuietSyncPref(); fontSyncPref(); }
     if (!state.user) await tvResume();     // v1.08.37: телевизор переживает перезагрузку страницы
     render();
     /* v1.08.73: возврат в документ после выгрузки и доразбор приёмника — только
