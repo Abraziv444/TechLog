@@ -71,7 +71,9 @@ const expose = `;window.__T = {
   /* v1.09.04: значок копирования, легенда полос в справке */
   IC, addrLineHtml, faqStripeLegend, faqStripeCard, faqStripeWts, STRIPE_PK, STRIPE_PK_DONE,
   /* v1.09.05: плотность интерфейса, холст ПК-режима */
-  densCur, densIsCompact, densPrefKey, densSyncPref, densSet, densBtnHtml, densRowHtml, canvasRowHtml, boardColsStyle, boardPkCard, fmtDMYyr, viewBoard
+  densCur, densIsCompact, densPrefKey, densSyncPref, densSet, densBtnHtml, densRowHtml, canvasRowHtml, boardColsStyle, boardPkCard, fmtDMYyr, viewBoard,
+  /* v1.09.06: кнопка «назад» — история экранов */
+  NAV, navTrack, navReset, navRoot, backExit, setBackExitAt: v => { backExitAt = v; }
 };`;
 
 try {
@@ -1910,7 +1912,9 @@ console.log('\n— v1.08.51: учёба —');
     src.includes("setTimeout(() => { pickRestore().catch(e => dlog('⛔ pickRestore:', e)); }, 400);") && src.includes('if (restored) return;'));
   t('v1.08.73: модуль камеры — takePhoto с таймаутом и кадр с потока, вспышка, зум, смена, видео MediaRecorder ≤ M_VMAX, «назад» закрывает',
     src.includes('async function camInGrab(){') && src.includes("new Error('takePhoto timeout')") && src.includes('async function camInTorch(') && src.includes('async function camInZoom(')
-    && src.includes('function camInRecStart(){') && src.includes('if (sec >= M_VMAX){ camInRecStop(); return; }') && src.includes('if (CAMIN.el){ camInClose(); rearm(); return; }'));
+    && src.includes('function camInRecStart(){') && src.includes('if (sec >= M_VMAX){ camInRecStop(); return; }')
+    /* v1.09.06: обработчик «назад» переписан (история экранов) — камера по-прежнему закрывается первой, сторож взводит сам обработчик */
+    && src.includes("if (CAMIN.el){ camInClose(); return 'camera'; }"));
   t('v1.08.73: поворот — orientation.lock(\'any\') в полном экране, иначе акселерометр → rot в обработке (воркер и запасной путь)',
     src.includes("await screen.orientation.lock('any'); CAMIN.locked = true;") && src.includes("addEventListener('devicemotion', camInMotion)")
     && src.includes('if (d.rot === 90 || d.rot === 270){') && src.includes("if (o.rot === 90 || o.rot === 270 || o.rot === 180){") && src.includes('const keep = qn === \'orig\' && isJpg && f.size <= M_ORIG_MAX && !rot;'));
@@ -2439,9 +2443,9 @@ console.log('\n— v1.09.05: компактная плотность (телеф
   const swjs = fs.readFileSync(ROOT + '/sw.js', 'utf8');
   const idx = fs.readFileSync(ROOT + '/index.html', 'utf8');
   const prevUser = T.state.user, prevData = T.state.data, prevLang = T.state.lang;
-  t('v1.09.05: версии (app = sw = version.json = 1.09.05), SQL не менялся, тест и ТЗ на месте',
-    T.APP_VERSION === '1.09.05' && swjs.includes("VERSION = '1.09.05'")
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.05' && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+  t('v1.09.05: версии (app = sw = version.json, не ниже 1.09.05), SQL не менялся, тест и ТЗ на месте',
+    /^1\.(09\.(0[5-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && swjs.includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.06: версия двинулась дальше */
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
     && fs.existsSync(ROOT + '/tests/v1_09_05.js') && fs.existsSync(ROOT + '/TZ-compact-mode.md'));
   t('v1.09.05: compact.css подключён ПОСЛЕ desktop.css и лежит в предзагрузке service worker',
     idx.indexOf('./compact.css') > idx.indexOf('./desktop.css') && idx.indexOf('./desktop.css') > 0 && swjs.includes("'./compact.css',"));
@@ -2538,6 +2542,66 @@ console.log('\n— v1.09.05: компактная плотность (телеф
     fs.readFileSync(ROOT + '/tests/ui-matrix.js', 'utf8').includes("--dens=") && fs.readFileSync(ROOT + '/tests/ui-matrix.js', 'utf8').includes('Pixel 7 альбом ПК (холст)')
     && fs.readFileSync(ROOT + '/tests/ui-check.js', 'utf8').includes('UI_DENS'));
   T.state.user = prevUser; T.state.data = prevData; T.state.lang = prevLang;
+}
+
+console.log('\n— v1.09.06: кнопка «назад» возвращает туда, откуда пришёл; выход — только с главного экрана —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const prevUser = T.state.user, prevScreen = T.state.screen, prevLang = T.state.lang;
+  t('v1.09.06: версии (app = sw = version.json = 1.09.06), SQL не менялся, тест на месте',
+    T.APP_VERSION === '1.09.06' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.06'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.06' && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && fs.existsSync(ROOT + '/tests/v1_09_06.js'));
+  /* история экранов */
+  const go = (scr, y) => { T.state.screen = scr; T.navTrack(y || 0); };
+  const stack = () => T.NAV.stack.map(x => x.s + ':' + x.y).join(' ');
+  T.setUser({ id: 'u1', role: 'admin', display_name: 'A B', login: 'a' });
+  T.navReset(); go('home');
+  go('board', 120); go('settings', 40); go('dirs', 300);
+  t('v1.09.06: история — уходящий экран с его прокруткой; текущий в неё не входит', stack() === 'home:120 board:40 settings:300' && T.NAV.cur === 'dirs', stack());
+  go('dirs', 999);
+  t('v1.09.06: перерисовка того же экрана историю не трогает', stack() === 'home:120 board:40 settings:300');
+  go('job', 10); go('stats', 0);
+  t('v1.09.06: документ (job) в историю не кладётся — вернуться «в него» нельзя', stack() === 'home:120 board:40 settings:300 dirs:10', stack());
+  T.NAV.backing = true; go('dirs', 0);
+  t('v1.09.06: сам возврат в историю не пишется, флаг снимается', stack() === 'home:120 board:40 settings:300 dirs:10' && T.NAV.backing === false, stack());
+  go('home', 0);
+  t('v1.09.06: главная — корень: переход на неё обнуляет историю', T.NAV.stack.length === 0 && T.navRoot() === 'home');
+  for (let i = 0; i < 40; i++) go(i % 2 ? 'board' : 'settings', i);
+  t('v1.09.06: история не растёт бесконечно (не больше ' + T.NAV.MAX + ')', T.NAV.stack.length <= T.NAV.MAX && T.NAV.stack.length >= 20, String(T.NAV.stack.length));
+  T.setUser({ id: 'u2', role: 'accountant', display_name: 'E S', login: 'e' });
+  T.navReset(); go('acc'); go('reports', 5); go('acc', 0);
+  t('v1.09.06: у бухгалтера корень — «Бухгалтерия»', T.navRoot() === 'acc' && T.NAV.stack.length === 0);
+  T.setUser(null); T.state.screen = 'home'; T.navTrack(0);
+  t('v1.09.06: без входа истории нет', T.NAV.stack.length === 0 && T.NAV.cur === null);
+  /* выход: только два нажатия подряд */
+  T.state.lang = 'ru'; T.setBackExitAt(0);
+  const e1 = T.backExit(), e2 = T.backExit();
+  T.setBackExitAt(Date.now() - 5000);
+  const e3 = T.backExit();
+  t('v1.09.06: первое нажатие — подсказка, второе подряд — выход, через 5 с — снова подсказка', e1 === 'hint' && e2 === 'exit' && e3 === 'hint', [e1, e2, e3].join());
+  T.setBackExitAt(0);
+  /* порядок веток в обработчике — по исходнику */
+  const bp = src.slice(src.indexOf('async function backPressed(){'), src.indexOf('function backExit(){'));
+  const order = ['CAMIN.el', "getElementById('mviewer')", "getElementById('uidiag-modal')", "'.tl-dd, #dsk-cal'", "getElementById('overlay')",
+    "state.screen === 'job' && jobDraft", "state.screen === 'proposals' && propDraft", "state.screen === 'repairs' && repDraft", 'STUDY.read', 'STUDY.run',
+    "state.screen === 'home' && (state.searchQ", 'state.screen !== navRoot()', 'return backExit();'];
+  const pos = order.map((x, i) => i === order.length - 1 ? bp.lastIndexOf(x) : bp.indexOf(x));   // «выход» есть и у экрана входа — берём последний
+  t('v1.09.06: порядок «назад»: поверх → внутри экрана → предыдущий экран → выход только в самом конце',
+    pos.every(x => x >= 0) && pos.every((x, i) => i === 0 || x > pos[i - 1]), pos.join());
+  t('v1.09.06: модалка закрывается своей стрелкой «назад» (окно из окна, отмена входа 2FA), документ сохраняется только с правками и не под замком',
+    bp.includes("const bx = ov.querySelector('.back-x');") && bp.includes('if (bx) bx.click(); else closeModal();')
+    && bp.includes('if (!editLocked(jobDraft) && jobDirty()){') && bp.includes('await saveJob(false);'));
+  const bg = src.slice(src.indexOf('function initBackGuard(){'), src.indexOf('/* v1.08.44 · ПЕРЕЕЗД НА СВОЙ ДОМЕН.'));
+  t('v1.09.06: «сторож» истории один и взводится после каждого нажатия; выход — history.back() только по «exit»',
+    (bg.match(/history\.pushState\(/g) || []).length === 1 && bg.includes("if (did === 'exit'){") && bg.includes('history.back(); return; }')
+    && bg.includes("if (did !== 'hint') backExitAt = 0;") && bg.includes('if (busy){ arm(); return; }'));
+  t('v1.09.06: render() ведёт историю и начинает новый экран сверху; экран входа её обнуляет',
+    src.includes('navTrack(_navY);') && src.includes('else if (_rLastScr !== state.screen && _navY) pageScrollTo(0);') && src.includes('if (!state.user){ navReset(); tvBodyClass(false);'));
+  t('v1.09.06: справка (RU/EN) описывает новое поведение, старой фразы про «двойное нажатие — выход» нет',
+    src.includes('только на главном экране, и только там второе нажатие закрывает приложение') && src.includes('Only on the home screen does it show')
+    && !src.includes('двойное нажатие — выход из приложения') && !src.includes('double-press exits the app'));
+  T.state.user = prevUser; T.state.screen = prevScreen; T.state.lang = prevLang; T.navReset();
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);

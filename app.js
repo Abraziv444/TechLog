@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.05';
+const APP_VERSION = '1.09.06';
 const DB_SQL_FILE = 'full-install-1_09_01.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -6393,6 +6393,7 @@ function viewJournal(){
 let _rLastScr = '';   // v1.08.46: какой экран был нарисован прошлым render()
 function render(){
   const _rt0 = performance.now();                       // v1.07.67: замер для диагностики
+  let _navY = 0; try{ _navY = pageScrollY(); }catch(e){}   // v1.09.06: куда вернуть прокрутку по «назад»
   if (state && state.user && state.screen === 'board' && !isManager() && vmCur() !== 'desktop') state.screen = 'home';
   /* v1.08.39: бухгалтеру вместо главной — «Бухгалтерия»; экранов с правкой документов у роли нет */
   if (state && state.user && isAcc()){ if (ACC_HIDE.has(state.screen)) state.screen = 'acc'; state.statMine = false; }
@@ -6407,7 +6408,7 @@ function render(){
   /* v1.08.92: экран входа не оставляет класс прошлого экрана — иначе после
      выхода на <div id="app"> висел scr-job/scr-home, и правила этих экранов
      (и проверки автотестов) применялись к форме входа */
-  if (!state.user){ tvBodyClass(false); app.innerHTML = viewLogin(); if (app.className !== 'scr-login') app.className = 'scr-login'; netMark(app); tabbarFit(); return; }
+  if (!state.user){ navReset(); tvBodyClass(false); app.innerHTML = viewLogin(); if (app.className !== 'scr-login') app.className = 'scr-login'; netMark(app); tabbarFit(); return; }
   if (!state.data) state.data = loadLocal() || (HAS_SB ? emptyData() : seedDemoData());
   if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
   let body = '';
@@ -6434,7 +6435,13 @@ function render(){
   const _keepY = _rLastScr === state.screen ? pageScrollY() : 0;
   perf('отрисовка ' + state.screen, () => { app.innerHTML = viewHeader() + body + viewTabbar(); });
   if (_keepY) pageScrollTo(_keepY);
+  /* v1.09.06: «с чистого верха» на деле не выполнялось — прокручиваемый блок (#app на
+     телефоне, документ на ПК) при замене содержимого сохраняет свою прокрутку, и с
+     длинного экрана на длинный новая вкладка открывалась с середины. Теперь смена
+     экрана честно начинается сверху, а точку прокрутки возвращает только «назад». */
+  else if (_rLastScr !== state.screen && _navY) pageScrollTo(0);
   _rLastScr = state.screen;
+  navTrack(_navY);                                       // v1.09.06: история экранов для кнопки «назад»
   if (!$('#overlay') && app.inert) modalTrap(false);   // v1.07.83: страховка от «залипшего» inert
   /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
   const scls = 'scr-' + state.screen;
@@ -11432,6 +11439,7 @@ const App = {
   },
   fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} fontSavePref(); render(); },
   densSet, densToggle, canvasSet,                                          // v1.09.05: плотность интерфейса, холст ПК-режима
+  navStack(){ return NAV.stack.map(x => x.s); }, back(){ return backPressed(); },   // v1.09.06: история экранов; то же, что системная «назад» (без выхода)
   menuLabels(v){ menuLabelsSet(v); }, menuRowsStep,                                  // v1.09.02
   __test_menu(){ return { labels: menuLabels(), rows: menuRows(), key: menuLabKey(), bottom: tabbarIsBottom() }; }, __test_tabbarCols: tabbarCols,
   fontSet(v){ try{ if (window.TLUI) TLUI.fontSet(v); }catch(e){} fontSavePref(); render(); },
@@ -11916,29 +11924,121 @@ window.addEventListener('tl:canvas', () => { try { if (state.user) render(); } c
 
 
 /* =====================================================================
-   СИСТЕМНАЯ КНОПКА «НАЗАД» (Android):
-   модалка → закрыть; инвойс → сохранить и на главную; иначе — двойное
-   нажатие для выхода из приложения (с подсказкой).
+   СИСТЕМНАЯ КНОПКА «НАЗАД» (Android, жест, кнопка браузера, Alt+←)
+   ---------------------------------------------------------------------
+   v1.09.06. Раньше «назад» понимала три вещи — модалку, камеру и открытый
+   инвойс, а НА ЛЮБОМ ДРУГОМ экране сразу показывала «нажмите ещё раз для
+   выхода»: с Доски, из Настроек, из Справочников второе нажатие закрывало
+   приложение. Теперь «назад» = вернуться туда, откуда пришёл:
+     1) что открыто поверх — закрывается: камера, просмотр фото, окно
+        диагностики, выпадающий список/календарь, модалка (через её же
+        стрелку «назад» — поэтому окно, открытое из другого окна,
+        возвращает к нему, а окно кода 2FA честно отменяет вход);
+     2) что открыто ВНУТРИ экрана — закрывается: документ (правки
+        сохраняются, как и раньше), редактор пропозала и ремонта (спросит
+        про несохранённое), чтение учебника, тест, поиск на главной;
+     3) иначе — предыдущий экран: приложение ведёт свою историю переходов
+        между вкладками (NAV) и возвращает в ту же точку прокрутки;
+     4) и только на ГЛАВНОМ экране (у бухгалтера — «Бухгалтерия», на экране
+        входа и ТВ) — подсказка о выходе, второе нажатие за 2,2 с — выход.
+   В истории браузера по-прежнему один «сторож» (pushState), который
+   взводится заново после каждого нажатия: записи браузера и состояние
+   приложения не могут разойтись, сколько бы экранов ни прошли.
    ===================================================================== */
+const NAV = { stack: [], cur: null, backing: false, MAX: 30 };
 let backExitAt = 0;
+function navRoot(){ return (state.user && isAcc()) ? 'acc' : 'home'; }
+function navReset(){ NAV.stack.length = 0; NAV.cur = null; NAV.backing = false; }
+/* вызывается из render() после отрисовки экрана: prevY — прокрутка ДО неё */
+function navTrack(prevY){
+  try{
+    const cur = state.user ? state.screen : null;
+    if (!cur){ navReset(); return; }
+    if (cur === NAV.cur) return;
+    const prev = NAV.cur; NAV.cur = cur;
+    if (NAV.backing){ NAV.backing = false; if (cur === navRoot()) NAV.stack.length = 0; return; }   // сам возврат в историю не пишется
+    if (cur === navRoot()){ NAV.stack.length = 0; return; }        // главная — корень: дальше только выход
+    /* документ (job) в историю не кладём: вернуться «в него» нельзя — черновик уже закрыт */
+    if (!prev || prev === 'job') return;
+    const top = NAV.stack[NAV.stack.length - 1];
+    if (!top || top.s !== prev) NAV.stack.push({ s: prev, y: Math.max(0, Math.round(+prevY || 0)) });
+    else top.y = Math.max(0, Math.round(+prevY || 0));
+    if (NAV.stack.length > NAV.MAX) NAV.stack.shift();
+  }catch(e){}
+}
+/* предыдущий экран; если истории нет (перезагрузка, прямой заход) — главный */
+function navBack(){
+  let to = null;
+  while (NAV.stack.length){ const e = NAV.stack.pop(); if (e && e.s && e.s !== state.screen){ to = e; break; } }
+  if (!to) to = { s: navRoot(), y: 0 };
+  NAV.backing = true;
+  App.go(to.s);
+  NAV.backing = false;                                   // экран мог не смениться (нет доступа) — флаг не должен «залипнуть»
+  if (to.y){ const y = to.y; pageScrollTo(y); requestAnimationFrame(() => { try{ if (state.screen === to.s) pageScrollTo(y); }catch(e){} }); }
+  return to.s;
+}
+/* Что сделала «назад» — строкой (для журнала событий и автотестов). */
+async function backPressed(){
+  /* 1 · поверх всего */
+  if (CAMIN.el){ camInClose(); return 'camera'; }                      // v1.08.73: «назад» закрывает камеру
+  if (document.getElementById('mviewer')){ mvClose(); return 'viewer'; }
+  const ud = document.getElementById('uidiag-modal');
+  if (ud){ const x = ud.querySelector('.ud-x'); if (x) x.click(); else ud.remove(); return 'uidiag'; }
+  if (document.querySelector('.tl-dd, #dsk-cal')){ try{ window.TLUI && TLUI.closeAll(); }catch(e){} return 'popup'; }
+  const ov = document.getElementById('overlay');
+  if (ov){
+    /* стрелка «назад» самого окна знает, куда вести: к предыдущему окну (пикап →
+       список пикапов), к отмене входа (код 2FA) или просто закрыть */
+    const bx = ov.querySelector('.back-x');
+    if (bx) bx.click(); else closeModal();
+    return 'modal';
+  }
+  if (!state.user) return backExit();
+  /* 2 · внутри экрана */
+  if (state.screen === 'job' && jobDraft){
+    if (!editLocked(jobDraft) && jobDirty()){
+      try{ await saveJob(false); }catch(e){ dlog('⚠ назад: документ не сохранился —', e); }   // как и раньше: «назад» сохраняет правки
+    }
+    return 'job→' + navBack();
+  }
+  if (state.screen === 'proposals' && propDraft){ propClose(); return 'proposal'; }
+  if (state.screen === 'repairs' && repDraft){ repClose(); return 'repair'; }
+  if (state.screen === 'study'){
+    if (STUDY.read){ await studyReadClose(false); return 'book'; }
+    if (STUDY.run){ studyAbortAsk(); return 'test'; }
+  }
+  if (state.screen === 'home' && (state.searchQ || '').trim()){
+    state.searchQ = ''; const inp = $('#home-search'); if (inp){ inp.value = ''; inp.blur(); }
+    searchInput('');
+    return 'search';
+  }
+  /* 3 · предыдущий экран */
+  if (state.screen !== navRoot()) return 'screen→' + navBack();
+  /* 4 · главный экран — выход */
+  return backExit();
+}
+function backExit(){
+  const now = Date.now();
+  if (now - backExitAt < 2200) return 'exit';                          // второе нажатие — выход
+  backExitAt = now;
+  toast(t('back_exit_hint'), 'inf');
+  return 'hint';
+}
 function initBackGuard(){
   if (!window.history || !history.pushState) return;
-  try{ history.pushState({ tl: 1 }, ''); }catch(e){ return; }
+  const arm = () => { try{ history.pushState({ tl: 1 }, ''); return true; }catch(e){ return false; } };
+  if (!arm()) return;
+  let busy = false;
   window.addEventListener('popstate', async () => {
-    const rearm = () => { try{ history.pushState({ tl: 1 }, ''); }catch(e){} };
-    if (CAMIN.el){ camInClose(); rearm(); return; }                 // v1.08.73: «назад» закрывает камеру
-    if (document.getElementById('mviewer')){ mvClose(); rearm(); return; }
-    if (document.getElementById('overlay')){ closeModal(); rearm(); return; }
-    if (state.user && state.screen === 'job' && jobDraft){
-      rearm();
-      try{ await saveJob(); }catch(e){ App.go('home'); }  // сохранить черновик и выйти на главную
-      return;
-    }
-    const now = Date.now();
-    if (now - backExitAt < 2200){ history.back(); return; } // второе нажатие — выход
-    backExitAt = now;
-    toast(t('back_exit_hint'), 'inf');
-    rearm();
+    if (busy){ arm(); return; }                                        // идёт сохранение документа — второе нажатие не теряем и не выходим
+    busy = true;
+    let did = '';
+    try{ did = await backPressed(); }catch(e){ dlog('⚠ назад:', e); did = 'error'; }
+    busy = false;
+    if (did === 'exit'){ dlog('назад ×2 на главном экране — выход из приложения'); history.back(); return; }
+    arm();
+    if (did !== 'hint') backExitAt = 0;                                // подсказка о выходе действует только подряд
+    dlog('назад → ' + did);
   });
 }
 
@@ -15677,7 +15777,7 @@ function faqHtml(){
     <h4>${ic('mic')} Notes, dictation & translation</h4>
     <p>Every job and pickup has a note. The ${ic('mic')} microphone dictates in RU or EN (Chrome/Android; on iPhone — the 🎤 key on the keyboard, see the iPhone section), text is editable by hand, and the note prints on the PDF as the <b>NOTES</b> line. One tap translates a Russian note to English.</p>
     <h4>${ic('wrench')} Account, settings & service</h4>
-    <p>Sign in with a login (Latin, 3–32 chars) and password; sign-up needs the <b>invite code</b> (set by the admin in Settings, default — APC). You change your own password under Settings → “Change password”; if you’re blocked or forgot it, the admin helps in Staff. Settings: UI language RU/EN (PDF is always EN), your display name, app install, event <b>log</b>, <b>diagnostics</b> (and DB diagnostics for admin). Android back button: closes a modal, saves and exits an open form, double-press exits the app.</p>
+    <p>Sign in with a login (Latin, 3–32 chars) and password; sign-up needs the <b>invite code</b> (set by the admin in Settings, default — APC). You change your own password under Settings → “Change password”; if you’re blocked or forgot it, the admin helps in Staff. Settings: UI language RU/EN (PDF is always EN), your display name, app install, event <b>log</b>, <b>diagnostics</b> (and DB diagnostics for admin). The back button (Android, the back gesture, the browser button) returns you to where you came from: it closes a window (a window opened from another window goes back to that one), the photo viewer or the camera; saves and closes an open document; closes a proposal or repair editor (asking about unsaved changes), a textbook, a test, the home search; otherwise it goes to the previous tab, to the same scroll position. Only on the home screen does it show the «press back again to exit» hint, and the second press exits the app.</p>
     <h4>${ic('bell')} ${t('upd_title')}</h4>
     <ul>
       <li><b>1.08.27</b> — stock register: intake/write-off, "My car #N", repair; equipment moves are written automatically (scheme behind "?" on Stock).</li>
@@ -15735,7 +15835,7 @@ function faqHtml(){
     <h4>${ic('mic')} Заметки, диктовка и перевод</h4>
     <p>У каждой задачи и пикапа есть заметка. Микрофон ${ic('mic')} диктует на RU или EN (Chrome/Android; на iPhone — кнопкой 🎤 на клавиатуре, см. раздел про iPhone), текст правится руками и печатается в PDF строкой <b>NOTES</b>. Одним нажатием русскую заметку можно перевести на английский.</p>
     <h4>${ic('wrench')} Аккаунт, настройки и сервис</h4>
-    <p>Вход — логин латиницей (3–32 символа) и пароль; для регистрации нужен <b>код приглашения</b> (задаёт админ в «Настройках», стандартный — APC). Свой пароль меняется в «Настройках» → «Смена пароля»; если вас заблокировали или пароль забыт — поможет админ во вкладке «Сотрудники». В «Настройках»: язык интерфейса RU/EN (PDF всегда на английском), ваше имя, установка приложения, <b>журнал</b> событий, <b>диагностика</b> (и БД-диагностика для админа). Кнопка «назад» на Android: закрывает модалку, сохраняет и закрывает открытую форму, двойное нажатие — выход из приложения.</p>
+    <p>Вход — логин латиницей (3–32 символа) и пароль; для регистрации нужен <b>код приглашения</b> (задаёт админ в «Настройках», стандартный — APC). Свой пароль меняется в «Настройках» → «Смена пароля»; если вас заблокировали или пароль забыт — поможет админ во вкладке «Сотрудники». В «Настройках»: язык интерфейса RU/EN (PDF всегда на английском), ваше имя, установка приложения, <b>журнал</b> событий, <b>диагностика</b> (и БД-диагностика для админа). Кнопка «назад» (Android, жест, кнопка браузера) возвращает туда, откуда вы пришли: закрывает окно (окно, открытое из другого окна, возвращает к нему), просмотр фото или камеру; сохраняет и закрывает открытый документ; закрывает редактор пропозала и ремонта (спросит про несохранённое), учебник, тест, поиск на главной; иначе — переходит на предыдущую вкладку, в то же место прокрутки. Подсказка «нажмите ещё раз для выхода» появляется только на главном экране, и только там второе нажатие закрывает приложение.</p>
     <h4>${ic('bell')} ${t('upd_title')}</h4>
     <ul>
       <li><b>1.08.27</b> — регистр склада: приход/списание, «Моя машина №N», ремонт; движения оборудования пишутся автоматически (схема — за «?» на экране Склад).</li>
