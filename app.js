@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.01';
+const APP_VERSION = '1.09.05';
 const DB_SQL_FILE = 'full-install-1_09_01.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -293,11 +293,19 @@ const I18N = {
     code_old_sum: 'Кодов старше {m} мес: {n}', code_tip: 'Жёлтая метка у комплекса, если код не менялся дольше порога. Видно админу и менеджеру.',
     sess_card: 'Сессии сотрудников', sess_mgr_lbl: 'Менеджер видит сессии и «был(а) в сети»',
     abk_card: 'Автобэкап (SQL → Google Drive)', abk_now: 'Сделать бэкап сейчас',
-    abk_auto_lbl: 'Автоматически при входе админа (раз в 7 дней)',
+    abk_auto_lbl: 'Автоматически при входе админа (не чаще раза в день)',
     abk_last: 'Последний', abk_never: 'ещё не делался', abk_list: 'Копии в Drive',
     abk_running: 'Делаю бэкап…', abk_ok: 'Бэкап готов', abk_need_fn: 'Разверните Edge Function backup (functions-dashboard/backup)',
     abk_need_gd: 'Сначала настройте Google Drive (карточка «Google Drive»)',
-    abk_tip: 'Полный SQL-дамп данных (включая логины и пароли-хэши) в папку «TechLog Backups» вашего Drive. Хранится 8 последних копий. Восстановление: чистая база → full-install → файл бэкапа.',
+    abk_tip: 'Полный SQL-дамп данных (включая логины и пароли-хэши) в папку «TechLog Backups» вашего Drive. Три вида копий. АДМИН — сделана кнопкой «Сделать бэкап сейчас»: хранится вечно, система её не удаляет и не чистит никогда (в имени файла -ADMIN). НЕДЕЛЬНАЯ — одна на каждую неделю, хранится вечно (в имени -weekly-ГГГГ-Wнн). ЕЖЕДНЕВНАЯ — автобэкап не чаще раза в день, хранятся последние 8, более старые уходят в корзину Диска (в имени -daily). Удаляется только то, что само помечено как ежедневное; файлы старого формата и всё, что вы положили или переименовали руками, не трогаются. Восстановление: чистая база → full-install → файл бэкапа.',
+    abk_r_admin: 'вручную админом — хранится вечно, система не удаляет',
+    abk_r_weekly: 'одна копия на неделю — хранится вечно',
+    abk_r_daily: 'автобэкап не чаще раза в день — последние {N}, старые в корзину Диска',
+    abk_k_admin: 'АДМИН · вечно', abk_k_weekly: 'НЕДЕЛЬНЫЙ · вечно', abk_k_daily: 'ежедневный', abk_k_legacy: 'старый формат · не удаляется',
+    abk_g_admin: 'Ручные бэкапы админа', abk_g_weekly: 'Недельные', abk_g_daily: 'Ежедневные (ротация)', abk_g_legacy: 'Старый формат (до 1.09.03)',
+    abk_more: 'ещё {N} — в папке «TechLog Backups» на Диске', abk_empty: 'копий пока нет',
+    abk_old_fn: 'Функция backup старой версии: ротация по-старому (8 последних, ручные тоже удаляются). Передеплойте Edge Function backup из functions-dashboard/backup.',
+    abk_perm_ok: 'Вечная копия готова',
     veh_service: 'ТО на одометре, mi', veh_service_left: 'до ТО {n} mi',
     veh_service_over: 'ТО просрочено на {n} mi', veh_mil: 'Check Engine',
     veh_fuel_low: 'мало топлива', veh_track: 'Трек дня', veh_track_off: 'Скрыть трек',
@@ -712,8 +720,12 @@ const I18N = {
     eq_settings_title: 'Аренда оборудования и права',
     docs_set_card: 'Настройки документов', docs_my_title: 'Карточка работы и поиск',
     def_days_lbl: 'Аренда по умолчанию, дн.', max_ext_lbl: 'Максимум продления, дн.',
-    lock_days_lbl: 'Блокировать правку старше, дн. (0 — выкл)',
+    lock_days_lbl: 'Блокировать правку старше, дн.',
     lock_hint: 'Документы старше срока техник менять не может — только менеджер или админ.',
+    lock_chk: 'Блокировать правку старых задач',
+    lock_state_off: 'Сейчас: выключено — правка задач по сроку никак не блокируется.',
+    lock_state_on: 'Сейчас: включено — сотрудник не может менять и удалять задачи с датой раньше {D} (старше {N} дн.). Менеджер и админ правят всегда.',
+    lock_tip: 'Замок на старые задачи (инвойсы). ГАЛОЧКА СНЯТА (в базе значение 0) — функция выключена: редактирование документов по сроку никак не блокируется, сотрудник правит и удаляет свои задачи любой давности. ГАЛОЧКА СТОИТ — сотрудник не может менять и удалять задачи старше указанного числа дней; считается по дате задачи, а не по дате создания. Минимум — 1 день: при «1» вчерашнюю задачу ещё можно править, позавчерашнюю — уже нет. Менеджера и админа замок не касается. Проверяет не только приложение, но и сама база (ответ LOCKED). Число дней запоминается: сняли галочку и поставили снова — вернётся прежний срок.',
     lock_note: 'Документ старше {N} дн. — правка только менеджером или админом',
     d_stock: 'Склад', stock_total: 'всего', stock_broken: 'сломано', stock_repair: 'в ремонте',
     stock_field: 'у клиентов', stock_avail: 'на складе',
@@ -876,6 +888,18 @@ const I18N = {
     doc_save_close: 'Сохранить и закрыть', doc_close_nosave: 'Закрыть без сохранения',
     font_title: 'Размер шрифта', font_hint: 'Личная настройка аккаунта, своя для каждого режима: размер, выбранный в режиме «Телефон», не меняет размер в режиме «ПК» и наоборот. Значение хранится в профиле — на другом телефоне или другом компьютере подхватится само. Меняет весь интерфейс: списки, документы, кнопки.',
     font_mode_ph: 'сейчас: режим «Телефон»', font_mode_pc: 'сейчас: режим «ПК»',
+    dens_title: 'Плотность интерфейса', dens_cozy: 'Обычная', dens_compact: 'Компактная',
+    dens_hint: 'Личная настройка аккаунта, своя для режима «Телефон» и режима «ПК»; хранится в профиле и подхватывается на другом устройстве. «Компактная» — для небольших ноутбуков, планшетов и телефонов: на экран помещается больше. Уменьшаются не только буквы, а сами блоки — шапка, лента недели, меню, значки, отступы внутри карточек; карточка дня становится вдвое ниже, на доске помещается в полтора-два раза больше сотрудников. Оформление остаётся тем же. Размер букв по-прежнему регулируется отдельно — строкой выше. На ПК то же самое переключает кнопка внизу слева, на доске — кнопка рядом с глазом.',
+    dens_btn_on: 'Компактно: включено — нажмите, чтобы вернуть обычную плотность', dens_btn_off: 'Сделать компактнее: больше помещается на экран',
+    dens_log_on: 'компактная', dens_log_off: 'обычная',
+    cv_title: 'ПК-режим на маленьком экране', cv_d_off: 'на этом устройстве · сейчас раскладка телефона', cv_d_on: 'на этом устройстве · холст {W} px, масштаб {P}%',
+    cv_d_wait: 'на этом устройстве · включится в режиме «ПК»', cv_d_narrow: 'на этом устройстве · экран сейчас слишком узкий — поверните телефон',
+    cv_auto: 'Авто', cv_off: 'Выкл',
+    cv_hint: 'У телефона и планшета экран уже 980 точек, а раскладка компьютера (меню слева, доска во всю ширину, «минимум сотрудников на экране») включается только от этой ширины — поэтому в режиме «ПК» телефон показывал обычную телефонную вёрстку. Теперь страница рисуется на холсте выбранной ширины и уменьшается под экран — так же, как «Версия для ПК» в браузере; увеличить нужное место можно щипком. «Авто» — холст 1100 точек. Чем шире холст, тем больше помещается и тем мельче буквы; масштаб мельче 45% не ставится — такая ширина просто недоступна, а телефон в книжной ориентации остаётся с телефонной раскладкой. Настройка хранится на устройстве, а не в профиле: у каждого экрана она своя. Лучше всего работает вместе с компактной плотностью.',
+    ml_title: 'Названия пунктов меню', ml_auto: 'Авто', ml_on: 'Показать', ml_off: 'Скрыть',
+    ml_hint: 'Личная настройка аккаунта, своя для режима «Телефон» и режима «ПК»; хранится в профиле и подхватывается на другом устройстве. «Авто» — как раньше: на узком экране (до 430 px) остаются одни значки, на широком подписи видны. «Показать» — подписи видны всегда, даже на маленьком экране; если в одном ряду они обрезаются, добавьте ряды меню. «Скрыть» — только значки; название пункта видно во всплывающей подсказке при наведении.',
+    mr_title: 'Рядов меню на телефоне', mr_d: 'Нижнее меню в режиме «Телефон»: от 1 до 5 рядов',
+    mr_hint: 'Личная настройка аккаунта. Пункты нижнего меню делятся поровну на выбранное число рядов — в каждом ряду становится меньше кнопок, и подписи помещаются целиком. Число рядов считается из расчёта четыре пункта на ряд, поэтому короткое меню на пять рядов не дробится — рядов получится меньше, чем выбрано. Содержимое экрана, кнопка «+» и подсказки снизу сами поднимаются над меню. В режиме «ПК» меню стоит колонкой слева, настройка на него не влияет.',
     font_reset: 'Обычный', font_demo: 'Так будет выглядеть текст',
     mq_all_ok: 'Все фото и видео отправлены', mq_sending: 'Идёт отправка фото и видео',
     mq_pending: 'Ждут отправки', mq_open: 'Открыть',
@@ -1253,7 +1277,7 @@ const I18N = {
     acc_inv_line: 'Бухгалтерия', act_acc_mark: 'отметка бухгалтера', act_acc_rates: 'проценты бухгалтерии', act_acc_map: 'категории бухгалтерии',
     /* v1.08.40: действия журнала, у которых не было подписи (показывался код) */
     act_push_sub: 'подписка на пуши', act_mfa_on: '2FA включена', act_mfa_off: '2FA выключена',
-    act_backup_auto: 'автобэкап SQL', act_cx_add_map: 'комплекс добавлен с карты', act_job_clone: 'создана копия задачи',
+    act_backup_auto: 'автобэкап SQL', act_backup_admin: 'ручной бэкап SQL (вечный)', act_cx_add_map: 'комплекс добавлен с карты', act_job_clone: 'создана копия задачи',
     act_day_move: 'перенос дня', act_tv_decide: 'решение по ТВ-сессии', act_veh_service: 'ТО автомобиля',
     act_route_opt: 'оптимизация маршрута', act_staff_flag: 'доступы сотрудника', act_sess_kill: 'сессии завершены',
     act_stock_return: 'возврат на склад', act_stock_return_all: 'возврат всего на склад', act_job_assign: 'задача назначена',
@@ -1476,11 +1500,19 @@ const I18N = {
     code_old_sum: 'Codes older than {m} mo: {n}', code_tip: 'A yellow chip on a complex whose code has not changed longer than the threshold. Admins and managers only.',
     sess_card: 'Staff sessions', sess_mgr_lbl: 'Managers see sessions and “last seen”',
     abk_card: 'Auto-backup (SQL → Google Drive)', abk_now: 'Back up now',
-    abk_auto_lbl: 'Automatically on admin sign-in (every 7 days)',
+    abk_auto_lbl: 'Automatically on admin sign-in (at most once a day)',
     abk_last: 'Last', abk_never: 'never yet', abk_list: 'Copies in Drive',
     abk_running: 'Backing up…', abk_ok: 'Backup done', abk_need_fn: 'Deploy the backup Edge Function (functions-dashboard/backup)',
     abk_need_gd: 'Configure Google Drive first (the “Google Drive” card)',
-    abk_tip: 'A full SQL dump of your data (logins and password hashes included) into the “TechLog Backups” folder of your Drive. Keeps the last 8 copies. Restore: clean DB → full-install → the backup file.',
+    abk_tip: 'A full SQL dump of your data (logins and password hashes included) into the “TechLog Backups” folder of your Drive. Three kinds of copies. ADMIN — made with “Back up now”: kept forever, the system never deletes or cleans it (the file name has -ADMIN). WEEKLY — one per week, kept forever (-weekly-YYYY-Wnn in the name). DAILY — auto-backup at most once a day, the last 8 are kept, older ones go to the Drive trash (-daily in the name). Only files marked as daily are ever removed; old-format files and anything you put there or renamed by hand are left alone. Restore: clean DB → full-install → the backup file.',
+    abk_r_admin: 'made by the admin by hand — kept forever, never deleted by the system',
+    abk_r_weekly: 'one copy per week — kept forever',
+    abk_r_daily: 'auto-backup at most once a day — the last {N}, older go to the Drive trash',
+    abk_k_admin: 'ADMIN · forever', abk_k_weekly: 'WEEKLY · forever', abk_k_daily: 'daily', abk_k_legacy: 'old format · never deleted',
+    abk_g_admin: 'Manual admin backups', abk_g_weekly: 'Weekly', abk_g_daily: 'Daily (rotated)', abk_g_legacy: 'Old format (before 1.09.03)',
+    abk_more: '{N} more — in the “TechLog Backups” folder on Drive', abk_empty: 'no copies yet',
+    abk_old_fn: 'The backup function is an old version: it still rotates the old way (last 8, manual ones are deleted too). Redeploy the backup Edge Function from functions-dashboard/backup.',
+    abk_perm_ok: 'Permanent copy done',
     veh_service: 'Service at odometer, mi', veh_service_left: '{n} mi to service',
     veh_service_over: 'service overdue by {n} mi', veh_mil: 'Check Engine',
     veh_fuel_low: 'low fuel', veh_track: 'Day track', veh_track_off: 'Hide track',
@@ -1885,8 +1917,12 @@ const I18N = {
     eq_settings_title: 'Equipment rental & permissions',
     docs_set_card: 'Document settings', docs_my_title: 'Job card & search',
     def_days_lbl: 'Default rental, days', max_ext_lbl: 'Max extension, days',
-    lock_days_lbl: 'Lock editing older than, days (0 — off)',
+    lock_days_lbl: 'Lock editing older than, days',
     lock_hint: 'Techs cannot edit documents older than this — only manager or admin.',
+    lock_chk: 'Lock editing of old jobs',
+    lock_state_off: 'Now: off — editing jobs is not restricted by age in any way.',
+    lock_state_on: 'Now: on — a tech cannot edit or delete jobs dated before {D} (older than {N} days). Manager and admin can always edit.',
+    lock_tip: 'A lock on old jobs (invoices). CHECKBOX OFF (the database value is 0) — the feature is disabled: editing is not restricted by age in any way, a tech edits and deletes own jobs of any age. CHECKBOX ON — a tech cannot edit or delete jobs older than the given number of days; it goes by the job date, not the creation date. The minimum is 1 day: with “1” yesterday’s job can still be edited, the day before yesterday cannot. Manager and admin are never locked. It is checked not only by the app but by the database itself (answer LOCKED). The number of days is remembered: untick and tick again — the previous term comes back.',
     lock_note: 'Document older than {N} days — manager/admin only',
     d_stock: 'Warehouse', stock_total: 'total', stock_broken: 'broken', stock_repair: 'in repair',
     stock_field: 'on site', stock_avail: 'available',
@@ -2049,6 +2085,18 @@ const I18N = {
     doc_save_close: 'Save and close', doc_close_nosave: 'Close without saving',
     font_title: 'Font size', font_hint: 'Personal account setting, separate for each mode: the size chosen in «Phone» mode does not change the size in «PC» mode and vice versa. The value lives in your profile, so another phone or another computer picks it up. It changes the whole interface: lists, documents, buttons.',
     font_mode_ph: 'now: «Phone» mode', font_mode_pc: 'now: «PC» mode',
+    dens_title: 'Interface density', dens_cozy: 'Regular', dens_compact: 'Compact',
+    dens_hint: 'Personal account setting, separate for «Phone» mode and «PC» mode; it lives in your profile and follows you to another device. «Compact» is for small laptops, tablets and phones: more fits on the screen. Not only the letters shrink but the blocks themselves — header, week ribbon, menu, icons, padding inside cards; a day card becomes half as tall and the board fits one and a half to two times more people. The look stays the same. Letter size is still adjusted separately — the row above. On a PC the button at the bottom left switches the same thing, on the board — the button next to the eye.',
+    dens_btn_on: 'Compact is on — press to return to regular density', dens_btn_off: 'Make it more compact: more fits on the screen',
+    dens_log_on: 'compact', dens_log_off: 'regular',
+    cv_title: 'PC mode on a small screen', cv_d_off: 'on this device · phone layout right now', cv_d_on: 'on this device · canvas {W} px, scale {P}%',
+    cv_d_wait: 'on this device · turns on in «PC» mode', cv_d_narrow: 'on this device · the screen is too narrow right now — rotate the phone',
+    cv_auto: 'Auto', cv_off: 'Off',
+    cv_hint: 'A phone or tablet screen is narrower than 980 points, while the computer layout (menu on the left, full-width board, «minimum staff on screen») only turns on from that width — so in «PC» mode a phone used to show the regular phone layout. Now the page is drawn on a canvas of the chosen width and scaled down to the screen — the same way «Desktop site» works in a browser; pinch to zoom into any spot. «Auto» is a 1100-point canvas. The wider the canvas, the more fits and the smaller the letters; a scale below 45% is never used — such a width is simply unavailable, and a phone held upright keeps the phone layout. The setting is stored on the device, not in the profile: every screen has its own. Works best together with compact density.',
+    ml_title: 'Menu item labels', ml_auto: 'Auto', ml_on: 'Show', ml_off: 'Hide',
+    ml_hint: 'Personal account setting, separate for «Phone» mode and «PC» mode; it lives in your profile and follows you to another device. «Auto» — as before: on a narrow screen (up to 430 px) only icons remain, on a wide one the labels are visible. «Show» — labels are always visible, even on a small screen; if they get cut off in a single row, add menu rows. «Hide» — icons only; the item name appears in the hover tooltip.',
+    mr_title: 'Menu rows on the phone', mr_d: 'Bottom menu in «Phone» mode: 1 to 5 rows',
+    mr_hint: 'Personal account setting. The bottom menu items are split evenly into the chosen number of rows — fewer buttons per row, so the labels fit in full. The number of rows is worked out at four items per row, so a short menu is not split into five rows — you get fewer rows than chosen. The screen content, the «+» button and bottom pop-ups move up above the menu by themselves. In «PC» mode the menu is a column on the left and this setting does not affect it.',
     font_reset: 'Normal', font_demo: 'This is how text will look',
     mq_all_ok: 'All photos and videos uploaded', mq_sending: 'Uploading photos and videos',
     mq_pending: 'Waiting to upload', mq_open: 'Open',
@@ -2424,7 +2472,7 @@ const I18N = {
     acc_inv_line: 'Accounting', act_acc_mark: 'accountant mark', act_acc_rates: 'accounting percentages', act_acc_map: 'accounting categories',
     /* v1.08.40: journal actions that had no caption (the raw code was shown) */
     act_push_sub: 'push subscription', act_mfa_on: '2FA enabled', act_mfa_off: '2FA disabled',
-    act_backup_auto: 'SQL auto-backup', act_cx_add_map: 'complex added from the map', act_job_clone: 'job cloned',
+    act_backup_auto: 'SQL auto-backup', act_backup_admin: 'manual SQL backup (permanent)', act_cx_add_map: 'complex added from the map', act_job_clone: 'job cloned',
     act_day_move: 'day moved', act_tv_decide: 'TV session decision', act_veh_service: 'vehicle service mark',
     act_route_opt: 'route optimized', act_staff_flag: 'staff access flags', act_sess_kill: 'sessions terminated',
     act_stock_return: 'returned to stock', act_stock_return_all: 'everything returned to stock', act_job_assign: 'job assigned',
@@ -2533,6 +2581,8 @@ function addDaysISO(iso, n){ const d = parseISO(iso); d.setDate(d.getDate()+n); 
 function mondayOf(iso){ const d = parseISO(iso); const wd = (d.getDay()+6)%7; d.setDate(d.getDate()-wd); return isoOf(d); }
 function fmtDM(iso){ const d = parseISO(iso); return d.getDate() + ' ' + t('months')[d.getMonth()]; }
 function fmtDMY(iso){ const d = parseISO(iso); return String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0') + '/' + d.getFullYear(); } // v1.07.26: US MM/DD/YYYY
+/* v1.09.05: та же дата, год — отдельным span.yr: компактная доска его прячет (compact.css) */
+function fmtDMYyr(iso){ const d = parseISO(iso); return String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0') + '<span class="yr">/' + d.getFullYear() + '</span>'; }
 function fmtUS(iso){ const d = parseISO(iso); return String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0') + '.' + String(d.getFullYear()).slice(2); }
 function nowStamp(){ const d = new Date(); return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); }
 function shortName(full){
@@ -2574,6 +2624,97 @@ function fontSyncPref(){
     if (pv >= 85 && pv <= 150){ if (fontPct() !== pv){ TLUI.fontSet(pv); render(); } return; }
     if (fontPct() !== 100) fontSavePref();
   }catch(e){}
+}
+
+/* =====================================================================
+   v1.09.05 · ПЛОТНОСТЬ ИНТЕРФЕЙСА — «обычная | компактная».
+   Сам класс tl-compact и кэш устройства — в ui.js (TLUI.density*), вёрстка —
+   в compact.css. Здесь — привязка к АККАУНТУ, своя для каждого режима:
+   push_prefs.density (режим «Телефон») и density_pc (режим «ПК»), как у
+   размера шрифта. До 1.09.05 «компактно» было только на ПК, жило в
+   localStorage устройства и меняло один кегль.
+   ===================================================================== */
+function densCur(){ try{ return window.TLUI && TLUI.density ? TLUI.density() : 'cozy'; }catch(e){ return 'cozy'; } }
+function densIsCompact(){ try{ return document.documentElement.classList.contains('tl-compact'); }catch(e){ return false; } }
+function densPrefKey(){ return fontMode() === 'desktop' ? 'density_pc' : 'density'; }
+let _densSaveT = null;
+function densSavePref(){
+  clearTimeout(_densSaveT);
+  _densSaveT = setTimeout(async () => {
+    try{
+      if (!state.user) return;
+      const k = densPrefKey(), v = densCur();
+      const me = (state.data.profiles || []).find(p => p.id === state.user.id);
+      if (((state.user.push_prefs || {})[k]) === v && me && (me.push_prefs || {})[k] === v) return;
+      const prefs = { ...((me && me.push_prefs) || {}), ...(state.user.push_prefs || {}), [k]: v };
+      state.user.push_prefs = prefs;
+      if (me){ me.push_prefs = prefs; if (HAS_SB) await dbUpsert('profiles', { ...me, push_prefs: prefs }); else saveLocalNow(); }
+      dlog('плотность: ' + t(v === 'compact' ? 'dens_log_on' : 'dens_log_off') + ' · ' + (k === 'density_pc' ? 'режим ПК' : 'режим телефона') + ' (настройка аккаунта)');
+    }catch(e){ dlog('⚠ density:', e); }
+  }, 700);
+}
+/* после входа и при смене режима: профиль → устройство; если в профиле для
+   этого режима пусто, а на устройстве уже «компактно» — переносим туда */
+function densSyncPref(){
+  try{
+    if (!state.user || !window.TLUI || !TLUI.densitySet) return;
+    const pv = (state.user.push_prefs || {})[densPrefKey()];
+    if (pv === 'compact' || pv === 'cozy'){ if (densCur() !== pv) TLUI.densitySet(pv); return; }
+    if (densCur() === 'compact') densSavePref();
+  }catch(e){}
+}
+function densSet(v){
+  try{ if (window.TLUI && TLUI.densitySet) TLUI.densitySet(v === 'compact' ? 'compact' : 'cozy'); }catch(e){}
+  densSavePref(); render();
+}
+function densToggle(){ densSet(densCur() === 'compact' ? 'cozy' : 'compact'); }
+/* кнопка-значок плотности (доска, оба режима) */
+function densBtnHtml(){
+  const on = densCur() === 'compact';
+  return `<button type="button" class="brd-eye brd-dens ${on ? 'on' : ''}" id="brd-dens" aria-pressed="${on ? 'true' : 'false'}"
+    title="${esc(t(on ? 'dens_btn_on' : 'dens_btn_off'))}" aria-label="${esc(t('dens_title'))}"
+    onclick="App.densToggle()">${ic('dens')}</button>`;
+}
+/* строка настроек «Плотность интерфейса» */
+function densRowHtml(){
+  const cur = densCur();
+  return `<div class="settings-row" id="dens-row"><!-- v1.09.05 -->
+      <div class="grow" style="flex:1"><b>${ic('dens')} ${t('dens_title')} ${tipQ('dens_hint')}</b>
+        <div class="d">${fontMode() === 'desktop' ? t('font_mode_pc') : t('font_mode_ph')}</div></div>
+      <div class="lang-seg">
+        <button class="${cur === 'cozy' ? 'on' : ''}" onclick="App.densSet('cozy')">${t('dens_cozy')}</button>
+        <button class="${cur === 'compact' ? 'on' : ''}" onclick="App.densSet('compact')">${t('dens_compact')}</button>
+      </div>
+    </div>`;
+}
+/* v1.09.05 · строка «ПК-режим на маленьком экране» (холст, viewmode.js). Видна
+   только там, где механизм применим: палец + экран уже 980 точек. */
+function canvasInfo(){ try{ return (window.TLView && TLView.canvasInfo) ? TLView.canvasInfo() : null; }catch(e){ return null; } }
+function canvasRowHtml(){
+  const c = canvasInfo();
+  if (!c || !c.applicable) return '';
+  const pref = String(c.pref);
+  const d = c.width ? t('cv_d_on').replace('{W}', c.width).replace('{P}', Math.round(c.scale * 100))
+          : pref === 'off' ? t('cv_d_off')
+          : vmCur() !== 'desktop' ? t('cv_d_wait')
+          : (c.fit && c.fit.length) ? t('cv_d_off') : t('cv_d_narrow');
+  const opts = ['auto', ...c.steps.map(String), 'off'];
+  return `<div class="settings-row" id="cv-row"><!-- v1.09.05 -->
+      <div class="grow" style="flex:1"><b>${ic('monitor')} ${t('cv_title')} ${tipQ('cv_hint')}</b>
+        <div class="d" id="cv-d">${d}</div></div>
+      <div class="lang-seg sm cv-seg">
+        ${opts.map(v => {
+          const na = v !== 'auto' && v !== 'off' && c.fit && c.fit.indexOf(+v) < 0;   // мельче 45% — недоступно на этом экране
+          return `<button class="${pref === v ? 'on' : ''}"${na ? ' disabled' : ''} onclick="App.canvasSet('${v}')">${v === 'auto' ? t('cv_auto') : v === 'off' ? t('cv_off') : v}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+function canvasSet(v){
+  try{ if (window.TLView && TLView.canvasSet) TLView.canvasSet(v); }catch(e){}
+  const c = canvasInfo();
+  dlog('холст ПК-режима: ' + v + (c && c.width ? ' → ' + c.width + ' px, масштаб ' + Math.round(c.scale * 100) + '%' : ' → нет'));
+  render();
 }
 
 function techNamesFor(j){
@@ -3036,16 +3177,17 @@ async function mfaRefresh(){
     MFA.on = !!f; MFA.factorId = f ? f.id : '';
   }catch(e){ dlog('⛔ mfa.listFactors:', e); MFA.on = false; }
 }
-function secCardHtml(){
-  if (!HAS_SB) return `<div class="card"><div style="font-weight:900;margin-bottom:6px">${ic('key')} ${t('sec_card')}</div><div class="tiny">${t('demo_sb_only')}</div></div>`;
-  const on = MFA.on === true;
-  return `<div class="card">
-    <div style="font-weight:900;margin-bottom:6px">${ic('key')} ${t('sec_card')} ${tipQ('mfa_tip')}</div>
-    <div class="tiny" style="margin-bottom:8px">${on ? '✅ ' + t('mfa_on') : t('mfa_off')}</div>
-    ${on
-      ? `<button class="btn btn-ghost sm" onclick="App.mfaDisable()">${t('mfa_disable')}</button>`
-      : `<button class="btn btn-green sm" onclick="App.mfaEnroll()">${ic('key')} ${t('mfa_enable')}</button>`}
-  </div>`;
+/* v1.09.02: 2FA — не отдельный спойлер внизу, а строка карточки профиля сразу
+   под «Сменой пароля» (просьба Abr): заголовок с «?», статус, кнопка справа. */
+function secRowHtml(){
+  const on = HAS_SB && MFA.on === true;
+  return `<div class="settings-row" id="sec-row">
+      <div class="grow" style="flex:1"><b>${ic('key')} ${t('sec_card')} ${HAS_SB ? tipQ('mfa_tip') : ''}</b>
+        <div class="d">${!HAS_SB ? t('demo_sb_only') : on ? '✅ ' + t('mfa_on') : t('mfa_off')}</div></div>
+      ${!HAS_SB ? ''
+        : on ? `<button class="btn btn-ghost sm" onclick="App.mfaDisable()">${t('mfa_disable')}</button>`
+             : `<button class="btn btn-green sm" onclick="App.mfaEnroll()">${ic('key')} ${t('mfa_enable')}</button>`}
+    </div>`;
 }
 async function mfaEnroll(){
   try{
@@ -3067,7 +3209,7 @@ async function mfaEnroll(){
       ${mfaQrHtml(qr)}
       <div class="tiny" style="word-break:break-all;margin-bottom:6px">${t('mfa_secret')}: <b>${esc(secret)}</b></div>
       <div class="btn-row3" style="grid-template-columns:1fr 1fr;margin-bottom:8px">
-        <button class="btn btn-ghost sm" onclick="App.mfaCopySecret()">${ic('clipboard')} ${t('mfa_copy_secret')}</button>
+        <button class="btn btn-ghost sm" onclick="App.mfaCopySecret()">${ic('copy')} ${t('mfa_copy_secret')}</button>
         ${uri ? `<a class="btn btn-ghost sm" href="${esc(uri)}">${ic('key')} ${t('mfa_open_app')}</a>` : ''}
       </div>
       <div class="tiny" style="margin-bottom:8px">${t('mfa_manual')}</div>
@@ -3259,6 +3401,24 @@ function featCardHtml(){
 }
 /* v1.08.33: автобэкап SQL → Google Drive (Edge Function backup) */
 const ABK = { busy: false, list: null };
+/* v1.09.03 · три полки хранения (решает Edge Function backup, здесь — показ):
+   ADMIN — кнопка «Сделать бэкап сейчас»: вечная копия, система её не удаляет;
+   weekly — одна на ISO-неделю, вечная; daily — автобэкап не чаще раза в день,
+   хранятся последние 8. Вид копии сервер отдаёт в list (f.kind); у старой
+   функции поля нет — вид угадывается по имени, а карточка просит передеплой. */
+const ABK_KEEP = 8, ABK_DAY_KEY = 'techlog_abk_auto_day', ABK_TRY_KEY = 'techlog_abk_auto_try';
+function abkKindOf(f){
+  if (f && ['admin', 'weekly', 'daily', 'legacy'].includes(f.kind)) return f.kind;
+  const nm = String((f || {}).name || '');
+  return /-ADMIN\.sql$/i.test(nm) ? 'admin' : /-weekly-\d{4}-W\d{2}\.sql$/i.test(nm) ? 'weekly'
+       : /-daily\.sql$/i.test(nm) ? 'daily' : 'legacy';
+}
+function abkRulesHtml(){
+  const row = (k, txt) => `<div><span class="abk-tag k-${k}">${t('abk_k_' + k)}</span> ${txt}</div>`;
+  return `<div class="abk-rules tiny" id="abk-rules">
+    ${row('admin', t('abk_r_admin'))}${row('weekly', t('abk_r_weekly'))}${row('daily', t('abk_r_daily').replace('{N}', ABK_KEEP))}
+  </div>`;
+}
 function abkCardHtml(){
   const org = state.data.org_settings || {};
   const last = org.backup_last_at
@@ -3269,52 +3429,98 @@ function abkCardHtml(){
     <button class="btn btn-blue sm" ${ABK.busy?'disabled':''} onclick="App.abkRun()">${ic('save')} ${ABK.busy ? t('abk_running') : t('abk_now')}</button>
     <label class="chk-line" style="margin-top:8px"><input type="checkbox" ${org.backup_auto===true?'checked':''}
       onchange="App.setOrgFlag('backup_auto', this.checked)"> ${t('abk_auto_lbl')}</label>
+    ${abkRulesHtml()}
     <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.abkList()">${t('abk_list')}</button>
-    <div class="tiny" id="abk-list"></div>
+    <div class="tiny" id="abk-list">${ABK.list ? abkListHtml(ABK.list) : ''}</div>
   </div>`;
 }
+/* silent = автозапуск (kind=auto: сервер сам решит, нужен ли сегодня daily и
+   weekly); кнопка — kind=admin: вечная копия с пометкой ADMIN */
 async function abkRun(silent){
-  if (!HAS_SB){ toast(t('demo_sb_only'), 'inf'); return; }
-  if (ABK.busy) return; ABK.busy = true; if (!silent) render();
+  if (!HAS_SB){ if (!silent) toast(t('demo_sb_only'), 'inf'); return null; }
+  if (ABK.busy) return null; ABK.busy = true; if (!silent) render();
+  let j = null;
   try{
     const token = await mediaJwt(); if (!token) throw new Error('AUTH');
-    const r = await fetch(mediaFN() + '/backup?run=1', { headers: { Authorization: 'Bearer ' + token } });
-    const j = await r.json().catch(()=>({}));
+    const r = await fetch(mediaFN() + '/backup?run=1&kind=' + (silent ? 'auto' : 'admin'), { headers: { Authorization: 'Bearer ' + token } });
+    j = await r.json().catch(()=>({}));
     if (!r.ok){
       const msg = r.status === 404 ? t('abk_need_fn')
         : /DRIVE/.test(j.error || '') ? t('abk_need_gd') : (j.error || 'HTTP ' + r.status);
-      throw new Error(msg);
+      j = null; throw new Error(msg);
     }
+    if (j.skipped){ dlog('автобэкап: сегодня уже сделан — пропуск'); return j; }
+    const c = j.counts || null;
     const org = { ...state.data.org_settings,
       backup_last_at: new Date().toISOString(),
-      backup_note: 'ok · ' + (j.name || '') + ' · ' + (j.size || '?') + ' KB' };
+      backup_note: 'ok · ' + (j.name || '') + (j.size ? ' · ' + j.size + ' KB' : '')
+        + (c ? ` · ежедн. ${c.daily}/${ABK_KEEP} · недельных ${c.weekly} · админ ${c.admin}` : '') };
     state.data.org_settings = org; saveLocal();
-    audit('backup_auto', 'org', 'backup', { name: j.name, kb: j.size });
-    if (!silent) toast('✓ ' + t('abk_ok') + ' · ' + (j.size || '?') + ' KB');
+    audit(silent ? 'backup_auto' : 'backup_admin', 'org', 'backup',
+      { name: j.name, kb: j.size, kind: j.kind || (silent ? 'auto' : 'admin'), weekly: j.weekly || undefined, removed: j.removed || undefined });
+    if (!c) dlog('⚠ backup: ' + t('abk_old_fn'));
+    if (!silent){
+      toast('✓ ' + t(c ? 'abk_perm_ok' : 'abk_ok') + ' · ' + (j.size || '?') + ' KB');
+      if (!c) toast('⚠ ' + t('abk_old_fn'), 'err');
+      if (ABK.list) abkListLoad();
+    }
+    return j;
   }catch(e){
     dlog('⛔ abkRun:', e);
     if (!silent) toast('⚠ ' + errStr(e), 'err');
+    return null;
   }finally{ ABK.busy = false; render(); }
+}
+function abkListHtml(j){
+  const files = (j && j.files) || [];
+  if (!files.length) return '—  ' + t('abk_empty');
+  const oldFn = !j.counts;                                     /* старая функция: видов и счётчиков нет */
+  const g = { admin: [], weekly: [], daily: [], legacy: [] };
+  files.forEach(f => g[abkKindOf(f)].push(f));
+  const cnt = j.counts || { admin: g.admin.length, weekly: g.weekly.length, daily: g.daily.length, legacy: g.legacy.length };
+  const rowH = (f, k) => `<div class="abk-row"><span class="nm">${esc(f.name)}</span>
+      <span>${fmtDMY(String(f.createdTime).slice(0,10))}${f.size ? ' · ' + Math.max(1, Math.round(+f.size/1024)) + ' KB' : ''}${f.by ? ' · @' + esc(f.by) : ''}</span>
+      <span class="abk-tag k-${k}">${t('abk_k_' + k)}</span></div>`;
+  const grp = (k, max) => {
+    if (!g[k].length) return '';
+    const rest = Math.max(0, (cnt[k] || g[k].length) - Math.min(max, g[k].length));
+    return `<div class="abk-grp" data-k="${k}"><div class="abk-grp-h">${t('abk_g_' + k)} · ${cnt[k] || g[k].length}${k === 'daily' ? ' / ' + (j.keep_daily || ABK_KEEP) : ''}</div>
+      ${g[k].slice(0, max).map(f => rowH(f, k)).join('')}
+      ${rest ? `<div class="abk-row">… ${t('abk_more').replace('{N}', rest)}</div>` : ''}</div>`;
+  };
+  return (oldFn ? `<div class="banner b-yellow" style="margin:8px 0">${ic('warn')} ${t('abk_old_fn')}</div>` : '')
+    + grp('admin', 20) + grp('weekly', 12) + grp('daily', 10) + grp('legacy', 10);
 }
 async function abkListLoad(){
   const el = $('#abk-list'); if (!el || !HAS_SB) return;
-  el.textContent = '…';
+  if (!ABK.list) el.textContent = '…';
   try{
     const token = await mediaJwt();
     const r = await fetch(mediaFN() + '/backup?list=1', { headers: { Authorization: 'Bearer ' + token } });
     const j = await r.json().catch(()=>({}));
     if (!r.ok) throw new Error(r.status === 404 ? t('abk_need_fn') : (j.error || 'HTTP ' + r.status));
-    el.innerHTML = (j.files || []).map(f => `<div>${esc(f.name)} · ${fmtDMY(String(f.createdTime).slice(0,10))}${f.size ? ' · ' + Math.round(+f.size/1024) + ' KB' : ''}</div>`).join('') || '—';
-  }catch(e){ el.textContent = '⚠ ' + errStr(e); }
+    ABK.list = j;
+    const el2 = $('#abk-list'); if (el2) el2.innerHTML = abkListHtml(j);
+  }catch(e){ const el2 = $('#abk-list'); if (el2) el2.textContent = '⚠ ' + errStr(e); }
 }
-/* автозапуск: вход админа + включён флаг + прошло ≥7 дней */
-function abkAutoMaybe(){
-  if (!HAS_SB || !isAdmin()) return;
-  const org = state.data.org_settings || {};
-  if (org.backup_auto !== true) return;
-  const last = org.backup_last_at ? Date.parse(org.backup_last_at) : 0;
-  if (Date.now() - last < 7 * 86400000) return;
-  abkRun(true);
+/* автозапуск: вход админа + включён флаг + на этом устройстве сегодня ещё не
+   спрашивали. «Не чаще раза в день» держит СЕРВЕР (по файлам в папке, дата по
+   Нью-Йорку): второе устройство или второй админ получат skipped. При ошибке
+   (нет связи, Диск) повтор не раньше чем через 3 часа. */
+function abkAutoDue(now){
+  if (!HAS_SB || !isAdmin()) return false;
+  if ((state.data.org_settings || {}).backup_auto !== true) return false;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
+  let day = '', tried = 0;
+  try{ day = localStorage.getItem(ABK_DAY_KEY) || ''; tried = +localStorage.getItem(ABK_TRY_KEY) || 0; }catch(e){}
+  if (day === todayISO()) return false;
+  return (now || Date.now()) - tried >= 3 * 3600000;
+}
+async function abkAutoMaybe(){
+  if (!abkAutoDue()) return;
+  try{ localStorage.setItem(ABK_TRY_KEY, String(Date.now())); }catch(e){}
+  const j = await abkRun(true);
+  if (j && j.ok){ try{ localStorage.setItem(ABK_DAY_KEY, todayISO()); }catch(e){} }
 }
 
 function popCardHtml(){
@@ -3393,10 +3599,34 @@ function docsEquipCardHtml(){
       <label class="opt ${org.allow_tech_proposal_flag!==false?'on':''}">
         <input type="checkbox" ${org.allow_tech_proposal_flag!==false?'checked':''} onchange="App.setOrgFlag('allow_tech_proposal_flag', this.checked)"> ${t('allow_prop_chk')}</label>
     </div>
-    <div class="qty-line"><span class="name">${t('lock_days_lbl')}</span>
-      ${orgStepperHtml('edit_lock_days', org.edit_lock_days ?? 0, 0, 60)}</div>
-    <div class="tiny">${t('lock_hint')}</div>
+    ${lockRowHtml(org)}
   </div>`;
+}
+/* v1.09.03 · замок правки старых задач: галочка «включено/выключено» + срок.
+   В базе по-прежнему одно число org_settings.edit_lock_days: 0 — выключено,
+   от 1 — срок в днях (тот же смысл у триггера jobs_lock_guard). Раньше «0 —
+   выкл» стояло в подписи степпера, и было не видно, работает ли функция.
+   Теперь: галочка — состояние, степпер — срок (минимум 1, при снятой галочке
+   блёклый и не нажимается), под ним строка «Сейчас: …», подробности — в «?». */
+const LOCK_LAST_KEY = 'techlog_lock_days_last', LOCK_DEF_DAYS = 7;
+function lockLastDays(){
+  let v = 0; try{ v = parseInt(localStorage.getItem(LOCK_LAST_KEY), 10) || 0; }catch(e){}
+  return v >= 1 && v <= 60 ? v : LOCK_DEF_DAYS;
+}
+function lockRowHtml(org){
+  const n = +((org || {}).edit_lock_days) >= 1 ? Math.min(60, +org.edit_lock_days) : 0;
+  const on = n >= 1, shown = on ? n : lockLastDays();
+  const state = on
+    ? t('lock_state_on').replace('{N}', n).replace('{D}', fmtDMY(addDaysISO(todayISO(), -n)))
+    : t('lock_state_off');
+  return `<div class="set-opts lock-opts" id="lock-row">
+      <label class="opt ${on?'on':''}">
+        <input type="checkbox" id="lock-chk" ${on?'checked':''} onchange="App.lockToggle(this.checked)"> ${t('lock_chk')}</label>
+      ${tipQ('lock_tip')}
+    </div>
+    <div class="qty-line lock-days ${on?'':'is-off'}"><span class="name">${t('lock_days_lbl')}</span>
+      ${orgStepperHtml('edit_lock_days', shown, 1, 60, 1, !on)}</div>
+    <div class="tiny lock-state ${on?'on':''}" id="lock-state">${on ? ic('lock') : ''} ${state}</div>`;
 }
 function docsCardHtml(){
   return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml()
@@ -3741,7 +3971,7 @@ function dbUpdateHelp(){
     <button class="btn btn-ghost" onclick="App.dbDiag()">${ic('steth')} ${t('db_help_check')}</button>
   `);
 }
-function toast(msg, kind){
+function toast(msg, kind, ms){
   const now = Date.now();                                  // v1.07.26: не спамим одинаковыми
   if (toast._m === msg && now - (toast._t || 0) < 1800) return;
   toast._m = msg; toast._t = now;
@@ -3751,7 +3981,8 @@ function toast(msg, kind){
   const p = splitMark(msg);
   if (p.icon){ el.innerHTML = p.icon + '<span class="t-txt"></span>'; el.querySelector('.t-txt').textContent = p.text; }
   else el.textContent = msg;
-  $('#toasts').appendChild(el); setTimeout(()=>el.remove(), 3800);
+  if (ms > 3800){ el.classList.add('tap'); el.onclick = () => el.remove(); }   // v1.09.03: длинную подсказку можно закрыть нажатием
+  $('#toasts').appendChild(el); setTimeout(()=>el.remove(), ms > 0 ? ms : 3800);
 }
 const PALETTE = ['#58CC02','#1CB0F6','#FF4B4B','#FF9600','#FFC800','#CE82FF','#2EC4B6','#111827','#8B9AA3'];
 
@@ -4413,7 +4644,7 @@ function netModal(){
     <div class="mq-log net-log" id="net-log"></div>
     <button class="btn btn-blue" id="net-run" style="margin-top:10px" onclick="App.netRunChecks()">${ic('wifi')} ${t('net_check_btn')}</button>
     <div class="btn-row3" style="grid-template-columns:1fr 1fr;margin-top:8px">
-      <button class="btn btn-ghost" onclick="App.netCopy()">${ic('clipboard')} ${t('net_copy')}</button>
+      <button class="btn btn-ghost" onclick="App.netCopy()">${ic('copy')} ${t('net_copy')}</button>
       <button class="btn btn-ghost" onclick="App.closeModal()">${t('close')}</button>
     </div>
   `);
@@ -5118,11 +5349,12 @@ async function afterSbLogin(session){
     await syncNow(true);
     mqQuietSyncPref();                                                      // v1.08.86
     fontSyncPref();                                                         // v1.08.89
+    densSyncPref();                                                         // v1.09.05
     try{ authRestoreDraft(); }catch(e){ dlog('⛔ authRestoreDraft:', e); }   // v1.08.85
   } finally {
     loginInFlight = false;
     mfaRefresh().catch(()=>{}); pbCurrentSub().catch(()=>{});   // v1.08.33: статусы 2FA и пуш-подписки
-    setTimeout(abkAutoMaybe, 4000);                              // v1.08.33: автобэкап раз в 7 дней
+    setTimeout(abkAutoMaybe, 4000);                              // v1.08.33: автобэкап; v1.09.03 — не чаще раза в день, решает сервер
   }
 }
 function demoLogin(id){
@@ -5131,7 +5363,7 @@ function demoLogin(id){
   if (u.blocked){ toast('⛔ ' + t('blocked_msg'), 'err'); return; }
   state.user = u; localStorage.setItem(LS_SESSION, id);
   state.screen = 'home'; state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate);
-  mqQuietSyncPref(); fontSyncPref();                                        // v1.08.86 / v1.08.89
+  mqQuietSyncPref(); fontSyncPref(); densSyncPref();                        // v1.08.86 / v1.08.89 / v1.09.05
   render(); checkPickupBanner(true);
 }
 const LOGIN_RE = /^[a-z0-9_.-]{3,32}$/;
@@ -5421,6 +5653,9 @@ const IC = {
   plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
   tv: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+  /* v1.09.05: плотность («сжать по вертикали» — тот же значок у кнопки ПК-режима в desktop.js) и монитор для строки холста */
+  dens: '<path d="M4 12h16"/><path d="M12 3v5.2M9.4 5.8L12 8.4l2.6-2.6"/><path d="M12 21v-5.2M9.4 18.2L12 15.6l2.6 2.6"/>',
+  monitor: '<rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M9 20.5h6M12 16.5v4"/>',
   fs: '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/>',
   chev_u: '<path d="M5 15l7-7 7 7"/>',
   chev_d: '<path d="M5 9l7 7 7-7"/>',
@@ -5493,7 +5728,7 @@ const IC = {
   video: '<rect x="2.6" y="6.4" width="12.6" height="11.2" rx="2"/><path d="M15.2 11.1 20.9 8v8l-5.7-3.1z"/>',
   link: '<path d="M10.2 13.4a3.7 3.7 0 0 0 5.5.4l2.5-2.5a3.7 3.7 0 0 0-5.2-5.2l-1.4 1.4"/><path d="M13.8 10.6a3.7 3.7 0 0 0-5.5-.4l-2.5 2.5a3.7 3.7 0 0 0 5.2 5.2l1.4-1.4"/>',
   eye_off: '<path d="M4.2 4.4 19.8 20"/><path d="M9.7 9.8a3.2 3.2 0 0 0 4.5 4.5"/><path d="M6.6 6.8C4.5 8.1 2.9 9.9 2 12c1.9 4 5.6 6.4 10 6.4 1.6 0 3.2-.3 4.6-.9"/><path d="M19.3 16C20.5 15 21.4 13.6 22 12c-1.9-4-5.6-6.4-10-6.4-.7 0-1.3.05-2 .16"/>',
-  copy: '<rect x="8.8" y="8.8" width="10.8" height="10.8" rx="2"/><path d="M15.4 5.6H6.6a2 2 0 0 0-2 2v8.8"/>',
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2.2"/><path d="M5.8 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v.8"/>',
   upload: '<path d="M12 19V6.4"/><path d="M6.8 11.6 12 6.4l5.2 5.2"/><path d="M4.6 20.6h14.8"/>',
   wifi: '<path d="M2.8 9.3a13.2 13.2 0 0 1 18.4 0"/><path d="M6.2 12.7a8.4 8.4 0 0 1 11.6 0"/><path d="M9.6 16.1a3.7 3.7 0 0 1 4.8 0"/><circle cx="12" cy="19.2" r=".6"/>',
   dot: '<circle cx="12" cy="12" r="5.2" fill="currentColor" stroke="none"/>',
@@ -6172,7 +6407,7 @@ function render(){
   /* v1.08.92: экран входа не оставляет класс прошлого экрана — иначе после
      выхода на <div id="app"> висел scr-job/scr-home, и правила этих экранов
      (и проверки автотестов) применялись к форме входа */
-  if (!state.user){ tvBodyClass(false); app.innerHTML = viewLogin(); if (app.className !== 'scr-login') app.className = 'scr-login'; netMark(app); return; }
+  if (!state.user){ tvBodyClass(false); app.innerHTML = viewLogin(); if (app.className !== 'scr-login') app.className = 'scr-login'; netMark(app); tabbarFit(); return; }
   if (!state.data) state.data = loadLocal() || (HAS_SB ? emptyData() : seedDemoData());
   if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
   let body = '';
@@ -6204,6 +6439,7 @@ function render(){
   /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
   const scls = 'scr-' + state.screen;
   if (app.className !== scls) app.className = scls;
+  tabbarFit();                                           // v1.09.02: высота многорядного меню → --tbx
   window.TLBoardScroll && window.TLBoardScroll.bind();   // wheel — только на доске
   dndBindTouch();                                        // touchmove — только на карточках главной
   selxApply();                                           // v1.08.46: крестики очистки у списков
@@ -6293,6 +6529,92 @@ function viewFooter(){
   </div>`;
 }
 
+/* =====================================================================
+   v1.09.02 · ЛИЧНЫЕ НАСТРОЙКИ МЕНЮ (profiles.push_prefs, кэш в localStorage
+   для офлайна и демо — как cam_way):
+   ─ menu_labels / menu_labels_pc: 'auto' | 'on' | 'off' — подписи пунктов,
+     своё значение для режима «Телефон» и режима «ПК» (как размер шрифта);
+     'auto' = прежнее поведение (до 430 px одни значки);
+   ─ menu_rows: 1…5 — рядов НИЖНЕГО меню (в ПК-раскладке меню — колонка слева,
+     там настройка не действует).
+   Высота многорядного меню измеряется после отрисовки и кладётся в --tbx на
+   <html>: на неё поднимаются отступ экрана, «+», пилюля связи и подсказки снизу.
+   ===================================================================== */
+function menuLabKey(){ return vmCur() === 'desktop' ? 'menu_labels_pc' : 'menu_labels'; }
+function menuLabels(){
+  try{
+    const k = menuLabKey();
+    const pv = state.user && state.user.push_prefs && state.user.push_prefs[k];
+    if (pv === 'on' || pv === 'off' || pv === 'auto') return pv;
+    const lv = localStorage.getItem('techlog_' + k);
+    return lv === 'on' || lv === 'off' ? lv : 'auto';
+  }catch(e){ return 'auto'; }
+}
+function menuRows(){
+  try{
+    let v = +(state.user && state.user.push_prefs && state.user.push_prefs.menu_rows);
+    if (!(v >= 1 && v <= 5)) v = +localStorage.getItem('techlog_menu_rows');
+    return v >= 1 && v <= 5 ? Math.round(v) : 1;
+  }catch(e){ return 1; }
+}
+/* меню стоит полосой внизу: режим «Телефон» либо ПК-режим в узком окне
+   (desktop.css включает колонку слева только от 980 px) */
+function tabbarIsBottom(){ try{ return !(vmCur() === 'desktop' && innerWidth >= 980); }catch(e){ return true; } }
+let _menuSaveT = null;
+function menuPrefSet(k, v){
+  try{ localStorage.setItem('techlog_' + k, String(v)); }catch(e){}
+  if (state.user) state.user.push_prefs = { ...(state.user.push_prefs || {}), [k]: v };
+  render();
+  clearTimeout(_menuSaveT);
+  _menuSaveT = setTimeout(async () => {
+    try{
+      if (!state.user) return;
+      const me = (state.data.profiles || []).find(p => p.id === state.user.id);
+      if (!me) return;
+      const prefs = { ...(me.push_prefs || {}), ...(state.user.push_prefs || {}) };
+      state.user.push_prefs = prefs; me.push_prefs = prefs;
+      if (HAS_SB) await dbUpsert('profiles', { ...me, push_prefs: prefs }); else saveLocalNow();
+      dlog('меню: подписи ' + menuLabels() + ' (' + (vmCur() === 'desktop' ? 'режим ПК' : 'режим телефона') + '), рядов ' + menuRows() + ' (настройка аккаунта)');
+    }catch(e){ dlog('⚠ menu prefs:', e); }
+  }, 600);
+}
+function menuLabelsSet(v){ menuPrefSet(menuLabKey(), v === 'on' || v === 'off' ? v : 'auto'); }
+function menuRowsStep(d){
+  const v = Math.max(1, Math.min(5, menuRows() + (d > 0 ? 1 : -1)));
+  if (v !== menuRows()) menuPrefSet('menu_rows', v);
+}
+/* сколько пунктов в ряду: делим поровну, но не меньше четырёх в ряду */
+function tabbarCols(n, rows){
+  if (!(rows > 1) || n <= 4) return n;
+  const per = Math.max(4, Math.ceil(n / rows));
+  return Math.min(n, Math.ceil(n / Math.ceil(n / per)));
+}
+/* после отрисовки: на сколько меню выше обычного (68 px) — в --tbx. Меряем
+   только при нестандартной настройке, чтобы обычный рендер не платил reflow. */
+function tabbarFit(){
+  try{
+    const root = document.documentElement, bar = $('#app .tabbar');
+    let x = 0;
+    if (bar && tabbarIsBottom() && (bar.classList.contains('tb-multi') || bar.classList.contains('tb-lab-on'))){
+      const safe = Math.max(0, (parseFloat(getComputedStyle(bar).paddingBottom) || 0) - 8);
+      x = Math.max(0, Math.round(bar.offsetHeight - safe - 68));
+    }
+    const v = x + 'px';
+    if (root.style.getPropertyValue('--tbx') !== v) root.style.setProperty('--tbx', v);
+  }catch(e){}
+}
+let _tbBottom = null, _tbResT = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_tbResT);
+  _tbResT = setTimeout(() => {
+    try{
+      const b = tabbarIsBottom();
+      if (_tbBottom !== null && b !== _tbBottom && state.user && menuRows() > 1){ _tbBottom = b; render(); return; }
+      _tbBottom = b; tabbarFit();
+    }catch(e){}
+  }, 150);
+});
+
 function viewTabbar(){
   /* v1.08.39: у бухгалтера свой набор вкладок — без экранов правки документов */
   /* v1.08.49: поиск стоит СРАЗУ ПОСЛЕ «Главной» (в ПК-меню — строкой под
@@ -6328,11 +6650,18 @@ function viewTabbar(){
   /* v1.08.23: у админа вкладок стало 12 — на узком экране подписи начинали
      наезжать на соседние кнопки и перехватывать нажатия. В тесной раскладке
      подпись обрезается и не выходит за свою кнопку. */
-  return `<nav class="tabbar${items.length > 11 ? ' tb-tight' : ''}">` + items.map(([id, ic, label]) => id === 'srch'
-    ? `<button class="tab hdr-srch" onclick="App.searchOpen()">${ic}<span>${label}</span></button>`
+  /* v1.09.02: личные настройки — подписи (авто/показать/скрыть) и число рядов
+     нижнего меню. «Тесная» раскладка теперь считается по пунктам В РЯДУ. */
+  const cols = tabbarIsBottom() ? tabbarCols(items.length, menuRows()) : items.length;
+  const multi = cols < items.length;
+  const lab = menuLabels();
+  _tbBottom = tabbarIsBottom();
+  const cls = 'tabbar' + (cols > 11 ? ' tb-tight' : '') + (multi ? ' tb-multi' : '') + (lab !== 'auto' ? ' tb-lab-' + lab : '');
+  return `<nav class="${cls}"${multi ? ` style="--tb-cols:${cols}"` : ''}>` + items.map(([id, ic, label]) => id === 'srch'
+    ? `<button class="tab hdr-srch" title="${esc(label)}" onclick="App.searchOpen()">${ic}<span>${label}</span></button>`
     : id === 'faq'
-    ? `<button class="tab" onclick="App.faq()">${ic}<span>${label}</span></button>`
-    : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" onclick="App.go('${id}')">
+    ? `<button class="tab" title="${esc(label)}" onclick="App.faq()">${ic}<span>${label}</span></button>`
+    : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" title="${esc(label)}" onclick="App.go('${id}')">
       ${ic}<span>${label}</span>
     </button>`).join('') + `</nav>`;
 }
@@ -6396,7 +6725,7 @@ function addrLineHtml(cx){
   if (!cx || !cx.address) return '';
   return `<div class="s addr"><span class="addr-txt">${esc(cx.address)}</span>
     <button class="copy-mini" title="${t('copy_addr')}" aria-label="${t('copy_addr')}"
-      onclick="event.stopPropagation();App.copyCxAddr('${cx.id}')">${ic('clipboard')}</button></div>`;
+      onclick="event.stopPropagation();App.copyCxAddr('${cx.id}')">${ic('copy')}</button></div>`;
 }
 function codesLineHtml(cx){
   if (!cx || (!cx.access_code && !cx.callbox_code)) return '';
@@ -6525,7 +6854,7 @@ function viewHome(){
     const overdue = p0.due_date < today;
     const pkJob = state.data.jobs.find(x=>x.id===jobId) || { id: jobId, priority:false, technician_id: p0.technician_id, sort_order: 999 };
     return `
-    <div class="item clicky${canReorder(pkJob)?' has-rail':''}" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : '#8AA0AB'}" onclick="App.pickupModal('${jobId}','${iso}',event)">
+    <div class="item clicky${canReorder(pkJob)?' has-rail':''}" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : STRIPE_PK}" onclick="App.pickupModal('${jobId}','${iso}',event)">
       ${rowNumHtml(num.pkNum[jobId])}${bnDotHtml('pk:' + jobId)}
       <div class="info">
         <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(p0.unit_number||'')}${triHtml(!!pkJob.priority, jobId, canPrio(pkJob), true)}</span></div>
@@ -6550,7 +6879,7 @@ function viewHome(){
     const g = {}; pkDone.forEach(p => (g[p.job_id] = g[p.job_id]||[]).push(p));
     return Object.values(g).map((list, di) => {
       const p0 = list[0]; const cx = cxById(p0.complex_id) || {abbr:'?',name:'?'};
-      return `<div class="item clicky" style="border-left-color:#3a4a52;opacity:.6" onclick="App.openJob('${p0.job_id}')">
+      return `<div class="item clicky" style="border-left-color:${STRIPE_PK_DONE};opacity:.6" onclick="App.openJob('${p0.job_id}')">
         ${rowNumHtml(num.count + di + 1)}
         <div class="info"><div class="t">${esc(cx.name)} · Unit ${esc(p0.unit_number||'')}</div>
         <div class="s">${ic('check')} ${t('picked')}${list.some(plOut) ? ` · <span class="chip info">${t('sb_out')}</span>` : ''}</div></div>
@@ -6816,6 +7145,52 @@ function faqAuditLegend(){
 }
 function faqMvDemo(){ return `<span class="demo"><button class="mv" style="pointer-events:none">${ic('chev_u')}</button><button class="mv" style="pointer-events:none">${ic('chev_d')}</button></span>`; }
 
+/* v1.09.04: «боковушка» — цвет левой полосы карточки. Образцы рисуются прямо
+   в справке теми же красками, что и настоящие карточки; сами карточки пустые:
+   номер, ▲▼ и полоса. Виды задач берутся из справочника — легенда всегда
+   совпадает с тем, что на экране. */
+const STRIPE_PK = '#8AA0AB', STRIPE_PK_DONE = '#3a4a52';
+function faqStripeCard(color, n, opt){
+  opt = opt || {};
+  const rail = opt.sm ? '' : `<span class="fq-rail"><span class="fq-mv">${ic('chev_u')}</span><span class="fq-mv">${ic('chev_d')}</span></span>`;
+  return `<span class="fq-card${opt.sm ? ' sm' : ''}${opt.dim ? ' dim' : ''}" style="border-left-color:${color}" aria-hidden="true"><span class="row-num">${n}</span>${rail}</span>`;
+}
+function faqStripeWts(){
+  const list = [...(state.data.work_types || [])].sort((a,b)=>(a.sort||0)-(b.sort||0));
+  if (!list.length) return '<div class="tiny">—</div>';
+  return `<div class="fq-wts">${list.map((w, i) =>
+    `<span class="fq-wt">${faqStripeCard(w.color || '#888', i + 1, { sm: true })}<span class="fq-wt-n" style="color:${w.color || '#888'}">${esc(biText(w.name))}</span></span>`).join('')}</div>`;
+}
+function faqStripeLegend(){
+  const ru = (state.lang || 'ru') !== 'en';
+  const row = (card, html) => `<div class="fq-row">${card}<div class="fq-txt">${html}</div></div>`;
+  return ru ? `
+    <h4>${ic('palette')} Цвет левой полосы карточки</h4>
+    <p>Полоса слева отвечает на один вопрос — <b>что это за карточка</b>. Статус, просрочка и сумма показаны отдельно, справа и в строке под адресом.</p>
+    <div class="fq-sub">Раздел «${t('pickups_today')}»</div>
+    <div class="fq-stripes">
+      ${row(faqStripeCard(STRIPE_PK, 7), `<b>Серая</b> — обычный пикап: техника ждёт вывоза. Просрочку полоса не показывает — на неё указывает красный чип <span class="chip bad">${t('overdue')}</span>.`)}
+      ${row(faqStripeCard('var(--red)', 6), `<b>Красная</b> — пикап <b>с приоритетом</b>: у названия горит ${faqTriDemo()}. Сняли приоритет — полоса снова серая.`)}
+      ${row(faqStripeCard(STRIPE_PK_DONE, 9, { dim: true }), `<b>Тёмная, карточка блёклая</b> — «${t('picked')}»: техника уже вывезена, карточка открывает связанный документ.`)}
+    </div>
+    <div class="fq-sub">Раздел «${t('jobs')}»</div>
+    <p>Полоса = <b>цвет вида задачи</b>; тем же цветом написано название вида в карточке. Цвета задаёт админ: ${t('tab_dirs')} → «${t('d_worktypes')}». Приоритет задачи полосу <b>не красит</b> — его показывает только ${faqTriDemo()}. Сейчас в справочнике:</p>
+    ${faqStripeWts()}
+    <p class="tiny" style="margin-top:6px">Красная полоса у пикапа — приоритет, красная у задачи — просто цвет её вида; разделы не смешиваются, пикапы всегда стоят первыми. На Доске полоса задачи значит то же самое. В поиске: задача — цвет вида, пикап — цвет типа оборудования.</p>` : `
+    <h4>${ic('palette')} Colour of the card's left stripe</h4>
+    <p>The stripe answers one question — <b>what kind of card this is</b>. Status, overdue and the amount are shown separately: on the right and in the line under the address.</p>
+    <div class="fq-sub">Section "${t('pickups_today')}"</div>
+    <div class="fq-stripes">
+      ${row(faqStripeCard(STRIPE_PK, 7), `<b>Grey</b> — a regular pickup: the equipment is waiting to be collected. The stripe does not show overdue — the red <span class="chip bad">${t('overdue')}</span> chip does.`)}
+      ${row(faqStripeCard('var(--red)', 6), `<b>Red</b> — a pickup <b>with priority</b>: ${faqTriDemo()} is lit next to the name. Priority off — the stripe is grey again.`)}
+      ${row(faqStripeCard(STRIPE_PK_DONE, 9, { dim: true }), `<b>Dark, dimmed card</b> — "${t('picked')}": the equipment is already collected, the card opens the linked document.`)}
+    </div>
+    <div class="fq-sub">Section "${t('jobs')}"</div>
+    <p>The stripe = the <b>work type colour</b>; the work type name in the card is written in the same colour. The admin sets the colours: ${t('tab_dirs')} → "${t('d_worktypes')}". A job's priority does <b>not</b> repaint the stripe — only ${faqTriDemo()} shows it. Currently in the directory:</p>
+    ${faqStripeWts()}
+    <p class="tiny" style="margin-top:6px">A red stripe on a pickup means priority, a red one on a job is just its work type colour; the sections never mix, pickups always come first. On the Board a job's stripe means the same. In search: a job — work type colour, a pickup — equipment type colour.</p>`;
+}
+
 function sectionFaqHtml(key){
   const ru = (state.lang || 'ru') !== 'en';
   const H = (r, e) => ru ? r : e;
@@ -6835,7 +7210,7 @@ function sectionFaqHtml(key){
       <li>Слева сверху — <b>порядковый номер</b> в дне, снизу ${faqMvDemo()} — поменять порядок (или перетащить карточку целиком).</li>
       <li>${faqTriDemo()} в конце названия — <b>приоритет</b>; менеджер/автор переключает кликом.</li>
       <li>Статус справа: ${faqStatusLegend()}; под ним сумма и ${ic('compass')} — открыть маршрут в навигаторе.</li>
-      <li>${ic('clipboard')} возле адреса — копировать адрес; строка кодов: ${ic('key')} код доступа, callbox.</li>
+      <li>${ic('copy')} возле адреса — копировать адрес; строка кодов: ${ic('key')} код доступа, callbox.</li>
       <li>Клик по карточке — открыть документ (инвойс).</li>
       <li>Внутри документа блок <b>${ic('camera')} Фото и видео</b>: съёмка из приложения, счётчик «сколько из лимита» (лимиты задаёт админ, по умолчанию 10 фото и 2 видео). Снятое без сети ждёт в очереди и уходит само; при запуске приложение напомнит поповером, а разбор очереди — в Настройках. Кнопка «Фото» открывает обычное приложение камеры телефона со всеми режимами, так что можно снять серию и отдать все кадры разом; как именно открывать камеру и с каким качеством сохранять — в Настройках, карточка «Съёмка» (у каждого своя, на своём телефоне).</li>
     </ul>
@@ -6845,6 +7220,7 @@ function sectionFaqHtml(key){
       <li>Красный бейдж-цифра — просроченные позиции; чип «продление» — аренда продлевалась.</li>
       <li>${ic('compass')} — маршрут; ${ic('note')} — документ; <b>Забрать</b> — отметить вывоз всего юнита; блеклая карточка «${ic('check')} забрано» открывает связанный документ.</li>
     </ul>
+    ${faqStripeLegend()}
     <h4>${ic('font')} Сокращения</h4>
     <div class="tiny">Комплексы: ${faqCxLegend()}</div>
     <div class="tiny" style="margin-top:4px">Оборудование: ${faqEqLegend()}</div>`,
@@ -6862,7 +7238,7 @@ function sectionFaqHtml(key){
       <li>Top-left — the <b>order number</b> within the day; ${faqMvDemo()} at the bottom reorders (or drag the whole card).</li>
       <li>${faqTriDemo()} after the name — <b>priority</b>; the manager/author toggles it with a click.</li>
       <li>Status on the right: ${faqStatusLegend()}; below it the amount and ${ic('compass')} — open the route in your navigator.</li>
-      <li>${ic('clipboard')} next to the address — copy the address; the codes line: ${ic('key')} access code, callbox.</li>
+      <li>${ic('copy')} next to the address — copy the address; the codes line: ${ic('key')} access code, callbox.</li>
       <li>Click the card — open the document (invoice).</li>
       <li>Inside the document, the <b>${ic('camera')} Photos & video</b> block: shooting from the app, a "how many of the limit" counter (limits are set by the admin, default 10 photos and 2 videos). Anything shot offline waits in the queue and is sent by itself; on launch the app reminds you with a popover, and the queue details are in Settings. The "Photo" button opens the phone's regular camera app with all its modes, so you can shoot a series and hand over all frames at once; how the camera opens and at what quality files are saved is set in Settings, "Camera" card (personal, on your own phone).</li>
     </ul>
@@ -6872,6 +7248,7 @@ function sectionFaqHtml(key){
       <li>A red number badge — overdue items; the "extension" chip — the rent was extended.</li>
       <li>${ic('compass')} — route; ${ic('note')} — document; <b>${t('pickup')}</b> — mark the whole unit as collected; a dimmed "${ic('check')} ${t('picked').toLowerCase()}" card opens the linked document.</li>
     </ul>
+    ${faqStripeLegend()}
     <h4>${ic('font')} Abbreviations</h4>
     <div class="tiny">Complexes: ${faqCxLegend()}</div>
     <div class="tiny" style="margin-top:4px">Equipment: ${faqEqLegend()}</div>`);
@@ -6883,6 +7260,7 @@ function sectionFaqHtml(key){
       <li><b>«Скрыть свободных»</b> — убирает пустые колонки.</li>
       <li>${faqMvDemo()} на карточке — перенос задачи между сотрудниками/позициями; клик — открыть документ.</li>
       <li>${faqTriDemo()} — приоритет; жёлтый «!» на дне недели — есть просроченные пикапы.</li>
+      <li><b>Полоса слева</b> у карточки задачи — цвет вида задачи (серая — вид не указан): ${faqStripeWts()} Пикап на доске — пунктирная плашка <b>PU</b> без полосы; красная рамка — просрочен.</li>
       <li><span class="bn-dot go" style="position:static;display:inline-block;vertical-align:middle"></span> — мигающая зелёная точка в углу карточки: по трекеру Bouncie сотрудник уехал с прошлого места и едет к этой задаче или пикапу; сплошная зелёная — уже на месте. Наведите курсор — покажется, сколько осталось. Точка появляется на следующей задаче сама, как только машина уехала с предыдущего объекта.</li>
     </ul>
     <h4>${ic('mouse')} Жесты (ПК)</h4>
@@ -6895,7 +7273,11 @@ function sectionFaqHtml(key){
     <ul><li>Настройки → «Доска»: <b>минимум сотрудников на экране</b> — если столько не влезает, карточки автоматически сужаются (подписи счётчиков сворачиваются до чисел).</li>
     <li><b>Авто-уплотнение</b>: когда колонки перестают помещаться (например, 12 сотрудников на Full HD), ширина подбирается так, чтобы влезли все — без горизонтальной прокрутки, до 128 px; в узкой колонке шапка становится вертикальной (аватар сверху, имя под ним).</li>
     <li>В этом режиме <b>боковое меню уезжает за левый край</b>: наведите на язычок у края — оно выглянет, клик — закрепит; после перехода в раздел снова спрячется. Когда места опять хватает, всё возвращается само.</li>
-    <li>У воркера в ПК-режиме доска недельная: колонка = день, только свои задачи; клик по шапке дня выбирает его в календаре.</li></ul>`,
+    <li>У воркера в ПК-режиме доска недельная: колонка = день, только свои задачи; клик по шапке дня выбирает его в календаре.</li></ul>
+    <h4>${ic('dens')} Компактная плотность (v1.09.05)</h4>
+    <ul><li>Кнопка ${ic('dens')} рядом с глазом (или Настройки → «${t('dens_title')}») делает доску плотной: шапка колонки — одна строка, карточка задачи — две строки («юнит · комплекс» и вид работ), пикап — одной строкой <b>PU SCR×1 BLW×3 · 09/14</b> без года. Колонка сужается до 96 px вместо 128 — на тот же экран влезает в полтора-два раза больше сотрудников; в режиме «Телефон» на экране три колонки вместо неполных двух.</li>
+    <li>Выставленный приоритет ${faqTriDemo()} в узкой колонке стоит в правом нижнем углу карточки. Серый «приоритет не задан» и ▲▼ в узкой колонке спрятаны: мышью они появляются по наведению на карточку, а когда сотрудников мало и колонка шире 170 px — стоят справа всегда, в том числе для пальца.</li>
+    <li><b>Телефон в режиме «ПК»</b>: поверните телефон горизонтально — страница рисуется на холсте шириной компьютера и уменьшается под экран (Настройки → «${t('cv_title')}»), включается раскладка ПК с меню слева и доской во всю ширину, действует «минимум сотрудников на экране». Щипок увеличивает нужное место.</li></ul>`,
   `
     <h4>${ic('board')} Board — the day by staff</h4>
     <ul>
@@ -6903,6 +7285,7 @@ function sectionFaqHtml(key){
       <li><b>"Hide free"</b> — removes the empty columns.</li>
       <li>${faqMvDemo()} on a card — move the task between employees/positions; click — open the document.</li>
       <li>${faqTriDemo()} — priority; a yellow "!" on a weekday — there are overdue pickups.</li>
+      <li><b>The left stripe</b> of a job card — the work type colour (grey — no work type): ${faqStripeWts()} A pickup on the board is a dashed <b>PU</b> plate without a stripe; a red frame — overdue.</li>
       <li><span class="bn-dot go" style="position:static;display:inline-block;vertical-align:middle"></span> — a blinking green dot in the card corner: per the Bouncie tracker the employee has left the previous site and is heading to this task or pickup; solid green — already on site. Hover to see how much is left. The dot moves to the next task by itself as soon as the car leaves the previous site.</li>
     </ul>
     <h4>${ic('mouse')} Gestures (desktop)</h4>
@@ -6915,7 +7298,11 @@ function sectionFaqHtml(key){
     <ul><li>Settings → "Board": <b>minimum staff visible</b> — when that many do not fit, the cards narrow automatically (counter captions collapse to bare numbers).</li>
     <li><b>Auto-fit</b>: when the columns stop fitting (say, 12 employees on Full HD), the width is picked so that everyone fits — no horizontal scroll, down to 128 px; in a narrow column the header goes vertical (avatar on top, name below).</li>
     <li>In that mode the <b>side menu slides off the left edge</b>: hover the tab at the edge — it peeks out, click — pins it; after you open a section it hides again. Once there is room again, everything comes back by itself.</li>
-    <li>A worker in desktop mode gets a weekly board: column = weekday, own tasks only; clicking a day header selects it in the calendar.</li></ul>`);
+    <li>A worker in desktop mode gets a weekly board: column = weekday, own tasks only; clicking a day header selects it in the calendar.</li></ul>
+    <h4>${ic('dens')} Compact density (v1.09.05)</h4>
+    <ul><li>The ${ic('dens')} button next to the eye (or Settings → "${t('dens_title')}") makes the board dense: the column header is one line, a job card is two lines ("unit · complex" and the work type), a pickup is a single line <b>PU SCR×1 BLW×3 · 09/14</b> without the year. A column narrows down to 96 px instead of 128 — the same screen fits one and a half to two times more people; in "Phone" mode the screen shows three columns instead of less than two.</li>
+    <li>A set priority ${faqTriDemo()} sits in the bottom right corner of the card in a narrow column. The grey "no priority" mark and ▲▼ are hidden in a narrow column: with a mouse they appear when you hover the card, and when there are few people and the column is wider than 170 px they stay on the right permanently, for a finger too.</li>
+    <li><b>A phone in "PC" mode</b>: rotate the phone to landscape — the page is drawn on a computer-wide canvas and scaled down to the screen (Settings → "${t('cv_title')}"), the PC layout with the left menu and the full-width board turns on, and "minimum staff visible" works. Pinch to zoom into any spot.</li></ul>`);
 
   S.map = H(`
     <h4>${ic('map')} Карта апарт-комплексов</h4>
@@ -7109,11 +7496,14 @@ function sectionFaqHtml(key){
       <li><b>${t('sec_card')}</b> (v1.08.33): необязательная 2FA (TOTP) — QR в приложение-аутентификатор, код из 6 цифр; при входе после пароля спросим код. Отключается в любой момент (потребуется код).</li>
       <li><b>${t('misc_card')}</b> (v1.09.00) — в самом низу, перед «Выйти»: «${t('feat_card')}» и «${t('invite_set_title')}» (админ), «PWA» с версией и «${t('upd_check')}» (все).</li>
       <li><b>${t('feat_card')}</b> (админ, v1.08.33, в «${t('misc_card')}»): шаблоны и перенос дня, напоминание о старых кодах (порог в месяцах), сессии для менеджера.</li>
-      <li><b>${t('abk_card')}</b> (админ, v1.08.33): полный SQL-дамп (включая пользователей и секреты) в папку «TechLog Backups» вашего Drive, 8 копий. «${t('abk_now')}» или автоматически при входе админа раз в 7 дней. Восстановление: чистая база → full-install → файл бэкапа.</li>
+      <li><b>${t('abk_card')}</b> (админ, v1.08.33): полный SQL-дамп (включая пользователей и секреты) в папку «TechLog Backups» вашего Drive. С v1.09.03 — три вида копий: «${t('abk_now')}» делает копию с пометкой <b>ADMIN</b> — она хранится вечно, система её не удаляет и не чистит никогда; автобэкап при входе админа идёт не чаще раза в день: одна копия на неделю (<b>weekly</b>) хранится вечно, ежедневных (<b>daily</b>) — последние 8, более старые уходят в корзину Диска. Удаляется только помеченное как ежедневное — файлы старого формата и положенные руками не трогаются. Восстановление: чистая база → full-install → файл бэкапа.</li>
       <li><b>Доска</b> — минимум сотрудников на экране (степпер «Авто ↔ 3…12», личная, в профиле).</li>
-      <li><b>Профиль</b>: имя в документах, смена пароля, язык RU/EN, навигатор (Авто/Apple/Google).</li>
+      <li><b>Профиль</b>: имя в документах, смена пароля, «${t('sec_card')}» (v1.09.02 — строкой сразу под паролем), язык RU/EN, навигатор (Авто/Apple/Google), размер шрифта.</li>
+      <li><b>Меню</b> (v1.09.02, личное, в карточке профиля): «${t('ml_title')}» — ${t('ml_auto')} / ${t('ml_on')} / ${t('ml_off')}, отдельно для режима «Телефон» и режима «ПК»; «${t('mr_title')}» — степпер 1…5: нижнее меню делится на ряды, подписи помещаются даже на маленьком экране.</li>
+      <li><b>${t('dens_title')}</b> (v1.09.05, личное, в карточке профиля, под размером шрифта): «${t('dens_cozy')}» / «${t('dens_compact')}», отдельно для режима «Телефон» и режима «ПК», хранится в профиле. Компактная ужимает не только буквы, а сами блоки: шапку, ленту недели, меню, значки, отступы в карточках — карточка дня вдвое ниже, на доске больше сотрудников; у пальца кнопки остаются 40 px. То же переключают кнопка ${ic('dens')} внизу слева на ПК и кнопка на доске.</li>
+      <li><b>${t('cv_title')}</b> (v1.09.05; строка видна только на телефоне и планшете): в режиме «ПК» страница рисуется на холсте шириной компьютера — «${t('cv_auto')}» (1100), 1280…1920 или «${t('cv_off')}» — и уменьшается под экран, как «Версия для ПК» в браузере. Масштаб мельче 45% не ставится, поэтому телефон в книжной ориентации остаётся с телефонной раскладкой — поверните его. Настройка хранится на устройстве.</li>
       <li><b>${t('docs_set_card')}</b> (v1.08.95) — всё про документы в одной складной секции. Личное (у каждого своё): кнопка печати инвойса на карточке, кнопка поиска в нижней панели телефона и «Открыть поиск». Для админа там же: общий доступ к документам для коворкеров, аренда оборудования и права, лимиты фото и видео и подраздел «${t('no_card')}». Подраздел «${t('org')}» (v1.08.97) — реквизиты для бланков PDF: название, адрес, телефон и факс, способ доставки, приписка внизу бланка; доступен админу и бухгалтеру (бухгалтер меняет только эти поля).</li>
-      <li><b>Аренда оборудования и права</b> (админ, в «Настройках документов»): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старше N дней (0 — выкл; заблокированные документы открываются на просмотр).</li>
+      <li><b>Аренда оборудования и права</b> (админ, в «Настройках документов»): аренда по умолчанию и максимум продления (степперы 1–30), галочки прав менеджера/воркеров, блокировка правки старых задач — галочка «${t('lock_chk')}» и срок от 1 дня (v1.09.03: галочка снята — правка по сроку не ограничена никак; заблокированные документы открываются на просмотр; под настройкой строка «Сейчас: …», подробности — в «?»).</li>
       <li><b>Лимиты фото и видео на документ</b> (админ, в «Настройках документов»): степперы «Фото на документ» (1–50) и «Видео на документ» (0–10), по умолчанию <b>10 и 2</b>. Лимит един для всех документов и проверяется сервером при загрузке — из браузера его не обойти. Уже загруженные сверх нового лимита файлы остаются, добавить больше нельзя; «видео 0» убирает кнопку съёмки видео из карточки задачи.</li>
       <li><b>${t('intg_card')}</b> (админ, v1.08.98) — подразделы «${t('gd_card')}» и «${t('bn_card')}».</li>
       <li><b>${t('gd_card')}</b> (в «${t('intg_card')}»): ключи OAuth архивного аккаунта для фото, видео, инвойсов и вложений. В поле «ID папки» можно вставить <b>ссылку целиком</b> — приложение само возьмёт ID. Сохранённые ключи карточка показывает в режиме просмотра: Client ID и папка — открыто, секрет и токен — звёздочками, ${ic('eye')} показывает значение (запрашивается с сервера отдельно), ${ic('copy')} копирует, ${ic('pencil')} включает правку. «Тест соединения» проверяет доступ, аккаунт, <b>свободное место</b> и запись в папку.</li>
@@ -7132,11 +7522,14 @@ function sectionFaqHtml(key){
       <li><b>${t('sec_card')}</b> (v1.08.33): optional 2FA (TOTP) — a QR code for an authenticator app, a 6-digit code; at sign-in we ask for the code after the password. Can be turned off at any time (a code is required).</li>
       <li><b>${t('misc_card')}</b> (v1.09.00) — at the very bottom, above “Sign out”: “${t('feat_card')}” and “${t('invite_set_title')}” (admin), “PWA” with the version and “${t('upd_check')}” (everyone).</li>
       <li><b>${t('feat_card')}</b> (admin, v1.08.33, in “${t('misc_card')}”): templates and day move, the stale-code reminder (threshold in months), sessions for the manager.</li>
-      <li><b>${t('abk_card')}</b> (admin, v1.08.33): a full SQL dump (users and secrets included) into the "TechLog Backups" folder of your Drive, 8 copies. "${t('abk_now')}" or automatically on admin sign-in every 7 days. Restore: clean database → full-install → the backup file.</li>
+      <li><b>${t('abk_card')}</b> (admin, v1.08.33): a full SQL dump (users and secrets included) into the "TechLog Backups" folder of your Drive. Since v1.09.03 there are three kinds of copies: "${t('abk_now')}" makes a copy marked <b>ADMIN</b> — kept forever, the system never deletes or cleans it; the auto-backup on admin sign-in runs at most once a day: one copy per week (<b>weekly</b>) is kept forever, of the <b>daily</b> ones the last 8 are kept and older ones go to the Drive trash. Only files marked as daily are ever removed — old-format files and files put there by hand are left alone. Restore: clean database → full-install → the backup file.</li>
       <li><b>Board</b> — minimum staff visible (the "Auto ↔ 3…12" stepper, personal, in the profile).</li>
-      <li><b>Profile</b>: the name on documents, password change, RU/EN language, navigator (Auto/Apple/Google).</li>
+      <li><b>Profile</b>: the name on documents, password change, “${t('sec_card')}” (v1.09.02 — a row right under the password), RU/EN language, navigator (Auto/Apple/Google), font size.</li>
+      <li><b>${t('dens_title')}</b> (v1.09.05, personal, in the profile card under the font size): "${t('dens_cozy')}" / "${t('dens_compact')}", separate for "Phone" mode and "PC" mode, stored in the profile. Compact shrinks not only the letters but the blocks themselves: header, week ribbon, menu, icons, card padding — a day card is half as tall and the board fits more people; for a finger the buttons stay 40 px. The ${ic('dens')} button at the bottom left on a PC and the button on the board switch the same thing.</li>
+      <li><b>${t('cv_title')}</b> (v1.09.05; the row is shown on phones and tablets only): in "PC" mode the page is drawn on a computer-wide canvas — "${t('cv_auto')}" (1100), 1280…1920 or "${t('cv_off')}" — and scaled down to the screen, like "Desktop site" in a browser. A scale below 45% is never used, so a phone held upright keeps the phone layout — rotate it. The setting is stored on the device.</li>
+      <li><b>Menu</b> (v1.09.02, personal, in the profile card): “${t('ml_title')}” — ${t('ml_auto')} / ${t('ml_on')} / ${t('ml_off')}, separately for «Phone» and «PC» mode; “${t('mr_title')}” — a 1…5 stepper: the bottom menu is split into rows so the labels fit even on a small screen.</li>
       <li><b>${t('docs_set_card')}</b> (v1.08.95) — everything about documents in one collapsible section. Personal (each person has their own): the invoice print button on the card, the search button in the phone's bottom bar and "Open search". For the admin, also there: shared document access for coworkers, equipment rental & permissions, photo and video limits and the "${t('no_card')}" subsection. The "${t('org')}" subsection (v1.08.97) holds the details printed on PDF forms: name, address, phone and fax, shipping method, the note at the bottom of the form; available to the admin and the accountant (the accountant can change only these fields).</li>
-      <li><b>Equipment rental & permissions</b> (admin, in "Document settings"): default rental and maximum extension (steppers 1–30), the manager/worker permission checkboxes, the edit lock for documents older than N days (0 — off; locked documents open read-only).</li>
+      <li><b>Equipment rental & permissions</b> (admin, in "Document settings"): default rental and maximum extension (steppers 1–30), the manager/worker permission checkboxes, the edit lock for old jobs — the “${t('lock_chk')}” checkbox and a term from 1 day (v1.09.03: unticked — editing is not restricted by age at all; locked documents open read-only; a “Now: …” line sits under the setting, details are in “?”).</li>
       <li><b>Photo and video limits per document</b> (admin, in "Document settings"): the "Photos per document" (1–50) and "Videos per document" (0–10) steppers, defaults <b>10 and 2</b>. The limit is the same for every document and is checked by the server on upload — it cannot be bypassed from the browser. Files already uploaded above a new limit stay, but no more can be added; "videos 0" removes the video button from the job card.</li>
       <li><b>${t('intg_card')}</b> (admin, v1.08.98) — the “${t('gd_card')}” and “${t('bn_card')}” subsections.</li>
       <li><b>${t('gd_card')}</b> (in “${t('intg_card')}”): the OAuth keys of the archive account for photos, video, invoices and attachments. You can paste the <b>whole link</b> into the "Folder ID" field — the app extracts the ID itself. Saved keys are shown in view mode: the Client ID and folder — in the open, the secret and token — as asterisks; ${ic('eye')} reveals the value (requested from the server separately), ${ic('copy')} copies, ${ic('pencil')} enables editing. "${t('gd_test')}" checks access, the account, the <b>free space</b> and writing into the folder.</li>
@@ -8911,7 +9304,7 @@ function viewPickupsReport(){
   </div>
   ${blocks || `<div class="list-empty"><div class="big">${ic('inbox')}</div>${t('nothing_due')}</div>`}
   ${cnt ? `<div class="card"><div style="font-weight:900;margin-bottom:6px">Σ ${t('stats_due')}: ${cnt}</div><div class="color-dots" style="gap:6px">${totals}</div></div>
-  <button class="btn btn-blue" onclick="App.copyReport()">${ic('clipboard')} ${t('copy_report')}</button>` : ''}`;
+  <button class="btn btn-blue" onclick="App.copyReport()">${ic('copy')} ${t('copy_report')}</button>` : ''}`;
 }
 function copyReport(){
   const dateISO = state.reportDate;
@@ -9647,6 +10040,7 @@ function viewSettings(){
         ${HAS_SB ? '' : `<div class="d">${t('demo_only_sb')}</div>`}</div>
       <button class="btn btn-ghost sm" onclick="App.ownPassModal()">${t('set_pass')}</button>
     </div>
+    ${secRowHtml()}
     <div class="settings-row">
       <div class="grow" style="flex:1"><b>${t('language')}</b></div>
       <div class="lang-seg">
@@ -9678,12 +10072,29 @@ function viewSettings(){
       </div>
     </div>
     <div class="fs-demo">${t('font_demo')}: <b>Unit 916 · Riverstone · ${money(1240)}</b></div>
+    ${densRowHtml()}
+    ${canvasRowHtml()}
+    <div class="settings-row" id="ml-row"><!-- v1.09.02: подписи пунктов меню -->
+      <div class="grow" style="flex:1"><b>${ic('eye')} ${t('ml_title')} ${tipQ('ml_hint')}</b>
+        <div class="d">${vmCur() === 'desktop' ? t('font_mode_pc') : t('font_mode_ph')}</div></div>
+      <div class="lang-seg">
+        ${['auto','on','off'].map(v => `<button class="${menuLabels()===v?'on':''}" onclick="App.menuLabels('${v}')">${t('ml_'+v)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="settings-row" id="mr-row"><!-- v1.09.02: рядов нижнего меню -->
+      <div class="grow" style="flex:1"><b>${ic('layers')} ${t('mr_title')} ${tipQ('mr_hint')}</b>
+        <div class="d">${t('mr_d')}</div></div>
+      <span class="stepper set-step">
+        <button type="button" aria-label="−" onclick="App.menuRowsStep(-1)"${menuRows() <= 1 ? ' disabled' : ''}>${ic('minus')}</button>
+        <span class="val" id="mr-val">${menuRows()}</span>
+        <button type="button" aria-label="+" onclick="App.menuRowsStep(1)"${menuRows() >= 5 ? ' disabled' : ''}>${ic('plus')}</button>
+      </span>
+    </div>
   </div>
 
   ${fold('docs', t('docs_set_card'), 'clipboard', docsCardHtml())}
   ${fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml())}
   ${fold('push', t('push_pop_card'), 'bell', pbCardHtml() + popCardHtml())}
-  ${fold('sec', t('sec_card'), 'key', secCardHtml())}
   ${fold('cam', t('cam_card'), 'camera', camCardHtml())}
   ${isAcc() ? '' : fold('study', t('st_card'), 'grad', studyCardHtml())}
   ${fold('dgs', t('dgs_card'), 'steth', dgsCardHtml())}
@@ -11020,6 +11431,9 @@ const App = {
     autosaveDraft(); render();
   },
   fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} fontSavePref(); render(); },
+  densSet, densToggle, canvasSet,                                          // v1.09.05: плотность интерфейса, холст ПК-режима
+  menuLabels(v){ menuLabelsSet(v); }, menuRowsStep,                                  // v1.09.02
+  __test_menu(){ return { labels: menuLabels(), rows: menuRows(), key: menuLabKey(), bottom: tabbarIsBottom() }; }, __test_tabbarCols: tabbarCols,
   fontSet(v){ try{ if (window.TLUI) TLUI.fontSet(v); }catch(e){} fontSavePref(); render(); },
   mapSearch: mapSearchRun, mapPick: mapPickRun, addCxFromMap: addCxModal, saveCxFromMap: saveCxFromMapRun, closeModal, sectionFaq: sectionFaqOpen,
   pickupModal, pkDueModal, pkDueOpen, bannerKey, extendModal, extMode, extDays, extQty, extApply, jobHistory, pickupOne,
@@ -11220,6 +11634,16 @@ const App = {
     dbSaveOrg(org); audit('org_toggle', 'org', key, { on: !!v });
     toast('✓ ' + t('saved')); render();
   },
+  /* v1.09.03: галочка замка правки. Вкл — возвращаем последний срок (на этом
+     устройстве) или 7 дн.; выкл — в базу уходит 0, срок запоминаем. */
+  lockToggle(v){
+    const cur = editLockDays();
+    if (v){ if (cur < 1) App.setOrgNum('edit_lock_days', lockLastDays(), 1, 60); }
+    else {
+      if (cur >= 1){ try{ localStorage.setItem(LOCK_LAST_KEY, String(cur)); }catch(e){} }
+      App.setOrgNum('edit_lock_days', 0, 0, 0);
+    }
+  },
   orgStep(key, d, min, max, step){                 /* v1.07.53: шаг степпера настроек */
     /* фолбэк = тот же дефолт, что показывает поле и применяют
        defRentDays()/maxExtendDays()/editLockDays() — иначе первый клик
@@ -11255,6 +11679,7 @@ const App = {
   },
   setOrgNum(key, v, min, max){
     const n = Math.max(min, Math.min(max, parseInt(v, 10) || 0));
+    if (key === 'edit_lock_days' && n >= 1){ try{ localStorage.setItem(LOCK_LAST_KEY, String(n)); }catch(e){} }   // v1.09.03
     const org = { ...state.data.org_settings, [key]: n };
     dbSaveOrg(org); audit('org_set', 'org', key, { v: n });
     toast('✓ ' + t('saved')); render();
@@ -11305,8 +11730,13 @@ const App = {
   tplMove(){ tplMoveModal(); },
   tplMoveGo(){ tplMoveGo(); },
   abkRun(){ abkRun(false); },
+  /* ручки автотеста tests/v1_09_03.js: список копий без сервера, условие автозапуска */
+  __test_abkList(j){ ABK.list = j; const el = $('#abk-list'); if (el) el.innerHTML = abkListHtml(j); return abkListHtml(j); },
+  __test_abkDue(now){ return abkAutoDue(now); },
   abkList(){ abkListLoad(); },
-  toastInfo(k){ toast('ℹ ' + t(k), 'inf'); },
+  /* v1.09.03: длинная подсказка «?» висит дольше (≈55 мс на знак, 3,8…20 с) и
+     закрывается нажатием — 3,8 с на абзац текста не хватало */
+  toastInfo(k){ const s = t(k); toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(20000, s.length * 55))); },
   clToggle(i, v){
     if (!jobDraft) return;
     (jobDraft.form_data.cl = jobDraft.form_data.cl || {})[i] = !!v;
@@ -11328,7 +11758,13 @@ window.App = App;
 
 /* v1.07.40: любое изменение режима (в т.ч. пилюлей на экране логина или из
    консоли) освежает разметку — подсветка кнопок в шапке не «залипает». */
+window.addEventListener('tl:viewmode', () => { try { densSyncPref(); } catch(e){} });   // v1.09.05: у каждого режима своя плотность (до рендера строкой ниже)
 window.addEventListener('tl:viewmode', () => { try { fontSyncPref(); render(); } catch(e){} });   // v1.08.89: у каждого режима свой размер шрифта
+/* v1.09.05: плотность сменили кнопкой ПК-режима (desktop.js → TLUI) — записать в
+   профиль и перерисовать: ширина колонок доски и сегмент в настройках зависят от неё */
+window.addEventListener('tl-density', () => { try { if (state.user){ densSavePref(); render(); } } catch(e){} });
+/* холст ПК-режима включился/выключился (поворот телефона) — строка настроек и доска */
+window.addEventListener('tl:canvas', () => { try { if (state.user) render(); } catch(e){} });
 
 /* =====================================================================
    v1.07.48: ДОСКА — инертная прокрутка колёсиком и «схватить-и-тянуть».
@@ -11541,7 +11977,12 @@ function canonUrl(loc){
     /* v1.07.21: iOS замораживает фон — досылаем недоставленные записи,
        когда приложение снова видно или появилась сеть */
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') pendingFlush();
+      if (document.visibilityState === 'visible'){
+        pendingFlush();
+        /* v1.09.03: автобэкап теперь ежедневный — вкладка админа, открытая сутками,
+           не ждёт нового входа; проверка дешёвая (дата в localStorage) */
+        if (state.user) setTimeout(abkAutoMaybe, 6000);
+      }
     });
     netInit();             // v1.08.38: online/offline, пинг, перехват серверных кнопок (досыл очереди — в netBack)
     if (HAS_SB){
@@ -11551,7 +11992,7 @@ function canonUrl(loc){
       }catch(e){}
     }
     await initAuth();
-    if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); mqQuietSyncPref(); fontSyncPref(); }
+    if (state.user){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); mqQuietSyncPref(); fontSyncPref(); densSyncPref(); }
     if (!state.user) await tvResume();     // v1.08.37: телевизор переживает перезагрузку страницы
     render();
     /* v1.08.73: возврат в документ после выгрузки и доразбор приёмника — только
@@ -15064,7 +15505,7 @@ async function showDiagnostics(){
   openModal(`
     ${modalHead(t('diag'), 'steth')}
     <pre class="diag-pre" id="diag-pre">${esc(t('diag_running'))}</pre>
-    <button class="btn btn-blue" id="diag-copy" disabled onclick="App.copyDiag()">${ic('clipboard')} ${t('diag_copy')}</button>
+    <button class="btn btn-blue" id="diag-copy" disabled onclick="App.copyDiag()">${ic('copy')} ${t('diag_copy')}</button>
     <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
   `);
   let txt = '';
@@ -15786,7 +16227,7 @@ function showLogModal(){
     <div class="tl-acts">
       <button class="btn btn-green sm" onclick="App.logSave()">${ic('download')} ${t('log_save')}</button>
       ${tlogCanShare() ? `<button class="btn btn-blue sm" onclick="App.logShare()">${ic('share')} ${t('log_share')}</button>` : ''}
-      <button class="btn btn-ghost sm" onclick="App.copyLog()">${ic('clipboard')} ${t('diag_copy')}</button>
+      <button class="btn btn-ghost sm" onclick="App.copyLog()">${ic('copy')} ${t('diag_copy')}</button>
     </div>
     <button class="btn btn-red" style="margin-top:8px" onclick="App.clearLog()">${ic('trash')} ${t('clear')}</button>
     <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
@@ -15970,7 +16411,7 @@ async function showDbDiagnostics(){
   openModal(`
     ${modalHead(t('db_diag'), 'archive')}
     <pre class="diag-pre">${esc(report)}</pre>
-    <button class="btn btn-blue" onclick="App.copyDiag()">${ic('clipboard')} ${t('diag_copy')}</button>
+    <button class="btn btn-blue" onclick="App.copyDiag()">${ic('copy')} ${t('diag_copy')}</button>
     <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
   `);
 }
@@ -16112,7 +16553,7 @@ function viewBoard(){
     <button type="button" class="brd-eye ${hideEmpty ? '' : 'on'}" aria-pressed="${hideEmpty ? 'false' : 'true'}"
       title="${hideEmpty ? t('b_free_off') : t('b_free_on')}"
       onclick="App.boardHideEmpty(${hideEmpty ? 'false' : 'true'})">${ic(hideEmpty ? 'eye_off' : 'eye')}
-      <span>${hideEmpty ? t('b_free_off') : t('b_free_on')}</span></button>${helpBtn('board')}</div>`;
+      <span>${hideEmpty ? t('b_free_off') : t('b_free_on')}</span></button>${densBtnHtml()}${helpBtn('board')}</div>`;
   return viewWeek() + extReqStripHtml() + propStripHtml() + repStripHtml() + freeJobsStripHtml() + tools
        + `<div class="board"${boardColsStyle(staff.length)}>${cols}</div>`;
 }
@@ -16122,13 +16563,14 @@ function viewBoard(){
    Мобильная раскладка переменную игнорирует (там фикс 232px). */
 /* v1.07.53: степпер числовой настройки организации — «−» поле «＋»;
    прямой ввод в поле сохранён (тот же setOrgNum). */
-function orgStepperHtml(key, val, min, max, step){
+function orgStepperHtml(key, val, min, max, step, off){
   const st = +step || 1;                       /* v1.07.83: шаг ≠ 1 — интервал проверки перевода */
-  return `<span class="stepper set-step">
-    <button type="button" aria-label="−" onclick="App.orgStep('${key}',-1,${min},${max},${st})">${ic('minus')}</button>
-    <input class="price-input" inputmode="numeric" value="${val}"
+  const dis = off ? ' disabled' : '';          /* v1.09.03: выключенная настройка — степпер виден, но не нажимается */
+  return `<span class="stepper set-step${off ? ' is-off' : ''}">
+    <button type="button" aria-label="−"${dis} onclick="App.orgStep('${key}',-1,${min},${max},${st})">${ic('minus')}</button>
+    <input class="price-input" inputmode="numeric" value="${val}"${dis}
       onchange="App.setOrgNum('${key}', this.value, ${min}, ${max})">
-    <button type="button" aria-label="+" onclick="App.orgStep('${key}',1,${min},${max},${st})">${ic('plus')}</button>
+    <button type="button" aria-label="+"${dis} onclick="App.orgStep('${key}',1,${min},${max},${st})">${ic('plus')}</button>
   </span>`;
 }
 
@@ -16141,8 +16583,11 @@ function boardColsStyle(colCount){
   const n = +((state.user || {}).board_cols) || 0;
   if (n < 2 || n > 12) return '';
   const eff = Math.max(2, Math.min(n, +colCount || n));
-  const gaps = (eff - 1) * 10;   // только зазоры: 100% в calc — уже контент-зона
-  return ` style="--bcolw:min(260px, calc((100% - ${gaps}px)/${eff}))"`;
+  /* v1.09.05: в компактной плотности колонка уже и зазор меньше — те же числа
+     стоят в compact.css и desktop.js (зазор 6 / колонка 200) */
+  const dense = densIsCompact();
+  const gaps = (eff - 1) * (dense ? 6 : 10);   // только зазоры: 100% в calc — уже контент-зона
+  return ` style="--bcolw:min(${dense ? 200 : 260}px, calc((100% - ${gaps}px)/${eff}))"`;
 }
 
 /* v1.07.49: НЕДЕЛЬНАЯ ДОСКА ВОРКЕРА (ПК): колонка = день недели, только
@@ -16169,7 +16614,8 @@ function viewBoardWeek(){
     </div>`);
   }
   /* вся неделя на экране: 7 равных колонок (60px = шесть зазоров по 10) */
-  return viewWeek() + `<div style="text-align:right;margin:2px 0 6px">${helpBtn('board')}</div><div class="board" style="--bcolw:calc((100% - 60px)/7)">${days.join('')}</div>`;
+  /* v1.09.05: кнопка плотности и у недельной доски; зазоры в компактном — по 6 */
+  return viewWeek() + `<div class="board-tools">${densBtnHtml()}${helpBtn('board')}</div><div class="board" style="--bcolw:calc((100% - ${densIsCompact() ? 36 : 60}px)/7)">${days.join('')}</div>`;
 }
 function boardJobCard(j, idx, canOrd){
   const wt = wtById(j.work_type_id), cx = cxById(j.complex_id);
@@ -16200,7 +16646,7 @@ function boardPkCard(jobId, arr, iso){
   return `<div class="bpk clicky ${over ? 'over' : ''}" onclick="App.pickupModal('${jobId}','${iso}',event)">
     ${bnDotHtml('pk:' + jobId)}
     <b>PU</b> ${esc(eq)}${ext ? ` <span class="bext" title="${t('b_ext')}">⟳</span>` : ''}
-    <span class="tiny">${over ? `${t('b_over')} · ` : ''}${fmtDMY(due)}</span>
+    <span class="tiny">${over ? `<span class="ov">${t('b_over')} · </span>` : ''}${fmtDMYyr(due)}</span>
   </div>`;
 }
 async function boardMove(id, dir){

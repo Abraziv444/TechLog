@@ -42,11 +42,23 @@
      примерно 1150px свободного поля хватает. На окне 1033px по бокам остаётся
      всего 56px — меню ложилось поверх содержимого, и первые кнопки справочников
      («Цены», «Склад», «Сотрудники», «Контрагенты») оказывались недоступны.
-     Ниже этой ширины прижимаем страницу к меню и отдаём ей остаток окна. */
+     Ниже этой ширины прижимаем страницу к меню и отдаём ей остаток окна.
+     v1.09.05: отступ слева был ДВОЙНЫМ — 128px у body (полоса меню) плюс эти
+     124px, страница начиналась на 252-м пикселе и теряла 124px ширины как раз
+     на маленьких ноутбуках; заодно несимметричные поля ломали центрирование
+     доски «во всю ширину» (она вылезала за правый край на 34px). Полосу меню
+     уже держит body, поэтому здесь поля нулевые. */
   @media (max-width:1150px){
     html.tl-desktop #app{
       max-width:none;
-      margin-left:124px; margin-right:12px;
+      margin-left:0; margin-right:0;
+    }
+    /* тесная доска (tl-fit) без закрепления: меню выезжает ПОВЕРХ страницы, а
+       страница здесь начинается от самого края — липкая шапка оказывается под
+       верхом меню. Меню по-прежнему по центру высоты, но не выше шапки: в
+       невысоком окне оно прокручивается внутри себя (как и раньше). */
+    html.tl-desktop.tl-fit:not(.tl-menu-pin) .tabbar{
+      max-height:calc(100dvh - 2 * var(--tbh, 88px) - 16px);
     }
   }
 
@@ -618,16 +630,8 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop #dsk-density svg{ width:20px; height:20px; }
   html.tl-desktop #dsk-density.on{ color:var(--blue,#1CB0F6); border-color:var(--blue,#1CB0F6); }
 
-  /* ---------- Компактная плотность ---------- */
-  html.tl-desktop.tl-compact .card{ padding:10px 12px; }
-  html.tl-desktop.tl-compact .item{ padding:8px 10px; gap:8px; }
-  html.tl-desktop.tl-compact .rowline{ padding:7px 6px; }
-  html.tl-desktop.tl-compact .inv-head{ padding:9px 10px; }
-  html.tl-desktop.tl-compact .inv-body{ padding:8px 10px; }
-  html.tl-desktop.tl-compact .btn{ padding:11px 14px; }
-  html.tl-desktop.tl-compact #day-list,
-  html.tl-desktop.tl-compact #search-area{ gap:8px; }
-  html.tl-desktop.tl-compact .item .info .s{ font-size:.72rem; }
+  /* v1.09.05: правила компактной плотности переехали в compact.css — она
+     теперь общая для режима «Телефон» и «ПК» и ужимает не только кегль. */
 }
 
 /* ---------- Чипы периодов при выбранном сотруднике ---------- */
@@ -761,7 +765,12 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop.tl-fit #dsk-staff{ left:16px; }
 
   /* ---------- Меню уезжает влево; наведение/закрепление возвращает ---------- */
-  html.tl-desktop.tl-fit .tabbar{ transform:translate(calc(-100% - 22px), -50%); }
+  html.tl-desktop.tl-fit .tabbar{ transform:translate(calc(-100% - 22px), -50%);
+    /* v1.09.05: выехавшее меню лежит ПОВЕРХ контента — значит и поверх липкой шапки
+       (z-index 45). В невысоком окне верх меню с кнопкой закрепления заходит на
+       высоту шапки; пока страница ≤1150px стояла с двойным отступом, шапка до меню
+       не доставала, теперь достаёт. Язычок (47) по-прежнему выше. */
+    z-index:46; }
   html.tl-desktop.tl-fit .tabbar:hover,
   html.tl-desktop.tl-fit.tl-menu-open .tabbar{
     transform:translate(0, -50%);
@@ -823,6 +832,11 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
   html.tl-desktop.tl-fit.tl-menu-pin body{ padding-left:128px; }
   html.tl-desktop.tl-fit.tl-menu-pin.tl-staff body{ padding-left:236px; }
   html.tl-desktop.tl-fit.tl-menu-pin #dsk-staff{ left:124px; }
+  /* v1.09.05: body возвращал меню его полосу, а --tl-padl оставалась 16px из
+     tl-fit — доска «во всю ширину» считала себя от 16-го пикселя, начиналась
+     ПОД закреплённым меню (78px) и вылезала за правый край на 34px. */
+  html.tl-desktop.tl-fit.tl-menu-pin{ --tl-padl:128px; }
+  html.tl-desktop.tl-fit.tl-menu-pin.tl-staff{ --tl-padl:236px; }
 
   /* ---------- Узкая колонка: шапка сотрудника вертикально ----------
      Триггер — фактическая ширина колонки (container query), поэтому
@@ -862,55 +876,45 @@ html.tl-desktop .map-flex .map-box{height:60vh}
 .tl-desktop .overlay .modal:has(.opt-list){ width:min(640px,92vw) }
 .tl-desktop .opt-list{ max-height:48vh }
 
-/* =====================================================================
-   v1.08.35: «компактно» теперь реально ужимает интерфейс, а не только
-   срезает пару отступов. Базовый rem уменьшен — всё, что задано в rem,
-   пропорционально плотнее; px-элементы управления подтянуты отдельно.
-   ===================================================================== */
-/* база шрифта 14px ставится из ui.js (inline перебивает CSS) */
-html.tl-desktop.tl-compact input,
-html.tl-desktop.tl-compact select,
-html.tl-desktop.tl-compact textarea{ min-height:32px; padding:6px 9px; }
-html.tl-desktop.tl-compact .btn{ padding:8px 11px; }
-html.tl-desktop.tl-compact .icon-btn,
-html.tl-desktop.tl-compact .sync-btn{ width:32px; height:32px; }
-html.tl-desktop.tl-compact .card{ padding:8px 10px; }
-html.tl-desktop.tl-compact .section-title{ margin:6px 0 5px; }
-html.tl-desktop.tl-compact .topbar{ margin-bottom:2px; }
-html.tl-desktop.tl-compact .form-row{ margin-bottom:6px; }
-html.tl-desktop.tl-compact .day-cell{ padding:5px 2px; }
+/* v1.08.35 → v1.09.05: блок «компактно» (база 14px + поля ввода, кнопки,
+   карточки) переехал в compact.css; база шрифта по-прежнему ставится из ui.js. */
 
 /* =====================================================================
    v1.08.39: бухгалтерия на ПК — реестр как таблица с шапкой
    ===================================================================== */
-html.tl-desktop .acc-wrap{max-width:1080px;margin:0 auto}
-html.tl-desktop .acc-tbl:not(.acc-tbl-staff) .acc-line{
-  display:grid;align-items:center;gap:4px 8px;padding:8px 0;
-  grid-template-columns:104px minmax(150px,1.6fr) repeat(4,minmax(64px,.8fr)) minmax(70px,.9fr) minmax(76px,.9fr) 120px 44px;
-}
-html.tl-desktop .acc-tbl .acc-head{display:grid;font-size:.64rem;font-weight:900;text-transform:uppercase;color:var(--dim);letter-spacing:.3px;cursor:default;border-bottom:2px solid var(--line)}
-html.tl-desktop .acc-tbl .acc-head .acc-c-num{text-align:right}
-html.tl-desktop .acc-tbl .acc-c-num{text-align:right;font-size:.82rem}
-html.tl-desktop .acc-tbl .acc-c-doc b{font-size:.84rem}
-html.tl-desktop .acc-tbl .acc-c-st,html.tl-desktop .acc-tbl .acc-c-num,html.tl-desktop .acc-tbl .acc-c-note{order:0;flex:none}
-html.tl-desktop .acc-tbl .acc-c-num[data-l]::before{content:none}
-html.tl-desktop .acc-tbl .acc-rent-by{display:block;margin:0;font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html.tl-desktop .acc-tbl .acc-c-st{flex-direction:column;align-items:flex-start;gap:3px}
-html.tl-desktop .acc-tbl .acc-c-note{margin-left:0;justify-content:flex-end}
-html.tl-desktop .acc-tbl .acc-prev{padding:0 0 8px 112px}
-html.tl-desktop .acc-tbl .acc-body{padding:4px 0 12px 112px}
-html.tl-desktop .acc-tbl .acc-foot{cursor:default}
-html.tl-desktop .acc-tbl .acc-foot .acc-c-num{font-size:.86rem}
-html.tl-desktop .acc-tbl-staff .acc-line{display:grid;grid-template-columns:48px 1fr 140px 140px 44px;gap:8px}
-html.tl-desktop .acc-tbl-staff .acc-c-num{text-align:right}
-html.tl-desktop .acc-tbl-staff .acc-c-num[data-l]::before{content:none}
-html.tl-desktop .acc-sum-btns .btn{flex:0 1 auto}
-html.tl-desktop .acc-actions .btn{flex:0 1 auto}
-html.tl-desktop .acc-rate-rows{max-width:640px}
-html.tl-desktop .acc-map-rows{max-width:640px}
-@media (max-width:1100px){
+/* v1.09.05: блок стоял БЕЗ @media, вопреки правилу файла: в ПК-режиме на узком окне
+   (телефон в книжной ориентации) таблица реестра шириной от 820px вылезала за экран
+   на 410px. Ниже 980px бухгалтерия остаётся мобильной вёрсткой из styles.css. */
+@media (min-width:980px){
+  html.tl-desktop .acc-wrap{max-width:1080px;margin:0 auto}
   html.tl-desktop .acc-tbl:not(.acc-tbl-staff) .acc-line{
-    grid-template-columns:86px minmax(130px,1.4fr) repeat(4,minmax(58px,.8fr)) minmax(66px,.9fr) minmax(70px,.9fr) 104px 36px;
+    display:grid;align-items:center;gap:4px 8px;padding:8px 0;
+    grid-template-columns:104px minmax(150px,1.6fr) repeat(4,minmax(64px,.8fr)) minmax(70px,.9fr) minmax(76px,.9fr) 120px 44px;
+  }
+  html.tl-desktop .acc-tbl .acc-head{display:grid;font-size:.64rem;font-weight:900;text-transform:uppercase;color:var(--dim);letter-spacing:.3px;cursor:default;border-bottom:2px solid var(--line)}
+  html.tl-desktop .acc-tbl .acc-head .acc-c-num{text-align:right}
+  html.tl-desktop .acc-tbl .acc-c-num{text-align:right;font-size:.82rem}
+  html.tl-desktop .acc-tbl .acc-c-doc b{font-size:.84rem}
+  html.tl-desktop .acc-tbl .acc-c-st,html.tl-desktop .acc-tbl .acc-c-num,html.tl-desktop .acc-tbl .acc-c-note{order:0;flex:none}
+  html.tl-desktop .acc-tbl .acc-c-num[data-l]::before{content:none}
+  html.tl-desktop .acc-tbl .acc-rent-by{display:block;margin:0;font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html.tl-desktop .acc-tbl .acc-c-st{flex-direction:column;align-items:flex-start;gap:3px}
+  html.tl-desktop .acc-tbl .acc-c-note{margin-left:0;justify-content:flex-end}
+  html.tl-desktop .acc-tbl .acc-prev{padding:0 0 8px 112px}
+  html.tl-desktop .acc-tbl .acc-body{padding:4px 0 12px 112px}
+  html.tl-desktop .acc-tbl .acc-foot{cursor:default}
+  html.tl-desktop .acc-tbl .acc-foot .acc-c-num{font-size:.86rem}
+  html.tl-desktop .acc-tbl-staff .acc-line{display:grid;grid-template-columns:48px 1fr 140px 140px 44px;gap:8px}
+  html.tl-desktop .acc-tbl-staff .acc-c-num{text-align:right}
+  html.tl-desktop .acc-tbl-staff .acc-c-num[data-l]::before{content:none}
+  html.tl-desktop .acc-sum-btns .btn{flex:0 1 auto}
+  html.tl-desktop .acc-actions .btn{flex:0 1 auto}
+  html.tl-desktop .acc-rate-rows{max-width:640px}
+  html.tl-desktop .acc-map-rows{max-width:640px}
+  @media (max-width:1100px){
+    html.tl-desktop .acc-tbl:not(.acc-tbl-staff) .acc-line{
+      grid-template-columns:86px minmax(130px,1.4fr) repeat(4,minmax(58px,.8fr)) minmax(66px,.9fr) minmax(70px,.9fr) 104px 36px;
+    }
   }
 }
 
@@ -921,3 +925,15 @@ html.tl-desktop .scr-study .st-sum{ grid-template-columns:repeat(auto-fit,minmax
 html.tl-desktop .st-frame{ height:calc(100dvh - 200px) }
 html.tl-desktop .modal .st-rv-list{ max-height:none }
 html.tl-desktop .st-sels{ grid-template-columns:1fr 1fr }
+
+/* =====================================================================
+   v1.09.05: ПК-режим в УЗКОМ окне (< 980px — телефон в книжной ориентации,
+   узкое окно браузера). Раскладка там мобильная, меню — полосой внизу, но
+   прокручивается документ, а не #app: при системном шрифте ×1.6 шестнадцать
+   пунктов меню распирали полосу на 22px, и у СТРАНИЦЫ появлялась горизонтальная
+   прокрутка (в режиме «Телефон» то же самое молча обрезает body). Полоса меню
+   держит свои пункты сама.
+   ===================================================================== */
+@media (max-width:979.98px){
+  html.tl-desktop .tabbar{ overflow:hidden; }
+}

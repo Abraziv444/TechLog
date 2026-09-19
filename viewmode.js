@@ -14,6 +14,21 @@
 
    Хранение выбора: localStorage['techlog_view_mode'] = 'mobile'|'desktop'.
    Чтение localStorage['techlog_lang'] — только для подписи кнопок (read-only).
+
+   v1.09.05 · ХОЛСТ ПК-РЕЖИМА НА МАЛЕНЬКОМ СЕНСОРНОМ ЭКРАНЕ.
+   viewport у приложения — device-width: у Full HD-телефона это ≈412 CSS-px
+   в книжной и ≈915 в альбомной ориентации, а вся ПК-раскладка desktop.css
+   стоит за min-width:980px. Поэтому «ПК-режим» на телефоне рисовал мобильную
+   вёрстку. Теперь, когда режим «ПК» выбран ЯВНО, палец — основной указатель,
+   а экран уже 980 CSS-px, страница рисуется на холсте шириной W
+   (<meta viewport width=W>) и браузер сам масштабирует её под экран — тот же
+   механизм, что «Версия для ПК» в браузере. Приложение при этом видит
+   innerWidth = W, и вся логика (media queries, авто-подгон доски) работает
+   без единой правки.
+     localStorage['techlog_pc_canvas'] = 'auto' | 'off' | '1100'…'1920'
+     (настройка УСТРОЙСТВА — зависит от экрана, в профиль не пишется).
+   Читаемость: масштаб не ниже 0.45 — иначе берётся ширина поменьше, а если
+   не проходит и 1100 (телефон в книжной ориентации) — холста нет.
    ===================================================================== */
 (function () {
   'use strict';
@@ -79,6 +94,21 @@
     '.vm-btn.on{background:var(--blue,#1CB0F6);color:#04314A;}' +      /* активная — синяя */
     '.vm-btn:not(.on):hover{color:var(--blue,#1CB0F6);}' +
     '.vm-btn:focus-visible{outline:3px solid rgba(28,176,246,.45);outline-offset:1px;}' +
+    /* v1.09.05: холст ПК-режима. Мобильный браузер на широком холсте «раздувает»
+       абзацы (font boosting) и ломает вёрстку — запрещаем. Подсказка о масштабе
+       рисуется в --vs раз крупнее: страница уменьшена, а палец прежний. */
+    'html.tl-vscale{-webkit-text-size-adjust:100%;text-size-adjust:100%;}' +
+    '#vm-canvas-hint{position:fixed;left:50%;transform:translateX(-50%);z-index:1300;' +
+      'top:calc(env(safe-area-inset-top,0px) + 10px * var(--vs,1));' +
+      'width:min(calc(340px * var(--vs,1)), 92vw);box-sizing:border-box;' +
+      'background:var(--panel,#17232A);color:var(--text,#F1F7FB);border:2px solid var(--blue,#1CB0F6);' +
+      'border-radius:calc(14px * var(--vs,1));padding:calc(10px * var(--vs,1)) calc(12px * var(--vs,1));' +
+      'font-weight:700;font-size:calc(13px * var(--vs,1));line-height:1.3;box-shadow:0 10px 30px rgba(0,0,0,.55);}' +
+    '#vm-canvas-hint .vch-b{display:flex;gap:calc(8px * var(--vs,1));margin-top:calc(8px * var(--vs,1));}' +
+    '#vm-canvas-hint button{flex:1;font:inherit;font-weight:900;cursor:pointer;color:var(--text,#F1F7FB);' +
+      'background:var(--panel-2,#1C2B33);border:2px solid var(--line,#31434C);' +
+      'border-radius:calc(12px * var(--vs,1));min-height:calc(40px * var(--vs,1));padding:0 calc(10px * var(--vs,1));}' +
+    '#vm-canvas-hint button[data-a="phone"]{background:var(--blue,#1CB0F6);border-color:var(--blue,#1CB0F6);color:#04314A;}' +
     '';  /* v1.07.40: подписи не показываем нигде — мини-пилюля (только значки)
              одинакова на телефоне и ПК; после входа её рисует сама шапка (#vm-slot),
              а эта плавающая остаётся только на экране логина. */
@@ -110,9 +140,155 @@
     if (bar) bar.setAttribute('aria-label', L.group);
   }
 
+  /* ------------------------------------------------------------------
+     v1.09.05 · холст ПК-режима (см. шапку файла)
+     ------------------------------------------------------------------ */
+  var CANVAS_KEY = 'techlog_pc_canvas';
+  var CANVAS_STEPS = [1100, 1280, 1440, 1600, 1920];
+  var CANVAS_AUTO = 1100;
+  var MIN_SCALE = 0.45;
+  var VP_BASE = 'width=device-width, initial-scale=1, viewport-fit=cover';
+  var canvasW = 0;            // применённая ширина холста; 0 — холста нет
+  var canvasDead = false;     // браузер игнорирует <meta viewport> (настольный)
+  var html = document.documentElement;
+
+  /* any-pointer: телефон с подключённой мышью остаётся телефоном (у него основной
+     указатель становится «точным», и холст иначе пропадал бы вместе с мышью) */
+  function coarse() {
+    try { return window.matchMedia('(any-pointer:coarse)').matches || window.matchMedia('(pointer:coarse)').matches; } catch (e) { return false; }
+  }
+  function isLandscape() {
+    try { if (screen.orientation && screen.orientation.type) return /landscape/.test(screen.orientation.type); } catch (e) {}
+    try { if (typeof window.orientation === 'number') return Math.abs(window.orientation) === 90; } catch (e) {}
+    try { return window.matchMedia('(orientation: landscape)').matches; } catch (e) {}
+    return false;
+  }
+  /* ширина экрана в CSS-px при device-width. Android и эмуляторы меняют
+     screen.width/height местами при повороте, iOS — никогда (всегда «книжные»),
+     поэтому у iOS сторону выбираем по ориентации. От <meta viewport> значение
+     не зависит — иначе после включения холста мы бы мерили сам холст. */
+  function nativeW() {
+    var sw = 0, sh = 0;
+    try { sw = +screen.width || 0; sh = +screen.height || 0; } catch (e) {}
+    if (!sw || !sh) return 0;
+    if (sw > sh) return sw;
+    return isLandscape() ? sh : sw;
+  }
+  function canvasPref() {
+    var v = safeGet(CANVAS_KEY);
+    if (v === 'off') return 'off';
+    var nn = parseInt(v, 10);
+    return CANVAS_STEPS.indexOf(nn) >= 0 ? nn : 'auto';
+  }
+  /* маленький сенсорный экран — там, где холст вообще имеет смысл */
+  function canvasApplicable() {
+    var nw = nativeW();
+    return !canvasDead && coarse() && nw > 0 && nw < 980;
+  }
+  function canvasPlan(mode) {
+    if (mode !== 'desktop' || !canvasApplicable()) return 0;
+    if (safeGet(KEY) !== 'desktop') return 0;          // только ЯВНО выбранный режим «ПК»
+    var pref = canvasPref();
+    if (pref === 'off') return 0;
+    var want = pref === 'auto' ? CANVAS_AUTO : pref;
+    var nw = nativeW(), best = 0;
+    for (var i = 0; i < CANVAS_STEPS.length; i++) {
+      var w = CANVAS_STEPS[i];
+      if (w <= want && nw / w >= MIN_SCALE) best = w;
+    }
+    return best;
+  }
+  function vpMeta() { try { return document.querySelector('meta[name="viewport"]'); } catch (e) { return null; } }
+  var verT = null;
+  function applyCanvas(mode) {
+    try {
+      var m = vpMeta(); if (!m) return;
+      var w = canvasPlan(mode), nw = nativeW();
+      var content = w
+        ? 'width=' + w + ', initial-scale=' + (Math.floor(nw / w * 10000) / 10000) + ', viewport-fit=cover'
+        : VP_BASE;
+      var changed = m.getAttribute('content') !== content;
+      if (changed) m.setAttribute('content', content);
+      var was = canvasW; canvasW = w;
+      if (html.classList.contains('tl-vscale') !== !!w) html.classList.toggle('tl-vscale', !!w);
+      if (w) html.style.setProperty('--vs', (w / nw).toFixed(3)); else html.style.removeProperty('--vs');
+      if (changed || was !== w) {
+        try { window.dispatchEvent(new CustomEvent('tl:canvas', { detail: canvasInfo() })); } catch (e) {}
+      }
+      if (w && changed) canvasVerify(0);
+      if (!w) canvasHintClose();
+    } catch (e) {}
+  }
+  /* самопроверка: настольный браузер на сенсорном ноутбуке <meta viewport>
+     игнорирует — innerWidth остаётся шириной экрана. Тогда выключаемся. Решение
+     не с первого замера: на медленном телефоне и в скрытой вкладке раскладка
+     обновляется не сразу, и холст нельзя гасить по одному раннему замеру. */
+  function canvasVerify(attempt) {
+    clearTimeout(verT);
+    verT = setTimeout(function () {
+      try {
+        if (!canvasW) return;
+        if (document.hidden) { canvasVerify(attempt); return; }
+        var iw = window.innerWidth, nw2 = nativeW();
+        if (Math.abs(iw - canvasW) <= 12) { canvasHint(); return; }
+        if (Math.abs(iw - nw2) <= 12) {
+          if (attempt < 1) { canvasVerify(attempt + 1); return; }
+          canvasDead = true; applyCanvas(getMode());
+        } else canvasHint();
+      } catch (e) {}
+    }, attempt ? 1300 : 700);
+  }
+  function canvasInfo() {
+    var nw = nativeW();
+    return { applicable: canvasApplicable(), pref: canvasPref(), width: canvasW, native: nw,
+             scale: canvasW && nw ? Math.round(nw / canvasW * 100) / 100 : 1,
+             steps: CANVAS_STEPS.slice(), auto: CANVAS_AUTO, minScale: MIN_SCALE,
+             /* какие ширины пройдут по читаемости на ЭТОМ экране в текущей ориентации */
+             fit: CANVAS_STEPS.filter(function (w) { return nw && nw / w >= MIN_SCALE; }) };
+  }
+  function canvasSet(v) {
+    var val = v === 'off' ? 'off' : (CANVAS_STEPS.indexOf(+v) >= 0 ? String(+v) : 'auto');
+    safeSet(CANVAS_KEY, val);
+    applyCanvas(getMode());
+    return canvasInfo();
+  }
+
+  /* подсказка при первом включении холста за сессию: что произошло и как
+     вернуться. Размеры умножены на --vs — иначе на уменьшенной странице в
+     кнопку не попасть пальцем. */
+  var hintEl = null, hintT = null;
+  function canvasHintClose() { clearTimeout(hintT); if (hintEl) { try { hintEl.remove(); } catch (e) {} hintEl = null; } }
+  function canvasHint() {
+    try {
+      if (!canvasW || hintEl) return;
+      if (sessionStorage.getItem('tl_canvas_hint') === '1') return;
+      sessionStorage.setItem('tl_canvas_hint', '1');
+      var en = safeGet('techlog_lang') === 'en';
+      var pct = Math.round(nativeW() / canvasW * 100);
+      hintEl = document.createElement('div');
+      hintEl.id = 'vm-canvas-hint';
+      hintEl.setAttribute('role', 'status');
+      hintEl.innerHTML =
+        '<div class="vch-t">' + (en
+          ? 'PC mode: the page is scaled to ' + pct + '% to fit this screen. Pinch to zoom.'
+          : 'ПК-режим: страница уменьшена до ' + pct + '%, чтобы влезла раскладка компьютера. Щипок — увеличить.') + '</div>' +
+        '<div class="vch-b"><button type="button" data-a="phone">' + (en ? 'Phone mode' : 'Режим «Телефон»') + '</button>' +
+        '<button type="button" data-a="ok">OK</button></div>';
+      hintEl.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('button') : null;
+        if (!b) return;
+        canvasHintClose();
+        if (b.getAttribute('data-a') === 'phone') setMode('mobile');
+      });
+      document.body.appendChild(hintEl);
+      hintT = setTimeout(canvasHintClose, 12000);
+    } catch (e) {}
+  }
+
   function setMode(mode) {
     safeSet(KEY, mode);
     applyClass(mode);
+    applyCanvas(mode);
     paintButtons(mode);
     /* v1.07.40: сообщаем приложению (если оно есть) — оно перерисует шапку.
        Зависимость по-прежнему односторонняя: мы ничего из App.* не зовём. */
@@ -150,6 +326,7 @@
 
   try {
     applyClass(getMode());           // класс — мгновенно, до первой отрисовки
+    applyCanvas(getMode());          // v1.09.05: холст — тоже до первой отрисовки
     injectStyles();
     if (document.body) buildBar();
     else document.addEventListener('DOMContentLoaded', function () {
@@ -159,6 +336,14 @@
     document.addEventListener('visibilitychange', function () {
       try { if (!document.hidden) paintButtons(getMode()); } catch (e) {}
     });
+    /* v1.09.05: поворот экрана меняет «родную» ширину — пересчитать холст.
+       Сам холст тоже даёт resize, но план от него не зависит (меряем screen,
+       а не окно), поэтому <meta> второй раз не переписывается — петли нет. */
+    var cvT = null;
+    var cvSched = function () { clearTimeout(cvT); cvT = setTimeout(function () { try { applyCanvas(getMode()); } catch (e) {} }, 180); };
+    window.addEventListener('orientationchange', cvSched);
+    window.addEventListener('resize', cvSched, { passive: true });
+    try { if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', cvSched); } catch (e) {}
     window.TLViewMode = { get: getMode, set: setMode }; // для отладки
   } catch (e) {
     /* Любая ошибка здесь не должна мешать приложению: молча остаёмся
@@ -198,7 +383,9 @@
     seg.style.right = '12px';
     seg.style.top = 'calc(env(safe-area-inset-top,0px) + 10px)';
   }
-  window.TLView = { setMode: setMode };   // v1.07.38: шапка дергает режим напрямую
+  window.TLView = { setMode: setMode,     // v1.07.38: шапка дергает режим напрямую
+    /* v1.09.05: холст ПК-режима — строка настроек в app.js и тесты */
+    canvasInfo: canvasInfo, canvasSet: canvasSet, canvasApply: function () { applyCanvas(getMode()); } };
   window.addEventListener('resize', placeSeg, { passive: true });
   /* v1.07.67: слушателя scroll здесь больше нет. Пилюля — position:fixed,
      при прокрутке она не двигается, пересчитывать нечего; зато вызов на

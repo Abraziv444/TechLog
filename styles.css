@@ -955,7 +955,7 @@ h3 .ic{width:21px;height:21px}
   background:var(--panel-2);color:var(--blue);display:grid;place-items:center;
   cursor:pointer;padding:0;margin-top:-3px;
 }
-.copy-mini .ic{width:14px;height:14px;vertical-align:0}
+.copy-mini .ic{width:15px;height:15px;vertical-align:0}   /* v1.09.04: «два листа» вместо планшета */
 .copy-mini:active{transform:translateY(1px);border-color:var(--blue)}
 
 /* --- перетаскивание карточек (long-press) --- */
@@ -1097,6 +1097,39 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
 .faqm .demo{display:inline-flex;gap:5px;align-items:center;margin:1px 8px 1px 0;vertical-align:middle}
 .faqm .badge-status{position:static}
 .faqm .mv{pointer-events:none}
+/* v1.09.04: легенда «боковушек» в справке — пустые карточки-образцы.
+   Краски и размеры те же, что у .item/.row-num/.rail .mv, но это не кнопки:
+   span без фокуса и нажатий, чтобы справка не добавляла остановок Tab. */
+.faqm p{margin:4px 0 8px;line-height:1.4;color:var(--dim);font-size:.88rem}
+.faqm p b{color:var(--text)}
+.fq-sub{margin:10px 0 6px;font-weight:900;font-size:.8rem;display:flex;align-items:center;gap:8px}
+.fq-sub::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--green)}
+.fq-stripes{display:grid;gap:8px}
+.fq-row{display:grid;grid-template-columns:112px 1fr;gap:12px;align-items:center}
+.fq-txt{font-size:.84rem;line-height:1.4;color:var(--dim);min-width:0}
+.fq-txt b{color:var(--text)}
+.fq-txt .chip{vertical-align:middle}
+.fq-card{
+  position:relative;display:block;box-sizing:border-box;width:112px;height:100px;flex:0 0 auto;   /* 100, а не 92: между номером и ▲▼ виден зазор, как на живой карточке */
+  background:var(--panel);border:2px solid var(--line);border-left-width:6px;border-radius:var(--r);
+}
+.fq-card.dim{opacity:.6}
+.fq-card .row-num{position:absolute;top:6px;left:8px;height:20px;min-width:20px}
+.fq-rail{position:absolute;left:8px;bottom:10px;display:flex;flex-direction:column;gap:4px}
+.fq-mv{
+  width:26px;height:24px;border-radius:8px;border:2px solid var(--line);box-sizing:border-box;
+  background:var(--panel-2);color:var(--dim);display:grid;place-items:center;
+}
+.fq-mv .ic{width:14px;height:14px}
+.fq-card.sm{width:64px;height:36px;border-radius:12px}
+.fq-card.sm .row-num{top:50%;transform:translateY(-50%)}
+.fq-wts{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px 12px;margin:6px 0 2px}
+.fq-wt{display:flex;align-items:center;gap:10px;min-width:0}
+.fq-wt-n{font-weight:800;font-size:.8rem;min-width:0;overflow-wrap:anywhere}
+@media (max-width:430px){
+  .fq-row{grid-template-columns:88px 1fr;gap:10px}
+  .fq-card{width:88px}
+}
 .total-bar .sum.pend{color:var(--dim)}
 .total-bar .sum.ok{color:var(--green)}
 .combo{position:relative;flex:1;min-width:0}
@@ -2787,3 +2820,76 @@ html.tl-desktop .ct2-bar{left:auto;right:24px;bottom:24px;max-width:420px}
 .trk-dot.on{ color:var(--green); border-color:var(--green) }
 .trk-row.off .grow b{ color:var(--dim) }
 .lang-seg.trk-seg button{ flex:1 1 0; min-width:0; font-size:.74rem; padding:8px 4px; white-space:nowrap }
+
+/* =====================================================================
+   v1.09.02 · ЛИЧНЫЕ НАСТРОЙКИ МЕНЮ: подписи пунктов (показать / скрыть) и
+   нижнее меню в несколько рядов. Классы ставит viewTabbar(), высоту лишних
+   рядов (--tbx на <html>) — tabbarFit() после отрисовки.
+   ===================================================================== */
+/* «Скрыть»: одни значки на любом экране (название — в title) */
+.tabbar.tb-lab-off .tab span{display:none}
+.tabbar.tb-lab-off .tab{padding:10px 0}
+.tabbar.tb-lab-off .tab svg{width:24px;height:24px}
+/* «Показать»: подписи остаются и на узком экране (правило ≤430px их прятало) */
+@media (max-width:430px){
+  .tabbar.tb-lab-on .tab span{display:block;font-size:.55rem}
+  .tabbar.tb-lab-on .tab{padding:6px 2px}
+  .tabbar.tb-lab-on .tab svg{width:22px;height:22px}
+}
+/* несколько рядов: поровну по --tb-cols в ряду, неполный ряд — по центру */
+.tabbar.tb-multi{flex-wrap:wrap;justify-content:center;row-gap:2px}
+.tabbar.tb-multi .tab{flex:0 0 calc(100% / var(--tb-cols,8));max-width:calc(100% / var(--tb-cols,8));min-width:0}
+/* в рядах подписи чуть мельче и плотнее — длинные («Справочники», «Бухгалтерия») помещаются целиком */
+.tabbar.tb-multi .tab{padding-left:1px;padding-right:1px}
+.tabbar.tb-multi .tab span{font-size:.55rem;letter-spacing:-.2px}
+/* всё, что стоит над нижним меню, поднимается на высоту лишних рядов */
+body{padding-bottom:calc(72px + var(--tbx,0px) + env(safe-area-inset-bottom))}   /* ПК-режим в узком окне: меню тоже внизу */
+html:not(.tl-desktop) #app{padding-bottom:calc(80px + var(--tbx,0px) + env(safe-area-inset-bottom))}
+.fab{bottom:calc(86px + var(--tbx,0px))}
+#tl-net{bottom:calc(env(safe-area-inset-bottom,0px) + 86px + var(--tbx,0px))}
+html.tl-pop-bottom #toasts{bottom:calc(env(safe-area-inset-bottom,0px) + 82px + var(--tbx,0px))}
+html.tl-pop-bottom .mq-pop{bottom:calc(env(safe-area-inset-bottom,0px) + 96px + var(--tbx,0px))}
+html.tl-pop-bottom .mq-mini{bottom:calc(env(safe-area-inset-bottom,0px) + 82px + var(--tbx,0px))}
+.ct2-bar{bottom:calc(72px + var(--tbx,0px) + env(safe-area-inset-bottom,0px))}
+.set-step button:disabled{opacity:.35;cursor:default}
+/* строки меню идут после рамки-примера шрифта — отделяем их такой же чертой, как остальные строки */
+.fs-demo + .settings-row{margin-top:10px;border-top:2px solid var(--line-soft)}
+
+/* ===== v1.09.03 · замок правки старых задач: галочка + срок; автобэкап по полкам ===== */
+.lock-opts{align-items:center;margin-bottom:6px;flex-wrap:nowrap}
+#app.scr-settings .card .lock-opts > .opt, .lock-opts > .opt{flex:0 1 auto;min-width:0}   /* «?» остаётся в строке галочки, подпись переносится */
+.lock-opts > .tipq{flex:0 0 auto}
+.lock-days.is-off .name{opacity:.45}
+.set-step.is-off .price-input{opacity:.45}
+.lock-state{margin-top:6px}
+.lock-state.on{color:var(--text)}
+.lock-state .ic{width:14px;height:14px;vertical-align:-.15em;color:var(--green)}
+.toast.tap{cursor:pointer}
+/* копии в Drive: три полки — админ (вечно), недельные (вечно), ежедневные (последние 8) */
+.abk-rules{margin:8px 0 2px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;display:grid;gap:4px}
+.abk-rules b{font-weight:900}
+.abk-grp{margin-top:10px}
+.abk-grp-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-weight:900;font-size:.8rem;margin-bottom:4px}
+.abk-row{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;padding:3px 0;border-top:1px solid var(--line-soft);overflow-wrap:anywhere}
+.abk-row:first-of-type{border-top:0}
+.abk-row .nm{flex:1 1 220px;min-width:0}
+.abk-tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:.62rem;font-weight:900;letter-spacing:.3px;border:1.5px solid currentColor;white-space:nowrap}
+.abk-tag.k-admin{color:var(--yellow)}
+.abk-tag.k-weekly{color:var(--green)}
+.abk-tag.k-daily{color:var(--blue)}
+.abk-tag.k-legacy{color:var(--dim)}
+
+/* =====================================================================
+   v1.09.05 · ПЛОТНОСТЬ ИНТЕРФЕЙСА. Сама компактная вёрстка — в compact.css;
+   здесь только то, что видно в ЛЮБОЙ плотности: кнопка-значок на доске,
+   строка холста ПК-режима в настройках, год в сроке пикапа.
+   ===================================================================== */
+.brd-eye.brd-dens{padding:0;width:36px;justify-content:center;flex:0 0 auto}
+.brd-eye.brd-dens.on{border-color:var(--blue);color:var(--blue)}
+.lang-seg.cv-seg{max-width:100%}
+.lang-seg.cv-seg button{flex:1 0 auto;font-variant-numeric:tabular-nums}
+.lang-seg button:disabled{opacity:.35;cursor:default}
+@media (pointer: coarse){
+  .brd-eye.brd-dens{width:40px}
+  .lang-seg.cv-seg button{padding:9px 10px}
+}

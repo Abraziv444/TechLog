@@ -452,7 +452,13 @@
     /* v1.08.02: элемент, укатившийся за край горизонтальной карусели, физически
        обрезан родителем — он не «под панелью», его вообще не видно. Раньше
        кнопки справочников, уехавшие влево, попадали в отчёт как недоступные. */
-    var clipped = function (el) {
+    /* v1.09.05: а элемент, обрезанный ЧАСТИЧНО (вкладка справочников, наполовину
+       уехавшая за левый край своей полосы), сравнивается с панелью только ВИДИМОЙ
+       частью: невидимый хвост его рамки геометрически заходит под левое меню ПК,
+       хотя на экране там ничего нет. Проявилось, когда страница в окне ≤1150px
+       встала вплотную к меню. */
+    var visBox = clipped;                       // внешний помощник: рамка ∩ обрезающие предки
+    var fullyClipped = function (el) {
       try {
         var r = el.getBoundingClientRect(), p = el.parentElement;
         while (p && p !== document.body) {
@@ -474,8 +480,9 @@
       scTo(scH());
       var br = box(bar);
       hits().forEach(function (el) {
-        if (items.length > 8 || bar.contains(el) || inOverlay(el) || clipped(el)) return;
-        var r = box(el);
+        if (items.length > 8 || bar.contains(el) || inOverlay(el) || fullyClipped(el)) return;
+        var r = visBox(el);
+        if (r.w < 2 || r.h < 2) return;
         if (r.b > br.t + 2 && r.t < br.b - 2 && r.r > br.l && r.l < br.r)
           items.push({ level: 'err', msg: 'недоступно под нижней панелью: ' + pathOf(el), el: el });
       });
@@ -486,8 +493,9 @@
       scTo(0);
       var tr = box(top);
       hits().forEach(function (el) {
-        if (items.length > 12 || top.contains(el) || inOverlay(el) || clipped(el)) return;
-        var r = box(el);
+        if (items.length > 12 || top.contains(el) || inOverlay(el) || fullyClipped(el)) return;
+        var r = visBox(el);
+        if (r.w < 2 || r.h < 2) return;
         if (r.t < tr.b - 2 && r.b > tr.t + 2 && r.r > tr.l && r.l < tr.r)
           items.push({ level: 'err', msg: 'недоступно под шапкой: ' + pathOf(el), el: el });
       });
@@ -881,14 +889,20 @@
       zoom: vv ? +(vv.scale || 1).toFixed(2) : 1,
       safe: ins.t + '/' + ins.r + '/' + ins.b + '/' + ins.l,
       mode: mode, device: dev, pwa: stand,
-      lang: lang(), font: parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+      lang: lang(), font: parseFloat(getComputedStyle(document.documentElement).fontSize) || 16,
+      /* v1.09.05: плотность и холст ПК-режима — без них отчёт с чужого телефона
+         не объясняет, почему вёрстка «не такая» */
+      dens: document.documentElement.classList.contains('tl-compact') ? 'компактная' : 'обычная',
+      canvas: (function () { try { var c = window.TLView && window.TLView.canvasInfo && window.TLView.canvasInfo();
+        return c && c.width ? c.width + 'px ×' + c.scale : ''; } catch (e) { return ''; } })()
     };
   }
 
   function envLine(e) {
     return e.device + ' · ' + e.view + ' (' + e.ratio + ') · ' + e.orient + ' · dpr ' + e.dpr +
       ' · экран ' + e.screen + ' · режим ' + e.mode + (e.pwa ? ' · PWA' : '') +
-      ' · шрифт ' + e.font + 'px' + (e.zoom !== 1 ? ' · масштаб ' + e.zoom : '') +
+      ' · шрифт ' + e.font + 'px' + (e.dens ? ' · плотность ' + e.dens : '') +
+      (e.canvas ? ' · холст ' + e.canvas : '') + (e.zoom !== 1 ? ' · масштаб ' + e.zoom : '') +
       ' · безопасные поля ' + e.safe;
   }
 

@@ -62,7 +62,16 @@ const expose = `;window.__T = {
   setJobDraft: d => { jobDraft = d; }, getJobDraft: () => jobDraft, setScreen: s => { state.screen = s; },
   /* v1.09.01: справочник трекеров Bouncie */
   TRK, bnDevices, bnDevByImei, bnDevActive, bnDevLabel, bnDevCar, bnDevNeedSync, bnDevNorm, bnDevApplyLocal, bnDevSync,
-  dirTrackers, vehTrackerLine, vehTrackerSelHtml, vehDevPick, isAdmin
+  dirTrackers, vehTrackerLine, vehTrackerSelHtml, vehDevPick, isAdmin,
+  /* v1.09.02: личные настройки меню, 2FA строкой профиля */
+  menuLabels, menuRows, menuLabKey, menuLabelsSet, menuRowsStep, tabbarCols, tabbarIsBottom, viewTabbar, viewSettings, secRowHtml,
+  /* v1.09.03: замок правки галочкой, бэкапы по полкам */
+  lockRowHtml, lockLastDays, editLockDays, editLocked, docsEquipCardHtml, orgStepperHtml,
+  ABK, abkKindOf, abkListHtml, abkCardHtml, abkRulesHtml, abkAutoDue,
+  /* v1.09.04: значок копирования, легенда полос в справке */
+  IC, addrLineHtml, faqStripeLegend, faqStripeCard, faqStripeWts, STRIPE_PK, STRIPE_PK_DONE,
+  /* v1.09.05: плотность интерфейса, холст ПК-режима */
+  densCur, densIsCompact, densPrefKey, densSyncPref, densSet, densBtnHtml, densRowHtml, canvasRowHtml, boardColsStyle, boardPkCard, fmtDMYyr, viewBoard
 };`;
 
 try {
@@ -2112,9 +2121,9 @@ console.log('\n— v1.09.01: справочник «Трекеры Bouncie» —
   const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
   const upd = fs.readFileSync(ROOT + '/supabase/update-to-1_09_01.sql', 'utf8');
   const full = fs.readFileSync(ROOT + '/supabase/full-install-1_09_01.sql', 'utf8');
-  t('v1.09.01: версии (app = sw = version.json = 1.09.01), DB_SQL_FILE = full-install-1_09_01.sql, комплект SQL и тесты на месте',
-    T.APP_VERSION === '1.09.01' && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
-    && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.01'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.01'
+  t('v1.09.01: версии (app = sw = version.json, не ниже 1.09.01), DB_SQL_FILE = full-install-1_09_01.sql, комплект SQL и тесты на месте',
+    /^1\.(09\.(0[1-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && T.DB_SQL_FILE === 'full-install-1_09_01.sql'   /* v1.09.02: версия двинулась дальше, база — нет */
+    && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
     && fs.existsSync(ROOT + '/tests/bn-devices.sql') && fs.existsSync(ROOT + '/tests/v1_09_01.js'));
   t('v1.09.01: ключи RU/EN справочника трекеров и карточки машины',
     ['d_trackers', 'trk_hint', 'trk_sync', 'trk_syncing', 'trk_all', 'trk_active', 'trk_inactive', 'trk_st_active', 'trk_st_inactive', 'trk_none', 'trk_none_f',
@@ -2144,7 +2153,7 @@ console.log('\n— v1.09.01: справочник «Трекеры Bouncie» —
       && x.includes("if not found then raise exception 'NO_DEVICE'; end if;") && x.includes("raise exception 'DEVICE_INACTIVE'") && x.includes("raise exception 'DEVICE_TAKEN'")
       && x.includes('insert into public.bn_devices (imei, make, first_seen_at)') && x.includes('схема соответствует v1.09.01'))
     && full.includes('create table if not exists public.vehicles (') && !full.includes('Самопроверка v1.08.97 (')
-    && (() => { const bk = fs.readFileSync(ROOT + '/supabase/functions/backup/index.ts', 'utf8'); return bk.indexOf('"bn_devices"') > 0 && bk.indexOf('"bn_devices"') < bk.indexOf('"vehicles"') && bk.includes('const BK_VER = "1.09.01";'); })()
+    && (() => { const bk = fs.readFileSync(ROOT + '/supabase/functions/backup/index.ts', 'utf8'); return bk.indexOf('"bn_devices"') > 0 && bk.indexOf('"bn_devices"') < bk.indexOf('"vehicles"') && /const BK_VER = "1\.(09\.(0[1-9]|[1-9]\d)|[1-9]\d\.\d\d)";/.test(bk); })()   /* v1.09.03: BK_VER двинулся дальше */
     && fs.readFileSync(ROOT + '/supabase/functions-dashboard/backup/index.ts', 'utf8').includes('"bn_devices"'));
   /* разбор ответа Bouncie — то же, что bn_dev_norm в базе */
   const raw = [
@@ -2219,6 +2228,316 @@ console.log('\n— v1.09.01: справочник «Трекеры Bouncie» —
     && html.indexOf('data-imei="359999000000001"') < html.indexOf('data-imei="359999000000002"') && /id="trk-sync"/.test(html) && /App\.trkSync\(\)/.test(html)
     && /chip warn/.test(html) && (htmlOff.match(/class="rowline trk-row/g) || []).length === 1 && /data-imei="359999000000002"/.test(htmlOff));
   T.state.user = prevUser; T.state.data = prevData;
+}
+
+console.log('\n— v1.09.02: личные настройки меню (подписи, ряды), 2FA под сменой пароля —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  t('v1.09.02: версии (app = sw = version.json = 1.09.02), SQL не менялся, тест на месте',
+    /^1\.(09\.(0[2-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.03: версия двинулась дальше */
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql' && fs.existsSync(ROOT + '/tests/v1_09_02.js'));
+  t('v1.09.02: ключи RU/EN настроек меню',
+    ['ml_title', 'ml_auto', 'ml_on', 'ml_off', 'ml_hint', 'mr_title', 'mr_d', 'mr_hint'].every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
+  t('v1.09.02: tabbarCols — поровну, из расчёта не меньше 4 пунктов на ряд',
+    T.tabbarCols(16, 1) === 16 && T.tabbarCols(16, 2) === 8 && T.tabbarCols(16, 3) === 6 && T.tabbarCols(16, 4) === 4 && T.tabbarCols(16, 5) === 4
+    && T.tabbarCols(15, 2) === 8 && T.tabbarCols(11, 2) === 6 && T.tabbarCols(11, 5) === 4 && T.tabbarCols(7, 2) === 4 && T.tabbarCols(7, 5) === 4 && T.tabbarCols(4, 5) === 4);
+  const prevUser = T.state.user, prevData = T.state.data, prevScr = T.state.screen;
+  const LS = w.localStorage;
+  ['techlog_menu_labels', 'techlog_menu_labels_pc', 'techlog_menu_rows'].forEach(k => LS.removeItem(k));
+  LS.setItem('techlog_view_mode', 'mobile');
+  const me = { id: 'u1', role: 'admin', display_name: 'Adm', login: 'adm', push_prefs: { cam_way: 'phone' } };
+  T.state.user = me; T.state.data = { ...(prevData || T.emptyData()), profiles: [me] }; T.state.screen = 'settings';
+  const bar0 = T.viewTabbar();
+  t('v1.09.02: по умолчанию — авто и 1 ряд: меню как раньше (без tb-multi / tb-lab-*), у кнопок появился title',
+    T.menuLabels() === 'auto' && T.menuRows() === 1 && !/tb-multi|tb-lab-/.test(bar0) && /class="tabbar tb-tight"/.test(bar0) && /<button class="tab[^"]*" title="[^"]+"/.test(bar0));
+  T.state.user.push_prefs = { ...T.state.user.push_prefs, menu_rows: 2, menu_labels: 'on' };
+  const bar2 = T.viewTabbar(), nTabs = (bar2.match(/<button class="tab/g) || []).length;
+  t('v1.09.02: 2 ряда + «Показать» — tb-multi, --tb-cols = половина пунктов, tb-lab-on, «тесная» раскладка снята',
+    /class="tabbar tb-multi tb-lab-on" style="--tb-cols:(\d+)"/.test(bar2) && +bar2.match(/--tb-cols:(\d+)/)[1] === Math.ceil(nTabs / 2) && !/tb-tight/.test(bar2), bar2.slice(0, 90));
+  T.state.user.push_prefs = { ...T.state.user.push_prefs, menu_labels: 'off', menu_rows: 9 };
+  t('v1.09.02: «Скрыть» — tb-lab-off; мусор в menu_rows → 1 ряд', /class="tabbar tb-tight tb-lab-off"/.test(T.viewTabbar()) && T.menuRows() === 1);
+  /* своё значение для режима ПК; ряды на ПК-колонку не действуют */
+  LS.setItem('techlog_view_mode', 'desktop');
+  const wasW = w.innerWidth; w.innerWidth = 1280;
+  T.state.user.push_prefs = { ...T.state.user.push_prefs, menu_rows: 3 };
+  const barPc = T.viewTabbar();
+  t('v1.09.02: режим ПК — свой ключ menu_labels_pc (там ещё «авто»), ряды не применяются',
+    T.menuLabKey() === 'menu_labels_pc' && T.menuLabels() === 'auto' && !/tb-multi|tb-lab-/.test(barPc) && T.tabbarIsBottom() === false);
+  w.innerWidth = 700;
+  t('v1.09.02: ПК-режим в узком окне (< 980 px) — меню внизу, ряды действуют', T.tabbarIsBottom() === true && /tb-multi/.test(T.viewTabbar()));
+  w.innerWidth = wasW; LS.setItem('techlog_view_mode', 'mobile');
+  /* запись: сразу в state + кэш устройства, остальные личные настройки целы */
+  T.menuLabelsSet('on'); T.menuRowsStep(1);
+  t('v1.09.02: menuLabelsSet / menuRowsStep — пишут в push_prefs и localStorage, соседние настройки (cam_way) не теряются, степпер упирается в 1…5',
+    T.state.user.push_prefs.menu_labels === 'on' && T.state.user.push_prefs.menu_rows === 4 && T.state.user.push_prefs.cam_way === 'phone'
+    && LS.getItem('techlog_menu_labels') === 'on' && LS.getItem('techlog_menu_rows') === '4'
+    && (() => { T.menuRowsStep(1); T.menuRowsStep(1); T.menuRowsStep(1); const hi = T.menuRows(); for (let i = 0; i < 7; i++) T.menuRowsStep(-1); return hi === 5 && T.menuRows() === 1; })());
+  /* экран настроек: 2FA строкой под сменой пароля, отдельного спойлера нет; строки меню после шрифта */
+  const html = T.viewSettings();
+  const iPass = html.indexOf('App.ownPassModal()'), iSec = html.indexOf('id="sec-row"'), iLang = html.indexOf("App.setLang('ru')"),
+        iFont = html.indexOf('class="fs-demo"'), iMl = html.indexOf('id="ml-row"'), iMr = html.indexOf('id="mr-row"'), iDocs = html.indexOf("App.foldToggle('docs')");
+  t('v1.09.02: «Безопасность (2FA)» — строка карточки профиля между «Сменой пароля» и «Языком»; спойлера sec больше нет',
+    iPass > 0 && iSec > iPass && iLang > iSec && !html.includes("App.foldToggle('sec')") && !src.includes('function secCardHtml(') && !src.includes("fold('sec',")
+    && /id="sec-row"/.test(T.secRowHtml()));
+  t('v1.09.02: «Названия пунктов меню» (Авто/Показать/Скрыть) и «Рядов меню на телефоне» (степпер) — в карточке профиля после размера шрифта',
+    iMl > iFont && iMr > iMl && iDocs > iMr && (html.match(/App\.menuLabels\('(auto|on|off)'\)/g) || []).length === 3
+    && html.includes('onclick="App.menuRowsStep(-1)" disabled') && /id="mr-val">1</.test(html));
+  t('v1.09.02: CSS — подписи on/off, многорядное меню, всё над меню поднимается на --tbx; render меряет меню',
+    css.includes('.tabbar.tb-lab-off .tab span{display:none}') && css.includes('.tabbar.tb-lab-on .tab span{display:block')
+    && css.includes('.tabbar.tb-multi{flex-wrap:wrap') && css.includes('flex:0 0 calc(100% / var(--tb-cols,8))')
+    && css.includes('html:not(.tl-desktop) #app{padding-bottom:calc(80px + var(--tbx,0px)') && css.includes('.fab{bottom:calc(86px + var(--tbx,0px))}')
+    && src.includes("tabbarFit();                                           // v1.09.02") && src.includes("root.style.setProperty('--tbx', v)"));
+  ['techlog_menu_labels', 'techlog_menu_labels_pc', 'techlog_menu_rows', 'techlog_view_mode'].forEach(k => LS.removeItem(k));
+  T.state.user = prevUser; T.state.data = prevData; T.state.screen = prevScr;
+}
+
+console.log('\n— v1.09.03: замок правки галочкой; бэкапы: ручные и недельные вечны —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  const prevUser = T.state.user, prevData = T.state.data;
+  const LS = w.localStorage;
+  const APP = w.App || globalThis.App;
+  t('v1.09.03: версии (app = sw = version.json = 1.09.03), SQL не менялся, BK_VER = 1.09.03, тесты на месте',
+    /^1\.(09\.(0[3-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.04: версия двинулась дальше */
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && fs.readFileSync(ROOT + '/supabase/functions/backup/index.ts', 'utf8').includes('const BK_VER = "1.09.03";')
+    && fs.readFileSync(ROOT + '/supabase/functions-dashboard/backup/index.ts', 'utf8').includes('const BK_VER = "1.09.03";')
+    && fs.existsSync(ROOT + '/tests/v1_09_03.js') && fs.existsSync(ROOT + '/tests/backup-rotation.js'));
+  t('v1.09.03: ключи RU/EN — замок и полки бэкапа',
+    ['lock_chk', 'lock_state_off', 'lock_state_on', 'lock_tip', 'lock_days_lbl', 'abk_tip', 'abk_auto_lbl', 'abk_r_admin', 'abk_r_weekly', 'abk_r_daily',
+     'abk_k_admin', 'abk_k_weekly', 'abk_k_daily', 'abk_k_legacy', 'abk_g_admin', 'abk_g_weekly', 'abk_g_daily', 'abk_g_legacy', 'abk_more', 'abk_empty',
+     'abk_old_fn', 'abk_perm_ok', 'act_backup_admin'].every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
+  t('v1.09.03: подпись срока без «(0 — выкл)»; в «?» сказано, что при 0 правка не блокируется никак, и что минимум 1',
+    !/0 — выкл/.test(T.DICT.ru.lock_days_lbl) && !/0 — off/.test(T.DICT.en.lock_days_lbl)
+    && /значение 0/.test(T.DICT.ru.lock_tip) && /никак не блокируется/.test(T.DICT.ru.lock_tip) && /Минимум — 1 день/.test(T.DICT.ru.lock_tip)
+    && /value is 0/.test(T.DICT.en.lock_tip) && /minimum is 1 day/.test(T.DICT.en.lock_tip));
+  LS.removeItem('techlog_lock_days_last');
+  const off = T.lockRowHtml({ edit_lock_days: 0 });
+  t('v1.09.03: замок выключен — галочка снята, степпер блёклый и disabled, показывает 7 (не 0), минимум 1, строка «выключено», есть «?»',
+    /id="lock-chk"\s+onchange/.test(off) && !/id="lock-chk" checked/.test(off) && /class="qty-line lock-days is-off"/.test(off)
+    && (off.match(/ disabled/g) || []).length === 3 && /value="7"/.test(off) && off.includes("App.orgStep('edit_lock_days',-1,1,60,1)")
+    && off.includes("App.setOrgNum('edit_lock_days', this.value, 1, 60)") && off.includes(T.DICT.ru.lock_state_off) && off.includes("App.toastInfo('lock_tip')"));
+  const on = T.lockRowHtml({ edit_lock_days: 5 });
+  t('v1.09.03: замок включён — галочка стоит, степпер живой со значением 5, строка «включено» с числом дней и датой',
+    /id="lock-chk" checked/.test(on) && !/ disabled/.test(on) && /value="5"/.test(on) && /class="qty-line lock-days "/.test(on)
+    && /старше 5 дн\./.test(on) && /раньше \d{2}\/\d{2}\/\d{4}/.test(on), on.replace(/\s+/g, ' ').slice(0, 300));
+  t('v1.09.03: мусор в edit_lock_days (null, -3, "x") = выключено; 999 → показывается 60',
+    [null, -3, 'x', undefined].every(v => /is-off/.test(T.lockRowHtml({ edit_lock_days: v }))) && /value="60"/.test(T.lockRowHtml({ edit_lock_days: 999 })));
+  T.state.user = { id: 'u-adm', role: 'admin' };
+  T.state.data = Object.assign(T.emptyData(), { org_settings: { id: 'org', edit_lock_days: 9 } });
+  APP.lockToggle(false);
+  t('v1.09.03: lockToggle(false) — в настройки уходит 0, срок 9 запомнен на устройстве', T.editLockDays() === 0 && LS.getItem('techlog_lock_days_last') === '9' && T.lockLastDays() === 9);
+  APP.lockToggle(true);
+  t('v1.09.03: lockToggle(true) — возвращается прежний срок 9; повторное «вкл» срок не меняет', T.editLockDays() === 9 && (APP.lockToggle(true), T.editLockDays() === 9));
+  APP.setOrgNum('edit_lock_days', 0, 1, 60);
+  t('v1.09.03: при включённом замке ноль не выставить — степпер/поле упираются в 1', T.editLockDays() === 1);
+  APP.orgStep('edit_lock_days', -1, 1, 60, 1);
+  t('v1.09.03: «−» на единице остаётся на 1; «+» даёт 2', T.editLockDays() === 1 && (APP.orgStep('edit_lock_days', 1, 1, 60, 1), T.editLockDays() === 2));
+  LS.removeItem('techlog_lock_days_last'); T.state.data.org_settings.edit_lock_days = 0;
+  APP.lockToggle(true);
+  t('v1.09.03: первое включение без запомненного срока — 7 дней', T.editLockDays() === 7);
+  t('v1.09.03: editLocked — при 0 не блокирует ничего; при N блокирует технику старше N, менеджеру/админу — нет',
+    (() => { const old = { date: '2020-01-01' }; T.state.data.org_settings.edit_lock_days = 0; T.state.user = { id: 'u-t', role: 'tech' };
+      const a = T.editLocked(old) === false; T.state.data.org_settings.edit_lock_days = 3; const b = T.editLocked(old) === true;
+      T.state.user = { id: 'u-adm', role: 'admin' }; return a && b && T.editLocked(old) === false; })());
+  t('v1.09.03: карточка «Аренда оборудования и права» содержит строку замка; orgStepperHtml без 6-го аргумента — как раньше',
+    T.docsEquipCardHtml().includes('id="lock-row"') && !/disabled|is-off/.test(T.orgStepperHtml('default_rent_days', 3, 1, 30)));
+  t('v1.09.03: длинная подсказка «?» висит дольше и закрывается нажатием',
+    src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(20000, s.length * 55)))") && src.includes('function toast(msg, kind, ms){')
+    && src.includes("if (ms > 3800){ el.classList.add('tap'); el.onclick = () => el.remove(); }") && css.includes('.toast.tap{cursor:pointer}'));
+
+  /* бэкапы */
+  t('v1.09.03: кнопка → kind=admin, автозапуск → kind=auto; skipped не пишет ни журнал, ни «последний»',
+    src.includes("'/backup?run=1&kind=' + (silent ? 'auto' : 'admin')") && src.includes("if (j.skipped){ dlog('автобэкап: сегодня уже сделан — пропуск'); return j; }")
+    && src.includes("audit(silent ? 'backup_auto' : 'backup_admin', 'org', 'backup',"));
+  t('v1.09.03: abkKindOf — поле сервера, иначе по имени; непонятное → legacy',
+    T.abkKindOf({ name: 'x.sql', kind: 'weekly' }) === 'weekly' && T.abkKindOf({ name: 'TechLog-backup-2026-09-19_1432-ADMIN.sql' }) === 'admin'
+    && T.abkKindOf({ name: 'TechLog-backup-2026-09-14-weekly-2026-W38.sql' }) === 'weekly' && T.abkKindOf({ name: 'TechLog-backup-2026-09-19-daily.sql' }) === 'daily'
+    && T.abkKindOf({ name: 'TechLog-backup-2026-09-01.sql' }) === 'legacy' && T.abkKindOf({ name: 'a.sql', kind: 'zzz' }) === 'legacy' && T.abkKindOf(null) === 'legacy');
+  const files = [
+    { name: 'TechLog-backup-2026-09-19_1432-ADMIN.sql', createdTime: '2026-09-19T18:32:00Z', size: '2048000', kind: 'admin', by: 'abraziv777' },
+    { name: 'TechLog-backup-2026-09-14-weekly-2026-W38.sql', createdTime: '2026-09-14T12:00:00Z', size: '1024000', kind: 'weekly' },
+    { name: 'TechLog-backup-2026-09-19-daily.sql', createdTime: '2026-09-19T12:00:00Z', size: '1024000', kind: 'daily' },
+    { name: 'TechLog-backup-2026-09-01.sql', createdTime: '2026-09-01T12:00:00Z', size: '900000', kind: 'legacy' }];
+  const html = T.abkListHtml({ ok: true, keep_daily: 8, counts: { admin: 1, weekly: 40, daily: 1, legacy: 1 }, files });
+  t('v1.09.03: список копий — четыре группы в порядке админ → недельные → ежедневные → старый формат, бейджи, счётчик «1 / 8», автор ручной копии',
+    (html.match(/class="abk-grp"/g) || []).length === 4 && html.indexOf('data-k="admin"') < html.indexOf('data-k="weekly"')
+    && html.indexOf('data-k="weekly"') < html.indexOf('data-k="daily"') && html.indexOf('data-k="daily"') < html.indexOf('data-k="legacy"')
+    && html.includes('abk-tag k-admin') && html.includes(T.DICT.ru.abk_k_admin) && html.includes(T.DICT.ru.abk_k_legacy)
+    && /Ежедневные \(ротация\) · 1 \/ 8/.test(html) && html.includes('@abraziv777') && !/b-yellow/.test(html));
+  t('v1.09.03: недельных больше, чем показано — строка «ещё N»', html.includes(T.DICT.ru.abk_more.replace('{N}', 39)));
+  const oldFn = T.abkListHtml({ ok: true, files: files.map(f => ({ name: f.name, createdTime: f.createdTime, size: f.size })) });
+  t('v1.09.03: ответ старой функции (без counts/kind) — жёлтое предупреждение «передеплойте», вид угадан по имени',
+    /banner b-yellow/.test(oldFn) && oldFn.includes(T.DICT.ru.abk_old_fn) && (oldFn.match(/class="abk-grp"/g) || []).length === 4);
+  t('v1.09.03: пустой список и имя с разметкой — без поломки', /—/.test(T.abkListHtml({ counts: {}, files: [] }))
+    && !T.abkListHtml({ counts: { legacy: 1 }, files: [{ name: '<img src=x onerror=1>.sql', createdTime: '2026-09-01T00:00:00Z' }] }).includes('<img'));
+  T.ABK.list = null;
+  const card = T.abkCardHtml();
+  t('v1.09.03: карточка автобэкапа — памятка из трёх строк (админ · недельный · ежедневный 8), «?» и галочка «не чаще раза в день»',
+    card.includes('id="abk-rules"') && (card.match(/abk-tag k-/g) || []).length === 3 && card.includes(T.DICT.ru.abk_r_daily.replace('{N}', 8))
+    && card.includes("App.toastInfo('abk_tip')") && card.includes(T.DICT.ru.abk_auto_lbl) && /не чаще раза в день/.test(T.DICT.ru.abk_auto_lbl)
+    && /вечно/.test(T.DICT.ru.abk_tip) && /никогда/.test(T.DICT.ru.abk_tip));
+  t('v1.09.03: abkAutoDue — в демо всегда false; условие: админ + галочка + не сегодня + 3 ч после ошибки; проверка и при возврате во вкладку',
+    T.abkAutoDue() === false && src.includes('if (day === todayISO()) return false;') && src.includes('return (now || Date.now()) - tried >= 3 * 3600000;')
+    && src.includes("if (state.user) setTimeout(abkAutoMaybe, 6000);") && !src.includes('7 * 86400000) return;\n  abkRun(true);'));
+  t('v1.09.03: справка Настроек (RU/EN) — три вида копий и галочка замка',
+    /ADMIN<\/b>/.test(T.sectionFaqHtml('settings')) && T.sectionFaqHtml('settings').includes(T.DICT.ru.lock_chk));
+  t('v1.09.03: CSS — блёклый срок, бейджи полок', css.includes('.lock-days.is-off .name{opacity:.45}') && css.includes('.abk-tag.k-admin{color:var(--yellow)}')
+    && css.includes('.abk-tag.k-legacy{color:var(--dim)}'));
+  LS.removeItem('techlog_lock_days_last');
+  T.state.user = prevUser; T.state.data = prevData;
+}
+
+console.log('\n— v1.09.04: значок «копировать» — два листа; цвет полосы карточки в справке —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  const prevLang = T.state.lang, prevData = T.state.data;
+  t('v1.09.04: версии (app = sw = version.json, не ниже 1.09.04), SQL не менялся, тест на месте',
+    /^1\.(09\.(0[4-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.05: версия двинулась дальше */
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && fs.existsSync(ROOT + '/tests/v1_09_04.js'));
+  t('v1.09.04: значок copy — прямоугольник + второй лист под ним; у адреса стоит он, а не планшет',
+    /^<rect [^>]*\/><path /.test(T.IC.copy) && T.addrLineHtml({ id: 'c1', address: '1 Main St' }).includes(T.IC.copy)
+    && !T.addrLineHtml({ id: 'c1', address: '1 Main St' }).includes(T.IC.clipboard));
+  t('v1.09.04: ни одна кнопка «копировать» не рисуется планшетом',
+    !/App\.(copyCxAddr|mfaCopySecret|netCopy|copyReport|copyDiag|copyLog|tlogCopy|camPerfCopy|gdCopy)\([^)]*\)">\$\{ic\('clipboard'\)/.test(src));
+  T.state.data = Object.assign({}, prevData, { work_types: [
+    { id: 'w2', name: 'Пар | STEAM', color: '#FF9600', sort: 2 }, { id: 'w1', name: 'VETVAG', color: '#58CC02', sort: 1 } ] });
+  T.state.lang = 'ru';
+  const ru = T.faqStripeLegend();
+  t('v1.09.04: легенда — три образца пикапа (серый, красный, тёмный блёклый) с рельсой ▲▼',
+    ru.includes('border-left-color:' + T.STRIPE_PK + '"') && ru.includes('border-left-color:var(--red)"')
+    && ru.includes('border-left-color:' + T.STRIPE_PK_DONE + '"') && /fq-card dim/.test(ru) && (ru.match(/fq-rail/g) || []).length === 3);
+  t('v1.09.04: образцы видов задач — из справочника, по sort, в цвете вида; карточки пустые',
+    ru.indexOf('#58CC02') < ru.indexOf('#FF9600') && ru.includes('>VETVAG<') && ru.includes('>Пар<')
+    && T.faqStripeCard('#fff', 3).replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]+>/g, '').trim() === '3'
+    && T.faqStripeCard('#fff', 4, { sm: true }).replace(/<[^>]+>/g, '').trim() === '4');
+  t('v1.09.04: образцы — не кнопки (нет button и onclick внутри легенды)', !/<button|onclick=/.test(ru));
+  T.state.lang = 'en';
+  const en = T.faqStripeLegend();
+  t('v1.09.04: EN-версия своя, образцы те же', en !== ru && en.includes('left stripe') && en.includes('>STEAM<') && (en.match(/fq-card/g) || []).length === (ru.match(/fq-card/g) || []).length);
+  T.state.lang = 'ru';
+  t('v1.09.04: легенда стоит в справке Главной и Доски', T.sectionFaqHtml('home').includes('fq-stripes') && T.sectionFaqHtml('board').includes('fq-wts'));
+  t('v1.09.04: пустой справочник видов — прочерк, без поломки', (() => { T.state.data = Object.assign({}, prevData, { work_types: [] }); return T.faqStripeWts().includes('—'); })());
+  t('v1.09.04: карточки главной берут цвета полос из тех же констант', src.includes("pkJob.priority ? 'var(--red)' : STRIPE_PK}") && src.includes('border-left-color:${STRIPE_PK_DONE};opacity:.6'));
+  t('v1.09.04: CSS образцов', css.includes('.fq-card{') && css.includes('.fq-card.dim{opacity:.6}') && css.includes('.fq-wts{'));
+  T.state.lang = prevLang; T.state.data = prevData;
+}
+
+console.log('\n— v1.09.05: компактная плотность (телефон и ПК), холст ПК-режима, наплыв доски на меню —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  const dcss = fs.readFileSync(ROOT + '/desktop.css', 'utf8');
+  const ccss = fs.readFileSync(ROOT + '/compact.css', 'utf8');
+  const uijs = fs.readFileSync(ROOT + '/ui.js', 'utf8');
+  const vmjs = fs.readFileSync(ROOT + '/viewmode.js', 'utf8');
+  const dskjs = fs.readFileSync(ROOT + '/desktop.js', 'utf8');
+  const swjs = fs.readFileSync(ROOT + '/sw.js', 'utf8');
+  const idx = fs.readFileSync(ROOT + '/index.html', 'utf8');
+  const prevUser = T.state.user, prevData = T.state.data, prevLang = T.state.lang;
+  t('v1.09.05: версии (app = sw = version.json = 1.09.05), SQL не менялся, тест и ТЗ на месте',
+    T.APP_VERSION === '1.09.05' && swjs.includes("VERSION = '1.09.05'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.05' && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && fs.existsSync(ROOT + '/tests/v1_09_05.js') && fs.existsSync(ROOT + '/TZ-compact-mode.md'));
+  t('v1.09.05: compact.css подключён ПОСЛЕ desktop.css и лежит в предзагрузке service worker',
+    idx.indexOf('./compact.css') > idx.indexOf('./desktop.css') && idx.indexOf('./desktop.css') > 0 && swjs.includes("'./compact.css',"));
+  /* правило файла: каждый селектор начинается с html.tl-compact (или html.tl-desktop.tl-compact) */
+  const sel = ccss.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@(media|container)[^{]*\{/g, '').split('}')
+    .map(x => x.split('{')[0].trim()).filter(Boolean).join(',').split(',').map(x => x.trim()).filter(Boolean);
+  const badSel = sel.filter(x => !/^html(\.tl-desktop)?\.tl-compact\b/.test(x));
+  t('v1.09.05: в compact.css КАЖДЫЙ селектор начинается с html.tl-compact (' + sel.length + ' шт.)', sel.length > 150 && badSel.length === 0, badSel.slice(0, 4).join(' | '));
+  t('v1.09.05: резерв колонки под номер и ▲▼ в карточке дня сохранён тем же !important',
+    (ccss.match(/\.item\.has-rail\{[^}]*padding-left:\d+px !important/g) || []).length >= 2 && css.includes('padding-left:44px !important;'));
+  t('v1.09.05: плотностью владеет ui.js — свой ключ у режима, класс до первого рендера, база 16/15/14, событие tl-density',
+    uijs.includes("var DENS_KEY_PC = 'techlog_density';") && uijs.includes("var DENS_KEY_M = 'techlog_density_m';")
+    && uijs.includes("html.classList.toggle('tl-compact', on)") && /densApply\(\);\s+\/\/ до первого рендера/.test(uijs)
+    && uijs.includes("(fontMode() === 'desktop' ? 14 : 15)") && uijs.includes("new CustomEvent('tl-density'")
+    && uijs.includes('densitySet: densitySet,') && uijs.includes('densityToggle: densityToggle,'));
+  t('v1.09.05: desktop.js — кнопка через TLUI, авто-подгон знает компактные числа (зазор 6, паддинг 16, колонка 200…96)',
+    dskjs.includes('window.TLUI.densityToggle()') && dskjs.includes('{ GAP: 6, PADX: 16, BASE: 200, MINW: 96 }')
+    && dskjs.includes('{ GAP: 10, PADX: 24, BASE: 260, MINW: 128 }') && !dskjs.includes("classList.toggle('tl-compact', on); } catch (e) {}\n    if (densBtn) densBtn.classList.toggle('on', on);\n    /* v1.08.35"));
+  t('v1.09.05: те же числа доски в compact.css и в boardColsStyle()',
+    ccss.includes('var(--bcolw,200px)') && ccss.includes('max(96px, var(--bcolw, 118px))') && ccss.includes('html.tl-compact .board{ gap:6px;')
+    && src.includes("(eff - 1) * (dense ? 6 : 10)") && src.includes('--bcolw:min(${dense ? 200 : 260}px'));
+  t('v1.09.05: наплыв доски на закреплённое меню — --tl-padl возвращается вместе с полосой body',
+    dcss.includes('html.tl-desktop.tl-fit.tl-menu-pin{ --tl-padl:128px; }') && dcss.includes('html.tl-desktop.tl-fit.tl-menu-pin.tl-staff{ --tl-padl:236px; }'));
+  t('v1.09.05: окно ≤ 1150px — двойного отступа слева больше нет; таблица бухгалтерии ПК — только от 980px',
+    /@media \(max-width:1150px\)\{\s*html\.tl-desktop #app\{\s*max-width:none;\s*margin-left:0; margin-right:0;/.test(dcss)
+    && !dcss.includes('margin-left:124px; margin-right:12px;')
+    && /@media \(min-width:980px\)\{\n  html\.tl-desktop \.acc-wrap\{/.test(dcss));
+  t('v1.09.05: старых правил плотности в desktop.css не осталось (переехали в compact.css)', !/tl-compact/.test(dcss.replace(/\/\*[\s\S]*?\*\//g, '')));
+  t('v1.09.05: холст ПК-режима — ключ устройства, шаги, предел 0.45, самопроверка, text-size-adjust, ручки TLView',
+    vmjs.includes("var CANVAS_KEY = 'techlog_pc_canvas';") && vmjs.includes('var CANVAS_STEPS = [1100, 1280, 1440, 1600, 1920];')
+    && vmjs.includes('var MIN_SCALE = 0.45;') && vmjs.includes("if (safeGet(KEY) !== 'desktop') return 0;") && vmjs.includes('canvasDead = true')
+    && vmjs.includes('text-size-adjust:100%') && vmjs.includes('canvasInfo: canvasInfo, canvasSet: canvasSet')
+    && !/user-scalable|maximum-scale/.test(vmjs));
+  /* разметка */
+  T.setData(T.seedDemoData()); T.setUser(Object.assign({}, T.state.data.profiles.find(p => p.id === 'demo-admin')));
+  T.state.lang = 'ru';
+  const row = T.densRowHtml();
+  t('v1.09.05: строка настроек — «Плотность интерфейса», сегмент из двух кнопок, подсказка «?»',
+    row.includes('id="dens-row"') && row.includes("App.densSet('cozy')") && row.includes("App.densSet('compact')") && row.includes("App.toastInfo('dens_hint')")
+    && row.includes('Обычная') && row.includes('Компактная'));
+  t('v1.09.05: строка стоит в карточке профиля под примером шрифта, перед строками меню',
+    T.viewSettings().indexOf('id="dens-row"') > T.viewSettings().indexOf('class="fs-demo"') && T.viewSettings().indexOf('id="dens-row"') < T.viewSettings().indexOf('id="ml-row"'));
+  t('v1.09.05: без viewmode.js / на мыши строки холста нет — и настройки не ломаются', T.canvasRowHtml() === '');
+  w.TLView = { canvasInfo: () => ({ applicable: true, pref: 'auto', width: 1100, native: 915, scale: 0.83, steps: [1100, 1280, 1440, 1600, 1920], fit: [1100, 1280, 1440, 1600], auto: 1100, minScale: 0.45 }), canvasSet: () => {} };
+  const cv = T.canvasRowHtml();
+  t('v1.09.05: строка холста — Авто/ширины/Выкл, недоступная ширина выключена, подпись с шириной и масштабом',
+    cv.includes('id="cv-row"') && cv.includes("App.canvasSet('auto')") && cv.includes("App.canvasSet('off')")
+    && /<button class=""\s+disabled onclick="App\.canvasSet\('1920'\)">1920<\/button>/.test(cv.replace(/\s+/g, ' ').replace('class="" disabled', 'class=""  disabled'))
+    && cv.includes('холст 1100 px') && cv.includes('83%'));
+  delete w.TLView;
+  t('v1.09.05: кнопка плотности на доске — рядом с глазом, и у недельной доски воркера',
+    /brd-eye[\s\S]{0,400}\$\{densBtnHtml\(\)\}\$\{helpBtn\('board'\)\}/.test(src) && (src.match(/\$\{densBtnHtml\(\)\}\$\{helpBtn\('board'\)\}/g) || []).length === 2
+    && T.densBtnHtml().includes('id="brd-dens"') && T.densBtnHtml().includes('App.densToggle()'));
+  const pk = T.boardPkCard('j1', [{ due_date: '2026-01-05', equipment_type_id: T.state.data.equipment_types[0].id, qty: 2 }], '2026-09-19');
+  t('v1.09.05: срок пикапа на доске — год отдельным span.yr, «просрочен» отдельным span.ov (компактная доска их прячет)',
+    /01\/05<span class="yr">\/2026<\/span>/.test(pk) && /<span class="ov">[^<]+ · <\/span>/.test(pk) && T.fmtDMYyr('2026-09-06') === '09/06<span class="yr">/2026</span>'
+    && ccss.includes('html.tl-compact .bpk .yr{ display:none; }'));
+  T.state.user.board_cols = 10;
+  w.document.documentElement.classList.remove('tl-compact');
+  const bc1 = T.boardColsStyle(12);
+  w.document.documentElement.classList.add('tl-compact');
+  const bc2 = T.boardColsStyle(12);
+  w.document.documentElement.classList.remove('tl-compact');
+  t('v1.09.05: ширина колонки доски — 260/зазор 10 в обычной, 200/зазор 6 в компактной',
+    bc1.includes('min(260px, calc((100% - 90px)/10))') && bc2.includes('min(200px, calc((100% - 54px)/10))'), bc1 + ' | ' + bc2);
+  /* профиль ⇄ устройство */
+  let dens = 'cozy'; const calls = [];
+  w.TLUI = Object.assign({}, w.TLUI || {}, { density: () => dens, densitySet: v => { calls.push(v); dens = v; return v; }, fontMode: () => 'desktop', fontPct: () => 100 });
+  T.state.user.push_prefs = { density_pc: 'compact', density: 'cozy' };
+  T.densSyncPref();
+  t('v1.09.05: профиль сильнее устройства — в ПК-режиме берётся density_pc', T.densPrefKey() === 'density_pc' && calls.join() === 'compact' && dens === 'compact');
+  w.TLUI.fontMode = () => 'mobile'; calls.length = 0;
+  T.densSyncPref();
+  t('v1.09.05: в режиме «Телефон» — push_prefs.density', T.densPrefKey() === 'density' && calls.join() === 'cozy');
+  delete w.TLUI;
+  t('v1.09.05: без ui.js плотность «обычная», ничего не падает', T.densCur() === 'cozy' && (T.densSyncPref(), true));
+  t('v1.09.05: слушатель смены режима у шрифта прежний, у плотности — свой и раньше него',
+    src.indexOf("window.addEventListener('tl:viewmode', () => { try { densSyncPref(); }") > 0
+    && src.indexOf("window.addEventListener('tl:viewmode', () => { try { densSyncPref(); }") < src.indexOf("window.addEventListener('tl:viewmode', () => { try { fontSyncPref(); render(); }")
+    && src.includes("window.addEventListener('tl-density', () => {"));
+  /* словарь и справка */
+  const KEYS = ['dens_title', 'dens_cozy', 'dens_compact', 'dens_hint', 'dens_btn_on', 'dens_btn_off', 'dens_log_on', 'dens_log_off',
+    'cv_title', 'cv_d_off', 'cv_d_on', 'cv_d_wait', 'cv_d_narrow', 'cv_auto', 'cv_off', 'cv_hint'];
+  t('v1.09.05: словарь ru/en — все ' + KEYS.length + ' ключей, переводы различаются',
+    KEYS.every(k => T.DICT.ru[k] && T.DICT.en[k]) && KEYS.filter(k => T.DICT.ru[k] === T.DICT.en[k]).length === 0,
+    KEYS.filter(k => !T.DICT.ru[k] || !T.DICT.en[k]).join(','));
+  t('v1.09.05: справка Доски и Настроек рассказывает про плотность и холст (RU и EN)',
+    T.sectionFaqHtml('board').includes('Компактная плотность') && T.sectionFaqHtml('settings').includes(T.DICT.ru.cv_title)
+    && (() => { T.state.lang = 'en'; const ok2 = T.sectionFaqHtml('board').includes('Compact density') && T.sectionFaqHtml('settings').includes(T.DICT.en.dens_title); T.state.lang = 'ru'; return ok2; })());
+  t('v1.09.05: значки dens и monitor есть в IC; кнопка ПК-режима рисует тот же «сжать по вертикали»',
+    !!T.IC.dens && !!T.IC.monitor && dskjs.includes('M12 3v5.2M9.4 5.8L12 8.4l2.6-2.6') && T.IC.dens.includes('M12 3v5.2M9.4 5.8L12 8.4l2.6-2.6'));
+  t('v1.09.05: CSS вне плотности — кнопка-значок на доске и сегмент холста', css.includes('.brd-eye.brd-dens{') && css.includes('.lang-seg.cv-seg button{') && css.includes('.lang-seg button:disabled{'));
+  t('v1.09.05: матрица и ui-check умеют компактную плотность, в матрице есть телефон в ПК-режиме',
+    fs.readFileSync(ROOT + '/tests/ui-matrix.js', 'utf8').includes("--dens=") && fs.readFileSync(ROOT + '/tests/ui-matrix.js', 'utf8').includes('Pixel 7 альбом ПК (холст)')
+    && fs.readFileSync(ROOT + '/tests/ui-check.js', 'utf8').includes('UI_DENS'));
+  T.state.user = prevUser; T.state.data = prevData; T.state.lang = prevLang;
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);

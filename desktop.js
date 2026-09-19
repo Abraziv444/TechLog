@@ -241,7 +241,8 @@
     clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     down:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M5 19.5h14"/></svg>',
-    dens:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg>'
+    /* v1.09.05: «сжать по вертикали» — прежние три полоски читались как «меню» */
+    dens:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/><path d="M12 3v5.2M9.4 5.8L12 8.4l2.6-2.6"/><path d="M12 21v-5.2M9.4 18.2L12 15.6l2.6 2.6"/></svg>'
   };
 
   /* ---------------- ВЕРХНЯЯ ПАНЕЛЬ ФОРМЫ ИНВОЙСА ----------------
@@ -399,16 +400,29 @@
     } catch (err) {}
   });
 
-  /* ---------------- ПЛОТНОСТЬ: компактно / просторно ---------------- */
+  /* ---------------- ПЛОТНОСТЬ: компактно / просторно ----------------
+     v1.09.05: плотностью владеет ui.js (TLUI.density*) — она общая для режима
+     «Телефон» и «ПК», класс tl-compact ставится там же до первого рендера, а
+     вся вёрстка лежит в compact.css. Здесь осталась только быстрая кнопка
+     ПК-режима; без ui.js она работает по-старому (класс ставит сама). */
   var densBtn = null;
-  function applyDensity() {
-    var on = lsGet('techlog_density') === 'compact';
-    try { if (document.documentElement.classList.contains('tl-compact') !== on)
-      document.documentElement.classList.toggle('tl-compact', on); } catch (e) {}
-    if (densBtn) densBtn.classList.toggle('on', on);
-    /* v1.08.35: база масштаба текста (16/14px) живёт в ui.js — просим пересчитать */
-    try { window.dispatchEvent(new CustomEvent('tl-density')); } catch (e) {}
+  function hasTLUI() { try { return !!(window.TLUI && window.TLUI.densityToggle); } catch (e) { return false; } }
+  function densOn() {
+    try { if (hasTLUI()) return window.TLUI.density() === 'compact'; } catch (e) {}
+    return lsGet('techlog_density') === 'compact';
   }
+  function applyDensity() {
+    var on = densOn();
+    if (!hasTLUI()) {
+      try { if (document.documentElement.classList.contains('tl-compact') !== on)
+        document.documentElement.classList.toggle('tl-compact', on); } catch (e) {}
+    }
+    if (densBtn) {
+      if (densBtn.classList.contains('on') !== on) densBtn.classList.toggle('on', on);
+      densBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+  try { window.addEventListener('tl-density', function () { applyDensity(); }); } catch (e) {}
   function buildDensity() {
     var need = isDesk() && wide(980);
     if (!need) { if (densBtn) { densBtn.remove(); densBtn = null; } return; }
@@ -419,7 +433,8 @@
     densBtn.title = ru() ? 'Плотность интерфейса: компактно / просторно' : 'Density: compact / cozy';
     densBtn.innerHTML = SVG.dens;
     densBtn.addEventListener('click', function () {
-      lsSet('techlog_density', lsGet('techlog_density') === 'compact' ? 'cozy' : 'compact');
+      if (hasTLUI()) window.TLUI.densityToggle();        // событие tl-density перекрасит кнопку
+      else lsSet('techlog_density', lsGet('techlog_density') === 'compact' ? 'cozy' : 'compact');
       applyDensity();
     });
     document.body.appendChild(densBtn);
@@ -636,11 +651,18 @@
    Пороги зеркалят константы desktop.css: слева 128/236px (меню/меню+
    колонка сотрудников), в tl-fit — 16/124px, справа 28px, паддинг доски
    24px, зазор 10px, базовая колонка 260px.
+   v1.09.05: в компактной плотности (html.tl-compact) карточки доски ужаты
+   всерьёз (compact.css), поэтому колонка уже: база 200px, минимум 96px,
+   зазор 6px, паддинг доски 16px — на тот же экран влезает на треть больше
+   сотрудников. Эти же числа стоят в compact.css.
    ===================================================================== */
 (function () {
   'use strict';
-  var GAP = 10, PADX = 24, RIGHT = 28, BASE = 260, MINW = 128;
+  var RIGHT = 28;
   var html = document.documentElement;
+  function dense() { return html.classList.contains('tl-compact'); }
+  function K() { return dense() ? { GAP: 6, PADX: 16, BASE: 200, MINW: 96 }
+                                : { GAP: 10, PADX: 24, BASE: 260, MINW: 128 }; }
   function q(s) { return document.querySelector(s); }
   function isDesk() { return html.classList.contains('tl-desktop'); }
   var hold = false;                                // клик по язычку держит меню, пока не ушли по пункту
@@ -727,6 +749,7 @@
       var n = board.querySelectorAll('.bcol').length;
       if (n < 2) return off();
       var staffCol = html.classList.contains('tl-staff');
+      var k = K(), GAP = k.GAP, PADX = k.PADX, BASE = k.BASE, MINW = k.MINW;
       var availSide = window.innerWidth - (staffCol ? 236 : 128) - RIGHT;
       var needSide = n * BASE + (n - 1) * GAP + PADX;
       var on = html.classList.contains('tl-fit');

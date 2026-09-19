@@ -1,0 +1,556 @@
+/* =====================================================================
+   TechLog · compact.css — КОМПАКТНАЯ ПЛОТНОСТЬ ИНТЕРФЕЙСА (v1.09.05)
+
+   ПРАВИЛА ЭТОГО ФАЙЛА
+   ┌───────────────────────────────────────────────────────────────────┐
+   │ 1. КАЖДЫЙ селектор начинается с `html.tl-compact`. Класс ставит   │
+   │    ui.js (до первой отрисовки) по личной настройке «Плотность     │
+   │    интерфейса» — своей у режима «Телефон» и у режима «ПК». Без    │
+   │    класса файл инертен; не загрузился — приложение просто не      │
+   │    компактное.                                                    │
+   │ 2. Здесь ТОЛЬКО размеры, отступы и раскладка строк. Цвета, рамки, │
+   │    тени-«кнопки», шрифт — из styles.css: дизайн тот же, плотнее.  │
+   │ 3. Общая часть действует в обоих режимах; ПК-часть начинается с   │
+   │    `html.tl-desktop.tl-compact` и, как desktop.css, завёрнута в   │
+   │    @media (min-width:980px) там, где опирается на ПК-раскладку.   │
+   │ 4. Палец. На сенсорном экране (pointer:coarse) видимый размер     │
+   │    уменьшается, а зона нажатия остаётся ≥ 40px — прозрачным полем │
+   │    ::after там, где это не перехватывает нажатия у соседей.       │
+   │ 5. Резерв колонки под номер и ▲▼ в карточке дня (.item.has-rail,  │
+   │    единственный !important проекта) СОХРАНЁН — меняется только    │
+   │    его величина, тем же !important.                               │
+   └───────────────────────────────────────────────────────────────────┘
+   База кегля в компактном — 14px (ПК) / 15px (телефон), её ставит ui.js.
+   Числа доски (зазор 6, паддинг 16, колонка 200…96) зеркалит desktop.js.
+   ===================================================================== */
+
+/* ============================ 0 · ТОКЕНЫ ============================ */
+html.tl-compact{
+  --r:12px; --r-sm:9px;              /* скругления: на мелких блоках 16px выглядит «пузырём» */
+  --shadow-press:0 3px 0;            /* тень-«кнопка» ниже — кнопка не вылезает из строки */
+}
+
+/* ===================== 1 · ОБЩИЕ ПРИМИТИВЫ ===================== */
+html.tl-compact .btn{ padding:8px 12px; gap:6px; letter-spacing:.3px; }
+html.tl-compact .btn.sm{ padding:5px 9px; font-size:.78rem; }
+html.tl-compact .btn .ic{ width:1.05em; height:1.05em; }
+html.tl-compact .btn:active{ transform:translateY(2px); }
+
+html.tl-compact input,
+html.tl-compact select,
+html.tl-compact textarea{ padding:6px 9px; min-height:32px; }
+html.tl-compact input[type=checkbox],
+html.tl-compact input[type=radio]{ width:18px; height:18px; min-height:0; padding:0; }
+html.tl-compact .rowline input[type="checkbox"]{ width:20px; height:20px; }
+html.tl-compact label{ gap:8px; }
+
+html.tl-compact .card{ padding:8px 10px; margin-bottom:6px; }
+html.tl-compact .section-title{ margin:8px 0 5px; gap:6px; font-size:.95rem; }
+html.tl-compact .section-title::before{ height:14px; width:3px; }
+html.tl-compact hr.sep{ margin:8px 0; }
+html.tl-compact .tiny{ font-size:.74rem; }
+
+html.tl-compact .chip{ padding:1px 7px; gap:4px; font-size:.68rem; border-width:1px; }
+html.tl-compact button.chip{ min-height:24px; }      /* чип-кнопка (фильтры, поиск): зона нажатия мыши — не меньше 24px */
+html.tl-compact .badge-status{ padding:1px 6px; font-size:.62rem; border-radius:6px; }
+html.tl-compact .eq-dot{ width:2em; height:2em; font-size:.66rem; border-width:1px; }
+html.tl-compact .eq-dots{ gap:3px; }
+
+html.tl-compact .icon-btn,
+html.tl-compact .sync-btn{ width:32px; height:32px; border-radius:9px; }
+html.tl-compact .icon-btn svg{ width:17px; height:17px; }
+
+html.tl-compact .lang-seg{ border-radius:10px; }
+html.tl-compact .lang-seg button{ padding:6px 11px; font-size:.9rem; }
+html.tl-compact .lang-seg.sm button{ padding:4px 8px; font-size:.68rem; }
+
+html.tl-compact .stepper{ border-radius:10px; }
+html.tl-compact .stepper button{ width:30px; height:30px; }
+html.tl-compact .stepper .val{ min-width:30px; }
+
+html.tl-compact .form-row{ margin-bottom:6px; }
+html.tl-compact .form-row > .lbl{ margin-bottom:2px; font-size:.7rem; }
+html.tl-compact .rowline{ padding-top:6px; padding-bottom:6px; gap:8px; }
+html.tl-compact .settings-row{ padding:7px 2px; gap:8px; row-gap:5px; }
+html.tl-compact .qty-line{ row-gap:5px; gap:6px; }
+html.tl-compact .fold{ margin:5px 0; }
+html.tl-compact .opt{ padding:5px 8px; gap:6px; }
+html.tl-compact .opt-grid{ gap:6px; }
+html.tl-compact .tabs{ gap:4px; margin-bottom:6px; }
+html.tl-compact .tabs-nav{ margin-bottom:6px; gap:4px; }
+html.tl-compact .tabbtn{ padding:6px 10px; }
+html.tl-compact .tabs-arr{ height:32px; width:30px; }
+html.tl-compact .list-empty{ padding:14px 8px; }
+html.tl-compact .list-empty .big .ic{ width:34px; height:34px; }
+html.tl-compact .app-footer{ margin-top:14px; font-size:.62rem; }
+
+html.tl-compact .inv-sec{ margin-bottom:6px; }
+html.tl-compact .inv-head{ padding:6px 9px; gap:6px; }
+html.tl-compact .inv-body{ padding:6px 9px; gap:6px; }
+
+/* модалки */
+html.tl-compact .overlay{ padding:8px; }
+html.tl-compact .modal{ padding:11px 12px; }
+html.tl-compact .modal h3{ margin-bottom:7px; gap:8px; font-size:1.02rem; }
+html.tl-compact .pkm-card{ padding:6px 8px; border-radius:11px; }
+html.tl-compact .pkm-list{ gap:6px; }
+
+/* шапка документа */
+html.tl-compact .docbar{ padding-top:5px; padding-bottom:5px; gap:6px; }
+
+/* ============================ 2 · ШАПКА ============================ */
+html.tl-compact .topbar{ gap:8px; margin-bottom:2px; }
+html.tl-compact:not(.tl-desktop) .topbar{
+  padding:calc(env(safe-area-inset-top,0px) + 4px) 0 5px;
+}
+html.tl-compact .logo-wrap{ min-width:34px; }
+html.tl-compact .logo{
+  width:32px; height:32px; border-radius:9px; font-size:.92rem;
+}
+html.tl-compact .brand .name{ font-size:1.06rem; }
+html.tl-compact .brand .sub{ font-size:.6rem; }
+html.tl-compact .brand.clicky{ min-height:32px; }
+html.tl-compact .avatar-wrap{ width:40px; }
+html.tl-compact .avatar-wrap .avatar{
+  width:32px; height:32px; border-width:2px; font-size:.8rem;
+}
+html.tl-compact .login-pill{
+  margin-top:-5px; padding:0 5px; font-size:.52rem; border-width:1px; max-width:40px;
+}
+html.tl-compact .rt-col{ gap:3px; }
+html.tl-compact .topbar .role-tag{ padding:1px 6px; font-size:.54rem; letter-spacing:.3px; }
+/* пилюля связи: 20px на вид (была 21). Вверх зону не растянуть — в 3px над ней
+   переключатель режима со своей зоной, поэтому до нормы 24px добирает нижнее поле,
+   оно целиком лежит в нижнем отступе шапки */
+html.tl-compact .net-pill{ min-height:20px; min-width:84px; padding:0 5px; font-size:.52rem; border-width:1px; }
+html.tl-compact button.net-pill::after{ top:-3px; bottom:-6px; }
+html.tl-compact .rt-row .vm-inline{ padding:1px; border-width:1px; }
+html.tl-compact .rt-row .vm-inline button{ height:20px; }
+html.tl-compact #vm-slot{ min-height:0; }
+
+/* ============= 3 · ПЛАШКИ, ЛЕНТА НЕДЕЛИ, СТРОКА ДНЯ, СВОДКА ============= */
+html.tl-compact .banner{
+  padding:5px 10px; margin-bottom:5px; gap:8px; font-size:.88rem; border-radius:11px;
+}
+html.tl-compact .banner .btn{ padding:4px 9px; }
+
+html.tl-compact .week{ margin:3px 0 5px; gap:4px; }
+html.tl-compact .week-days{ gap:4px; padding:1px; }
+html.tl-compact .week-days .day-cell{
+  padding:4px 2px 10px; border-radius:9px; line-height:1.05;
+}
+/* месяц в ячейке прячем: полная дата стоит строкой ниже, «сегодня» видно
+   по зелёной рамке; точки задач садятся к нижнему краю */
+html.tl-compact .day-cell .mon{ display:none; }
+html.tl-compact .day-cell .dow{ font-size:.56rem; }
+html.tl-compact .week-days .day-cell .dom{ font-size:.98rem; }
+html.tl-compact .day-cell .dot-row{
+  position:absolute; left:0; right:0; bottom:3px; margin:0; height:5px; gap:2px;
+}
+html.tl-compact .day-cell .dot{ width:5px; height:5px; }
+html.tl-compact .day-cell .warn{ top:-4px; right:-2px; }
+html.tl-compact .week .wk-arrow{ width:28px; height:28px; }
+/* «к сегодня» и «перенести день» — в одну строку слева (были блоками по центру,
+   каждая на своей строке) */
+html.tl-compact .today-jump,
+html.tl-compact .today-jump.tpl-move{
+  display:inline-flex; align-items:center; gap:4px; vertical-align:top;
+  padding:3px 10px; margin:0 4px 5px 2px; font-size:.68rem; min-height:26px;
+}
+/* широкий экран: инструменты доски встают в ТУ ЖЕ строку справа. Правило
+   действует только когда между ними ничего нет (полосы заявок и черновиков
+   стоят между — тогда сосед другой и строка остаётся своей). */
+@media (min-width:700px){
+  html.tl-compact .today-jump + .board-tools{ margin-top:-33px; min-height:33px; pointer-events:none; }
+  html.tl-compact .today-jump + .board-tools > *{ pointer-events:auto; }
+}
+
+html.tl-compact .day-bar{ margin:-2px 0 5px; gap:8px; font-size:.8rem; }
+html.tl-compact .mini-nav{ padding:2px 8px; min-height:24px; font-size:.66rem; }
+html.tl-compact .help-btn{ width:24px; height:24px; min-width:24px; font-size:.72rem; }
+
+html.tl-compact .stats-day{ gap:6px; margin:5px 0; }
+html.tl-compact .stats{ gap:6px; margin:5px 0; }
+html.tl-compact .stat{ padding:5px 3px; border-radius:10px; }
+html.tl-compact .dcard{ padding:5px 8px; border-radius:11px; }
+html.tl-compact .dcard-head .n{ font-size:1.08rem; }
+html.tl-compact .wt-lines{ gap:1px; margin-top:3px; }
+html.tl-compact .wt-line{ font-size:.68rem; gap:5px; }
+html.tl-compact .wt-dot{ width:7px; height:7px; }
+html.tl-compact .eq-badges{ gap:8px; margin-top:4px; }
+html.tl-compact .eq-badge b{ font-size:.7rem; }
+
+html.tl-compact .filter-row{ gap:6px; margin-bottom:6px; }
+html.tl-compact .search-box{ border-radius:10px; padding:0 8px; gap:5px; }
+html.tl-compact .search-box input{ padding:5px 0; min-height:30px; }
+html.tl-compact .sb-onhand{ padding:5px 8px; margin-bottom:5px; gap:6px; }
+
+/* ===================== 4 · КАРТОЧКА ДНЯ (.item) =====================
+   Было 110–190px: четыре-пять отдельных строк и кнопки 40px. Стало 64–104:
+   адрес, вид работ с исполнителем и код идут ОДНИМ потоком с переносом,
+   номер и ▲▼ мельче, кнопки 30px. Колонка под номер и ▲▼ зарезервирована
+   как раньше — только уже (34 вместо 44). */
+html.tl-compact .item{
+  padding:7px 9px 7px 30px; gap:8px; margin-bottom:5px;
+  border-left-width:5px;
+}
+html.tl-compact .item.has-rail{
+  padding-left:36px !important;        /* 5 + 24 (кнопка) + 7 (зазор) */
+  min-height:82px;                     /* 4 + 18 (номер) + 2 + 50 (▲▼ по 24) + 4 + рамки */
+}
+html.tl-compact .item .row-num.corner{
+  top:4px; left:5px; height:18px; min-width:18px; font-size:.62rem; padding:0 4px; border-width:1px;
+}
+html.tl-compact .item > .rail{ left:5px; bottom:4px; gap:2px; }
+html.tl-compact .item > .rail .mv{ width:24px; height:24px; border-radius:7px; border-width:1px; }
+html.tl-compact .item > .rail .mv .ic{ width:12px; height:12px; }
+/* МЫШЬ: ▲▼ не диктуют высоту карточки. Они появляются по наведению (и по
+   фокусу с клавиатуры) НА МЕСТЕ номера — кнопки при этом полноразмерные 24×24.
+   Порядок по-прежнему меняется и перетаскиванием карточки. У пальца наведения
+   нет — там ▲▼ видны всегда (блок «Палец» ниже). */
+@media (hover:hover) and (pointer:fine){
+  html.tl-compact .item.has-rail{ min-height:62px; }
+  html.tl-compact .item > .rail{ display:none; top:4px; bottom:auto; }
+  html.tl-compact .item.has-rail:hover > .rail,
+  html.tl-compact .item.has-rail:focus-within > .rail{ display:flex; }
+  html.tl-compact .item.has-rail:hover > .row-num.corner,
+  html.tl-compact .item.has-rail:focus-within > .row-num.corner{ visibility:hidden; }
+  html.tl-compact .item.dragging > .rail{ display:none; }
+}
+
+html.tl-compact .item .info{
+  display:flex; flex-wrap:wrap; align-items:baseline; column-gap:10px; row-gap:0;
+}
+html.tl-compact .item .info .t{ flex:1 0 100%; font-size:.97rem; line-height:1.2; }
+html.tl-compact .item .info .s{ flex:0 1 auto; min-width:0; font-size:.72rem; line-height:1.3; white-space:normal; }
+html.tl-compact .item .info .s.addr{ gap:4px; align-items:center; }
+html.tl-compact .item .info .s.note-line{ flex:1 0 100%; }
+/* кнопка копирования и маркер приоритета: на вид мельче, сама кнопка — прежние
+   24px (норма зоны нажатия для мыши); строку не распирают — поля отрицательные */
+html.tl-compact .copy-mini{ width:24px; height:24px; margin:-3px 0; border-radius:7px; border-width:1px; }
+html.tl-compact .copy-mini .ic{ width:12px; height:12px; }
+html.tl-compact .pri.inline{ margin:-5px 0 -5px 2px; }
+html.tl-compact .tri{ width:18px; height:16px; font-size:.52rem; padding-top:4px; }
+
+html.tl-compact .item .right{ gap:4px; margin-top:2px; }
+/* у вложенных рядов кнопок отступы заданы inline-стилем (margin-top:6px;gap:6px) —
+   перебить их можно только так */
+html.tl-compact .item .right > div{ margin-top:0 !important; gap:4px !important; }
+html.tl-compact .item .right .money{ margin-top:0 !important; font-size:.95rem; }
+html.tl-compact .item .right .btn.sm{ padding:4px 8px; min-height:28px; }
+html.tl-compact .item .right .btn.sm .ic{ width:15px; height:15px; }
+/* шире 430px правая колонка — столбик «статус / сумма / кнопки» (три строки).
+   В компактном статус и сумма встают в одну строку, кнопки — под ними: карточка
+   становится в две строки правой колонки и равна по высоте тексту слева. */
+@media (min-width:430.02px){
+  html.tl-compact .item .right{
+    display:grid; grid-template-columns:auto auto; justify-content:end; align-items:center;
+    column-gap:8px; row-gap:4px;
+  }
+  html.tl-compact .item .right > div:not(.money),
+  html.tl-compact .item .right > .btn{ grid-column:1 / -1; justify-self:end; }
+  html.tl-compact .item .right > .badge-status:only-child,
+  html.tl-compact .item .right > .money:only-child{ grid-column:1 / -1; justify-self:end; }
+}
+
+/* поиск: те же карточки, сетка плотнее */
+html.tl-compact #day-list,
+html.tl-compact #search-area{ gap:5px; }
+
+/* ============================ 5 · ДОСКА ============================ */
+html.tl-compact .board-tools{ padding:0 8px 4px; gap:6px; }
+html.tl-compact .brd-eye{ min-height:28px; padding:3px 9px; font-size:.7rem; gap:5px; border-radius:9px; }
+html.tl-compact .brd-eye .ic{ width:15px; height:15px; }
+html.tl-compact .strip-h{ margin-top:4px; margin-bottom:3px; }
+html.tl-compact .pstrip{ gap:6px; padding-bottom:5px; }
+html.tl-compact .pcard{ padding:5px 8px; border-radius:10px; min-width:130px; }
+
+html.tl-compact .board{ gap:6px; padding:1px 8px 70px; }
+/* МОБИЛЬНАЯ раскладка (режим «Телефон» на любом экране и ПК-режим в окне уже
+   980px): страница — колонка 536px по центру, и доска была зажата в ней же —
+   на планшете 2,3 сотрудника при пустых полях по бокам. В компактном доска
+   выходит из колонки на всю ширину окна (как в ПК-раскладке с v1.07.49).
+   --bleed — запас под полосу прокрутки: у пальца она накладная, у мыши ~15px. */
+html.tl-compact{ --bleed:8px; }
+@media (pointer:fine){ html.tl-compact{ --bleed:26px; } }
+html.tl-compact:not(.tl-desktop) .board{
+  width:calc(100vw - var(--bleed)); margin-left:calc((100% - (100vw - var(--bleed))) / 2);
+}
+@media (max-width:979.98px){
+  html.tl-desktop.tl-compact .board{
+    width:calc(100vw - var(--bleed)); margin-left:calc((100% - (100vw - var(--bleed))) / 2);
+  }
+}
+html.tl-compact .bcol{
+  padding:5px; border-radius:11px; border-width:1px;
+  container-type:inline-size;          /* колонка — контейнер: ужимки ниже — по её фактической ширине */
+}
+/* режим «Телефон»: три сотрудника на экран вместо 1,7 */
+html.tl-compact:not(.tl-desktop) .bcol{
+  flex:0 0 clamp(104px, calc((100% - 12px) / 3), 232px);
+  max-width:clamp(104px, calc((100% - 12px) / 3), 232px);
+}
+/* шапка колонки — ОДНА строка */
+html.tl-compact .bcol-h{
+  flex-direction:row; align-items:center; gap:5px; margin-bottom:3px; text-align:left; min-height:24px;
+}
+html.tl-compact .bcol-h .avatar{ width:22px; height:22px; font-size:.56rem; border-width:2px; flex:0 0 auto; }
+html.tl-compact .bcol-h .grow{
+  display:flex; align-items:baseline; gap:4px; min-width:0; flex:1; width:auto;
+}
+html.tl-compact .bcol-h .grow b{
+  flex:0 1 auto; min-width:0; font-size:.76rem; line-height:1.15;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; max-width:none;
+}
+html.tl-compact .bcol-h .grow .tiny{
+  flex:0 0 auto; margin-left:auto; font-size:.6rem; white-space:nowrap; letter-spacing:0;
+}
+html.tl-compact .bcol-h .bunit{ display:none; }
+html.tl-compact .bcol-h .car-no{ min-width:15px; height:15px; padding:0 3px; margin-left:0; font-size:.54rem; flex:0 0 auto; }
+html.tl-compact .bempty{ padding:6px 0; font-size:.64rem; text-align:center; }
+
+/* карточка задачи — ДВЕ строки, текст не выходит за карточку */
+/* overflow:hidden карточке НЕЛЬЗЯ: на её углу снаружи висит точка трекера
+   (.bn-dot). Текст держат сами строки: название переносится, вид работ — с многоточием. */
+html.tl-compact .bjob{
+  padding:3px 6px 3px 17px; margin:3px 0; border-radius:8px; border-left-width:3px;
+  min-width:0;
+}
+html.tl-compact .bjob.has-brail{ min-height:0; }
+html.tl-compact .bjob .bnum{ left:4px; top:3px; font-size:.56rem; }
+html.tl-compact .bjob .bst{ left:5px; bottom:5px; width:7px; height:7px; }
+html.tl-compact .bjob .bmain{ min-width:0; line-height:1.2; overflow-wrap:anywhere; }
+html.tl-compact .bjob .bmain b{ font-size:.82rem; }
+html.tl-compact .bjob .bmain > .tiny{ font-size:.64rem; }
+html.tl-compact .bjob .bwt{
+  gap:4px; margin-top:0; font-size:.6rem; line-height:1.25; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;
+}
+html.tl-compact .bjob .bwt .dotc{ display:inline-block; width:6px; height:6px; margin-right:3px; vertical-align:1px; }
+html.tl-compact .bjob .chip{ padding:0 4px; font-size:.54rem; vertical-align:1px; }
+/* ПРИОРИТЕТ И ▲▼. Оба живут в правой части карточки и в обычной плотности
+   съедают до 56px ширины и диктуют высоту (две кнопки по 24px столбиком).
+   В компактном:
+     • выставленный приоритет (красный/жёлтый) виден всегда — в правом верхнем
+       углу, строка названия оставляет под него место;
+     • серый «приоритет не задан» и ▲▼ в УЗКОЙ колонке (< 170px) спрятаны;
+       мышью они появляются по наведению поверх правого края, не меняя высоты;
+     • в ШИРОКОЙ колонке (≥ 170px, когда людей мало) места хватает — ▲▼ стоят
+       в ряд справа, серый треугольник — левее них; это работает и пальцем. */
+/* сама кнопка — 24×24 (норма зоны нажатия), значок 18×16 прижат в её правый
+   нижний угол; зона растёт ВНУТРЬ карточки, поверх текста, — наружу нельзя:
+   в 3px под карточкой уже следующая */
+html.tl-compact .bjob .pri.corner{
+  top:auto; bottom:0; right:0; width:24px; height:24px;
+  place-items:end; padding:0 2px 1px 0;
+}
+html.tl-compact .bjob .pri.corner::after{ content:none; }
+/* в узкой колонке треугольник стоит в ПРАВОМ НИЖНЕМ углу: первая строка
+   («юнит · комплекс») важнее и остаётся целой, а вид работ под ним и так с
+   многоточием. Место под него отдаёт нижняя строка (или ряд кнопки ремонта). */
+html.tl-compact .bjob .pri.corner.on ~ .bmain .bwt{ padding-right:16px; }
+html.tl-compact .bjob .pri.corner.on ~ .bmain .brep{ padding-right:22px; }
+html.tl-compact .bjob .pri.corner:not(.on){ display:none; }
+html.tl-compact .bjob .brail{ display:none; }
+html.tl-compact .brep{ margin-top:2px; }
+html.tl-compact .brep .btn{ padding:1px 7px; min-height:24px; min-width:30px; border-radius:7px; }
+html.tl-compact .brep .btn .ic{ width:13px; height:13px; }
+
+@media (hover:hover) and (pointer:fine){
+  html.tl-compact .bjob:hover .pri.corner:not(.on),
+  html.tl-compact .bjob:focus-within .pri.corner:not(.on){
+    display:grid; z-index:4; background:var(--panel); border-radius:5px;
+  }
+  html.tl-compact .bjob.has-brail:hover .brail,
+  html.tl-compact .bjob.has-brail:focus-within .brail{
+    display:flex; flex-direction:row; gap:2px; top:auto; bottom:2px; right:2px;
+    z-index:3; background:var(--panel); border-radius:7px; box-shadow:-8px 0 8px var(--panel);
+  }
+  html.tl-compact .bjob .brail .mv{ width:24px; height:24px; border-radius:6px; border-width:1px; }
+}
+@container (min-width:170px){
+  html.tl-compact .bjob.has-brail .brail,
+  html.tl-compact .bjob.has-brail:hover .brail,
+  html.tl-compact .bjob.has-brail:focus-within .brail{
+    display:flex; flex-direction:row; gap:2px; top:50%; bottom:auto; right:3px;
+    transform:translateY(-50%); background:none; box-shadow:none; z-index:2;
+  }
+  html.tl-compact .bjob .brail .mv{ width:24px; height:24px; border-radius:6px; border-width:1px; }
+  html.tl-compact .bjob.has-brail{ padding-right:56px; min-height:32px; }
+  html.tl-compact .bjob .pri.corner,
+  html.tl-compact .bjob .pri.corner:not(.on){
+    display:grid; top:50%; bottom:auto; right:2px; transform:translateY(-50%); background:none;
+    place-items:center; padding:0;
+  }
+  html.tl-compact .bjob.has-brail .pri.corner,
+  html.tl-compact .bjob.has-brail .pri.corner:not(.on){ right:56px; }
+  html.tl-compact .bjob .pri.corner ~ .bmain{ padding-right:24px; }
+  html.tl-compact .bjob .pri.corner.on ~ .bmain .bwt,
+  html.tl-compact .bjob .pri.corner.on ~ .bmain .brep{ padding-right:0; }
+}
+
+/* карточка пикапа — ОДИН поток мелким жирным: «PU SCR×1 BLW×3 · просрочен 09/06».
+   Был flex: «PU», набор оборудования и срок — три отдельных блока, в узкой
+   колонке каждый уходил на свою строку (до 180px на пикап). Год в сроке
+   прячем — на доске одного дня он ничего не сообщает. */
+html.tl-compact .bpk{
+  display:block; padding:3px 6px; margin:3px 0; border-radius:8px;
+  font-size:.7rem; font-weight:800; line-height:1.3; min-width:0;
+  overflow-wrap:anywhere;
+}
+html.tl-compact .bpk{ min-height:24px; }              /* однострочный пикап в широкой колонке — всё ещё цель для мыши */
+html.tl-compact .bpk > b{ font-size:.7rem; margin-right:2px; }
+html.tl-compact .bpk .tiny{ font-size:.58rem; font-weight:700; white-space:normal; }
+html.tl-compact .bpk .yr{ display:none; }
+html.tl-compact .bpk.over .tiny{ color:var(--red); }
+
+/* совсем узкая колонка (авто-подгон, телефон): без аватара и номера машины */
+@container (max-width:116px){
+  html.tl-compact .bcol-h .avatar{ display:none; }
+  html.tl-compact .bcol-h .car-no{ display:none; }
+  html.tl-compact .bjob{ padding-left:14px; padding-right:4px; }
+  html.tl-compact .bjob .bnum{ left:3px; }
+  html.tl-compact .bjob .bst{ left:4px; }
+  html.tl-compact .bpk{ padding:3px 4px; }
+}
+/* в узкой колонке слово «просрочен» не помещается в строку с датой — его
+   заменяют красная рамка карточки, красные «PU» и сама дата */
+@container (max-width:150px){
+  html.tl-compact .bpk .ov{ display:none; }
+}
+
+/* ======================= 6 · НИЖНЕЕ МЕНЮ, «+» ======================= */
+html.tl-compact .tabbar{ padding-top:3px; }
+html.tl-compact .tabbar .tab{ padding:4px 2px; gap:1px; border-radius:9px; }
+html.tl-compact .tabbar .tab svg{ width:20px; height:20px; }
+html.tl-compact .tabbar.tb-lab-off .tab{ padding:6px 0; }
+html.tl-compact .tabbar.tb-lab-off .tab svg{ width:21px; height:21px; }
+html.tl-compact .fab{ width:48px; height:48px; font-size:1.55rem; }
+
+/* ====================== 7 · ПАЛЕЦ (pointer:coarse) ======================
+   У пальца экономия идёт за счёт полей, шапки, карточек и зазоров, а НЕ за счёт
+   кнопок: всё, во что целятся, остаётся 40px — либо само, либо прозрачной зоной
+   ::after там, где до соседей есть запас (движок «Диагностики» меряет зону
+   пробами на 4/9/14px от края, поэтому поля зон — не меньше 5px). */
+@media (pointer:coarse){
+  html.tl-compact input,
+  html.tl-compact select,
+  html.tl-compact textarea{ min-height:40px; }
+  html.tl-compact input[type=checkbox],
+  html.tl-compact input[type=radio]{ min-height:0; }
+  html.tl-compact .search-box input{ min-height:40px; }
+  html.tl-compact .btn{ min-height:40px; }
+  html.tl-compact .btn.sm{ min-height:40px; }
+  html.tl-compact .lang-seg button{ padding:9px 12px; min-height:40px; }
+  html.tl-compact .lang-seg.sm button{ padding:8px 9px; min-height:40px; }
+  html.tl-compact .tabbtn{ padding:10px 11px; }
+  html.tl-compact .tabs-arr{ height:42px; width:38px; }
+  html.tl-compact .icon-btn,
+  html.tl-compact .sync-btn,
+  html.tl-compact .staff-ctl .icon-btn,
+  html.tl-compact .icon-btn.sm{ width:40px; height:40px; }
+  html.tl-compact .help-btn{ width:40px; height:40px; min-width:40px; }
+  html.tl-compact .stepper button{ width:36px; height:36px; }
+  html.tl-compact .week .wk-arrow{ width:40px; height:40px; }
+  html.tl-compact .mini-nav{ min-height:40px; }
+  html.tl-compact .brd-eye{ min-height:40px; }
+  html.tl-compact .banner .btn{ min-height:38px; }
+  html.tl-compact .today-jump,
+  html.tl-compact .today-jump.tpl-move{ min-height:32px; }
+  html.tl-compact .today-jump + .board-tools{ margin-top:0; min-height:0; pointer-events:auto; }   /* у пальца инструменты выше строки кнопок — своей строкой */
+
+  /* шапка: логотип, название и аватар 36px на вид, зона — 40+. Вверх зону не
+     растянуть (край экрана), поэтому она уходит вниз — в нижнее поле шапки;
+     подпись логина под аватаром нажатий не берёт — они достаются аватару */
+  html.tl-compact:not(.tl-desktop) .topbar{ padding-bottom:6px; }
+  html.tl-compact .logo{ width:36px; height:36px; }
+  html.tl-compact .brand.clicky{ min-height:36px; }
+  html.tl-compact .avatar-wrap .avatar{ width:36px; height:36px; }
+  html.tl-compact .logo.clicky,
+  html.tl-compact .brand.clicky,
+  html.tl-compact .avatar-wrap .avatar{ position:relative; }
+  html.tl-compact .logo.clicky::after{ content:''; position:absolute; left:-6px; right:-2px; top:0; bottom:-6px; }
+  html.tl-compact .brand.clicky::after{ content:''; position:absolute; left:0; right:0; top:0; bottom:-6px; }
+  html.tl-compact .avatar-wrap .avatar::after{ content:''; position:absolute; left:-2px; right:-7px; top:0; bottom:-12px; }
+  html.tl-compact .login-pill{ pointer-events:none; }
+  html.tl-compact .rt-row .vm-inline button{ height:22px; }
+
+  /* плашки «Ждут апрува / Пикап сегодня» — цель для пальца, 40px */
+  html.tl-compact .banner.clicky{ min-height:40px; }
+
+  /* кнопки в карточке дня: 34 на вид, 42 по зоне. Поля зоны — 8px: у кнопки рамка
+     2px, зона считается от внутреннего края, наружу выходит на 6 */
+  html.tl-compact .item .right .btn.sm{ min-height:34px; min-width:40px; position:relative; }
+  html.tl-compact .item .right .btn.sm::after{ content:''; position:absolute; left:0; right:0; top:-8px; bottom:-8px; }
+  /* доска: карточки — цели для пальца; кнопка ремонта внутри — как в обычной плотности */
+  html.tl-compact .bjob,
+  html.tl-compact .bpk{ min-height:40px; }
+  html.tl-compact .brep .btn{ min-height:28px; }
+  /* ▲▼ в карточке дня пальцу нужны настоящие и всегда на виду (наведения нет) */
+  html.tl-compact .item.has-rail{ padding-left:38px !important; min-height:82px; }
+  html.tl-compact .item > .rail .mv{ width:26px; height:24px; }
+  html.tl-compact .item > .rail .mv .ic{ width:13px; height:13px; }
+  /* код доступа в потоке стоит строкой ниже адреса с его кнопкой копирования:
+     44-пиксельная зона кода накрывала её. Зона кода — только по своей строке. */
+  html.tl-compact .item .info{ row-gap:3px; }
+  html.tl-compact .item .key-copy::after{ height:100%; }
+  html.tl-compact .tabbar .tab{ padding:10px 2px; }          /* 20px значок + 20 = 40px — норма пальца */
+  html.tl-compact .tabbar.tb-lab-off .tab{ padding:10px 0; }
+}
+
+/* =====================================================================
+   8 · ПК-РЕЖИМ (html.tl-desktop.tl-compact)
+   ===================================================================== */
+html.tl-desktop.tl-compact .day-cell{ padding:4px 2px 10px; }
+
+@media (min-width:980px){
+  /* шапка: пилюля режима, связь и роль — в ОДНУ строку, шапка 52px вместо 82 */
+  html.tl-desktop.tl-compact .topbar{ padding:6px 20px; margin-bottom:8px; }
+  html.tl-desktop.tl-compact .rt-col{ flex-direction:row-reverse; align-items:center; gap:8px; }
+
+  /* левое меню: 16 пунктов влезают в 768px без прокрутки; ширина колонки
+     прежняя — на неё завязаны полоса body (128px) и расчёт доски в desktop.js */
+  html.tl-desktop.tl-compact .tabbar,
+  html.tl-desktop.tl-compact .tabbar.tb-tight{ gap:1px; padding:6px; border-radius:16px; max-height:calc(100dvh - 96px); }
+  html.tl-desktop.tl-compact .tabbar .tab,
+  html.tl-desktop.tl-compact .tabbar.tb-tight .tab{ padding:3px 4px; gap:1px; border-radius:10px; }
+  html.tl-desktop.tl-compact .tabbar .tab svg,
+  html.tl-desktop.tl-compact .tabbar.tb-tight .tab svg{ width:19px; height:19px; }
+  html.tl-desktop.tl-compact .tabbar .tab span,
+  html.tl-desktop.tl-compact .tabbar.tb-tight .tab span{ font-size:.56rem; }
+  html.tl-desktop.tl-compact.tl-fit .tabbar{ padding-top:24px; }
+  /* палец в ПК-раскладке (планшет, телефон на холсте): пункт меню — 40px */
+  @media (pointer:coarse){
+    html.tl-desktop.tl-compact .tabbar .tab,
+    html.tl-desktop.tl-compact .tabbar.tb-tight .tab{ min-height:40px; justify-content:center; }
+  }
+  html.tl-desktop.tl-compact #dsk-density{ width:34px; height:34px; border-radius:10px; left:16px; bottom:12px; }
+  html.tl-desktop.tl-compact #dsk-density svg{ width:17px; height:17px; }
+  html.tl-desktop.tl-compact .fab{ right:22px; bottom:22px; }
+
+  html.tl-desktop.tl-compact .modal{ padding:13px 15px; }
+  html.tl-desktop.tl-compact .overlay{ padding:18px; }
+
+  /* доска: колонка 200px по умолчанию (desktop.js: BASE 200 / MINW 96 / зазор 6 / паддинг 16) */
+  html.tl-desktop.tl-compact .bcol{
+    flex:0 0 var(--dsk-fit, var(--bcolw,200px)); max-width:var(--dsk-fit, var(--bcolw,200px));
+  }
+}
+@media (min-width:1180px){
+  html.tl-desktop.tl-compact #day-list,
+  html.tl-desktop.tl-compact #search-area{ gap:6px; }
+  html.tl-desktop.tl-compact #day-list > .section-title{ margin:5px 0 0; }
+}
+/* сводка дня: на широком экране виды работ в две колонки — карточка вдвое ниже */
+@media (min-width:700px){
+  html.tl-compact .wt-lines{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); column-gap:14px; }
+}
+
+/* ПК-режим в УЗКОМ окне (< 980px: телефон в книжной ориентации, узкое окно
+   браузера). Раскладка там мобильная, но «минимум сотрудников на экране»
+   (--bcolw ставит app.js) теперь действует и здесь — не уже 96px. */
+@media (max-width:979.98px){
+  html.tl-desktop.tl-compact .bcol{
+    flex:0 0 max(96px, var(--bcolw, 118px)); max-width:max(96px, var(--bcolw, 118px));
+  }
+}

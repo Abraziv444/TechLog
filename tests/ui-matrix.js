@@ -18,6 +18,8 @@
      node tests/ui-matrix.js 8099 --shots    # + снимки
      node tests/ui-matrix.js 8099 --only=iPhone,iPad
      node tests/ui-matrix.js 8099 --screens=home,settings
+     node tests/ui-matrix.js 8099 --dens=compact   # v1.09.05: та же матрица в компактной плотности
+                                                   # (отчёт — ui-matrix-compact.md/.json, снимки *-compact.png)
 
    Важно: вырез и домашнюю полосу iPhone эмулятор не воспроизводит —
    env(safe-area-inset-*) там всегда 0. Эти зоны проверяет уже сама
@@ -33,6 +35,9 @@ const EXE = process.env.PW_CHROME || '/opt/pw-browsers/chromium-1194/chrome-linu
 const SHOTS = args.includes('--shots');
 const ONLY = (args.find(a => a.startsWith('--only=')) || '').replace('--only=', '');
 const SCREENS = (args.find(a => a.startsWith('--screens=')) || '').replace('--screens=', '');
+/* v1.09.05: плотность интерфейса — своя у режима «Телефон» и «ПК», ставим обе */
+const DENS = (args.find(a => a.startsWith('--dens=')) || '').replace('--dens=', '') === 'compact' ? 'compact' : '';
+const SUF = DENS ? '-compact' : '';
 const OUT = path.join(__dirname, 'out');
 
 const UA_IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
@@ -52,6 +57,10 @@ const DEVICES = [
   { name: 'Pixel 7',              w: 412,  h: 915,  dpr: 2.6, touch: 1, ua: UA_ANDROID, mode: 'mobile' },
   { name: 'минимум 320',          w: 320,  h: 568,  dpr: 2,   touch: 1, ua: UA_IOS,     mode: 'mobile' },
   { name: 'iPhone 14 альбом',     w: 844,  h: 390,  dpr: 3,   touch: 1, ua: UA_IOS,     mode: 'mobile' },
+  /* v1.09.05: телефон в режиме «ПК» — альбомный получает холст 1100px (раскладка
+     компьютера, уменьшенная под экран), книжный остаётся с мобильной раскладкой */
+  { name: 'Pixel 7 альбом ПК (холст)', w: 915, h: 412, dpr: 2.6, touch: 1, mobile: 1, ua: UA_ANDROID, mode: 'desktop' },
+  { name: 'Pixel 7 книжн. ПК',    w: 412,  h: 915,  dpr: 2.6, touch: 1, ua: UA_ANDROID, mode: 'desktop' },
 
   // ---- планшеты, оба режима -------------------------------------------
   { name: 'iPad mini книжн.',     w: 744,  h: 1133, dpr: 2,   touch: 1, ua: UA_IPAD,    mode: 'mobile' },
@@ -91,7 +100,7 @@ const norm = s => String(s).replace(/\d+([.,]\d+)?/g, '#').replace(/«[^»]*»/g
       viewport: { width: d.w, height: d.h },
       deviceScaleFactor: d.dpr,
       hasTouch: !!d.touch,
-      isMobile: !!d.touch && d.w < 900,
+      isMobile: (!!d.touch && d.w < 900) || !!d.mobile,   // mobile: эмулятор слушается <meta viewport> и на широком экране
       userAgent: d.ua || undefined,
     });
     const page = await ctx.newPage();
@@ -100,10 +109,11 @@ const norm = s => String(s).replace(/\d+([.,]\d+)?/g, '#').replace(/«[^»]*»/g
     for (const p of ['**://*.jsdelivr.net/**', '**://*.cloudflare.com/**', '**://*.unpkg.com/**',
                      '**://*.googleapis.com/**', '**://*.gstatic.com/**', '**://*.supabase.co/**'])
       await page.route(p, r => r.abort());
-    await page.addInitScript(mode => {
+    await page.addInitScript(([mode, dens]) => {
       localStorage.setItem('techlog_session_v1', 'demo-admin');
       localStorage.setItem('techlog_view_mode', mode);
-    }, d.mode);
+      if (dens) { localStorage.setItem('techlog_density', dens); localStorage.setItem('techlog_density_m', dens); }
+    }, [d.mode, DENS]);
 
     let rec = { device: d, env: null, screens: [], hard: 0, soft: 0, errs, failed: null };
     try {
@@ -138,7 +148,7 @@ const norm = s => String(s).replace(/\d+([.,]\d+)?/g, '#').replace(/«[^»]*»/g
           try {
             await page.evaluate(x => window.App.go(x), s);
             await page.waitForTimeout(350);
-            await page.screenshot({ path: path.join(OUT, 'shots', `${d.name.replace(/[^\wА-Яа-я]+/g, '_')}-${s}.png`), fullPage: false });
+            await page.screenshot({ path: path.join(OUT, 'shots', `${d.name.replace(/[^\wА-Яа-я]+/g, '_')}-${s}${SUF}.png`), fullPage: false });
           } catch (e) {}
         }
       }
@@ -171,7 +181,7 @@ const norm = s => String(s).replace(/\d+([.,]\d+)?/g, '#').replace(/«[^»]*»/g
   const softG = sorted.filter(g => !(g.level === 'err' && !SOFT.includes(g.id)));
 
   const md = [];
-  md.push('# TechLog · интерфейс по матрице устройств', '');
+  md.push('# TechLog · интерфейс по матрице устройств' + (DENS ? ' · КОМПАКТНАЯ плотность' : ''), '');
   md.push(`Собрано: ${new Date().toISOString()} · устройств: ${results.length} · экранов на каждом: ${results[0] ? results[0].screens.length : 0}`, '');
   md.push('## Сводка по устройствам', '');
   md.push('| Устройство | Размер | Режим | dpr | Дефектов | Оформление |', '|---|---:|---|---:|---:|---:|');
@@ -193,8 +203,8 @@ const norm = s => String(s).replace(/\d+([.,]\d+)?/g, '#').replace(/«[^»]*»/g
   block('Дефекты', hardG);
   block('Оформление и предупреждения', softG);
 
-  fs.writeFileSync(path.join(OUT, 'ui-matrix.md'), md.join('\n'), 'utf8');
-  fs.writeFileSync(path.join(OUT, 'ui-matrix.json'), JSON.stringify({
+  fs.writeFileSync(path.join(OUT, `ui-matrix${SUF}.md`), md.join('\n'), 'utf8');
+  fs.writeFileSync(path.join(OUT, `ui-matrix${SUF}.json`), JSON.stringify({
     ts: new Date().toISOString(),
     devices: results.map(r => ({ device: r.device, env: r.env, hard: r.hard, soft: r.soft, failed: r.failed, console: r.errs })),
     groups: sorted.map(g => ({ check: g.check, id: g.id, level: g.level, sample: g.sample, n: g.n, devices: [...g.devices], screens: [...g.screens] })),
@@ -202,7 +212,7 @@ const norm = s => String(s).replace(/\d+([.,]\d+)?/g, '#').replace(/«[^»]*»/g
 
   const totalHard = results.reduce((a, r) => a + r.hard, 0);
   const crashed = results.filter(r => r.failed).length;
-  console.log(`\nОтчёт: tests/out/ui-matrix.md · групп замечаний ${sorted.length} (дефектных ${hardG.length})`);
+  console.log(`\nОтчёт: tests/out/ui-matrix${SUF}.md · групп замечаний ${sorted.length} (дефектных ${hardG.length})`);
   console.log(`Итого: дефектов ${totalHard}, устройств не открылось ${crashed}`);
   process.exit(totalHard || crashed ? 1 : 0);
 })().catch(e => { console.error('матрица упала:', e); process.exit(2); });

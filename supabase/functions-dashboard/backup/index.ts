@@ -5,8 +5,23 @@ import { svc, userClient, CORS, jres, driveToken, driveConfig, monthFolder } fro
    Собирает ВСЕ данные фирмы (включая auth-пользователей с хэшами
    паролей и app_secrets через RPC backup_dump) в один .sql-файл с
    INSERT'ами и кладёт его в папку «TechLog Backups» корневой папки
-   Google Drive (той же, что настроена для фото). Хранятся последние
-   8 копий, старые удаляются.
+   Google Drive (той же, что настроена для фото).
+
+   v1.09.03 · ТРИ ПОЛКИ ХРАНЕНИЯ (вид копии — в имени файла И в
+   appProperties.tl_kind файла на Диске):
+     ADMIN   — бэкап, сделанный админом вручную («Сделать бэкап сейчас»).
+               TechLog-backup-ГГГГ-ММ-ДД_ЧЧММ-ADMIN.sql. Хранится ВЕЧНО:
+               функция его не удаляет и не трогает никогда.
+     weekly  — одна копия на ISO-неделю: TechLog-backup-ГГГГ-ММ-ДД-weekly-
+               ГГГГ-Wнн.sql. Хранится ВЕЧНО. Делается первым автобэкапом
+               недели (копия дневного файла средствами Диска).
+     daily   — автобэкап, не чаще одного в день (дата по Нью-Йорку):
+               TechLog-backup-ГГГГ-ММ-ДД-daily.sql. Хранятся последние 8
+               дней, более старые уходят в КОРЗИНУ Диска (30 дней на возврат).
+   Ротация работает по «белому списку»: удалить можно только файл, у которого
+   И имя оканчивается на -daily.sql, И appProperties.tl_kind = daily. Всё
+   остальное в папке (ручные, недельные, файлы старого формата без пометки,
+   переименованные или положенные руками) функция не удаляет НИКОГДА.
 
    Восстановление: чистая база → supabase/full-install-*.sql → затем
    этот файл целиком в SQL Editor. Дамп сам включает replica-режим,
@@ -15,9 +30,14 @@ import { svc, userClient, CORS, jres, driveToken, driveConfig, monthFolder } fro
 
    Режимы:
      ?ping=1  — диагностика;
-     ?run=1   — сделать бэкап сейчас. Права: админ (JWT) либо заголовок
-                x-cron-key = app_secrets.push_cron_key;
-     ?list=1  — последние копии в папке (имя · дата · размер), админ.
+     ?run=1&kind=admin — ручной бэкап админа (вечный). Права: админ (JWT);
+     ?run=1&kind=auto  — автобэкап: daily, если за сегодня его ещё нет, и
+                weekly, если за эту неделю его ещё нет; иначе {skipped:true}
+                и дамп не строится. Права: админ (JWT) либо заголовок
+                x-cron-key = app_secrets.push_cron_key.
+                Без kind: по ключу крона — auto, по JWT — admin (старый
+                клиент ничего не потеряет: его копии станут вечными);
+     ?list=1  — копии в папке (имя · дата · размер · вид) и счётчики, админ.
 
    v1.09.01 · в дамп добавлена таблица bn_devices (справочник трекеров
    Bouncie) — перед vehicles, потому что vehicles.imei ссылается на неё.
@@ -28,7 +48,7 @@ import { svc, userClient, CORS, jres, driveToken, driveConfig, monthFolder } fro
    значении — папка Files внутри корневой gd_folder_id). Права: админ.
    ===================================================================== */
 
-const BK_VER = "1.09.01";
+const BK_VER = "1.09.03";
 type Sb = ReturnType<typeof svc>;
 
 const TABLES = [
@@ -126,24 +146,103 @@ async function buildSql(s: Sb): Promise<string> {
   return out.join("\n") + "\n";
 }
 
+/* PURE-BEGIN · чистые функции полок и ротации (их гоняет tests/backup-rotation.js) */
+const KEEP_DAILY = 8;
+type BkKind = "admin" | "weekly" | "daily" | "legacy";
+type BkFile = { id: string; name: string; createdTime: string; size?: string;
+  description?: string; appProperties?: Record<string, string> };
+
+/* ISO-неделя «ГГГГ-Wнн» по дате «ГГГГ-ММ-ДД» (понедельник — первый день) */
+function isoWeek(day: string): string {
+  const [y, m, d] = day.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + 4 - (dt.getUTCDay() || 7));      // четверг этой недели
+  const wk = Math.ceil(((dt.getTime() - Date.UTC(dt.getUTCFullYear(), 0, 1)) / 86400000 + 1) / 7);
+  return `${dt.getUTCFullYear()}-W${String(wk).padStart(2, "0")}`;
+}
+function nameKind(name: string): BkKind {
+  if (/-ADMIN\.sql$/i.test(name)) return "admin";
+  if (/-weekly-\d{4}-W\d{2}\.sql$/i.test(name)) return "weekly";
+  if (/-daily\.sql$/i.test(name)) return "daily";
+  return "legacy";
+}
+/* Вид копии. «Вечная» пометка побеждает: хватит её в ОДНОМ месте (имя или
+   свойство). daily — только когда так говорят ОБА места; любое сомнение
+   (старый формат, переименовали, положили руками) — legacy: не удаляется. */
+function kindOf(f: BkFile): BkKind {
+  const p = f.appProperties?.tl_kind, nk = nameKind(f.name);
+  if (p === "admin" || nk === "admin") return "admin";
+  if (p === "weekly" || nk === "weekly") return "weekly";
+  if (p === "daily" && nk === "daily") return "daily";
+  return "legacy";
+}
+const dayOf = (f: BkFile): string =>
+  f.appProperties?.tl_day || (f.name.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? "");
+const weekOf = (f: BkFile): string =>
+  f.appProperties?.tl_week || (f.name.match(/\d{4}-W\d{2}/)?.[0] ?? "");
+
+/* что делать автобэкапу сегодня */
+function bkPlan(files: BkFile[], day: string) {
+  const week = isoWeek(day);
+  const today = files.find((f) => kindOf(f) === "daily" && dayOf(f) === day) ?? null;
+  const hasWeekly = files.some((f) => kindOf(f) === "weekly" && weekOf(f) === week);
+  return { week, needDaily: !today, needWeekly: !hasWeekly, dailyTodayId: today?.id ?? null };
+}
+/* что уходит в корзину: только daily — дубли одного дня (кроме самого свежего)
+   и всё, что старше KEEP_DAILY последних дней. Остальные виды сюда не попадают. */
+function bkRotate(files: BkFile[], keep = KEEP_DAILY): BkFile[] {
+  const daily = files.filter((f) => kindOf(f) === "daily")
+    .sort((a, b) => String(b.createdTime).localeCompare(String(a.createdTime)));
+  const days: string[] = [], out: BkFile[] = [];
+  for (const f of daily) {
+    const d = dayOf(f) || f.id;
+    if (days.includes(d)) { out.push(f); continue; }              // дубль дня
+    days.push(d);
+    if (days.length > keep) out.push(f);                           // девятый день и дальше
+  }
+  return out;
+}
+function bkCounts(files: BkFile[]) {
+  const c = { admin: 0, weekly: 0, daily: 0, legacy: 0 };
+  for (const f of files) c[kindOf(f)]++;
+  return c;
+}
+/* PURE-END */
+
+const nyDay = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+const nyHM = (d = new Date()) => d.toLocaleTimeString("en-GB",
+  { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false }).replace(":", "");
+
 async function ensureBackupFolder(t: string): Promise<string> {
   const cfg = await driveConfig();
   const rootId = cfg.gd_folder_id.match(/[-\w]{20,}/)?.[0] ?? cfg.gd_folder_id;
   return await monthFolder(t, rootId, "TechLog Backups");   // найти/создать по имени
 }
 
-async function listBackups(t: string, folderId: string) {
-  const q = encodeURIComponent(`'${folderId}' in parents and trashed=false`);
-  const r = await (await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=createdTime desc` +
-    `&fields=files(id,name,createdTime,size)`,
-    { headers: { Authorization: `Bearer ${t}` } })).json();
-  return (r.files ?? []) as { id: string; name: string; createdTime: string; size?: string }[];
+/* все копии папки (недельные и ручные копятся годами — читаем постранично) */
+async function listBackups(t: string, folderId: string): Promise<BkFile[]> {
+  const q = encodeURIComponent(
+    `'${folderId}' in parents and trashed=false and mimeType!='application/vnd.google-apps.folder'`);
+  const out: BkFile[] = [];
+  let page = "";
+  for (let i = 0; i < 20; i++) {
+    const r = await (await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=createdTime desc&pageSize=1000` +
+      `&fields=nextPageToken,files(id,name,createdTime,size,description,appProperties)` +
+      (page ? `&pageToken=${encodeURIComponent(page)}` : ""),
+      { headers: { Authorization: `Bearer ${t}` } })).json();
+    if (r.error) throw new Error("DRIVE_LIST: " + JSON.stringify(r.error).slice(0, 200));
+    out.push(...((r.files ?? []) as BkFile[]));
+    page = r.nextPageToken ?? "";
+    if (!page) break;
+  }
+  return out;
 }
 
-async function upload(t: string, folderId: string, name: string, body: string, mime = "application/sql") {
+async function upload(t: string, folderId: string, name: string, body: string, mime = "application/sql",
+  extra: Record<string, unknown> = {}) {
   const boundary = "tlbk" + crypto.randomUUID().slice(0, 8);
-  const meta = JSON.stringify({ name, parents: [folderId], mimeType: mime });
+  const meta = JSON.stringify({ name, parents: [folderId], mimeType: mime, ...extra });
   const payload =
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n` +
     `--${boundary}\r\nContent-Type: application/sql\r\n\r\n${body}\r\n--${boundary}--`;
@@ -156,6 +255,32 @@ async function upload(t: string, folderId: string, name: string, body: string, m
   return r as { id: string; size?: string };
 }
 
+/* недельная копия = копия дневного файла средствами Диска (без повторной выгрузки) */
+async function copyFile(t: string, srcId: string, folderId: string, name: string, extra: Record<string, unknown>) {
+  const r = await (await fetch(
+    `https://www.googleapis.com/drive/v3/files/${srcId}/copy?fields=id,size`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name, parents: [folderId], ...extra }) })).json();
+  if (!r.id) throw new Error("DRIVE_COPY: " + JSON.stringify(r).slice(0, 200));
+  return r as { id: string; size?: string };
+}
+/* в корзину (не насовсем): у ошибочно ушедшей копии есть 30 дней на возврат */
+async function trashFile(t: string, id: string): Promise<boolean> {
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=id`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ trashed: true }) });
+  return r.ok;
+}
+const meta = (kind: BkKind, day: string, week: string, by: string) => ({
+  description: kind === "admin"
+    ? `TechLog · ручной бэкап администратора${by ? " " + by : ""} · хранится вечно, автоматически не удаляется`
+    : kind === "weekly" ? `TechLog · недельный бэкап ${week} · хранится вечно, автоматически не удаляется`
+    : `TechLog · ежедневный автобэкап · хранятся последние ${KEEP_DAILY}, старые уходят в корзину`,
+  appProperties: { tl_kind: kind, tl_day: day, tl_week: week, ...(by ? { tl_by: by.slice(0, 60) } : {}) },
+});
+
 async function noteOrg(s: Sb, note: string, okStamp: boolean) {
   const { data: org } = await s.from("org_settings").select("id").limit(1).maybeSingle();
   if (!org) return;
@@ -164,11 +289,14 @@ async function noteOrg(s: Sb, note: string, okStamp: boolean) {
   await s.from("org_settings").update(patch).eq("id", org.id);
 }
 
-async function isAdminReq(req: Request, s: Sb): Promise<boolean> {
+async function adminOf(req: Request, s: Sb): Promise<{ ok: boolean; who: string }> {
   const { data: u } = await userClient(req).auth.getUser();
-  if (!u?.user) return false;
-  const { data: p } = await s.from("profiles").select("role").eq("id", u.user.id).maybeSingle();
-  return p?.role === "admin";
+  if (!u?.user) return { ok: false, who: "" };
+  const { data: p } = await s.from("profiles").select("role,login").eq("id", u.user.id).maybeSingle();
+  return { ok: p?.role === "admin", who: String(p?.login ?? "") };
+}
+async function isAdminReq(req: Request, s: Sb): Promise<boolean> {
+  return (await adminOf(req, s)).ok;
 }
 
 Deno.serve(async (req) => {
@@ -208,33 +336,67 @@ Deno.serve(async (req) => {
       if (!byKey && !(await isAdminReq(req, s))) return jres({ error: "FORBIDDEN" }, 403);
       const t = await driveToken();
       const files = await listBackups(t, await ensureBackupFolder(t));
-      return jres({ ok: true, files: files.slice(0, 10) });
+      return jres({ ok: true, ver: BK_VER, keep_daily: KEEP_DAILY, counts: bkCounts(files),
+        files: files.slice(0, 500).map((f) => ({ id: f.id, name: f.name, createdTime: f.createdTime,
+          size: f.size, kind: kindOf(f), by: f.appProperties?.tl_by ?? "" })) });
     }
 
     if (url.searchParams.get("run")) {
-      if (!byKey && !(await isAdminReq(req, s))) return jres({ error: "FORBIDDEN" }, 403);
+      const adm = byKey ? { ok: false, who: "" } : await adminOf(req, s);
+      if (!byKey && !adm.ok) return jres({ error: "FORBIDDEN" }, 403);
+      const kp = url.searchParams.get("kind");
+      const kind: "auto" | "admin" = kp === "auto" || kp === "admin" ? kp : (byKey ? "auto" : "admin");
+      if (kind === "admin" && !adm.ok) return jres({ error: "FORBIDDEN" }, 403);   // вечную копию делает только человек-админ
       let t: string;
       try { t = await driveToken(); }
       catch (e: any) {
         await noteOrg(s, "⛔ " + String(e?.message ?? e), false);
         return jres({ error: "DRIVE: " + String(e?.message ?? e) }, 409);
       }
-      const sql = await buildSql(s);
       const folder = await ensureBackupFolder(t);
-      const name = "TechLog-backup-" +
-        new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }) + ".sql";
-      const up = await upload(t, folder, name, sql);
-      /* ротация: держим 8 свежих */
-      const files = await listBackups(t, folder);
-      let removed = 0;
-      for (const f of files.slice(8)) {
-        await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}`,
-          { method: "DELETE", headers: { Authorization: `Bearer ${t}` } });
-        removed++;
+      const day = nyDay(), week = isoWeek(day);
+      let name = "", weekly = "", sql: string | null = null;
+
+      if (kind === "admin") {
+        /* ручной бэкап: вечный, время в имени — сколько угодно за день */
+        sql = await buildSql(s);
+        name = `TechLog-backup-${day}_${nyHM()}-ADMIN.sql`;
+        await upload(t, folder, name, sql, "application/sql", meta("admin", day, week, adm.who));
+      } else {
+        const plan = bkPlan(await listBackups(t, folder), day);
+        if (!plan.needDaily && !plan.needWeekly)                     // сегодня уже делали — не чаще раза в день
+          return jres({ ok: true, skipped: true, kind, day, week });
+        let srcId = plan.dailyTodayId;
+        if (plan.needDaily) {
+          sql = await buildSql(s);
+          name = `TechLog-backup-${day}-daily.sql`;
+          srcId = (await upload(t, folder, name, sql, "application/sql", meta("daily", day, week, ""))).id;
+        }
+        if (plan.needWeekly) {
+          weekly = `TechLog-backup-${day}-weekly-${week}.sql`;
+          try {
+            if (!srcId) throw new Error("NO_SOURCE");
+            await copyFile(t, srcId, folder, weekly, meta("weekly", day, week, ""));
+          } catch (_e) {                                             // копия не вышла — выгружаем сами
+            sql = sql ?? await buildSql(s);
+            await upload(t, folder, weekly, sql, "application/sql", meta("weekly", day, week, ""));
+          }
+          if (!name) name = weekly;
+        }
       }
-      const kb = Math.max(1, Math.round(sql.length / 1024));
-      await noteOrg(s, `ok · ${name} · ${kb} KB · копий: ${Math.min(files.length, 8)}`, true);
-      return jres({ ok: true, name, size: kb, kept: Math.min(files.length, 8), removed });
+
+      /* ротация: только daily, только по белому списку, только в корзину */
+      let files = await listBackups(t, folder);
+      let removed = 0;
+      for (const f of bkRotate(files)) {
+        if (kindOf(f) !== "daily" || nameKind(f.name) !== "daily" || f.appProperties?.tl_kind !== "daily") continue;
+        if (await trashFile(t, f.id)) { removed++; files = files.filter((x) => x.id !== f.id); }
+      }
+      const c = bkCounts(files);
+      const kb = sql ? Math.max(1, Math.round(sql.length / 1024)) : 0;
+      await noteOrg(s, `ok · ${name}${kb ? ` · ${kb} KB` : ""} · ежедн. ${c.daily}/${KEEP_DAILY} · недельных ${c.weekly}` +
+        ` · админ ${c.admin}${c.legacy ? ` · старых ${c.legacy}` : ""}`, true);
+      return jres({ ok: true, kind, name, weekly, size: kb, counts: c, kept: c.daily, removed });
     }
 
     return jres({ error: "BAD_REQUEST" }, 400);

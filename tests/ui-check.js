@@ -19,12 +19,14 @@
    Переменные окружения:
      PW_CHROME  — путь к бинарю Chromium (по умолчанию системный)
      UI_STRICT  — 1: предупреждения тоже валят сборку
+     UI_DENS    — compact: тот же прогон в компактной плотности (v1.09.05)
    ===================================================================== */
 const { chromium } = require('playwright-core');
 
 const PORT = process.argv[2] || process.env.PORT || '8099';
 const EXE = process.env.PW_CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const STRICT = process.env.UI_STRICT === '1';
+const DENS = process.env.UI_DENS === 'compact' ? 'compact' : '';   // v1.09.05
 
 const SCREENS = ['home', 'board', 'proposals', 'repairs', 'map', 'reports', 'stats', 'study', 'dirs', 'journal', 'settings'];   // v1.08.51: + учёба
 const MODES = [
@@ -47,10 +49,11 @@ const SOFT = ['contrast', 'hit', 'clip'];
                      '**://*.googleapis.com/**', '**://*.gstatic.com/**', '**://*.supabase.co/**'])
       await page.route(p, r => r.abort());
 
-    await page.addInitScript(mode => {
+    await page.addInitScript(([mode, dens]) => {
       localStorage.setItem('techlog_session_v1', 'demo-admin');
       localStorage.setItem('techlog_view_mode', mode);
-    }, m.mode);
+      if (dens) { localStorage.setItem('techlog_density', dens); localStorage.setItem('techlog_density_m', dens); }
+    }, [m.mode, DENS]);
 
     const errors = [];
     page.on('pageerror', e => errors.push(String(e).slice(0, 160)));
@@ -61,7 +64,7 @@ const SOFT = ['contrast', 'hit', 'clip'];
 
     /* --- 1. блокирующие слушатели прокрутки ------------------------- */
     const blocking = await page.evaluate(() => window.UIDiag.blocking());
-    console.log(`\n=== режим: ${m.name} (${m.vp.width}×${m.vp.height}) ===`);
+    console.log(`\n=== режим: ${m.name} (${m.vp.width}×${m.vp.height})${DENS ? ' · компактная плотность' : ''} ===`);
     if (blocking.length) {
       fails++;
       console.log(`  ⛔ блокирующих слушателей прокрутки: ${blocking.length}`);

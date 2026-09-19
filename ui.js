@@ -13,10 +13,14 @@
      2) выпадающие списки — свой список вместо системного для всех
         <select>, в стиле приложения (как .combo-list и календарь);
      3) календарь для input[type=date] — раньше был только в ПК-режиме
-        (desktop.js), теперь общий.
+        (desktop.js), теперь общий;
+     4) плотность интерфейса (v1.09.05) — «обычная | компактная», своя у
+        режима «Телефон» и у режима «ПК»; класс tl-compact ставится до
+        первого рендера, сама вёрстка — в compact.css.
 
    Публичные ручки: window.TLUI.{fontPct,fontSet,fontStep,FONT_STEPS,
-   closeAll}. Событие 'tl-font' летит на window при смене масштаба.
+   density,densitySet,densityToggle,closeAll}. События на window:
+   'tl-font' — сменился масштаб, 'tl-density' — сменилась плотность.
    ===================================================================== */
 (function () {
   'use strict';
@@ -80,15 +84,16 @@
     try {
       /* v1.08.35: «компактно» на ПК меняет БАЗУ масштаба 16 → 14px, личный
          процент пользователя сохраняется и умножается на неё. Inline-стиль
-         на <html> перебивает любой CSS, поэтому база живёт здесь. */
-      var base = html.classList.contains('tl-compact') ? 14 : 16;
+         на <html> перебивает любой CSS, поэтому база живёт здесь.
+         v1.09.05: у режима «Телефон» компактная база мягче — 15px: текст на
+         телефоне читают с руки, а место дают отступы (compact.css), не кегль. */
+      var base = !html.classList.contains('tl-compact') ? 16
+               : (fontMode() === 'desktop' ? 14 : 15);
       html.style.fontSize = (base * pct / 100).toFixed(2) + 'px';
       html.setAttribute('data-fs', String(pct));
       html.classList.toggle('tl-fs-big', pct >= 122);
     } catch (e) {}
   }
-  /* desktop.js шлёт это событие после переключения плотности */
-  try { window.addEventListener('tl-density', function () { fontApply(fontPct()); }); } catch (e) {}
   function fontSet(pct) {
     var v = Number(pct) || 100;
     /* приводим к ближайшему шагу — чтобы «＋/−» и прямая установка совпадали */
@@ -106,9 +111,43 @@
     i = Math.max(0, Math.min(FONT_STEPS.length - 1, i + (dir > 0 ? 1 : -1)));
     return fontSet(FONT_STEPS[i]);
   }
-  fontApply(fontPct());                       // до первого рендера приложения
-  /* смена режима «Телефон ⇄ ПК» — сразу свой размер этого режима */
-  try { window.addEventListener('tl:viewmode', function () { fontApply(fontPct()); }); } catch (e) {}
+  /* ===================================================================
+     1b · ПЛОТНОСТЬ ИНТЕРФЕЙСА (v1.09.05)
+     «Обычная | компактная» — отдельная ось от размера шрифта. Раньше
+     «компактно» жило в desktop.js, только в ПК-режиме, и меняло один кегль:
+     отступы, значки и кнопки заданы в px и оставались прежними. Теперь:
+       • значение своё у режима «Телефон» и у режима «ПК» (как шрифт);
+         ключ ПК — историческое имя techlog_density, прежний выбор цел;
+       • класс tl-compact на <html> ставится ЗДЕСЬ, до первого рендера —
+         вёрстка не прыгает; все правила — в compact.css под этим классом;
+       • привязку к аккаунту (profiles.push_prefs.density / density_pc)
+         делает app.js, здесь — кэш устройства.
+     =================================================================== */
+  var DENS_KEY_PC = 'techlog_density';        // ПК-режим (имя с v1.07.19)
+  var DENS_KEY_M = 'techlog_density_m';       // режим «Телефон»
+  function densKey() { return fontMode() === 'desktop' ? DENS_KEY_PC : DENS_KEY_M; }
+  function density() { return LS.get(densKey(), 'cozy') === 'compact' ? 'compact' : 'cozy'; }
+  function densApply() {
+    var on = density() === 'compact';
+    try { if (html.classList.contains('tl-compact') !== on) html.classList.toggle('tl-compact', on); } catch (e) {}
+    try { html.setAttribute('data-dens', on ? 'compact' : 'cozy'); } catch (e) {}
+    fontApply(fontPct());                     // база кегля зависит от плотности
+  }
+  function densitySet(v) {
+    var want = v === 'compact' ? 'compact' : 'cozy';
+    var changed = density() !== want;
+    LS.set(densKey(), want);
+    densApply();
+    if (changed) {
+      try { window.dispatchEvent(new CustomEvent('tl-density', { detail: { density: want, mode: fontMode() } })); } catch (e) {}
+    }
+    return want;
+  }
+  function densityToggle() { return densitySet(density() === 'compact' ? 'cozy' : 'compact'); }
+
+  densApply();                                // до первого рендера приложения (шрифт — внутри)
+  /* смена режима «Телефон ⇄ ПК» — сразу свои размер и плотность этого режима */
+  try { window.addEventListener('tl:viewmode', function () { densApply(); }); } catch (e) {}
 
   /* Ctrl/⌘ + «+» / «−» / «0» — привычные горячие клавиши в ПК-режиме */
   document.addEventListener('keydown', function (e) {
@@ -358,6 +397,11 @@
     fontMode: fontMode,
     fontSet: fontSet,
     fontStep: fontStep,
+    /* v1.09.05: плотность интерфейса */
+    density: density,
+    densitySet: densitySet,
+    densityToggle: densityToggle,
+    densityKey: densKey,
     closeAll: function () { ddClose(); calClose(); }
   };
 })();
