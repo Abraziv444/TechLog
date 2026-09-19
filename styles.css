@@ -306,6 +306,9 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   border:2px solid rgba(255,255,255,.18);white-space:nowrap}
 .pkm-s{font-size:.78rem;font-weight:700;color:var(--dim);overflow-wrap:anywhere}
 .pkm-s .chip{margin-left:2px}
+/* v1.09.07: заметка в карточке окна «Пикапы: сегодня и просроченные» — не больше двух строк,
+   иначе одна карточка с длинной заметкой занимала весь экран (527 px против 140) */
+.pkm-s.note-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 /* v1.07.23: баннер установки на iOS и шаги в модалке */
 .banner.a2hs{border-color:var(--blue);background:rgba(28,176,246,.08);color:var(--text)}
 .banner.a2hs .grow{flex:1;min-width:0}
@@ -1036,6 +1039,9 @@ select.role-sel{width:auto;flex:0 0 auto;max-width:46%}
   padding:0 5px;margin-left:4px;border-radius:999px;background:var(--blue);color:#04314A;
   font-size:.68rem;font-weight:900;vertical-align:middle}
 .car-inp{width:52px;text-align:center;padding:6px 4px}
+/* v1.09.07: номер машины — степпер по дизайну; поле между − и ＋ */
+.stepper.set-step.car-step > input.car-inp{width:40px;max-width:40px;padding:0}
+.stepper.car-step button{width:30px}
 
 .board{display:flex;gap:10px;align-items:flex-start;overflow-x:auto;
   padding:2px 12px 90px;-webkit-overflow-scrolling:touch;
@@ -2053,8 +2059,11 @@ select:disabled{opacity:.55;cursor:default}
    его рисует псевдоэлемент. Отрицательные поля держат высоту строки как была. */
 .tipq{ position:relative;width:24px;height:24px;border:0;border-radius:50%;
   background:transparent;color:var(--dim-2);font-size:11px;font-weight:900;line-height:1;
-  display:inline-grid;place-items:center;vertical-align:-6px;flex:0 0 auto;
+  display:inline-grid;place-items:center;vertical-align:middle;top:-1px;flex:0 0 auto;
   margin:-4px 0 -4px 4px;padding:0;cursor:pointer }
+/* v1.09.07: было vertical-align:-6px — с отрицательными полями кружок в заголовках
+   (карточка сотрудника: Bouncie, Учёба, Время на объектах) садился на 4–5 px ниже
+   середины текста. middle + 1px вверх ставит «?» по центру заглавных букв. */
 .tipq::before{ content:'';position:absolute;left:50%;top:50%;width:17px;height:17px;
   margin:-8.5px 0 0 -8.5px;border-radius:50%;border:1.6px solid var(--dim-2) }
 .tipq:active{ transform:scale(.92) }
@@ -2339,7 +2348,7 @@ button.btn:has(> .net-pill){ flex-wrap:wrap }
 .twtile .bn-sno{ min-width:0; width:31px; height:31px; border-radius:0 }
 .bn-chip-no{ min-width:0; border:0; background:none; padding:0;
   width:20px; height:20px; color:inherit }   /* руль — цветом текста чипа */
-.carno-dot{ display:inline-flex; width:24px; height:24px; color:var(--blue);
+.carno-dot{ display:inline-flex; width:48px; height:48px; flex:0 0 auto; /* v1.09.07: вдвое крупнее (было 24) */ color:var(--blue);
   flex:0 0 auto }
 
 /* v1.08.48: открытая модалка забирает прокрутку себе — страница под
@@ -2893,3 +2902,19 @@ html.tl-pop-bottom .mq-mini{bottom:calc(env(safe-area-inset-bottom,0px) + 82px +
   .brd-eye.brd-dens{width:40px}
   .lang-seg.cv-seg button{padding:9px 10px}
 }
+
+/* ===================== v1.09.07 ===================== */
+/* «Резкость как у родной камеры»: когда обе настройки уже стоят — отметка, а не кнопка */
+.cam-native-on{ display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;
+  color:var(--green-hi);border:1.6px solid var(--green);background:rgba(88,204,2,.08);font-size:.85rem }
+.cam-native-on .ic{ width:15px;height:15px }
+/* крестик очистки у текстовых полей: виден, только когда в поле есть текст */
+.inpx{ position:relative;display:block;flex:1 1 auto;min-width:0 }
+.inpx > input{ width:100%;padding-right:40px }
+.combo > .combo-in{ padding-right:40px }
+.inpx-x{ position:absolute;right:8px;top:50%;transform:translateY(-50%);z-index:2;
+  width:26px;height:26px;display:grid;place-items:center;padding:0;border:0;border-radius:8px;
+  background:transparent;color:var(--dim);cursor:pointer }
+.inpx-x:hover{ color:var(--text);background:var(--panel-2) }
+.inpx-x .ic{ width:15px;height:15px }
+input:placeholder-shown + .inpx-x{ display:none }

@@ -277,6 +277,10 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
 @media (min-width: 1180px){
   html.tl-desktop .item .info .t,
   html.tl-desktop .item .info .s{ white-space:normal; overflow:visible; text-overflow:clip; }
+  /* v1.09.07: заметка на карточке — одна строка с многоточием, как на телефоне: длинная
+     заметка раздувала карточку до 700–800 px при соседних 130–150. Целиком заметка
+     читается по кнопке «Заметка» на карточке и в самом документе. */
+  html.tl-desktop .item .info .s.note-line{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   html.tl-desktop .wt-line .wt-nm{ white-space:normal; overflow:visible; text-overflow:clip; }
   html.tl-desktop .eq-name .nm,
   html.tl-desktop .eq-name .pr{ white-space:normal; overflow:visible; text-overflow:clip; }

@@ -491,6 +491,7 @@
 
   var pane = null, frames = null, act = 0, eye = null, busyEl = null;
   var genT = null, genBusy = false, genQueued = false, lastUrl = null, retries = 0;
+  var lastKey = null;                              // v1.09.07: отпечаток данных последнего показанного бланка
 
   function prefOn()  { return lsGet('techlog_pdf_preview') !== 'off'; }   // по умолчанию включён
   function jobOpen() { return !!q('#app .inv-sec'); }
@@ -544,7 +545,7 @@
   function removePane() {
     try { if (pane) pane.remove(); } catch (e) {}
     if (lastUrl) { try { URL.revokeObjectURL(lastUrl); } catch (e) {} }
-    pane = null; frames = null; busyEl = null; lastUrl = null;
+    pane = null; frames = null; busyEl = null; lastUrl = null; lastKey = null;
     genBusy = false; genQueued = false;
   }
   function setBusy(v, warn) {
@@ -560,7 +561,9 @@
     var html = document.documentElement;
     if (html.classList.contains('tl-pdfprev') !== show) html.classList.toggle('tl-pdfprev', show);
     paintEye();
-    if (show) { ensurePane(); schedGen(80); }
+    /* v1.09.07: бланк строим при появлении панели; дальше — только по правкам
+       формы (input/change/перерисовка #app), а не на каждый refresh() */
+    if (show) { var fresh = !(pane && document.contains(pane)); ensurePane(); if (fresh) { lastKey = null; schedGen(80); } }
     else removePane();
   }
 
@@ -572,6 +575,10 @@
   function gen() {
     if (!pane || !document.contains(pane)) return;
     if (genBusy) { genQueued = true; return; }
+    /* v1.09.07: данные бланка не изменились — не пересобираем и не моргаем */
+    var key = null;
+    try { key = window.App.pdfPreviewKey ? window.App.pdfPreviewKey() : null; } catch (e) { key = null; }
+    if (key && key === lastKey && lastUrl) return;
     genBusy = true;
     setBusy(true);
     var blob = null;
@@ -593,7 +600,7 @@
       if (next.classList.contains('hid')) next.classList.remove('hid');
       if (!cur.classList.contains('hid')) cur.classList.add('hid');
       act = 1 - act;
-      lastUrl = url;
+      lastUrl = url; lastKey = key;
       if (prev) { try { URL.revokeObjectURL(prev); } catch (e) {} }
       setBusy(false);
       genBusy = false;
@@ -686,11 +693,19 @@
     b.setAttribute('aria-label', b.title);
     b.setAttribute('aria-pressed', PIN ? 'true' : 'false');
   }
+  /* v1.09.07: класс и переменную трогаем ТОЛЬКО при реальной смене. Chrome шлёт
+     мутацию атрибута class даже на «пустой» classList.remove()/add() — наш же
+     наблюдатель за <html> ловил её и снова звал fit() → off(): вечная петля
+     ~8 раз/сек на любом ПК-экране, кроме доски сотрудников. Она же будила живой
+     предпросмотр PDF — бланк пересобирался по 4 раза в секунду и моргал. */
+  function clsSet(name, on) {
+    if (html.classList.contains(name) !== !!on) html.classList.toggle(name, !!on);
+  }
   function off() {
-    html.classList.remove('tl-fit');
-    html.classList.remove('tl-menu-open');
+    clsSet('tl-fit', false);
+    clsSet('tl-menu-open', false);
     hold = false;
-    html.style.removeProperty('--dsk-fit');
+    if (html.style.getPropertyValue('--dsk-fit')) html.style.removeProperty('--dsk-fit');
   }
   /* язычок у левого края: наведение выдвигает меню, клик держит открытым.
      v1.08.45: стрелка в язычке поворачивается, когда меню выехало (показывает,
@@ -763,8 +778,8 @@
         - (PIN ? (staffCol ? 236 : 128) : (staffCol ? 124 : 16)) - RIGHT;   // v1.08.45: pin держит полосу меню
       var w = Math.floor((availBottom - PADX - (n - 1) * GAP) / n);
       w = Math.max(MINW, Math.min(BASE, w));
-      html.classList.add('tl-fit');
-      html.style.setProperty('--dsk-fit', w + 'px');
+      clsSet('tl-fit', true);
+      if (html.style.getPropertyValue('--dsk-fit') !== w + 'px') html.style.setProperty('--dsk-fit', w + 'px');
       buildTab();
     } catch (e) { off(); }
   }

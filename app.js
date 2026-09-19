@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.06';
+const APP_VERSION = '1.09.07';
 const DB_SQL_FILE = 'full-install-1_09_01.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -292,6 +292,7 @@ const I18N = {
     code_months: 'Порог, мес', code_old: 'код {n} мес',
     code_old_sum: 'Кодов старше {m} мес: {n}', code_tip: 'Жёлтая метка у комплекса, если код не менялся дольше порога. Видно админу и менеджеру.',
     sess_card: 'Сессии сотрудников', sess_mgr_lbl: 'Менеджер видит сессии и «был(а) в сети»',
+    sess_mgr_tip: 'Кто и когда заходил в приложение. Админ видит это всегда: в справочнике «Сотрудники» у каждого написано «Был(а) в сети …», а в карточке сотрудника — список активных сессий (устройство, браузер, время) и кнопка «Завершить все сессии». ГАЛОЧКА СНЯТА — менеджер этого не видит: вкладки «Сотрудники» у него нет. ГАЛОЧКА СТОИТ — у менеджера в Справочниках появляется вкладка «Сотрудники» только для чтения: «Был(а) в сети» и шестерёнка со списком сессий. Номер машины, роль, пароль, блокировка и кнопка «Завершить все сессии» остаются только у админа. На сотрудников не влияет: они чужих сессий не видят никогда.',
     abk_card: 'Автобэкап (SQL → Google Drive)', abk_now: 'Сделать бэкап сейчас',
     abk_auto_lbl: 'Автоматически при входе админа (не чаще раза в день)',
     abk_last: 'Последний', abk_never: 'ещё не делался', abk_list: 'Копии в Drive',
@@ -1094,8 +1095,9 @@ const I18N = {
     ct_s_perf: 'Метрики отклика камеры',
     mv_dl_pct: 'загрузка {P}%', mv_dl_mb: '{A} из {B} МБ',
     mq_l_vid_codec: 'ролик {N} МБ не проходит лимит, а пережать его телефон не смог ({E}). Снимите видео кнопкой «Видео» (в приложении, H.264) или выключите HEVC в настройках камеры телефона',
-    cam_native_btn: 'Резкость как у родной камеры',
-    cam_native_h: 'Одним нажатием: съёмка — родной камерой, файл уходит на Диск как есть, без уменьшения и пережатия. Байт в байт то, что снял телефон. Весит больше, зато резкость ровно та же.',
+    cam_native_btn: 'Включить: резкость как у родной камеры',
+    cam_native_on: 'Резкость как у родной камеры — включено',
+    cam_native_h: 'Это не переключатель, а быстрая настройка: одно нажатие ставит сразу «Способ 2 — камера телефона» и качество «Оригинал». Файл уходит на Диск как есть, без уменьшения и пережатия — байт в байт то, что снял телефон. Весит больше, зато резкость ровно та же. Когда обе настройки уже такие, вместо кнопки стоит отметка «включено»; отменить — выбрать другой способ или качество выше.',
     cam_usm: 'Подрезкость после уменьшения',
     cam_usm_h: 'Любое уменьшение съедает микроконтраст, и кадр кажется мягче оригинала. Слабое нерезкое маскирование возвращает его. При качестве «Оригинал» не применяется — там кадр не уменьшается вовсе.',
     cam_native_done: 'Съёмка — родной камерой, файл без пережатия',
@@ -1499,6 +1501,7 @@ const I18N = {
     code_months: 'Threshold, mo', code_old: 'code {n} mo',
     code_old_sum: 'Codes older than {m} mo: {n}', code_tip: 'A yellow chip on a complex whose code has not changed longer than the threshold. Admins and managers only.',
     sess_card: 'Staff sessions', sess_mgr_lbl: 'Managers see sessions and “last seen”',
+    sess_mgr_tip: 'Who signed in and when. The admin always sees it: the Staff directory shows “Last seen …” for everyone, and a staff card lists active sessions (device, browser, time) with the “End all sessions” button. CHECKBOX OFF — a manager sees none of this: there is no Staff tab for them. CHECKBOX ON — a read-only Staff tab appears in the manager’s Directories: “Last seen” and the gear with the session list. Car number, role, password, blocking and “End all sessions” stay admin-only. Techs are not affected: they never see other people’s sessions.',
     abk_card: 'Auto-backup (SQL → Google Drive)', abk_now: 'Back up now',
     abk_auto_lbl: 'Automatically on admin sign-in (at most once a day)',
     abk_last: 'Last', abk_never: 'never yet', abk_list: 'Copies in Drive',
@@ -2289,8 +2292,9 @@ const I18N = {
     ct_s_perf: 'Camera responsiveness metrics',
     mv_dl_pct: 'loading {P}%', mv_dl_mb: '{A} of {B} MB',
     mq_l_vid_codec: 'the {N} MB clip exceeds the limit and the phone could not shrink it ({E}). Record with the «Video» button (in-app, H.264) or turn HEVC off in the phone camera settings',
-    cam_native_btn: 'Sharpness like the native camera',
-    cam_native_h: 'One tap: shoot with the native camera and send the file to Drive as is — no resize, no recompression. Byte for byte what the phone shot. Heavier, but exactly as sharp.',
+    cam_native_btn: 'Turn on: sharpness like the native camera',
+    cam_native_on: 'Sharpness like the native camera — on',
+    cam_native_h: 'Not a toggle but a shortcut: one tap sets both “Way 2 — phone camera” and the “Original” quality. The file goes to Drive as is — no resize, no recompression, byte for byte what the phone shot. Heavier, but exactly as sharp. When both settings are already like that, a mark “on” replaces the button; to undo, pick another way or quality above.',
     cam_usm: 'Sharpen after downscale',
     cam_usm_h: 'Any downscale eats micro-contrast and the frame looks softer than the original. A light unsharp mask brings it back. Not applied at «Original» quality — nothing is resized there.',
     cam_native_done: 'Native camera, file sent without recompression',
@@ -3396,7 +3400,7 @@ function featCardHtml(){
     ${chk('code_remind', org.code_remind === true, t('code_remind_lbl'), 'code_tip')}
     <div class="form-row" style="margin:2px 0 6px"><span class="lbl">${t('code_months')}</span>
       ${orgStepperHtml('code_remind_months', codeMonths(), 1, 60, 1)}</div>
-    ${chk('sess_mgr', org.sess_mgr === true, t('sess_mgr_lbl'), 'st_flags_tip')}
+    ${chk('sess_mgr', org.sess_mgr === true, t('sess_mgr_lbl'), 'sess_mgr_tip')}
   </div>`;
 }
 /* v1.08.33: автобэкап SQL → Google Drive (Edge Function backup) */
@@ -7210,6 +7214,7 @@ function sectionFaqHtml(key){
       <li><b>Счётчики дня</b>: «N ЗАДАЧ» и «N ПИКАПОВ» с разбивкой по типам; «Карта этого дня» строит маршрут по точкам дня.</li>
       <li><b>Мои / Все</b> — фильтр задач; <b>Поиск</b> ищет по юниту, комплексу и адресу.</li>
       <li><b>${ic('note')} ＋ Добавить задание</b>: дата → контрагент → комплекс → юнит → вид задачи. Если по этому комплексу есть непривязанный пропозал, под полем юнита появится зелёная строка-подсказка и карточки пропозалов с галочкой «привязать» — задача создастся уже связанной.</li>
+      <li><b>Крестик ${ic('close')}</b> справа в полях «Контрагент», «Апарт-комплекс» и «Юнит №» очищает поле одним нажатием (то же в пропозале и в документе ремонта). Крестик контрагента снимает и комплекс: комплекса без контрагента не бывает. Стерли текст руками — выбор тоже сброшен, «Создать» напомнит, что не выбрано.</li>
       <li>В ПК-режиме клик по любому месту поля даты открывает встроенный тёмный календарь; на телефоне — системный выбор даты.</li>
     </ul>
     <h4>${ic('wrench')} Карточка задачи</h4>
@@ -7238,6 +7243,7 @@ function sectionFaqHtml(key){
       <li><b>Day counters</b>: "N JOBS" and "N PICKUPS" with a breakdown by type; "${t('map_of_day')}" builds a route across the day's points.</li>
       <li><b>${t('mine')} / ${t('all')}</b> — task filter; <b>${t('srch_btn')}</b> looks through unit, complex and address.</li>
       <li><b>${ic('note')} ＋ ${t('add_task')}</b>: date → counterparty → complex → unit → work type. If this complex has an unlinked proposal, a green hint line and proposal cards with a "link" checkbox appear under the unit field — the job is created already linked.</li>
+      <li>The <b>cross ${ic('close')}</b> on the right of the Counterparty, Complex and Unit fields clears the field in one tap (same in a proposal and a repair document). The counterparty cross also clears the complex: a complex cannot exist without its counterparty. Erasing the text by hand resets the choice too — "Create" will remind you what is not selected.</li>
       <li>In desktop mode a click anywhere on the date field opens the built-in dark calendar; on the phone — the system date picker.</li>
     </ul>
     <h4>${ic('wrench')} Job card</h4>
@@ -7415,7 +7421,7 @@ function sectionFaqHtml(key){
       <li>Запросы кода от воркеров появляются входящими сверху — подтвердите или обновите код.</li>
       <li>${ic('clipboard')} у вида задачи — <b>пред-выездной чек-лист</b>: что взять и проверить перед выездом; сотрудник видит его в задаче этого вида.</li>
       <li><b>Склад</b> переехал в отдельную вкладку внизу: наличие по типам и «Моя машина», кнопки «Взять» / «Сдать» / «В ремонт», у админа — «Поступление» и «Списание». Аренда, «забрал» и «вернул на склад» двигают оборудование сами.</li>
-      <li><b>Штат</b> (v1.08.33): ${ic('gear')} у сотрудника — «был(а) в сети», доступы Bouncie (трекер / пуши ТО / трек дня — включение доступа само включает человеку пуши), журнал времени (свой; чей ещё видит: нет / всех / список) и активные <b>сессии</b> с кнопкой «${t('st_kill')}» (сессии видит админ; менеджер — если включено в «Функциях»).</li>
+      <li><b>Штат</b> (v1.08.33): ${ic('gear')} у сотрудника — «был(а) в сети», доступы Bouncie (трекер / пуши ТО / трек дня — включение доступа само включает человеку пуши), журнал времени (свой; чей ещё видит: нет / всех / список) и активные <b>сессии</b> с кнопкой «${t('st_kill')}» (сессии видит админ; менеджер — если включено в «Функциях»: тогда у него появляется вкладка «Сотрудники» только для чтения — «был(а) в сети» и шестерёнка с сессиями, без номера машины, роли, пароля и блокировки). Номер машины у админа — степпер «− №  +»: «+» с пустого ставит первый свободный номер, «−» с единицы очищает.</li>
       <li><b>Автомобили</b> (v1.08.33): чипы ⚠ Check Engine и 🔻 топлива, поле «${t('veh_service')}» — за 500 mi до порога уходит пуш; кнопка ${ic('map')} — трек дня на карте. Жёлтая метка «🟡 код N мес» у комплексов — включается в «Функциях».</li>
       <li><b>${t('d_trackers')}</b> (v1.09.01): приборы из аккаунта Bouncie. «${t('trk_sync')}» добавляет новые трекеры, пропавшие из Bouncie помечает «${t('trk_st_inactive')}» (с датой; из базы не удаляются), вернувшиеся снова делает активными; пустой ответ Bouncie статусы не меняет. Сверка идёт и сама: при открытии вкладки, при смене состава приборов в фоновом опросе карты, не реже раза в 15 минут. Фильтр «${t('trk_all')} / ${t('trk_active')} / ${t('trk_inactive')}», у каждого трекера — машина, дата связи или дата ухода из Bouncie, пробег. В карточке машины трекер выбирается из этого списка (занятые другой машиной недоступны, неактивные не предлагаются) — по нему машина и видна на карте; ⚠ у машины — её трекер стал неактивным, выберите другой.</li>
     </ul>`,
@@ -7429,7 +7435,7 @@ function sectionFaqHtml(key){
       <li>Code requests from workers appear as incoming items on top — confirm or update the code.</li>
       <li>${ic('clipboard')} on a work type — the <b>pre-departure checklist</b>: what to take and check before leaving; the employee sees it in a job of that type.</li>
       <li><b>${t('tab_stock')}</b> moved to its own bottom tab: totals by type and "My car", the "Take" / "Hand in" / "To repair" buttons, for the admin — "Intake" and "Write-off". Rentals, "picked up" and "returned to stock" move the equipment by themselves.</li>
-      <li><b>Staff</b> (v1.08.33): ${ic('gear')} on an employee — "last seen", Bouncie access (tracker / service pushes / day track — granting access also turns on that person's pushes), the time log (own; who else sees it: no one / everyone / list) and active <b>sessions</b> with the "${t('st_kill')}" button (the admin sees sessions; a manager — if enabled under "Features").</li>
+      <li><b>Staff</b> (v1.08.33): ${ic('gear')} on an employee — "last seen", Bouncie access (tracker / service pushes / day track — granting access also turns on that person's pushes), the time log (own; who else sees it: no one / everyone / list) and active <b>sessions</b> with the "${t('st_kill')}" button (the admin sees sessions; a manager — if enabled under "Features": a read-only Staff tab then appears for them — "last seen" and the gear with sessions, without car number, role, password or blocking). The admin's car number is a "− №  +" stepper: "+" from empty sets the first free number, "−" from one clears it.</li>
       <li><b>${t('d_vehicles')}</b> (v1.08.33): the ⚠ Check Engine and 🔻 fuel chips, the "${t('veh_service')}" field — a push goes out 500 mi before the threshold; the ${ic('map')} button — the day track on the map. The yellow "🟡 code N mo" chip on complexes is enabled under "Features".</li>
       <li><b>${t('d_trackers')}</b> (v1.09.01): devices from the Bouncie account. "${t('trk_sync')}" adds new trackers, marks those gone from Bouncie as "${t('trk_st_inactive')}" (with the date; nothing is deleted from the database) and re-activates the ones that came back; an empty Bouncie reply leaves statuses untouched. Sync also runs by itself: when the tab opens, when the background map poll brings a different set of devices, and at least every 15 minutes. The "${t('trk_all')} / ${t('trk_active')} / ${t('trk_inactive')}" filter; each tracker shows its vehicle, the last report time or the date it left Bouncie, and the odometer. In the vehicle card the tracker is picked from this list (ones on another vehicle are disabled, inactive ones are not offered) — that is what shows the vehicle on the map; ⚠ on a vehicle means its tracker went inactive — pick another one.</li>
     </ul>`);
@@ -7852,18 +7858,18 @@ function addTaskModal(){
     <div class="form-row"><span class="lbl">${t('counterparty')}</span>
       <div class="combo" id="cb-cp">
         <input class="combo-in" placeholder="${t('select')}" autocomplete="off"
-          oninput="App.comboFilter('cp', this.value)" onfocus="App.comboFilter('cp', this.value)">
+          oninput="App.comboFilter('cp', this.value)" onfocus="App.comboFilter('cp', this.value)">${inpxBtn()}
         <input type="hidden" id="nt-cp"><div class="combo-list" id="cb-cp-list"></div>
       </div></div>
     <div class="form-row"><span class="lbl">${t('complex')}</span>
       <div class="combo" id="cb-cx">
         <input class="combo-in" placeholder="${t('select')}" autocomplete="off"
-          oninput="App.comboFilter('cx', this.value)" onfocus="App.comboFilter('cx', this.value)">
+          oninput="App.comboFilter('cx', this.value)" onfocus="App.comboFilter('cx', this.value)">${inpxBtn()}
         <input type="hidden" id="nt-cx"><div class="combo-list" id="cb-cx-list"></div>
       </div></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
       <div class="unit-wrap">
-        <input id="nt-unit" inputmode="${unitKb()}" placeholder="916" oninput="App.ntPropRefresh()">
+        <span class="inpx"><input id="nt-unit" inputmode="${unitKb()}" placeholder="916" oninput="App.ntPropRefresh()">${inpxBtn()}</span>
         <button type="button" class="kb-toggle" id="nt-unit-kb" title="${t('unit_kb_hint')}"
           onclick="App.unitKbToggle()">${unitKbLabel()}</button>
       </div></div>
@@ -7913,8 +7919,60 @@ function comboItems(kind){
   return state.data.complexes.filter(c => !cpId || c.counterparty_id === cpId)
     .map(c => ({ id: c.id, label: c.name + (c.abbr ? ` (${c.abbr})` : '') }));
 }
+/* =====================================================================
+   v1.09.07 · КРЕСТИК ОЧИСТКИ У ТЕКСТОВЫХ ПОЛЕЙ (контрагент, комплекс, юнит).
+   Кнопка стоит сразу за полем; пока поле пустое (виден placeholder), CSS её
+   прячет — скриптов на показ/скрытие нет. У комбо крестик чистит и скрытый id.
+   Заодно закрыт старый баг: текст контрагента/комплекса стёрли руками, а
+   скрытый id оставался — задача создавалась со «стёртым» значением.
+   ===================================================================== */
+function inpxBtn(){
+  return `<button type="button" class="inpx-x" tabindex="-1" title="${t('sel_clear')}" aria-label="${t('sel_clear')}" onclick="App.inpClear(this)">${ic('close')}</button>`;
+}
+function inpClear(btn){
+  const inp = btn && btn.previousElementSibling; if (!inp) return;
+  const box = inp.closest('.combo');
+  if (box && /^cb-(cp|cx)$/.test(box.id)){ comboClear(box.id.slice(3)); return; }   // без фокуса: список не выпрыгивает поверх соседних полей
+  inp.value = '';
+  inp.dispatchEvent(new Event('input', { bubbles: true }));
+  inp.dispatchEvent(new Event('change', { bubbles: true }));
+  inp.focus();
+}
+function comboClear(kind, keepText){
+  const wipe = k => {
+    const hid = $('#nt-' + k); if (hid) hid.value = '';
+    const bx = $('#cb-' + k);
+    if (bx){ if (!(keepText && k === kind)) bx.querySelector('.combo-in').value = ''; bx.querySelector('.combo-list').style.display = 'none'; }
+  };
+  wipe(kind);
+  if (kind === 'cp') wipe('cx');                 // комплекс без контрагента не бывает
+  const drafts = [];
+  if (!$('#overlay')){
+    if (propDraft && state.screen === 'proposals') drafts.push(propDraft);
+    if (typeof repDraft !== 'undefined' && repDraft && state.screen === 'repairs') drafts.push(repDraft);
+  }
+  drafts.forEach(d => { d.complex_id = ''; if (kind === 'cp') d.counterparty_id = ''; });
+  if ($('#nt-prop-zone')) ntPropRefresh();
+}
+/* ушли из поля, не выбрав из списка: показываем то, что реально выбрано (или пусто) */
+function comboNormalize(kind){
+  const box = $('#cb-' + kind); if (!box) return;
+  const inp = box.querySelector('.combo-in'), list = box.querySelector('.combo-list'), hid = $('#nt-' + kind);
+  if (!inp || document.activeElement === inp || (list && list.style.display === 'block')) return;
+  const it = hid && hid.value ? comboItems(kind).find(x => x.id === hid.value) : null;
+  if (!it){ if (inp.value !== '') inp.value = ''; return; }
+  const cur = inp.value.trim();
+  if (cur !== it.label && cur !== it.label.replace(/\s*\([^()]*\)$/, '')) inp.value = it.label;
+}
+document.addEventListener('focusout', e => {
+  const inp = e.target; if (!inp || !inp.classList || !inp.classList.contains('combo-in')) return;
+  const box = inp.closest('.combo'); if (!box || !/^cb-(cp|cx)$/.test(box.id)) return;
+  setTimeout(() => comboNormalize(box.id.slice(3)), 250);
+});
 function comboFilter(kind, q){
   const list = $('#cb-' + kind + '-list'); if (!list) return;
+  /* v1.09.07: текст стёрт целиком — выбранного значения больше нет */
+  if (!String(q || '').trim() && ($('#nt-' + kind) || {}).value) comboClear(kind, true);
   const v = String(q || '').toLowerCase();
   const items = comboItems(kind).filter(it => it.label.toLowerCase().includes(v)).slice(0, 30);
   list.innerHTML = items.map(it =>
@@ -7965,8 +8023,10 @@ function comboPick(kind, id){
   if ($('#nt-prop-zone')) ntPropRefresh();   // v1.07.58: форма «Добавить задание»
 }
 document.addEventListener('click', e => {
-  if (!e.target.closest('.combo'))
+  if (!e.target.closest('.combo')){
     document.querySelectorAll('.combo-list').forEach(l => l.style.display = 'none');
+    comboNormalize('cp'); comboNormalize('cx');          // v1.09.07
+  }
 });
 async function createTask(){
   const date = $('#nt-date').value || state.selDate;
@@ -9546,7 +9606,7 @@ async function auditRun(){
 function viewDirs(){
   const tabs = [
     ['price', t('d_price'), true],
-    ['staff', t('d_staff'), isAdmin()],
+    ['staff', t('d_staff'), isAdmin() || canSeeSessions()],   // v1.09.07: менеджеру с галочкой «видит сессии» — список только для чтения
     ['vehicles', t('d_vehicles'), isAdmin()],   // v1.08.32
     ['trackers', t('d_trackers'), isAdmin()],   // v1.09.01
     ['counterparties', t('d_counterparties'), isAdmin()],
@@ -10210,6 +10270,19 @@ function jobPrintQuick(id){
   });
 }
 /* публичная ручка для ПК-режима: Blob с актуальным бланком или null */
+/* v1.09.07: отпечаток всего, от чего зависит бланк. Живой предпросмотр (desktop.js)
+   сравнивает его с прошлым и не пересобирает PDF, если данные те же: jsPDF пишет в
+   файл время создания, поэтому сами blob'ы сравнивать бессмысленно. */
+function pdfPreviewKey(){
+  try{
+    const j = jobDraft || state.data.jobs.find(x => x.id === state.jobId);
+    if (!j) return '';
+    const d = state.data;
+    return JSON.stringify([j, d.org_settings || null, cxById(j.complex_id) || null, cpById(j.counterparty_id) || null,
+      (d.equipment_types || []).map(e => [e.id, e.name, e.abbr]), (d.profiles || []).map(p => [p.id, p.display_name]),
+      (wtById(j.work_type_id) || {}).name || '']);
+  }catch(e){ return ''; }
+}
 function pdfPreviewBlob(){
   try{
     const doc = buildInvoicePdfDoc(true);
@@ -10880,7 +10953,7 @@ function studyResultModal(row){
           <span class="chip bad">${t('st_wrong')}: ${row.wrong}</span>
           ${row.answered < row.total ? `<span class="chip">${t('st_skipped')}: ${row.total - row.answered}</span>` : ''}
         </div>
-        <div class="tiny">${t('st_time')}: <b>${fmtMs(row.duration_ms)}</b> · ${t('st_avg_q')}: ${row.answered ? fmtMs(row.duration_ms / row.answered) : '—'}</div>
+        ${isAdmin() ? `<div class="tiny">${t('st_time')}: <b>${fmtMs(row.duration_ms)}</b> · ${t('st_avg_q')}: ${row.answered ? fmtMs(row.duration_ms / row.answered) : '—'}</div>` : ''}
       </div></div>
     <div class="st-btns">
       <button class="btn btn-blue" onclick="App.studySessReview('${row.id}')">${ic('eye')} ${t('st_review')}</button>
@@ -10917,13 +10990,13 @@ async function studySessReview(id){
       ${opts}
       ${qq.explanation ? `<div class="st-ex">${ic('book')} ${esc(LOC(qq.explanation))}</div>` : ''}
       ${studyRefHtml(qq)}
-      <div class="tiny">${t('st_time')}: ${fmtMs(a.ms)}${a.hint ? ' · ' + t('st_hint_used') : ''}</div>
+      <div class="tiny">${isAdmin() ? t('st_time') + ': ' + fmtMs(a.ms) : ''}${a.hint ? (isAdmin() ? ' · ' : '') + t('st_hint_used') : ''}</div>
     </div>`;
   }).join('');
   openModal(`
     ${modalHead(t('st_review'), 'grad')}
     <div class="tiny" style="margin-bottom:6px">${s ? esc(LOC(s.title)) : ''} · ${fmtDMY(String(row.started_at).slice(0, 10))}${who} ·
-      <b style="color:${row.passed ? 'var(--green)' : 'var(--red)'}">${row.score_pct}%</b> · ${row.correct}/${row.total} · ${fmtMs(row.duration_ms)}</div>
+      <b style="color:${row.passed ? 'var(--green)' : 'var(--red)'}">${row.score_pct}%</b> · ${row.correct}/${row.total}${isAdmin() ? ' · ' + fmtMs(row.duration_ms) : ''}</div>
     <div class="st-rv-tools">
       <label class="chk-line"><input type="checkbox" ${only ? 'checked' : ''} onchange="App.studyOnlyWrong(this.checked,'${row.id}')"> ${t('st_only_wrong')}</label>
     </div>
@@ -10964,7 +11037,7 @@ async function studyReadClose(silent){
     await studySave({ id: rd.id, kind: 'read', section: rd.sec, file: rd.file, lang: stLang(),
       started_at: rd.started_at, finished_at: new Date().toISOString(), duration_ms: ms,
       total: 0, answered: 0, correct: 0, wrong: 0, score_pct: null, passed: null, answers: [] });
-    if (!silent) toast('✓ ' + t('st_read_saved') + ': ' + fmtMs(ms));
+    if (!silent) toast('✓ ' + t('st_read_saved') + (isAdmin() ? ': ' + fmtMs(ms) : ''));
   }
   if (!silent) render();
 }
@@ -10990,7 +11063,6 @@ function studyReadHtml(){
       <button class="btn btn-ghost sm" onclick="App.studyReadClose()">${ic('close')} ${t('st_read_done')}</button>
     </div>
     ${frame}
-    <div class="tiny" style="margin-top:6px">${t('st_read_hint')}</div>
   </div>`;
 }
 /* ---------- экран ---------- */
@@ -11044,15 +11116,15 @@ function studyResultsHtml(){
   const st = studySecStat(s.id, mine);
   const passPct = studyPassPct(STUDY.quiz[s.id]);
   const kpi = (v, lbl, cls) => `<div class="st-kpi ${cls || ''}"><b>${v}</b><span>${lbl}</span></div>`;
-  const rows = mine.filter(x => +x.section === +s.id).slice(0, 8);
+  /* v1.09.07: время чтения и прохождения видит только админ — сотруднику остаются тесты и ответы */
+  const rows = mine.filter(x => +x.section === +s.id && (isAdmin() || x.kind !== 'read')).slice(0, 8);
   return `<div class="card">
     <div class="st-cap">${t('st_my_res')} · ${esc(studyShort(s))}</div>
     <div class="st-sum">
       ${kpi(st.n, t('st_attempts'), 'k-blue')}
       ${kpi(st.best ? st.best + '%' : '—', t('st_best'), st.best >= passPct ? 'k-green' : (st.n ? 'k-red' : ''))}
       ${kpi(st.last != null ? st.last + '%' : '—', t('st_last'), st.last != null ? (st.last >= passPct ? 'k-green' : 'k-red') : '')}
-      ${kpi(fmtMs(st.testMs), t('st_time_tests'), '')}
-      ${kpi(fmtMs(st.readMs), t('st_time_read'), 'k-yellow')}
+      ${isAdmin() ? kpi(fmtMs(st.testMs), t('st_time_tests'), '') + kpi(fmtMs(st.readMs), t('st_time_read'), 'k-yellow') : ''}
     </div>
     ${rows.length ? `<div class="st-rows">${rows.map(x => studySessRow(x, false)).join('')}</div>` : `<div class="tiny st-empty">${t('st_sec_empty')}</div>`}
   </div>`;
@@ -11077,8 +11149,8 @@ function studyOverallHtml(){
       ${kpi(tests.filter(x => x.passed).length, t('st_passed_n'), 'k-green')}
       ${kpi(ans, t('st_answers'), '')}
       ${kpi(ans ? Math.round(ok * 100 / ans) + '%' : '—', t('st_correct'), 'k-green')}
-      ${kpi(fmtMs(tests.reduce((a, x) => a + (+x.duration_ms || 0), 0)), t('st_time_tests'), '')}
-      ${kpi(fmtMs(list.filter(x => x.kind === 'read').reduce((a, x) => a + (+x.duration_ms || 0), 0)), t('st_time_read'), 'k-yellow')}
+      ${isAdmin() ? kpi(fmtMs(tests.reduce((a, x) => a + (+x.duration_ms || 0), 0)), t('st_time_tests'), '')
+        + kpi(fmtMs(list.filter(x => x.kind === 'read').reduce((a, x) => a + (+x.duration_ms || 0), 0)), t('st_time_read'), 'k-yellow') : ''}
     </div>
     <div class="tiny" style="margin:8px 0 4px">${t('st_best_by_sec')}:</div>
     <div class="st-pills">${pills}</div>
@@ -11144,7 +11216,7 @@ function studySessRow(s, withName){
   }
   return `<div class="rowline st-srow"><span class="st-sec-dot" style="background:${col}"></span>
     <div class="grow"><b>${esc(LOC(sec.title) || (t('st_section') + ' ' + s.section))}</b>
-      <div class="tiny">${when}${withName ? ' · ' + esc(shortName(profName(s.user_id))) : ''} · ${s.correct}/${s.total} · ${fmtMs(s.duration_ms)} · ${s.mode === 'exam' ? t('st_mode_exam') : t('st_mode_learn')}</div></div>
+      <div class="tiny">${when}${withName ? ' · ' + esc(shortName(profName(s.user_id))) : ''} · ${s.correct}/${s.total}${isAdmin() ? ' · ' + fmtMs(s.duration_ms) : ''} · ${s.mode === 'exam' ? t('st_mode_exam') : t('st_mode_learn')}</div></div>
     <span class="chip ${s.passed ? 'ok' : 'bad'}">${s.score_pct ?? 0}%</span>
     <button class="btn btn-ghost sm" onclick="App.studySessReview('${s.id}')">${ic('eye')}</button></div>`;
 }
@@ -11350,7 +11422,7 @@ const App = {
     e.hours_start = isNaN(n) ? null : n;
     autosaveDraft();
   },
-  openJob, saveJob, approveJob, deleteJob, chainArchive, makePdf, pdfPreviewBlob, pickupGroup,
+  openJob, saveJob, approveJob, deleteJob, chainArchive, makePdf, pdfPreviewBlob, pdfPreviewKey, pickupGroup,
   /* v1.08.23: документ ремонтных работ */
   openRepair, newRepairFromJob, newRepairFromProp, saveRepair, delRepair,
   repClose, repSaveClose, repDrop, repField, repItem, repItemAdd, repItemDel,
@@ -11476,8 +11548,12 @@ const App = {
   auditList: auditListModal,
   /* v1.07.90: «камера не открылась» — объясняем и разом чиним кнопку «Фото» */
   /* v1.07.93: «резкость как у родной камеры» — родная камера + оригинал файла */
-  camNative(){
-    camSet('mode', 'full'); camSet('q', 'orig');
+  /* v1.09.07: кнопка была наполовину мёртвой — писала cam_mode='full', а с 1.08.79
+     режим выводится из «Способа съёмки» и это значение игнорируется; реально менялось
+     только качество. Теперь ставит Способ 2 (камера телефона) + «Оригинал». */
+  async camNative(){
+    camSet('mode', ''); camSet('q', 'orig');
+    await camWaySet('phone');
     toast('✓ ' + t('cam_native_done')); render();
   },
   camUsm(v){ camSet('usm', v ? '1' : '0'); render(); },
@@ -11531,7 +11607,7 @@ const App = {
   jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
   jrAct(v){ state.jr.act = v; loadJournal(true); },
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
-  togglePriority, prioMenu, prioSet, moveJob, boardMove, setCarNo, restorePk, pdfPreview, pdfPrint,
+  togglePriority, prioMenu, prioSet, moveJob, boardMove, setCarNo, carNoStep, restorePk, pdfPreview, pdfPrint,
   comboFilter, comboPick, wtChecklistModal, wtChecklistSave,
   openProposal, propBack, saveProposal, delProposal, makeProposalPdf, linkProposal, linkJobFromProp,
   propField(k, v){ if (!propDraft) return;
@@ -11596,6 +11672,7 @@ const App = {
     const el = document.getElementById('dir-tabs'); if (!el) return;
     el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: 'smooth' });
   },
+  inpClear, comboClear,
   openCp, cpTab(v){ state.cpTab = v; renderCpModal(); },
   editCpModal, saveCp, cpCustomToggle, cpSetPrice,
   editCxModal, saveCx, editWtModal, saveWt, editEtModal, saveEt, editAuxModal, saveAux,
@@ -15120,6 +15197,11 @@ async function staffCfgModal(uid_){
 
 function dirStaff(){
   lastSeenLoad();   // v1.08.33: «был(а) в сети» — лениво, кэш 60 с
+  /* v1.09.07: галочка «Менеджер видит сессии» раньше ничего не давала — вкладка
+     «Сотрудники» была только у админа. Теперь менеджер с этой галочкой видит список
+     ТОЛЬКО ДЛЯ ЧТЕНИЯ: «был(а) в сети» и шестерёнка со списком сессий; номер машины,
+     роль, пароль, блокировка и «Добавить» остаются за админом. */
+  const adm = isAdmin();
   const list = [...state.data.profiles].sort((a,b)=>a.display_name.localeCompare(b.display_name));
   return `<div class="card">` + list.map(u => {
     const me = u.id === state.user.id;
@@ -15133,18 +15215,17 @@ function dirStaff(){
         <div class="tiny">@${esc(u.login)} · ${t('registered')} ${reg}${canSeeSessions() && HAS_SB ? ` · ${t('st_last_seen')}: ${fmtSeen(LS_SEEN.map[u.id])}` : ''}</div>
       </div>
       <div class="staff-ctl">
-        <input class="car-inp" type="number" min="1" max="99" inputmode="numeric" title="${t('car_no')}"
-          placeholder="№" value="${u.car_no ?? ''}" onchange="App.setCarNo('${u.id}', this.value)">
-        ${u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
+        ${adm ? carNoStepHtml(u) : ''}
+        ${adm && u.role==='manager' ? `<button class="btn btn-ghost sm" onclick="App.staffVis('${u.id}')">${ic('eye')} ${t('vis_btn')}</button>` : ''}
         ${(isAdmin() || canSeeSessions()) ? `<button class="icon-btn" title="${t('st_cfg')}" aria-label="${t('st_cfg')}" onclick="App.staffCfg('${u.id}')">${ic('gear')}</button>` : ''}
-        <select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${me?'disabled':''}>
+        ${adm ? `<select class="role-sel" onchange="App.setRole('${u.id}', this.value)" ${me?'disabled':''}>
           ${['tech','manager','admin','accountant'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${t('role_'+r)}</option>`).join('')}
-        </select>
-        ${me ? '' : `<button class="icon-btn key-btn" title="${t('set_pass')}" aria-label="${t('set_pass')}" onclick="App.staffPassModal('${u.id}')">${ic('key')}</button>
+        </select>` : `<span class="role-tag rt-${u.role}">${t('role_'+u.role)}</span>`}
+        ${me || !adm ? '' : `<button class="icon-btn key-btn" title="${t('set_pass')}" aria-label="${t('set_pass')}" onclick="App.staffPassModal('${u.id}')">${ic('key')}</button>
         <button class="icon-btn ban-btn ${u.blocked?'off':''}" title="${u.blocked?t('unblock'):t('block')}" aria-label="${u.blocked?t('unblock'):t('block')}" onclick="App.staffBlock('${u.id}')">${ic('ban')}</button>`}
       </div>
     </div>`; }).join('') + `</div>
-    <button class="btn btn-green" onclick="App.staffAddModal()">${ic('plus')} ${t('add_staff')}</button>`;
+    ${adm ? `<button class="btn btn-green" onclick="App.staffAddModal()">${ic('plus')} ${t('add_staff')}</button>` : ''}`;
 }
 async function setRole(uid_, role){
   /* v1.08.31: раньше роль писалась dbUpsert'ом, а INSERT-политика profiles
@@ -15175,6 +15256,33 @@ async function staffName(uid_, v){
   await dbUpsert('profiles', { ...u, display_name: name });
   audit('name_change', 'profile', uid_, { was: u.display_name, now: name });
   toast('✓ ' + t('saved')); render();
+}
+/* v1.09.07: номер машины в списке сотрудников — степпер по дизайну (− поле ＋) вместо
+   родного input[type=number] со стрелочками браузера. «−» с единицы очищает номер,
+   «＋» с пустого ставит первый свободный. Запись — через 600 мс после последнего
+   нажатия, чтобы серия кликов не сыпала в базу и журнал по записи на клик. */
+function carNoStepHtml(u){
+  return `<span class="stepper set-step car-step" title="${t('car_no')}">
+    <button type="button" aria-label="−" onclick="App.carNoStep('${u.id}',-1)">${ic('minus')}</button>
+    <input class="price-input car-inp" data-uid="${u.id}" inputmode="numeric" maxlength="2" placeholder="№"
+      value="${u.car_no ?? ''}" onchange="App.setCarNo('${u.id}', this.value)">
+    <button type="button" aria-label="+" onclick="App.carNoStep('${u.id}',1)">${ic('plus')}</button>
+  </span>`;
+}
+const _carNoT = {};
+function carNoStep(uid_, dir){
+  if (!isAdmin()) return;
+  const inp = document.querySelector('.car-inp[data-uid="' + uid_ + '"]'); if (!inp) return;
+  const cur = inp.value.trim() === '' ? null : (parseInt(inp.value, 10) || null);
+  let nx;
+  if (cur == null){
+    if (dir < 0) return;
+    const used = new Set(state.data.profiles.filter(p => p.id !== uid_ && p.car_no != null).map(p => +p.car_no));
+    nx = 1; while (used.has(nx) && nx < 99) nx++;
+  } else { nx = cur + dir; if (nx < 1) nx = null; else if (nx > 99) nx = 99; }
+  inp.value = nx == null ? '' : String(nx);
+  clearTimeout(_carNoT[uid_]);
+  _carNoT[uid_] = setTimeout(() => { delete _carNoT[uid_]; setCarNo(uid_, inp.value); }, 600);
 }
 async function setCarNo(uid_, v){
   if (!isAdmin()) return;
@@ -17238,19 +17346,19 @@ function viewProposalForm(){
     <div class="form-row"><span class="lbl">${t('counterparty')}</span>
       <div class="combo" id="cb-cp">
         <input class="combo-in" value="${esc(cp.name || '')}" placeholder="${t('select')}" autocomplete="off"
-          oninput="App.comboFilter('cp', this.value)" onfocus="App.comboFilter('cp', this.value)">
+          oninput="App.comboFilter('cp', this.value)" onfocus="App.comboFilter('cp', this.value)">${inpxBtn()}
         <input type="hidden" id="nt-cp" value="${p.counterparty_id || ''}">
         <div class="combo-list" id="cb-cp-list"></div>
       </div></div>
     <div class="form-row"><span class="lbl">${t('complex')}</span>
       <div class="combo" id="cb-cx">
         <input class="combo-in" value="${esc(cx.name || '')}" placeholder="${t('select')}" autocomplete="off"
-          oninput="App.comboFilter('cx', this.value)" onfocus="App.comboFilter('cx', this.value)">
+          oninput="App.comboFilter('cx', this.value)" onfocus="App.comboFilter('cx', this.value)">${inpxBtn()}
         <input type="hidden" id="nt-cx" value="${p.complex_id || ''}">
         <div class="combo-list" id="cb-cx-list"></div>
       </div></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
-      <input id="pr-unit" value="${esc(p.unit_number || '')}" oninput="App.propField('unit_number', this.value)"></div>
+      <span class="inpx"><input id="pr-unit" placeholder=" " value="${esc(p.unit_number || '')}" oninput="App.propField('unit_number', this.value)">${inpxBtn()}</span></div>
     <div class="form-row"><span class="lbl">${t('prop_status')}</span>
       <div class="lang-seg">${stSeg}</div></div>
     <div class="form-row"><span class="lbl">PO Number</span>
@@ -18367,19 +18475,19 @@ function viewRepairForm(){
     <div class="form-row"><span class="lbl">${t('counterparty')}</span>
       <div class="combo" id="cb-cp">
         <input class="combo-in" value="${esc(cp.name || '')}" placeholder="${t('select')}" autocomplete="off"
-          oninput="App.comboFilter('cp', this.value)" onfocus="App.comboFilter('cp', this.value)">
+          oninput="App.comboFilter('cp', this.value)" onfocus="App.comboFilter('cp', this.value)">${inpxBtn()}
         <input type="hidden" id="nt-cp" value="${r.counterparty_id || ''}">
         <div class="combo-list" id="cb-cp-list"></div>
       </div></div>
     <div class="form-row"><span class="lbl">${t('complex')}</span>
       <div class="combo" id="cb-cx">
         <input class="combo-in" value="${esc(cx.name || '')}" placeholder="${t('select')}" autocomplete="off"
-          oninput="App.comboFilter('cx', this.value)" onfocus="App.comboFilter('cx', this.value)">
+          oninput="App.comboFilter('cx', this.value)" onfocus="App.comboFilter('cx', this.value)">${inpxBtn()}
         <input type="hidden" id="nt-cx" value="${r.complex_id || ''}">
         <div class="combo-list" id="cb-cx-list"></div>
       </div></div>
     <div class="form-row"><span class="lbl">${t('unit')}</span>
-      <input value="${esc(r.unit_number || '')}" oninput="App.repField('unit_number', this.value)"></div>
+      <span class="inpx"><input placeholder=" " value="${esc(r.unit_number || '')}" oninput="App.repField('unit_number', this.value)">${inpxBtn()}</span></div>
     <div class="form-row"><span class="lbl">${t('prop_status')}</span>
       <div class="lang-seg" id="rep-st">${repStSegHtml(r)}</div></div>
     <div class="form-row"><span class="lbl">PO Number</span>
@@ -23529,7 +23637,9 @@ function camCardHtml(){
       <input type="checkbox" ${mCopyDl() ? 'checked' : ''} onchange="App.copyDl(this.checked)"> ${t('copy_dl_chk')}
     </label>
     <div class="tiny" style="margin-bottom:6px">${t('copy_dl_hint')}</div>
-    <button class="btn btn-green sm" style="margin-top:10px" onclick="App.camNative()">${ic('camera')} ${t('cam_native_btn')}</button>
+    ${camWay() === 'phone' && q === 'orig'
+      ? `<div class="cam-native-on" style="margin-top:10px">${ic('check')} <b>${t('cam_native_on')}</b></div>`
+      : `<button class="btn btn-ghost sm" style="margin-top:10px" onclick="App.camNative()">${ic('camera')} ${t('cam_native_btn')}</button>`}
     <div class="tiny" style="margin:4px 0 6px">${t('cam_native_h')}</div>
     <label class="opt ${camUsmOn() ? 'on' : ''}">
       <input type="checkbox" ${camUsmOn() ? 'checked' : ''} onchange="App.camUsm(this.checked)"> ${t('cam_usm')}</label>

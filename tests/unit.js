@@ -420,7 +420,8 @@ console.log('\n— резкость как у родной камеры (v1.07.9
   t('подрезкость только после реального уменьшения',
     /if \(d\.usm && \(tw < iw \|\| th < ih\)\) usm\(big, d\.usm\)/.test(src));
   t('мелкое уменьшение пропускается', (src.match(/if \(k > 0\.9\) k = 1;/g) || []).length === 2);
-  t('кнопка «как у родной камеры»', /camNative\(\)\{\s*\n\s*camSet\('mode', 'full'\); camSet\('q', 'orig'\);/.test(src));
+  /* v1.09.07: кнопка ставит Способ 2 через camWaySet('phone') — cam_mode='full' с 1.08.79 ни на что не влиял */
+  t('кнопка «как у родной камеры»', /async camNative\(\)\{\s*\n\s*camSet\('mode', ''\); camSet\('q', 'orig'\);\s*\n\s*await camWaySet\('phone'\);/.test(src));
   t('тумблер подрезкости', /function camUsmOn/.test(src) && /camUsm\(v\)\{/.test(src));
   t('ключи в обоих языках', ['cam_native_btn','cam_native_h','cam_usm','cam_usm_h','cam_native_done']
     .every(k => (k in T.DICT.ru) && (k in T.DICT.en)));
@@ -2548,9 +2549,9 @@ console.log('\n— v1.09.06: кнопка «назад» возвращает т
 {
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
   const prevUser = T.state.user, prevScreen = T.state.screen, prevLang = T.state.lang;
-  t('v1.09.06: версии (app = sw = version.json = 1.09.06), SQL не менялся, тест на месте',
-    T.APP_VERSION === '1.09.06' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.06'")
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.06' && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+  t('v1.09.06: версии (app = sw = version.json, не ниже 1.09.06), SQL не менялся, тест на месте',
+    /^1\.(09\.(0[6-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.07: версия двинулась дальше */
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
     && fs.existsSync(ROOT + '/tests/v1_09_06.js'));
   /* история экранов */
   const go = (scr, y) => { T.state.screen = scr; T.navTrack(y || 0); };
@@ -2602,6 +2603,60 @@ console.log('\n— v1.09.06: кнопка «назад» возвращает т
     src.includes('только на главном экране, и только там второе нажатие закрывает приложение') && src.includes('Only on the home screen does it show')
     && !src.includes('двойное нажатие — выход из приложения') && !src.includes('double-press exits the app'));
   T.state.user = prevUser; T.state.screen = prevScreen; T.state.lang = prevLang; T.navReset();
+}
+
+console.log('\n— v1.09.07: пачка по замечаниям —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const dsk = fs.readFileSync(ROOT + '/desktop.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  const dcss = fs.readFileSync(ROOT + '/desktop.css', 'utf8');
+  const ccss = fs.readFileSync(ROOT + '/compact.css', 'utf8');
+  t('v1.09.07: версии (app = sw = version.json = 1.09.07), SQL не менялся, тест на месте',
+    T.APP_VERSION === '1.09.07' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.07'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.07' && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && fs.existsSync(ROOT + '/tests/v1_09_07.js'));
+  /* петля наблюдателя: класс на <html> — только при реальной смене */
+  const offBody = dsk.slice(dsk.indexOf('function off() {'), dsk.indexOf('function off() {') + 260);
+  t('v1.09.07: desktop.js — off() и fit() пишут класс/переменную только при смене',
+    dsk.includes("function clsSet(name, on)") && offBody.includes("clsSet('tl-fit', false)") && offBody.includes("clsSet('tl-menu-open', false)")
+    && !offBody.includes("classList.remove(") && dsk.includes("clsSet('tl-fit', true);") && !dsk.includes("html.classList.add('tl-fit')"));
+  t('v1.09.07: предпросмотр — бланк строится при появлении панели и по отпечатку данных',
+    dsk.includes('if (key && key === lastKey && lastUrl) return;') && dsk.includes('lastUrl = url; lastKey = key;')
+    && dsk.includes('if (fresh) { lastKey = null; schedGen(80); }') && /pdfPreviewBlob, pdfPreviewKey,/.test(src) && src.includes('function pdfPreviewKey(){'));
+  /* крестики очистки */
+  t('v1.09.07: крестик очистки — в задании, пропозале и ремонте (9 полей)', (src.match(/\$\{inpxBtn\(\)\}/g) || []).length === 9
+    && src.includes('function inpClear(btn){') && src.includes('function comboClear(kind, keepText){') && /inpClear, comboClear,/.test(src));
+  t('v1.09.07: пустой текст комбо сбрасывает скрытый id; уход из поля нормализует текст',
+    src.includes("if (!String(q || '').trim() && ($('#nt-' + kind) || {}).value) comboClear(kind, true);") && src.includes('function comboNormalize(kind){')
+    && src.includes("comboNormalize('cp'); comboNormalize('cx');"));
+  t('v1.09.07: крестик прячется чистым CSS, пока поле пустое', css.includes('input:placeholder-shown + .inpx-x{ display:none }') && css.includes('.combo > .combo-in{ padding-right:40px }'));
+  /* сессии для менеджера */
+  t('v1.09.07: «Менеджер видит сессии» — свой тултип в обоих языках, чужой снят',
+    ('sess_mgr_tip' in T.DICT.ru) && ('sess_mgr_tip' in T.DICT.en) && src.includes("t('sess_mgr_lbl'), 'sess_mgr_tip')") && !src.includes("t('sess_mgr_lbl'), 'st_flags_tip')"));
+  t('v1.09.07: вкладка «Сотрудники» — админу и менеджеру с галочкой; правка только у админа',
+    src.includes("['staff', t('d_staff'), isAdmin() || canSeeSessions()]") && src.includes('${adm ? carNoStepHtml(u) : \'\'}')
+    && src.includes("${me || !adm ? '' : `<button class=\"icon-btn key-btn\"") && src.includes("${adm ? `<button class=\"btn btn-green\" onclick=\"App.staffAddModal()\">"));
+  /* степпер номера машины */
+  t('v1.09.07: номер машины — степпер, родного input[type=number] в списке сотрудников нет',
+    src.includes('function carNoStepHtml(u){') && src.includes('function carNoStep(uid_, dir){') && /setCarNo, carNoStep,/.test(src)
+    && !/class="car-inp" type="number"/.test(src));
+  /* камера */
+  t('v1.09.07: «как у родной камеры» — отметка вместо кнопки, когда Способ 2 + «Оригинал» уже стоят',
+    src.includes("${camWay() === 'phone' && q === 'orig'") && ('cam_native_on' in T.DICT.ru) && ('cam_native_on' in T.DICT.en) && css.includes('.cam-native-on{'));
+  /* оформление */
+  t('v1.09.07: «?» — vertical-align:middle; кружок номера 48 px', /\.tipq\{[^}]*vertical-align:middle;top:-1px/.test(css) && !/\.tipq\{[^}]*vertical-align:-6px/.test(css)
+    && /\.carno-dot\{ display:inline-flex; width:48px; height:48px;/.test(css));
+  t('v1.09.07: заметка на карточке — одна строка (ПК и компактная плотность), в окне пикапов — две',
+    dcss.includes('html.tl-desktop .item .info .s.note-line{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }')
+    && /html\.tl-compact \.item \.info \.s\.note-line\{[^}]*text-overflow:ellipsis/.test(ccss) && /\.pkm-s\.note-line\{[^}]*-webkit-line-clamp:2/.test(css));
+  /* учёба */
+  t('v1.09.07: учёба — надписи под учебником нет, время только у админа',
+    !src.includes("${t('st_read_hint')}</div>\n  </div>`;") && src.includes("${isAdmin() ? kpi(fmtMs(st.testMs), t('st_time_tests'), '')")
+    && src.includes("(isAdmin() || x.kind !== 'read')") && src.includes("${isAdmin() ? ' · ' + fmtMs(s.duration_ms) : ''}"));
+  t('v1.09.07: справка (RU/EN) — крестики очистки и вкладка менеджера',
+    src.includes('Крестик контрагента снимает и комплекс') && src.includes('The counterparty cross also clears the complex')
+    && src.includes('вкладка «Сотрудники» только для чтения') && src.includes('a read-only Staff tab then appears'));
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);
