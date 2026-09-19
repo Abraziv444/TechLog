@@ -1856,6 +1856,21 @@ select:disabled{opacity:.55;cursor:default}
 
 /* ============ v1.08.05: складные секции настроек ============ */
 .fold{margin:8px 0}
+/* v1.08.92: QR для 2FA — всегда в белой рамке с полями (зона тишины),
+   фиксированного размера; сам код приходит либо SVG-разметкой, либо data: */
+.mfa-qr{width:212px;height:212px;margin:0 auto 10px;background:#fff;border-radius:12px;
+  padding:10px;box-sizing:border-box;display:grid;place-items:center}
+.mfa-qr svg, .mfa-qr img{width:100%;height:100%;display:block;background:#fff}
+/* список «Документы без перевода»: фильтры, строка-кнопка документа */
+.tr-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.tr-filters .tr-f{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 140px}
+.tr-filters .tr-f select{width:100%}
+.rowline.tr-row-doc{align-items:flex-start;gap:8px}
+.rowline.tr-row-doc > input[type="checkbox"]{margin-top:4px;flex:none}
+.tr-open{flex:1;min-width:0;background:none;border:0;padding:4px 2px;color:var(--text);
+  font:inherit;text-align:left;cursor:pointer;border-radius:10px}
+.tr-open:hover{background:var(--black-chip)}
+.tr-open .tiny{font-weight:600;color:var(--dim)}
 .fold-h{
   width:100%;display:flex;align-items:center;gap:8px;
   background:var(--panel);border:2px solid var(--line);border-radius:16px;

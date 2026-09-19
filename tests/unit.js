@@ -57,6 +57,8 @@ const expose = `;window.__T = {
   invTail, drawInvoiceCont, techFullNamesFor, invCutLine,
   /* v1.08.85 */
   AUTHX, sbFetch, authWhy, authSignedOutLog, authKeepDraft, authRestoreDraft, viewLogin,
+  /* v1.08.92 */
+  mfaQrHtml, mfaUri, mfaNeedsCode, MFA, trPending, trFiltered, trSelSet, TRF, trWhoOf, trCpOf,
   setJobDraft: d => { jobDraft = d; }, getJobDraft: () => jobDraft, setScreen: s => { state.screen = s; }
 };`;
 
@@ -1561,6 +1563,42 @@ console.log('\n— v1.08.51: учёба —');
     && /function numberingCardHtml\(\)\{[\s\S]*App\.noHelp\(\)[\s\S]*fold\('nohelp'/.test(src)
     && src.includes("noHelp(){ openModal(modalHead(t('no_help_t'), 'receipt') + noHelpHtml()); }")
     && (src.match(/\bno_help_open: '/g) || []).length === 2);
+  /* --- v1.08.92: 2FA и список «Документы без перевода» --- */
+  {
+    const svg = T.mfaQrHtml('<svg xmlns="http://www.w3.org/2000/svg" width="41" height="41" style="x"><rect x="0" y="0"/></svg>');
+    const dataUrl = T.mfaQrHtml('data:image/png;base64,AAAA');
+    const dirty = T.mfaQrHtml('<svg onload="alert(1)"><scr' + 'ipt>alert(2)</scr' + 'ipt><rect/></svg>');
+    t('v1.08.92: QR-разметка вставляется как SVG в белую рамку и растягивается по viewBox',
+      /^<div class="mfa-qr"><svg /.test(svg) && / width="100%" height="100%"/.test(svg)
+      && /viewBox="0 0 41 41"/.test(svg) && !/ style="x"/.test(svg) && !/width="41"/.test(svg), svg.slice(0, 160));
+    {
+      const withVb = T.mfaQrHtml('<svg viewBox="0 0 25 25"><rect/></svg>');
+      const noSize = T.mfaQrHtml('<svg><rect/></svg>');
+      t('v1.08.92: свой viewBox не трогаем, SVG без размеров оставляем как есть',
+        /viewBox="0 0 25 25"/.test(withVb) && (withVb.match(/viewBox/g) || []).length === 1
+        && /width="100%"/.test(withVb) && /<svg><rect\/><\/svg>/.test(noSize), withVb + ' | ' + noSize);
+    }
+    t('v1.08.92: data:-код — картинкой в той же рамке; мусор и скрипты вырезаются',
+      /^<div class="mfa-qr"><img src="data:image\/png;base64,AAAA"/.test(dataUrl)
+      && !/onload/.test(dirty) && !/<scr.pt/i.test(dirty) && T.mfaQrHtml('') === '' && T.mfaQrHtml('javascript:1') === '', dataUrl + ' | ' + dirty);
+    t('v1.08.92: otpauth-ссылка собирается с секретом и издателем',
+      /^otpauth:\/\/totp\/TechLog/.test(T.mfaUri('ABC')) && /[?&]secret=ABC/.test(T.mfaUri('ABC'))
+      && /issuer=TechLog/.test(T.mfaUri('ABC')) && T.mfaUri('') === '');
+    t('v1.08.92: код 2FA требуется ровно при aal1→aal2',
+      T.mfaNeedsCode({ currentLevel: 'aal1', nextLevel: 'aal2' }) === true
+      && T.mfaNeedsCode({ currentLevel: 'aal2', nextLevel: 'aal2' }) === false
+      && T.mfaNeedsCode({ currentLevel: 'aal1', nextLevel: 'aal1' }) === false && T.mfaNeedsCode(null) === false);
+  }
+  t('v1.08.92: калитка 2FA стоит на всех трёх путях входа, «Отмена» завершает вход, prompt() убран',
+    src.includes('if (await mfaGate(data.session)) return;') && src.includes('if (session && !(await mfaGate(session)))')
+    && src.includes('mfaGate(s).then(need => {') && src.includes('async function mfaLoginCancel(){')
+    && src.includes('function mfaDisableModal(){') && !/prompt\(t\('mfa_enter'\)\)/.test(src)
+    && ['mfa_open_app', 'mfa_copy_secret', 'mfa_manual', 'mfa_gate', 'mfa_dis_code', 'mfa_lost'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
+  t('v1.08.92: список без перевода — строка-кнопка документа, галочки и фильтры; перевод по отмеченным',
+    src.includes('class="grow tr-open"') && src.includes('App.trOpenDoc(') && src.includes('App.trSelOne(')
+    && src.includes('App.trSelAll(1)') && src.includes('function trFiltered(list){') && src.includes('async function trRunSel(){')
+    && src.includes('async function trRunList(list, silent){') && css.includes('.rowline.tr-row-doc')
+    && ['tr_sel_all', 'tr_sel_none', 'tr_f_who', 'tr_f_cp', 'tr_f_cx', 'tr_open_doc'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')

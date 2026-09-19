@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.91';
+const APP_VERSION = '1.08.92';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -252,7 +252,12 @@ const I18N = {
     mfa_code: 'Код из приложения', mfa_confirm: 'Подтвердить', mfa_bad_code: 'Неверный код',
     mfa_enter: 'Введите код из приложения-аутентификатора', mfa_secret: 'Секрет',
     mfa_enabled_ok: '2FA включена', mfa_disabled_ok: '2FA отключена',
-    mfa_tip: 'Опциональная защита: при входе после пароля спросим код из приложения-аутентификатора. Включается лично для себя.',
+    mfa_tip: 'Опциональная защита: при входе после пароля спросим код из приложения-аутентификатора. Включается лично для себя. Отключается там же кнопкой «Отключить 2FA» — приложение спросит текущий код. Потеряли телефон с приложением — снять защиту может только владелец проекта Supabase: Authentication → Users → ваш пользователь → удалить фактор.',
+    mfa_open_app: 'Открыть в приложении', mfa_copy_secret: 'Скопировать секрет',
+    mfa_manual: 'QR не сканируется? В приложении-аутентификаторе выберите «Ввести ключ настройки» и впишите секрет — это то же самое.',
+    mfa_gate: 'Вход не завершён: у аккаунта включена двухфакторная защита — введите код из приложения',
+    mfa_dis_t: 'Отключить 2FA', mfa_dis_code: 'Для отключения введите текущий код из приложения',
+    mfa_lost: 'Телефон потерян? Снять защиту может только владелец проекта Supabase: Authentication → Users → ваш пользователь → удалить фактор.',
     tt_tab: 'Время', tt_title: 'Время на объектах', tt_none: 'За этот день записей нет',
     tt_total: 'итого', tt_onsite: 'На объекте', tt_now: 'ещё на объекте',
     tt_src: 'по данным GPS-трекера (прибытие/убытие рядом с комплексом)',
@@ -529,7 +534,10 @@ const I18N = {
     tr_go_wo: 'Сформировать без них',
     tr_tr_go: 'Перевести и продолжить',
     tr_saved: 'Перевод сохранён',
-    tr_scope: 'Показаны документы, которые вам разрешено править',
+    tr_scope: 'Показаны документы, которые вам разрешено править. Нажмите строку — документ откроется; галочками выберите, что переводить.',
+    tr_sel_all: 'Выбрать все', tr_sel_none: 'Снять выбор', tr_sel_n: 'Выбрано',
+    tr_f_who: 'Сотрудник', tr_f_cp: 'Контрагент', tr_f_cx: 'Комплекс', tr_f_all: 'Все',
+    tr_f_none: 'По фильтру ничего нет', tr_open_doc: 'Открыть документ',
     tr_busy: 'Перевод уже идёт',
     /* v1.07.83: где показывать всплывашки — настройка своя на каждом устройстве */
     pop_card: 'Всплывающие подсказки',
@@ -1403,7 +1411,12 @@ const I18N = {
     mfa_code: 'Code from the app', mfa_confirm: 'Confirm', mfa_bad_code: 'Wrong code',
     mfa_enter: 'Enter the code from your authenticator app', mfa_secret: 'Secret',
     mfa_enabled_ok: '2FA enabled', mfa_disabled_ok: '2FA disabled',
-    mfa_tip: 'Optional protection: after the password we ask for a code from your authenticator app. You enable it for yourself.',
+    mfa_tip: 'Optional protection: after the password we ask for a code from your authenticator app. You enable it for yourself. Turn it off with the «Disable 2FA» button — the app asks for the current code. Lost the phone with the app? Only the Supabase project owner can remove it: Authentication → Users → your user → delete the factor.',
+    mfa_open_app: 'Open in the app', mfa_copy_secret: 'Copy secret',
+    mfa_manual: 'QR not scanning? In your authenticator choose «Enter a setup key» and type the secret — it is the same thing.',
+    mfa_gate: 'Sign-in is not finished: this account has two-factor auth — enter the code from your app',
+    mfa_dis_t: 'Disable 2FA', mfa_dis_code: 'To disable, enter the current code from your app',
+    mfa_lost: 'Lost the phone? Only the Supabase project owner can remove it: Authentication → Users → your user → delete the factor.',
     tt_tab: 'Time', tt_title: 'Time on site', tt_none: 'No records for this day',
     tt_total: 'total', tt_onsite: 'On site', tt_now: 'still on site',
     tt_src: 'from the GPS tracker (arrival/departure near a complex)',
@@ -1676,7 +1689,10 @@ const I18N = {
     tr_go_wo: 'Build without them',
     tr_tr_go: 'Translate and continue',
     tr_saved: 'Translation saved',
-    tr_scope: 'Showing documents you are allowed to edit',
+    tr_scope: 'Showing documents you are allowed to edit. Tap a row to open the document; tick what to translate.',
+    tr_sel_all: 'Select all', tr_sel_none: 'Clear selection', tr_sel_n: 'Selected',
+    tr_f_who: 'Employee', tr_f_cp: 'Counterparty', tr_f_cx: 'Complex', tr_f_all: 'All',
+    tr_f_none: 'Nothing matches the filter', tr_open_doc: 'Open document',
     tr_busy: 'A translation run is already going',
     pop_card: 'Pop-up messages',
     pop_hint: 'Where toasts and reminders appear — in this browser, both in mobile and desktop mode',
@@ -2909,7 +2925,49 @@ async function pbPrefSet(k, v){
    себе сам: Настройки → «Безопасность». При входе после пароля приложение
    спросит 6-значный код, если у аккаунта есть подтверждённый фактор.
    ===================================================================== */
-const MFA = { on: null, factorId: '' };
+const MFA = { on: null, factorId: '', _secret: '', _pending: null, gating: false };
+/* =====================================================================
+   v1.08.92 · QR ДЛЯ 2FA. GoTrue отдаёт qr_code РАЗМЕТКОЙ <svg …>, а она
+   подставлялась в src="" картинки: тег рвался, часть разметки вылезала
+   на экран текстом, а сам код печатался тёмным по тёмному фону и без
+   полей — телефон его не брал (секрет руками при этом подходил).
+   Теперь: SVG вставляется как SVG, data:/http — картинкой, всегда в белой
+   рамке с полями (зона тишины) и фиксированного размера. Плюс ссылка
+   otpauth:// («Открыть в приложении») и кнопка «Скопировать секрет».
+   ===================================================================== */
+function mfaUri(secret){
+  if (!secret) return '';
+  const acc = (state.user && (state.user.login || state.user.display_name)) || 'TechLog';
+  return 'otpauth://totp/' + encodeURIComponent('TechLog:' + acc) +
+         '?secret=' + encodeURIComponent(secret) + '&issuer=TechLog&algorithm=SHA1&digits=6&period=30';
+}
+function mfaQrHtml(qr){
+  const raw = String(qr || '').trim();
+  if (!raw) return '';
+  if (/^<svg[\s>]/i.test(raw)){
+    const svg = raw.replace(/<script[\s\S]*?<\/script>/gi, '')
+                   .replace(/\son\w+="[^"]*"/gi, '')
+                   .replace(/<svg([^>]*)>/i, (m, at) => {
+                     /* без viewBox растянуть SVG нельзя — код останется крошечным
+                        в углу белого квадрата; собираем viewBox из его же размеров */
+                     const w = parseFloat((at.match(/\swidth="([\d.]+)/i) || [])[1] || '');
+                     const h = parseFloat((at.match(/\sheight="([\d.]+)/i) || [])[1] || '');
+                     const vb = /viewBox="/i.test(at) ? '' : (w && h ? ` viewBox="0 0 ${w} ${h}"` : '');
+                     if (!/viewBox="/i.test(at) && !(w && h)) return m;      // размеров нет — оставляем как есть
+                     return '<svg' + at.replace(/\s(width|height|style)="[^"]*"/gi, '') + vb +
+                            ' width="100%" height="100%" preserveAspectRatio="xMidYMid meet">';
+                   });
+    return `<div class="mfa-qr">${svg}</div>`;
+  }
+  if (/^(data:|https?:)/i.test(raw)) return `<div class="mfa-qr"><img src="${esc(raw)}" alt="QR"></div>`;
+  return '';
+}
+function mfaCopySecret(){
+  const sec = MFA._secret || '';
+  if (!sec) return;
+  (navigator.clipboard ? navigator.clipboard.writeText(sec) : Promise.reject())
+    .then(() => toast('✓ ' + t('copied'))).catch(() => toast('⚠ ' + sec, 'inf'));
+}
 async function mfaRefresh(){
   if (!HAS_SB || !state.user){ MFA.on = false; return; }
   try{
@@ -2941,11 +2999,18 @@ async function mfaEnroll(){
     if (error) throw error;
     const qr = data.totp && data.totp.qr_code || '';
     const secret = data.totp && data.totp.secret || '';
+    const uri = (data.totp && data.totp.uri) || mfaUri(secret);
+    MFA._secret = secret;
     openModal(`
       ${modalHead(t('mfa_enable'), 'key')}
       <div class="tiny" style="margin-bottom:8px">${t('mfa_scan')}</div>
-      ${qr ? `<div style="text-align:center;margin-bottom:8px"><img src="${qr}" alt="QR" style="width:190px;height:190px;background:#fff;border-radius:12px;padding:6px"></div>` : ''}
-      <div class="tiny" style="word-break:break-all;margin-bottom:8px">${t('mfa_secret')}: <b>${esc(secret)}</b></div>
+      ${mfaQrHtml(qr)}
+      <div class="tiny" style="word-break:break-all;margin-bottom:6px">${t('mfa_secret')}: <b>${esc(secret)}</b></div>
+      <div class="btn-row3" style="grid-template-columns:1fr 1fr;margin-bottom:8px">
+        <button class="btn btn-ghost sm" onclick="App.mfaCopySecret()">${ic('clipboard')} ${t('mfa_copy_secret')}</button>
+        ${uri ? `<a class="btn btn-ghost sm" href="${esc(uri)}">${ic('key')} ${t('mfa_open_app')}</a>` : ''}
+      </div>
+      <div class="tiny" style="margin-bottom:8px">${t('mfa_manual')}</div>
       <label>${t('mfa_code')}</label>
       <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
       <div class="modal-actions">
@@ -2970,33 +3035,90 @@ async function mfaVerifyEnroll(factorId){
 }
 async function mfaDisable(){
   try{
-    let { error } = await state.sb.auth.mfa.unenroll({ factorId: MFA.factorId });
-    if (error && /AAL2|aal2|insufficient/i.test(String(error.message || error))){
-      /* сессия входила без кода — сначала подтверждаем код, затем снимаем */
-      const { data: ch } = await state.sb.auth.mfa.challenge({ factorId: MFA.factorId });
-      const code = prompt(t('mfa_enter')) || '';
-      const { error: ev } = await state.sb.auth.mfa.verify({ factorId: MFA.factorId, challengeId: ch.id, code: code.trim() });
-      if (ev) throw ev;
-      ({ error } = await state.sb.auth.mfa.unenroll({ factorId: MFA.factorId }));
+    const { error } = await state.sb.auth.mfa.unenroll({ factorId: MFA.factorId });
+    if (error){
+      /* сессия входила без кода — спрашиваем код своим окном (раньше это был
+         системный prompt(), который на телефоне в установленном приложении
+         часто не показывается вовсе) */
+      if (/AAL2|aal2|insufficient/i.test(String(error.message || error))){ mfaDisableModal(); return; }
+      throw error;
     }
-    if (error) throw error;
-    await mfaRefresh();
-    audit('mfa_off', 'profile', state.user.id, {});
-    toast('✓ ' + t('mfa_disabled_ok')); render();
+    await mfaDisableDone();
   }catch(e){ dlog('⛔ mfa.unenroll:', e); toast('⚠ ' + errStr(e), 'err'); }
 }
-/* вход: пароль принят, но аккаунту нужен второй фактор */
-function mfaLoginModal(session){
+function mfaDisableModal(){
   openModal(`
-    ${modalHead(t('sec_card'), 'key')}
-    <div class="tiny" style="margin-bottom:8px">${t('mfa_enter')}</div>
+    ${modalHead(t('mfa_dis_t'), 'key')}
+    <div class="tiny" style="margin-bottom:8px">${t('mfa_dis_code')}</div>
     <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+    <div class="tiny" style="margin-top:8px">${t('mfa_lost')}</div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
+      <button class="btn btn-green" onclick="App.mfaDisableGo()">${t('mfa_confirm')}</button>
+    </div>`);
+  setTimeout(() => { const i = $('#mfa-code'); if (i) i.focus(); }, 50);
+}
+async function mfaDisableGo(){
+  const code = ($('#mfa-code')?.value || '').trim();
+  if (code.length < 6) return;
+  try{
+    const { data: ch, error: e1 } = await state.sb.auth.mfa.challenge({ factorId: MFA.factorId });
+    if (e1) throw e1;
+    const { error: e2 } = await state.sb.auth.mfa.verify({ factorId: MFA.factorId, challengeId: ch.id, code });
+    if (e2) throw e2;
+    const { error: e3 } = await state.sb.auth.mfa.unenroll({ factorId: MFA.factorId });
+    if (e3) throw e3;
+    closeModal();
+    await mfaDisableDone();
+  }catch(e){ dlog('⛔ mfa.unenroll:', e); toast('⚠ ' + t('mfa_bad_code'), 'err'); }
+}
+async function mfaDisableDone(){
+  await mfaRefresh();
+  audit('mfa_off', 'profile', state.user.id, {});
+  toast('✓ ' + t('mfa_disabled_ok')); render();
+}
+/* вход: пароль принят, но аккаунту нужен второй фактор.
+   v1.08.92: КАЛИТКА. Раньше код спрашивался только в sbSignIn, а сессию
+   параллельно подхватывали onAuthStateChange и восстановление при загрузке
+   страницы — приложение грузилось дальше без кода. Теперь проверка одна и
+   стоит на всех трёх путях; пока код не введён, данные не загружаются,
+   а «Отмена» завершает вход. */
+function mfaNeedsCode(aal){ return !!(aal && aal.currentLevel === 'aal1' && aal.nextLevel === 'aal2'); }
+async function mfaGate(session){
+  if (!state.sb || !state.sb.auth || !state.sb.auth.mfa) return false;   // демо-режим
+  try{
+    const { data: aal } = await state.sb.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (mfaNeedsCode(aal)){
+      dlog('auth: аккаунту нужен код 2FA — данные не загружаем');
+      state.user = null; state.screen = 'login'; render();
+      mfaLoginModal(session);
+      return true;
+    }
+  }catch(e){ dlog('mfa aal check:', e); }
+  return false;
+}
+function mfaLoginModal(session){
+  MFA._pending = session || MFA._pending;
+  if (MFA.gating && $('#overlay .mfa-login')) return;      // окно уже открыто
+  MFA.gating = true;
+  openModal(`
+    ${modalHead(t('sec_card'), 'key')}
+    <div class="mfa-login tiny" style="margin-bottom:8px">${t('mfa_gate')}</div>
+    <input id="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456">
+    <div class="tiny" style="margin-top:8px">${t('mfa_lost')}</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="App.mfaLoginCancel()">${t('cancel')}</button>
       <button class="btn btn-green" onclick="App.mfaLoginVerify()">${t('mfa_confirm')}</button>
     </div>`);
-  MFA._pending = session;
   setTimeout(()=>{ const i=$('#mfa-code'); if(i) i.focus(); }, 50);
+}
+/* «Отмена» на этом окне = отказ от входа: сессию без кода не оставляем */
+async function mfaLoginCancel(){
+  closeModal();
+  MFA.gating = false; MFA._pending = null;
+  AUTHX.byUser = true;
+  try{ await state.sb.auth.signOut(); }catch(e){}
+  state.user = null; state.screen = 'login'; render();
 }
 async function mfaLoginVerify(){
   const code = ($('#mfa-code')?.value || '').trim();
@@ -3010,6 +3132,7 @@ async function mfaLoginVerify(){
     const { error: e2 } = await state.sb.auth.mfa.verify({ factorId: f.id, challengeId: ch.id, code });
     if (e2) throw e2;
     closeModal();
+    MFA.gating = false;
     const { data: s2 } = await state.sb.auth.getSession();
     try{ await afterSbLogin(s2 && s2.session || MFA._pending); }catch(e){ dlog('⛔ afterSbLogin(mfa):', e); }
     MFA._pending = null;
@@ -3935,10 +4058,10 @@ const NET_ONLY = new Set([
   'mediaSaveKeys', 'mediaConnect', 'mediaHealth', 'gdCycle', 'gdNamesRefresh', 'auditRun',
   'bkExport', 'bkImportPick', 'abkRun', 'abkList', 'mqRetry', 'mqPing', 'mediaFlush', 'mediaOpen', 'mvDownload',
   /* пуши, 2FA, ТВ, Bouncie, перевод, карты */
-  'pbSub', 'pbUnsub', 'mfaEnroll', 'mfaDisable', 'mfaVerifyEnroll',
+  'pbSub', 'pbUnsub', 'mfaEnroll', 'mfaDisable', 'mfaDisableGo', 'mfaVerifyEnroll', 'mfaLoginVerify',
   'tvStart', 'tvNewCode', 'tvListRefresh', 'tvApprove', 'tvDeny', 'tvRevoke',
   'bnConnect', 'bnTest', 'bnSaveKeys', 'bnTrack', 'vehSave', 'vehDel', 'vehImport', 'vehServiceSet',
-  'translateEn', 'trRun', 'trOneDoc', 'trFill', 'trPdfNow',
+  'translateEn', 'trRun', 'trRunSel', 'trOneDoc', 'trFill', 'trPdfNow',
   'geocodeCx', 'mapSearch', 'mapRoute', 'optRoute',
 ]);
 const NET_RE = /App\.([A-Za-z0-9_]+)\s*\(/g;
@@ -4642,7 +4765,7 @@ async function initAuth(){
   }
   state.sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { global: { fetch: sbFetch } });   // v1.08.85
   const { data: { session } } = await state.sb.auth.getSession();
-  if (session){ try{ await afterSbLogin(session); }catch(e){ dlog('⛔ afterSbLogin(init):', e); } }
+  if (session && !(await mfaGate(session))){ try{ await afterSbLogin(session); }catch(e){ dlog('⛔ afterSbLogin(init):', e); } }
   state.sb.auth.onAuthStateChange((ev, s) => {
     dlog('auth: событие', ev);
     if (!s && state.user){
@@ -4652,7 +4775,10 @@ async function initAuth(){
       state.user = null; state.screen = 'login'; render();
     }
     else if (s && !state.user && !loginInFlight){
-      afterSbLogin(s).then(()=>{ render(); checkPickupBanner(true); }).catch(e => dlog('⛔ onAuthStateChange:', e));
+      mfaGate(s).then(need => {                       // v1.08.92: без кода 2FA данные не грузим
+        if (need) return;
+        return afterSbLogin(s).then(()=>{ render(); checkPickupBanner(true); });
+      }).catch(e => dlog('⛔ onAuthStateChange:', e));
     }
   });
 }
@@ -4802,12 +4928,7 @@ async function sbSignIn(login, pass){
     return;
   }
   dlog('auth: вход ок, uid', data.session?.user?.id);
-  try{   // v1.08.33: включённая 2FA требует код до загрузки данных
-    const { data: aal } = await state.sb.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aal && aal.currentLevel === 'aal1' && aal.nextLevel === 'aal2'){
-      mfaLoginModal(data.session); return;
-    }
-  }catch(e){ dlog('mfa aal check:', e); }
+  if (await mfaGate(data.session)) return;   // v1.08.33/92: код 2FA — до загрузки данных
   try{ await afterSbLogin(data.session); }catch(e){ dlog('⛔ afterSbLogin:', e); }
   render(); checkPickupBanner(true);
 }
@@ -5826,7 +5947,10 @@ function render(){
     tvAfterRender();
     return;
   }
-  if (!state.user){ tvBodyClass(false); app.innerHTML = viewLogin(); netMark(app); return; }
+  /* v1.08.92: экран входа не оставляет класс прошлого экрана — иначе после
+     выхода на <div id="app"> висел scr-job/scr-home, и правила этих экранов
+     (и проверки автотестов) применялись к форме входа */
+  if (!state.user){ tvBodyClass(false); app.innerHTML = viewLogin(); if (app.className !== 'scr-login') app.className = 'scr-login'; netMark(app); return; }
   if (!state.data) state.data = loadLocal() || (HAS_SB ? emptyData() : seedDemoData());
   if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
   let body = '';
@@ -10809,6 +10933,11 @@ const App = {
   },
   trFill: trFillDraft,
   trRun(){ trRunPending(false); },
+  trRunSel(){ trRunSel(); },                          // v1.08.92
+  trFilter(id, v){ trFilterSet(id, v); },
+  trSelOne(k, on){ trSelOne(k, !!on); },
+  trSelAll(on){ trSelAll(!!on); },
+  trOpenDoc(kind, id){ trOpenDoc(kind, id); },
   trOneDoc: trOneDoc,
   trPendingModal: trPendingModal,
   trPdfNow: trPdfNow,
@@ -10979,7 +11108,15 @@ const App = {
   mfaEnroll(){ mfaEnroll(); },
   mfaVerifyEnroll(id){ mfaVerifyEnroll(id); },
   mfaDisable(){ mfaDisable(); },
+  mfaDisableGo(){ mfaDisableGo(); },                 // v1.08.92
+  mfaCopySecret(){ mfaCopySecret(); },
   mfaLoginVerify(){ mfaLoginVerify(); },
+  mfaLoginCancel(){ mfaLoginCancel(); },
+  /* ручки для автотестов (tests/v1_08_92.js): без них 2FA не проверить — в
+     демо-режиме Supabase нет, а живой аккаунт трогать нельзя */
+  __test_mfaQr(qr){ return mfaQrHtml(qr); },
+  __test_mfaGate(s){ return mfaGate(s); },
+  __test_setSb(c){ state.sb = c; },
   staffCfg(uid){ staffCfgModal(uid); },
   setStaffFlag(uid, k, v){ setStaffFlag(uid, k, v); },
   ttOthersSet(uid, m){ ttOthersSet(uid, m); },
@@ -14929,10 +15066,10 @@ async function trSaveDoc(kind, doc, fields){
 
 /* ---------- пакетный прогон: рука админа или почасовой таймер ---------- */
 let trBusy = false;
-async function trRunPending(silent){
+async function trRunPending(silent){ return trRunList(trPending(), silent); }
+async function trRunList(list, silent){
   if (trBusy){ if (!silent) toast('⏳ ' + t('tr_busy'), 'inf'); return; }
-  const list = trPending();
-  if (!list.length){ if (!silent) toast('✓ ' + t('tr_nothing')); return; }
+  if (!list || !list.length){ if (!silent) toast('✓ ' + t('tr_nothing')); return; }
   trBusy = true;
   const batch = list.slice(0, TR_MAX_DOCS);
   let done = 0, err = null;
@@ -14947,7 +15084,7 @@ async function trRunPending(silent){
   trBusy = false;
   if (done) toast('✓ ' + t('tr_done_n') + ': ' + done + (list.length > done ? ' / ' + list.length : ''));
   if (err) toast('⛔ ' + t('translate_err'), 'err');
-  trCacheDrop(); saveLocal(); render();
+  trCacheDrop(); saveLocal(); TRF.sel = null; render();
 }
 /* Перевод одного документа по кнопке (карточка документа или список) */
 async function trOneDoc(kind, id){
@@ -15037,19 +15174,102 @@ function trPop(n){
   popHost(el);
   setTimeout(() => { const q = document.getElementById('tr-pop'); if (q) q.remove(); }, 30000);
 }
+/* =====================================================================
+   v1.08.92 · СПИСОК «ДОКУМЕНТЫ БЕЗ ПЕРЕВОДА»: строка открывает документ,
+   галочки выбирают, что переводить, сверху фильтры — сотрудник, контрагент,
+   апарт-комплекс. Выбор и фильтры живут, пока открыто окно.
+   ===================================================================== */
+const TRF = { who: '', cp: '', cx: '', sel: null };
+function trKey(it){ return it.kind + ':' + it.doc.id; }
+function trWhoOf(doc){ return doc.technician_id || ''; }
+function trCpOf(doc){
+  if (doc.counterparty_id) return doc.counterparty_id;
+  const cx = cxById(doc.complex_id); return (cx && cx.counterparty_id) || '';
+}
+function trFiltered(list){
+  return list.filter(it => (!TRF.who || trWhoOf(it.doc) === TRF.who)
+    && (!TRF.cp || trCpOf(it.doc) === TRF.cp)
+    && (!TRF.cx || (it.doc.complex_id || '') === TRF.cx));
+}
+function trSelSet(list){
+  if (!TRF.sel) TRF.sel = new Set(list.map(trKey));          // по умолчанию — всё
+  return TRF.sel;
+}
+function trFilterSel(id, label, cur, opts){
+  if (opts.length < 2) return '';
+  return `<label class="tiny tr-f"><span>${label}</span>
+    <select onchange="App.trFilter('${id}', this.value)">
+      <option value="">${t('tr_f_all')}</option>
+      ${opts.map(o => `<option value="${esc(o.id)}" ${cur === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}
+    </select></label>`;
+}
 function trPendingModal(){
-  const list = trPending();
+  const all = trPending();
+  const uniq = (arr) => { const m = new Map(); arr.forEach(x => { if (x && x.id && !m.has(x.id)) m.set(x.id, x); }); 
+    return [...m.values()].sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { numeric: true })); };
+  const whoOpts = uniq(all.map(it => ({ id: trWhoOf(it.doc), name: profName(trWhoOf(it.doc)) || '—' })));
+  const cpOpts  = uniq(all.map(it => { const c = cpById(trCpOf(it.doc)); return c ? { id: c.id, name: c.name } : null; }).filter(Boolean));
+  const cxOpts  = uniq(all.map(it => { const c = cxById(it.doc.complex_id); return c ? { id: c.id, name: c.abbr || c.name } : null; }).filter(Boolean));
+  const list = trFiltered(all);
+  const sel = trSelSet(all);
+  const selN = list.filter(it => sel.has(trKey(it))).length;
+  const filters = trFilterSel('who', t('tr_f_who'), TRF.who, whoOpts)
+                + trFilterSel('cp', t('tr_f_cp'), TRF.cp, cpOpts)
+                + trFilterSel('cx', t('tr_f_cx'), TRF.cx, cxOpts);
   openModal(`
     ${modalHead(t('tr_pend_t'), 'globe')}
     <div class="tiny" style="margin-bottom:8px">${t('tr_scope')}</div>
-    <div class="card">${list.map(it => `
-      <div class="rowline">
-        <div class="grow"><b>${esc(trDocLabel(it.kind, it.doc))}</b>
-          <div class="tiny">${trMiss(it.kind, it.doc).map(f => esc(f.label)).join(' · ')}</div></div>
-        <button class="btn btn-ghost sm" title="${t('translate_en')}" aria-label="${t('translate_en')}" onclick="App.trOneDoc('${it.kind}','${it.doc.id}')">${ic('globe')}</button>
-      </div>`).join('') || `<div class="list-empty">${t('tr_nothing')}</div>`}</div>
-    ${list.length ? `<button class="btn btn-blue" style="margin-top:8px" onclick="App.closeModal();App.trRun()">${ic('globe')} ${t('tr_run')} (${Math.min(list.length, TR_MAX_DOCS)})</button>` : ''}
+    ${filters ? `<div class="tr-filters">${filters}</div>` : ''}
+    ${all.length ? `<div class="qty-line" style="margin-bottom:6px">
+      <button class="btn btn-ghost sm" onclick="App.trSelAll(1)">${t('tr_sel_all')}</button>
+      <button class="btn btn-ghost sm" onclick="App.trSelAll(0)">${t('tr_sel_none')}</button>
+      <span class="tiny grow" style="text-align:right">${t('tr_sel_n')}: <b>${selN}</b> / ${list.length}</span>
+    </div>` : ''}
+    <div class="card">${list.map(it => {
+      const k = trKey(it), doc = it.doc;
+      const cx = cxById(doc.complex_id) || {}, cp = cpById(trCpOf(doc)) || {};
+      const who = profName(trWhoOf(doc));
+      return `
+      <div class="rowline tr-row-doc">
+        <input type="checkbox" ${sel.has(k) ? 'checked' : ''} onclick="event.stopPropagation()"
+          onchange="App.trSelOne('${esc(k)}', this.checked)" aria-label="${esc(trDocLabel(it.kind, doc))}">
+        <button type="button" class="grow tr-open" title="${t('tr_open_doc')}" onclick="App.trOpenDoc('${it.kind}','${doc.id}')">
+          <b>${esc(trDocLabel(it.kind, doc))}</b>
+          <div class="tiny">${trMiss(it.kind, doc).map(f => esc(f.label)).join(' · ')}</div>
+          <div class="tiny">${[who, cp.name, cx.name && cx.name !== cx.abbr ? cx.name : ''].filter(Boolean).map(esc).join(' · ')}</div>
+        </button>
+        <button class="btn btn-ghost sm" title="${t('translate_en')}" aria-label="${t('translate_en')}" onclick="App.trOneDoc('${it.kind}','${doc.id}')">${ic('globe')}</button>
+      </div>`; }).join('') || `<div class="list-empty">${all.length ? t('tr_f_none') : t('tr_nothing')}</div>`}</div>
+    ${selN ? `<button class="btn btn-blue" style="margin-top:8px" onclick="App.trRunSel()">${ic('globe')} ${t('tr_run')} (${Math.min(selN, TR_MAX_DOCS)})</button>` : ''}
   `);
+}
+function trFilterSet(id, v){
+  if (id === 'who') TRF.who = v; else if (id === 'cp') TRF.cp = v; else TRF.cx = v;
+  trPendingModal();
+}
+function trSelOne(key, on){
+  const sel = trSelSet(trPending());
+  if (on) sel.add(key); else sel.delete(key);
+  trPendingModal();
+}
+function trSelAll(on){
+  const list = trFiltered(trPending());
+  const sel = trSelSet(trPending());
+  list.forEach(it => { if (on) sel.add(trKey(it)); else sel.delete(trKey(it)); });
+  trPendingModal();
+}
+/* строка → сам документ (окно закрывается, как при переходе из поиска) */
+function trOpenDoc(kind, id){
+  closeModal();
+  if (kind === 'prop') App.openProposal(id); else App.openJob(id);
+}
+/* перевести только отмеченные */
+async function trRunSel(){
+  const all = trPending();
+  const sel = trSelSet(all);
+  const picked = trFiltered(all).filter(it => sel.has(trKey(it)));
+  closeModal();
+  await trRunList(picked);
 }
 
 /* ---------- карточка «Перевод для PDF» в документе ---------- */
