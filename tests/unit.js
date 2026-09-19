@@ -1533,6 +1533,11 @@ console.log('\n— v1.08.51: учёба —');
     && src.includes('pickupModal, pkDueModal, pkDueOpen, bannerKey,')
     && (src.match(/\(p\.technician_id === state\.user\.id \|\| isPlacementSharedWithMe\(p\)\) && pkPending\(p\)/g) || []).length === 2
     && ['pkd_title', 'pkd_today', 'pkd_over', 'pkd_addr', 'pkd_units', 'pkd_days', 'pkd_open', 'pkd_hint', 'pkd_empty', 'pkd_banner_open'].every(k => (src.match(new RegExp('\\b' + k + ': \'', 'g')) || []).length === 2));
+  t('v1.08.88: «Проверить связь» в настройках открывает netModal (одна модалка), строка домена вместо сайта Cloudflare, «Копировать лог», img-проба',
+    src.includes('onclick="App.netModal()">${ic(\'wifi\')} ${t(\'net_check_btn\')} · ${netPillHtml()}') && !/onclick="App\.netCheck\(\)"/.test(src)
+    && src.includes("await netLine(t('net_l_dom').replace('{H}', CANON_HOST)") && src.includes('function netImgProbe(url){') && src.includes('function netCopy(){')
+    && src.includes("netLogSet(el, `⚠ ${t('net_l_cf')} — ${t('net_l_blocked')}`, 'warn')")
+    && ['net_l_dom', 'net_l_blocked', 'net_cf_note', 'net_copy'].every(k => (src.match(new RegExp('\\b' + k + ': \'', 'g')) || []).length === 2));
   t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
     idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
     && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')

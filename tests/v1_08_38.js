@@ -62,8 +62,9 @@ const t = (n, c, x) => { if (c){ ok++; console.log('  ✓ ' + n); } else { bad++
   t('«Выйти» помечена', marks.logout);
   t('«Диагностика» — нет (работает без сети)', marks.diagFree);
   t('сама пилюля не помечена', marks.pillFree);
+  /* v1.08.88: кнопка открывает ту же модалку, что бейдж в шапке (App.netModal) */
   t('в карточке синхронизации есть «Проверить связь» с живой пилюлей', await p.evaluate(() =>
-    !!document.querySelector('[onclick="App.netCheck()"] .net-pill') && !document.querySelector('[onclick="App.netCheck()"].net-need')));
+    !!document.querySelector('[onclick="App.netModal()"] .net-pill') && !document.querySelector('[onclick="App.netModal()"].net-need')));
   t('при сети класса tl-offline нет', !marks.offlineCls);
 
   console.log('— 3. обрыв сети —');

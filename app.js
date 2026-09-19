@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.08.87';
+const APP_VERSION = '1.08.88';
 const DB_SQL_FILE = 'full-install-1_08_71.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -200,7 +200,10 @@ const I18N = {
     net_pill_t: 'Связь с сервером · нажмите — проверка', net_check_btn: 'Проверить связь',
     net_unst: 'нестабильно', net_modal_h: 'Проверка связи', net_l_fail: 'нет ответа',
     net_l_inet: 'Интернет', net_l_gd: 'Сервис Google Диска', net_l_map: 'Сервис карт',
-    net_l_bn: 'Сервис Bouncie', net_l_gh: 'Сервер GitHub (хостинг)', net_l_cf: 'Сервер Cloudflare',
+    net_l_bn: 'Сервис Bouncie', net_l_gh: 'Сервер GitHub (хостинг)', net_l_cf: 'Сайт cloudflare.com',
+    net_l_dom: 'Домен {H} (DNS Cloudflare)', net_l_blocked: 'не отвечает — похоже, режет этот браузер',
+    net_cf_note: 'Сайт cloudflare.com к работе приложения не относится: Cloudflare у нас только держит DNS домена, трафик идёт мимо него. Строку часто гасят блокировщики рекламы и приватные DNS — на ПК с расширениями чаще, чем на телефоне. Важна строка «Домен {H}»: она и проверяет, что DNS Cloudflare отдаёт адрес сайта.',
+    net_copy: 'Копировать лог',
     pass_show: 'Показать пароль', pass_hide: 'Скрыть пароль',
     net_off_hint: 'Нет связи — эта функция станет доступна, когда появится сеть',
     net_saved_off: 'Сохранено на устройстве — отправится, когда появится связь',
@@ -1331,7 +1334,10 @@ const I18N = {
     net_pill_t: 'Server connection · tap to check', net_check_btn: 'Check connection',
     net_unst: 'unstable', net_modal_h: 'Connection check', net_l_fail: 'no response',
     net_l_inet: 'Internet', net_l_gd: 'Google Drive service', net_l_map: 'Maps service',
-    net_l_bn: 'Bouncie service', net_l_gh: 'GitHub server (hosting)', net_l_cf: 'Cloudflare server',
+    net_l_bn: 'Bouncie service', net_l_gh: 'GitHub server (hosting)', net_l_cf: 'cloudflare.com site',
+    net_l_dom: '{H} domain (Cloudflare DNS)', net_l_blocked: 'no response — looks blocked by this browser',
+    net_cf_note: 'The cloudflare.com site is not part of the app: Cloudflare only holds the domain DNS here, traffic does not go through it. Ad blockers and private DNS often kill this line — more often on a PC with extensions than on a phone. What matters is the «{H} domain» line: it checks that Cloudflare DNS resolves the site.',
+    net_copy: 'Copy log',
     pass_show: 'Show password', pass_hide: 'Hide password',
     net_off_hint: 'No connection — this function becomes available when the network is back',
     net_saved_off: 'Saved on this device — will be sent when the connection is back',
@@ -3852,6 +3858,23 @@ async function netProbe(run){
   try{ await run(ctl ? ctl.signal : undefined); return Math.max(1, Math.round(performance.now() - t0)); }
   finally{ clearTimeout(tm); }
 }
+/* картинкой, без CORS: некоторые фильтры режут fetch, но пропускают <img> */
+function netImgProbe(url){
+  return new Promise((res, rej) => {
+    const t0 = performance.now(); const im = new Image(); let done = false;
+    const fin = ok => { if (done) return; done = true; ok ? res(Math.max(1, Math.round(performance.now() - t0))) : rej(new Error('img')); };
+    im.onload = () => fin(true); im.onerror = () => fin(false);
+    setTimeout(() => fin(false), NET_TIMEOUT_MS);
+    im.src = url;
+  });
+}
+function netCopy(){
+  const box = $('#net-log'); if (!box) return;
+  const txt = `TechLog v${APP_VERSION} · ${t('net_modal_h')} · ${new Date().toLocaleString()}\n${location.href}\n`
+    + [...box.children].map(d => d.textContent.trim()).join('\n');
+  (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject())
+    .then(() => toast('✓ ' + t('copied'))).catch(() => toast('⚠ ' + t('net_l_fail'), 'err'));
+}
 async function netLine(label, run){
   const el = netLog(label + ' …', 'dim');
   try{
@@ -3867,7 +3890,10 @@ function netModal(){
     <div class="net-mrow">${netPillHtml()}</div>
     <div class="mq-log net-log" id="net-log"></div>
     <button class="btn btn-blue" id="net-run" style="margin-top:10px" onclick="App.netRunChecks()">${ic('wifi')} ${t('net_check_btn')}</button>
-    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('close')}</button>
+    <div class="btn-row3" style="grid-template-columns:1fr 1fr;margin-top:8px">
+      <button class="btn btn-ghost" onclick="App.netCopy()">${ic('clipboard')} ${t('net_copy')}</button>
+      <button class="btn btn-ghost" onclick="App.closeModal()">${t('close')}</button>
+    </div>
   `);
   netRunChecks();
 }
@@ -3914,9 +3940,31 @@ async function netRunChecks(){
       else netLog('— ' + t('net_l_bn') + ' · ' + t('diag_skip'), 'dim');
       await netLine(t('net_l_gh'), sig =>
         fetch('version.json?ping=' + Date.now(), { cache: 'no-store', signal: sig }));
-      await netLine(t('net_l_cf'), sig =>
-        fetch('https://www.cloudflare.com/cdn-cgi/trace',
+      /* v1.08.88: раньше «Сервер Cloudflare» ходил на сайт cloudflare.com —
+         на ПК его гасят блокировщики и приватные DNS, и строка краснела при
+         полностью рабочей связи. Что действительно зависит от Cloudflare —
+         DNS домена: проверяем сам домен (на нём же и работаем). */
+      await netLine(t('net_l_dom').replace('{H}', CANON_HOST), sig =>
+        fetch('https://' + CANON_HOST + '/version.json?ping=' + Date.now(),
           { mode: 'no-cors', cache: 'no-store', credentials: 'omit', signal: sig }));
+      /* сам сайт Cloudflare — справочно: если интернет жив, а строка молчит,
+         это фильтр в браузере, а не обрыв связи */
+      {
+        const el = netLog(t('net_l_cf') + ' …', 'dim');
+        let ms = null;
+        try{
+          ms = await netProbe(sig => fetch('https://www.cloudflare.com/cdn-cgi/trace',
+            { mode: 'no-cors', cache: 'no-store', credentials: 'omit', signal: sig }));
+        }catch(e){
+          try{ ms = await netImgProbe('https://www.cloudflare.com/favicon.ico?d=' + Date.now()); }catch(e2){ ms = null; }
+        }
+        if (ms != null) netLogSet(el, `✓ ${t('net_l_cf')} — ${ms} ${t('net_ms')}`, ms >= NET_SLOW_MS ? 'warn' : 'ok');
+        else if (netState() !== 'off' && netState() !== 'warn'){
+          netLogSet(el, `⚠ ${t('net_l_cf')} — ${t('net_l_blocked')}`, 'warn');
+          netLog(t('net_cf_note').replace(/\{H\}/g, CANON_HOST), 'dim');
+        }
+        else netLogSet(el, `✗ ${t('net_l_cf')} — ${t('net_l_fail')}`, 'err');
+      }
     }
     /* хвост — очереди устройства, как в быстрой проверке */
     const q = pendingLoad().length, m = (typeof mediaQ !== 'undefined' && mediaQ) ? mediaQ.length : 0;
@@ -9088,7 +9136,7 @@ function viewSettings(){
       </div>
       <button class="btn btn-green sm" onclick="App.sync()">${t('sync')}</button>
     </div>
-    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.netCheck()">${ic('wifi')} ${t('net_check_btn')} · ${netPillHtml()}</button>
+    <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.netModal()">${ic('wifi')} ${t('net_check_btn')} · ${netPillHtml()}</button>
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.diag()">${ic('steth')} ${t('diag')}</button>
     <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.showLog()">${ic('receipt')} ${t('log_title')}</button>
     ${isAdmin() ? `<button class="btn btn-blue sm" style="margin-top:8px" onclick="App.dbDiag()">${ic('archive')} ${t('db_diag')}</button>` : ''}
@@ -10335,7 +10383,7 @@ const App = {
   accStaffOpen(id){ const f = accF(); f.staffOpen[id] = !f.staffOpen[id]; render(); },
   accType, accMark, accMarkAll, accSaveRates, accMapSet, accMapReset, accDoc, accPdf, accPdfBatch, accCsv,
   /* v1.08.38: офлайн-режим и спойлеры инвойса */
-  netCheck, netModal, netRunChecks, netOff, netState: () => netState(), invSecAll, invSecToggle, jrArchive, staffName, tvCleanup,
+  netCheck, netModal, netRunChecks, netCopy, netOff, netState: () => netState(), invSecAll, invSecToggle, jrArchive, staffName, tvCleanup,
   /* v1.08.37: режим телевизора */
   tvStart, tvCancel, tvNewCode, tvFsGo, tvFsExit,
   tvListRefresh, tvApprove, tvDeny, tvRevoke,
