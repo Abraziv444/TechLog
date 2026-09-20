@@ -2793,9 +2793,9 @@ console.log('\n— v1.09.10: история треков, папка забло�
   const gs = fs.readFileSync(ROOT + '/supabase/functions/_shared/google.ts', 'utf8');
   const sqlU = fs.readFileSync(ROOT + '/supabase/update-to-1_09_10.sql', 'utf8');
   const sqlF = fs.readFileSync(ROOT + '/supabase/full-install-1_09_10.sql', 'utf8');
-  t('v1.09.10: версии (app = sw = version.json = 1.09.10), DB_SQL_FILE = full-install-1_09_10.sql, комплект SQL и тест на месте',
-    T.APP_VERSION === '1.09.10' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.10'")
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.10' && T.DB_SQL_FILE === 'full-install-1_09_10.sql'
+  t('v1.09.10: версии (app = sw = version.json, не ниже 1.09.10), DB_SQL_FILE не ниже full-install-1_09_10.sql, комплект SQL и тест на месте',
+    /^1\.(09\.[1-9]\d|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.11: версия двинулась дальше */
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /^full-install-1_09_[1-9]\d\.sql$/.test(T.DB_SQL_FILE)
     && fs.existsSync(ROOT + '/tests/v1_09_10.js'));
   t('v1.09.10: SQL — bn_trips (уникальность imei+старт), bn_trip_days, RLS только на чтение по праву трека; update включает 1.09.08 и 1.09.09',
     [sqlU, sqlF].every(q => q.includes('create table if not exists public.bn_trips') && q.includes('create unique index if not exists bn_trips_imei_start_uq on public.bn_trips (imei, started_at)')
@@ -2827,6 +2827,27 @@ console.log('\n— v1.09.10: история треков, папка забло�
   /* неделя — с понедельника; выбор машин: «все» = null */
   { const prevD = T.TRKH ? T.TRKH.date : null;
     t('v1.09.10: словарь — ключи вкладки не пересекаются с ключами справочника трекеров', ['trk_all', 'trk_none', 'trk_empty'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2)); }
+}
+
+console.log('\n— v1.09.11: «Несохранённые изменения» без правок —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  t('v1.09.11: версии (app = sw = version.json = 1.09.11), SQL не менялся, тест на месте',
+    T.APP_VERSION === '1.09.11' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.11'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.11' && T.DB_SQL_FILE === 'full-install-1_09_10.sql'
+    && fs.existsSync(ROOT + '/tests/v1_09_11.js'));
+  t('v1.09.11: jobKey сравнивает form_data в каноническом виде, а не строкой «как есть»',
+    src.includes('function canonVal(v){') && src.includes('function jobFdCanon(fd){ return canonVal(Object.assign(emptyFormData(), fd || {})); }')
+    && src.includes("st === 'approved' ? 'approved' : st, jobFdCanon(j.form_data)]);") && !src.includes("st === 'approved' ? 'approved' : st, j.form_data]);"));
+  /* сам алгоритм: порядок ключей не важен, значения важны */
+  { const fn = new Function(src.slice(src.indexOf('function canonVal(v){'), src.indexOf('function jobFdCanon(fd){')) + '; return canonVal;')();
+    const a = { steam: { on: false, rooms: 1, deep_scrub: true }, others: [{ desc: 'x', amount: 5 }], pad: { size: null } };
+    const b = { pad: { size: null }, others: [{ amount: 5, desc: 'x' }], steam: { deep_scrub: true, rooms: 1, on: false } };
+    const c = JSON.parse(JSON.stringify(b)); c.steam.rooms = 2;
+    const d = JSON.parse(JSON.stringify(b)); d.others = [{ amount: 5, desc: 'x' }, { amount: 0, desc: '' }];
+    t('v1.09.11: canonVal — порядок ключей не влияет, изменённое значение и новая строка массива — влияют; undefined отбрасывается',
+      JSON.stringify(fn(a)) === JSON.stringify(fn(b)) && JSON.stringify(fn(a)) !== JSON.stringify(fn(c)) && JSON.stringify(fn(a)) !== JSON.stringify(fn(d))
+      && JSON.stringify(fn({ x: 1, y: undefined })) === JSON.stringify(fn({ x: 1 }))); }
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);

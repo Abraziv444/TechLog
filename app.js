@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.10';
+const APP_VERSION = '1.09.11';
 const DB_SQL_FILE = 'full-install-1_09_10.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -9192,13 +9192,28 @@ function docBarHtml(o){
 }
 /* Есть ли несохранённые правки: сравниваем черновик с тем, что в базе.
    Сравнение по значимым полям — updated_at и служебное меняются сами. */
+/* v1.09.11 · «НЕСОХРАНЁННЫЕ ИЗМЕНЕНИЯ» БЕЗ ПРАВОК. Сравнивались строки JSON.stringify(form_data),
+   а порядок ключей у двух сторон разный: PostgreSQL хранит jsonb с ключами, отсортированными
+   по длине и алфавиту ({"dye":…,"fog":…,"pad":…,"extra":…}), а черновик при открытии
+   собирается как Object.assign(emptyFormData(), …) — в порядке бланка; у документов старых
+   версий к тому же нет новых разделов (aux_take, extra), которые черновик получает пустыми.
+   Итог: любой документ, пришедший с сервера, считался изменённым сразу после открытия — окно
+   спрашивало про несохранённые правки, а системная «назад» молча пересохраняла документ. В демо
+   не воспроизводилось: там данные лежат в localStorage в том порядке, как их записало приложение.
+   Теперь обе стороны приводятся к одному виду: те же разделы, ключи по алфавиту на всех уровнях. */
+function canonVal(v){
+  if (Array.isArray(v)) return v.map(canonVal);
+  if (v && typeof v === 'object'){ const o = {}; Object.keys(v).sort().forEach(k => { if (v[k] !== undefined) o[k] = canonVal(v[k]); }); return o; }
+  return v;
+}
+function jobFdCanon(fd){ return canonVal(Object.assign(emptyFormData(), fd || {})); }
 function jobKey(j){
   if (!j) return '';
   const chk = $('#jb-done');
   const st = (chk && jobDraft && j === jobDraft) ? (chk.checked ? 'done' : 'draft') : (j.status === 'approved' ? 'approved' : j.status);
   return JSON.stringify([j.date, j.unit_number || '', j.note || '', j.technician_id || '', j.work_type_id || '',   // v1.09.08: + вид работы
     (j.helper_ids || []).slice().sort(), !!j.shared_with_helpers, j.proposal_id || '',
-    st === 'approved' ? 'approved' : st, j.form_data]);
+    st === 'approved' ? 'approved' : st, jobFdCanon(j.form_data)]);
 }
 function jobDirty(){
   if (!jobDraft) return false;
