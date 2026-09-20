@@ -25,6 +25,7 @@ const t = (name, cond, extra) => {
 
 const expose = `;window.__T = {
   DICT: I18N, APP_VERSION, DB_SQL_FILE, DB_NEED_COLS, DB_NEED_RPCS, POP_POS,
+  wtPreset, fdBoxes, fdBoxesApply, fdBoxesStd, dictLangAuto,   /* v1.09.08 */
   hasCyr, enText, needsTr, trFields, trMiss, trCanWrite, trDocLabel,
   translit, pdfLatinize, enName,
   renderNoFmt, docNo, pickNo, docNoVals, DOC_FMT_DEF, FILE_FMT_DEF, DOC_TOKENS, FILE_TOKENS,
@@ -707,7 +708,7 @@ console.log('\n— корень и конечная папка на Диске (
   t('карточка предупреждает про старую функцию', /gd_paths_old/.test(src));
   t('пример пути инвойса — с подчёркиванием', /slice\(0, 7\)\.replace\('-', '_'\)/.test(src));
   t('минимальные версии функций подняты',
-    /'media-begin': '1\.08\.25'/.test(src) && /'media-health': '1\.08\.25'/.test(src));
+    /'media-begin': '1\.(08\.(2[5-9]|[3-9]\d)|09\.\d\d)'/.test(src) && /'media-health': '1\.(08\.(2[5-9]|[3-9]\d)|09\.\d\d)'/.test(src));   /* v1.09.10: минимум двинулся дальше */
   ['gd_root','gd_into','gd_into_root','gd_seg_cp','gd_seg_cx','gd_seg_unit','gd_seg_tech',
    'gd_seg_doc','gd_photo_note','gd_paths_old']
     .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
@@ -953,7 +954,8 @@ console.log('\n— спойлеры инвойса (v1.08.38) —');
   t('others: описание строки — заполнен', T.invSecFilled('others', o, null, ''));
   t('note: только текст заметки — заполнен', T.invSecFilled('note', e, null, 'Ключ в офисе'));
   const x = T.emptyFormData(); x.extra = [{ qty: 1 }];
-  t('note: строка доп. работ — заполнен', T.invSecFilled('note', x, null, ''));
+  /* v1.09.08: доп. работы по шаблону переехали в раздел Other services */
+  t('others: строка доп. работ по шаблону — заполнен (а заметка — нет)', T.invSecFilled('others', x, null, '') && !T.invSecFilled('note', x, null, ''));
   ['net_on','net_off','net_srv','net_off_hint','net_saved_off','net_login_off','inv_sec_open_all','inv_sec_fold_empty']
     .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
 }
@@ -1697,7 +1699,7 @@ console.log('\n— v1.08.51: учёба —');
     && src.includes("Настройки → «Режим телевизора» → «ТВ-экраны»") && src.includes("Settings → “TV mode” → “TV screens”"));
   t('v1.09.00: «Push уведомления и подсказки» одним разделом; «Прочие функции» (Функции, Код приглашения, PWA) — последний раздел перед «Выйти»',
     src.includes("${fold('push', t('push_pop_card'), 'bell', pbCardHtml() + popCardHtml())}") && !src.includes("fold('pop'")
-    && !src.includes("fold('feat'") && src.includes("${fold('misc', t('misc_card'), 'gear', miscCardHtml())}\n\n  <button class=\"btn btn-red\" onclick=\"App.logout()\">")
+    && !src.includes("fold('feat'") && /\$\{fold\('misc', t\('misc_card'\), 'gear', miscCardHtml\(\)\)\}\n\n  <button class="btn btn-red"(?: id="set-logout")? onclick="App\.logout\(\)">/.test(src)   /* v1.09.09: у кнопки появился id */
     && src.includes("return (isAdmin() ? featCardHtml() + inviteCardHtml() : '') + pwaCardHtml();")
     && (src.match(/onclick="App\.inviteSave\(\)"/g) || []).length === 1 && (src.match(/onclick="App\.updCheck\(\)"/g) || []).length === 1
     && /function inviteCardHtml\(\)\{\s*if \(!isAdmin\(\)\) return '';/.test(src)
@@ -1852,7 +1854,7 @@ console.log('\n— v1.08.51: учёба —');
     && fs.readFileSync(path.join(ROOT, 'supabase/update-to-1_08_71.sql'), 'utf8').includes('media_lock_approved boolean not null default true')
     && fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_08_71.sql'), 'utf8').includes('media_lock_approved')
     && fs.readFileSync(path.join(ROOT, 'supabase/functions/media-delete/index.ts'), 'utf8').includes('LOCKED_APPROVED')
-    && fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/google.ts'), 'utf8').includes('FN_VER = "1.08.71"') && src.includes("'media-delete': '1.08.71'"));
+    && fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/google.ts'), 'utf8').match(/FN_VER = "1\.(08\.(7[1-9]|[89]\d)|09\.\d\d)"/) && src.includes("'media-delete': '1.08.71'"));   /* v1.09.10: FN_VER двинулся дальше */
   t('v1.08.71: полная проверка Диска — кнопка в карточке Диска и функция gdFullTest в App',
     src.includes('App.gdFullTest()') && src.includes('async function gdFullTest()') && src.includes("kind === 'invoice' ? M_INV_MAX"));
   t('v1.08.70: разбор комбо-пунктов — «1 и 3», «все», «ни один», просто число, обычный текст',
@@ -2127,7 +2129,7 @@ console.log('\n— v1.09.01: справочник «Трекеры Bouncie» —
   const upd = fs.readFileSync(ROOT + '/supabase/update-to-1_09_01.sql', 'utf8');
   const full = fs.readFileSync(ROOT + '/supabase/full-install-1_09_01.sql', 'utf8');
   t('v1.09.01: версии (app = sw = version.json, не ниже 1.09.01), DB_SQL_FILE = full-install-1_09_01.sql, комплект SQL и тесты на месте',
-    /^1\.(09\.(0[1-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && T.DB_SQL_FILE === 'full-install-1_09_01.sql'   /* v1.09.02: версия двинулась дальше, база — нет */
+    /^1\.(09\.(0[1-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && /^full-install-1_09_(0[1-9]|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE)   /* v1.09.02: версия двинулась дальше, база — нет */
     && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
     && fs.existsSync(ROOT + '/tests/bn-devices.sql') && fs.existsSync(ROOT + '/tests/v1_09_01.js'));
   t('v1.09.01: ключи RU/EN справочника трекеров и карточки машины',
@@ -2241,7 +2243,7 @@ console.log('\n— v1.09.02: личные настройки меню (подп�
   const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
   t('v1.09.02: версии (app = sw = version.json = 1.09.02), SQL не менялся, тест на месте',
     /^1\.(09\.(0[2-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.03: версия двинулась дальше */
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql' && fs.existsSync(ROOT + '/tests/v1_09_02.js'));
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /^full-install-1_09_(0[1-9]|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE) && fs.existsSync(ROOT + '/tests/v1_09_02.js'));
   t('v1.09.02: ключи RU/EN настроек меню',
     ['ml_title', 'ml_auto', 'ml_on', 'ml_off', 'ml_hint', 'mr_title', 'mr_d', 'mr_hint'].every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]));
   t('v1.09.02: tabbarCols — поровну, из расчёта не меньше 4 пунктов на ряд',
@@ -2306,7 +2308,7 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   const APP = w.App || globalThis.App;
   t('v1.09.03: версии (app = sw = version.json = 1.09.03), SQL не менялся, BK_VER = 1.09.03, тесты на месте',
     /^1\.(09\.(0[3-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.04: версия двинулась дальше */
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /^full-install-1_09_(0[1-9]|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE)
     && fs.readFileSync(ROOT + '/supabase/functions/backup/index.ts', 'utf8').includes('const BK_VER = "1.09.03";')
     && fs.readFileSync(ROOT + '/supabase/functions-dashboard/backup/index.ts', 'utf8').includes('const BK_VER = "1.09.03";')
     && fs.existsSync(ROOT + '/tests/v1_09_03.js') && fs.existsSync(ROOT + '/tests/backup-rotation.js'));
@@ -2402,7 +2404,7 @@ console.log('\n— v1.09.04: значок «копировать» — два л
   const prevLang = T.state.lang, prevData = T.state.data;
   t('v1.09.04: версии (app = sw = version.json, не ниже 1.09.04), SQL не менялся, тест на месте',
     /^1\.(09\.(0[4-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.05: версия двинулась дальше */
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /^full-install-1_09_(0[1-9]|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE)
     && fs.existsSync(ROOT + '/tests/v1_09_04.js'));
   t('v1.09.04: значок copy — прямоугольник + второй лист под ним; у адреса стоит он, а не планшет',
     /^<rect [^>]*\/><path /.test(T.IC.copy) && T.addrLineHtml({ id: 'c1', address: '1 Main St' }).includes(T.IC.copy)
@@ -2446,7 +2448,7 @@ console.log('\n— v1.09.05: компактная плотность (телеф
   const prevUser = T.state.user, prevData = T.state.data, prevLang = T.state.lang;
   t('v1.09.05: версии (app = sw = version.json, не ниже 1.09.05), SQL не менялся, тест и ТЗ на месте',
     /^1\.(09\.(0[5-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && swjs.includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.06: версия двинулась дальше */
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /^full-install-1_09_(0[1-9]|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE)
     && fs.existsSync(ROOT + '/tests/v1_09_05.js') && fs.existsSync(ROOT + '/TZ-compact-mode.md'));
   t('v1.09.05: compact.css подключён ПОСЛЕ desktop.css и лежит в предзагрузке service worker',
     idx.indexOf('./compact.css') > idx.indexOf('./desktop.css') && idx.indexOf('./desktop.css') > 0 && swjs.includes("'./compact.css',"));
@@ -2551,7 +2553,7 @@ console.log('\n— v1.09.06: кнопка «назад» возвращает т
   const prevUser = T.state.user, prevScreen = T.state.screen, prevLang = T.state.lang;
   t('v1.09.06: версии (app = sw = version.json, не ниже 1.09.06), SQL не менялся, тест на месте',
     /^1\.(09\.(0[6-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.07: версия двинулась дальше */
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /^full-install-1_09_(0[1-9]|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE)
     && fs.existsSync(ROOT + '/tests/v1_09_06.js'));
   /* история экранов */
   const go = (scr, y) => { T.state.screen = scr; T.navTrack(y || 0); };
@@ -2612,9 +2614,9 @@ console.log('\n— v1.09.07: пачка по замечаниям —');
   const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
   const dcss = fs.readFileSync(ROOT + '/desktop.css', 'utf8');
   const ccss = fs.readFileSync(ROOT + '/compact.css', 'utf8');
-  t('v1.09.07: версии (app = sw = version.json = 1.09.07), SQL не менялся, тест на месте',
-    T.APP_VERSION === '1.09.07' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.07'")
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.07' && T.DB_SQL_FILE === 'full-install-1_09_01.sql'
+  t('v1.09.07: версии (app = sw = version.json, не ниже 1.09.07), тест на месте',
+    /^1\.(09\.(0[7-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.08: версия двинулась дальше */
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /^full-install-1_09_(0[1-9]|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE)
     && fs.existsSync(ROOT + '/tests/v1_09_07.js'));
   /* петля наблюдателя: класс на <html> — только при реальной смене */
   const offBody = dsk.slice(dsk.indexOf('function off() {'), dsk.indexOf('function off() {') + 260);
@@ -2625,7 +2627,7 @@ console.log('\n— v1.09.07: пачка по замечаниям —');
     dsk.includes('if (key && key === lastKey && lastUrl) return;') && dsk.includes('lastUrl = url; lastKey = key;')
     && dsk.includes('if (fresh) { lastKey = null; schedGen(80); }') && /pdfPreviewBlob, pdfPreviewKey,/.test(src) && src.includes('function pdfPreviewKey(){'));
   /* крестики очистки */
-  t('v1.09.07: крестик очистки — в задании, пропозале и ремонте (9 полей)', (src.match(/\$\{inpxBtn\(\)\}/g) || []).length === 9
+  t('v1.09.07: крестик очистки — в задании, пропозале и ремонте (9 полей)', (src.match(/\$\{inpxBtn\(\)\}/g) || []).length >= 9   /* v1.09.08: + строки Other services */
     && src.includes('function inpClear(btn){') && src.includes('function comboClear(kind, keepText){') && /inpClear, comboClear,/.test(src));
   t('v1.09.07: пустой текст комбо сбрасывает скрытый id; уход из поля нормализует текст',
     src.includes("if (!String(q || '').trim() && ($('#nt-' + kind) || {}).value) comboClear(kind, true);") && src.includes('function comboNormalize(kind){')
@@ -2647,9 +2649,9 @@ console.log('\n— v1.09.07: пачка по замечаниям —');
   /* оформление */
   t('v1.09.07: «?» — vertical-align:middle; кружок номера 48 px', /\.tipq\{[^}]*vertical-align:middle;top:-1px/.test(css) && !/\.tipq\{[^}]*vertical-align:-6px/.test(css)
     && /\.carno-dot\{ display:inline-flex; width:48px; height:48px;/.test(css));
-  t('v1.09.07: заметка на карточке — одна строка (ПК и компактная плотность), в окне пикапов — две',
+  t('v1.09.07: заметка на карточке — одна строка (ПК и компактная плотность); в окне пикапов с 1.09.09 тоже одна',
     dcss.includes('html.tl-desktop .item .info .s.note-line{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }')
-    && /html\.tl-compact \.item \.info \.s\.note-line\{[^}]*text-overflow:ellipsis/.test(ccss) && /\.pkm-s\.note-line\{[^}]*-webkit-line-clamp:2/.test(css));
+    && /html\.tl-compact \.item \.info \.s\.note-line\{[^}]*text-overflow:ellipsis/.test(ccss) && /\.pkm-s\.note-line\{[^}]*text-overflow:ellipsis/.test(css));
   /* учёба */
   t('v1.09.07: учёба — надписи под учебником нет, время только у админа',
     !src.includes("${t('st_read_hint')}</div>\n  </div>`;") && src.includes("${isAdmin() ? kpi(fmtMs(st.testMs), t('st_time_tests'), '')")
@@ -2657,6 +2659,174 @@ console.log('\n— v1.09.07: пачка по замечаниям —');
   t('v1.09.07: справка (RU/EN) — крестики очистки и вкладка менеджера',
     src.includes('Крестик контрагента снимает и комплекс') && src.includes('The counterparty cross also clears the complex')
     && src.includes('вкладка «Сотрудники» только для чтения') && src.includes('a read-only Staff tab then appears'));
+}
+
+console.log('\n— v1.09.08: стандартные галочки вида задачи, смена вида, Other services —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  const upd = fs.readFileSync(ROOT + '/supabase/update-to-1_09_08.sql', 'utf8');
+  const full = fs.readFileSync(ROOT + '/supabase/full-install-1_09_08.sql', 'utf8');
+  t('v1.09.08: версии (app = sw = version.json, не ниже 1.09.08), DB_SQL_FILE не ниже full-install-1_09_08.sql, SQL и тест на месте',
+    /^1\.(09\.(0[8-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
+    && /^full-install-1_09_(0[8-9]|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE) && fs.existsSync(ROOT + '/supabase/' + T.DB_SQL_FILE)
+    && fs.existsSync(ROOT + '/tests/v1_09_08.js'));
+  t('v1.09.08: SQL — колонка preset и вид OTHER, идемпотентно, в полном скрипте то же',
+    [upd, full].every(q => q.includes('alter table public.work_types add column if not exists preset jsonb;')
+      && q.includes("where not exists (select 1 from public.work_types where upper(name) like 'OTHER%')") && q.includes('on conflict (id) do nothing;')
+      && q.includes("column_name='preset'")));
+  t('v1.09.08: диагностика БД знает про work_types.preset', /\['work_types',\s+'preset'\]/.test(src));
+  /* наборы галочек */
+  const W = n => ({ name: n });
+  t('v1.09.08: встроенные наборы по названию вида', JSON.stringify([T.wtPreset(W('VETVAG (water extraction)')), T.wtPreset(W('DAMAGE WATER')), T.wtPreset(W('STEAM CLEAN')),
+      T.wtPreset(W('AIR DUCT')), T.wtPreset(W('DEMOLITION (walls/cabinets)')), T.wtPreset(W('OTHER'))])
+    === JSON.stringify([['wetvac.wet_vac'], ['wetvac.flood'], ['steam.deep_scrub'], ['airduct.air_duct'], [], []]));
+  t('v1.09.08: набор из справочника важнее встроенного; мусорные ключи отбрасываются',
+    JSON.stringify(T.wtPreset({ name: 'STEAM CLEAN', preset: ['dye.spot', 'nope.key', 'fog.pet'] })) === JSON.stringify(['dye.spot', 'fog.pet'])
+    && JSON.stringify(T.wtPreset({ name: 'STEAM CLEAN', preset: [] })) === '[]');
+  const fd = T.fdBoxesApply(T.emptyFormData(), ['steam.deep_scrub', 'wetvac.flood']);
+  t('v1.09.08: fdBoxesApply ставит ровно набор и не трогает остальное', fd.steam.deep_scrub === true && fd.wetvac.flood === true && fd.steam.rotovac === false
+    && fd.steam.rooms === 1 && Array.isArray(fd.others) && fd.others.length === 3 && JSON.stringify(T.fdBoxes(fd)) === JSON.stringify(['steam.deep_scrub', 'wetvac.flood']));
+  t('v1.09.08: «галочки не трогали» — пусто или ровно стандартный набор своего вида',
+    T.fdBoxesStd(T.emptyFormData(), W('STEAM CLEAN')) === true
+    && T.fdBoxesStd(T.fdBoxesApply(T.emptyFormData(), ['steam.deep_scrub']), W('STEAM CLEAN')) === true
+    && T.fdBoxesStd(T.fdBoxesApply(T.emptyFormData(), ['steam.deep_scrub', 'removals.wax']), W('STEAM CLEAN')) === false
+    && T.fdBoxesStd(T.fdBoxesApply(T.emptyFormData(), ['steam.rotovac']), W('STEAM CLEAN')) === false);
+  t('v1.09.08: создание задачи — с набором вида и посчитанной суммой', src.includes('const fd0 = fdBoxesApply(emptyFormData(), wtPreset(wtById(ntWt)));')
+    && src.includes('form_data: fd0, total: calcTotal(fd0, priceResolver(cpId)),'));
+  t('v1.09.08: смена вида — кнопка в шапке, права, окно выбора, окно-вопрос, журнал',
+    src.includes('function wtCanChange(j){') && src.includes("if (j.status === 'approved' && !isAdmin()) return false;") && src.includes('onclick="App.wtChangeModal()"')
+    && src.includes("if (fdBoxesStd(j.form_data, wtById(j.work_type_id))){ wtChangeDo(id, true); return; }") && src.includes("App.wtChangeDo('${id}', false)")
+    && src.includes("audit('job_wt_change'") && ('act_job_wt_change' in T.DICT.ru) && ('act_job_wt_change' in T.DICT.en) && /wtChangeModal, wtChangePick, wtChangeDo,/.test(src));
+  t('v1.09.08: смена вида видна как несохранённая правка (вид входит в ключ документа)', src.includes("j.technician_id || '', j.work_type_id || '',"));
+  t('v1.09.08: тултип «Вид задачи» — RU/EN, в форме задания и в шапке документа',
+    ('wt_tip' in T.DICT.ru) && ('wt_tip' in T.DICT.en) && /OTHER/.test(T.DICT.ru.wt_tip) && /\{WT\}/.test(T.DICT.ru.wt_tip)
+    && src.includes("${t('work_type')} ${tipQ('wt_tip')}</span>") && (src.match(/tipQ\('wt_tip'\)/g) || []).length >= 3);
+  t('v1.09.08: справочник — сетка стандартных галочек, сохранение не теряет остальные поля вида',
+    src.includes('data-wtbox="${sec}.${k}"') && src.includes("const row = { ...(wtById(id) || {}), id, name: $('#wt-name').value.trim(), color: $('#wt-color-v').value, preset,"));
+  t('v1.09.08: демо — вид OTHER', /name: 'OTHER', color: '#8AA0AB'/.test(src));
+  /* Other services */
+  t('v1.09.08: Other services — строки, инструменты, шаблоны и переводы внутри раздела',
+    src.includes('<div id="oth-rows">${othRowsHtml()}</div>') && src.includes('${othToolsHtml()}') && src.includes('<div id="oth-tr">${othTrHtml()}</div>')
+    && src.includes('onclick="App.othAdd()"') && /othAdd, othDel, othDict, othTranslate,/.test(src)
+    && (src.match(/<div id="extra-list">/g) || []).length === 1 && src.indexOf('<div id="extra-list">') < src.indexOf('data-sec="note"'));
+  t('v1.09.08: первые три строки не удаляются, потолок 20', src.includes('if (i < 3 || i >= rows.length) return;') && src.includes('if (rows.length >= 20)') && src.includes('${i >= 3 ? `<button type="button" class="icon-btn sm oth-del"'));
+  t('v1.09.08: общая карточка переводов не дублирует строки Other services', src.includes("${trCardHtml('job', j, true)}") && src.includes("!(skipOth && /^oth\\d+$/.test(f.id))"));
+  t('v1.09.08: сумма в шапке раздела — строки + шаблоны; «раздел не пуст» учитывает шаблоны',
+    src.includes("${amtWrap('othsum',(sec.others||0)+(sec.extra||0))}") && src.includes("document.querySelector('[data-amt=\"othsum\"]')")
+    && src.includes("|| (fd.extra || []).length > 0;   // v1.09.08") && src.includes("case 'note':       return !!String(note || '').trim();"));
+  /* пилюля */
+  const prev = T.state.dictLang;
+  T.state.dictLang = 'ru-RU'; T.dictLangAuto('carpet cleaning'); const a1 = T.state.dictLang;
+  T.dictLangAuto('carpet и пол'); const a2 = T.state.dictLang;
+  T.dictLangAuto('   '); const a3 = T.state.dictLang;
+  T.state.dictLang = prev;
+  t('v1.09.08: пилюля идёт за текстом — латиница → EN, кириллица → RU, пустое поле ничего не меняет', a1 === 'en-US' && a2 === 'ru-RU' && a3 === 'ru-RU', [a1, a2, a3]);
+  t('v1.09.08: автопилюля не пишет личную настройку и молчит во время диктовки', (() => { const b = src.slice(src.indexOf('function dictLangAuto(text){'), src.indexOf('function dictLangAuto(text){') + 520);
+    return b.includes('if (dictTa) return;') && !b.includes('localStorage'); })());
+  /* пропозал из задачи, PDF */
+  t('v1.09.08: «Создать пропозал» из документа — сохранение, предзаполнение, автопривязка',
+    src.includes('onclick="App.propFromJob()"') && src.includes('async function propFromJob(){') && src.includes('if (_propForJob){') && src.includes('await linkProposal(jid, p.id);')
+    && src.includes('function propBack(){ propDraft = null; _propForJob = null; render(); }') && ('prop_from_job' in T.DICT.ru) && ('prop_from_job' in T.DICT.en));
+  t('v1.09.08: лист-продолжение — Unit # и Property/Customer; заметка бланка — до колонки AMOUNT',
+    src.includes("txt('Unit #:', L+2, y);") && src.includes("txt('Property/Customer:', L+2, y);") && (src.match(/splitTextToSize\(noteEn[^\n]{0,30}W - 28\)/g) || []).length === 2 && !/splitTextToSize\(noteEn[^\n]{0,30}W - 16\)/.test(src));
+  t('v1.09.08: стили — кнопка вида, строки и спойлер переводов', css.includes('.wt-change{') && css.includes('.oth-line{ flex-wrap:nowrap;gap:6px }') && css.includes('.oth-trbox{'));
+}
+
+console.log('\n— v1.09.09: настройки, справочники, ТВ, склад, карточки, выборка вопросов —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const css = fs.readFileSync(ROOT + '/styles.css', 'utf8');
+  const ccss = fs.readFileSync(ROOT + '/compact.css', 'utf8');
+  const uic = fs.readFileSync(ROOT + '/tests/ui-check.js', 'utf8');
+  const sqlU = fs.readFileSync(ROOT + '/supabase/update-to-1_09_09.sql', 'utf8');
+  const sqlF = fs.readFileSync(ROOT + '/supabase/full-install-1_09_09.sql', 'utf8');
+  t('v1.09.09: версии (app = sw = version.json, не ниже 1.09.09), DB_SQL_FILE не ниже full-install-1_09_09.sql, комплект SQL и тест на месте',
+    /^1\.(09\.(09|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.10: версия двинулась дальше */
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /^full-install-1_09_(09|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE)
+    && fs.existsSync(ROOT + '/supabase/update-to-1_09_09.sql') && fs.existsSync(ROOT + '/tests/v1_09_09.js'));
+  t('v1.09.09: SQL — dir_order и stock_mode (с проверкой значений) в обоих файлах; update включает и 1.09.08',
+    [sqlU, sqlF].every(q => q.includes('add column if not exists dir_order  jsonb') && q.includes("add column if not exists stock_mode text not null default 'full'")
+      && q.includes("check (stock_mode in ('full','lite'))") && q.includes('add column if not exists preset jsonb'))
+    && ['dir_order', 'stock_mode'].every(c => new RegExp("\\['org_settings',\\s+'" + c + "'\\]").test(src)));
+  t('v1.09.09: настройки — меню разделов; справочники — колёсико, «по умолчанию», «Порядок»',
+    src.includes('function settingsNavHtml(){') && src.includes('function setNavGo(k){') && src.includes('dirTabsWheelBind();')
+    && src.includes('function dirDefaultSet(){') && src.includes('function dirOrderModal(){') && /setNavGo, dirDefaultSet, dirOrderModal,/.test(src));
+  t('v1.09.09: ТВ — экран на всё окно, проверка из-под своей учётной записи, общая плотность',
+    css.includes('html.tl-tv #app.scr-tv, html.tl-tv:not(.tl-desktop) #app.scr-tv, html.tl-tv.tl-desktop #app.scr-tv{')
+    && src.includes('if ((!state.user || TV.test) && TV.screen){') && src.includes('function tvTest(){') && src.includes('function tvTestStop(){')
+    && src.includes("function tvDens(){ return tvCfg().dens === 'compact' ? 'compact' : 'cozy'; }") && /tvTest, tvTestStop, tvDensSet, stockModeSet,/.test(src)
+    && ['tv_test_btn', 'tv_test_stop', 'tv_dens_t'].every(k => (k in T.DICT.ru) && (k in T.DICT.en)));
+  t('v1.09.09: склад — режим «облегчённый / полный»; в облегчённом «Забрал» сразу возвращает на склад',
+    src.includes("function stockLite(){ return (((state.data || {}).org_settings) || {}).stock_mode === 'lite'; }")
+    && (src.match(/\.\.\.stockLiteRet\(now_?\)/g) || []).length === 2 && src.includes('function myOnHandQty(){ if (stockLite()) return 0;')
+    && src.includes("${lite ? '' : myCar}") && src.includes("${lite ? '' : bigrow}") && src.includes("${lite ? '' : carsBlock}")
+    && ['stk_mode_t', 'stk_mode_tip', 'stk_lite_cars', 'eq_hint_lite'].every(k => (k in T.DICT.ru) && (k in T.DICT.en)));
+  t('v1.09.09: карточки дня — один набор строк, номер юнита и чипы не обрезаются',
+    src.includes('function cardNoteLineHtml(note){') && (src.match(/\$\{codesLineHtml\(cx, true\)\}/g) || []).length === 2
+    && (src.match(/<div class="s meta"><span class="mt">/g) || []).length === 2 && (src.match(/<span class="nm">\$\{esc\(cx\.name\)\}<\/span><span class="tail">/g) || []).length === 3
+    && css.includes('.item.clicky .info > .t > .tail, .pkm-card .pkm-t > .tail{ flex:0 0 auto; white-space:nowrap }')
+    && ccss.includes('v1.09.09 · один размер карточек дня'));
+  /* выборка вопросов: равномерно по темам, без повторов между попытками */
+  { const store = {}; const ls = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
+    const fnSrc = src.slice(src.indexOf('function studyPickOrder('), src.indexOf('function studyBegin(secId){'));
+    const shSrc = src.match(/function stShuffle\(a\)\{[^\n]*\n/)[0];
+    const pick = new Function('localStorage', 'state', shSrc + fnSrc + '; return studyPickOrder;')(ls, { user: { id: 'u1' } });
+    const qs = []; ['a', 'b', 'c', 'd'].forEach((tp, ti) => { for (let i = 0; i < [40, 30, 20, 10][ti]; i++) qs.push({ id: tp + i, topic: tp }); });
+    const seen = new Set(); let rep = 0, quotaOk = true;
+    for (let r = 0; r < 5; r++){ const o = pick(qs, 20, 1, true); const tc = {}; o.forEach(i => { if (seen.has(i)) rep++; seen.add(i); tc[qs[i].topic] = (tc[qs[i].topic] || 0) + 1; });
+      if (new Set(o).size !== 20 || tc.a !== 8 || tc.b !== 6 || tc.c !== 4 || tc.d !== 2) quotaOk = false; }
+    const asc = pick(qs, 40, 2, false);
+    t('v1.09.09: выборка 20 из 100 — квоты по темам 8/6/4/2, пять попыток подряд без единого повтора; без «Перемешать» — порядок учебника',
+      quotaOk && rep === 0 && seen.size === 100 && asc.every((v, i) => i === 0 || v > asc[i - 1]), { quotaOk, rep, n: seen.size }); }
+  t('v1.09.09: сквозной UI-тест проверяет области сообщений', uic.includes('ОБЛАСТИ ВЫВОДА СООБЩЕНИЙ') && uic.includes("box: '#net-log'") && uic.includes("box: '#mq-log'"));
+}
+
+console.log('\n— v1.09.10: история треков, папка заблокированного сотрудника —');
+{
+  const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
+  const bn = fs.readFileSync(ROOT + '/supabase/functions/bouncie/index.ts', 'utf8');
+  const mh = fs.readFileSync(ROOT + '/supabase/functions/media-health/index.ts', 'utf8');
+  const mb = fs.readFileSync(ROOT + '/supabase/functions/media-begin/index.ts', 'utf8');
+  const mc = fs.readFileSync(ROOT + '/supabase/functions/media-commit/index.ts', 'utf8');
+  const gs = fs.readFileSync(ROOT + '/supabase/functions/_shared/google.ts', 'utf8');
+  const sqlU = fs.readFileSync(ROOT + '/supabase/update-to-1_09_10.sql', 'utf8');
+  const sqlF = fs.readFileSync(ROOT + '/supabase/full-install-1_09_10.sql', 'utf8');
+  t('v1.09.10: версии (app = sw = version.json = 1.09.10), DB_SQL_FILE = full-install-1_09_10.sql, комплект SQL и тест на месте',
+    T.APP_VERSION === '1.09.10' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.10'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.10' && T.DB_SQL_FILE === 'full-install-1_09_10.sql'
+    && fs.existsSync(ROOT + '/tests/v1_09_10.js'));
+  t('v1.09.10: SQL — bn_trips (уникальность imei+старт), bn_trip_days, RLS только на чтение по праву трека; update включает 1.09.08 и 1.09.09',
+    [sqlU, sqlF].every(q => q.includes('create table if not exists public.bn_trips') && q.includes('create unique index if not exists bn_trips_imei_start_uq on public.bn_trips (imei, started_at)')
+      && q.includes('create table if not exists public.bn_trip_days') && q.includes("create policy bn_trips_sel on public.bn_trips for select")
+      && q.includes("(p.role = 'admin' or p.bn_track is true)") && q.includes('revoke insert, update, delete on public.bn_trips, public.bn_trip_days from authenticated, anon')
+      && q.includes('add column if not exists stock_mode') && q.includes('add column if not exists preset jsonb'))
+    && !/create policy bn_trips_(ins|upd|del)/.test(sqlF) && /\['bn_trips',\s+'started_at'\]/.test(src));
+  t('v1.09.10: bouncie — ?tracks=1 по праву трека, окна ≤ 5 дней, «закрытые» дни не перезапрашиваются, запись попутно из ?stats и ?tv',
+    bn.includes('const BN_VER = "1.09.10";') && bn.includes('if (url.searchParams.get("tracks")) {') && /get\("tracks"\)\) \{\s*\n\s*if \(!canTrack\) return jres\(\{ error: "NO_ACCESS" \}, 403\);/.test(bn)
+    && bn.includes('j - i < 4') && bn.includes('const need = days.filter(d => refresh || !closed(d));') && bn.includes('onConflict: "imei,started_at"')
+    && (bn.match(/await tripsStore\(s, /g) || []).length === 3 && bn.includes('return jres({ error: "NEED_SQL"') && bn.includes('timeZone: "America/New_York"'));
+  t('v1.09.10: копии для Dashboard совпадают с рабочими функциями (кроме пути к google.ts), google.ts одинаков везде',
+    ['bouncie', 'media-begin', 'media-commit', 'media-health'].every(f => fs.readFileSync(ROOT + '/supabase/functions-dashboard/' + f + '/index.ts', 'utf8')
+        === fs.readFileSync(ROOT + '/supabase/functions/' + f + '/index.ts', 'utf8').replace('from "../_shared/google.ts"', 'from "./google.ts"'))
+    && fs.readdirSync(ROOT + '/supabase/functions-dashboard').every(d => { const g = ROOT + '/supabase/functions-dashboard/' + d + '/google.ts'; return !fs.existsSync(g) || fs.readFileSync(g, 'utf8') === gs; }));
+  t('v1.09.10: папка заблокированного — суффикс общий, учитывается в media-begin / media-commit, переименование по ID папки в media-health',
+    gs.includes('export const BLOCKED_SUFFIX = " Заблокирован";') && gs.includes('export function techDirLabel(base: string, blocked: unknown)') && gs.includes('FN_VER = "1.09.10"')
+    && (mb.match(/techDirLabel\(techFolderName\(techName\), techBlocked\)/g) || []).length === 2 && mb.includes('.select("display_name,blocked")')
+    && mc.includes('techDirLabel(techDirName(String(h.display_name ?? "")), h.blocked)') && mh.includes('if (url.searchParams.get("tech_dir")) {')
+    && mh.includes('.eq("kind", "tech").eq("key", uid)') && mh.includes('split(BLOCKED_SUFFIX).join("")'));
+  t('v1.09.10: приложение зовёт переименование после блокировки и разблокировки; минимум версий функций поднят',
+    src.includes('staffDirRename(uid_, want);') && src.includes("'/media-health?tech_dir=' + encodeURIComponent(uid_)")
+    && src.includes("'media-begin': '1.09.10', 'media-commit': '1.09.10', 'media-health': '1.09.10'"));
+  t('v1.09.10: карта — вкладка «Треки» по праву трека, день/неделя, выбор машин; старый «трек дня» ведёт сюда',
+    src.includes("${bnCanTrack() ? `<button class=\"tabbtn ${state.mapTrk?'active':''}\" onclick=\"App.trkMode()\">") && src.includes('function trkControlsHtml(){')
+    && src.includes('function trkLegendHtml(){') && src.includes('function trkDraw(){') && src.includes("'?tracks=1&from=' + r.from + '&to=' + r.to")
+    && src.includes("bnTrack(imei){ TRKH.sel = new Set([String(imei)]);") && /trkMode, trkSetMode, trkSetDate, trkShift, trkCar, trkAll, trkReload,/.test(src)
+    && ['trh_tab', 'trh_week', 'trh_reload', 'trh_need_sql', 'dir_blocked_done'].every(k => (k in T.DICT.ru) && (k in T.DICT.en)));
+  /* неделя — с понедельника; выбор машин: «все» = null */
+  { const prevD = T.TRKH ? T.TRKH.date : null;
+    t('v1.09.10: словарь — ключи вкладки не пересекаются с ключами справочника трекеров', ['trk_all', 'trk_none', 'trk_empty'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2)); }
 }
 
 console.log('\nИтого: пройдено ' + ok + ', провалено ' + bad);

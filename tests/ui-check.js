@@ -174,6 +174,50 @@ const SOFT = ['contrast', 'hit', 'clip'];
       console.log(`  ${hard ? '⛔' : '✓'} учёба/${id}   дефектов ${hard} · ${note.join(' · ')}`);
     }
 
+    /* v1.09.09: ОБЛАСТИ ВЫВОДА СООБЩЕНИЙ (логи). Случай из замечаний: строка-предупреждение в
+       «Проверке связи» превращалась в жёлтый кружок-столбик — общий класс .warn красил её как
+       значок. Теперь в каждую область-лог (.mq-log и полоска отправки .mq-mini-b) тест сам
+       вставляет строки всех видов, включая очень длинную, и проверяет геометрию каждой:
+       строка — во всю ширину области, не вылезает за неё, не круглая и не выше шести строк. */
+    {
+      let hard = 0;
+      const areas = [
+        { name: 'проверка связи', open: () => window.App.netModal(), box: '#net-log', wait: 2500 },
+        { name: 'очередь отправки', open: () => (window.App.mediaQueueModal || window.App.mqOpen || (() => {}))(), box: '#mq-log', wait: 600 },
+      ];
+      for (const a of areas){
+        await page.evaluate(a.open).catch(() => {}); await page.waitForTimeout(a.wait);
+        const res = await page.evaluate((sel) => {
+          const box = document.querySelector(sel); if (!box) return null;
+          const LONG = 'Очень длинная строка журнала: '.repeat(12);
+          ['', 'ok', 'warn', 'err', 'inf', 'dim'].forEach(c => { const d = document.createElement('div'); d.className = 'mq-l ' + c; d.textContent = (c || 'обычная') + ' — ' + (c === 'err' ? LONG : '✓ Сервис карт — 2300 мс'); box.appendChild(d); });
+          const bw = box.clientWidth, br = box.getBoundingClientRect();
+          return [...box.querySelectorAll('.mq-l')].map(e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.35;
+            const bad = [];
+            if (r.width < bw * 0.6) bad.push('узкая: ' + Math.round(r.width) + ' из ' + bw);
+            if (r.left < br.left - 1 || r.right > br.right + 1) bad.push('вылезает за область');
+            if (r.height > lh * 6 + 4 && e.textContent.length < 80) bad.push('слишком высокая: ' + Math.round(r.height));
+            if (parseFloat(cs.borderTopLeftRadius) >= Math.min(r.width, r.height) / 2 - 1 && r.height > 4 && r.width < 60) bad.push('круглая');
+            if (e.scrollWidth > e.clientWidth + 1 && cs.whiteSpace === 'nowrap' && cs.textOverflow !== 'ellipsis') bad.push('текст обрезан без многоточия');
+            return { cls: e.className, bad }; }).filter(x => x.bad.length);
+        }, a.box);
+        if (res === null){ console.log(`  · сообщения/${a.name}: область не открылась — пропуск`); }
+        else { hard += res.length; res.forEach(x => console.log(`      ⛔ сообщения/${a.name}: «${x.cls}» — ${x.bad.join('; ')}`)); }
+        await page.evaluate(() => window.App.closeModal()).catch(() => {}); await page.waitForTimeout(200);
+      }
+      /* полоска отправки: строки хвоста лога */
+      const mini = await page.evaluate(() => {
+        const host = document.getElementById('toasts') || document.body;
+        const el = document.createElement('div'); el.id = 'mq-mini'; el.className = 'mq-mini'; el.innerHTML = '<div class="mq-mini-b"></div>'; host.appendChild(el);
+        const b = el.querySelector('.mq-mini-b');
+        ['ok', 'warn', 'err', 'dim'].forEach(c => { const d = document.createElement('div'); d.className = 'mq-l ' + c; d.textContent = c + ' — файл отправлен на Диск'; b.appendChild(d); });
+        const bw = b.clientWidth; const out = [...b.querySelectorAll('.mq-l')].map(e => ({ cls: e.className, w: Math.round(e.getBoundingClientRect().width), h: Math.round(e.getBoundingClientRect().height), bw })).filter(x => x.w < x.bw * 0.6 || x.h > 60);
+        el.remove(); return out; });
+      hard += mini.length; mini.forEach(x => console.log(`      ⛔ сообщения/полоска отправки: «${x.cls}» ${x.w}×${x.h} при ширине ${x.bw}`));
+      fails += hard;
+      console.log(`  ${hard ? '⛔' : '✓'} сообщения   дефектов ${hard} · проверка связи, очередь отправки, полоска отправки`);
+    }
+
     if (errors.length) {
       fails += errors.length;
       console.log('  ⛔ ошибки в консоли:');

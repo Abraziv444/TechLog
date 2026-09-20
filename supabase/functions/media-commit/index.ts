@@ -1,5 +1,5 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, dirFor, ymDir,
-         folderIdOf, INVOICES_DIR, CORS, jres, FN_VER } from "../_shared/google.ts";
+         folderIdOf, INVOICES_DIR, CORS, jres, FN_VER, techDirLabel } from "../_shared/google.ts";
 
 /* v1.08.13: имя папки сотрудника — как в media-begin */
 function techDirName(display: string) {
@@ -55,9 +55,9 @@ Deno.serve(async (req) => {
             const root = folderIdOf(String(o.data?.gd_inv_folder ?? "")) ||
                          await monthFolder(t, cfg.gd_folder_id, INVOICES_DIR);
             const ymd = ymDir(String(j.data?.date ?? ""));
-            const pr = await s.from("profiles").select("id,display_name").in("id", ids);
+            const pr = await s.from("profiles").select("id,display_name,blocked").in("id", ids);
             for (const h of (pr.data ?? [])) {
-              const dir = techDirName(String(h.display_name ?? "")) || "—";
+              const dir = techDirLabel(techDirName(String(h.display_name ?? "")), h.blocked) || "—";   // v1.09.10
               const techDir = await dirFor(s, t, "tech", String(h.id), root, dir);
               const monthDir = await dirFor(s, t, "ym", techDir + "/" + ymd, techDir, ymd);
               await fetch(

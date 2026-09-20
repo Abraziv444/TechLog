@@ -1,5 +1,5 @@
 import { svc, userClient, driveToken, monthFolder, CORS, jres, FN_VER,
-         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, ymDir } from "../_shared/google.ts";
+         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, ymDir, techDirLabel, BLOCKED_SUFFIX } from "../_shared/google.ts";
 
 /* v1.07.64 · три режима:
    ?cfg=1     — только конфиг без секретов (быстро, для отрисовки карточки);
@@ -45,6 +45,37 @@ Deno.serve(async (req) => {
 
   const url = new URL(req.url);
   const s = svc();
+
+  /* v1.09.10 · ПАПКА СОТРУДНИКА ПРИ БЛОКИРОВКЕ: ?tech_dir=<uid>.
+     Приложение зовёт это сразу после блокировки / разблокировки. Папки сотрудника на Диске
+     (инвойсы и вложения; ищутся по drive_dirs kind='tech', key=uid — по ID, не по имени)
+     переименовываются в «Имя Ф Заблокирован», при разблокировке суффикс снимается. Если у
+     человека папок ещё нет — делать нечего, это не ошибка. Только админ (проверка выше). */
+  if (url.searchParams.get("tech_dir")) {
+    const uid = String(url.searchParams.get("tech_dir") ?? "");
+    if (!/^[0-9a-f-]{36}$/i.test(uid)) return jres({ error: "BAD_REQUEST" }, 400);
+    const { data: pr } = await s.from("profiles").select("display_name,blocked").eq("id", uid).maybeSingle();
+    if (!pr) return jres({ error: "NO_PROFILE" }, 404);
+    const { data: dirs, error: de } = await s.from("drive_dirs").select("kind,key,folder_id,name").eq("kind", "tech").eq("key", uid);
+    if (de) return jres({ error: de.message }, 500);
+    if (!(dirs ?? []).length) return jres({ ok: true, renamed: 0, note: "NO_FOLDERS" });
+    const t = await driveToken();
+    let renamed = 0; const errs: string[] = [];
+    for (const d of dirs ?? []) {
+      const base = String(d.name ?? "").split(BLOCKED_SUFFIX).join("").trim() || "—";
+      const want = techDirLabel(base, pr.blocked === true);
+      if (want === d.name) continue;
+      try {
+        const r = await fetch(`https://www.googleapis.com/drive/v3/files/${d.folder_id}?supportsAllDrives=true`, {
+          method: "PATCH", headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ name: want }) });
+        if (!r.ok) { errs.push(String(r.status) + " " + (await r.text()).slice(0, 120)); continue; }
+        await s.from("drive_dirs").update({ name: want, updated_at: new Date().toISOString() }).eq("kind", "tech").eq("key", uid).eq("folder_id", d.folder_id);
+        renamed++;
+      } catch (e) { errs.push(String((e as Error)?.message ?? e).slice(0, 120)); }
+    }
+    return jres({ ok: !errs.length, renamed, blocked: pr.blocked === true, errors: errs });
+  }
 
   /* v1.07.88 · СВЕРКА С ДИСКОМ. Проходим по записям media и спрашиваем Диск,
      жив ли файл. Отвечаем списком потерянных id — приложение помечает их в

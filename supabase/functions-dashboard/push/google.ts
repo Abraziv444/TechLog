@@ -61,7 +61,7 @@ export async function monthFolder(t: string, rootId: string, ym: string) {
 /* v1.07.72: версия комплекта функций. Диагностика в приложении спрашивает
    каждую функцию «кто ты и какой версии» — так видно и перепутанный код,
    и функцию, которую забыли передеплоить. */
-export const FN_VER = "1.08.71";
+export const FN_VER = "1.09.10";
 
 /* v1.07.81: имена служебных папок внутри архива — одни на все функции.
    Фото и видео лежат в «Photos/ГГГГ-ММ», документы — в «Files/ГГГГ-ММ»:
@@ -136,6 +136,14 @@ export async function dirFor(
     await s.from("drive_dirs").insert({ kind, key, folder_id: fresh, name: clean });
   } catch (_e) { /* не страшно: в следующий раз найдём по имени */ }
   return fresh;
+}
+/* v1.09.10: папка заблокированного (уволенного) сотрудника — «Имя Ф Заблокирован».
+   Суффикс добавляют все, кто вычисляет имя папки сотрудника (media-begin, media-commit,
+   media-health?tech_dir=…): иначе dirFor при следующей выгрузке переименовал бы папку обратно. */
+export const BLOCKED_SUFFIX = " Заблокирован";
+export function techDirLabel(base: string, blocked: unknown) {
+  const b = String(base || "").trim();
+  return b && blocked === true ? (b + BLOCKED_SUFFIX).slice(0, 60) : b;
 }
 /* Месяц в виде 2026_09 — так просил заказчик */
 export function ymDir(date: string) {

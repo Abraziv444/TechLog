@@ -308,7 +308,13 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
 .pkm-s .chip{margin-left:2px}
 /* v1.09.07: заметка в карточке окна «Пикапы: сегодня и просроченные» — не больше двух строк,
    иначе одна карточка с длинной заметкой занимала весь экран (527 px против 140) */
-.pkm-s.note-line{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.pkm-s.note-line{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}   /* v1.09.09: одна строка, место держится всегда */
+.pkm-card .pkm-t, .pkm-card .pkm-a{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pkm-card .pkm-e{flex-wrap:nowrap;overflow:hidden;white-space:nowrap}
+.pkm-card .pkm-s:not(.note-line){height:24px;line-height:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pkm-card .pkm-s:not(.note-line) .chip{vertical-align:middle;line-height:1.1;padding-top:2px;padding-bottom:2px}
+.pkm-card .is-empty{visibility:hidden}
+html:not(.tl-desktop) .item.clicky > .right{min-height:46px}
 /* v1.07.23: баннер установки на iOS и шаги в модалке */
 .banner.a2hs{border-color:var(--blue);background:rgba(28,176,246,.08);color:var(--text)}
 .banner.a2hs .grow{flex:1;min-width:0}
@@ -2918,3 +2924,95 @@ html.tl-pop-bottom .mq-mini{bottom:calc(env(safe-area-inset-bottom,0px) + 82px +
 .inpx-x:hover{ color:var(--text);background:var(--panel-2) }
 .inpx-x .ic{ width:15px;height:15px }
 input:placeholder-shown + .inpx-x{ display:none }
+
+/* ===================== v1.09.08 ===================== */
+/* вид задачи в шапке документа — кнопка «сменить» */
+.wt-change{ display:inline-flex;align-items:center;gap:5px;padding:2px 8px;margin:1px 0 1px -8px;border:1.6px dashed currentColor;
+  border-radius:9px;background:transparent;font-size:.75rem;font-weight:800;cursor:pointer;text-align:left }
+.wt-change .ic{ width:12px;height:12px;opacity:.8 }
+.wt-change:hover{ background:rgba(255,255,255,.05) }
+/* Other services: строки, инструменты, переводы под спойлером */
+.oth-line{ align-items:center;border-left:3px solid transparent;padding-left:4px;margin-left:-7px }
+.oth-line.oth-cur{ border-left-color:var(--blue) }
+.oth-line{ flex-wrap:nowrap;gap:6px }
+.oth-line .inpx{ flex:1 1 0;min-width:0 }
+.oth-line .price-input{ flex:0 0 78px;width:78px;min-width:0 }
+.oth-line .oth-del{ flex:0 0 36px;width:36px;height:36px;color:var(--red) }
+.oth-tools{ margin-top:8px }
+.oth-btns{ display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 }
+.oth-btns .btn{ flex:1 1 140px }
+.oth-trbox{ margin-top:8px;border:2px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--panel-2) }
+.oth-trbox > summary{ cursor:pointer;font-weight:800;list-style:none;display:flex;align-items:center;gap:6px }
+.oth-trbox > summary::-webkit-details-marker{ display:none }
+.oth-trbox > summary::after{ content:'›';margin-left:auto;font-size:1.1rem;color:var(--dim);transition:transform .15s }
+.oth-trbox[open] > summary::after{ transform:rotate(90deg) }
+.oth-trbox > summary .ic{ width:15px;height:15px }
+
+/* ===================== v1.09.09 ===================== */
+/* навигация по настройкам: на телефоне — лента под заголовком */
+.set-nav{ display:flex;gap:6px;overflow-x:auto;padding:8px 12px;margin:0 -12px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  position:sticky;top:0;z-index:60;background:var(--bg) }
+.set-nav::-webkit-scrollbar{ display:none }
+.set-nav-b{ flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border:2px solid var(--line);border-radius:12px;
+  background:var(--panel-2);color:var(--dim);font-weight:800;font-size:.76rem;white-space:nowrap;cursor:pointer }
+.set-nav-b .ic{ width:15px;height:15px;flex:0 0 auto }
+.set-nav-b.on{ color:var(--blue);border-color:var(--blue) }
+.set-main > .fold, #set-profile{ scroll-margin-top:96px }
+/* справочники: «по умолчанию» и «порядок» у заголовка текущего справочника */
+.dir-cur-h{ display:flex;align-items:center;gap:8px;flex-wrap:wrap }
+.dir-tools{ margin-left:auto;display:inline-flex;gap:6px;flex-wrap:wrap }
+.dir-tools .btn{ width:auto;margin:0 }
+.dir-def.on{ color:var(--green-hi);border-color:var(--green) }
+.dir-ord-row .row-num{ position:static;flex:0 0 auto }
+/* ТВ-режим занимает ВСЁ окно в любом режиме вида: правила #app для «Телефона» (колонка 536 px
+   по центру) и «ПК» (max-width 1080 + место под меню) сильнее #app.scr-tv — в обычном окне
+   монитора карта сжималась до 40 px, а экран занимал 1040 px из 1920 */
+html.tl-tv #app.scr-tv, html.tl-tv:not(.tl-desktop) #app.scr-tv, html.tl-tv.tl-desktop #app.scr-tv{
+  max-width:none !important; width:100% !important; margin:0 !important; padding:0 !important; height:100dvh; overflow:hidden }
+html.tl-tv .tabbar, html.tl-tv .dsk-menu-tab, html.tl-tv .topbar{ display:none !important }
+html.tl-tv body{ padding:0 !important }
+@media (max-width:1100px){ .tvwrap{ grid-template-columns:minmax(0,1fr) 380px } }
+@media (max-width:760px){ .tvwrap{ grid-template-columns:1fr; grid-template-rows:42vh 1fr; overflow:auto } }
+.tv-testbar{ position:fixed; left:20px; top:20px; z-index:50; max-width:calc(100vw - 520px); display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:6px 10px; border-radius:12px; border:2px solid var(--yellow); background:rgba(19,31,36,.94); font-size:12px }
+.tv-testbar b{ color:var(--yellow); display:inline-flex; align-items:center; gap:5px }
+.tv-testbar .btn{ width:auto; margin:0 }
+body.tl-tvfs .tv-testbar{ opacity:.25 } body.tl-tvfs .tv-testbar:hover{ opacity:1 }
+/* плотность ТВ: те же переменные, что у compact.css, плюс свои отступы экрана */
+html.tl-tv.tl-compact{ font-size:16px }
+html.tl-tv.tl-compact .tvwrap{ gap:8px; padding:8px }
+html.tl-tv.tl-compact .tv-rail, html.tl-tv.tl-compact #tv-zrail{ gap:6px }
+html.tl-tv.tl-compact .tv-head{ padding:6px 10px } html.tl-tv.tl-compact .tv-head .logo{ width:40px; height:40px }
+.tv-testbar .btn, .tv-testbar .lang-seg button{ font-size:12px !important; padding:4px 9px !important; min-height:0 !important; height:auto !important; line-height:1.2 }
+.tv-testbar .btn .ic, .tv-testbar b .ic{ width:13px; height:13px }
+/* один размер карточек дня: каждая строка — одна линия; строка статуса держит высоту чипа */
+.item.clicky .info > .t{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.item.clicky .info > .s:not(.addr):not(.codes):not(.note-line){ height:24px; line-height:24px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.item.clicky .info > .s:not(.addr):not(.codes):not(.note-line) .chip{ vertical-align:middle; line-height:1.1; padding-top:2px; padding-bottom:2px; margin-top:0; margin-bottom:0 }
+.item.clicky .info > .s.codes{ min-height:16px; white-space:nowrap; overflow:hidden; flex-wrap:nowrap }
+.item.clicky .info > .s.note-line{ display:block; min-height:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.item.clicky .info > .s.is-empty{ visibility:hidden }
+/* в одну линию — но номер юнита и чипы статуса не обрезаются никогда: сжимается название комплекса и текст */
+.item.clicky .info > .t, .pkm-card .pkm-t{ display:flex; align-items:baseline; gap:5px; min-width:0 }
+.item.clicky .info > .t > .nm, .pkm-card .pkm-t > .nm{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.item.clicky .info > .t > .tail, .pkm-card .pkm-t > .tail{ flex:0 0 auto; white-space:nowrap }
+.item.clicky .info > .s.meta{ display:flex; align-items:center; gap:6px; min-width:0 }
+.item.clicky .info > .s.meta > .mt{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.item.clicky .info > .s.meta > .chip, .item.clicky .info > .s.meta > button, .item.clicky .info > .s.meta > a{ flex:0 0 auto }
+
+/* ===================== v1.09.10 ===================== */
+/* карта → «Треки»: период, календарь, машины */
+.trk-ctl{ display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px }
+.trk-date{ display:inline-flex;align-items:center;gap:4px }
+.trk-date input[type=date]{ width:auto;min-width:0;padding:6px 8px }
+.trk-ctl .btn{ width:auto;margin:0 }
+.trk-lbl{ font-weight:800 }
+.trk-cars{ display:flex;gap:6px;flex-wrap:wrap;margin-top:8px }
+.trk-chip{ display:inline-flex;align-items:center;gap:6px;cursor:pointer;opacity:.55;border-color:var(--line);background:var(--panel-2);color:var(--text) }
+.trk-chip.on{ opacity:1;border-color:var(--c, var(--blue)) }
+.trk-dot{ width:12px;height:12px;border-radius:50%;background:var(--c, var(--blue));flex:0 0 auto;border:2px solid #0F171B }
+.trk-row{ align-items:center;gap:10px }
+.trk-sum{ text-align:right;white-space:nowrap }
+.trk-days{ display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:2px }
+.trk-day{ font-size:.72rem;color:var(--dim) }
+.map-tabs{ flex-wrap:wrap } .map-tabs .tabbtn{ flex:1 1 auto }

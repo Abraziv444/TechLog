@@ -1,5 +1,5 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_VER,
-         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, dirFor, ymDir } from "./google.ts";
+         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, dirFor, ymDir, techDirLabel } from "./google.ts";
 
 /* v1.07.64: max — это дефолт; действующий лимит на документ админ задаёт
    в настройках (org_settings.media_max_photo / media_max_video). Проверка
@@ -142,13 +142,15 @@ Deno.serve(async (req) => {
        раскладка инвойсов по папкам сотрудников — читаем один раз */
     const byTech = !!org?.gd_inv_by_tech && kind === "invoice";
     let techName = "";
+    let techBlocked = false;
     /* v1.08.25: вложения всегда лежат в папке сотрудника, поэтому имя нужно
        и для них — без него папка называлась «—». */
     if (((job as any).technician_id) &&
         (byTech || kind === "file" || String(org?.file_name_fmt ?? "").includes("{TECH}"))) {
-      const pr = await s.from("profiles").select("display_name")
+      const pr = await s.from("profiles").select("display_name,blocked")
         .eq("id", (job as any).technician_id).maybeSingle();
       techName = String(pr.data?.display_name ?? "");
+      techBlocked = pr.data?.blocked === true;               // v1.09.10
     }
     const tech = clean(initialsOf(techName), 3);
     const date = String(job.date ?? "");
@@ -210,14 +212,14 @@ Deno.serve(async (req) => {
          галочке называлась «—». */
       let base = root;
       if (byTech) {
-        const dir = techFolderName(techName) || "—";
+        const dir = techDirLabel(techFolderName(techName), techBlocked) || "—";
         base = await dirFor(s, t, "tech", String((job as any).technician_id ?? dir), root, dir);
       }
       parent = await dirFor(s, t, "ym", base + "/" + ymd, base, ymd);
     } else {
       const root = folderIdOf(String(org?.gd_files_folder ?? "")) ||
                    await monthFolder(t, cfg.gd_folder_id, FILES_DIR);
-      const dir = techFolderName(techName) || "—";
+      const dir = techDirLabel(techFolderName(techName), techBlocked) || "—";
       const techDir = await dirFor(s, t, "tech", String((job as any).technician_id ?? dir), root, dir);
       const ymDirId = await dirFor(s, t, "ym", techDir + "/" + ymd, techDir, ymd);
       /* имя папки документа фиксируется при первой загрузке и дальше не

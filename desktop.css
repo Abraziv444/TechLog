@@ -281,6 +281,10 @@ html.tl-desktop #dsk-staff{ display:none; }           /* узкое окно —
      заметка раздувала карточку до 700–800 px при соседних 130–150. Целиком заметка
      читается по кнопке «Заметка» на карточке и в самом документе. */
   html.tl-desktop .item .info .s.note-line{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* v1.09.09: карточки дня — один размер: название и строка статуса тоже в одну линию */
+  html.tl-desktop .item.clicky .info > .t,
+  html.tl-desktop .item.clicky .info > .s:not(.addr):not(.codes){ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  html.tl-desktop .item.clicky .info > .s.codes{ white-space:nowrap; overflow:hidden; }
   html.tl-desktop .wt-line .wt-nm{ white-space:normal; overflow:visible; text-overflow:clip; }
   html.tl-desktop .eq-name .nm,
   html.tl-desktop .eq-name .pr{ white-space:normal; overflow:visible; text-overflow:clip; }
@@ -940,4 +944,16 @@ html.tl-desktop .st-sels{ grid-template-columns:1fr 1fr }
    ===================================================================== */
 @media (max-width:979.98px){
   html.tl-desktop .tabbar{ overflow:hidden; }
+}
+
+/* ---------- v1.09.09: настройки — вертикальное меню разделов слева, липкое ---------- */
+@media (min-width: 980px){
+  html.tl-desktop .set-wrap{ display:grid; grid-template-columns:196px minmax(0,1fr); gap:16px; align-items:start; }
+  html.tl-desktop .set-nav{ position:sticky; top:96px; flex-direction:column; overflow:visible; padding:8px; margin:0;
+    border:2px solid var(--line); border-radius:16px; background:var(--panel); max-height:calc(100vh - 120px); overflow-y:auto; }
+  html.tl-desktop .set-nav-b{ width:100%; white-space:normal; text-align:left; border-color:transparent; background:transparent; padding:8px 10px; line-height:1.2; }
+  html.tl-desktop .set-nav-b.on{ background:var(--panel-2); border-color:var(--blue); }
+}
+@media (min-width: 980px) and (hover:hover){
+  html.tl-desktop .set-nav-b:hover{ color:var(--text); background:var(--panel-2); }
 }

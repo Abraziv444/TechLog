@@ -555,3 +555,20 @@ html.tl-desktop.tl-compact .day-cell{ padding:4px 2px 10px; }
     flex:0 0 max(96px, var(--bcolw, 118px)); max-width:max(96px, var(--bcolw, 118px));
   }
 }
+
+/* ===================== v1.09.09 · один размер карточек дня =====================
+   В компактной плотности строки карточки текли в одну линию и переносились как придётся —
+   высота зависела от длины адреса, числа чипов и заметки (ПК: 70 / 82 / 98 px вперемешку).
+   Теперь набор строк жёсткий: название / адрес / статус + коды, каждая — в одну линию с
+   многоточием. Все карточки одной высоты, и она в рамках ТЗ компактного режима
+   (телефон ≤ 126 px, ПК ≤ 76 px). Строки заметки в компактной карточке нет: заметка — в
+   документе и по кнопке «Заметка». */
+html.tl-compact .item.clicky .info > .s.note-line{ display:none; }
+html.tl-compact .item.clicky .info > .s{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; height:16px; line-height:16px; min-height:0; }
+html.tl-compact .item.clicky .info > .s.addr{ flex:1 0 100%; max-width:100%; min-width:0; }
+html.tl-compact .item.clicky .info > .s.addr .addr-txt{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:0 1 auto; min-width:0; }
+html.tl-compact .item.clicky .info > .s.meta{ flex:1 1 0; min-width:0; }
+html.tl-compact .item.clicky .info > .s.codes{ flex:0 1 auto; max-width:45%; }
+html.tl-compact .item.clicky .info > .s.codes.is-empty{ display:none; }
+html.tl-compact .item.clicky .info > .s .chip{ font-size:.6rem; padding:0 6px; line-height:14px; height:14px; }
+html.tl-compact:not(.tl-desktop) .item.clicky > .right{ min-height:34px; }

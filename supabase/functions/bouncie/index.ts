@@ -28,14 +28,24 @@ import { svc, userClient, CORS, jres } from "../_shared/google.ts";
                               с комплексом = прибытие, старт следующей
                               оттуда = убытие;
      ?track=1&imei=&date=   — поездки машины за день (polyline) для
-                              отрисовки реального трека (право bn_track).
+                              отрисовки реального трека (право bn_track);
+     ?tracks=1&from=&to=[&refresh=1] — v1.09.10: ИСТОРИЯ ТРЕКОВ из таблицы
+                              bn_trips за дни from..to (YYYY-MM-DD, не шире 31 дня;
+                              право bn_track). Дни, которых в базе ещё нет или
+                              которые сохранялись до конца суток, сначала
+                              догружаются из Bouncie (окнами по 5 дней) и
+                              записываются; «закрытые» дни читаются только из
+                              базы. refresh=1 перечитывает весь диапазон.
+   Поездки пишутся в bn_trips и попутно — из ?stats=1 и ?tv=1 (их и так
+   запрашивают весь день), так что история копится сама, без cron.
+   День поездки — по времени Нью-Йорка (как бэкапы и отчёты).
 
    Доступ к данным трекера (v1.08.33): profiles.bn_access — null значит
    «по роли» (админ и менеджер да, воркер нет); Check Engine / топливо /
    ТО ставятся в push_queue прямо отсюда при смене состояния машины.
    ===================================================================== */
 
-const BN_VER = "1.08.37";
+const BN_VER = "1.09.10";
 const AUTH = "https://auth.bouncie.com/oauth/token";
 const API = "https://api.bouncie.dev/v1";
 
@@ -98,6 +108,25 @@ const bnGet = async (s: Sb, path: string) => {
 
 /* Google encoded polyline (precision 5) → последняя точка трека.
    Нужна как «откуда уехал»: конец последней завершённой поездки. */
+/* ---------- v1.09.10: история треков ---------- */
+const NY_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" });
+function nyDay(iso: string | number | Date): string { try { return NY_DAY.format(new Date(iso)); } catch (_e) { return ""; } }
+function addDays(day: string, d: number): string { return new Date(Date.parse(day + "T12:00:00Z") + d * 86400_000).toISOString().slice(0, 10); }
+/* запись поездок одной машины; дубли (два потока данных Bouncie) сворачиваются по началу поездки */
+async function tripsStore(s: any, imei: string, arr: any[], drv: string | null, veh: string | null): Promise<number> {
+  const seen = new Set<string>(); const rows: any[] = [];
+  for (const tr of arr) {
+    if (!tr || !tr.startTime || !tr.endTime) continue;
+    const k = String(tr.startTime); if (seen.has(k)) continue; seen.add(k);
+    rows.push({ imei, day: nyDay(tr.startTime), started_at: tr.startTime, ended_at: tr.endTime,
+      mi: Math.round((+tr.distance || 0) * 10) / 10, gps: String(tr.gps ?? ""), tx: tr.transactionId ? String(tr.transactionId) : null,
+      driver_id: drv, vehicle_id: veh });
+  }
+  if (!rows.length) return 0;
+  const { error } = await s.from("bn_trips").upsert(rows, { onConflict: "imei,started_at" });
+  if (error) throw new Error("bn_trips: " + error.message);
+  return rows.length;
+}
 function polyLast(str: string): { lat: number; lng: number } | null {
   if (!str) return null;
   let i = 0, lat = 0, lng = 0, last: { lat: number; lng: number } | null = null;
@@ -282,6 +311,7 @@ Deno.serve(async (req) => {
               if (b > a) sec += (b - a) / 1000;
             }
             day[imei] = { mi: Math.round(mi * 10) / 10, min: Math.round(sec / 60), n: cnt };
+            try { await tripsStore(s, imei, arr, v.driver_id ?? null, null); } catch (_e2) { /* v1.09.10 */ }
           } catch (_e) { /* без сводки — машина всё равно уедет в ответ */ }
         }));
       }
@@ -395,6 +425,53 @@ Deno.serve(async (req) => {
       return jres({ ok: true, date, imei, trips: out });
     }
 
+    /* ---- v1.09.10 · история треков: ?tracks=1&from=YYYY-MM-DD&to=YYYY-MM-DD[&refresh=1] ---- */
+    if (url.searchParams.get("tracks")) {
+      if (!canTrack) return jres({ error: "NO_ACCESS" }, 403);
+      const from = url.searchParams.get("from") ?? "", to = url.searchParams.get("to") ?? "";
+      const RX = /^\d{4}-\d{2}-\d{2}$/;
+      if (!RX.test(from) || !RX.test(to) || to < from) return jres({ error: "BAD_REQUEST" }, 400);
+      if ((Date.parse(to) - Date.parse(from)) / 86400_000 > 31) return jres({ error: "RANGE_TOO_WIDE" }, 400);
+      const refresh = !!url.searchParams.get("refresh");
+      const today = nyDay(Date.now());
+      const days: string[] = []; for (let d = from; d <= to && d <= today; d = addDays(d, 1)) days.push(d);
+      const { data: known, error: e0 } = await s.from("bn_trip_days").select("day,synced_at").gte("day", from).lte("day", to);
+      if (e0) return jres({ error: "NEED_SQL", detail: e0.message }, 409);           // таблиц ещё нет — нужен update-to-1_09_10.sql
+      const syncedAt: Record<string, number> = {};
+      for (const r of known ?? []) syncedAt[String(r.day)] = Date.parse(r.synced_at);
+      /* день «закрыт», если сохранялся позже чем через 3 часа после своего конца (конец — с запасом, +29 ч от полудня UTC) */
+      const closed = (d: string) => (syncedAt[d] ?? 0) > Date.parse(d + "T12:00:00Z") + 29 * 3600_000 + 3 * 3600_000;
+      const need = days.filter(d => refresh || !closed(d));
+      const { data: vrows } = await s.from("vehicles").select("id,imei,driver_id").not("imei", "is", null);
+      const vehs = (vrows ?? []).map((r: any) => ({ id: r.id, imei: String(r.imei || "").trim(), drv: r.driver_id ?? null })).filter((x: any) => x.imei);
+      let pulled = 0; const errs: string[] = [];
+      for (let i = 0; i < need.length; ) {                                           // окна по ≤ 5 дней подряд (лимит Bouncie — неделя с запасом по краям)
+        let j = i; while (j + 1 < need.length && j - i < 4 && need[j + 1] === addDays(need[j], 1)) j++;
+        const wFrom = new Date(Date.parse(need[i] + "T00:00:00Z") - 2 * 3600_000).toISOString();
+        const wTo = new Date(Date.parse(need[j] + "T00:00:00Z") + 34 * 3600_000).toISOString();
+        const inWin = new Set(need.slice(i, j + 1));
+        const got = await Promise.all(vehs.map(async (v: any) => {
+          try {
+            const trips = await bnGet(s, "/trips?gps-format=polyline&imei=" + encodeURIComponent(v.imei)
+              + "&starts-after=" + encodeURIComponent(wFrom) + "&ends-before=" + encodeURIComponent(wTo));
+            const arr = (Array.isArray(trips) ? trips : []).filter((tr: any) => inWin.has(nyDay(tr.startTime)));
+            return await tripsStore(s, v.imei, arr, v.drv, v.id);
+          } catch (e) { errs.push(v.imei + ": " + String((e as Error)?.message ?? e).slice(0, 80)); return 0; }
+        }));
+        pulled += got.reduce((a: number, x: number) => a + x, 0);      // «pulled += await …» внутри параллельных задач терял слагаемые
+        if (!errs.length) {
+          const now = new Date().toISOString();
+          await s.from("bn_trip_days").upsert(need.slice(i, j + 1).map(d => ({ day: d, synced_at: now })), { onConflict: "day" });
+        }
+        i = j + 1;
+      }
+      const { data: rows, error: e1 } = await s.from("bn_trips").select("imei,day,started_at,ended_at,mi,gps,driver_id")
+        .gte("day", from).lte("day", to).order("started_at", { ascending: true }).limit(5000);
+      if (e1) return jres({ error: e1.message }, 500);
+      return jres({ ok: true, from, to, pulled, synced: need, errors: errs,
+        trips: (rows ?? []).map((r: any) => ({ imei: r.imei, day: r.day, s: r.started_at, e: r.ended_at, mi: +r.mi || 0, gps: r.gps || "", drv: r.driver_id ?? null })) });
+    }
+
     /* ---- сводка дня по поездкам: ?stats=1&from=ISO&to=ISO ---- */
     if (url.searchParams.get("stats")) {
       if (!canBn) return jres({ error: "NO_ACCESS" }, 403);
@@ -432,6 +509,7 @@ Deno.serve(async (req) => {
           }
           cars[imei] = { mi: Math.round(mi * 10) / 10, min: Math.round(sec / 60), n, lastEnd, lastAt };
           perImei[imei] = { drv: drvOf[imei] ?? null, trips: tlist };
+          try { await tripsStore(s, imei, arr, drvOf[imei] ?? null, null); } catch (_e) { /* v1.09.10: история не критична для сводки */ }
         } catch (e) {
           cars[imei] = { err: String((e as Error)?.message ?? e).slice(0, 120) };
         }

@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.07';
-const DB_SQL_FILE = 'full-install-1_09_01.sql';
+const APP_VERSION = '1.09.10';
+const DB_SQL_FILE = 'full-install-1_09_10.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -134,6 +134,19 @@ const I18N = {
     add_task: 'Добавить задание', no_items: 'На этот день пусто', tap_add: 'Нажмите «Добавить задание»',
     date: 'Дата', counterparty: 'Контрагент', complex: 'Апарт-комплекс', unit: 'Юнит №',
     unit_kb_hint: 'Переключить клавиатуру: цифры или буквы',
+    wt_tip: 'Вид задачи — это подсказка, а не отчёт о сделанном. Он ставит в документе стандартные галочки этого вида работ (какие именно — настраивает админ: Справочники → Виды задач), задаёт цвет карточки и чек-лист «что взять с собой». После работы всё равно проверьте галочки и отметьте то, что реально сделано. Нет подходящего вида — берите OTHER: галочки останутся пустыми. Вид задачи может поменять сам исполнитель или менеджер — нажмите на название вида в шапке документа. При смене стандартные галочки могут замениться (если вы ставили свои — приложение сначала спросит). Оборудование в аренде, заметки, Other services, доп. работы по шаблону, фото и видео при смене не трогаются. Если в шаблоне номера документа есть {WT}, вместе с видом поменяется и номер.',
+    oth_add: 'Строка', oth_max: 'Не больше 20 строк', oth_hint: 'Микрофон пишет в строку, где стоял курсор (она подсвечена). В PDF всё, что не влезло в бланк, уходит на лист-продолжение справа.',
+    set_nav_profile: 'Профиль и вид',
+    dir_def_on: 'Этот справочник будет открываться первым', dir_def_off: 'Справочник по умолчанию сброшен', dir_def_btn: 'По умолчанию', dir_def_tip: 'Сделать этот справочник открывающимся первым (личная настройка). Повторное нажатие — сбросить.',
+    dir_order_t: 'Порядок справочников', dir_order_h: 'Порядок вкладок общий для всех сотрудников. Каждый видит только свои вкладки — в этом порядке.', dir_order_reset: 'Вернуть исходный порядок', dir_order_btn: 'Порядок',
+    wt_change: 'Сменить вид задачи', wt_change_h: 'Выберите новый вид. Текущий отмечен галочкой.',
+    wt_keep: 'Не затрагивается: оборудование в аренде и его количество, заметки, Other services, доп. работы по шаблону, фото и видео. Если в шаблоне номера есть {WT} — номер документа изменится.',
+    wt_ask: 'В документе стоят свои галочки — не стандартный набор прежнего вида. Что с ними сделать?',
+    wt_ask_reset: 'Поставить стандартные нового вида', wt_ask_reset_h: 'Ваши галочки снимутся, встанут',
+    wt_ask_keep: 'Оставить галочки как есть', wt_std_none: 'ничего — у этого вида нет стандартных галочек',
+    wt_changed: 'Вид задачи изменён', wt_changed_std: 'галочки — стандартные', wt_changed_keep: 'галочки не тронуты',
+    wt_preset_t: 'Стандартные галочки документа', wt_preset_h: 'Ставятся сами, когда создаётся документ этого вида и когда вид меняют в документе с нетронутыми галочками.',
+    act_job_wt_change: 'сменён вид задачи',
     work_type: 'Вид задачи', create: 'Создать', cancel: 'Отмена', save: 'Сохранить',
     delete: 'Удалить', edit: 'Изменить', close: 'Закрыть', back: 'Назад', add: 'Добавить',
     tab_home: 'Главная', tab_report: 'Отчёт', tab_dirs: 'Справочники', tab_settings: 'Настройки', tab_faq: 'FAQ', tab_stats: 'Статистика',
@@ -463,6 +476,10 @@ const I18N = {
     bn_left: 'осталось', bn_onsite: 'на месте', bn_parked: 'стоит', bn_moving: 'в движении',
     bn_speed: 'скорость', bn_fuel: 'топливо', bn_mph: 'миль/ч', bn_mi: 'mi',
     bn_dot_go: 'Сотрудник едет сюда', bn_dot_site: 'Сотрудник на месте',
+    dir_blocked_done: 'Папки сотрудника на Диске помечены «Заблокирован»', dir_unblocked_done: 'С папок сотрудника на Диске снята пометка «Заблокирован»', dir_block_fail: 'Папку сотрудника на Диске переименовать не удалось — подробности в журнале событий (нужен передеплой media-health)',
+    trh_tab: 'Треки', trh_day: 'День', trh_week: 'Неделя', trh_date: 'Дата', trh_reload: 'Обновить из Bouncie', trh_all: 'Все машины', trh_none: 'Снять все',
+    trh_loading: 'Загружаю поездки…', trh_empty: 'За этот период поездок нет (или не выбрана ни одна машина)', trh_total: 'Итого по выбранным', trh_no_cars: 'Нет машин с трекером: привяжите трекер в справочнике «Автомобили».',
+    trh_need_sql: 'Таблиц истории треков ещё нет — выполните supabase/update-to-1_09_10.sql и передеплойте функцию bouncie', trh_part: 'Часть машин Bouncie не отдал, ошибок:',
     bn_trips: 'поездок', bn_nav_to_car: 'Маршрут к машине',
     bn_card: 'GPS-трекинг Bouncie',
     /* v1.09.01: справочник «Трекеры Bouncie» */
@@ -773,6 +790,7 @@ const I18N = {
     rep_photos_nojob: 'Фото хранятся в инвойсе. Привяжите задачу — снимки появятся здесь.',
     rep_hide: 'Скрыть суммы ремонта от работников',
     rep_hide_h: 'Работник видит состав задач, но вместо цен — прочерк.',
+    prop_from_job: 'Создать пропозал', prop_from_job_h: 'Пропозал откроется с тем же комплексом и юнитом и после сохранения сам привяжется к этой задаче',
     prop_new: 'Новый пропозал', prop_items: 'Позиции', prop_desc: 'Описание',
     prop_add_row: 'строка', prop_note: 'Примечание',
     pst_draft: 'Черновик', pst_sent: 'Отправлен', pst_approved: 'Одобрен', pst_declined: 'Отклонён',
@@ -889,6 +907,8 @@ const I18N = {
     doc_save_close: 'Сохранить и закрыть', doc_close_nosave: 'Закрыть без сохранения',
     font_title: 'Размер шрифта', font_hint: 'Личная настройка аккаунта, своя для каждого режима: размер, выбранный в режиме «Телефон», не меняет размер в режиме «ПК» и наоборот. Значение хранится в профиле — на другом телефоне или другом компьютере подхватится само. Меняет весь интерфейс: списки, документы, кнопки.',
     font_mode_ph: 'сейчас: режим «Телефон»', font_mode_pc: 'сейчас: режим «ПК»',
+    tv_test_btn: 'Проверить ТВ-режим на этом экране', tv_test_h: 'Открывает настоящий ТВ-экран на ваших данных — без кода и без отдельной ТВ-сессии. Разверните окно или нажмите «На весь экран», чтобы увидеть ровно то, что будет на телевизоре. Сверху полоска проверки: плотность и «Закончить проверку».',
+    tv_test_on: 'Проверка ТВ-режима', tv_test_stop: 'Закончить проверку', tv_dens_t: 'Плотность ТВ-экрана', tv_dens_h: 'Общая для всех телевизоров. «Компактная» — мельче отступы и карточки, больше влезает сотрудников.', tv_dens_admin: 'Плотность ТВ меняет администратор',
     dens_title: 'Плотность интерфейса', dens_cozy: 'Обычная', dens_compact: 'Компактная',
     dens_hint: 'Личная настройка аккаунта, своя для режима «Телефон» и режима «ПК»; хранится в профиле и подхватывается на другом устройстве. «Компактная» — для небольших ноутбуков, планшетов и телефонов: на экран помещается больше. Уменьшаются не только буквы, а сами блоки — шапка, лента недели, меню, значки, отступы внутри карточек; карточка дня становится вдвое ниже, на доске помещается в полтора-два раза больше сотрудников. Оформление остаётся тем же. Размер букв по-прежнему регулируется отдельно — строкой выше. На ПК то же самое переключает кнопка внизу слева, на доске — кнопка рядом с глазом.',
     dens_btn_on: 'Компактно: включено — нажмите, чтобы вернуть обычную плотность', dens_btn_off: 'Сделать компактнее: больше помещается на экран',
@@ -919,6 +939,13 @@ const I18N = {
     sb_hist_none: 'Пока пусто: первая строка появится в 10:00.',
     sb_neg: 'Свободный остаток ушёл в минус — проверьте общее количество и незакрытые пикапы.',
     sb_return: 'Вернул на склад', sb_return_all: 'Вернуть всё на склад',
+    stk_mode_t: 'Режим склада', stk_mode_lite: 'Облегчённый', stk_mode_full: 'Полный учёт',
+    stk_mode_lite_h: 'Оборудование вычитается со склада документом аренды и продления и возвращается, когда его забрали. Машины не считаются.',
+    stk_mode_full_h: 'Склад → машина → объект → машина → склад: у каждого своя «Моя машина», «Взять» и «Сдать».',
+    stk_mode_tip: 'ОБЛЕГЧЁННЫЙ: приложение само уменьшает остаток склада, когда в документе ставят оборудование в аренду (и при продлении), и само прибавляет его обратно, когда нажали «Забрал». Сколько чего лежит в машине у сотрудника — не считается: нет карточки «Моя машина», кнопок «Взять» / «Сдать», блока «По машинам» и плашки «У вас на руках». ПОЛНЫЙ УЧЁТ: оборудование идёт по цепочке склад → машина → объект → машина → склад, сотрудник берёт его со склада в машину и сдаёт обратно, видно, у кого что на руках. Регистр движений один и тот же, режим можно менять в любой момент. Перед переходом на облегчённый сдайте на склад то, что числится в машинах: в облегчённом это количество не показывается в общем остатке склада.',
+    stk_lite_cars: 'В машинах сейчас числится {N} ед. оборудования. В облегчённом режиме «Взять» и «Сдать» скрыты — эти единицы останутся «в машинах», пока вы не вернётесь в полный учёт и не сдадите их. Всё равно переключить?',
+    stk_lite_note: 'Склад работает в облегчённом режиме: остаток меняют только аренда, продление и «Забрал».',
+    eq_hint_lite: 'Аренда и продление вычитают оборудование со склада, «Забрал» возвращает его. «В ремонт», «Поступление» и «Списание» работают как обычно.',
     sb_returned: 'Оборудование на складе', sb_on_hand: 'У вас на руках',
     sb_none_mine: 'Забранного оборудования за вами не числится',
     sb_all_q: 'Вернуть на склад {N} ед. оборудования по {U} документам?',
@@ -1339,6 +1366,19 @@ const I18N = {
     add_task: 'Add task', no_items: 'Nothing for this day', tap_add: 'Tap "Add task"',
     date: 'Date', counterparty: 'Counterparty', complex: 'Apartment complex', unit: 'Unit #',
     unit_kb_hint: 'Switch keyboard: digits or letters',
+    wt_tip: 'The work type is a helper, not a report of what was done. It sets this type’s standard checkboxes in the document (the admin configures them: Directories → Work types), the card colour and the “take with you” checklist. After the job, still review the checkboxes and tick what was actually done. No suitable type — pick OTHER: the checkboxes stay empty. The tech or a manager can change the type — tap its name in the document header. On a change the standard checkboxes may be replaced (if you ticked your own, the app asks first). Rental equipment, notes, Other services, template extra works, photos and videos are never touched. If the document number template has {WT}, the number changes with the type.',
+    oth_add: 'Row', oth_max: 'No more than 20 rows', oth_hint: 'The microphone writes into the row where the cursor was (it is highlighted). In the PDF whatever does not fit the form goes to the continuation sheet on the right.',
+    set_nav_profile: 'Profile & look',
+    dir_def_on: 'This directory will open first', dir_def_off: 'Default directory cleared', dir_def_btn: 'Default', dir_def_tip: 'Make this directory open first (personal setting). Press again to clear.',
+    dir_order_t: 'Directory order', dir_order_h: 'The tab order is shared by all staff. Everyone sees only their own tabs — in this order.', dir_order_reset: 'Restore the original order', dir_order_btn: 'Order',
+    wt_change: 'Change work type', wt_change_h: 'Pick the new type. The current one is ticked.',
+    wt_keep: 'Not affected: rental equipment and its quantities, notes, Other services, template extra works, photos and videos. If the number template has {WT}, the document number will change.',
+    wt_ask: 'The document has its own checkboxes — not the previous type’s standard set. What to do with them?',
+    wt_ask_reset: 'Set the new type’s standard ones', wt_ask_reset_h: 'Your checkboxes are cleared and these are set',
+    wt_ask_keep: 'Keep the checkboxes as they are', wt_std_none: 'nothing — this type has no standard checkboxes',
+    wt_changed: 'Work type changed', wt_changed_std: 'standard checkboxes', wt_changed_keep: 'checkboxes untouched',
+    wt_preset_t: 'Standard document checkboxes', wt_preset_h: 'Set automatically when a document of this type is created and when the type is changed in a document with untouched checkboxes.',
+    act_job_wt_change: 'work type changed',
     work_type: 'Work type', create: 'Create', cancel: 'Cancel', save: 'Save',
     delete: 'Delete', edit: 'Edit', close: 'Close', back: 'Back', add: 'Add',
     tab_home: 'Home', tab_report: 'Report', tab_dirs: 'Directory', tab_settings: 'Settings', tab_faq: 'FAQ', tab_stats: 'Stats',
@@ -1669,6 +1709,10 @@ const I18N = {
     bn_left: 'left', bn_onsite: 'on site', bn_parked: 'parked', bn_moving: 'moving',
     bn_speed: 'speed', bn_fuel: 'fuel', bn_mph: 'mph', bn_mi: 'mi',
     bn_dot_go: 'The employee is heading here', bn_dot_site: 'The employee is on site',
+    dir_blocked_done: 'The employee’s Drive folders got the “blocked” suffix', dir_unblocked_done: 'The “blocked” suffix is removed from the employee’s Drive folders', dir_block_fail: 'Could not rename the employee’s Drive folder — see the event journal (media-health must be redeployed)',
+    trh_tab: 'Tracks', trh_day: 'Day', trh_week: 'Week', trh_date: 'Date', trh_reload: 'Refresh from Bouncie', trh_all: 'All cars', trh_none: 'Clear all',
+    trh_loading: 'Loading trips…', trh_empty: 'No trips for this period (or no car is selected)', trh_total: 'Total for the selection', trh_no_cars: 'No cars with a tracker: link a tracker in the Vehicles directory.',
+    trh_need_sql: 'Track history tables are missing — run supabase/update-to-1_09_10.sql and redeploy the bouncie function', trh_part: 'Bouncie failed for some cars, errors:',
     bn_trips: 'trips', bn_nav_to_car: 'Route to the car',
     bn_card: 'Bouncie GPS tracking',
     /* v1.09.01: Bouncie trackers directory */
@@ -1972,6 +2016,7 @@ const I18N = {
     rep_photos_nojob: 'Photos live in the invoice. Link a work order and they show up here.',
     rep_hide: 'Hide repair amounts from workers',
     rep_hide_h: 'A worker sees the scope of work but a dash instead of prices.',
+    prop_from_job: 'Create proposal', prop_from_job_h: 'The proposal opens with the same complex and unit and links itself to this job once saved',
     prop_new: 'New proposal', prop_items: 'Line items', prop_desc: 'Description',
     prop_add_row: 'row', prop_note: 'Notes',
     pst_draft: 'Draft', pst_sent: 'Sent', pst_approved: 'Approved', pst_declined: 'Declined',
@@ -2088,6 +2133,8 @@ const I18N = {
     doc_save_close: 'Save and close', doc_close_nosave: 'Close without saving',
     font_title: 'Font size', font_hint: 'Personal account setting, separate for each mode: the size chosen in «Phone» mode does not change the size in «PC» mode and vice versa. The value lives in your profile, so another phone or another computer picks it up. It changes the whole interface: lists, documents, buttons.',
     font_mode_ph: 'now: «Phone» mode', font_mode_pc: 'now: «PC» mode',
+    tv_test_btn: 'Try TV mode on this screen', tv_test_h: 'Opens the real TV screen on your data — no code, no separate TV session. Maximise the window or press “Full screen” to see exactly what the TV will show. The test bar on top has the density switch and “End the test”.',
+    tv_test_on: 'TV mode test', tv_test_stop: 'End the test', tv_dens_t: 'TV screen density', tv_dens_h: 'Shared by all TVs. “Compact” — smaller paddings and cards, more staff fit.', tv_dens_admin: 'The TV density is changed by the administrator',
     dens_title: 'Interface density', dens_cozy: 'Regular', dens_compact: 'Compact',
     dens_hint: 'Personal account setting, separate for «Phone» mode and «PC» mode; it lives in your profile and follows you to another device. «Compact» is for small laptops, tablets and phones: more fits on the screen. Not only the letters shrink but the blocks themselves — header, week ribbon, menu, icons, padding inside cards; a day card becomes half as tall and the board fits one and a half to two times more people. The look stays the same. Letter size is still adjusted separately — the row above. On a PC the button at the bottom left switches the same thing, on the board — the button next to the eye.',
     dens_btn_on: 'Compact is on — press to return to regular density', dens_btn_off: 'Make it more compact: more fits on the screen',
@@ -2118,6 +2165,13 @@ const I18N = {
     sb_hist_none: 'Empty so far: the first row appears at 10:00.',
     sb_neg: 'Free stock went negative — check the total and the open pickups.',
     sb_return: 'Returned to warehouse', sb_return_all: 'Return everything',
+    stk_mode_t: 'Warehouse mode', stk_mode_lite: 'Lite', stk_mode_full: 'Full tracking',
+    stk_mode_lite_h: 'Equipment is subtracted from stock by rental and extension documents and returns once it is picked up. Cars are not counted.',
+    stk_mode_full_h: 'Stock → car → site → car → stock: everyone has “My car”, “Take” and “Hand in”.',
+    stk_mode_tip: 'LITE: the app lowers the stock balance when equipment is rented out in a document (and on extension) and adds it back when “Picked up” is pressed. What sits in a tech’s car is not counted: no “My car” card, no “Take” / “Hand in” buttons, no “By cars” block, no “On your hands” strip. FULL TRACKING: equipment goes stock → car → site → car → stock; a tech takes it into the car and hands it back, and you see who holds what. The movement ledger is the same, so the mode can be switched at any time. Before going Lite, hand in whatever is listed in cars: in Lite that quantity is not shown in the stock balance.',
+    stk_lite_cars: '{N} units are currently listed in cars. In Lite mode “Take” and “Hand in” are hidden — these units stay “in cars” until you switch back to full tracking and hand them in. Switch anyway?',
+    stk_lite_note: 'The warehouse works in Lite mode: only rentals, extensions and “Picked up” change the balance.',
+    eq_hint_lite: 'Rentals and extensions subtract equipment from stock, “Picked up” returns it. “To repair”, “Intake” and “Write-off” work as usual.',
     sb_returned: 'Equipment is back in the warehouse', sb_on_hand: 'You are holding',
     sb_none_mine: 'Nothing picked up is on you',
     sb_all_q: 'Return {N} units from {U} documents to the warehouse?',
@@ -2875,7 +2929,7 @@ function foldSet(k, v){
 function fold(key, label, iconName, html, sub){
   if (!html) return '';
   const on = foldOpen(key);
-  return `<div class="fold${sub ? ' fold-sub' : ''} ${on ? 'on' : ''}">
+  return `<div class="fold${sub ? ' fold-sub' : ''} ${on ? 'on' : ''}" id="fold-${key}">
     <button class="fold-h" onclick="App.foldToggle('${key}')" aria-expanded="${on}">
       ${ic(iconName)} <span class="grow">${esc(label)}</span> ${ic(on ? 'chev_u' : 'chev_d')}</button>
     ${on ? `<div class="fold-b">${html}</div>` : ''}
@@ -4049,6 +4103,7 @@ function seedCatalogs(){
     { id: uid(), name: 'AIR DUCT',                  color: '#FF4B4B', needs_aux: true,  aux_ids: [auxIds.duct], sort: 4 },
     { id: uid(), name: 'DEMOLITION (walls/cabinets)', color: '#1CB0F6', needs_aux: false, aux_ids: [], sort: 5 },
     { id: uid(), name: 'PROPOSAL (approved earlier)', color: '#CE82FF', needs_aux: false, aux_ids: [], sort: 6 },
+    { id: uid(), name: 'OTHER', color: '#8AA0AB', needs_aux: false, aux_ids: [], sort: 7 },   // v1.09.08
   ];
   const equipment_types = [
     { id: uid(), name: 'Blower',        abbr: 'BLW', color: '#58CC02', price_key: 'eq_blw', sort: 2 },
@@ -4770,6 +4825,10 @@ function netInit(){
    приложение падало уже в бою. Список ниже держим рядом с DB_SQL_FILE:
    пополняется вместе с каждой миграцией. */
 const DB_NEED_COLS = [
+  ['org_settings',  'stock_mode'],   // v1.09.09: режим склада «облегчённый / полный учёт»
+  ['org_settings',  'dir_order'],    // v1.09.09: порядок вкладок справочников
+  ['bn_trips',      'started_at'],   // v1.09.10: история треков машин
+  ['work_types',    'preset'],       // v1.09.08: стандартные галочки вида работы
   ['bn_devices',    'checked_at'],   // v1.09.01: справочник трекеров Bouncie
   ['org_settings',  'study_shuffle'],// v1.08.70
   ['org_settings',  'media_lock_approved'],// v1.08.71
@@ -5117,6 +5176,52 @@ function sharedAccessBoxHtml(j){
 /* =====================================================================
    МОДЕЛЬ ФОРМЫ ИНВОЙСА + РАСЧЁТ
    ===================================================================== */
+/* =====================================================================
+   v1.09.08 · СТАНДАРТНЫЕ ГАЛОЧКИ ВИДА РАБОТЫ
+   У каждого вида работы есть набор галочек бланка, которые ставятся сами при
+   создании документа (work_types.preset — массив «раздел.ключ»; админ правит его в
+   Справочники → Виды задач). Пока колонка пуста — встроенный набор по названию.
+   Это только помощь: после работы сотрудник сверяет галочки с тем, что сделано.
+   Смена вида работы в документе трогает ТОЛЬКО эти галочки: оборудование, заметки,
+   Other services, доп. работы по шаблону, фото и видео не меняются никогда.
+   ===================================================================== */
+const WT_BOXES = [
+  ['steam',      'Steam Clean', [['deep_scrub','Deep Scrub'], ['rotovac','Rotovac']]],
+  ['removals',   'Removals',    [['red_stain','Red Stain'], ['wax','Wax'], ['rust','Rust'], ['ink','Ink'], ['gum','Gum'], ['paint','Paint Removal']]],
+  ['repairs',    'Repairs',     [['threshold','Threshold'], ['stretch','Stretch'], ['seam','Seam'], ['patch','Patch']]],
+  ['dye',        'Dye',         [['spot','Spot Dye'], ['full','Full Dye']]],
+  ['other',      'Other',       [['trash_out','Trash Out'], ['pad_removal','Pad Removal'], ['all_unit','All Unit']]],
+  ['fog',        'Fog / GOC',   [['fog','Fog'], ['goc','GOC'], ['pet','Pet'], ['smoke','Smoke'], ['deodorizer','Deodorizer']]],
+  ['treatments', 'Treatments',  [['sealant','Sealant'], ['mold','Mold & Mildew'], ['degreaser','Degreaser']]],
+  ['wetvac',     'Wet Vac / Flood', [['wet_vac','Wet Vac'], ['flood','Flood'], ['sewer','Sewer'], ['fresh','Fresh Water']]],
+  ['airduct',    'Air Duct',    [['air_duct','Air Duct Cleaning'], ['dryer_vent','Dryer Vent Cleaning']]],
+];
+const WT_BOX_KEYS = WT_BOXES.flatMap(([sec, , ks]) => ks.map(([k]) => sec + '.' + k));
+function wtPresetDefault(wt){
+  const nm = String((wt && wt.name) || '').toUpperCase();
+  if (/VETVAG|WET\s*VAC|EXTRACTION/.test(nm)) return ['wetvac.wet_vac'];
+  if (/DAMAGE|FLOOD/.test(nm)) return ['wetvac.flood'];
+  if (/STEAM/.test(nm)) return ['steam.deep_scrub'];
+  if (/AIR\s*DUCT/.test(nm)) return ['airduct.air_duct'];
+  return [];
+}
+function wtPreset(wt){
+  if (wt && Array.isArray(wt.preset)) return wt.preset.filter(k => WT_BOX_KEYS.includes(k));
+  return wtPresetDefault(wt);
+}
+function fdBoxes(fd){
+  return WT_BOX_KEYS.filter(k => { const [sec, key] = k.split('.'); return !!(fd && fd[sec] && fd[sec][key]); });
+}
+function fdBoxesApply(fd, keys){
+  WT_BOX_KEYS.forEach(k => { const [sec, key] = k.split('.'); if (fd[sec]) fd[sec][key] = keys.includes(k); });
+  return fd;
+}
+/* галочки «как из коробки»: ни одной или ровно стандартный набор своего вида работы */
+function fdBoxesStd(fd, wt){
+  const cur = fdBoxes(fd); if (!cur.length) return true;
+  const std = wtPreset(wt);
+  return cur.length === std.length && cur.every(k => std.includes(k));
+}
 function emptyFormData(){
   return {
     vacant: false, occupied: false,
@@ -6078,24 +6183,42 @@ const SECTION_HELP = {
      "te": "Description + $",
     "r": "Свободные строки: любая услуга словами и её сумма — попадают в инвойс как есть.",
     "e": "Free-form lines: any service in words plus its amount — go to the invoice as-is."
-   }
-  ]
- },
- "note": {
-  "title": "Заметка · Доп. работы и покупки",
-   "title_en": "Note · Extra works & purchases",
-  "items": [
+   },
    {
-    "t": "Заметка",
-     "te": "Note",
-    "r": "Текст попадает в PDF-инвойс (строка NOTES).",
-    "e": "The text goes into the PDF invoice (NOTES line)."
+    "t": "＋ Строка",
+     "te": "＋ Row",
+    "r": "Строк сколько нужно (до 20). Первые три — как на бумажном бланке — остаются всегда, у добавленных есть корзина; крестик в строке очищает текст. В PDF всё, что не влезло в бланк, уходит на лист-продолжение справа.",
+    "e": "As many rows as needed (up to 20). The first three — like the paper form — always stay, added ones have a bin; the cross clears the text. In the PDF whatever does not fit goes to the continuation sheet on the right."
    },
    {
     "t": "＋ Шаблон",
      "te": "＋ Template",
     "r": "Подставляет позиции из справочника «Доп. работы и покупки»: у задач с размером появляется поле размера, цена считается автоматически и попадает в раздел Extra.",
     "e": "Inserts items from the “Extra works & purchases” directory: sized works get a size input, the price is calculated automatically into the Extra section."
+   },
+   {
+    "t": "Микрофон и RU/EN",
+     "te": "Mic and RU/EN",
+    "r": "Диктовка пишет в строку, где стоял курсор (она подсвечена); иначе — в первую пустую или в новую. Пилюля RU/EN сама идёт за текстом: появилась кириллица — RU, текст без кириллицы — EN.",
+    "e": "Dictation writes into the row where the cursor was (it is highlighted); otherwise into the first empty or a new one. The RU/EN pill follows the text: Cyrillic appears — RU, text without Cyrillic — EN."
+   },
+   {
+    "t": "Перевод для PDF (EN)",
+     "te": "Translation for PDF (EN)",
+    "r": "«Перевести на EN» переводит все русские строки раздела. Переводы лежат тут же под спойлером — их можно поправить руками; в PDF печатается только английский.",
+    "e": "“Translate to EN” translates every Russian row of the section. The translations sit right here under the spoiler and can be edited by hand; only English is printed in the PDF."
+   }
+  ]
+ },
+ "note": {
+  "title": "Заметка",
+   "title_en": "Note",
+  "items": [
+   {
+    "t": "Заметка",
+     "te": "Note",
+    "r": "Текст попадает в PDF-инвойс (строка NOTES).",
+    "e": "The text goes into the PDF invoice (NOTES line)."
    },
    {
     "t": "Микрофон",
@@ -6403,7 +6526,7 @@ function render(){
   if (state && state.user && isAcc()){ if (ACC_HIDE.has(state.screen)) state.screen = 'acc'; state.statMine = false; }
   const app = $('#app');
   /* v1.08.37: экраны телевизора живут без входа в аккаунт */
-  if (!state.user && TV.screen){
+  if ((!state.user || TV.test) && TV.screen){            // v1.09.09: TV.test — проверка ТВ-режима из-под своей учётной записи
     app.innerHTML = TV.screen === 'on' ? viewTv() : viewTvWait();
     if (app.className !== 'scr-tv') app.className = 'scr-tv';
     tvAfterRender();
@@ -6454,6 +6577,18 @@ function render(){
   window.TLBoardScroll && window.TLBoardScroll.bind();   // wheel — только на доске
   dndBindTouch();                                        // touchmove — только на карточках главной
   selxApply();                                           // v1.08.46: крестики очистки у списков
+  if (state.screen === 'settings') document.querySelectorAll('#set-nav .set-nav-b').forEach(b => {   // v1.09.09: пункт без раздела (роль) не показываем
+    if (!document.getElementById(b.dataset.k === 'profile' ? 'set-profile' : 'fold-' + b.dataset.k)) b.remove(); });
+  if (state.screen === 'settings'){                      // v1.09.09: лента разделов липнет ПОД шапкой, а не поверх неё
+    const n = document.getElementById('set-nav'), tb = document.querySelector('.topbar');
+    if (n && tb && getComputedStyle(tb).position === 'sticky'){
+      const h = Math.round(tb.getBoundingClientRect().height) + 'px';
+      if (n.style.top !== h) n.style.top = h;
+      const sm = (parseInt(h, 10) + Math.round(n.getBoundingClientRect().height) + 8) + 'px';
+      document.querySelectorAll('.set-main > .fold, #set-profile').forEach(e => { if (e.style.scrollMarginTop !== sm) e.style.scrollMarginTop = sm; });
+    }
+  }
+  dirTabsWheelBind();                                    // v1.09.09: карусель справочников крутится колёсиком
   if (state.screen === 'home' || state.screen === 'board'){
     try { document.querySelector('.day-cell.sel')?.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch(e){}
   }
@@ -6738,9 +6873,17 @@ function addrLineHtml(cx){
     <button class="copy-mini" title="${t('copy_addr')}" aria-label="${t('copy_addr')}"
       onclick="event.stopPropagation();App.copyCxAddr('${cx.id}')">${ic('copy')}</button></div>`;
 }
-function codesLineHtml(cx){
-  if (!cx || (!cx.access_code && !cx.callbox_code)) return '';
+function codesLineHtml(cx, keep){
+  if (!cx || (!cx.access_code && !cx.callbox_code)) return keep ? '<div class="s codes is-empty">&nbsp;</div>' : '';
   return `<div class="s codes">${codeLineHtml(cx, true)}</div>`;
+}
+/* v1.09.09 · ОДИН РАЗМЕР КАРТОЧЕК ДНЯ. У карточки работы и карточки пикапа один и тот же набор
+   строк: название · адрес · строка статуса · коды · заметка. Строки, которых нет (кодов у
+   комплекса, заметки у задачи), занимают своё место пустыми; каждая строка — в одну линию с
+   многоточием. Поэтому высота одинаковая в любом режиме и плотности, без подгонки чисел в CSS. */
+function cardNoteLineHtml(note){
+  const v = String(note || '').replace(/\s+/g, ' ').trim();
+  return v ? `<div class="s note-line" title="${esc(v.slice(0, 400))}">${ic('note')} ${esc(v)}</div>` : '<div class="s note-line is-empty">&nbsp;</div>';
 }
 function eqDotsFor(list){
   const agg = {};
@@ -6868,11 +7011,11 @@ function viewHome(){
     <div class="item clicky${canReorder(pkJob)?' has-rail':''}" data-drag-id="${jobId}" data-can="${canReorder(pkJob)?1:0}" style="border-left-color:${pkJob.priority ? 'var(--red)' : STRIPE_PK}" onclick="App.pickupModal('${jobId}','${iso}',event)">
       ${rowNumHtml(num.pkNum[jobId])}${bnDotHtml('pk:' + jobId)}
       <div class="info">
-        <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(p0.unit_number||'')}${triHtml(!!pkJob.priority, jobId, canPrio(pkJob), true)}</span></div>
+        <div class="t"><span class="nm">${esc(cx.name)}</span><span class="tail">· Unit ${esc(p0.unit_number||'')}${triHtml(!!pkJob.priority, jobId, canPrio(pkJob), true)}</span></div>
         ${addrLineHtml(cx)}
-        <div class="s">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)} ${overdue?`<span class="chip bad">${t('overdue')}</span>`:''}${list.some(p=>p.ext_of)?` <span class="chip info">${t('ext_chip')}</span>`:''} ${(!state.filterMine || isPlacementSharedWithMe(p0))?'· '+esc(profName(p0.technician_id)):''}</div>
-        ${codesLineHtml(cx)}
-        ${(state.data.jobs.find(x=>x.id===jobId)||{}).note ? `<div class="s note-line">${ic('note')} ${esc((state.data.jobs.find(x=>x.id===jobId)||{}).note)}</div>` : ''}
+        <div class="s meta"><span class="mt">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)}${(!state.filterMine || isPlacementSharedWithMe(p0))?' · '+esc(profName(p0.technician_id)):''}</span>${overdue?`<span class="chip bad">${t('overdue')}</span>`:''}${list.some(p=>p.ext_of)?`<span class="chip info">${t('ext_chip')}</span>`:''}</div>
+        ${codesLineHtml(cx, true)}
+        ${cardNoteLineHtml((state.data.jobs.find(x=>x.id===jobId)||{}).note)}
       </div>
       <div class="right">
         <div class="eq-dots">${eqDotsFor(list)}</div>
@@ -6911,10 +7054,11 @@ function viewHome(){
     <div class="item clicky${canReorder(j)?' has-rail':''}" data-drag-id="${j.id}" data-can="${canReorder(j)?1:0}" style="border-left-color:${wt.color}" onclick="App.openJob('${j.id}')">
       ${rowNumHtml(num.jobNum[j.id])}${bnDotHtml('job:' + j.id)}
       <div class="info">
-        <div class="t">${esc(cx.name)} · <span class="tail">Unit ${esc(j.unit_number||'—')}${triHtml(!!j.priority, j.id, canPrio(j), true)}</span></div>
+        <div class="t"><span class="nm">${esc(cx.name)}</span><span class="tail">· Unit ${esc(j.unit_number||'—')}${triHtml(!!j.priority, j.id, canPrio(j), true)}</span></div>
         ${addrLineHtml(cx)}
-        <div class="s"><span style="color:${wt.color};font-weight:800">${esc(biText(wt.name))}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}${jobSharedChipHtml(j)}${proposalChipHtml(j)}${repChipHtml(j)}</div>
-        ${codesLineHtml(cx)}
+        <div class="s meta"><span class="mt"><span style="color:${wt.color};font-weight:800">${esc(biText(wt.name))}</span>${(!state.filterMine || isJobSharedWithMe(j))?' · '+esc(j.technician_name||profName(j.technician_id)):''}</span>${jobSharedChipHtml(j)}${proposalChipHtml(j)}${repChipHtml(j)}</div>
+        ${codesLineHtml(cx, true)}
+        ${cardNoteLineHtml(j.note)}
       </div>
       <div class="right">
         <span class="badge-status st-${j.status}">${jobIssues(j).length ? warnIcon() : ''}${t('status_'+j.status)}</span>
@@ -7320,6 +7464,7 @@ function sectionFaqHtml(key){
   S.map = H(`
     <h4>${ic('map')} Карта апарт-комплексов</h4>
     <ul>
+      <li><b>${t('trh_tab')}</b> (v1.09.10, вкладка у админа и у сотрудников с правом «Трек дня»): поездки машин за <b>день</b> или <b>неделю</b> — календарь и стрелки листают период, чипы выбирают машины (все, одну или несколько), у каждой свой цвет линии. Под картой — мили, время в пути и число поездок по машинам, в неделе ещё и по дням. Поездки каждого дня сохраняются в базе, поэтому старые дни открываются сразу; «${t('trh_reload')}» перечитывает период заново. Значок трека у машины открывает эту вкладку с выбранной машиной.</li>
       <li>Точки — комплексы, цвет = контрагент; фильтр по контрагенту сверху; клик по строке списка — фокус на точке.</li>
       <li>${ic('key')} в строке — скопировать код доступа; «${ic('warn')} без координат» — у комплекса нет точки (задайте в справочнике или найдите поиском).</li>
       <li>Режим <b>«День»</b>: пронумерованные точки задач выбранной даты и кнопка ${ic('compass')} — маршрут дня в вашем навигаторе (Apple/Google — см. Настройки). Менеджеру и админу карта дня показывает задачи <b>всех</b> сотрудников; открывается она по умолчанию на сегодня.</li>
@@ -7337,6 +7482,7 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('map')} Complexes map</h4>
     <ul>
+      <li><b>${t('trh_tab')}</b> (v1.09.10, a tab for the admin and for staff with the "Day track" right): car trips for a <b>day</b> or a <b>week</b> — the calendar and arrows move the period, chips pick the cars (all, one or several), each with its own line colour. Under the map: miles, driving time and trip count per car, per day in week mode. Every day's trips are stored in the database, so past days open at once; "${t('trh_reload')}" re-reads the period. The track icon next to a car opens this tab with that car selected.</li>
       <li>Dots — complexes, color = counterparty; counterparty filter on top; click a list row — focus on the point.</li>
       <li>${ic('key')} in a row — copy the access code; "${ic('warn')} no coordinates" — the complex has no point (set it in the Directory or find it with the search).</li>
       <li><b>"Day"</b> mode: numbered points of the selected date's tasks and the ${ic('compass')} button — the day's route in your navigator (Apple/Google — see Settings). For managers and admins the day map shows the tasks of <b>all</b> staff; it opens on today by default.</li>
@@ -7414,6 +7560,8 @@ function sectionFaqHtml(key){
   S.dirs = H(`
     <h4>${ic('book')} Справочник</h4>
     <ul>
+      <li><b>Блокировка сотрудника</b> (v1.09.10): его папки на Google Диске (инвойсы и вложения) переименовываются в «Имя Ф Заблокирован», при разблокировке пометка снимается. Файлы внутри не трогаются.</li>
+      <li><b>Вкладки</b> (v1.09.09): лента вкладок крутится колёсиком мыши; «По умолчанию» запоминает, какой справочник открывать вам первым (без выбора — «Сотрудники»); «Порядок» у админа задаёт порядок вкладок для всех.</li>
       <li>Вкладки: Сотрудники (админ), Автомобили и Трекеры Bouncie (админ), Контрагенты, Комплексы, Виды задач, Оборудование, Доп. снаряжение, PRICE, Доп. работы, Размеры, Продукты.</li>
       <li><b>Комплексы</b> сгруппированы по владельцам; группа «Без владельца» и «⏳ Временный владелец» помечены ${faqTriDemo()} — таким нужно назначить контрагента.</li>
       <li>${ic('book')} у комплекса — история кодов доступа; ${ic('pencil')} — редактирование (менеджер+).</li>
@@ -7428,6 +7576,8 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('book')} Directory</h4>
     <ul>
+      <li><b>Blocking an employee</b> (v1.09.10): their Google Drive folders (invoices and attachments) are renamed with a "blocked" suffix; unblocking removes it. The files inside are not touched.</li>
+      <li><b>Tabs</b> (v1.09.09): the tab strip scrolls with the mouse wheel; "Default" remembers which directory opens first for you (none chosen — Staff); the admin's "Order" sets the tab order for everyone.</li>
       <li>Tabs: Staff (admin), Vehicles and Bouncie trackers (admin), Counterparties, Complexes, Work types, Equipment, Extra gear, PRICE, Extra works, Sizes, Products.</li>
       <li><b>Complexes</b> are grouped by owner; the "No owner" group and "⏳ Temporary owner" are flagged ${faqTriDemo()} — those need a counterparty assigned.</li>
       <li>${ic('book')} on a complex — the access-code history; ${ic('pencil')} — editing (manager+).</li>
@@ -7461,6 +7611,7 @@ function sectionFaqHtml(key){
     <h4>${ic('box')} ${t('eq_sch_title')}</h4>
     <div class="faq-example">${faqStockScheme()}</div>
     <ul>
+      <li><b>${t('stk_mode_t')}</b> (v1.09.09, переключатель у админа вверху экрана): «${t('stk_mode_lite')}» — склад уменьшается документом аренды и продления и пополняется, когда нажали «Забрал»; машины не считаются, блоков «Моя машина», «Взять» / «Сдать», «По машинам» и плашки «на руках» нет. «${t('stk_mode_full')}» — склад → машина → объект → машина → склад, как раньше. Регистр движений один, режим можно менять в любой момент.</li>
       <li><b>Круг жизни</b>: Склад → ${t('eq_take_b')} → Машина → аренда (создание задачи) → Объект → «Забрал» → Машина → «Вернул на склад» → Склад.</li>
       <li><b>Аренда двигает сама</b>: создали задачу с оборудованием — оно ушло из вашей машины на объект; не хватало в машине — недостающее само списалось со склада. «Забрал» кладёт в машину забравшего, «Вернул на склад» — на склад. Отмена шага возвращает всё как было.</li>
       <li><b>Продление аренды</b> — бумажная операция: физически ничего не едет.</li>
@@ -7473,6 +7624,7 @@ function sectionFaqHtml(key){
     <h4>${ic('box')} ${t('eq_sch_title')}</h4>
     <div class="faq-example">${faqStockScheme()}</div>
     <ul>
+      <li><b>${t('stk_mode_t')}</b> (v1.09.09, the admin's switch at the top of the screen): "${t('stk_mode_lite')}" — stock goes down with rental and extension documents and back up when "Picked up" is pressed; cars are not counted, so there is no "My car", "Take" / "Hand in", "By cars" or "on your hands" strip. "${t('stk_mode_full')}" — stock → car → site → car → stock, as before. The movement ledger is the same, so the mode can be switched at any time.</li>
       <li><b>The cycle</b>: Stock → Take → Car → rental (creating a job) → Site → "Picked up" → Car → "Returned" → Stock.</li>
       <li><b>Rentals move equipment automatically</b>: create a job with equipment and it leaves your car for the site; whatever the car was short of is taken from stock for you. "Picked up" puts it into the picker's car, "Returned" — back to stock. Undoing a step rolls it back.</li>
       <li><b>Extensions</b> are paper moves — nothing physically travels.</li>
@@ -7504,6 +7656,7 @@ function sectionFaqHtml(key){
   S.settings = H(`
     <h4>${ic('gear')} Настройки</h4>
     <ul>
+      <li><b>Меню разделов</b> (v1.09.09): на ПК — столбец слева, на телефоне — лента под шапкой; нажатие прокручивает к разделу и раскрывает его. <b>${t('tv_test_btn')}</b> — в «Режиме телевизора»: настоящий ТВ-экран на ваших данных без кода, сверху полоска проверки (плотность, «На весь экран», «${t('tv_test_stop')}»). «${t('tv_dens_t')}» — общая для всех телевизоров.</li>
       <li><b>${t('push_pop_card')}</b> (v1.09.00) — один раздел: Push-уведомления этого устройства и всплывающие подсказки (где показывать, полоска отправки).</li>
       <li><b>${t('push_card')}</b> (v1.08.33): кнопка подписывает ЭТО устройство (нажмите на каждом телефоне/ПК); галочки — что присылать: задача, пикап, апрув, просрочка, снятие апрува, плюс ошибки машин и ТО при доступе. iPhone: сначала «На экран Домой» (iOS 16.4+). Доставка идёт, пока кто-то из фирмы онлайн; после действий уходит сразу.</li>
       <li><b>${t('sec_card')}</b> (v1.08.33): необязательная 2FA (TOTP) — QR в приложение-аутентификатор, код из 6 цифр; при входе после пароля спросим код. Отключается в любой момент (потребуется код).</li>
@@ -7530,6 +7683,7 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('gear')} Settings</h4>
     <ul>
+      <li><b>Section menu</b> (v1.09.09): a column on the left on a PC, a strip under the header on a phone; a tap scrolls to the section and opens it. <b>${t('tv_test_btn')}</b> — under "TV mode": the real TV screen on your data without a code, with a test bar on top (density, "Full screen", "${t('tv_test_stop')}"). "${t('tv_dens_t')}" is shared by all TVs.</li>
       <li><b>${t('push_pop_card')}</b> (v1.09.00) — one section: this device's push notifications and the pop-up messages (where to show them, the upload bar).</li>
       <li><b>${t('push_card')}</b> (v1.08.33): the button subscribes THIS device (press it on every phone/PC); the checkboxes pick what to send: task, pickup, approval, overdue, approval reset, plus vehicle alerts and service when you have access. iPhone: "Add to Home Screen" first (iOS 16.4+). Delivery runs while someone from the company is online; after an action it goes out at once.</li>
       <li><b>${t('sec_card')}</b> (v1.08.33): optional 2FA (TOTP) — a QR code for an authenticator app, a 6-digit code; at sign-in we ask for the code after the password. Can be turned off at any time (a code is required).</li>
@@ -7884,7 +8038,7 @@ function addTaskModal(){
     <div id="nt-prop-msg"></div>
     <label class="opt" style="margin:2px 0 8px"><input type="checkbox" id="nt-prop" onchange="App.ntPropRefresh()"> ${t('proposal_chk')}</label>
     <div id="nt-prop-zone"></div>
-    <div class="form-row"><span class="lbl">${t('work_type')}</span>
+    <div class="form-row"><span class="lbl">${t('work_type')} ${tipQ('wt_tip')}</span>
       <div class="opt-grid" id="nt-wt">
         ${wts.map(w=>`<button class="opt" data-id="${w.id}" style="border-color:${w.color};color:${w.color}"
           onclick="App.ntPickWt(this)">${esc(biText(w.name))}</button>`).join('')}
@@ -8043,11 +8197,13 @@ async function createTask(){
   const techId = isManager() ? ((techSel ? techSel.value : state.user.id) || null) : state.user.id;
   const techPr = techId ? state.data.profiles.find(p => p.id === techId) : null;
   const techName = techPr ? shortName(techPr.display_name) : shortName(state.user.display_name);
+  /* v1.09.08: стандартные галочки вида работы — сразу при создании */
+  const fd0 = fdBoxesApply(emptyFormData(), wtPreset(wtById(ntWt)));
   const job = {
     id: uid(), date, counterparty_id: cpId, complex_id: cxId, unit_number: unit,
     has_proposal: !!($('#nt-prop') && $('#nt-prop').checked),
     work_type_id: ntWt, technician_id: techId, technician_name: techId ? techName : '', helper_ids: [], shared_with_helpers: false, priority: false, sort_order: jobsOn(date).length,
-    status: 'draft', note: '', form_data: emptyFormData(), total: 0,
+    status: 'draft', note: '', form_data: fd0, total: calcTotal(fd0, priceResolver(cpId)),
     approved_total: null, approved_by: null, approved_at: null,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString()
   };
@@ -8069,7 +8225,7 @@ async function pickupGroup(jobId){
   const list = state.data.placements.filter(p => p.job_id === jobId && pkPending(p))
     .filter(p => canTouchPk(p));
   for (const p of list){
-    const upd = { ...p, picked_up: true, picked_up_at: now, picked_up_by: state.user.id };
+    const upd = { ...p, picked_up: true, picked_up_at: now, picked_up_by: state.user.id, ...stockLiteRet(now) };   // v1.09.09
     await dbUpsert('placements', upd);
   }
   navigator.vibrate?.([30,40,30]);
@@ -8173,13 +8329,13 @@ function pkDueCardHtml(jobId, list, today){
   return `<div class="pkm-card${days ? ' od' : ''}" role="button" tabindex="0" data-job="${jobId}" aria-label="${t('pkd_open')}: ${esc(cx.name)} · Unit ${esc(p0.unit_number || '—')}"
       onclick="App.pkDueOpen('${jobId}',event)" onkeydown="App.bannerKey(event)">
     <div class="pkm-top">
-      <div class="pkm-t">${esc(cx.name)} · <span class="tail">Unit ${esc(p0.unit_number || '—')}</span></div>
+      <div class="pkm-t"><span class="nm">${esc(cx.name)}</span><span class="tail">· Unit ${esc(p0.unit_number || '—')}</span></div>
       <button type="button" class="btn btn-ghost sm" title="${t('navigate')}" aria-label="${t('navigate')}" onclick="event.stopPropagation();App.navToCx('${p0.complex_id}')">${ic('compass')}</button>
     </div>
-    ${cx.address ? `<div class="pkm-a">${esc(cx.address)}</div>` : ''}
+    <div class="pkm-a">${cx.address ? esc(cx.address) : '&nbsp;'}</div>
     <div class="pkm-e">${eq}</div>
     <div class="pkm-s">${t('due')}: ${fmtDMY(due)}${days ? ` <span class="chip bad">${t('overdue')} · ${days} ${t('pkd_days')}</span>` : ''}${list.some(p => p.ext_of) ? ` <span class="chip info">${t('ext_chip')}</span>` : ''}${who ? ' · ' + who : ''}</div>
-    ${note ? `<div class="pkm-s note-line">${ic('note')} ${esc(note)}</div>` : ''}
+    ${String(note || '').trim() ? `<div class="pkm-s note-line" title="${esc(String(note).slice(0, 400))}">${ic('note')} ${esc(note)}</div>` : '<div class="pkm-s note-line is-empty">&nbsp;</div>'}
   </div>`;
 }
 function pkDueModal(){
@@ -8346,7 +8502,8 @@ function jobHistory(jobId){
 async function pickupOne(pid, jobId){
   const p = state.data.placements.find(x => x.id === pid); if (!p) return;
   if (!confirm(t('pickup_confirm'))) return;
-  await dbUpsert('placements', { ...p, picked_up: true, picked_up_at: new Date().toISOString(), picked_up_by: state.user.id });
+  { const now_ = new Date().toISOString();
+    await dbUpsert('placements', { ...p, picked_up: true, picked_up_at: now_, picked_up_by: state.user.id, ...stockLiteRet(now_) }); }   // v1.09.09
   audit(p.due_date > todayISO() ? 'pickup_early' : 'pickup_done', 'placement', pid, {   // v1.07.18
     unit: p.unit_number, eq: (etById(p.equipment_type_id) || {}).abbr || '?', qty: +p.qty || 1 });
   navigator.vibrate?.(30);
@@ -8575,8 +8732,8 @@ function invSecFilled(id, fd, sec, note){
     case 'airduct':    return any(fd.airduct, ['air_duct', 'dryer_vent']) || !!String((fd.airduct || {}).note || '').trim();
     case 'equipment':  return Object.values(fd.equipment || {}).some(e => e && (+e.qty > 0 || (e.hours_start != null && e.hours_start !== '')));
     case 'pad':        return !!(fd.pad && (fd.pad.size || fd.pad.all_unit || +fd.pad.rooms > 0));
-    case 'others':     return (fd.others || []).some(o => o && (String(o.desc || '').trim() || +o.amount > 0));
-    case 'note':       return !!String(note || '').trim() || (fd.extra || []).length > 0;
+    case 'others':     return (fd.others || []).some(o => o && (String(o.desc || '').trim() || +o.amount > 0)) || (fd.extra || []).length > 0;   // v1.09.08: шаблоны переехали сюда
+    case 'note':       return !!String(note || '').trim();
   }
   return true;
 }
@@ -8718,7 +8875,9 @@ function viewJob(){
           <button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button></div>
         ${(cx.access_code||cx.callbox_code)?`<div class="tiny">${codeLineHtml(cx, true)}</div>`:''}
         ${ttJobLine(j)}
-        <div class="tiny" style="color:${wt.color};font-weight:800">${esc(biText(wt.name))}</div>
+        ${wtCanChange(j)
+          ? `<button type="button" class="wt-change" style="color:${wt.color}" title="${t('wt_change')}" onclick="App.wtChangeModal()">${esc(biText(wt.name))} ${ic('pencil')}</button> ${tipQ('wt_tip')}`
+          : `<div class="tiny" style="color:${wt.color};font-weight:800">${esc(biText(wt.name))}</div>`}
       </div>
       <span class="badge-status st-${j.status}">${t('status_'+j.status)}</span>
     </div>
@@ -8836,24 +8995,26 @@ function viewJob(){
       <div class="qty-line"><span class="tiny">Rooms</span>${stepperHtml('pad-rooms', fd.pad.rooms||0)}</div>
     </div></div>
 
-  <div class="inv-sec${invSecCls('others', sec)}" data-sec="others"><div class="inv-head" ${invSecHead('others', sec)}${ic('pen')} Other services ${helpBtn('others')} ${amtWrap('others',sec.others)}</div>
+  <div class="inv-sec${invSecCls('others', sec)}" data-sec="others"><div class="inv-head" ${invSecHead('others', sec)}${ic('pen')} Other services ${helpBtn('others')} ${amtWrap('othsum',(sec.others||0)+(sec.extra||0))}</div>
     <div class="inv-body">
-      ${fd.others.map((o,i)=>`
-        <div class="qty-line">
-          <input data-oth-d="${i}" placeholder="${t('desc')}…" value="${esc(o.desc)}" style="flex:1">
-          <input data-oth-a="${i}" inputmode="decimal" placeholder="$" value="${o.amount||''}" class="price-input">
-        </div>`).join('')}
+      <div id="oth-rows">${othRowsHtml()}</div>
+      ${othToolsHtml()}
+      <div class="oth-btns">
+        <button type="button" class="btn btn-ghost sm" onclick="App.othAdd()">${ic('plus')} ${t('oth_add')}</button>
+        <button type="button" class="btn btn-blue sm" onclick="App.extraPicker()">${ic('plus')} ${t('template')}</button>
+      </div>
+      <div id="extra-list">${(jobDraft.form_data.extra||[]).length ? extraListHtml() : ''}</div>
+      <div id="oth-tr">${othTrHtml()}</div>
     </div></div>
 
-  <div class="inv-sec${invSecCls('note', sec)}" data-sec="note"><div class="inv-head" ${invSecHead('note', sec)}${ic('note')} ${t('note')} · ${t('extra_section')} ${helpBtn('note')} ${amtWrap('extra',sec.extra)}</div>
+  <div class="inv-sec${invSecCls('note', sec)}" data-sec="note"><div class="inv-head" ${invSecHead('note', sec)}${ic('note')} ${t('note')} ${helpBtn('note')}</div>
     <div class="inv-body">
       ${dictationHTML('jb-note', j.note || '', 'draft')}
       <div class="tiny">${t('note_hint')}</div>
-      <div id="extra-list">${(jobDraft.form_data.extra||[]).length ? extraListHtml() : ''}</div>
-      <button class="btn btn-blue sm" onclick="App.extraPicker()">${ic('plus')} ${t('template')}</button>
+
     </div></div>
 
-  ${trCardHtml('job', j)}
+  ${trCardHtml('job', j, true)}
   ${mediaStripHtml(j.id)}
   ${proposalBoxHtml(j)}
   ${repBoxHtml(j)}
@@ -8895,6 +9056,123 @@ function viewJob(){
   </div>
   `;
 }
+/* =====================================================================
+   v1.09.08 · OTHER SERVICES: строк сколько нужно, диктовка, пилюля RU/EN, перевод и
+   шаблоны — всё внутри раздела; переводы строк для PDF — под спойлером тут же.
+   ===================================================================== */
+let _othFocus = -1, _othTrOpen = false, _othTrT = null;
+function othRowsHtml(){
+  const rows = jobDraft.form_data.others || (jobDraft.form_data.others = []);
+  return rows.map((o, i) => `
+    <div class="qty-line oth-line${i === _othFocus ? ' oth-cur' : ''}">
+      <span class="inpx"><input id="oth-d-${i}" data-oth-d="${i}" placeholder="${t('desc')}…" value="${esc(o.desc)}">${inpxBtn()}</span>
+      <input data-oth-a="${i}" inputmode="decimal" placeholder="$" value="${o.amount||''}" class="price-input">
+      ${i >= 3 ? `<button type="button" class="icon-btn sm oth-del" title="${t('delete')}" aria-label="${t('delete')}" onclick="App.othDel(${i})">${ic('trash')}</button>` : ''}
+    </div>`).join('');
+}
+function othToolsHtml(){
+  const mic = dictSupported() ? `
+      <button type="button" class="mic oth-mic" onclick="App.othDict()" title="${t('dictate')}">${ic('mic')}</button>
+      <div class="lang-seg sm">
+        <button type="button" class="${state.dictLang==='ru-RU'?'on':''}" onclick="App.dictLang('ru-RU')">RU</button>
+        <button type="button" class="${state.dictLang==='en-US'?'on':''}" onclick="App.dictLang('en-US')">EN</button>
+      </div>` : '';
+  return `<div class="dict-row oth-tools">${mic}
+      <button type="button" class="btn btn-ghost sm" onclick="App.othTranslate()">${ic('globe')} ${t('translate_en')}</button>
+      <span class="tiny oth-mic-hint"></span></div>
+    <div class="tiny">${t('oth_hint')}</div>`;
+}
+function othTrHtml(){
+  if (!jobDraft) return '';
+  const fs = trFields('job', jobDraft).filter(f => /^oth\d+$/.test(f.id) && hasCyr(f.ru));
+  if (!fs.length) return '';
+  const miss = fs.filter(f => needsTr(f.ru, f.en)).length;
+  return `<details class="oth-trbox"${_othTrOpen ? ' open' : ''} ontoggle="App.othTrToggle(this.open)">
+    <summary>${ic('globe')} ${t('tr_pdf_card')} <span class="chip ${miss ? 'warn' : 'ok'}">${miss ? miss + ' ' + t('tr_no_tr') : '✓'}</span></summary>
+    <div class="tiny" style="margin:4px 0 6px">${t('tr_pdf_hint')}</div>
+    ${fs.map(f => `<div class="tr-row">
+      <div class="tiny">${esc(f.label)} · RU</div>
+      <div class="tr-ru">${esc(f.ru)}</div>
+      <textarea class="tr-en" rows="2" data-tr="${f.id}" placeholder="English…"
+        oninput="App.trSet('job','${f.id}',this.value)">${esc(f.en)}</textarea>
+    </div>`).join('')}
+  </details>`;
+}
+function othRefresh(rows){
+  if (rows){ const r = $('#oth-rows'); if (r) r.innerHTML = othRowsHtml(); }
+  const b = $('#oth-tr'); if (b && !b.contains(document.activeElement)) b.innerHTML = othTrHtml();
+}
+function othTrSoon(){ clearTimeout(_othTrT); _othTrT = setTimeout(() => othRefresh(false), 500); }
+function othAdd(silent){
+  if (!jobDraft || editLocked(jobDraft)) return;
+  const rows = jobDraft.form_data.others || (jobDraft.form_data.others = []);
+  if (rows.length >= 20){ toast('ℹ ' + t('oth_max'), 'inf'); return; }
+  rows.push({ desc: '', desc_en: '', amount: 0 });
+  _othFocus = rows.length - 1;
+  othRefresh(true); autosaveDraft();
+  if (!silent){ const el = $('#oth-d-' + _othFocus); if (el) el.focus(); }
+}
+function othDel(i){
+  if (!jobDraft) return;
+  const rows = jobDraft.form_data.others || [];
+  if (i < 3 || i >= rows.length) return;                 // первые три строки — как на бумажном бланке, остаются всегда
+  if (dictTa && /^oth-d-/.test(dictTa)) dictStop();
+  rows.splice(i, 1); _othFocus = -1;
+  othRefresh(true); recalcJob(); autosaveDraft();
+}
+/* диктовка — в строку, где стоял курсор; не стоял — в первую пустую, нет пустой — в новую */
+function othDict(){
+  if (!jobDraft) return;
+  if (dictTa && /^oth-d-/.test(dictTa)){ dictStop(); return; }
+  const rows = jobDraft.form_data.others || (jobDraft.form_data.others = []);
+  let i = _othFocus;
+  if (!(i >= 0 && i < rows.length)){
+    i = rows.findIndex(o => !String(o.desc || '').trim());
+    if (i < 0){ othAdd(true); i = rows.length - 1; }
+  }
+  _othFocus = i;
+  document.querySelectorAll('.oth-line').forEach((r, k) => r.classList.toggle('oth-cur', k === i));
+  const id = 'oth-d-' + i;
+  const mic = document.querySelector('.oth-mic'), hint = document.querySelector('.oth-mic-hint');
+  if (mic) mic.id = 'mic-' + id;                           // dictToggle/dictStop красят кнопку и подпись по этим id
+  if (hint) hint.id = 'mic-hint-' + id;
+  dictToggle(id);
+}
+async function othTranslate(){
+  if (!jobDraft || trBusy) return;
+  const fs = trFields('job', jobDraft).filter(f => /^oth\d+$/.test(f.id) && needsTr(f.ru, f.en));
+  if (!fs.length){ toast('ℹ ' + t('tr_ok_all'), 'inf'); return; }
+  trBusy = true; toast('🌐 ' + t('translating'), 'inf');
+  try{
+    for (const f of fs){ const en = await trApi(f.ru); if (en) f.set(en); }
+    _othTrOpen = true; toast('✓ ' + t('tr_saved'));
+  }catch(e){ dlog('⛔ othTranslate:', e); toast('⛔ ' + t('translate_err'), 'err'); }
+  trBusy = false; autosaveDraft(); othRefresh(false);
+}
+/* ---------- пилюля RU/EN сама идёт за текстом ----------
+   В поле появилась хоть одна кириллическая буква — пилюля встаёт на RU (дальше обычный путь:
+   «Перевести на EN»). Текст без кириллицы — перевод не нужен, пилюля уходит на EN. Во время
+   диктовки язык не трогаем; выбор не запоминается как личная настройка — это подстройка под поле. */
+function dictLangAuto(text){
+  if (dictTa) return;
+  const v = String(text || '');
+  const want = hasCyr(v) ? 'ru-RU' : (v.trim() ? 'en-US' : '');
+  if (!want || want === state.dictLang) return;
+  state.dictLang = want;
+  document.querySelectorAll('.dict-row .lang-seg button').forEach(b => b.classList.toggle('on', b.textContent === (want === 'ru-RU' ? 'RU' : 'EN')));
+}
+document.addEventListener('input', e => {
+  const el = e.target; if (!el || !el.matches) return;
+  if (el.matches('textarea.note-ta, [data-oth-d]')) dictLangAuto(el.value);
+}, true);
+document.addEventListener('focusin', e => {
+  const el = e.target; if (!el || !el.matches) return;
+  if (el.matches('[data-oth-d]')){
+    _othFocus = +el.dataset.othD;
+    document.querySelectorAll('.oth-line').forEach((r, k) => r.classList.toggle('oth-cur', k === _othFocus));
+  }
+  if (el.matches('textarea.note-ta, [data-oth-d]')) dictLangAuto(el.value);
+});
 function amtWrap(id, v){ return `<span class="amt" data-amt="${id}">${v>0?money(v):'—'}</span>`; }
 
 /* =====================================================================
@@ -8918,7 +9196,7 @@ function jobKey(j){
   if (!j) return '';
   const chk = $('#jb-done');
   const st = (chk && jobDraft && j === jobDraft) ? (chk.checked ? 'done' : 'draft') : (j.status === 'approved' ? 'approved' : j.status);
-  return JSON.stringify([j.date, j.unit_number || '', j.note || '', j.technician_id || '',
+  return JSON.stringify([j.date, j.unit_number || '', j.note || '', j.technician_id || '', j.work_type_id || '',   // v1.09.08: + вид работы
     (j.helper_ids || []).slice().sort(), !!j.shared_with_helpers, j.proposal_id || '',
     st === 'approved' ? 'approved' : st, j.form_data]);
 }
@@ -8927,6 +9205,51 @@ function jobDirty(){
   const orig = (state.data.jobs || []).find(x => x.id === jobDraft.id);
   if (!orig) return true;
   return jobKey(jobDraft) !== jobKey(orig);
+}
+/* ---------- v1.09.08: смена вида работы в документе ---------- */
+function wtCanChange(j){
+  if (!j || editLocked(j)) return false;
+  if (j.status === 'approved' && !isAdmin()) return false;
+  return isManager() || j.technician_id === state.user.id;
+}
+function wtChangeModal(){
+  const j = jobDraft; if (!wtCanChange(j)) return;
+  const wts = [...state.data.work_types].filter(w => !/proposal/i.test(w.name) || w.id === j.work_type_id).sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  openModal(`
+    ${modalHead(t('wt_change'), 'pencil')}
+    <div class="tiny" style="margin-bottom:8px">${t('wt_change_h')}</div>
+    <div class="opt-grid" id="wtc-grid">
+      ${wts.map(w => { const cur = w.id === j.work_type_id;
+        return `<button class="opt" data-id="${w.id}" style="border-color:${w.color};${cur ? `background:${w.color};color:${textColorFor(w.color)}` : `color:${w.color}`}"
+          onclick="App.wtChangePick('${w.id}')">${esc(biText(w.name))}${cur ? ' ✓' : ''}</button>`; }).join('')}
+    </div>
+    <div class="note-green" style="display:block;margin-top:10px">${ic('lock')} ${t('wt_keep')}</div>`);
+}
+function wtChangePick(id){
+  const j = jobDraft; if (!j || !wtCanChange(j)) return;
+  if (id === j.work_type_id){ closeModal(); return; }
+  const nw = wtById(id); if (!nw) return;
+  if (fdBoxesStd(j.form_data, wtById(j.work_type_id))){ wtChangeDo(id, true); return; }   // галочки не трогали руками — ставим стандартные молча
+  const std = wtPreset(nw).map(k => { const [sec, key] = k.split('.'); const S = WT_BOXES.find(x => x[0] === sec); return (S[2].find(x => x[0] === key) || [])[1]; }).filter(Boolean);
+  openModal(`
+    ${modalHead(t('wt_change'), 'warn')}
+    <div style="font-weight:800;margin-bottom:6px">${esc(biText((wtById(j.work_type_id) || {}).name || '—'))} → <span style="color:${nw.color}">${esc(biText(nw.name))}</span></div>
+    <div class="tiny" style="margin-bottom:10px">${t('wt_ask')}</div>
+    <button class="btn btn-blue" onclick="App.wtChangeDo('${id}', true)">${ic('refresh')} ${t('wt_ask_reset')}</button>
+    <div class="tiny" style="margin:4px 0 10px">${t('wt_ask_reset_h')}: <b>${std.length ? esc(std.join(', ')) : t('wt_std_none')}</b></div>
+    <button class="btn btn-green" onclick="App.wtChangeDo('${id}', false)">${ic('check')} ${t('wt_ask_keep')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('cancel')}</button>
+    <div class="note-green" style="display:block;margin-top:10px">${ic('lock')} ${t('wt_keep')}</div>`);
+}
+function wtChangeDo(id, reset){
+  const j = jobDraft; if (!j || !wtCanChange(j)) return;
+  const old = wtById(j.work_type_id), nw = wtById(id); if (!nw) return;
+  j.work_type_id = id;
+  if (reset) fdBoxesApply(j.form_data, wtPreset(nw));
+  j.total = calcTotal(j.form_data, priceResolver(j.counterparty_id));
+  audit('job_wt_change', 'job', j.id, { unit: j.unit_number, from: (old || {}).name || '', to: nw.name, boxes: reset ? 'standard' : 'kept' });
+  closeModal(); render();
+  toast('✓ ' + t('wt_changed') + ' · ' + t(reset ? 'wt_changed_std' : 'wt_changed_keep'));
 }
 function jobClose(){
   if (!jobDirty()){ localStorage.removeItem('techlog_draft'); App.go('home'); return; }
@@ -8974,8 +9297,8 @@ function bindJobForm(){
     else if (el.id === 'jb-adnote'){ fd().airduct.note = el.value; }
     else if (el.id === 'jb-note'){ jobDraft.note = el.value; }
     else if (el.id === 'jb-shared'){ jobDraft.shared_with_helpers = el.checked; el.closest('.opt')?.classList.toggle('on', el.checked); }
-    else if (el.matches('[data-oth-d]')){ fd().others[+el.dataset.othD].desc = el.value; }
-    else if (el.matches('[data-oth-a]')){ fd().others[+el.dataset.othA].amount = parseFloat(el.value)||0; recalcJob(); }
+    else if (el.matches('[data-oth-d]')){ const o = fd().others[+el.dataset.othD]; if (o){ o.desc = el.value; othRefresh(false); } }   // v1.09.08: строку могли удалить
+    else if (el.matches('[data-oth-a]')){ const o = fd().others[+el.dataset.othA]; if (o){ o.amount = parseFloat(el.value)||0; recalcJob(); } }
     else if (el.matches('[data-ex-qty]')){ const it=fd().extra[+el.dataset.exQty]; it.qty = Math.max(1, parseInt(el.value)||1); recalcJob(); }
     else if (el.matches('[data-ex-price]')){ const it=fd().extra[+el.dataset.exPrice]; it.price = parseFloat(el.value)||0; recalcJob(); }
     else if (el.matches('[data-ex-prod]')){
@@ -8997,6 +9320,9 @@ function bindJobForm(){
   root.addEventListener('input', (e) => {
     if (state.screen !== 'job' || !jobDraft) return;
     if (e.target.id === 'jb-note') jobDraft.note = e.target.value;
+    if (e.target.matches && e.target.matches('[data-oth-d]')){               // v1.09.08: диктовка и перевод видят текст сразу
+      const o = jobDraft.form_data.others[+e.target.dataset.othD]; if (o){ o.desc = e.target.value; othTrSoon(); }
+    }
     if (e.target.id === 'jb-unit'){
       jobDraft.unit_number = e.target.value.trim();
       const w = $('#jb-warn-unit'); if (w) w.innerHTML = jobDraft.unit_number ? '' : warnIcon();
@@ -9071,6 +9397,9 @@ function recalcJob(){
     const el = document.querySelector('[data-exline="'+i+'"]');
     if (el){ const v = extraLineTotal(it); el.textContent = v>0 ? money(v) : '—'; }
   });
+  /* v1.09.08: в шапке Other services — строки + доп. работы по шаблону (они теперь в этом разделе) */
+  const os = document.querySelector('[data-amt="othsum"]');
+  if (os){ const v = (sec.others || 0) + (sec.extra || 0); os.textContent = v > 0 ? money(v) : '—'; }
   const total = calcTotal(jobDraft.form_data, p);
   const tEl = $('#jb-total'); if (tEl) tEl.textContent = money(total);
   return total;
@@ -9603,6 +9932,63 @@ async function auditRun(){
 /* =====================================================================
    ЭКРАН: СПРАВОЧНИКИ
    ===================================================================== */
+/* v1.09.09: карусель вкладок справочников крутится колёсиком мыши. Слушатель висит на самой
+   ленте (не на window/document — там блокирующий wheel запрещён проверкой интерфейса); у края
+   событие отдаётся странице. */
+let _dirTabInit = false, _dirTabsSeen = [];
+function dirOrder(){ const o = (state.data.org_settings || {}).dir_order; return Array.isArray(o) ? o : []; }
+function dirDefault(){ try{ return (state.user && state.user.push_prefs && state.user.push_prefs.dir_default) || ''; }catch(e){ return ''; } }
+async function dirDefaultSet(){
+  const v = dirDefault() === state.dirTab ? '' : state.dirTab;
+  try{
+    const me = (state.data.profiles || []).find(p => p.id === state.user.id);
+    const prefs = { ...((me && me.push_prefs) || state.user.push_prefs || {}), dir_default: v };
+    state.user.push_prefs = prefs;
+    if (me){ me.push_prefs = prefs; if (HAS_SB) await dbUpsert('profiles', { ...me, push_prefs: prefs }); else saveLocalNow(); }
+  }catch(e){ dlog('⚠ dir_default:', e); }
+  toast('✓ ' + t(v ? 'dir_def_on' : 'dir_def_off')); render();
+}
+function dirOrderModal(){
+  if (!isAdmin()) return;
+  const list = _dirTabsSeen.slice();
+  openModal(`${modalHead(t('dir_order_t'), 'layers')}
+    <div class="tiny" style="margin-bottom:8px">${t('dir_order_h')}</div>
+    <div id="dir-ord">${list.map(([id, lbl], i) => `<div class="rowline dir-ord-row" data-id="${id}">
+      <span class="row-num">${i + 1}</span><div class="grow"><b>${esc(lbl)}</b></div>
+      <button type="button" class="icon-btn sm" aria-label="↑" onclick="App.dirOrderMove(this,-1)">${ic('chev_u')}</button>
+      <button type="button" class="icon-btn sm" aria-label="↓" onclick="App.dirOrderMove(this,1)">${ic('chev_d')}</button></div>`).join('')}</div>
+    <button class="btn btn-green" style="margin-top:10px" onclick="App.dirOrderSave()">${ic('save')} ${t('save')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.dirOrderReset()">${t('dir_order_reset')}</button>`);
+}
+function dirOrderMove(btn, dir){
+  const row = btn.closest('.dir-ord-row'), box = row && row.parentElement; if (!box) return;
+  if (dir < 0 && row.previousElementSibling) box.insertBefore(row, row.previousElementSibling);
+  else if (dir > 0 && row.nextElementSibling) box.insertBefore(row.nextElementSibling, row);
+  [...box.children].forEach((r, i) => { const n = r.querySelector('.row-num'); if (n) n.textContent = i + 1; });
+}
+function dirOrderSave(){
+  const ids = [...document.querySelectorAll('#dir-ord .dir-ord-row')].map(r => r.dataset.id);
+  dbSaveOrg({ ...state.data.org_settings, dir_order: ids }); audit('org_toggle', 'org', 'dir_order', { order: ids.join(',') });
+  closeModal(); toast('✓ ' + t('saved')); render();
+}
+function dirOrderReset(){
+  dbSaveOrg({ ...state.data.org_settings, dir_order: [] }); audit('org_toggle', 'org', 'dir_order', { order: '' });
+  closeModal(); toast('✓ ' + t('saved')); render();
+}
+function dirTabsWheelBind(){
+  const el = document.getElementById('dir-tabs'); if (!el || el.__tlWheel) return;
+  el.__tlWheel = 1;
+  el.addEventListener('wheel', e => {
+    if (e.ctrlKey || el.scrollWidth <= el.clientWidth + 1) return;
+    let d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (e.deltaMode === 1) d *= 32;
+    if (!d) return;
+    const atStart = el.scrollLeft <= 0, atEnd = el.scrollLeft >= el.scrollWidth - el.clientWidth - 1;
+    if ((d < 0 && atStart) || (d > 0 && atEnd)) return;
+    e.preventDefault();
+    el.scrollLeft += d;
+  }, { passive: false });
+}
 function viewDirs(){
   const tabs = [
     ['price', t('d_price'), true],
@@ -9618,7 +10004,14 @@ function viewDirs(){
     ['sizes', t('d_sizes'), isAdmin()],
     ['products', t('d_products'), isAdmin()],
   ].filter(x=>x[2]);
+  /* v1.09.09: порядок вкладок задаёт админ (org_settings.dir_order, общий для всех); чего в
+     списке нет — идёт следом в исходном порядке. Справочник по умолчанию — личный выбор
+     (profiles.push_prefs.dir_default); не выбран — «Сотрудники», если вкладка доступна. */
+  const ord = dirOrder();
+  tabs.sort((a, b) => { const ia = ord.indexOf(a[0]), ib = ord.indexOf(b[0]); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib); });
+  if (!_dirTabInit){ _dirTabInit = true; const d = dirDefault(); state.dirTab = tabs.find(x => x[0] === d) ? d : (tabs.find(x => x[0] === 'staff') ? 'staff' : tabs[0][0]); }
   if (!tabs.find(x=>x[0]===state.dirTab)) state.dirTab = tabs[0][0];
+  _dirTabsSeen = tabs.map(x => [x[0], x[1]]);
   const nav = `<div class="tabs-nav">
     <button class="tabs-arr" onclick="App.dirTabsScroll(-1)" aria-label="prev">${ic('chev_l')}</button>
     <div class="tabs" id="dir-tabs">` + tabs.map(([id,l]) =>
@@ -9631,7 +10024,12 @@ function viewDirs(){
   /* v1.07.78: карусель кнопок уезжает вбок, и после выбора было не видно,
      какой справочник открыт. Название выбранного — отдельной строкой. */
   const cur = (tabs.find(x => x[0] === state.dirTab) || [,''])[1];
-  const curHead = `<div class="section-title" style="margin:2px 0 8px">${ic('book')} ${cur}</div>`;
+  const isDef = dirDefault() === state.dirTab;
+  const curHead = `<div class="section-title dir-cur-h" style="margin:2px 0 8px">${ic('book')} ${cur}
+    <span class="dir-tools">
+      <button type="button" class="btn btn-ghost sm dir-def${isDef ? ' on' : ''}" title="${t('dir_def_tip')}" onclick="App.dirDefaultSet()">${ic(isDef ? 'check' : 'pin')} ${t('dir_def_btn')}</button>
+      ${isAdmin() ? `<button type="button" class="btn btn-ghost sm" onclick="App.dirOrderModal()">${ic('layers')} ${t('dir_order_btn')}</button>` : ''}
+    </span></div>`;
   return `<div class="section-title">${t('dirs')}${helpBtn('dirs')}</div>` + nav + curHead + body;
 }
 
@@ -10000,13 +10398,21 @@ function editWtModal(id){
       <div class="opt-grid">${state.data.aux_equipment.map(a=>`
         <label class="opt ${(w.aux_ids||[]).includes(a.id)?'on':''}"><input type="checkbox" data-wtaux="${a.id}" ${(w.aux_ids||[]).includes(a.id)?'checked':''}> ${esc(a.name)}</label>`).join('')}
       </div></div>
-    <button class="btn btn-green" onclick="App.saveWt('${w.id}', ${w.sort||0})">${t('save')}</button>
+    <div style="font-weight:800;margin:8px 0 2px">${ic('clipboard')} ${t('wt_preset_t')} ${tipQ('wt_tip')}</div>
+    <div class="tiny" style="margin-bottom:6px">${t('wt_preset_h')}</div>
+    ${(() => { const cur = wtPreset(w); return WT_BOXES.map(([sec, title, ks]) => `
+      <div class="tiny" style="font-weight:800;margin:6px 0 3px">${title}</div>
+      <div class="opt-grid">${ks.map(([k, lbl]) => { const on = cur.includes(sec + '.' + k);
+        return `<label class="opt ${on ? 'on' : ''}"><input type="checkbox" data-wtbox="${sec}.${k}" ${on ? 'checked' : ''}
+          onchange="this.closest('.opt').classList.toggle('on', this.checked)"> ${lbl}</label>`; }).join('')}</div>`).join(''); })()}
+    <button class="btn btn-green" style="margin-top:10px" onclick="App.saveWt('${w.id}', ${w.sort||0})">${t('save')}</button>
     ${id?`<button class="btn btn-red" style="margin-top:8px" onclick="App.delRow('work_types','${w.id}')">${t('delete')}</button>`:''}
   `);
 }
 async function saveWt(id, sort){
   const aux_ids = [...document.querySelectorAll('[data-wtaux]:checked')].map(x=>x.dataset.wtaux);
-  const row = { id, name: $('#wt-name').value.trim(), color: $('#wt-color-v').value,
+  const preset = [...document.querySelectorAll('[data-wtbox]:checked')].map(x => x.dataset.wtbox);   // v1.09.08
+  const row = { ...(wtById(id) || {}), id, name: $('#wt-name').value.trim(), color: $('#wt-color-v').value, preset,
     code: (($('#wt-code') || {}).value || '').trim().toUpperCase(),   // v1.07.98
     needs_aux: $('#wt-aux').checked, aux_ids, sort };
   if (!row.name) return;
@@ -10083,10 +10489,13 @@ function viewSettings(){
   const org = state.data.org_settings;
   return `
   <div class="section-title">${t('settings')}${helpBtn('settings')}</div>
+  <div class="set-wrap">
+  ${settingsNavHtml()}
+  <div class="set-main">
   ${mediaQueueCardHtml()}
   ${bcolsCard}
 
-  <div class="card">
+  <div class="card" id="set-profile">
     <div class="settings-row">
       <span class="avatar role-${u.role}">${esc(initials(u.display_name))}</span>
       <div class="grow" style="flex:1">
@@ -10173,8 +10582,41 @@ function viewSettings(){
 
   ${fold('misc', t('misc_card'), 'gear', miscCardHtml())}
 
-  <button class="btn btn-red" onclick="App.logout()">${ic('close')} ${t('logout')}</button>
+  <button class="btn btn-red" id="set-logout" onclick="App.logout()">${ic('close')} ${t('logout')}</button>
+  </div></div>
   ${viewFooter()}`;
+}
+/* v1.09.09 · НАВИГАЦИЯ ПО НАСТРОЙКАМ. На ПК — вертикальный столбец слева от настроек
+   (липкий, как основное меню), на телефоне — лента-карусель под заголовком. Пункт
+   раскрывает свой спойлер и подводит к нему страницу. Состав — ровно те разделы,
+   что видит эта роль. */
+let _setNavCur = 'profile';
+function settingsNavItems(){
+  const it = [['profile', t('set_nav_profile'), 'crew']];
+  it.push(['docs', t('docs_set_card'), 'clipboard'], ['tr', t('tr_set_card'), 'globe'], ['push', t('push_pop_card'), 'bell'], ['cam', t('cam_card'), 'camera']);
+  if (!isAcc()) it.push(['study', t('st_card'), 'grad']);
+  it.push(['dgs', t('dgs_card'), 'steth']);
+  if (isAdmin()) it.push(['intg', t('intg_card'), 'link'], ['tvc', t('tvc_card'), 'tv']);
+  it.push(['misc', t('misc_card'), 'gear']);
+  return it;
+}
+function settingsNavHtml(){
+  return `<nav class="set-nav" id="set-nav" aria-label="${t('settings')}">` + settingsNavItems().map(([k, lbl, icn]) =>
+    `<button type="button" class="set-nav-b${k === _setNavCur ? ' on' : ''}" data-k="${k}" onclick="App.setNavGo('${k}')">${ic(icn)}<span>${esc(lbl)}</span></button>`).join('') + `</nav>`;
+}
+function setNavGo(k){
+  _setNavCur = k;
+  if (k !== 'profile' && !foldOpen(k)){ foldSet(k, true); render(); }
+  else document.querySelectorAll('#set-nav .set-nav-b').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+  setTimeout(() => {
+    const el = document.getElementById(k === 'profile' ? 'set-profile' : 'fold-' + k);
+    if (el){ const desk = document.documentElement.classList.contains('tl-desktop'), hdr = document.querySelector('.topbar'), nv = document.getElementById('set-nav');
+      const off = desk ? (hdr ? Math.max(0, hdr.getBoundingClientRect().bottom) : 80) + 14 : (nv ? nv.offsetHeight : 44) + 10;   // телефон: шапка уезжает, сверху остаётся липкая лента
+      pageScrollTo(Math.max(0, pageScrollY() + el.getBoundingClientRect().top - off), true); }   // своя прокрутка: у приложения свой scrollHost
+    /* ленту пунктов двигаем сами: scrollIntoView потянул бы и страницу, оборвав её прокрутку к разделу */
+    const nav = document.getElementById('set-nav'), nb = nav && nav.querySelector('.set-nav-b.on');
+    if (nb && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = Math.max(0, nb.offsetLeft - (nav.clientWidth - nb.offsetWidth) / 2);
+  }, 60);
 }
 
 /* =====================================================================
@@ -10850,12 +11292,42 @@ function stOpts(q, view){
 function stCorrect(q, view){ const v = view === undefined ? stView(q) : view; return v ? v.correct : (q.correct || []).map(String); }
 function stIsMulti(q){ const v = stView(q); return v ? !!v.multi : q.type === 'multi'; }
 function stNums(q, ids, view){ const opts = stOpts(q, view); return ids.map(id => (opts.find(x => String(x.o.id) === String(id)) || {}).no || id); }
+/* v1.09.09 · ВЫБОРКА ВОПРОСОВ ДЛЯ 20/40/60.
+   Раньше: галочка «Перемешать» стоит — первые N из перемешанного списка, снята — просто первые
+   N вопросов раздела (всегда одни и те же, всё из первых глав). Теперь неполный тест набирается
+   случайно и РАВНОМЕРНО ПО ТЕМАМ раздела (поле topic; квоты пропорциональны числу вопросов в
+   теме), без повторов внутри теста и между попытками: пока не пройден весь раздел, уже выпавшие
+   вопросы не выдаются (список на устройстве, по разделу и сотруднику). Галочка «Перемешать»
+   теперь отвечает только за порядок показа: снята — вопросы идут в порядке учебника. */
+function studyPickOrder(questions, count, secId, shuffle){
+  const all = questions.map((_, i) => i);
+  if (!count || count >= all.length) return shuffle ? stShuffle(all) : all;
+  const key = 'techlog_st_seen_' + ((state.user && state.user.id) || 'x') + '_' + secId;
+  let seen = []; try{ seen = JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){ seen = []; }
+  let seenSet = new Set(seen);
+  if (all.filter(i => !seenSet.has(questions[i].id)).length < count){ seen = []; seenSet = new Set(); }   // круг пройден — новый
+  const groups = new Map();                                 // тема → индексы ещё не выпавших вопросов (в случайном порядке)
+  all.forEach(i => { const tp = String(questions[i].topic || ''); if (!groups.has(tp)) groups.set(tp, { size: 0, free: [] });
+    const g = groups.get(tp); g.size++; if (!seenSet.has(questions[i].id)) g.free.push(i); });
+  groups.forEach(g => { g.free = stShuffle(g.free); g.take = 0; });
+  const gs = [...groups.values()];
+  /* квоты: пропорционально размеру темы, остаток — по наибольшим дробным частям, нехватку в теме добираем из остальных */
+  gs.forEach(g => { g.q = count * g.size / all.length; g.take = Math.min(Math.floor(g.q), g.free.length); });
+  let left = count - gs.reduce((a, g) => a + g.take, 0);
+  const byFrac = stShuffle(gs).sort((a, b) => (b.q - Math.floor(b.q)) - (a.q - Math.floor(a.q)));
+  while (left > 0){
+    let moved = false;
+    for (const g of byFrac){ if (left > 0 && g.take < g.free.length){ g.take++; left--; moved = true; } }
+    if (!moved) break;
+  }
+  let pick = []; gs.forEach(g => { pick = pick.concat(g.free.slice(0, g.take)); });
+  try{ localStorage.setItem(key, JSON.stringify(seen.concat(pick.map(i => questions[i].id)))); }catch(e){}
+  return shuffle ? stShuffle(pick) : pick.sort((a, b) => a - b);
+}
 function studyBegin(secId){
   const q = STUDY.quiz[secId]; if (!q || !q.questions) return;
   const st = STUDY._start || {};
-  let order = q.questions.map((_, i) => i);
-  if (st.shuffle !== false){ for (let i = order.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; } }
-  if (st.count) order = order.slice(0, st.count);
+  const order = studyPickOrder(q.questions, +st.count || 0, secId, st.shuffle !== false);   // v1.09.09
   let view = null;
   if (stShuffleOn()){ view = {}; order.forEach(i => { const qq = q.questions[i]; const v = stViewBuild(qq); if (v) view[qq.id] = v; }); }
   STUDY.run = { id: uid(), sec: +secId, quizId: q.meta.id, mode: st.mode || 'learn', order, i: 0, view,
@@ -11422,6 +11894,10 @@ const App = {
     e.hours_start = isNaN(n) ? null : n;
     autosaveDraft();
   },
+  propFromJob,
+  tvTest, tvTestStop, tvDensSet, stockModeSet,
+  wtChangeModal, wtChangePick, wtChangeDo,
+  othAdd, othDel, othDict, othTranslate, othTrToggle(v){ _othTrOpen = !!v; },
   openJob, saveJob, approveJob, deleteJob, chainArchive, makePdf, pdfPreviewBlob, pdfPreviewKey, pickupGroup,
   /* v1.08.23: документ ремонтных работ */
   openRepair, newRepairFromJob, newRepairFromProp, saveRepair, delRepair,
@@ -11593,7 +12069,8 @@ const App = {
   trPdfNow: trPdfNow,
   trPdfSkip: trPdfSkip,
   openDayMap(){ state.mapDay = true; state.mapDate = state.selDate; App.go('map'); },
-  mapMode(v){ state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
+  mapMode(v){ state.mapTrk = false; state.mapDay = !!v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
+  trkMode, trkSetMode, trkSetDate, trkShift, trkCar, trkAll, trkReload,
   /* v1.08.32: машины Bouncie и справочник «Автомобили» */
   bnToggleCar, bnCarsAll, bnFocusCar, bnSaveKeys, bnConnect, bnTest, bnReveal, bnToggleEdit,
   vehModal, vehSave, vehDel, vehImport, vehDevPick,
@@ -11672,7 +12149,7 @@ const App = {
     const el = document.getElementById('dir-tabs'); if (!el) return;
     el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior: 'smooth' });
   },
-  inpClear, comboClear,
+  inpClear, comboClear, setNavGo, dirDefaultSet, dirOrderModal, dirOrderMove, dirOrderSave, dirOrderReset,
   openCp, cpTab(v){ state.cpTab = v; renderCpModal(); },
   editCpModal, saveCp, cpCustomToggle, cpSetPrice,
   editCxModal, saveCx, editWtModal, saveWt, editEtModal, saveEt, editAuxModal, saveAux,
@@ -11791,7 +12268,7 @@ const App = {
   ttListToggle(uid, tid){ ttListToggle(uid, tid); },
   staffKillSessions(uid){ staffKillSessions(uid); },
   ttDate(v){ state.ttDate = v || todayISO(); render(); },
-  bnTrack(imei){ if (state.screen !== 'map'){ state.screen = 'map'; state.mapDay = true; render(); setTimeout(()=>bnTrackShow(imei), 400); } else bnTrackShow(imei); },
+  bnTrack(imei){ TRKH.sel = new Set([String(imei)]); TRKH.mode = 'day'; TRKH.date = todayISO(); state.screen = 'map'; trkMode(true); },   // v1.09.10: трек дня переехал во вкладку «Треки» карты
   vehServiceSet(id, v){ vehServiceSet(id, v); },
   optRoute(){ optRouteModal(); },
   optOpen(){ optOpenNav(); },
@@ -12311,7 +12788,7 @@ function tvStop(toLogin){
   if (TV.map){ try{ TV.map.remove(); }catch(e){} }
   Object.assign(TV, { screen: null, key: '', code: '', feed: null, bn: null, bnOff: false,
     map: null, pins: {}, cars: {}, routes: {}, fit: false });
-  tvBodyClass(false);
+  tvBodyClass(false); if (!TV.test) tvDensApply(false);
   if (toLogin !== false){ state.screen = 'login'; render(); }
 }
 function tvCancel(){
@@ -12562,10 +13039,62 @@ function viewTv(){
       <div id="tv-zrail"></div>
     </div>
     <button class="tv-x" onclick="App.tvFsExit()" aria-label="${t('tv_exit')}">${ic('close')}</button>
+    ${TV.test ? `<div class="tv-testbar">
+      <b>${ic('warn')} ${t('tv_test_on')}</b>
+      <div class="lang-seg sm"><button class="${tvDens() === 'cozy' ? 'on' : ''}" onclick="App.tvDensSet('cozy')">${t('dens_cozy')}</button><button class="${tvDens() === 'compact' ? 'on' : ''}" onclick="App.tvDensSet('compact')">${t('dens_compact')}</button></div>
+      <button class="btn btn-ghost sm" onclick="App.tvFsGo()">${ic('fs')} ${t('tv_fs')}</button>
+      <button class="btn btn-red sm" onclick="App.tvTestStop()">${ic('close')} ${t('tv_test_stop')}</button>
+    </div>` : ''}
   </div>`;
 }
+/* =====================================================================
+   v1.09.09 · ПРОВЕРКА ТВ-РЕЖИМА И ПЛОТНОСТЬ ТВ
+   «Проверить ТВ-режим на этом экране» (Настройки → Режим телевизора, админ и менеджер)
+   открывает настоящий ТВ-экран на своих данных, без кода и без отдельной ТВ-сессии:
+   набор данных собирается из уже загруженного, обновляется раз в 25 с. Сверху —
+   полоска теста: плотность, «На весь экран», «Закончить проверку». На самом телевизоре
+   (вход по коду) полоски нет. Плотность ТВ — общая настройка в org_settings.tv.dens
+   (приезжает на телевизор вместе с раскладкой), включает те же правила compact.css.
+   ===================================================================== */
+function tvDens(){ return tvCfg().dens === 'compact' ? 'compact' : 'cozy'; }
+function tvDensApply(on){
+  try{ const h = document.documentElement;
+    const want = !!on && tvDens() === 'compact';
+    if (on){ if (h.classList.contains('tl-compact') !== want) h.classList.toggle('tl-compact', want); }
+    else { const back = densCur() === 'compact'; if (h.classList.contains('tl-compact') !== back) h.classList.toggle('tl-compact', back); }
+  }catch(e){}
+}
+async function tvDensSet(v){
+  if (!isAdmin()){ toast('ℹ ' + t('tv_dens_admin'), 'inf'); return; }
+  const org = state.data.org_settings || {};
+  const tv = JSON.stringify({ ...tvCfgParse(org.tv), dens: v === 'compact' ? 'compact' : 'cozy' });
+  await dbSaveOrg({ ...org, tv }); audit('org_set', 'org', 'tv', { dens: v });
+  if (TV.feed) TV.feed.tv = tv;
+  render();
+}
+function tvTestFeed(){ const f = tvDemoFeed(); f.tv = ((state.data || {}).org_settings || {}).tv || null; return f; }
+function tvTestBn(){
+  if (!HAS_SB) return tvDemoBn();
+  try{ return bnVehicles().filter(v => v.imei).map(v => { const x = v.driver_id && BN.live[v.driver_id]; const st = (BN.stats || {})[String(v.imei)] || null;
+    if (!x || !x.pos) return null;
+    return { car_no: v.car_no ?? null, driver_id: v.driver_id ?? null, run: !!x.run, lat: +x.pos.lat, lng: +x.pos.lng,
+      heading: +x.pos.heading || 0, mi: st && st.mi != null ? +st.mi : null, min: st ? +st.min || 0 : 0, n: st ? +st.n || 0 : 0 }; }).filter(Boolean); }catch(e){ return []; }
+}
+function tvTest(){
+  if (!state.user || !isManager()) return;
+  closeModal();
+  Object.assign(TV, { test: true, key: 'test', feed: tvTestFeed(), bn: tvTestBn(), screen: 'on', fit: false });
+  render();
+  if (!TV.tm.clk) TV.tm.clk = setInterval(tvClockTick, 5000);
+  if (!TV.tm.test) TV.tm.test = setInterval(() => { if (!TV.test) return; TV.feed = tvTestFeed(); TV.bn = tvTestBn(); tvRepaint(); }, TV_FEED_MS);
+}
+function tvTestStop(){
+  if (document.fullscreenElement){ try{ document.exitFullscreen(); }catch(e){} }
+  tvStop(false); TV.test = false; tvDensApply(false);
+  state.screen = 'settings'; render();
+}
 function tvAfterRender(){
-  tvBodyClass(true);
+  tvBodyClass(true); tvDensApply(true);                  // v1.09.09: плотность ТВ
   if (TV.screen !== 'on') return;
   tvRepaint();
   if (!TV.fsBound){
@@ -12868,7 +13397,12 @@ function tvCfgCardHtml(){
     : t('tvc_rule_manual');
   const chk = (key, label) => `<label class="chk-line"><input type="checkbox" ${cfg[key] ? 'checked' : ''}
       onchange="App.tvcFlag('${key}', this.checked)"> ${label}</label>`;
-  return `<div style="font-weight:900;margin-bottom:4px">${t('tvc_show')}</div>
+  return `<button class="btn btn-blue" style="margin-bottom:6px" onclick="App.tvTest()">${ic('tv')} ${t('tv_test_btn')}</button>
+  <div class="tiny" style="margin-bottom:10px">${t('tv_test_h')}</div>
+  <div class="rowline" style="margin-bottom:8px"><div class="grow"><b>${t('tv_dens_t')}</b><div class="tiny">${t('tv_dens_h')}</div></div>
+    <div class="lang-seg sm"><button class="${cfg.dens === 'compact' ? '' : 'on'}" onclick="App.tvDensSet('cozy')">${t('dens_cozy')}</button><button class="${cfg.dens === 'compact' ? 'on' : ''}" onclick="App.tvDensSet('compact')">${t('dens_compact')}</button></div></div>
+  <hr class="sep">
+  <div style="font-weight:900;margin-bottom:4px">${t('tvc_show')}</div>
   ${chk('map', t('tvc_map'))}
   ${chk('cardJobs', t('tvc_cjobs'))}
   ${chk('cardPk', t('tvc_cpk'))}
@@ -13398,6 +13932,7 @@ function bnStatsHtml(inner){
 /* ---- слой машин на Leaflet-карте: маркеры двигаются без пересоздания ---- */
 function bnDrawCars(){
   if (!window.L || !mapObj) return;
+  if (state.mapTrk && state.screen === 'map'){ if (BN.layer && BN._layerMap === mapObj) BN.layer.clearLayers(); return; }   // v1.09.10: во вкладке «Треки» — только история, без живых машин и пунктиров
   if (!bnVisible()){ if (BN.layer && BN._layerMap === mapObj) BN.layer.clearLayers(); return; }   // v1.08.33
   if (!BN.layer || BN._layerMap !== mapObj){
     BN.markers = {}; BN.routes = {};
@@ -13516,6 +14051,140 @@ async function bnTrackShow(imei){
   BN.track.layer = L.layerGroup(lines.map(pts =>
     L.polyline(pts, { color: '#3B82F6', weight: 4, opacity: .85 }))).addTo(mapObj);
   try{ mapObj.fitBounds(L.latLngBounds(lines.flat()), { padding: [30, 30] }); }catch(_e){}
+}
+/* =====================================================================
+   v1.09.10 · ИСТОРИЯ ТРЕКОВ — вкладка «Треки» на карте.
+   День или неделя, календарь, все машины сразу или выбранные (одна / несколько). Поездки
+   лежат в базе (bn_trips): Edge Function bouncie догружает из Bouncie дни, которых ещё нет,
+   и отдаёт всё из таблицы — старые дни открываются без обращения к Bouncie. У каждой
+   машины свой цвет; в списке под картой — мили, время в пути и число поездок по машинам,
+   в режиме недели — и по дням. Право — «Трек дня» у сотрудника (админу всегда).
+   ===================================================================== */
+const TRKH = { mode: 'day', date: '', sel: null, trips: [], key: '', loading: false, err: '', note: '' };
+const TRKH_COLORS = ['#3B82F6', '#FF9600', '#58CC02', '#CE82FF', '#FF4B4B', '#2EC4B6', '#FFC800', '#8AA0AB', '#F472B6', '#A3E635'];
+function trkCars(){ return bnVehicles().filter(v => v.imei).sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999)); }
+function trkColor(imei){ const i = trkCars().findIndex(v => String(v.imei) === String(imei)); return TRKH_COLORS[(i < 0 ? 0 : i) % TRKH_COLORS.length]; }
+function trkRange(){
+  const d = TRKH.date || todayISO();
+  if (TRKH.mode !== 'week') return { from: d, to: d };
+  const x = parseISO(d); const wd = (x.getDay() + 6) % 7;             // неделя с понедельника
+  const from = addDaysISO(d, -wd); return { from, to: addDaysISO(from, 6) };
+}
+function trkSelHas(imei){ return !TRKH.sel || TRKH.sel.has(String(imei)); }
+function trkMode(keepSel){
+  if (!bnCanTrack()) return;
+  state.mapTrk = true; if (!TRKH.date) TRKH.date = todayISO();
+  if (keepSel !== true && TRKH.sel && !TRKH.sel.size) TRKH.sel = null;
+  render(); trkLoad(false);
+}
+function trkSetMode(m){ TRKH.mode = m === 'week' ? 'week' : 'day'; render(); trkLoad(false); }
+function trkSetDate(v){ if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')) return; TRKH.date = v > todayISO() ? todayISO() : v; render(); trkLoad(false); }
+function trkShift(dir){ trkSetDate(addDaysISO(TRKH.date || todayISO(), dir * (TRKH.mode === 'week' ? 7 : 1))); }
+function trkCar(imei){
+  imei = String(imei);
+  const all = trkCars().map(v => String(v.imei));
+  const cur = new Set(TRKH.sel ? [...TRKH.sel] : all);
+  if (cur.has(imei)) cur.delete(imei); else cur.add(imei);
+  TRKH.sel = cur.size === all.length ? null : cur;
+  render();
+}
+function trkAll(on){ TRKH.sel = on ? null : new Set(); render(); }
+function trkReload(){ trkLoad(true); }
+async function trkLoad(force){
+  const r = trkRange(), key = r.from + '|' + r.to;
+  if (!force && key === TRKH.key && !TRKH.err) return;
+  TRKH.loading = true; TRKH.err = ''; TRKH.note = ''; if (state.screen === 'map' && state.mapTrk) render();
+  let trips = [];
+  try{
+    if (HAS_SB){
+      const j = await bnFetch('?tracks=1&from=' + r.from + '&to=' + r.to + (force ? '&refresh=1' : ''));
+      if (!j) throw new Error(/NEED_SQL/.test(BN.err || '') ? t('trh_need_sql') : (BN.err || t('bn_no_access')));
+      trips = (j.trips || []).map(x => ({ imei: String(x.imei), day: x.day, s: x.s, e: x.e, mi: +x.mi || 0, pts: polyDecode(x.gps || '') }));
+      if ((j.errors || []).length) TRKH.note = t('trh_part') + ' ' + j.errors.length;
+    } else trips = trkDemoTrips(r.from, r.to);
+  }catch(e){ TRKH.err = errStr(e); dlog('⛔ tracks:', e); }
+  TRKH.trips = trips.filter(x => x.pts.length > 1); TRKH.key = key; TRKH.loading = false;
+  if (state.screen === 'map' && state.mapTrk) render();
+}
+/* демо: у каждой машины в каждый прошедший день — объезд двух-трёх комплексов, детерминированно от даты */
+function trkDemoTrips(from, to){
+  const cxs = (state.data.complexes || []).filter(c => c.lat != null && c.lng != null); const out = [];
+  if (cxs.length < 2) return out;
+  const today = todayISO();
+  for (let d = from; d <= to && d <= today; d = addDaysISO(d, 1)){
+    trkCars().forEach((v, vi) => {
+      const seed = (+d.slice(8) + vi * 3) % cxs.length; const n = 2 + ((+d.slice(8) + vi) % 2);
+      for (let k = 0; k < n; k++){
+        const a = cxs[(seed + k) % cxs.length], b = cxs[(seed + k + 1) % cxs.length];
+        if (a.id === b.id) continue;
+        const A = [+a.lat, +a.lng], B = [+b.lat, +b.lng], j = 0.006 * (vi + 1) * (k % 2 ? 1 : -1);
+        const pts = [A, [A[0] + (B[0] - A[0]) * .33 + j, A[1] + (B[1] - A[1]) * .33], [A[0] + (B[0] - A[0]) * .66, A[1] + (B[1] - A[1]) * .66 - j], B];
+        const mi = Math.round((bnMiP({ lat: A[0], lng: A[1] }, { lat: B[0], lng: B[1] }) || 5) * 13) / 10;
+        const hh = String(8 + k * 2).padStart(2, '0');
+        out.push({ imei: String(v.imei), day: d, s: d + 'T' + hh + ':10:00', e: d + 'T' + hh + ':45:00', mi, pts });
+      }
+    });
+  }
+  return out;
+}
+function trkControlsHtml(){
+  const r = trkRange(), cars = trkCars();
+  const lbl = TRKH.mode === 'week' ? fmtDMY(r.from) + ' – ' + fmtDMY(r.to) : fmtDMY(r.from);
+  return `<div class="trk-ctl">
+    <div class="lang-seg sm"><button class="${TRKH.mode === 'day' ? 'on' : ''}" onclick="App.trkSetMode('day')">${t('trh_day')}</button><button class="${TRKH.mode === 'week' ? 'on' : ''}" onclick="App.trkSetMode('week')">${t('trh_week')}</button></div>
+    <div class="trk-date">
+      <button type="button" class="icon-btn sm" aria-label="‹" onclick="App.trkShift(-1)">${ic('chev_l')}</button>
+      <input type="date" max="${todayISO()}" value="${TRKH.date || todayISO()}" aria-label="${t('trh_date')}" onchange="App.trkSetDate(this.value)">
+      <button type="button" class="icon-btn sm" aria-label="›" ${r.to >= todayISO() ? 'disabled' : ''} onclick="App.trkShift(1)">${ic('chev_r')}</button>
+    </div>
+    <span class="tiny trk-lbl">${lbl}</span>
+    <button type="button" class="btn btn-ghost sm" onclick="App.trkReload()" ${TRKH.loading ? 'disabled' : ''}>${ic('sync')} ${t('trh_reload')}</button>
+  </div>
+  <div class="trk-cars">
+    <button type="button" class="chip trk-chip ${!TRKH.sel ? 'on' : ''}" onclick="App.trkAll(${TRKH.sel ? 'true' : 'false'})">${t(TRKH.sel ? 'trh_all' : 'trh_none')}</button>
+    ${cars.map(v => { const c = trkColor(v.imei), on = trkSelHas(v.imei);
+      return `<button type="button" class="chip trk-chip ${on ? 'on' : ''}" style="--c:${c}" onclick="App.trkCar('${esc(String(v.imei))}')"><span class="trk-dot"></span>${v.car_no != null ? '№' + v.car_no + ' ' : ''}${esc(v.name || '')}${v.driver_id ? ' · ' + esc(shortName(profName(v.driver_id))) : ''}</button>`; }).join('')}
+  </div>
+  ${cars.length ? '' : `<div class="tiny gd-hint">${ic('warn')} ${t('trh_no_cars')}</div>`}`;
+}
+function trkLegendHtml(){
+  const fmtH = m => Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+  if (TRKH.loading) return `<div class="list-empty">${ic('sync')} ${t('trh_loading')}</div>`;
+  if (TRKH.err) return `<div class="list-empty" style="color:var(--red)">${ic('warn')} ${esc(TRKH.err)}</div>`;
+  const vis = TRKH.trips.filter(x => trkSelHas(x.imei));
+  if (!vis.length) return `<div class="list-empty">${t('trh_empty')}</div>`;
+  const mins = x => Math.max(0, Math.round((Date.parse(x.e) - Date.parse(x.s)) / 60000));
+  const rows = trkCars().filter(v => trkSelHas(v.imei)).map(v => {
+    const tr = vis.filter(x => x.imei === String(v.imei)); if (!tr.length) return '';
+    const mi = tr.reduce((a, x) => a + x.mi, 0), mn = tr.reduce((a, x) => a + mins(x), 0);
+    const days = TRKH.mode === 'week' ? [...new Set(tr.map(x => x.day))].sort().map(d => { const dd = tr.filter(x => x.day === d);
+      return `<span class="trk-day">${fmtDMY(d).slice(0, 5)} · ${dd.reduce((a, x) => a + x.mi, 0).toFixed(1)} ${t('bn_mi')}</span>`; }).join('') : '';
+    return `<div class="rowline trk-row"><span class="trk-dot" style="--c:${trkColor(v.imei)}"></span>
+      <div class="grow"><b>${v.car_no != null ? '№' + v.car_no + ' · ' : ''}${esc(v.name || '')}</b>${v.driver_id ? ` <span class="tiny">· ${esc(profName(v.driver_id))}</span>` : ''}
+        ${days ? `<div class="trk-days">${days}</div>` : ''}</div>
+      <div class="trk-sum"><b>${mi.toFixed(1)}</b> ${t('bn_mi')}<div class="tiny">${fmtH(mn)} · ${tr.length} ${t('bn_trips')}</div></div></div>`; }).join('');
+  const tot = vis.reduce((a, x) => a + x.mi, 0);
+  return `<div class="card trk-list">${rows}
+    <div class="rowline trk-row"><div class="grow"><b>${t('trh_total')}</b></div><div class="trk-sum"><b>${tot.toFixed(1)}</b> ${t('bn_mi')}<div class="tiny">${vis.length} ${t('bn_trips')}</div></div></div>
+    ${TRKH.note ? `<div class="tiny gd-hint">${ic('warn')} ${esc(TRKH.note)}</div>` : ''}</div>`;
+}
+/* линии на карте; возвращает точки для подбора границ */
+function trkDraw(){
+  const all = [];
+  try{
+    const vis = TRKH.trips.filter(x => trkSelHas(x.imei));
+    const grp = L.layerGroup();
+    vis.forEach(x => { const c = trkColor(x.imei);
+      L.polyline(x.pts, { color: '#0F171B', weight: 7, opacity: .55 }).addTo(grp);
+      const pl = L.polyline(x.pts, { color: c, weight: 4, opacity: .95 }).addTo(grp);
+      const v = trkCars().find(y => String(y.imei) === x.imei) || {};
+      pl.bindPopup(`<b>${v.car_no != null ? '№' + v.car_no + ' · ' : ''}${esc(v.name || '')}</b><br>${fmtDMY(x.day)} · ${String(x.s).slice(11, 16)}–${String(x.e).slice(11, 16)}<br>${x.mi.toFixed(1)} ${t('bn_mi')}`);
+      L.circleMarker(x.pts[0], { radius: 4, color: '#0F171B', weight: 1, fillColor: c, fillOpacity: 1 }).addTo(grp);
+      L.circleMarker(x.pts[x.pts.length - 1], { radius: 6, color: '#0F171B', weight: 2, fillColor: c, fillOpacity: 1 }).addTo(grp);
+      x.pts.forEach(pt => all.push(pt)); });
+    grp.addTo(mapObj);
+  }catch(e){ dlog('⚠ trkDraw:', e); }
+  return all;
 }
 function bnTrackClear(){
   if (BN.track.layer){ try{ BN.track.layer.remove(); }catch(_e){} }
@@ -14070,7 +14739,7 @@ function viewMap(){
   const noCoords = list.filter(cx => cx.lat == null || cx.lng == null);
   const day = state.mapDay ? mapDayItems() : null;
 
-  const legend = state.mapDay
+  const legend = state.mapTrk ? trkLegendHtml() : state.mapDay
     ? (day.pts.length
         ? day.pts.map(p=>`<button class="rowline map-row" onclick="App.mapFocus(${p.lat},${p.lng})">
             <span class="dot num" style="background:${p.color};color:${textColorFor(p.color)}">${p.num}</span>
@@ -14104,16 +14773,18 @@ function viewMap(){
         onkeydown="if(event.key==='Enter'){event.preventDefault();App.mapSearch();}">
       <button class="btn btn-blue sm" onclick="App.mapSearch()">${ic('search')} ${t('map_search_go')}</button></div>
     <div id="map-sr"></div>
-    <div class="tabs" style="margin-top:8px">
-      <button class="tabbtn ${!state.mapDay?'active':''}" onclick="App.mapMode(false)">${ic('map')} ${t('map_mode_all')}</button>
-      <button class="tabbtn ${state.mapDay?'active':''}" onclick="App.mapMode(true)">${ic('calendar')} ${t('map_mode_day')}</button>
+    <div class="tabs map-tabs" style="margin-top:8px">
+      <button class="tabbtn ${!state.mapDay && !state.mapTrk?'active':''}" onclick="App.mapMode(false)">${ic('map')} ${t('map_mode_all')}</button>
+      <button class="tabbtn ${state.mapDay && !state.mapTrk?'active':''}" onclick="App.mapMode(true)">${ic('calendar')} ${t('map_mode_day')}</button>
+      ${bnCanTrack() ? `<button class="tabbtn ${state.mapTrk?'active':''}" onclick="App.trkMode()">${ic('compass')} ${t('trh_tab')}</button>` : ''}
     </div>
-    ${state.mapDay ? `
+    ${state.mapTrk ? trkControlsHtml() : ''}
+    ${state.mapDay && !state.mapTrk ? `
       <div class="form-row" style="margin-top:8px"><span class="lbl">${t('map_day_hint')}</span>
         <input type="date" value="${state.mapDate || state.selDate}" onchange="App.mapSetDate(this.value)"></div>
       ${day.pts.length ? `<button class="btn btn-blue sm" onclick="App.mapRoute()">${ic('compass')} ${t('route_day_in')} ${navName()}</button>` : ''}
       ${day.pts.length >= 2 ? `<button class="btn btn-ghost sm" onclick="App.optRoute()">${ic('compass')} ${t('opt_btn')}</button>` : ''}` : ''}
-    ${bnChipsHtml()}
+    ${state.mapTrk ? '' : bnChipsHtml()}
   </div>
   <div class="map-flex">
     <div class="map-main">
@@ -14121,7 +14792,7 @@ function viewMap(){
       ${legend}
       ${!state.mapDay && noCoords.length ? `<div class="tiny" style="margin-top:6px">${ic('warn')} ${noCoords.length} · ${t('map_no_coords')}</div>` : ''}
     </div>
-    ${bnStatsHtml()}
+    ${state.mapTrk ? '' : bnStatsHtml()}
   </div>`;
 }
 function initMapView(){
@@ -14170,6 +14841,7 @@ function initMapView(){
   /* v1.08.32: машины Bouncie — свой слой поверх задач; выбранные машины
      участвуют в подборе границ карты */
   BN.layer = null; BN.markers = {}; BN.routes = {};
+  if (state.mapTrk){ const tb = trkDraw(); if (tb.length){ mapObj.fitBounds(tb, { padding: [30, 30], maxZoom: 15 }); setTimeout(() => mapObj && mapObj.invalidateSize(), 120); return; } }   // v1.09.10
   bnDrawCars();
   const selBN = bnSelSet();
   (BN.vs || []).forEach(x => {
@@ -14851,7 +15523,7 @@ function drawInvoiceVert(doc, j, left, top, cont){
   if (noteEn){
     const noteOver = !!(cont && cont.noteOver);
     F('bolditalic',6);                          /* тот же шрифт, что при разборе в invTail */
-    const nl = doc.splitTextToSize(noteEn.replace(/\s+/g,' '), W - 16).slice(0,2);
+    const nl = doc.splitTextToSize(noteEn.replace(/\s+/g,' '), W - 28).slice(0,2);   /* v1.09.08: до линии колонки AMOUNT — раньше текст её пересекал */
     if (noteOver) nl[1] = '(continued - ' + SEE + ')';
     ry = row(2.2 + nl.length*2.8 + 1.6);
     F('bold',6.2); txt('NOTES:', L+1.3, ry+3.1);
@@ -14915,7 +15587,7 @@ function invTail(doc, j){
   const exOver = ex.length > 2 || (ex.length > 0 && tw(ex[0].text) > C2 - 1 - 2)
     || (ex.length > 1 && tw(ex.slice(1).map(x=>x.text).join(' · ')) > C2 - 1 - 2);
   F('bolditalic',6);
-  const noteLines = noteEn ? doc.splitTextToSize(noteEn, W - 16) : [];
+  const noteLines = noteEn ? doc.splitTextToSize(noteEn, W - 28) : [];        /* v1.09.08: та же ширина, что в drawInvoiceVert */
   const noteOver = noteLines.length > 2;
   return { oth, ex, noteEn, noteLines, othOver, exOver, noteOver, any: othOver || exOver || noteOver };
 }
@@ -14941,6 +15613,14 @@ function drawInvoiceCont(doc, j, cont, left, top){
     y += 5.2;
     F('bold',6.8); txt('Invoice #:', L+2, y); F('bold',7.2); txt(no, L+16, y);
     F('bold',6.8); txt('Date:', L+76, y); F('bold',7.2); txt(fmtUS(j.date), L+84, y);
+    y += 4.4;
+    /* v1.09.08: лист-продолжение могут отрезать по линии — на нём должны быть юнит и объект */
+    F('bold',6.8); txt('Unit #:', L+2, y); F('bold',7.2); txt(String(j.unit_number || '-'), L+16, y);
+    y += 4.4;
+    { const cx_ = cxById(j.complex_id) || {}, cp_ = cpById(j.counterparty_id) || {};
+      const prop = [cp_.name, cx_.name].filter(Boolean).join(' - ') || '-';
+      F('bold',6.8); txt('Property/Customer:', L+2, y); F('bold',7.2);
+      txt(doc.splitTextToSize(prop, W - 32)[0] || '-', L+30, y); }
     y += 4.4;
     F('bold',6.8); txt('Technician(s):', L+2, y); F('bold',7.2);
     const nl = doc.splitTextToSize(names, W - 24).slice(0, 2);
@@ -15313,6 +15993,22 @@ async function staffBlock(uid_){
   navigator.vibrate?.(20);
   toast(want ? '🚫 ' + t('blocked_done') : '✓ ' + t('unblocked_done'));
   render();
+  staffDirRename(uid_, want);                            // v1.09.10: папка на Диске → «Имя Ф Заблокирован» (и обратно)
+}
+/* v1.09.10: папки сотрудника на Google Диске (инвойсы и вложения) получают суффикс
+   «Заблокирован» при блокировке и теряют его при разблокировке. Делает Edge Function
+   media-health?tech_dir=<uid> — по ID папки из drive_dirs, а не по имени. Диск не подключён,
+   функция старая или папок у человека ещё нет — блокировке это не мешает, пишем в журнал. */
+async function staffDirRename(uid_, blocked){
+  if (!HAS_SB) return;
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/media-health?tech_dir=' + encodeURIComponent(uid_), { headers: { Authorization: 'Bearer ' + token } });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.renamed > 0){ toast('✓ ' + t(blocked ? 'dir_blocked_done' : 'dir_unblocked_done') + ': ' + j.renamed, 'inf'); dlog('папка сотрудника на Диске переименована:', j.renamed); }
+    else if (r.ok && j.note === 'NO_FOLDERS') dlog('папок сотрудника на Диске ещё нет — переименовывать нечего');
+    else if (!r.ok || (j.errors || []).length){ dlog('⚠ папка сотрудника на Диске:', r.status, JSON.stringify(j).slice(0, 200)); toast('⚠ ' + t('dir_block_fail'), 'err'); }
+  }catch(e){ dlog('⚠ staffDirRename:', e); }
 }
 /* ---------- v1.07.06: админ меняет пароль сотрудника ---------- */
 function staffPassModal(uid_){
@@ -16318,8 +17014,9 @@ async function trRunSel(){
 }
 
 /* ---------- карточка «Перевод для PDF» в документе ---------- */
-function trCardHtml(kind, doc){
-  const fs = trFields(kind, doc).filter(f => hasCyr(f.ru));
+function trCardHtml(kind, doc, skipOth){
+  /* v1.09.08: в документе работ строки Other services переводятся в своём разделе */
+  const fs = trFields(kind, doc).filter(f => hasCyr(f.ru) && !(skipOth && /^oth\d+$/.test(f.id)));
   if (!fs.length) return '';
   const miss = fs.filter(f => needsTr(f.ru, f.en)).length;
   return `<div class="card tr-card">
@@ -17118,7 +17815,8 @@ function proposalBoxHtml(j){
           ${opts.map(x => `<option value="${x.id}">P-${x.no ?? '·'} · ${esc(x.unit_number || '')} · ${money(+x.total || 0)}</option>`).join('')}
         </select>
         <button class="btn btn-blue sm" onclick="App.linkProposal('${j.id}', ($('#jb-prop-sel')||{}).value)">${t('prop_link')}</button>`
-        : `<span class="tiny">${t('prop_pick_none')}</span>`}`;
+        : `<span class="tiny">${t('prop_pick_none')}</span>`}
+        ${propCanCreate() ? `<button class="btn btn-ghost sm" onclick="App.propFromJob()">${ic('plus')} ${t('prop_from_job')}</button>` : ''}`;   // v1.09.08
     }
     return `<div class="card" style="margin:4px 0 0;padding:8px 10px">
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${ic('prop')} <b>PROPOSAL</b> ${inner}</div></div>`;
@@ -17254,6 +17952,22 @@ function viewProposalList(){
   ${propCanCreate() ? `<button class="btn btn-green" style="margin:10px 12px" onclick="App.openProposal()">${ic('plus')} ${t('prop_new')}</button>`
     : `<div class="tiny" style="margin:10px 12px">${t('prop_mgr_h')}</div>`}</div>`;
 }
+/* v1.09.08: «Создать пропозал» прямо из документа работ. Документ сначала сохраняется
+   (если есть правки), новый пропозал открывается с теми же контрагентом, комплексом и
+   юнитом, а после его сохранения сам привязывается к этой задаче. */
+let _propForJob = null;
+async function propFromJob(){
+  const j = jobDraft; if (!j || !propCanCreate()) return;
+  if (!editLocked(j) && jobDirty()) await saveJob(false);
+  const jid = j.id, src = state.data.jobs.find(x => x.id === jid) || j;
+  localStorage.removeItem('techlog_draft'); jobDraft = null;
+  openProposal();
+  if (propDraft){
+    Object.assign(propDraft, { date: src.date, counterparty_id: src.counterparty_id, complex_id: src.complex_id, unit_number: src.unit_number || '' });
+    _propForJob = jid; render();
+    toast('ℹ ' + t('prop_from_job_h'), 'inf');
+  }
+}
 function openProposal(id){
   if (!isManager()) return;
   state.screen = 'proposals';
@@ -17269,7 +17983,7 @@ function openProposal(id){
   }
   render();
 }
-function propBack(){ propDraft = null; render(); }
+function propBack(){ propDraft = null; _propForJob = null; render(); }
 /* v1.07.78: закрытие пропозала крестиком — с проверкой несохранённого */
 function propKey(p){
   if (!p) return '';
@@ -17431,6 +18145,11 @@ async function saveProposal(){
   }
   audit(isNew ? 'proposal_create' : 'proposal_update', 'proposal', p.id,
     { no: p.no, unit: p.unit_number, total: p.total, status: p.status });
+  if (_propForJob){                                      // v1.09.08: создан из задачи — привязываем к ней
+    const jid = _propForJob; _propForJob = null;
+    const jj = state.data.jobs.find(x => x.id === jid);
+    if (jj && !jj.proposal_id){ try{ await linkProposal(jid, p.id); }catch(e){ dlog('⚠ propFromJob link:', e); } }
+  }
   toast('✓ ' + t('saved')); render();
 }
 async function delProposal(id){
@@ -17694,7 +18413,36 @@ function myOnHand(){
   return (state.data.placements || []).filter(p => plOut(p)
     && (p.picked_up_by === state.user.id || (!p.picked_up_by && p.technician_id === state.user.id)));
 }
-function myOnHandQty(){ return myOnHand().reduce((n, p) => n + (+p.qty || 0), 0); }
+function myOnHandQty(){ if (stockLite()) return 0; return myOnHand().reduce((n, p) => n + (+p.qty || 0), 0); }
+/* =====================================================================
+   v1.09.09 · РЕЖИМ РАБОТЫ СКЛАДА: «ОБЛЕГЧЁННЫЙ» / «ПОЛНЫЙ УЧЁТ» (org_settings.stock_mode)
+   Полный — как было: склад → машина → объект → машина → склад, у каждого своя «Моя машина»,
+   «Взять» / «Сдать», «У вас на руках». Облегчённый — оборудование только вычитается со склада
+   документом аренды (и продления) и прибавляется обратно, когда его забрали: «Забрал» сразу
+   ставит и «вернул на склад». Машины не считаются: нет «Моей машины», «Взять/Сдать», «по машинам»
+   и плашки «на руках». Регистр движений тот же, поэтому режим можно менять туда-обратно.
+   ===================================================================== */
+function stockLite(){ return (((state.data || {}).org_settings) || {}).stock_mode === 'lite'; }
+function stockLiteRet(now){ return stockLite() ? { returned_at: now, returned_by: state.user.id } : {}; }
+function stockModeHtml(){
+  if (!isAdmin()) return stockLite() ? `<div class="tiny gd-hint" style="margin:4px 2px">${ic('box')} ${t('stk_lite_note')}</div>` : '';
+  const lite = stockLite();
+  return `<div class="card"><div class="rowline"><div class="grow"><b>${t('stk_mode_t')}</b> ${tipQ('stk_mode_tip')}
+      <div class="tiny">${t(lite ? 'stk_mode_lite_h' : 'stk_mode_full_h')}</div></div>
+    <div class="lang-seg sm"><button class="${lite ? 'on' : ''}" onclick="App.stockModeSet('lite')">${t('stk_mode_lite')}</button><button class="${lite ? '' : 'on'}" onclick="App.stockModeSet('full')">${t('stk_mode_full')}</button></div></div></div>`;
+}
+async function stockModeSet(v){
+  if (!isAdmin()) return;
+  v = v === 'lite' ? 'lite' : 'full';
+  if ((stockLite() ? 'lite' : 'full') === v) return;
+  if (v === 'lite'){
+    const inCars = (state.data.equipment_types || []).reduce((a, et) => a + (emRow(et.id).car || 0), 0);
+    if (inCars > 0 && !confirm(t('stk_lite_cars').replace('{N}', inCars))) return;
+  }
+  await dbSaveOrg({ ...state.data.org_settings, stock_mode: v });
+  audit('org_toggle', 'org', 'stock_mode', { value: v });
+  toast('✓ ' + t(v === 'lite' ? 'stk_mode_lite' : 'stk_mode_full')); render();
+}
 
 /* ---------- карточки и график ---------- */
 function stockCardsHtml(){
@@ -17922,7 +18670,7 @@ function viewStock(){
         <span>${t('eq_col_stock')} <b style="color:var(--green)">${em.stock}</b></span>
         <span>${t('eq_col_rented')} <b style="color:var(--blue)">${r.rented}</b></span>
         <span>${t('eq_col_pending')} <b style="color:var(--orange)">${r.pending}</b></span>
-        <span>${t('eq_col_cars')} <b style="color:var(--purple)">${em.car}</b></span>
+        ${stockLite() && !em.car ? '' : `<span>${t('eq_col_cars')} <b style="color:var(--purple)">${em.car}</b></span>`}
         <span>${t('eq_col_repair')} <b style="color:var(--red)">${em.repair}</b></span>
       </div>
     </div>`;
@@ -17975,17 +18723,19 @@ function viewStock(){
     ${isAdmin() ? btn('writeoff', 'trash', 'eq_writeoff', 'btn-ghost eq-danger') : ''}
   </div>`;
 
+  const lite = stockLite();                              // v1.09.09
   return `<div class="section-title">${ic('box')} ${t('tab_stock')}${helpBtn('stock')}</div>
-    ${myCar}
-    ${onHandBtnHtml('sb-btn')}
-    ${bigrow}
+    ${stockModeHtml()}
+    ${lite ? '' : myCar}
+    ${lite ? '' : onHandBtnHtml('sb-btn')}
+    ${lite ? '' : bigrow}
     ${emptyHint}
     ${btns}
     ${showAll ? stockCardsHtml() : `<div class="tiny" style="margin:4px 2px">${t('eq_stock_closed')}</div>`}
     ${showAll ? table : ''}
-    ${carsBlock}
+    ${lite ? '' : carsBlock}
     ${showAll ? stockChartHtml() : ''}
-    <div class="tiny gd-hint" style="margin:8px 2px">${t('eq_hint')}</div>`;
+    <div class="tiny gd-hint" style="margin:8px 2px">${t(lite ? 'eq_hint_lite' : 'eq_hint')}</div>`;
 }
 
 /* v1.08.28: большие кнопки «Взять»/«Сдать» — минивен со стрелкой.
@@ -23310,7 +24060,7 @@ const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
 const MEDIA_FN_VER = '1.08.12';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
-const MEDIA_FN_MIN = { 'media-begin': '1.08.25', 'media-commit': '1.08.13', 'media-health': '1.08.25',
+const MEDIA_FN_MIN = { 'media-begin': '1.09.10', 'media-commit': '1.09.10', 'media-health': '1.09.10',   // v1.09.10: папка заблокированного сотрудника
                        'media-delete': '1.08.71' };   // v1.08.71: замок на архивацию апрувнутого документа
 const MEDIA_FN_MIN_DEF = '1.07.72';
 function mFnVerOk(ver, name){
