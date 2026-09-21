@@ -219,6 +219,22 @@ begin
   perform pg_temp.eq('вернул P3: склад E2', public.equip_bal(E2, 'stock'), 3);
   perform pg_temp.eq('вернул P3: машина B по E2', public.equip_bal(E2, 'car', B), 1);
 
+  -- ---------- v1.09.26: техника убрана из инвойса — строка уходит в архив, регистр возвращает её, как при удалении ----------
+  declare PA uuid; s0 int; c0 int;
+  begin
+    s0 := public.equip_bal(E2, 'stock'); c0 := public.equip_bal(E2, 'car', B);
+    insert into public.placements (id, job_id, equipment_type_id, qty, days, due_date, technician_id, complex_id, counterparty_id, unit_number)
+    values (gen_random_uuid(), J, E2, 2, 3, current_date + 3, B, CX, CP, '101') returning id into PA;
+    perform pg_temp.eq('архив: до архива техника ушла из машины/со склада', (s0 + c0 - public.equip_bal(E2, 'stock') - public.equip_bal(E2, 'car', B))::int, 2);
+    update public.placements set archived_at = now(), archived_by = A, superseded = true, arch_note = 'техника удалена из инвойса' where id = PA;
+    select count(*) into n from public.equip_moves where placement_id = PA;
+    perform pg_temp.eq('архив: движений по строке не осталось', n, 0);
+    perform pg_temp.eq('архив: склад + машина вернулись к прежнему', (public.equip_bal(E2, 'stock') + public.equip_bal(E2, 'car', B))::int, s0 + c0);
+    update public.placements set archived_at = null, archived_by = null, superseded = false, arch_note = null where id = PA;
+    perform pg_temp.eq('возврат из архива: техника снова числится на объекте', (s0 + c0 - public.equip_bal(E2, 'stock') - public.equip_bal(E2, 'car', B))::int, 2);
+    delete from public.placements where id = PA;
+  end;
+
   -- ---------- документ ремонтных работ: склад не трогает ----------
   select count(*) into n from public.equip_moves;
   insert into public.repairs (id, job_id, date, created_by, helper_ids, status, items, materials, total, hist)
@@ -283,14 +299,14 @@ begin
   -- регрессия «админ не может изменить роль» (клиентский upsert под RLS).
   -- =====================================================================
   perform set_config('request.jwt.claim.sub', A::text, true);
-  NN := public.admin_create_user('trt.new', 'trt.new@techlog.local', 'secret7', 'Новый Работник', 'tech');
+  NN := public.admin_create_user('trt.new', 'trt.new@techlog.local', 'secret7890ab', 'Новый Работник', 'tech');
   select count(*) into n from public.profiles where id = NN and role = 'tech' and blocked = false;
   perform pg_temp.eq('создание сотрудника админом (tech)', n, 1);
   select count(*) into n from auth.identities where user_id = NN;
   perform pg_temp.eq('identity для входа создана', n, 1);
 
   begin
-    perform public.admin_create_user('trt.new', 'trt.new@techlog.local', 'secret7', 'Дубль', 'tech');
+    perform public.admin_create_user('trt.new', 'trt.new@techlog.local', 'secret7890ab', 'Дубль', 'tech');
     raise exception 'ТЕСТ [дубль логина прошёл]';
   exception when others then
     if SQLERRM <> 'LOGIN_TAKEN' then raise; end if;
@@ -369,6 +385,8 @@ begin
     perform set_config('request.jwt.claim.sub', A::text, true);   -- exception откатил GUC
 
     -- vehicle_save: создание + синхронизация номера в профиле водителя
+    -- v1.09.01: трекер выбирается из справочника — кладём прибор в него заранее (иначе NO_DEVICE)
+    insert into public.bn_devices (imei, nickname) values ('35000111', 'trt tracker 1'), ('35000222', 'trt tracker 2') on conflict do nothing;
     select public.vehicle_save(null, 'Ford Transit', 'VIN0001', '35-000 111', 11, NN) into V1;
     select count(*) into n from public.vehicles
      where id = V1 and imei = '35000111' and car_no = 11 and driver_id = NN;

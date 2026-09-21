@@ -88,7 +88,7 @@ begin
     perform pg_temp.ok('admin_set_role: неизвестная роль — BAD_ROLE', true);
   end;
   perform set_config('request.jwt.claim.sub', A::text, true);
-  NN := public.admin_create_user('tac_acc2', 'tac_acc2@techlog.example.com', 'secret123', 'Бухгалтер Два', 'accountant');
+  NN := public.admin_create_user('tac_acc2', 'tac_acc2@techlog.example.com', 'secret123456', 'Бухгалтер Два', 'accountant');
   perform pg_temp.ok('admin_create_user с ролью accountant', (select role from public.profiles where id = NN) = 'accountant');
   begin
     perform set_config('request.jwt.claim.sub', K::text, true);
@@ -161,7 +161,9 @@ begin
 
   -- ---------- триггер acc_guard: чужой upsert не затирает отметку ----------
   perform set_config('request.jwt.claim.sub', B::text, true);
-  update public.jobs set note = 'ключ у консьержа', acc_status = '', acc_note = '', acc_at = null, acc_by = null where id = J;
+  -- v1.09.25: «Выполнена» заперта — исполнитель сперва отзывает документ (тем же сохранением), потом сдаёт снова
+  update public.jobs set status = 'draft', note = 'ключ у консьержа', note_en = 'key at the concierge', acc_status = '', acc_note = '', acc_at = null, acc_by = null where id = J;   -- v1.09.26: на согласование — только с переводом
+  update public.jobs set status = 'done', acc_status = '' where id = J;
   perform pg_temp.ok('техник правит инвойс — note изменён', (select note = 'ключ у консьержа' from public.jobs where id = J));
   perform pg_temp.ok('…а отметка бухгалтера уцелела (acc_guard)', (select acc_status = 'issue' and acc_note = 'уточнить аренду' and acc_by = A from public.jobs where id = J));
   perform set_config('request.jwt.claim.sub', A::text, true);

@@ -36,7 +36,7 @@ const foldInfo = (p, key) => p.evaluate((key) => {
     open_srch: q('button[onclick="App.searchOpen()"]'),
     shared: q('#org-shared'), reorder: q('input[onchange="App.setMgrReorder(this.checked)"]'),
     rent: q('[onclick*="orgStep(\'default_rent_days\'"]'), ext: q('[onclick*="orgStep(\'max_extend_days\'"]'),
-    approve: q('input[onchange*="manager_can_approve"]'), stock: q('input[onchange*="stock_visible_all"]'),
+    approve: q('input[onchange*="manager_can_approve"]') || q('#df-appr-moved'),   /* v1.09.25: право апрува стало личным — на месте галочки подсказка, где оно ставится */ stock: q('input[onchange*="stock_visible_all"]'),
     prop: q('input[onchange*="allow_tech_proposal_flag"]'), lock: q('[onclick*="orgStep(\'edit_lock_days\'"]'),
     photo: q('[onclick*="orgStep(\'media_max_photo\'"]'), mlock: q('input[onchange*="media_lock_approved"]'),
     cards: b ? b.querySelectorAll(':scope > .card').length : 0 };
@@ -93,7 +93,7 @@ const gaps = (p) => p.evaluate(() => {
 
     const g = await gaps(p);
     t('галочки-кнопки не стоят вплотную (зазор ≥ 6 px по горизонтали и вертикали)',
-      g.pairs >= 3 && !g.touching.length && g.minH >= 6 && g.minH < 99 && g.minV >= 6, JSON.stringify(g));
+      g.pairs >= 2 &&   /* v1.09.25: галочек в группе стало на одну меньше (апрув — личное право) */ !g.touching.length && g.minH >= 6 && g.minH < 99 && g.minV >= 6, JSON.stringify(g));
     t('кнопка «Открыть поиск» отделена от подсказки', g.btnGap !== null && g.btnGap >= 8, g.btnGap);
 
     /* галочки и степперы работают на новом месте */
@@ -119,7 +119,7 @@ const gaps = (p) => p.evaluate(() => {
   {
     const p = await boot(br, 'demo-admin', 'mobile', 390, 3600, ['docs']);
     const g = await gaps(p);
-    t('на телефоне галочки тоже с зазорами', g.pairs >= 3 && !g.touching.length && g.minV >= 6, JSON.stringify(g));
+    t('на телефоне галочки тоже с зазорами', g.pairs >= 2 &&   /* v1.09.25: галочек в группе стало на одну меньше (апрув — личное право) */ !g.touching.length && g.minV >= 6, JSON.stringify(g));
     const over = await p.evaluate(() => {
       const b = document.querySelector('#app .fold-b'); if (!b) return 'нет';
       const R = b.getBoundingClientRect();

@@ -74,7 +74,7 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
       return { badge: b && !b.hidden ? b.textContent : '', banner: bn ? bn.textContent.replace(/\s+/g, ' ').trim() : '', n: chUnread() }; });
     t('у админа: счётчик в меню = 3 и плашка «Новые сообщения: 3» на главной', adm.badge === '3' && /: 3/.test(adm.banner) && adm.n === 3, adm);
     await p.click('#b-chat'); await p.waitForTimeout(400);
-    const th = await p.evaluate(me => { const b = document.querySelector(`#ch-ths .ch-th[data-k="${me}"]`); return b ? { unread: b.classList.contains('unread'), n: (b.querySelector('.ch-n') || {}).textContent, first: document.querySelectorAll('#ch-ths .ch-th')[2].dataset.k === me } : null; }, ids.me);
+    const th = await p.evaluate(me => { const b = document.querySelector(`#ch-ths .ch-th[data-k="${me}"]`); return b ? { unread: b.classList.contains('unread'), n: (b.querySelector('.ch-n') || {}).textContent, first: ([...document.querySelectorAll('#ch-ths .ch-th')].filter(x => !['all', 'ann', 'ntf'].includes(x.dataset.k) && !/^g:/.test(x.dataset.k))[0] || { dataset: {} }).dataset.k === me }   /* v1.09.25: каналов стало три (+ лента «Уведомления») — первого человека ищем не по номеру строки */ : null; }, ids.me);
     t('переписка с сотрудником — первая среди людей, непрочитанных 2', th && th.unread && th.n === '2' && th.first, th);
     await p.evaluate(me => App.chOpen(me), ids.me); await p.waitForTimeout(500);
     const conv = await p.evaluate(() => ({ newMark: !!document.querySelector('#ch-msgs .ch-new'), card: !!document.querySelector('#ch-msgs .ch-doc:not(.locked)'), imp: !!document.getElementById('ch-imp-btn'), left: !document.querySelector('#ch-msgs .ch-msg.mine'), unread: chUnread() }));

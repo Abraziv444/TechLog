@@ -74,7 +74,16 @@ const expose = `;window.__T = {
   /* v1.09.05: плотность интерфейса, холст ПК-режима */
   densCur, densIsCompact, densPrefKey, densSyncPref, densSet, densBtnHtml, densRowHtml, canvasRowHtml, boardColsStyle, boardPkCard, fmtDMYyr, viewBoard,
   /* v1.09.06: кнопка «назад» — история экранов */
-  NAV, navTrack, navReset, navRoot, backExit, setBackExitAt: v => { backExitAt = v; }
+  NAV, navTrack, navReset, navRoot, backExit, setBackExitAt: v => { backExitAt = v; },
+  /* v1.09.25: документооборот инвойса */
+  DF, JL, DF_REJECT, jobMode, jobOrig, meProf, dfReady, dfRejectCode, techTag, techTagAuto, canApprove, isJobSharedWithMe, crewMainCan,
+  dfNotices, dfReqs, ntfUnread, chThreads, chCanPost, chMuted, chIsCh, chBoss, dfStaffLineHtml, setJobDraft: d => { jobDraft = d; },
+  /* v1.09.26 */
+  jobRights, dflCollect, dfProblems, dfProblemAdd, dfProblemDrop, pkNoteOf, pkPending, dfDev, dayMoveOn, accCrewOf, archPickupsHtml,
+  /* v1.09.27 */
+  DFT, dftOn, dftStripTest, dftDemoExec, dftFullForm, dftNorm, dftCut, DFT_NET_RE, calcTotal, priceResolver,
+  /* v1.09.31 */
+  propStatuses, propSendOn
 };`;
 
 try {
@@ -153,7 +162,8 @@ t('админ правит чужую работу', T.trCanWrite('job', { techn
 t('админ правит пропозал', T.trCanWrite('prop', prop));
 T.state.user = { id: 'u1', role: 'manager' };
 t('менеджер правит ничейную работу', T.trCanWrite('job', { technician_id: null }));
-t('менеджер не правит чужую назначенную', !T.trCanWrite('job', { technician_id: 'u2' }));
+/* v1.09.25–26: менеджер правит чужой ЧЕРНОВИК (и перевод в нём); отправленный на согласование документ — только согласующий */
+t('менеджер правит чужой черновик, но не документ на согласовании', T.trCanWrite('job', { technician_id: 'u2', status: 'draft' }) && !T.trCanWrite('job', { technician_id: 'u2', status: 'done' }));
 
 console.log('\n— интервал проверки —');
 T.state.data.org_settings = {};
@@ -1841,12 +1851,13 @@ console.log('\n— v1.08.51: учёба —');
     (() => { const L0 = T.state.lang; T.state.lang = 'en'; const e1 = T.biText('Шланги и насадки | Hoses and nozzles'), e2 = T.biText('Эйрдак-машина / Air duct machine'), e3 = T.biText('Шуруповёрт'), e4 = T.biText('Steam / Dry');
       T.state.lang = 'ru'; const r1 = T.biText('Шланги и насадки | Hoses and nozzles'), r2 = T.biText('Air duct machine / Эйрдак-машина'); T.state.lang = L0;
       return e1 === 'Hoses and nozzles' && e2 === 'Air duct machine' && e3 === 'Шуруповёрт' && e4 === 'Steam / Dry' && r1 === 'Шланги и насадки' && r2 === 'Эйрдак-машина'; })());
-  t('v1.08.71: замок после апрува — работник не архивирует апрувнутый документ, админ может, без галочки можно',
+  t('v1.08.71: замок после апрува — работник не архивирует апрувнутый документ, админ может (v1.09.25: работник — только свой черновик)',
     (() => { const org = T.state.data.org_settings, u = T.state.user; const saveOrg = { ...org }, saveU = u;
       const job = { id: 'j1', technician_id: 'tech1', status: 'approved', date: '2026-09-14' };
       T.setUser({ id: 'tech1', role: 'tech', display_name: 'T' }); T.state.data.org_settings = { ...org };
       const a = T.mediaLocked(job) && !T.canArchDoc({ t: 'job', o: job });
-      T.state.data.org_settings = { ...org, media_lock_approved: false }; const b = !T.mediaLocked(job) && T.canArchDoc({ t: 'job', o: job });
+      /* v1.09.25: НЕ черновик удаляет только админ — даже со снятой галочкой замка файлов работник апрувнутый документ не архивирует; свой черновик — может */
+      T.state.data.org_settings = { ...org, media_lock_approved: false }; const b = !T.mediaLocked(job) && !T.canArchDoc({ t: 'job', o: job }) && T.canArchDoc({ t: 'job', o: { ...job, status: 'draft' } });
       T.state.data.org_settings = { ...org }; T.setUser({ id: 'adm', role: 'admin', display_name: 'A' }); const c = !T.mediaLocked(job) && T.canArchDoc({ t: 'job', o: job });
       T.state.data.org_settings = saveOrg; T.setUser(saveU); return a && b && c; })());
   t('v1.08.71: кнопка печати на карточке — личная галочка включена по умолчанию, SQL 1.08.71 и media-delete с замком',
@@ -2112,7 +2123,7 @@ console.log('\n— v1.08.51: учёба —');
     src.includes("L.push('', `--- ${t('tl_sec_steps')} ---`);") && src.includes("`--- ${t('tl_sec_perf')} ---`") && src.includes("mqLogLines.slice(-150)") && src.includes("PLOG.slice(-400)") && src.includes('function tlogFileName(c){'));
   t('v1.08.76: кнопки Скачать/Поделиться/Копировать/Показать в карточке Съёмка и в Диагностике, модалка по завершении, Web Share для файла',
     src.includes('function tlogBtnsHtml(style){') && src.includes('function tlogCardHtml(){') && src.includes('${tlogCardHtml()}')
-    && (src.match(/\$\{tlogCardHtml\(\)\}/g) || []).length === 2 && src.includes('function tlogDoneModal(){') && src.includes('setTimeout(tlogDoneModal, 400);') && src.includes("navigator.canShare({ files: [f] })"));
+    && (src.match(/\$\{tlogCardHtml\(\)\}/g) || []).length >= 2 /* v1.09.27: + карточка «Тест документооборота» */ && src.includes('function tlogDoneModal(){') && src.includes('setTimeout(tlogDoneModal, 400);') && src.includes("navigator.canShare({ files: [f] })"));
   t('v1.08.76: тест съёмки и регресс пишут в журнал; прерванный тест помечается при старте; «Журнал событий» скачивается',
     src.includes("tlogStart('camtest', t('ct_btn'));") && src.includes("tlogStart('regress', t('rg_btn'));") && src.includes('function tlogInit(){') && src.includes('try{ tlogInit(); }catch(e){}')
     && src.includes('function logSave(){') && src.includes('App.logSave()') && css.includes('.tl-acts{display:flex'));
@@ -2354,6 +2365,172 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   t('v1.09.03: длинная подсказка «?» висит дольше и закрывается нажатием',
     src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(12000, s.length * 40)))") && src.includes('function toast(msg, kind, ms){')   /* v1.09.12: не дольше 12 с, крестик, нажатие мимо */
     && src.includes("el.classList.add('tap'); el.onclick = () => el.remove();") && src.includes("x.className = 't-x'") && css.includes('.toast.tap{cursor:pointer}'));
+
+  /* ---------- v1.09.31 ---------- */
+  console.log('\n— v1.09.31: пропозал без «отправки клиенту», фото/видео/PDF на Диск и пуши в тесте —');
+  t('v1.09.31: версии (app = sw = version.json, не ниже 1.09.31), SQL-комплект, функция dft с отчётом о пушах и уборкой файлов Диска',
+    T.APP_VERSION >= '1.09.31' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
+    && ['update-to-1_09_31.sql', 'full-install-1_09_31.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f))
+    && ['if (action === "pushes")', 'trashed: true', 'driveToken'].every(k => fs.readFileSync(ROOT + '/supabase/functions/dft/index.ts', 'utf8').includes(k)));
+  t('v1.09.31: статус «Отправлен» у пропозала выключен по умолчанию; уже отправленный пропозал свой статус видит', (() => { const o = T.state.data.org_settings, was = o.prop_send_on;
+    try{ o.prop_send_on = undefined; const a = T.propStatuses('draft').join(), b = T.propStatuses('sent').join(); o.prop_send_on = true; const c = T.propStatuses('draft').join();
+      return a === 'draft,approved,declined' && b === 'draft,sent,approved,declined' && c === 'draft,sent,approved,declined' && T.propSendOn() === true; } finally { o.prop_send_on = was; } })());
+  t('v1.09.31: в сценарии — съёмка способом 1, отправка на Диск, PDF на Диск (черновик — нет), цикл пропозала, отчёт о пушах, файлы теста в корзину Диска',
+    ["t('dft_m1')", "t('dft_m2')", "ctStepSend(J)", "t('dft_m5')", "t('dft_m6')", "t('dft_p1')", "t('dft_p3')", "t('dft_p4')", "dftCall('pushes'", "mediaDropJob(id)"].every(k => src.includes(k)));
+  t('v1.09.31: сервер — пуши тестовых документов идут ведущему тест (или всем участникам), статус «Отправлен» закрыт на сервере', (() => { const q = fs.readFileSync(ROOT + '/supabase/full-install-1_09_31.sql', 'utf8');
+    return q.includes("raise exception 'PROP_SEND_OFF'") && q.includes("current_setting('techlog.test_wide', true)") && q.includes('grant execute on function public.dft_pushes(uuid, text) to service_role;'); })());
+
+  /* ---------- v1.09.30 ---------- */
+  console.log('\n— v1.09.30: тест документооборота — ремонт, второй согласующий, все ветки —');
+  t('v1.09.30: версии (app = sw = version.json, не ниже 1.09.30), SQL-комплект, функция dft с операциями ремонта и приёма в тест',
+    T.APP_VERSION >= '1.09.30' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
+    && ['update-to-1_09_30.sql', 'full-install-1_09_30.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f))
+    && ['"rep_create"', '"rep_adopt"', '"rep_update"', '"prop_adopt"'].every(k => fs.readFileSync(ROOT + '/supabase/functions/dft/index.ts', 'utf8').includes(k)));
+  t('v1.09.30: тестовые ремонты в рабочие списки не попадают', (() => { const d = { jobs: [{ id: 'x', is_test: true }], placements: [], proposals: [], repairs: [{ id: 'r1' }, { id: 'r2', is_test: true }, { id: 'r3', job_id: 'x' }] }; T.dftStripTest(d); return d.repairs.length === 1 && d.repairs[0].id === 'r1'; })());
+  t('v1.09.30: демо-зеркало — апрув ремонта только согласующим; ремонт к настоящей задаче не создаётся; запрет по давности действует на работника', (() => { const D = T.state.data, s0 = { jobs: D.jobs, reps: D.repairs, prof: D.profiles, org: D.org_settings, u: T.state.user };
+    try{ D.profiles = [{ id: 'ta', role: 'tech', display_name: 'T' }, { id: 'ma', role: 'manager', display_name: 'M', can_approve: false }, { id: 'aa', role: 'manager', display_name: 'A', can_approve: true }]; T.state.user = D.profiles[0]; T.DFT.owner = 'ta';
+      D.jobs = [{ id: 'tj', is_test: true, technician_id: 'ta', status: 'draft', date: '2020-01-01', helper_ids: [], form_data: {} }, { id: 'real', technician_id: 'ta', status: 'draft', helper_ids: [] }]; D.repairs = [];
+      const c = T.dftDemoExec('ta', 'rep_create', { row: { job_id: 'tj', status: 'sent' } }), bad = T.dftDemoExec('ta', 'rep_create', { row: { job_id: 'real' } }), id = c.data.id;
+      const a = T.dftDemoExec('ta', 'rep_update', { id, patch: { status: 'approved' } }), b = T.dftDemoExec('ma', 'rep_update', { id, patch: { status: 'approved' } }), ok2 = T.dftDemoExec('aa', 'rep_update', { id, patch: { status: 'approved' } });
+      D.org_settings = { ...s0.org, edit_lock_days: 3 }; const lk = T.dftDemoExec('ta', 'job_update', { id: 'tj', patch: { note: 'x' } });
+      return c.ok && bad.error.message === 'DFT_NOT_TEST_DOC' && a.error.message === 'FORBIDDEN_APPROVE' && b.error.message === 'FORBIDDEN_APPROVE' && ok2.ok && ok2.data.decided_by === 'aa' && lk.error.message === 'LOCKED'; }
+    finally { D.jobs = s0.jobs; D.repairs = s0.reps; D.profiles = s0.prof; D.org_settings = s0.org; T.state.user = s0.u; } })());
+  t('v1.09.30: одно действие — от имени любого согласующего (кнопками у ведущего, через функцию у остальных); второй круг согласования и группа ремонта в сценарии',
+    src.includes('const approveBy = async (who, sum) =>') && src.includes('const returnBy = async (who, note) =>') && src.includes('const decideBy = async (who, grant, answer) =>') && src.includes("G(t('dft_g_c2'));") && src.includes("G(t('dft_g_r'));") && src.includes("G(t('dft_g_l'));"));
+
+  /* ---------- v1.09.29 ---------- */
+  console.log('\n— v1.09.29: тест документооборота — все сценарии и журнал —');
+  t('v1.09.29: версии (app = sw = version.json, не ниже 1.09.29) и SQL-комплект на месте',
+    T.APP_VERSION >= '1.09.29' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
+    && ['update-to-1_09_29.sql', 'full-install-1_09_29.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)));
+  t('v1.09.29: журнал теста — все запросы кроме шума, заголовки и номер запроса Supabase, время запроса, тело до 6000 знаков в отчёте',
+    src.includes('const DFT_NET_SKIP = ') && src.includes("['sb-request-id', 'x-request-id', 'content-range'") && src.includes("dftCut(tx, 6000)") && src.includes("' ms' + hr"));
+  t('v1.09.29: в отчёт идут подсказки, окна, вопросы приложения, ошибки JavaScript, снимок документа после шага и контекст провала',
+    src.includes("if (DFT.running) dftLog('   💬 '") && src.includes("dftLog('   ▣ '") && src.includes("window.addEventListener('unhandledrejection', onErr);") && src.includes("dftLog('   ∑ '") && src.includes("dftLog('   ✗ ' + ctx(), 'err');")
+    && src.includes("DFT.asked.push(String(q));"));
+  t('v1.09.29: отчёт, не поместившийся в память браузера, не пропадает молча — укороченная копия и предупреждение', src.includes('c.big = true;') && src.includes("t('dft_big')"));
+  t('v1.09.29: «апрув не совпадает с расчётом» — по ревизии на момент апрува, а не по часам', (() => { const d0 = T.state.data.jobs, u0 = T.state.user; try{ T.state.user = { id: 'adm', role: 'admin' };
+      T.state.data.jobs = [{ id: 'a1', status: 'approved', total: 70, approved_total: 55, rev: 5, approved_rev: 5 }, { id: 'a2', status: 'approved', total: 70, approved_total: 55, rev: 6, approved_rev: 5 }, { id: 'a3', status: 'approved', total: 70, approved_total: 70, rev: 9, approved_rev: 5 }];
+      const ids = T.dflCollect().sumDiff.map(j => j.id).join(); return ids === 'a2'; } finally { T.state.data.jobs = d0; T.state.user = u0; } })());
+
+  /* ---------- v1.09.28 ---------- */
+  console.log('\n— v1.09.28: тест документооборота кнопками —');
+  t('v1.09.28: тест нажимает кнопки приложения — драйвер интерфейса считает кнопку доступной, только если она видна, не выключена и нажимаема',
+    src.includes("cs.pointerEvents === 'none') return false;") && src.includes("dftLog('   ☛ '") && src.includes("dftLog('   ⌨ '") && src.includes("op: 'job_adopt'")
+    && src.includes('function dftPanelOpen(){') && !src.includes("openModal(`${modalHead(t('dft_card'), 'flask')}\n    <div class=\"tiny\" id=\"dft-head\">"));
+  t('v1.09.28: блок PROPOSAL нажимаем и в запертом документе; сдали заново — причина возврата снята и на клиенте; снимок бригады при апруве',
+    css.includes('#app.job-ro .prop-box, #app.job-ro .prop-box * { pointer-events: auto; }') && src.includes('<div class="card prop-box"')
+    && src.includes("if (j.status === 'done' && (!orig || orig.status === 'draft')){ j.return_note = null; j.returned_by = null; }") && src.includes('j.approved_crew = { main: j.technician_id, crew: j.helper_ids || [] };'));
+
+  /* ---------- v1.09.27 ---------- */
+  console.log('\n— v1.09.27: тест документооборота —');
+  t('v1.09.27: версии (app = sw = version.json, не ниже 1.09.27), SQL-комплект, Edge Function dft (и копия для Dashboard), тесты на месте',
+    T.APP_VERSION >= '1.09.27' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_27.sql'
+    && ['update-to-1_09_27.sql', 'full-install-1_09_27.sql', 'update-to-1_09_28.sql', 'full-install-1_09_28.sql', 'functions/dft/index.ts', 'functions-dashboard/dft/index.ts', 'functions-dashboard/dft/google.ts'].every(f => fs.existsSync(ROOT + '/supabase/' + f))
+    && ['v1_09_27.js', 'dft.sql', 'dft-fn.js'].every(f => fs.existsSync(ROOT + '/tests/' + f)));
+  t('v1.09.27: режим считается включённым только до истечения срока', (() => { const o = T.state.data.org_settings, s0 = { on: o.dft_on, u: o.dft_until };
+    o.dft_on = true; o.dft_until = new Date(Date.now() + 60000).toISOString(); const a = T.dftOn(); o.dft_until = new Date(Date.now() - 1000).toISOString(); const b = T.dftOn(); o.dft_on = false; o.dft_until = null; const c = T.dftOn();
+    o.dft_on = s0.on; o.dft_until = s0.u; return a === true && b === false && c === false; })());
+  t('v1.09.27: тестовые документы и их пикапы в рабочие данные не попадают (остатки — тоже)', (() => {
+    const d = { jobs: [{ id: 'r' }, { id: 'x', is_test: true }], placements: [{ id: 'p1', job_id: 'r' }, { id: 'p2', job_id: 'x' }, { id: 'p3', job_id: 'r', is_test: true }], proposals: [{ id: 'pr' }, { id: 'pt', is_test: true }] };
+    T.dftStripTest(d); return d.jobs.length === 1 && d.placements.length === 1 && d.placements[0].id === 'p1' && d.proposals.length === 1 && T.DFT.left === 1; })());
+  t('v1.09.27: «вся форма» заполняет каждую секцию бланка', (() => { const fd = T.dftFullForm();
+    return fd.steam.deep_scrub && fd.removals.gum && fd.repairs.seam && fd.dye.full && fd.other.crb && fd.fog.smoke && fd.treatments.mold && fd.wetvac.areas.hall && fd.airduct.air_duct && fd.pad.on
+      && fd.others[0].amount === 50 && fd.emergency && fd.po === 'DFT-PO-1' && Object.keys(fd.equipment).length === Math.min(2, (T.state.data.equipment_types || []).length); })());   /* сумма и пикапы проверяются в tests/v1_09_27.js на демо-данных */
+  t('v1.09.27: ответ базы приводится к одному виду — ошибка, отказ политики («0 строк») и успех', T.dftNorm({ error: { message: 'DOC_LOCKED_DONE', code: 'P0001' } }).error.message === 'DOC_LOCKED_DONE'
+    && T.dftNorm({ data: [] }).error.message === 'RLS_DENIED' && T.dftNorm({ error: { code: '42501', message: 'new row violates row-level security policy' } }).error.message === 'RLS_DENIED' && T.dftNorm({ data: [{ id: 1 }] }).data.id === 1);
+  t('v1.09.27: в отчёт попадают запросы только по документообороту (не чат и не обмен), тело длинного ответа обрезается',
+    T.DFT_NET_RE.test('https://x.supabase.co/rest/v1/jobs?id=eq.1') && T.DFT_NET_RE.test('https://x.supabase.co/rest/v1/rpc/doc_request_edit') && T.DFT_NET_RE.test('https://x.supabase.co/functions/v1/dft')
+    && !T.DFT_NET_RE.test('https://x.supabase.co/rest/v1/chat_msgs') && !T.DFT_NET_RE.test('https://x.supabase.co/rest/v1/profiles') && T.dftCut('x'.repeat(2000), 100).length < 130);
+  t('v1.09.27: демо-зеркало сервера — настоящий документ не трогает, пометку «тестовый» у него поставить нельзя', (() => { const j0 = T.state.data.jobs;
+    try{ T.state.data.jobs = [{ id: 'real1', technician_id: 'u1', status: 'done', form_data: {}, helper_ids: [] }]; T.state.data.profiles = T.state.data.profiles.concat([{ id: 'dfa', role: 'admin', display_name: 'A' }]);
+      const a = T.dftDemoExec('dfa', 'job_update', { id: 'real1', patch: { status: 'approved' } }), b = T.dftDemoExec('dfa', 'rpc', { fn: 'approve_job', args: { p_job: 'real1', p_total: 1 } });
+      return a.ok === false && a.error.message === 'DFT_NOT_TEST_DOC' && b.error.message === 'DFT_NOT_TEST_DOC' && T.state.data.jobs[0].status === 'done'; }
+    finally{ T.state.data.jobs = j0; T.state.data.profiles = T.state.data.profiles.filter(p => p.id !== 'dfa'); } })());
+  t('v1.09.27: запросы во время теста пишутся в отчёт; записи журнала событий помечаются; админ предупреждается при каждом входе',
+    src.includes('if (DFT.running) dftNetLog(url, init, p);') && src.includes('if (DFT.running) details = { ...(details || {}), test: true };') && src.includes('setTimeout(dftAdminWarn, 1200);') && src.includes('dftStripTest(state.data);'));
+
+  /* ---------- v1.09.26 ---------- */
+  console.log('\n— v1.09.26: документооборот, исправления по разбору —');
+  t('v1.09.26: версии (app = sw = version.json, не ниже 1.09.26), SQL-комплект и тест на месте',
+    T.APP_VERSION >= '1.09.26' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_26.sql'
+    && ['update-to-1_09_26.sql', 'full-install-1_09_26.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_26.js'));
+  t('v1.09.26: сервер распознаёт новые отказы, отказ политики доступа — тоже окончательный',
+    ['TRANSLATION_REQUIRED', 'FORBIDDEN_EQUIPMENT', 'SELF_APPROVE_OFF', 'LINK_LOCKED', 'LOCKED', 'FORBIDDEN_FIELD'].every(c => T.dfRejectCode({ message: c }) === c)
+    && T.dfRejectCode({ code: '42501', message: 'new row violates row-level security policy for table "jobs"' }) === 'NO_RIGHTS' && T.dfRejectCode({ message: 'timeout' }) === '');
+  t('v1.09.26: у каждого кода отказа есть текст на обоих языках', ['STALE_DOC', 'DOC_LOCKED_DONE', 'DOC_LOCKED_APPROVED', 'DOC_LOCKED_DELETE', 'FORBIDDEN_CREW', 'FORBIDDEN_APPROVE',
+    'FORBIDDEN_EQUIPMENT', 'FORBIDDEN_FIELD', 'TRANSLATION_REQUIRED', 'SELF_APPROVE_OFF', 'LINK_LOCKED', 'LOCKED', 'NO_RIGHTS', 'ERROR'].every(c => T.DICT.ru['df_rej_' + c] && T.DICT.en['df_rej_' + c]));
+  t('v1.09.26: архивный пикап не считается ожидающим; метка устройства постоянна; «Перенести день» выключен',
+    T.pkPending({ picked_up: false, superseded: false }) && !T.pkPending({ picked_up: false, superseded: false, archived_at: '2026-09-21' }) && T.dfDev() === T.dfDev() && T.dfDev().length >= 8 && T.dayMoveOn() === false);
+  t('v1.09.26: бухгалтерия берёт бригаду заапрувленного инвойса из снимка на момент апрува',
+    T.accCrewOf('job', { status: 'approved', technician_id: 'a', helper_ids: ['x'], approved_crew: { main: 'm', crew: ['h1', 'h2'] } }).join() === 'm,h1,h2'
+    && T.accCrewOf('job', { status: 'done', technician_id: 'a', helper_ids: ['x'], approved_crew: { main: 'm', crew: [] } }).join() === 'a,x');
+  t('v1.09.26: отклонённая версия документа остаётся на устройстве (по одной на документ, у каждого пользователя свои)', (() => {
+    const u0 = T.state.user; try{
+      T.state.user = { id: 'pu1', role: 'tech' }; w.localStorage.removeItem('techlog_df_problems');
+      T.dfProblemAdd('jobs', { id: 'd1', note: 'a' }, 'STALE_DOC'); T.dfProblemAdd('jobs', { id: 'd2', note: 'b' }, 'DOC_LOCKED_DONE'); T.dfProblemAdd('jobs', { id: 'd1', note: 'c' }, 'STALE_DOC');
+      const mine = T.dfProblems(); T.state.user = { id: 'pu2', role: 'tech' }; const other = T.dfProblems().length; T.state.user = { id: 'pu1', role: 'tech' };
+      const okk = mine.length === 2 && mine.find(x => x.doc_id === 'd1').row.note === 'c' && other === 0; T.dfProblemDrop(mine[0].id); return okk && T.dfProblems().length === 1;
+    } finally { T.state.user = u0; w.localStorage.removeItem('techlog_df_problems'); } })());
+  t('v1.09.26: автоперевод по таймеру в документы не пишет; перевод сохраняется только там, где правится сам документ; результат записи проверяется',
+    !src.includes('if (o.tr_auto) trRunPending(true);') && src.includes('return jobRights(jobOrig(doc) || doc).edit === true;') && src.includes('if (_r && _r.ok === false) return;                          // v1.09.26'));
+  t('v1.09.26: «Отозвать» и «Вернуть» накатывают статус на свежую строку, а не предлагают затереть чужое',
+    src.includes("{ svc: ['status', 'return_note', 'returned_by'] }") && src.includes("{ svc: ['status', 'return_note', 'returned_by', 'approved_total', 'approved_by', 'approved_at'] }"));
+  t('v1.09.26: PDF — пометки DRAFT и APPROVED, на Диск только отправленный на согласование; экран и пункт меню «Документооборот»; справка',
+    src.includes("doc.text('DRAFT'") && src.includes("doc.text('APPROVED'") && src.includes("t('inv_drive_draft')") && src.includes("else if (state.screen === 'docflow') body = viewDocflow();")
+    && (src.match(/\['docflow', ic\('clipboard'\), t\('tab_docflow_s'\)\]/g) || []).length === 2 && src.includes('S.docflow = H(`'));
+  t('v1.09.26: CSS — техника «только просмотр» у менеджера, подсказка-ссылка, строки «Документооборота»',
+    css.includes('.inv-body.eq-ro > * { pointer-events: none; }') && css.includes('.toast.go {') && css.includes('.dfl-row {'));
+
+  /* ---------- v1.09.25 ---------- */
+  console.log('\n— v1.09.25: документооборот инвойса —');
+  t('v1.09.25: версии (app = sw = version.json, не ниже 1.09.25), SQL-комплект и тесты на месте',
+    T.APP_VERSION >= '1.09.25' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_25.sql'
+    && ['update-to-1_09_25.sql', 'full-install-1_09_25.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_25.js') && fs.existsSync(ROOT + '/tests/docflow.sql'));
+  t('v1.09.25: диагностика БД знает новые колонки и функции',
+    ['rev', 'doc_no'].every(c => T.DB_NEED_COLS.some(x => x[0] === 'jobs' && x[1] === c)) && T.DB_NEED_COLS.some(x => x[0] === 'profiles' && x[1] === 'tag')
+    && ['doc_lock', 'doc_request_edit', 'doc_request_decide', 'job_fix_no', 'admin_set_doc_rights'].every(f => T.DB_NEED_RPCS.includes(f)));
+  t('v1.09.25: отказ сервера по документу распознаётся по коду; посторонняя ошибка — нет',
+    T.dfRejectCode({ message: 'STALE_DOC' }) === 'STALE_DOC' && T.dfRejectCode({ message: 'new row violates … DOC_LOCKED_APPROVED' }) === 'DOC_LOCKED_APPROVED' && T.dfRejectCode({ message: 'duplicate key' }) === '');
+  t('v1.09.25: режим документа по роли и статусу (основной · помощник · менеджер без права · согласующий)', (() => {
+    const save = { user: T.state.user, jobs: T.state.data.jobs, profiles: T.state.data.profiles, org: T.state.data.org_settings };
+    try{
+      T.state.data.org_settings = { ...save.org, allow_shared_jobs: true, docflow_v: 1 };
+      T.state.data.profiles = [{ id: 'm', role: 'tech', display_name: 'Main T' }, { id: 'h', role: 'tech', display_name: 'Help T', can_edit_docs: true },
+        { id: 'g', role: 'manager', display_name: 'Mgr T', can_approve: false }, { id: 'a', role: 'manager', display_name: 'Appr T', can_approve: true }];
+      const mk = (st, shared) => ({ id: 'jx', status: st, technician_id: 'm', helper_ids: ['h'], shared_with_helpers: !!shared, form_data: T.emptyFormData(), date: '2026-09-21' });
+      const as = (uid, st, shared) => { T.state.user = T.state.data.profiles.find(p => p.id === uid); const j = mk(st, shared); T.state.data.jobs = [j]; return T.jobMode(j); };
+      const r = [
+        as('m', 'draft').edit === true, as('m', 'done').edit === false && as('m', 'done').canWithdraw === true, as('m', 'approved').canRequest === true && as('m', 'approved').edit === false,
+        as('h', 'draft').edit === false && as('h', 'draft').why === 'crew', as('h', 'draft', true).edit === true, as('h', 'done', true).canWithdraw === true && as('h', 'done').canWithdraw === false,   /* v1.09.26: отзывает тот, кто правит черновик */
+        as('h', 'approved', true).canRequest === true && as('h', 'approved').canRequest === false,
+        as('g', 'draft').edit === true, as('g', 'done').edit === false && as('g', 'done').canWithdraw === true, as('g', 'approved').edit === false && as('g', 'approved').canRequest === false,
+        as('a', 'done').edit === true && as('a', 'approved').edit === true && as('a', 'approved').appr === true];
+      T.state.data.profiles[1].can_edit_docs = false; r.push(as('h', 'draft', true).edit === false);
+      return r.every(Boolean) || r;
+    } finally { T.state.user = save.user; T.state.data.jobs = save.jobs; T.state.data.profiles = save.profiles; T.state.data.org_settings = save.org; }
+  })() === true);
+  t('v1.09.25: сокращение сотрудника — из карточки, иначе инициалы; у старых номеров (без numbered_at) и у не-инвойсов — прежние инициалы', (() => {
+    const save = T.state.data.profiles; try{
+      T.state.data.profiles = [{ id: 'p1', display_name: 'Ivan Petrov', tag: 'IVP' }, { id: 'p2', display_name: 'Oleg Sidorov' }];
+      const v = (kind, o) => T.docNoVals(kind, { date: '2026-09-21', ...o }).TECH;
+      return T.techTag('p1') === 'IVP' && T.techTag('p2') === 'OS' && T.techTagAuto('p1') === 'IP'
+        && v('job', { technician_id: 'p1', no: null }) === 'IVP' && v('job', { technician_id: 'p1', no: 7, numbered_at: '2026-09-21T10:00:00Z' }) === 'IVP'
+        && v('job', { technician_id: 'p1', no: 7 }) === 'IP' && v('prop', { created_by: 'p1', no: 3 }) === 'IP'
+        && T.docNo('job', { doc_no: 'WORK-FROZEN-00007', technician_id: 'p1', no: 7, date: '2026-09-21' }) === 'WORK-FROZEN-00007';
+    } finally { T.state.data.profiles = save; } })());
+  t('v1.09.25: чат — лента «Уведомления» третьей в списке, писать в неё нельзя, «Важные объявления» и ленту не заглушить',
+    (() => { const ks = T.chThreads().slice(0, 3).map(x => x.key); return ks.join() === 'all,ann,ntf' && T.chCanPost('ntf') === false && T.chIsCh('ntf') && T.chMuted('ann') === false && T.chMuted('ntf') === false; })());
+  t('v1.09.25: старый баг апрува закрыт — свежий апрув согласующего не откатывается в «Выполнено»; молчаливого сброса апрува при правке больше нет',
+    src.includes("if ((orig && orig.status === 'approved') || (j.status === 'approved' && canApprove())){") && !src.includes("audit('approve_reset', 'job', j.id"));
+  t('v1.09.25: запись документа читает ревизию тем же запросом; отказ сервера не остаётся в очереди; служебная правка накатывается на свежую строку',
+    src.includes("if (_back) _q = _q.select('id,no,rev,updated_by,updated_at,doc_no,numbered_at');") && src.includes("pendingBusy = false; await dfRejected(it.table, it.payload, dfRejectCode(r.error)); pendingBusy = true;")
+    && src.includes("{ svc: Object.keys(patch) }") && src.includes("{ svc: ['archived_at', 'archived_by'] }"));
+  t('v1.09.25: просмотр — поля не нажимаются, фото добавлять можно; черновик на устройстве в режиме просмотра не заводится',
+    css.includes('#app.job-ro input:not([type=file])') && css.includes('#app.job-ro .media-card, #app.job-ro .media-card * { pointer-events: auto;') && src.includes("if (jobDraft && state.screen === 'job' && !jobMode(jobDraft).edit) return;"));
 
   /* ---------- v1.09.24 ---------- */
   console.log('\n— v1.09.24: модерация групп, «не беспокоить», очередь без связи, поиск, пересылка —');

@@ -3157,7 +3157,7 @@ html.tl-desktop .modal.cl-modal{max-width:min(760px,94vw);width:min(760px,94vw)}
 
 /* ===== v1.09.17: сообщения (чат) ===== */
 .tab{position:relative}
-.tab-badge{position:absolute;top:2px;right:6px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;
+.tab-badge{position:absolute;top:2px;right:6px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--red-dk);color:#fff;   /* v1.09.26: белым по #FF4B4B — контраст 3.3 при норме 4.5; тёмно-красный даёт 5.3 */
   font:800 .62rem/17px system-ui,sans-serif;font-style:normal;text-align:center;pointer-events:none}
 .tab-badge[hidden]{display:none}
 .ch-wrap{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:12px;align-items:start}
@@ -3319,3 +3319,90 @@ html.tl-desktop .modal.cl-modal{max-width:min(760px,94vw);width:min(760px,94vw)}
 .ch-hit{min-height:48px}
 .ch-hit mark{background:rgba(255,200,0,.35);color:inherit;border-radius:3px;padding:0 1px}
 .chg-m .chg-role{white-space:nowrap}
+
+/* =====================================================================
+   v1.09.25 · ДОКУМЕНТООБОРОТ ИНВОЙСА
+   ===================================================================== */
+/* документ только для просмотра: поля и отметки не нажимаются, заголовки разделов (спойлеры), фото и печать — работают */
+#app.job-ro .inv-body, #app.job-ro .inv-flags, #app.job-ro .crew-add, #app.job-ro .shared-opt,
+#app.job-ro .cl-card, #app.job-ro .opt, #app.job-ro .stepper, #app.job-ro .wt-change,
+#app.job-ro input:not([type=file]), #app.job-ro textarea, #app.job-ro select { pointer-events: none; }
+#app.job-ro .inv-body, #app.job-ro .inv-flags { opacity: .8; }
+#app.job-ro .media-card, #app.job-ro .media-card * { pointer-events: auto; opacity: 1; }   /* фото и видео бригада добавляет и в режиме просмотра */
+.df-ban { align-items: center; gap: 8px; flex-wrap: wrap; }
+.df-ban .btn { flex: 0 0 auto; }
+.df-edited { margin-top: 2px; color: var(--dim); }
+.df-edited svg { width: 12px; height: 12px; vertical-align: -1px; }
+.crew-star { color: var(--yellow, #f5b300); }
+.crew-mk { border: 0; background: none; color: var(--dim); font-size: 16px; line-height: 1; padding: 0; cursor: pointer; min-width: 28px; min-height: 28px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; }
+.crew-mk:hover { color: var(--yellow, #f5b300); }
+.crew-tag { font-size: 10px; font-weight: 800; letter-spacing: .04em; padding: 1px 4px; border-radius: 4px; background: rgba(128,128,128,.18); margin-left: 2px; }
+/* сотрудники: сокращение и личные права */
+.staff-df { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 4px; font-size: 12px; }
+.staff-df label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; min-height: 28px; cursor: pointer; }
+.staff-df .df-tag { width: 62px; min-height: 28px; padding: 3px 6px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; text-align: center; }
+@media (pointer: coarse){ .staff-df label, .staff-df .df-tag, .crew-mk { min-height: 40px; } .crew-mk { min-width: 40px; } }
+/* запросы на правку в «На апруве» */
+.df-req-row { flex-wrap: wrap; gap: 6px; }
+/* лента «Уведомления» */
+.ntf-row { display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left; border: 0; border-left: 3px solid transparent; border-radius: 10px;
+  background: var(--card); color: inherit; padding: 8px 10px; margin: 4px 0; cursor: pointer; font: inherit; }
+.ntf-row .grow { display: flex; flex-direction: column; min-width: 0; }
+.ntf-row .grow .tiny { white-space: normal; overflow-wrap: anywhere; }
+.ntf-row.unread { border-left-color: var(--blue); }
+.ntf-row.unread b { font-weight: 900; }
+.ntf-row .ntf-ic { flex: 0 0 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: rgba(128,128,128,.18); }
+.ntf-row .ntf-ic svg { width: 14px; height: 14px; }
+.ntf-row.k-approve .ntf-ic { background: rgba(88,204,2,.18); }
+.ntf-row.k-reset .ntf-ic { background: rgba(255,75,75,.16); }
+.ntf-row .ntf-t { flex: 0 0 auto; }
+
+/* =====================================================================
+   v1.09.26 · ДОКУМЕНТООБОРОТ — исправления по разбору
+   ===================================================================== */
+/* техника в чужом документе: менеджер видит, не правит; нажатие объясняет почему */
+.inv-body.eq-ro { cursor: help; }
+.inv-body.eq-ro > * { pointer-events: none; }
+.inv-body.eq-ro .eq-line, .inv-body.eq-ro .eq-hline { opacity: .7; }
+.eq-ro-note { color: var(--dim); margin: 2px 0 6px; }
+.eq-ro-note svg { width: 12px; height: 12px; vertical-align: -1px; }
+/* подсказка-ссылка */
+.toast.go { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+/* экран «Документооборот» */
+.dfl-row { flex-wrap: wrap; gap: 6px; }
+.dfl-row .grow { min-width: 180px; }
+.dfl-row.clicky { cursor: pointer; }
+.dfl-row.clicky:hover { background: rgba(128,128,128,.08); }
+.dfl-row .badge-status { font-size: 10px; vertical-align: 1px; }
+.dfl-problem { border-left: 3px solid var(--red); padding-left: 8px; }
+.arch-note { color: var(--dim); margin-top: 2px; white-space: normal; overflow-wrap: anywhere; }
+
+/* =====================================================================
+   v1.09.27 · ТЕСТ ДОКУМЕНТООБОРОТА
+   ===================================================================== */
+.dft-steps { max-height: 46vh; overflow: auto; margin: 8px 0; font-size: 13px; line-height: 1.45; }
+.dft-steps > div { padding: 2px 0; overflow-wrap: anywhere; }
+.dft-steps svg { width: 14px; height: 14px; vertical-align: -2px; }
+.dft-g { font-weight: 900; margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(128,128,128,.25); }
+.dft-k { display: inline-block; min-width: 12px; font-weight: 900; color: var(--dim); }
+.dft-bad { color: var(--red); }
+.dft-log { max-height: 18vh; overflow: auto; margin-bottom: 8px; padding: 6px 8px; border-radius: 10px; background: rgba(0,0,0,.28); font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.dft-l { white-space: pre-wrap; overflow-wrap: anywhere; color: #cfd8dc; }
+.dft-l.net { color: #8fb8c9; } .dft-l.neterr { color: #ffb4a8; } .dft-l.err { color: #ff8a80; } .dft-l.st { color: #fff; margin-top: 3px; } .dft-l.grp { color: #ffd54f; font-weight: 700; }
+.dft-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#dft-card .role-sel { max-width: 60%; }
+
+/* =====================================================================
+   v1.09.28 · ТЕСТ ДОКУМЕНТООБОРОТА КНОПКАМИ — панель хода (не модальная: тест сам нажимает кнопки приложения под ней)
+   ===================================================================== */
+.dft-panel { position: fixed; right: 10px; bottom: 76px; z-index: 9500; width: min(420px, calc(100vw - 20px)); max-height: 56vh; display: flex; flex-direction: column;
+  background: var(--card); color: inherit; border: 2px solid var(--blue); border-radius: 14px; padding: 8px 10px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+.dft-panel .dft-ph { display: flex; align-items: center; gap: 8px; }
+.dft-panel .dft-ph .tiny { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dft-panel .dft-steps { max-height: 24vh; }
+.dft-panel .dft-log { max-height: 14vh; }
+.dft-panel.min .dft-steps, .dft-panel.min .dft-log { display: none; }
+html.tl-desktop .dft-panel { bottom: 14px; }
+.dft-l.ui { color: #c5e1a5; }
+/* привязка пропозала — функция менеджера и админа и в запертом документе */
+#app.job-ro .prop-box, #app.job-ro .prop-box * { pointer-events: auto; }

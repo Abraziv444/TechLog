@@ -55,7 +55,8 @@ async function boot(br, o, who){
     t('строка дня — одна строка: дата · карта · «?»; отдельных кнопок под лентой нет', db.oneLine && db.inside && db.h <= 48 && !db.loose, db);
     t('«Перенести день» по умолчанию скрыт', !db.move);
     await p.evaluate(() => { state.data.org_settings.day_move_on = true; render(); }); await p.waitForTimeout(200);
-    t('включили в «Функциях» — кнопка «Перенести день» стоит в строке дня', await p.evaluate(() => !!document.querySelector('#day-bar .tpl-move')));
+    /* v1.09.26: «Перенести день» не используется — выключен совсем, даже если в базе осталась прежняя настройка */
+    t('v1.09.26: «Перенести день» выключен — кнопки нет даже при старой настройке в базе', await p.evaluate(() => !document.querySelector('#day-bar .tpl-move') && !document.querySelector('.tpl-move')));
     await p.evaluate(() => { state.selDate = '2026-01-07'; state.weekStart = mondayOf(state.selDate); render(); }); await p.waitForTimeout(200);
     t('другой день — «сегодня» тоже в строке дня', await p.evaluate(() => !!document.querySelector('#day-bar .today-jump') && document.getElementById('day-bar').getBoundingClientRect().height <= 48));
     await p.evaluate(() => App.jumpToday()); await p.waitForTimeout(200);

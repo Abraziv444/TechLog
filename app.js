@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.24';
-const DB_SQL_FILE = 'full-install-1_09_24.sql';
+const APP_VERSION = '1.09.31';
+const DB_SQL_FILE = 'full-install-1_09_31.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -253,9 +253,9 @@ const I18N = {
     push_denied: 'Запрещены в браузере — разрешите в настройках сайта',
     push_unsupported: 'Браузер не поддерживает пуш-уведомления',
     push_ios_hint: 'iPhone/iPad: сначала «Поделиться → На экран Домой», пуши работают только из установленного приложения (iOS 16.4+)',
-    push_kinds: 'Какие уведомления получать', push_k_job: 'Новая задача',
-    push_k_pickup: 'Новый пикап', push_k_approve: 'Апрув документа',
-    push_k_overdue: 'Пикап просрочен', push_k_reset: 'Апрув снят',
+    push_kinds: 'Какие уведомления получать', push_k_job: 'Новая задача · добавили в бригаду · сняли с задачи',
+    push_k_pickup: 'Новый пикап', push_k_approve: 'Апрув документа · ждёт апрува · запрос правки',
+    push_k_overdue: 'Пикап просрочен', push_k_reset: 'Апрув снят · возврат на доработку · ответ на запрос правки',
     push_k_bn_alert: 'Ошибки машины (Check Engine, топливо)', push_k_bn_service: 'Пора на ТО',
     push_tip: 'Галочки — что присылать именно вам. Кнопка включает уведомления на этом телефоне или компьютере; на другом устройстве нажмите её ещё раз.',
     push_need_deploy: 'Разверните Edge Function push (functions-dashboard/push)',
@@ -836,6 +836,101 @@ const I18N = {
     mq_docs: 'докум.', mq_photo: 'фото', mq_video: 'видео',
     /* v1.08.46 */
     sel_clear: 'Очистить поле',
+    /* v1.09.27: тест документооборота */
+    prop_send_chk: 'Статус «Отправлен» у пропозала (отправка клиенту)', prop_send_off: 'Пропозал клиенту не отправляется: статус «Отправлен» выключен. Включить его может администратор — Настройки → Пропозалы', dft_wide: 'Уведомления и пуши — всем участникам, а не только мне', dft_media_chk: 'Фото, видео и PDF на Google Диск (съёмка способом 1)', dft_hdr_push: 'Уведомления', dft_g_m: 'M · Фото, видео и PDF на Google Диск', dft_m0: 'Google Диск подключён', dft_m0_na: 'состояние Диска видит только админ — проверится отправкой', dft_m1: 'Фото способом 1 (камера в приложении, без участия человека)', dft_m2: 'Видео способом 1 — ролик 3 с', dft_m3: 'Документ сохранён — фото и видео отправлены на Google Диск', dft_m4: 'Миниатюры с сервера и просмотр файлов с Диска', dft_m5: 'PDF ЧЕРНОВИКА на Диск не уходит', dft_m6: 'PDF отправленного документа ушёл на Google Диск', dft_m_prev: 'превью камеры не запустилось', dft_m_shot: 'кадр', dft_m_rec: 'запись ролика', dft_m_queue: 'файлы не встали в очередь', dft_m_limit: 'лимит видео в документе исчерпан', dft_m_nobtn: 'кнопки отправки PDF на Диск в документе нет', dft_p1: 'Работник отмечает «Нужен пропозал» — менеджер видит запрос «P?»', dft_p2: 'Статуса «Отправлен» у пропозала нет (клиенту пропозал не отправляется)', dft_p3: 'Согласующий отвязывает пропозал и привязывает снова', dft_p4: 'Работник видит привязанный пропозал, а привязать или отвязать не может', dft_i_push: 'Пуши за прогон: что ушло в очередь и отправлено', dft_push_none: 'в очереди пушей нет ни одной строки по тестовым документам', dft_push_bad: 'пуши не отправляются', dft_push_q: 'в очереди', dft_push_s: 'отправлено', dft_push_e: 'с ошибкой', dft_i_media: 'Файлы тестовых документов — в корзину Google Диска',
+    dft_g_c2: 'C2 · Второй согласующий — тот же круг от имени другого', dft_c2_ret: 'Работник сдаёт — второй согласующий возвращает на доработку', dft_c2_appr: 'Работник сдаёт снова — второй согласующий апрувит', dft_c2_deny: 'Запрос правки — второй согласующий отказывает', dft_c2_grant: 'Запрос правки — второй согласующий разрешает', dft_g_l: 'L · Запрет правки по давности и окно правки', dft_l0: 'Запрет правки по давности включён', dft_l1: 'Работник правит документ старше срока', dft_l2: 'Апрув → запрос → разрешение: работник правит старый документ внутри суточного окна', dft_l3: 'Запрет по давности возвращён в прежнее положение', dft_lock_off: 'запрет по давности выключен, а включить его может только админ', dft_days_w: 'дн.', dft_u_settings: 'включён галочкой в Настройках', dft_a2move: 'Менеджер переносит задачу — работнику в ленту «Задача перенесена»', dft_n_given: 'Работнику в ленту пришло «Задача передана вам»', dft_pdf_appr: 'PDF заапрувленного — со штампом APPROVED', dft_p_ui: 'Создаю пропозал кнопками: «Новый пропозал», поля, строка, «Сохранить»; принят в тест', dft_adopt_s: 'принят в тест служебно', dft_p_noright: 'кнопки «Новый пропозал» нет: создавать пропозалы менеджеру не разрешено в настройках', dft_g_r: 'R · Документ ремонта', dft_r1: 'Работник создаёт ремонт из задачи (строка работ, «Сохранить»)', dft_r2: 'Работник отправляет ремонт на апрув', dft_r3: 'Работник апрувит ремонт', dft_r4: 'Менеджер без права апрува апрувит ремонт', dft_r5: 'МЕНЕДЖЕР с правом апрува апрувит ремонт', dft_r5n: 'Работнику в ленту пришло «Ремонт апрувлен»', dft_r6: 'АДМИН отклоняет ремонт с причиной', dft_r7: 'Работник отправляет снова — АДМИН апрувит', dft_rep_arch: 'связанный ремонт не ушёл в архив с пояснением', dft_ar1: 'Экран «Архив»: пикапы в архиве с пояснением, удалённый документ на месте', dft_ar2: 'Экран «Архив»: «Вернуть из архива» и «Удалить навсегда»', dft_not_purged: 'документ не удалён насовсем', dft_f_off: 'Без связи: правка уходит в очередь; связь вернулась — конфликт → «Записать мои поверх»', dft_only_sb_w: 'шаг идёт только у ведущего-работника и только с сервером', dft_no_queue: 'правка не попала в очередь', dft_net_off: 'связь выключена', dft_net_on: 'связь включена',
+    dft_n_wait: 'Согласующему в ленту пришло «Ждёт апрува»', dft_n_withdrawn: 'Согласующему в ленту пришло «Документ отозван из согласования»', dft_n_req: 'Согласующему в ленту пришло «Запрос на правку документа»', dft_n_deleted: 'Работнику в ленту пришло «Задача удалена»', dft_s_waiting: '«Документооборот»: документ в разделе «Ждут апрува»', dft_s_returned: '«Документооборот»: документ в разделе «Возвращены на доработку»', dft_s_denied: '«Документооборот»: раздел «В правке отказано»', dft_s_reopened: '«Документооборот»: документ в разделе «В правке после апрува»', dft_s_retry: '«Документооборот»: отклонённая версия → кнопка «Записать заново»', dft_c_sum: 'Согласующий правит заапрувленный документ — вопрос про сумму апрува', dft_no_question: 'приложение не задало вопрос', dft_tag_missing: 'в номере нет сокращения сотрудника:', dft_no_tech_tok: 'в шаблоне номера нет {TECH}', dft_pdf_draft: 'PDF черновика — с пометкой DRAFT', dft_e_req: 'Заявка на продление сверх лимита кнопкой «Запросить…»', dft_e_req_no: 'Менеджер отклоняет заявку на продление', dft_e_helper: 'Помощник с «Общим доступом» забирает часть техники', dft_e_ret: '«Вернуть на склад»', dft_only_ui: 'шаг идёт только кнопками у ведущего-работника', dft_only_sb: 'решение по заявке работает только с сервером', dft_one_row: 'ожидает одна строка пикапа', dft_ret_auto: 'возврат на склад отмечен при «Забрал» (облегчённый склад)', dft_ret_nobtn: 'кнопки «Вернуть на склад» на главной нет', dft_cl_asked: 'вопрос про чек-лист задан', dft_u_staff: 'Сотрудники', dft_x_self: 'Настройка «менеджер апрувит свой инвойс» — второе положение (галочкой в Настройках) и возврат', dft_x_link: 'Настройка «привязка пропозала к запертому инвойсу» — второе положение и возврат', dft_x_right: 'Админ снимает помощнику «правка общих» — помощник документ не правит; галочка возвращена', dft_restore_fail: 'НЕ УДАЛОСЬ ВЕРНУТЬ НАСТРОЙКУ',
+    dft_yes: 'да', dft_hdr_env: 'Среда', dft_hdr_view: 'вид', dft_hdr_set: 'Настройки', dft_hdr_fn: 'Функция', dft_hdr_left: 'остатков', dft_ctx: 'контекст', dft_ctx_scr: 'экран', dft_ctx_ban: 'плашки', dft_end_feed: 'В ленту за прогон пришло', dft_end_audit: 'Записей журнала событий с пометкой test', dft_end_asked: 'Вопросов приложения, на которые тест ответил сам', dft_end_net: 'запросов к серверу', dft_js_err: 'Ошибки JavaScript во время теста', dft_big: 'Отчёт не помещается в память браузера — скачайте его файлом сейчас: после перезагрузки останется только конец.',
+    dft_a1ui: 'Создаю задачу кнопкой «Добавить задание» — без исполнителя', dft_a1as: 'Назначаю исполнителя в документе и сохраняю', dft_a2own: 'Работник сам создаёт задачу кнопкой «Добавить задание»', dft_adopt: 'Документ принят в тест (служебно: пометку «тестовый» ставит только функция)', dft_me: 'я', dft_pk_follow: 'пикапы едут за основным', dft_pk_lost: 'пикапы остались у прежнего исполнителя', dft_raw: 'запрос в обход интерфейса:', dft_service: 'служебно — пометку «тестовый» ставит только функция', dft_u_allboxes: 'все галочки бланка', dft_u_card: 'карточка задачи', dft_u_crew: 'бригада', dft_u_day: 'день', dft_u_empty: 'пусто', dft_u_menu: 'меню', dft_u_week: 'другая неделя', dft_u_expand: 'развернуть все разделы', dft_ui_avail: 'в интерфейсе ДОСТУПНО то, чего быть не должно', dft_ui_none: 'в интерфейсе нет того, что должно быть', dft_ui_noreason: 'пустая причина принята', dft_ui_notoast: 'нет поясняющей подсказки', dft_ui_off: 'элемент недоступен для нажатия', dft_ui_wait: 'не дождался',
+    tab_dft: 'Тест документооборота', dft_card: 'Тест документооборота',
+    dft_hint: 'Полный цикл документа под вашей ролью: шаги вашей роли идут настоящим путём приложения, шаги остальных ролей выполняет служебная функция dft. «+» — шаг должен пройти, «−» — сервер обязан отказать. Всё тестовое удаляется в конце; отчёт с запросами и ответами сервера можно скопировать или скачать.',
+    dft_on_q: 'Включить режим тестирования документооборота? Пока он включён, служебная функция может действовать от имени администратора и менеджера — только над тестовыми документами. Режим выключится сам по истечении срока.',
+    dft_need_sql: 'Сначала выполните supabase/update-to-1_09_31.sql', dft_on_done: 'Режим тестирования ВКЛЮЧЁН — не забудьте выключить', dft_off_done: 'Режим тестирования выключен', dft_warn_t: 'Включён режим тестирования',
+    dft_warn_text: 'Режим тестирования документооборота включён до {UNTIL} (включил(а) {WHO}). Пока он включён, служебная функция dft действует от имени администратора и менеджера над тестовыми документами. Настоящие документы она не трогает, но это потенциальная дыра — выключите режим, когда тестирование закончено.',
+    dft_warn_off: 'Выключить сейчас', dft_warn_keep: 'Оставить включённым', dft_cleaned: 'Тестовых документов убрано: {N}', dft_mode_on: 'Режим тестирования включён', dft_mode_off: 'Режим тестирования выключен',
+    dft_mode_until: 'до {UNTIL} · включил(а) {WHO}', dft_mode_h: 'Включает только администратор и только на срок. Каждое включение пишется в журнал событий.', dft_mode_btn_off: 'Выключить', dft_mode_btn_on: 'Включить', dft_h: 'ч',
+    dft_no_fn: 'Функция dft не отвечает — задеплойте supabase/functions/dft', dft_worker: 'Работник для шагов «от имени работника»', dft_worker2: 'Второй работник (помощник в бригаде)', dft_none: 'первый доступный',
+    dft_stepmode: 'Пошагово: ждать «Дальше» после каждого шага', dft_run: 'Запустить тест', dft_clean: 'Убрать остатки тестов: {N}', dft_stopping: 'Останавливаю после текущего шага…', dft_stopped: 'тест остановлен',
+    dft_next: 'Дальше', dft_stop: 'Остановить', dft_bg: 'Тест продолжается — отчёт будет в «Диагностике»', dft_skipped: 'пропущено', dft_no_actor: 'нет сотрудника для роли', dft_exp_ok: 'ждали успех, а сервер ответил',
+    dft_exp_err: 'ждали отказ', dft_but_ok: 'а запись ПРОШЛА', dft_got: 'получили', dft_no_notice: 'в ленте «Уведомления» нет строки', dft_ui_noopen: 'документ не открылся', dft_ui_bad: 'экран документа не такой, как ждали',
+    dft_ui_ro: 'документ открылся только для просмотра', dft_g_prep: 'Подготовка', dft_s_status: 'Режим включён, функция отвечает, роли найдены', dft_no_worker: 'нет работника для теста — заведите сотрудника с ролью «Сотрудник»',
+    dft_no_dirs: 'нет апарт-комплекса или вида задачи в справочниках', dft_s_clean0: 'Уборка остатков прошлых прогонов', dft_s_begin: 'Запуск записан в журнал событий', dft_g_a: 'A · Назначение и черновик',
+    dft_a1: 'Менеджер назначает задачу работнику (документ помечен тестовым, номера нет)', dft_a2: 'Работнику в ленту пришло «Новая задача»', dft_a3ui: 'Работник кнопками заполняет ВСЮ форму и технику, жмёт «Сохранить» — созданы пикапы',
+    dft_a3: 'Работник заполняет всю форму, технику и сохраняет черновик — созданы пикапы', dft_a4: 'Менеджер меняет технику в чужом документе', dft_a4ui: 'Экран менеджера: документ правится, техника — только просмотр', dft_c0ui: 'Экран согласующего: карточка апрува и «Вернуть на доработку»', dft_d3ui: 'Экран «Документооборот» показывает запрос на правку', dft_dfl_noreq: 'запроса нет в «Документообороте»', dft_a5: 'Менеджер правит остальное в чужом черновике',
+    dft_a6: 'Менеджер добавляет помощника — помощник видит документ', dft_a7: 'Помощник правит документ без «Общего доступа»', dft_a8: 'Основной включает «Общий доступ» — помощник правит документ',
+    dft_a9: 'Помощник меняет состав бригады', dft_a10: 'Работник сам меняет основного исполнителя', dft_a11: 'Менеджер переназначает основного в черновике и возвращает обратно', dft_pickups: 'пикапов',
+    dft_no_eq: 'в справочнике нет техники', dft_no_eq2: 'в справочнике меньше двух типов техники', dft_g_b: 'B · Отправка на согласование', dft_b1: '«Выполнено» без перевода',
+    dft_b2: 'Перевод внесён — «Выполнено»: документ на согласовании, номер выдан', dft_b3: 'Заморозка номера текстом без самого номера', dft_b4: 'Номер заморожен текстом; повторная заморозка его не меняет',
+    dft_b5: 'Работник правит документ на согласовании', dft_b6: 'Работник апрувит свой документ', dft_b7: 'Менеджер без права апрува апрувит', dft_b8: 'Менеджер меняет основного после «Выполнено»',
+    dft_b9: 'Работник удаляет отправленный документ', dft_b10: 'Экран работника: только просмотр, плашка и кнопка «Отозвать»', dft_b11: 'Работник отзывает документ (с правкой тем же сохранением) и сдаёт снова — номер прежний',
+    dft_real_no: 'номер взят из НАСТОЯЩЕЙ нумерации:', dft_already_frozen: 'номер уже заморожен приложением при сохранении', dft_g_c: 'C · Возврат и апрув', dft_c0: 'Менеджер без права ставит статус «Апрув» напрямую',
+    dft_c1: 'Согласующий возвращает на доработку с причиной', dft_c2: 'Работнику в ленту пришло «Возвращён на доработку»', dft_c3: 'Работник сдаёт снова — причина возврата очищена',
+    dft_c4: 'Админ апрувит с другой суммой — состав бригады зафиксирован', dft_c5: 'Работнику в ленту пришло «Инвойс апрувлен»', dft_c6: 'Работник правит заапрувленный документ', dft_c7: 'Работник отзывает заапрувленный документ',
+    dft_c8: 'Работник удаляет заапрувленный документ', dft_c9: 'Экран работника: «Апрув получен», кнопка «Запросить правку»', dft_c10: 'Менеджер с правом апрува апрувит СОБСТВЕННЫЙ инвойс', dft_g_d: 'D · Запрос правки',
+    dft_d1: 'Запрос без причины', dft_d2: 'Запрос от того, кто документ не правит', dft_d3: 'Работник отправляет запрос с причиной', dft_d4: 'Второй запрос на тот же документ', dft_d5: 'Менеджер без права решает запрос',
+    dft_d6: 'Админ отказывает с ответом — апрув цел', dft_d7: 'Работнику в ленту пришло «В правке отказано»', dft_d8: 'Решение по уже решённому запросу',
+    dft_d9: 'Новый запрос — админ разрешает: черновик, апрув снят, правка открыта на сутки', dft_d10: 'Работнику в ленту пришло «Апрув снят — документ в черновике»',
+    dft_d11: 'Запрос закрывается сам, когда согласующий вернул документ другим путём', dft_req_hidden: 'запрос этому пользователю не виден', dft_g_e: 'E · Пикап, заметка, продление, техника в архив',
+    dft_e1: 'Заметка пикапа — своя: инвойс и его ревизия не тронуты', dft_e2: 'Продление аренды: новая строка, исходная закрыта продлением', dft_e3: 'Технику убрали из инвойса — пикап ушёл в архив, строка сохранена',
+    dft_e4: '«Забрал» — ожидающих пикапов не осталось', dft_inv_touched: 'заметка пикапа изменила инвойс', dft_arch_kept: 'строка пикапа в архиве', dft_g_f: 'F · Двое сразу',
+    dft_f1: 'Админ поправил документ — запись работника со старой ревизией', dft_f2: 'Запись работника со свежей ревизией', dft_f3: 'Документ занят админом — работнику «занято» с именем; запрос доступа документ не отбирает',
+    dft_f4: 'Админ отпустил — работник берёт документ', dft_lock_taken_bad: 'работник отобрал документ у админа', dft_g_g: 'G · Пропозал и привязка', dft_g1: 'Работник создаёт пропозал',
+    dft_g2: 'Тестовый пропозал создан служебно', dft_g3: 'Работник снова отправляет документ на согласование', dft_g4: 'Менеджер привязывает пропозал к запертому инвойсу',
+    dft_g5: 'Админ привязывает пропозал — документ остаётся запертым, ревизия не растёт', dft_g_h: 'H · Удаление', dft_h1: 'Работник удаляет документ, который ни разу не отправляли',
+    dft_h2: 'Работник удаляет документ с выданным номером', dft_h3: 'Админ удаляет отправленный документ', dft_h4: 'Функция и НАСТОЯЩИЙ документ: чтение и апрув', dft_no_real: 'настоящих документов в кэше нет',
+    dft_g_i: 'I · Уборка', dft_i1: 'Все тестовые документы удалены насовсем', dft_left: 'остались тестовые документы:', dft_deleted: 'удалено', dft_total: 'ИТОГ', act_dft_on: 'режим тестирования включён',
+    act_dft_off: 'режим тестирования выключен', act_dft_run: 'запуск теста документооборота',
+    /* v1.09.26: документооборот — исправления по разбору */
+    arch_pk_title: 'Пикапы в архиве', arch_pk_hint: 'Техника, убранная из инвойса: строка пикапа не удаляется, а остаётся здесь с пояснением. Склад вернул её так же, как при удалении.',
+    arch_by_hand: 'Удалён вручную', arch_linked: 'был связан с', arch_with: 'В архив вместе с документом {DOC}',
+    tab_docflow: 'Документооборот', tab_docflow_s: 'Док-оборот', dfl_open: 'нажмите, чтобы открыть «Документооборот»', dfl_gone: 'Документа больше нет', dfl_retry: 'Записать заново', dfl_drop: 'Убрать',
+    dfl_retry_q: 'Записать вашу версию поверх той, что сейчас на сервере? Правки коллег в этом документе будут заменены вашими.', dfl_drop_q: 'Убрать вашу неотправленную версию? Восстановить её будет нельзя.',
+    dfl_nobody: 'без исполнителя', dfl_days: 'дн.', dfl_acc: 'отметка бухгалтерии', dfl_hint: 'Документы, с которыми что-то не так или которые ждут действия. Нажмите строку — откроется документ. Число на значке меню — то, что ждёт именно вас.',
+    dfl_empty: 'С документами всё в порядке', dfl_s_problems: 'Не записано на сервер', dfl_h_problems: 'Сервер отклонил запись. Ваша версия сохранена на ЭТОМ устройстве: откройте документ, запишите её заново или уберите.',
+    dfl_s_returned: 'Возвращены на доработку', dfl_s_reopened: 'В правке после апрува', dfl_h_reopened: 'Апрув снят по запросу на правку. Пока документ не сдан заново, он выпадает из реестра бухгалтерии.',
+    dfl_s_notr: 'Без перевода', dfl_h_notr: 'Без английского текста документ на согласование не уйдёт.', dfl_s_waiting: 'Ждут апрува', dfl_h_waiting: 'Апрув ставит согласующий.',
+    dfl_s_denied: 'В правке отказано', dfl_s_sum: 'Апрув не совпадает с расчётом', dfl_h_sum: 'После апрува документ правили, и расчётная сумма изменилась. Откройте документ и обновите апрув или верните сумму.',
+    dfl_s_orphan: 'Документы заблокированных сотрудников', dfl_h_orphan: 'Исполнитель заблокирован, документ не закрыт. Откройте документ и назначьте другого основного (☆ у члена бригады).',
+    dfl_orphan_toast: 'У заблокированного сотрудника незакрытых документов: {N}. Нажмите — переназначить', inv_drive_draft: 'На Диск уходит инвойс, отправленный на согласование: у черновика ещё нет номера. Отметьте «Задача выполнена» и сохраните.',
+    pl_arch_removed: 'Техника удалена из инвойса {DOC}', pk_note_title: 'Заметка пикапа', pk_note_inv: 'Заметка инвойса (только чтение)', pk_note_own: 'Заметка пикапа',
+    pk_note_hint: 'Заметка остаётся в пикапе: в инвойс и его PDF она не попадает.',
+    df_rej_FORBIDDEN_EQUIPMENT: 'Технику в чужом документе менеджер не меняет: это пикапы и склад исполнителя. Правит исполнитель или администратор',
+    df_rej_FORBIDDEN_FIELD: 'Исполнителя меняет администратор; менеджер — только пока документ в черновике', df_rej_TRANSLATION_REQUIRED: 'На согласование уходит только полностью переведённый документ — сформируйте переводы',
+    df_rej_SELF_APPROVE_OFF: 'Собственный инвойс апрувит другой согласующий: так настроил администратор', df_rej_LINK_LOCKED: 'Инвойс заперт. Привязку пропозала к запертому инвойсу должен разрешить администратор: Настройки → Настройки документов → «Аренда оборудования и права» → «Менеджер привязывает пропозал к запертому инвойсу»',
+    df_rej_LOCKED: 'Документ старше срока, разрешённого для правки, — правит менеджер или администратор', df_rej_NO_RIGHTS: 'Нет прав на эту запись — документ перечитан с сервера', df_rej_ERROR: 'Сервер не принял запись',
+    self_approve_chk: 'Менеджер может апрувить собственный инвойс', mgr_link_chk: 'Менеджер привязывает пропозал к запертому инвойсу', pdf_draft_chk: 'PDF черновика — с пометкой DRAFT', pdf_appr_chk: 'PDF заапрувленного — с пометкой APPROVED',
+    eq_ro_note: 'Техника — только просмотр', eq_ro_why: 'Технику в чужом документе менеджер не меняет: каждая позиция — это пикап и техника со склада или из машины исполнителя. Изменить её может исполнитель документа или администратор.',
+    df_self_appr: 'Это ваш собственный инвойс — его апрувит другой согласующий. Разрешить апрув своих инвойсов может администратор (Настройки → Настройки документов).',
+    df_sum_q: 'Сумма документа изменилась: апрув {OLD}, расчёт теперь {NEW}. Обновить апрувленную сумму до {NEW}? «Отмена» — оставить {OLD}.',
+    tr_need_title: 'Нужен перевод', tr_need_text: 'На согласование уходит только полностью переведённый документ. Без английского текста полей: {N}.', tr_need_btn: 'Сформировать переводы',
+    tr_need_manual: 'Переведу сам', tr_need_hint: 'Перевод делается на этом устройстве и требует сети. После перевода документ сохранится и уйдёт на согласование сам.', tr_need_left: 'Перевести удалось не всё, осталось полей: {N}. Впишите перевод вручную в карточке «Перевод для PDF»',
+    act_pickup_archive: 'пикап в архив', act_pickup_note: 'заметка пикапа', act_approve_resum: 'апрувленная сумма обновлена',
+    /* v1.09.25: документооборот инвойса */
+    df_lock_free: 'Документ свободен — можно править', df_lock_taken: 'Документ у вас — можно править', df_lock_asked: 'Коллеге ушло уведомление. Документ откроется для правки сам, как только освободится',
+    df_lock_wait: 'Документ ещё занят — откроется для правки сам, как только освободится', df_lock_by: 'Сейчас редактирует {NAME}', df_lock_since: 'с', df_lock_h: 'двое сразу один документ не правят',
+    df_lock_force: 'Забрать документ', df_lock_ask: 'Запросить редактирование',
+    df_rej_STALE_DOC: 'Документ изменил кто-то другой — ваша запись не прошла', df_rej_DOC_LOCKED_DONE: 'Документ на согласовании — правка закрыта. Сначала отзовите его',
+    df_rej_DOC_LOCKED_APPROVED: 'Документ заапрувлен — правка закрыта. Отправьте запрос на правку', df_rej_DOC_LOCKED_DELETE: 'Удалить выполненный документ может только администратор',
+    df_rej_FORBIDDEN_CREW: 'Состав бригады меняет основной исполнитель, менеджер или администратор', df_rej_FORBIDDEN_APPROVE: 'У вас нет права апрува',
+    df_cf_title: 'Документ изменил другой человек', df_cf_text: 'Пока вы правили, документ сохранил(а) {WHO} · {AT}. Ваши правки на сервер не записаны.',
+    df_cf_fresh: 'Открыть свежую версию', df_cf_mine: 'Записать мои правки поверх', df_cf_hint: '«Поверх» сотрёт то, что записал коллега. Если не уверены — откройте свежую версию и внесите правки заново.',
+    df_withdraw: 'Отозвать из согласования', df_withdraw_q: 'Отозвать документ из согласования? Он вернётся в черновик, согласующие получат уведомление.', df_withdrawn: 'Документ отозван — можно править',
+    df_return: 'Вернуть на доработку', df_return_h: 'Документ вернётся исполнителю в черновик. Причина обязательна — её увидит вся бригада.', df_return_ph: 'Что исправить…',
+    df_reason_req: 'Напишите причину (от 3 знаков)', df_returned: 'Возвращён на доработку', df_need_sql: 'Сначала выполните supabase/update-to-1_09_25.sql',
+    df_req: 'Запросить правку', df_req_h: 'Документ заапрувлен. Напишите, что нужно исправить: согласующий разрешит правку (документ вернётся в черновик) или откажет.',
+    df_req_ph: 'Что и почему нужно исправить…', df_req_send: 'Отправить запрос', df_req_dup: 'Запрос на этот документ уже ждёт решения', df_req_sent: 'Запрос отправлен',
+    df_req_deny_ph: 'Причина отказа (можно оставить пустой)', df_req_granted_note: 'Правка разрешена', df_req_granted: 'Правка разрешена — документ в черновике', df_req_denied: 'В правке отказано',
+    df_req_pending: 'Запрос на правку отправлен — ждёт решения', df_req_was_denied: 'в правке отказано', df_req_from: 'Запрос на правку:', df_req_grant: 'Разрешить', df_req_deny: 'Отказать', df_reqs: 'Запросы на правку',
+    df_ro_done: 'На согласовании — правка закрыта', df_ro_done_h: 'Нужно исправить — отзовите документ кнопкой внизу: он вернётся в черновик.', df_ro_view_h: 'Документ открыт только для просмотра.',
+    df_ro_appr: 'Апрув получен — правка закрыта', df_ro_appr_h: 'Нужна правка — отправьте запрос кнопкой внизу.', df_ro_crew: 'Вы в бригаде — документ для просмотра',
+    df_ro_crew_h: 'Правит основной исполнитель. Фото и видео добавлять можно.', df_ret_ban: 'Возвращён на доработку',
+    df_edited: 'Изменён', df_open_until: 'правка открыта до', df_done_h: 'После отметки документ уходит на согласование и запирается. Исправить можно, отозвав его.',
+    df_appr_note: 'После апрува документ заперт; исполнитель правит его только через запрос на правку.', df_main: 'Основной исполнитель: его сокращение в номере, он правит документ', df_main_set: 'Сделать основным исполнителем',
+    df_tag: 'Сокр.', df_tag_t: 'Сокращение сотрудника для номера документа: 2–4 латинские буквы или цифры, у каждого своё', df_r_edit: 'правка общих', df_r_appr: 'апрув', df_r_ann: 'объявления',
+    df_rights_tip: 'Сокращение попадает в номер инвойса (кусочек {TECH} в шаблоне номера) в момент, когда документ впервые сохраняют НЕ черновиком. «Правка общих» — помощник может править документ, где основной включил «Общий доступ». «Апрув» — менеджер апрувит инвойсы и ремонты, возвращает на доработку и решает запросы на правку (админ может всегда). «Объявления» — сотрудник пишет в «Важные объявления».',
+    df_tag_taken: 'Такое сокращение уже занято', df_tag_bad: 'Сокращение — от 2 до 4 латинских букв или цифр', df_appr_moved: 'Право апрува теперь личное: Справочники → Сотрудники, галочка «апрув» у менеджера.',
+    ntf_empty: 'Уведомлений пока нет', ch_ntf: 'Уведомления', ch_ntf_sub: 'журнал ваших документов: назначения, статусы, пикапы', ch_ntf_ro: 'Сюда пишет только система. Нажмите на строку — откроется документ',
+    act_job_return: 'возврат на доработку', act_job_overwrite: 'запись поверх чужой правки', act_edit_request: 'запрос на правку', act_edit_request_granted: 'правка разрешена', act_edit_request_denied: 'в правке отказано', act_doc_rights: 'права сотрудника на документы',
     apv_title: 'На апруве', apv_banner: 'Ждут апрува: {N}',
     apv_jobs: 'Задачи — выполнено, ждут апрува', apv_reps: 'Ремонты — отправлены на апрув',
     apv_props: 'Пропозалы — отправлены', apv_empty: 'Апрувов не ждёт ничего 🎉',
@@ -921,8 +1016,8 @@ const I18N = {
     ap_tip: 'Считаются все выставленные документы (не черновики и не архив) за всё время, а не только за выбранный период. Срок оплаты = дата документа + Net N дней (N задаётся на вкладке «Проценты», по умолчанию 30). «Поступило за период» — оплаты с датой внутри периода, выбранного в «Реестре». Оплаты видят только админ и бухгалтер.',
     ap_need_sql: 'Учёт оплат появится после supabase/update-to-1_09_15.sql', ap_terms_lbl: 'Срок оплаты, дней (Net)', ap_terms_hint: 'От даты документа. 0 — оплата сразу. По умолчанию 30 — как в приписке «NET DUE 30 DAYS» на бланке.',
     act_acc_pay_add: 'записана оплата', act_acc_pay_del: 'удалена оплата',
-    tab_chat: 'Сообщения', ch_ann: 'Объявления', ch_all: 'Общий чат', ch_ann_sub: 'важное от менеджера и админа — читают все', ch_all_sub: 'пишут и читают все сотрудники',
-    ch_ann_ro: 'В «Объявления» пишут менеджер и администратор', ch_ph: 'Сообщение…', ch_q_ph: 'Найти сотрудника', ch_pick: 'Выберите переписку слева', ch_you: 'Вы',
+    tab_chat: 'Сообщения', ch_ann: 'Важные объявления', ch_all: 'Общий чат', ch_ann_sub: 'пишет ограниченный круг — читают все, пуш не отключается', ch_all_sub: 'пишут и читают все сотрудники',
+    ch_ann_ro: 'В «Важные объявления» пишут админ, менеджеры, бухгалтер и те, кому админ дал это право', ch_ph: 'Сообщение…', ch_q_ph: 'Найти сотрудника', ch_pick: 'Выберите переписку слева', ch_you: 'Вы',
     chm_empty: 'Сообщений пока нет — напишите первым', ch_empty_ann: 'Объявлений пока нет', ch_new: 'новые сообщения', ch_important: 'Важно', ch_imp_t: 'Пометить сообщение важным',
     ch_attach: 'Приложить документ', ch_pick_ph: 'Юнит, комплекс или номер документа', ch_pick_none: 'Ничего не найдено', ch_doc_locked: 'нет доступа или документ удалён',
     ch_del_t: 'Удалить сообщение?', ch_del_q: 'Сообщение исчезнет у всех участников переписки.', ch_banner: 'Новые сообщения', ch_open: 'Открыть чат', ch_open_later: 'Пришло сообщение — откройте «Сообщения», когда сохраните документ',
@@ -1624,9 +1719,9 @@ const I18N = {
     push_denied: 'Blocked by the browser — allow them in site settings',
     push_unsupported: 'This browser does not support push notifications',
     push_ios_hint: 'iPhone/iPad: first “Share → Add to Home Screen”; push works only from the installed app (iOS 16.4+)',
-    push_kinds: 'What to receive', push_k_job: 'New job',
-    push_k_pickup: 'New pickup', push_k_approve: 'Document approved',
-    push_k_overdue: 'Pickup overdue', push_k_reset: 'Approval reset',
+    push_kinds: 'What to receive', push_k_job: 'New job · added to the crew · removed from a job',
+    push_k_pickup: 'New pickup', push_k_approve: 'Document approved · awaiting approval · edit request',
+    push_k_overdue: 'Pickup overdue', push_k_reset: 'Approval reset · returned for rework · edit request answered',
     push_k_bn_alert: 'Vehicle alerts (Check Engine, fuel)', push_k_bn_service: 'Service due',
     push_tip: 'Checkboxes choose what YOU receive. The button enables push on this phone or computer; press it again on every other device.',
     push_need_deploy: 'Deploy the push Edge Function (functions-dashboard/push)',
@@ -2197,6 +2292,101 @@ const I18N = {
     mq_docs: 'docs', mq_photo: 'photo', mq_video: 'video',
     /* v1.08.46 */
     sel_clear: 'Clear field',
+    /* v1.09.27: workflow test */
+    prop_send_chk: 'The "Sent" proposal status (sending to the client)', prop_send_off: 'Proposals are not sent to the client: the "Sent" status is off. The admin can turn it on — Settings → Proposals', dft_wide: 'Notifications and pushes — to all participants, not only me', dft_media_chk: 'Photo, video and PDF to Google Drive (capture method 1)', dft_hdr_push: 'Notifications', dft_g_m: 'M · Photo, video and PDF to Google Drive', dft_m0: 'Google Drive is connected', dft_m0_na: 'only the admin sees the Drive state — the upload will tell', dft_m1: 'Photos with method 1 (in-app camera, no human involved)', dft_m2: 'Video with method 1 — a 3 s clip', dft_m3: 'The document is saved — photos and video are uploaded to Google Drive', dft_m4: 'Server thumbnails and viewing files from Drive', dft_m5: 'A DRAFT PDF does not go to Drive', dft_m6: 'The PDF of the submitted document went to Google Drive', dft_m_prev: 'the camera preview did not start', dft_m_shot: 'shot', dft_m_rec: 'recording a clip', dft_m_queue: 'files did not reach the queue', dft_m_limit: 'the document video limit is used up', dft_m_nobtn: 'the document has no Send PDF to Drive button', dft_p1: 'The worker ticks "Proposal needed" — a manager sees the "P?" request', dft_p2: 'A proposal has no "Sent" status (proposals are not sent to the client)', dft_p3: 'An approver unlinks the proposal and links it again', dft_p4: 'The worker sees the linked proposal but cannot link or unlink', dft_i_push: 'Pushes of the run: queued and sent', dft_push_none: 'the push queue has no rows for the test documents', dft_push_bad: 'pushes are not being sent', dft_push_q: 'queued', dft_push_s: 'sent', dft_push_e: 'failed', dft_i_media: 'Files of the test documents — to the Google Drive trash',
+    dft_g_c2: 'C2 · The second approver — the same round by the other one', dft_c2_ret: 'The worker submits — the second approver returns it', dft_c2_appr: 'The worker resubmits — the second approver approves', dft_c2_deny: 'Edit request — the second approver refuses', dft_c2_grant: 'Edit request — the second approver allows', dft_g_l: 'L · Age lock and the edit window', dft_l0: 'The age lock is on', dft_l1: 'The worker edits a document older than the period', dft_l2: 'Approve → request → permission: the worker edits the old document inside the one-day window', dft_l3: 'The age lock is back to its previous position', dft_lock_off: 'the age lock is off and only the admin can turn it on', dft_days_w: 'd', dft_u_settings: 'turned on with the Settings checkbox', dft_a2move: 'A manager moves the job — the worker gets "Job moved" in the feed', dft_n_given: 'The worker got "Job handed to you"', dft_pdf_appr: 'An approved PDF carries the APPROVED stamp', dft_p_ui: 'Creating a proposal with buttons: New proposal, fields, a row, Save; adopted into the test', dft_adopt_s: 'adopted by the service call', dft_p_noright: 'no New proposal button: managers are not allowed to create proposals in the settings', dft_g_r: 'R · Repair document', dft_r1: 'The worker creates a repair from the job (a work row, Save)', dft_r2: 'The worker sends the repair for approval', dft_r3: 'The worker approves the repair', dft_r4: 'A manager without the right approves the repair', dft_r5: 'A MANAGER with the approve right approves the repair', dft_r5n: 'The worker got "Repair approved"', dft_r6: 'The ADMIN declines the repair with a reason', dft_r7: 'The worker sends it again — the ADMIN approves', dft_rep_arch: 'the linked repair was not archived with a note', dft_ar1: 'Archive screen: archived pickups with a note, the deleted document is there', dft_ar2: 'Archive screen: Restore and Delete for good', dft_not_purged: 'the document was not deleted for good', dft_f_off: 'Offline: the edit goes to the queue; back online — conflict → Write my changes over it', dft_only_sb_w: 'this step runs only when a worker leads and only with the server', dft_no_queue: 'the edit did not reach the queue', dft_net_off: 'connection turned off', dft_net_on: 'connection turned on',
+    dft_n_wait: 'The approver got "Awaiting approval" in the feed', dft_n_withdrawn: 'The approver got "Withdrawn from approval"', dft_n_req: 'The approver got "Edit request"', dft_n_deleted: 'The worker got "Job deleted"', dft_s_waiting: 'Workflow: the document is under Awaiting approval', dft_s_returned: 'Workflow: the document is under Returned for rework', dft_s_denied: 'Workflow: the Edit refused section', dft_s_reopened: 'Workflow: the document is under Being edited after approval', dft_s_retry: 'Workflow: a refused version → the Write again button', dft_c_sum: 'An approver edits an approved document — the approved-amount question', dft_no_question: 'the app did not ask', dft_tag_missing: 'the number lacks the employee tag:', dft_no_tech_tok: 'the number template has no {TECH}', dft_pdf_draft: 'A draft PDF carries the DRAFT mark', dft_e_req: 'Over-limit extension request with the Request button', dft_e_req_no: 'A manager rejects the extension request', dft_e_helper: 'A helper with Shared access picks up part of the equipment', dft_e_ret: 'Return to stock', dft_only_ui: 'this step runs only with buttons when a worker leads', dft_only_sb: 'deciding a request works only with the server', dft_one_row: 'one pickup row is pending', dft_ret_auto: 'the return was recorded on pickup (light stock mode)', dft_ret_nobtn: 'there is no Return to stock button on Home', dft_cl_asked: 'the checklist question was asked', dft_u_staff: 'Staff', dft_x_self: 'The "manager approves own invoice" switch — the other position (Settings checkbox) and back', dft_x_link: 'The "link a proposal to a locked invoice" switch — the other position and back', dft_x_right: 'The admin unticks the helper\'s edit-shared box — the helper cannot edit; the box is ticked back', dft_restore_fail: 'FAILED TO RESTORE THE SETTING',
+    dft_yes: 'yes', dft_hdr_env: 'Environment', dft_hdr_view: 'view', dft_hdr_set: 'Settings', dft_hdr_fn: 'Function', dft_hdr_left: 'leftovers', dft_ctx: 'context', dft_ctx_scr: 'screen', dft_ctx_ban: 'banners', dft_end_feed: 'Feed rows received during the run', dft_end_audit: 'Event journal rows tagged test', dft_end_asked: 'App questions the test answered itself', dft_end_net: 'server requests', dft_js_err: 'JavaScript errors during the test', dft_big: 'The report does not fit into browser storage — download it as a file now: after a reload only its tail remains.',
+    dft_a1ui: 'Creating a job with the Add job button — unassigned', dft_a1as: 'Assigning the lead in the document and saving', dft_a2own: 'The worker creates a job himself with the Add job button', dft_adopt: 'The document is adopted into the test (service call: only the function sets the test flag)', dft_me: 'me', dft_pk_follow: 'pickups follow the lead', dft_pk_lost: 'pickups stayed with the previous lead', dft_raw: 'request bypassing the UI:', dft_service: 'service call — only the function sets the test flag', dft_u_allboxes: 'every checkbox of the form', dft_u_card: 'job card', dft_u_crew: 'crew', dft_u_day: 'day', dft_u_empty: 'empty', dft_u_menu: 'menu', dft_u_week: 'another week', dft_u_expand: 'expand all sections', dft_ui_avail: 'the UI OFFERS what it must not', dft_ui_none: 'the UI lacks what it must have', dft_ui_noreason: 'an empty reason was accepted', dft_ui_notoast: 'no explaining hint', dft_ui_off: 'the element cannot be pressed', dft_ui_wait: 'timed out waiting for',
+    tab_dft: 'Workflow test', dft_card: 'Workflow test',
+    dft_hint: 'The full document cycle under your role: your own steps go the real app way, the other roles are played by the dft helper function. "+" must pass, "−" must be refused by the server. Everything created is deleted at the end; the report with server requests and answers can be copied or downloaded.',
+    dft_on_q: 'Turn the workflow test mode on? While it is on, the helper function may act as the admin and a manager — on test documents only. The mode turns itself off when the period ends.',
+    dft_need_sql: 'Run supabase/update-to-1_09_31.sql first', dft_on_done: 'Test mode is ON — remember to turn it off', dft_off_done: 'Test mode is off', dft_warn_t: 'Test mode is on',
+    dft_warn_text: 'The workflow test mode is on until {UNTIL} (turned on by {WHO}). While it is on, the dft helper function acts as the admin and a manager on test documents. It never touches real documents, but it is a potential hole — turn the mode off when testing is over.',
+    dft_warn_off: 'Turn off now', dft_warn_keep: 'Keep it on', dft_cleaned: 'Test documents removed: {N}', dft_mode_on: 'Test mode is on', dft_mode_off: 'Test mode is off', dft_mode_until: 'until {UNTIL} · turned on by {WHO}',
+    dft_mode_h: 'Only the admin turns it on, and only for a period. Every switch is written to the event journal.', dft_mode_btn_off: 'Turn off', dft_mode_btn_on: 'Turn on', dft_h: 'h',
+    dft_no_fn: 'The dft function does not answer — deploy supabase/functions/dft', dft_worker: 'Worker for the "as a worker" steps', dft_worker2: 'Second worker (crew helper)', dft_none: 'first available',
+    dft_stepmode: 'Step by step: wait for "Next" after every step', dft_run: 'Run the test', dft_clean: 'Remove test leftovers: {N}', dft_stopping: 'Stopping after the current step…', dft_stopped: 'test stopped', dft_next: 'Next',
+    dft_stop: 'Stop', dft_bg: 'The test keeps running — the report will be in Diagnostics', dft_skipped: 'skipped', dft_no_actor: 'no employee for role', dft_exp_ok: 'expected success, the server said',
+    dft_exp_err: 'expected refusal', dft_but_ok: 'but the write WENT THROUGH', dft_got: 'got', dft_no_notice: 'the Notifications feed has no row', dft_ui_noopen: 'the document did not open',
+    dft_ui_bad: 'the document screen is not as expected', dft_ui_ro: 'the document opened view-only', dft_g_prep: 'Preparation', dft_s_status: 'Mode on, function answers, roles found',
+    dft_no_worker: 'no worker for the test — add an employee with the Technician role', dft_no_dirs: 'no complex or job type in the directories', dft_s_clean0: 'Leftovers of earlier runs removed',
+    dft_s_begin: 'The run is written to the event journal', dft_g_a: 'A · Assignment and draft', dft_a1: 'A manager assigns a job to the worker (flagged as test, no number)', dft_a2: 'The worker got "New job" in the feed',
+    dft_a3ui: 'The worker fills the WHOLE form and equipment with the controls and presses Save — pickups created', dft_a3: 'The worker fills the whole form and equipment, saves the draft — pickups created',
+    dft_a4: 'A manager changes equipment in someone else\'s document', dft_a4ui: 'Manager screen: the document is editable, equipment is view-only', dft_c0ui: 'Approver screen: approval card and Return for rework', dft_d3ui: 'The Workflow screen shows the edit request', dft_dfl_noreq: 'the request is missing from Workflow', dft_a5: 'A manager edits the rest of someone else\'s draft', dft_a6: 'A manager adds a helper — the helper sees the document',
+    dft_a7: 'The helper edits without Shared access', dft_a8: 'The lead turns Shared access on — the helper edits', dft_a9: 'The helper changes the crew', dft_a10: 'The worker changes the lead himself',
+    dft_a11: 'A manager reassigns the lead in a draft and back', dft_pickups: 'pickups', dft_no_eq: 'no equipment in the directory', dft_no_eq2: 'fewer than two equipment types in the directory',
+    dft_g_b: 'B · Sending for approval', dft_b1: '"Done" without translation', dft_b2: 'Translation added — "Done": awaiting approval, number issued', dft_b3: 'Freezing the number with a text lacking the number',
+    dft_b4: 'Number text frozen; freezing again does not change it', dft_b5: 'The worker edits a document awaiting approval', dft_b6: 'The worker approves his own document', dft_b7: 'A manager without the right approves',
+    dft_b8: 'A manager changes the lead after "Done"', dft_b9: 'The worker deletes a submitted document', dft_b10: 'Worker screen: view only, banner and Withdraw button',
+    dft_b11: 'The worker withdraws (with an edit in the same save) and resubmits — same number', dft_real_no: 'the number came from the REAL numbering:', dft_already_frozen: 'the app already froze the number on save',
+    dft_g_c: 'C · Return and approval', dft_c0: 'A manager without the right sets Approved directly', dft_c1: 'An approver returns for rework with a reason', dft_c2: 'The worker got "Returned for rework"',
+    dft_c3: 'The worker resubmits — the return reason is cleared', dft_c4: 'The admin approves with another amount — the crew is recorded', dft_c5: 'The worker got "Invoice approved"',
+    dft_c6: 'The worker edits an approved document', dft_c7: 'The worker withdraws an approved document', dft_c8: 'The worker deletes an approved document', dft_c9: 'Worker screen: "Approved", Request an edit button',
+    dft_c10: 'A manager with the approve right approves their OWN invoice', dft_g_d: 'D · Edit request', dft_d1: 'Request without a reason', dft_d2: 'Request from someone who does not edit the document',
+    dft_d3: 'The worker sends a request with a reason', dft_d4: 'Second request for the same document', dft_d5: 'A manager without the right decides the request', dft_d6: 'The admin refuses with an answer — approval intact',
+    dft_d7: 'The worker got "Edit refused"', dft_d8: 'Deciding an already decided request', dft_d9: 'New request — the admin allows: draft, approval reset, editing open for a day',
+    dft_d10: 'The worker got "Approval reset — document is a draft"', dft_d11: 'A request closes by itself when the approver returned the document another way', dft_req_hidden: 'the request is not visible to this user',
+    dft_g_e: 'E · Pickup, note, extension, archived equipment', dft_e1: 'The pickup note is its own: the invoice and its revision untouched', dft_e2: 'Rental extension: a new row, the original closed by the extension',
+    dft_e3: 'Equipment removed from the invoice — the pickup is archived, the row kept', dft_e4: '"Picked up" — no pending pickups left', dft_inv_touched: 'the pickup note changed the invoice', dft_arch_kept: 'pickup row archived',
+    dft_g_f: 'F · Two at once', dft_f1: 'The admin edited the document — the worker writes with a stale revision', dft_f2: 'The worker writes with the fresh revision',
+    dft_f3: 'Locked by the admin — the worker gets "busy" with the name; asking does not take it over', dft_f4: 'The admin released it — the worker takes the document',
+    dft_lock_taken_bad: 'the worker took the document from the admin', dft_g_g: 'G · Proposal and linking', dft_g1: 'The worker creates a proposal', dft_g2: 'A test proposal is created by the service call',
+    dft_g3: 'The worker sends the document for approval again', dft_g4: 'A manager links a proposal to a locked invoice', dft_g5: 'The admin links the proposal — the document stays locked, the revision does not grow',
+    dft_g_h: 'H · Deletion', dft_h1: 'The worker deletes a never-submitted document', dft_h2: 'The worker deletes a document with an issued number', dft_h3: 'The admin deletes a submitted document',
+    dft_h4: 'The function and a REAL document: read and approve', dft_no_real: 'no real documents in the cache', dft_g_i: 'I · Cleanup', dft_i1: 'All test documents are deleted for good', dft_left: 'test documents left:',
+    dft_deleted: 'deleted', dft_total: 'TOTAL', act_dft_on: 'test mode turned on', act_dft_off: 'test mode turned off', act_dft_run: 'workflow test run',
+    /* v1.09.26: workflow — review fixes */
+    arch_pk_title: 'Archived pickups', arch_pk_hint: 'Equipment removed from an invoice: the pickup row is not deleted, it stays here with an explanation. The stock got it back the same way as on deletion.',
+    arch_by_hand: 'Deleted by hand', arch_linked: 'was linked with', arch_with: 'Archived together with document {DOC}',
+    tab_docflow: 'Workflow', tab_docflow_s: 'Workflow', dfl_open: 'tap to open Workflow', dfl_gone: 'The document no longer exists', dfl_retry: 'Write again', dfl_drop: 'Discard',
+    dfl_retry_q: 'Write your version over the one on the server now? Your colleagues\' edits in this document will be replaced by yours.', dfl_drop_q: 'Discard your unsent version? It cannot be restored.',
+    dfl_nobody: 'unassigned', dfl_days: 'd', dfl_acc: 'accounting mark', dfl_hint: 'Documents that have a problem or wait for an action. Tap a row to open the document. The number on the menu badge is what waits for you.',
+    dfl_empty: 'All documents are fine', dfl_s_problems: 'Not written to the server', dfl_h_problems: 'The server refused the write. Your version is kept on THIS device: open the document, write it again or discard it.',
+    dfl_s_returned: 'Returned for rework', dfl_s_reopened: 'Being edited after approval', dfl_h_reopened: 'The approval was reset on an edit request. Until resubmitted the document drops out of the accounting register.',
+    dfl_s_notr: 'No translation', dfl_h_notr: 'A document without English text will not go for approval.', dfl_s_waiting: 'Awaiting approval', dfl_h_waiting: 'An approver approves it.',
+    dfl_s_denied: 'Edit refused', dfl_s_sum: 'Approved amount differs from the total', dfl_h_sum: 'The document was edited after approval and the total changed. Open it and update the approval or restore the total.',
+    dfl_s_orphan: 'Documents of blocked employees', dfl_h_orphan: 'The lead is blocked and the document is not closed. Open it and make someone else the lead (☆ on a crew member).',
+    dfl_orphan_toast: 'The blocked employee has open documents: {N}. Tap to reassign', inv_drive_draft: 'Only an invoice sent for approval goes to Drive: a draft has no number yet. Tick "Job done" and save.',
+    pl_arch_removed: 'Equipment removed from invoice {DOC}', pk_note_title: 'Pickup note', pk_note_inv: 'Invoice note (read-only)', pk_note_own: 'Pickup note',
+    pk_note_hint: 'The note stays with the pickup: it does not go into the invoice or its PDF.',
+    df_rej_FORBIDDEN_EQUIPMENT: 'A manager does not change equipment in someone else\'s document: it is the lead\'s pickups and stock. The lead or the admin edits it',
+    df_rej_FORBIDDEN_FIELD: 'The lead is changed by the admin; a manager can do it only while the document is a draft', df_rej_TRANSLATION_REQUIRED: 'Only a fully translated document goes for approval — generate the translations',
+    df_rej_SELF_APPROVE_OFF: 'Your own invoice is approved by another approver: the admin set it so', df_rej_LINK_LOCKED: 'The invoice is locked. Linking a proposal to a locked invoice must be allowed by the admin: Settings → Document settings → "Equipment rental and rights" → "Manager links a proposal to a locked invoice"',
+    df_rej_LOCKED: 'The document is older than the editing period — a manager or the admin edits it', df_rej_NO_RIGHTS: 'No rights for this write — the document was re-read from the server', df_rej_ERROR: 'The server did not accept the write',
+    self_approve_chk: 'A manager may approve their own invoice', mgr_link_chk: 'Manager links a proposal to a locked invoice', pdf_draft_chk: 'Draft PDF carries a DRAFT mark', pdf_appr_chk: 'Approved PDF carries an APPROVED mark',
+    eq_ro_note: 'Equipment — view only', eq_ro_why: 'A manager does not change equipment in someone else\'s document: every line is a pickup and gear from the stock or the lead\'s car. The document lead or the admin can change it.',
+    df_self_appr: 'This is your own invoice — another approver approves it. The admin can allow approving own invoices (Settings → Document settings).',
+    df_sum_q: 'The document total changed: approved {OLD}, calculated now {NEW}. Update the approved amount to {NEW}? "Cancel" keeps {OLD}.',
+    tr_need_title: 'Translation needed', tr_need_text: 'Only a fully translated document goes for approval. Fields without English text: {N}.', tr_need_btn: 'Generate translations',
+    tr_need_manual: 'I will translate myself', tr_need_hint: 'Translation runs on this device and needs a connection. After it the document is saved and sent for approval automatically.', tr_need_left: 'Not everything was translated, fields left: {N}. Type the translation in the "Translation for PDF" card',
+    act_pickup_archive: 'pickup archived', act_pickup_note: 'pickup note', act_approve_resum: 'approved amount updated',
+    /* v1.09.25: invoice workflow */
+    df_lock_free: 'The document is free — you can edit', df_lock_taken: 'The document is yours — you can edit', df_lock_asked: 'Your colleague was notified. The document opens for editing as soon as it is free',
+    df_lock_wait: 'Still busy — it opens for editing as soon as it is free', df_lock_by: '{NAME} is editing now', df_lock_since: 'since', df_lock_h: 'two people do not edit one document at once',
+    df_lock_force: 'Take over', df_lock_ask: 'Request editing',
+    df_rej_STALE_DOC: 'Someone else changed the document — your save did not go through', df_rej_DOC_LOCKED_DONE: 'The document awaits approval — editing is closed. Withdraw it first',
+    df_rej_DOC_LOCKED_APPROVED: 'The document is approved — editing is closed. Send an edit request', df_rej_DOC_LOCKED_DELETE: 'Only the admin deletes a completed document',
+    df_rej_FORBIDDEN_CREW: 'The crew is changed by the lead, a manager or the admin', df_rej_FORBIDDEN_APPROVE: 'You have no approval right',
+    df_cf_title: 'Someone else changed the document', df_cf_text: 'While you were editing, {WHO} saved the document · {AT}. Your changes were not written to the server.',
+    df_cf_fresh: 'Open the fresh version', df_cf_mine: 'Write my changes over it', df_cf_hint: '"Over it" erases what your colleague saved. If unsure, open the fresh version and redo your changes.',
+    df_withdraw: 'Withdraw from approval', df_withdraw_q: 'Withdraw the document from approval? It goes back to draft and approvers are notified.', df_withdrawn: 'Withdrawn — you can edit',
+    df_return: 'Return for rework', df_return_h: 'The document goes back to the lead as a draft. A reason is required — the whole crew sees it.', df_return_ph: 'What to fix…',
+    df_reason_req: 'Write a reason (3+ characters)', df_returned: 'Returned for rework', df_need_sql: 'Run supabase/update-to-1_09_25.sql first',
+    df_req: 'Request an edit', df_req_h: 'The document is approved. Say what needs fixing: an approver will allow the edit (the document returns to draft) or refuse.',
+    df_req_ph: 'What needs fixing and why…', df_req_send: 'Send request', df_req_dup: 'A request for this document is already pending', df_req_sent: 'Request sent',
+    df_req_deny_ph: 'Reason for refusal (may be empty)', df_req_granted_note: 'Edit allowed', df_req_granted: 'Edit allowed — the document is a draft again', df_req_denied: 'Edit refused',
+    df_req_pending: 'Edit request sent — awaiting a decision', df_req_was_denied: 'edit refused', df_req_from: 'Edit request:', df_req_grant: 'Allow', df_req_deny: 'Refuse', df_reqs: 'Edit requests',
+    df_ro_done: 'Awaiting approval — editing is closed', df_ro_done_h: 'To fix something, withdraw the document with the button below: it returns to draft.', df_ro_view_h: 'The document is open for viewing only.',
+    df_ro_appr: 'Approved — editing is closed', df_ro_appr_h: 'Need a change? Send a request with the button below.', df_ro_crew: 'You are on the crew — view only',
+    df_ro_crew_h: 'The lead edits the document. You can add photos and videos.', df_ret_ban: 'Returned for rework',
+    df_edited: 'Edited', df_open_until: 'editing open until', df_done_h: 'Once marked, the document goes for approval and locks. To fix it, withdraw it.',
+    df_appr_note: 'An approved document is locked; the crew edits it only through an edit request.', df_main: 'Lead: their tag goes into the number, they edit the document', df_main_set: 'Make lead',
+    df_tag: 'Tag', df_tag_t: 'Employee tag for the document number: 2–4 Latin letters or digits, unique', df_r_edit: 'edit shared', df_r_appr: 'approve', df_r_ann: 'announce',
+    df_rights_tip: 'The tag goes into the invoice number (the {TECH} piece of the number template) the moment the document is first saved as non-draft. "Edit shared" — a helper may edit a document whose lead turned on Shared access. "Approve" — a manager approves invoices and repairs, returns them for rework and decides edit requests (the admin always can). "Announce" — the employee posts to Important announcements.',
+    df_tag_taken: 'This tag is already taken', df_tag_bad: 'A tag is 2 to 4 Latin letters or digits', df_appr_moved: 'The approval right is now personal: Directories → Staff, the "approve" box on a manager.',
+    ntf_empty: 'No notifications yet', ch_ntf: 'Notifications', ch_ntf_sub: 'a log of your documents: assignments, statuses, pickups', ch_ntf_ro: 'Only the system writes here. Tap a row to open the document',
+    act_job_return: 'returned for rework', act_job_overwrite: 'written over a colleague\'s edit', act_edit_request: 'edit request', act_edit_request_granted: 'edit allowed', act_edit_request_denied: 'edit refused', act_doc_rights: 'employee document rights',
     apv_title: 'Awaiting approval', apv_banner: 'Awaiting approval: {N}',
     apv_jobs: 'Tasks — done, awaiting approval', apv_reps: 'Repairs — sent for approval',
     apv_props: 'Proposals — sent', apv_empty: 'Nothing awaits approval 🎉',
@@ -2282,8 +2472,8 @@ const I18N = {
     ap_tip: 'All issued documents count (no drafts, no archive), for all time — not only the selected period. Due date = document date + Net N days (N is set on the Rates tab, 30 by default). "Received in the period" — payments dated inside the period chosen in the Register. Payments are visible to the admin and the accountant only.',
     ap_need_sql: 'Payment tracking needs supabase/update-to-1_09_15.sql', ap_terms_lbl: 'Payment terms, days (Net)', ap_terms_hint: 'From the document date. 0 — due on receipt. Default 30 — as in the "NET DUE 30 DAYS" line of the form.',
     act_acc_pay_add: 'payment recorded', act_acc_pay_del: 'payment deleted',
-    tab_chat: 'Messages', ch_ann: 'Announcements', ch_all: 'Team chat', ch_ann_sub: 'important notes from the manager and admin — everyone reads', ch_all_sub: 'all employees write and read',
-    ch_ann_ro: 'Only the manager and the admin post to Announcements', ch_ph: 'Message…', ch_q_ph: 'Find an employee', ch_pick: 'Pick a conversation on the left', ch_you: 'You',
+    tab_chat: 'Messages', ch_ann: 'Important announcements', ch_all: 'Team chat', ch_ann_sub: 'a limited circle posts — everyone reads, push cannot be turned off', ch_all_sub: 'all employees write and read',
+    ch_ann_ro: 'Admin, managers, the accountant and people picked by the admin post here', ch_ph: 'Message…', ch_q_ph: 'Find an employee', ch_pick: 'Pick a conversation on the left', ch_you: 'You',
     chm_empty: 'No messages yet — be the first to write', ch_empty_ann: 'No announcements yet', ch_new: 'new messages', ch_important: 'Important', ch_imp_t: 'Mark the message as important',
     ch_attach: 'Attach a document', ch_pick_ph: 'Unit, complex or document number', ch_pick_none: 'Nothing found', ch_doc_locked: 'no access or the document was deleted',
     ch_del_t: 'Delete the message?', ch_del_q: 'The message disappears for everyone in the conversation.', ch_banner: 'New messages', ch_open: 'Open chat', ch_open_later: 'A message arrived — open Messages once you save the document',
@@ -3317,7 +3507,7 @@ function deepLinkDoc(url){
   try{ const m = /^(job|prop|rep):([0-9a-f-]{8,40})$/i.exec(new URL(url, location.href).searchParams.get('doc') || ''); return m ? { kind: m[1].toLowerCase(), id: m[2] } : null; }catch(e){ return null; }
 }
 function deepLinkChat(url){
-  try{ const v = new URL(url, location.href).searchParams.get('chat') || ''; return (v === 'ann' || v === 'all' || /^(g:)?[A-Za-z0-9_-]{3,40}$/.test(v)) ? v : ''; }catch(e){ return ''; }
+  try{ const v = new URL(url, location.href).searchParams.get('chat') || ''; return (v === 'ann' || v === 'all' || v === 'ntf' || /^(g:)?[A-Za-z0-9_-]{3,40}$/.test(v)) ? v : ''; }catch(e){ return ''; }
 }
 function deepLinkApply(url){
   if (/[?&]pushtest=/.test(String(url || ''))){ try{ history.replaceState(history.state, '', location.pathname); }catch(e){} if (state.user){ foldSet('push', true); state.screen = 'settings'; render(); } return true; }   // v1.09.22
@@ -3777,7 +3967,7 @@ function chInGroup(gid){ return chGroupMembers(gid).includes(chMe()); }
 function chGroupRole(gid, uid_){ const m = chMembersAll().find(x => x.group_id === gid && x.user_id === uid_); return m ? (m.role || 'member') : ''; }
 function chIsGroupMod(gid){ const g = chGroup(gid); return !!g && (g.created_by === chMe() || chGroupRole(gid, chMe()) === 'admin'); }
 function chMuteList(){ const v = state.user && state.user.push_prefs && state.user.push_prefs.chat_mute; return Array.isArray(v) ? v : []; }
-function chMuted(k){ return chMuteList().includes(k); }
+function chMuted(k){ return k !== 'ann' && k !== 'ntf' && chMuteList().includes(k); }   // v1.09.25: «Важные объявления» и ленту заглушить нельзя
 async function chMuteToggle(k){
   const on = !chMuted(k), list = on ? chMuteList().concat([k]) : chMuteList().filter(x => x !== k);
   const me = (state.data.profiles || []).find(p => p.id === state.user.id);
@@ -3787,7 +3977,7 @@ async function chMuteToggle(k){
   toast((on ? '🔕 ' : '🔔 ') + t(on ? 'ch_mute_on' : 'ch_mute_off')); chBadgePaint(); render();
 }
 function chCanDelete(m){ return !!m && (m.from_user === chMe() || (m.channel && isAdmin()) || (m.group_id && chIsGroupMod(m.group_id))); }
-function chIsCh(k){ return k === 'ann' || k === 'all'; }
+function chIsCh(k){ return k === 'ann' || k === 'all' || k === 'ntf'; }   // v1.09.25: + лента «Уведомления» (пишет только система)
 let _chRowsMemo = { src: null, mem: null, me: '', out: [] };
 function chRows(){
   const me = chMe(), src = HAS_SB ? CH.rows : ((state.data && state.data.chat_msgs) || CH_NONE), mem = chMembersAll();
@@ -3805,8 +3995,9 @@ function chMsgsOf(k, withPending){ const a = chRows().filter(m => chThreadOf(m) 
 function chUnread(k){
   const me = chMe(); if (!me) return 0;
   const cnt = key => { const ra = chReadAt(key); return chRows().filter(m => chThreadOf(m) === key && m.from_user !== me && String(m.created_at) > ra).length; };
+  if (k === 'ntf') return ntfUnread();                       // v1.09.25
   if (k) return cnt(k);
-  const keys = new Set(chRows().map(chThreadOf)); let n = 0; keys.forEach(key => { if (!chMuted(key)) n += cnt(key); }); return n;   // v1.09.24: «не беспокоить» в общий счётчик не идёт
+  const keys = new Set(chRows().map(chThreadOf)); let n = ntfUnread(); keys.forEach(key => { if (!chMuted(key)) n += cnt(key); }); return n;   // v1.09.24: «не беспокоить» в общий счётчик не идёт
 }
 /* собеседник прочитал мои сообщения до этого момента (только личная переписка) */
 function chPeerReadAt(k){ if (chIsCh(k) || chIsG(k)) return ''; if (HAS_SB) return CH.peer[k] || ''; const m = (state.data && state.data.chat_reads) || {}; return m[k + '|' + chMe()] || ''; }
@@ -3832,10 +4023,10 @@ function chRtStart(){
 }
 function chRtStop(){ try{ if (CH.rt && state.sb) state.sb.removeChannel(CH.rt); }catch(e){} CH.rt = null; CH.rtOk = false; }
 /* v1.09.24: в чате бухгалтер — с правами менеджера: пишет в «Объявления», ставит «Важно» */
-function chBoss(){ return isAdmin() || isManager() || isAcc(); }
-function chCanPost(k){ if (chIsG(k)) return chInGroup(chGid(k)); if (!chIsCh(k)){ const p = (state.data.profiles || []).find(x => x.id === k); if (!p || p.blocked) return false; }   // v1.09.23: заблокированному не пишем — сервер всё равно откажет
+function chBoss(){ return isAdmin() || isManager() || isAcc() || meProf().can_announce === true; }   // v1.09.25: + те, кому админ дал право писать в «Важные объявления»
+function chCanPost(k){ if (k === 'ntf') return false; if (chIsG(k)) return chInGroup(chGid(k)); if (!chIsCh(k)){ const p = (state.data.profiles || []).find(x => x.id === k); if (!p || p.blocked) return false; }   // v1.09.23: заблокированному не пишем — сервер всё равно откажет
   return k !== 'ann' || chBoss(); }
-function chName(k){ if (chIsG(k)){ const g = chGroup(k); return g ? g.name : t('chg_gone'); } return k === 'ann' ? t('ch_ann') : k === 'all' ? t('ch_all') : profName(k); }
+function chName(k){ if (chIsG(k)){ const g = chGroup(k); return g ? g.name : t('chg_gone'); } return k === 'ann' ? t('ch_ann') : k === 'ntf' ? t('ch_ntf') : k === 'all' ? t('ch_all') : profName(k); }
 function chNarrow(){ try{ return !document.documentElement.classList.contains('tl-desktop') || innerWidth < 900; }catch(e){ return true; } }
 function chThreads(){
   const me = chMe(), last = {};
@@ -3845,7 +4036,9 @@ function chThreads(){
     .sort((a, b) => (b.last ? String(b.last.created_at) : '').localeCompare(a.last ? String(a.last.created_at) : '') || a.name.localeCompare(b.name));
   const groups = chGroups().filter(g => chInGroup(g.id)).map(g => ({ key: 'g:' + g.id, name: g.name, grp: true, n: chGroupMembers(g.id).length, last: last['g:' + g.id] || null }))
     .sort((a, b) => (b.last ? String(b.last.created_at) : '').localeCompare(a.last ? String(a.last.created_at) : '') || a.name.localeCompare(b.name));
-  return [{ key: 'all', name: t('ch_all'), ch: true, last: last.all || null }, { key: 'ann', name: t('ch_ann'), ch: true, last: last.ann || null }].concat(groups, people);
+  const nl = ntfLast();                                        // v1.09.25: лента «Уведомления» — сразу под «Важными объявлениями»
+  return [{ key: 'all', name: t('ch_all'), ch: true, last: last.all || null }, { key: 'ann', name: t('ch_ann'), ch: true, last: last.ann || null },
+          { key: 'ntf', name: t('ch_ntf'), ch: true, ntf: true, last: nl ? { created_at: nl.created_at, _ntf: nl.title } : null }].concat(groups, people);
 }
 async function chLoad(force){
   if (!state.user) return;
@@ -3928,6 +4121,7 @@ function chTickStart(){
 let _chReadT = 0;
 function chMarkRead(k){
   if (!k || !state.user) return;
+  if (k === 'ntf'){ ntfMarkRead(); return; }                  // v1.09.25
   const msgs = chMsgsOf(k); if (!msgs.length) return;
   const ts = msgs[msgs.length - 1].created_at;
   if (String(chReadAt(k)) >= String(ts)) return;
@@ -3989,6 +4183,7 @@ function chMenuHtml(m){
     </div></div>`;
 }
 function chMsgsHtml(k){
+  if (k === 'ntf') return ntfMsgsHtml();                       // v1.09.25: лента уведомлений — свой вид строк
   const me = chMe(), msgs = chMsgsOf(k, true), ra0 = CH._openReadAt || '', peerAt = chPeerReadAt(k), dm = !chIsCh(k) && !chIsG(k);
   if (!msgs.length) return `<div class="list-empty ch-empty">${t(k === 'ann' ? 'ch_empty_ann' : 'chm_empty')}</div>`;
   const byId = {}; msgs.forEach(m => { byId[m.id] = m; });
@@ -4019,17 +4214,17 @@ function chListOnlyHtml(){
   let sec = '';
   return chThreads().filter(x => !q || String(x.name).toLowerCase().includes(q)).map(x => {
     const n = chUnread(x.key), l = x.last;
-    const who = l && (x.ch || x.grp) && l.from_user !== chMe() ? shortName(profName(l.from_user)).split(' ')[0] + ': ' : '';
-    const prev = l ? ((l.from_user === chMe() ? t('ch_you') + ': ' : who) + chSnippet(l).slice(0, 60)) : (x.ch ? t(x.key === 'ann' ? 'ch_ann_sub' : 'ch_all_sub') : x.grp ? t('chg_n').replace('{N}', x.n) : t('role_' + x.role));
+    const who = l && !x.ntf && (x.ch || x.grp) && l.from_user !== chMe() ? shortName(profName(l.from_user)).split(' ')[0] + ': ' : '';
+    const prev = x.ntf ? (l ? String(l._ntf || '').slice(0, 60) : t('ch_ntf_sub')) : l ? ((l.from_user === chMe() ? t('ch_you') + ': ' : who) + chSnippet(l).slice(0, 60)) : (x.ch ? t(x.key === 'ann' ? 'ch_ann_sub' : 'ch_all_sub') : x.grp ? t('chg_n').replace('{N}', x.n) : t('role_' + x.role));
     const kind = x.ch ? 'ch' : x.grp ? 'grp' : 'dm', cap = kind !== sec && kind !== 'ch' ? `<div class="ch-sec">${t(kind === 'grp' ? 'chg_sec' : 'ch_sec_dm')}</div>` : ''; sec = kind;
     return `${cap}<button type="button" class="ch-th ${CH.thread === x.key ? 'on' : ''} ${n ? 'unread' : ''} ${x.off ? 'off' : ''}" data-k="${x.key}" onclick="App.chOpen('${x.key}')">
-      <span class="ch-ava ${x.ch ? 'ch' : x.grp ? 'grp' : 'role-' + x.role}">${x.ch ? ic(x.key === 'ann' ? 'bell' : 'crew') : x.grp ? ic('crew') : esc(initials(x.name))}</span>
+      <span class="ch-ava ${x.ch ? 'ch' : x.grp ? 'grp' : 'role-' + x.role}">${x.ch ? ic(x.key === 'ann' ? 'bell' : x.key === 'ntf' ? 'receipt' : 'crew') : x.grp ? ic('crew') : esc(initials(x.name))}</span>
       <span class="grow"><b>${esc(x.ch || x.grp ? x.name : shortName(x.name))}</b><span class="tiny">${esc(prev || '')}</span></span>
       <span class="ch-th-r">${l ? `<span class="tiny">${chDayOf(l.created_at) === todayISO() ? chTimeShort(l.created_at) : fmtDM(chDayOf(l.created_at))}</span>` : ''}${chMuted(x.key) ? `<span class="ch-muted" title="${t('ch_mute_on')}">${ic('bell_off')}</span>` : ''}${n ? `<i class="ch-n ${chMuted(x.key) ? 'mut' : ''}">${n > 99 ? '99+' : n}</i>` : ''}</span></button>`;
   }).join('');
 }
 function chComposeHtml(k){
-  if (!chCanPost(k)) return `<div class="ch-ro tiny">${ic('lock')} ${t(k === 'ann' ? 'ch_ann_ro' : chIsG(k) ? 'chg_not_member' : 'ch_peer_off')}</div>`;
+  if (!chCanPost(k)) return `<div class="ch-ro tiny">${ic('lock')} ${t(k === 'ntf' ? 'ch_ntf_ro' : k === 'ann' ? 'ch_ann_ro' : chIsG(k) ? 'chg_not_member' : 'ch_peer_off')}</div>`;
   const boss = chBoss(), a = CH.attach, rp = CH.reply ? chRows().find(x => x.id === CH.reply) : null, ed = CH.edit ? chRows().find(x => x.id === CH.edit) : null;
   return `<div class="ch-compose" id="ch-compose">
     ${ed ? `<div class="ch-att ch-ctx" id="ch-editing">${ic('pencil')} <span class="grow"><b>${t('ch_editing')}</b> ${esc(chSnippet(ed))}</span><button type="button" class="ch-att-x" aria-label="${t('cancel')}" onclick="App.chCtxOff()">×</button></div>` : ''}
@@ -4046,7 +4241,7 @@ function chComposeHtml(k){
     </div></div>`;
 }
 function viewChat(){
-  chTickStart(); try{ chLoad(Date.now() - CH.at > 8000); }catch(e){}
+  chTickStart(); try{ chLoad(Date.now() - CH.at > 8000); }catch(e){} try{ dfLoad(); }catch(e){}
   const k = CH.thread, narrow = chNarrow();
   const list = `<aside class="ch-list" id="ch-list">
       <div class="ch-top"><div class="search-box ch-q">${ic('search')}<input id="ch-q" type="search" autocomplete="off" placeholder="${esc(t('ch_q_ph'))}" value="${esc(CH.q || '')}" oninput="App.chQ(this.value)"></div>
@@ -4054,8 +4249,8 @@ function viewChat(){
       <div id="ch-ths">${chListHtml()}</div></aside>`;
   const pane = k ? `<section class="ch-pane" id="ch-pane">
       <div class="ch-head"><button type="button" class="back-x ch-back" aria-label="${t('back')}" onclick="App.chBack()">${ic('arr_l')}</button>
-        <div class="grow"><b>${esc(chIsCh(k) || chIsG(k) ? chName(k) : profName(k))}</b><div class="tiny">${esc(k === 'ann' ? t('ch_ann_sub') : k === 'all' ? t('ch_all_sub') : chIsG(k) ? chGroupMembers(chGid(k)).map(id => shortName(profName(id)).split(' ')[0]).join(', ') : t('role_' + ((state.data.profiles.find(p => p.id === k) || {}).role || 'tech')))}</div></div>
-        <button type="button" class="btn btn-ghost ch-ib ${chMuted(k) ? 'on-mute' : ''}" id="ch-mute" title="${t(chMuted(k) ? 'ch_mute_off_t' : 'ch_mute_on_t')}" aria-label="${t(chMuted(k) ? 'ch_mute_off_t' : 'ch_mute_on_t')}" aria-pressed="${chMuted(k) ? 'true' : 'false'}" onclick="App.chMuteToggle('${k}')">${ic(chMuted(k) ? 'bell_off' : 'bell')}</button>
+        <div class="grow"><b>${esc(chIsCh(k) || chIsG(k) ? chName(k) : profName(k))}</b><div class="tiny">${esc(k === 'ann' ? t('ch_ann_sub') : k === 'ntf' ? t('ch_ntf_sub') : k === 'all' ? t('ch_all_sub') : chIsG(k) ? chGroupMembers(chGid(k)).map(id => shortName(profName(id)).split(' ')[0]).join(', ') : t('role_' + ((state.data.profiles.find(p => p.id === k) || {}).role || 'tech')))}</div></div>
+        ${k === 'ntf' || k === 'ann' ? '' : `<button type="button" class="btn btn-ghost ch-ib ${chMuted(k) ? 'on-mute' : ''}" id="ch-mute" title="${t(chMuted(k) ? 'ch_mute_off_t' : 'ch_mute_on_t')}" aria-label="${t(chMuted(k) ? 'ch_mute_off_t' : 'ch_mute_on_t')}" aria-pressed="${chMuted(k) ? 'true' : 'false'}" onclick="App.chMuteToggle('${k}')">${ic(chMuted(k) ? 'bell_off' : 'bell')}</button>`}
         ${chIsG(k) ? `<button type="button" class="btn btn-ghost ch-ib" id="ch-ginfo" title="${t('chg_info')}" aria-label="${t('chg_info')}" onclick="App.chGroupInfo('${chGid(k)}')">${ic('gear')}</button>` : ''}</div>
       <div class="ch-msgs" id="ch-msgs" tabindex="0">${chMsgsHtml(k)}</div>
       ${chComposeHtml(k)}</section>`
@@ -5101,7 +5296,6 @@ function featCardHtml(){
   return `<div class="card" id="feat-card">
     <div style="font-weight:900;margin-bottom:6px">${ic('gear')} ${t('feat_card')}</div>
     ${chk('tpl_on', org.tpl_on !== false, t('tpl_on_lbl'), 'tpl_tip')}
-    ${chk('day_move_on', org.day_move_on === true, t('day_move_lbl'), 'day_move_tip')}
     ${chk('rep_kind_only', org.rep_kind_only === true, t('rep_kind_lbl'), 'rep_kind_tip')}
     <label class="chk-line" id="chat-keep-chk" style="margin-top:8px"><input type="checkbox" ${(+org.chat_keep_days || 0) > 0 ? 'checked' : ''} onchange="App.setOrgNum('chat_keep_days', this.checked ? 180 : 0, 0, 730)"> ${t('chat_keep_on')} ${tipQ('chat_keep_hint')}</label>
     ${(+org.chat_keep_days || 0) > 0 ? `<div class="qty-line" id="chat-keep-row" style="margin-top:6px"><span class="name">${ic('chat')} ${t('chat_keep_lbl')}</span>${orgStepperHtml('chat_keep_days', +org.chat_keep_days, 7, 730, 30)}</div>` : ''}<!-- v1.09.24: по умолчанию — без ограничения -->
@@ -5304,12 +5498,22 @@ function docsEquipCardHtml(){
     <div class="qty-line"><span class="name">${t('max_ext_lbl')}</span>
       ${orgStepperHtml('max_extend_days', org.max_extend_days ?? 3, 1, 30)}</div>
     <div class="set-opts">
-      <label class="opt ${org.manager_can_approve?'on':''}">
-        <input type="checkbox" ${org.manager_can_approve?'checked':''} onchange="App.setOrgFlag('manager_can_approve', this.checked)"> ${t('mgr_approve_chk')}</label>
+      ${dfReady()
+        ? `<div class="tiny df-appr-moved" id="df-appr-moved">${ic('check')} ${t('df_appr_moved')}</div>`
+        : `<label class="opt ${org.manager_can_approve?'on':''}">
+        <input type="checkbox" ${org.manager_can_approve?'checked':''} onchange="App.setOrgFlag('manager_can_approve', this.checked)"> ${t('mgr_approve_chk')}</label>`}
       <label class="opt ${org.stock_visible_all!==false?'on':''}">
         <input type="checkbox" ${org.stock_visible_all!==false?'checked':''} onchange="App.setOrgFlag('stock_visible_all', this.checked)"> ${t('stock_vis_chk')}</label>
       <label class="opt ${org.allow_tech_proposal_flag!==false?'on':''}">
         <input type="checkbox" ${org.allow_tech_proposal_flag!==false?'checked':''} onchange="App.setOrgFlag('allow_tech_proposal_flag', this.checked)"> ${t('allow_prop_chk')}</label>
+      <label class="opt ${org.self_approve===true?'on':''}" id="opt-self-approve">
+        <input type="checkbox" ${org.self_approve===true?'checked':''} onchange="App.setOrgFlag('self_approve', this.checked)"> ${t('self_approve_chk')}</label>
+      <label class="opt ${org.mgr_link_locked===true?'on':''}" id="opt-link-locked">
+        <input type="checkbox" ${org.mgr_link_locked===true?'checked':''} onchange="App.setOrgFlag('mgr_link_locked', this.checked)"> ${t('mgr_link_chk')}</label>
+      <label class="opt ${org.pdf_draft_mark!==false?'on':''}" id="opt-pdf-draft">
+        <input type="checkbox" ${org.pdf_draft_mark!==false?'checked':''} onchange="App.setOrgFlag('pdf_draft_mark', this.checked)"> ${t('pdf_draft_chk')}</label>
+      <label class="opt ${org.pdf_approved_mark!==false?'on':''}" id="opt-pdf-appr">
+        <input type="checkbox" ${org.pdf_approved_mark!==false?'checked':''} onchange="App.setOrgFlag('pdf_approved_mark', this.checked)"> ${t('pdf_appr_chk')}</label>
     </div>
     ${lockRowHtml(org)}
   </div>`;
@@ -5684,7 +5888,13 @@ function dbUpdateHelp(){
     <button class="btn btn-ghost" onclick="App.dbDiag()">${ic('steth')} ${t('db_help_check')}</button>
   `);
 }
+/* v1.09.26: подсказка-ссылка — нажатие выполняет действие (открыть «Документооборот», документ) */
+function toastGo(msg, kind, ms, fn){
+  toast(msg, kind, Math.max(3900, ms || 0));
+  try{ const box = document.getElementById('toasts'), el = box && box.lastElementChild; if (el && typeof fn === 'function'){ el.classList.add('go'); el.onclick = () => { try{ el.remove(); }catch(e){} fn(); }; } }catch(e){}
+}
 function toast(msg, kind, ms){
+  try{ if (DFT.running) dftLog('   💬 ' + (kind === 'err' ? '⛔ ' : '') + String(msg), kind === 'err' ? 'neterr' : 'ui'); }catch(e){}   // v1.09.29: подсказки — в отчёт теста
   const now = Date.now();                                  // v1.07.26: не спамим одинаковыми
   if (toast._m === msg && now - (toast._t || 0) < 1800) return;
   toast._m = msg; toast._t = now;
@@ -6056,6 +6266,9 @@ async function pendingFlush(){
         } else {
           dlog('⛔ pending', it.op, it.table + ':', r.error);
           if (isNetErr(r.error)) netFail = true;
+          else if (it.op === 'upsert' && it.table === 'jobs' && dfRejectCode(r.error)){   // v1.09.25: сервер отклонил документ из очереди — не долбим его вечно
+            pendingBusy = false; await dfRejected(it.table, it.payload, dfRejectCode(r.error)); pendingBusy = true;
+          }
         }
       }catch(e){ dlog('⛔ pending exception', it.table + ':', e); if (isNetErr(e)) netFail = true; }
     }
@@ -6593,6 +6806,20 @@ const DB_NEED_COLS = [
   ['study_sessions','score_pct'],     // v1.08.51: учёба
   ['profiles',      'study_access'],
   ['org_settings',  'study_on'],
+  ['jobs',          'rev'],            // v1.09.25: документооборот инвойса
+  ['jobs',          'doc_no'],
+  ['profiles',      'tag'],
+  ['profiles',      'can_approve'],
+  ['profiles',      'can_announce'],
+  ['org_settings',  'docflow_v'],
+  ['notices',       'read_at'],
+  ['doc_requests',  'status'],
+  ['placements',    'arch_note'],       // v1.09.26
+  ['placements',    'note'],
+  ['jobs',          'updated_dev'],
+  ['org_settings',  'self_approve'],
+  ['jobs',          'is_test'],         // v1.09.27
+  ['org_settings',  'dft_until'],
 ];
 const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'decide_ext_request', 'throttle', 'admin_restore_rows',
@@ -6602,7 +6829,9 @@ const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'admin_last_seen', 'vehicle_service_set',
   'tv_list', 'tv_decide', 'tv_cleanup',       // v1.08.33 · v1.08.48
   'acc_doc_mark',               // v1.08.39
-  'bn_devices_sync'];           // v1.09.01
+  'bn_devices_sync',            // v1.09.01
+  'doc_lock', 'doc_request_edit', 'doc_request_decide', 'job_fix_no', 'admin_set_doc_rights', 'admin_set_announce', 'notices_mark_read',   // v1.09.25
+  'admin_set_dft'];                                         // v1.09.27
 
 const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings','study_sessions','bn_devices'];   // v1.09.01: + справочник трекеров Bouncie (RLS: только админ)   // v1.08.51: + сессии учёбы (RLS: свои; админ — все)   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)
 
@@ -6677,6 +6906,7 @@ async function syncNow(silent){
     render();
     await pendingFlush();                 // v1.07.21: сперва досылаем очередь — снимок включит эти записи
     state.data = await sbLoadAll();
+    dftStripTest(state.data);             // v1.09.27: тестовые документы (и остатки сорвавшегося теста) в рабочие списки не попадают
     netSet(true);                         // v1.08.38: снимок пришёл — сервер точно на связи
     pendingApplyLocal(state.data);        // v1.07.21: что не доставилось — не теряем, накатываем поверх снимка
     saveLocal();
@@ -6699,6 +6929,8 @@ async function syncNow(silent){
     }
     state.lastSync = nowStamp();
     localStorage.setItem('techlog_lastsync', state.lastSync);
+    dfLoad(true).then(() => dfAfterSync()).catch(() => {});   // v1.09.25: запросы правки, лента, заморозка номеров
+    setTimeout(dftAdminWarn, 1200);                          // v1.09.27: включён режим тестирования — админ видит это при каждом входе
     // v1.07.06: если админ заблокировал текущего пользователя — сразу выходим
     const meProf = state.user && (state.data.profiles||[]).find(p => p.id === state.user.id);
     if (meProf && meProf.blocked){
@@ -6724,27 +6956,42 @@ async function syncNow(silent){
 /* Универсальные записи: локально + (если есть) Supabase */
 function tableOf(name){ return state.data[name]; }
 const NUMBERED = ['jobs', 'placements', 'proposals', 'repairs'];   // v1.08.23
-async function dbUpsert(table, row){
+async function dbUpsert(table, row, opt){
   /* v1.07.86: сквозной номер выдаёт база (identity). Явный null сервер не
      принял бы, а в демо-режиме сервера нет — там считаем сами. */
   if (NUMBERED.indexOf(table) >= 0 && (row.no == null)){
     row = { ...row };
     if (HAS_SB) delete row.no;
-    else row.no = (tableOf(table).reduce((m, r) => Math.max(m, +r.no || 0), 0) || 0) + 1;
+    else if (table !== 'jobs' || row.status !== 'draft'){     // v1.09.25: инвойс получает номер при первом НЕ черновике
+      row.no = (tableOf(table).reduce((m, r) => Math.max(m, +r.no || 0), 0) || 0) + 1;
+      if (table === 'jobs') row.numbered_at = new Date().toISOString();
+    }
+  }
+  if (!HAS_SB && table === 'jobs'){                           // демо: ревизия и автор правки — как на сервере
+    const _p = tableOf(table).find(r => r.id === row.id), _ch = !_p || jobKey(_p) !== jobKey(row);   // служебная правка (приоритет, порядок) автора не меняет
+    row = { ...row, rev: _p ? (+_p.rev || 0) + (_ch ? 1 : 0) : 0, updated_by: _ch ? state.user.id : (_p.updated_by || null) };
+    if (row.status === 'approved' && (!_p || _p.status !== 'approved' || (+_p.approved_total || 0) !== (+row.approved_total || 0))) row.approved_rev = row.rev; else if (row.status !== 'approved') row.approved_rev = null;   // v1.09.29
   }
   const arr = tableOf(table);
   const i = arr.findIndex(r => r.id === row.id);
   const _plPrev = (table === 'placements' && i >= 0) ? arr[i] : null;   // v1.08.29: для демо-зеркала
   if (i >= 0) arr[i] = row; else arr.push(row);
+  if (table === 'jobs'){ try{ dflMemoDrop(); }catch(e){} }
   if (table === 'placements') demoPlMoves(_plPrev ? 'update' : 'insert', row, _plPrev);
   saveLocal();
   if (HAS_SB) {
+    if (table === 'jobs' && +((state.data.org_settings || {}).docflow_v) >= 2) row.updated_dev = dfDev();   // v1.09.26: метка устройства (колонка есть с 1.09.26); row уже лежит в данных — правим его же, не копию
     pendingAdd('upsert', table, row);              // v1.07.21: в очередь до подтверждения сервера
     if (netOff()){ netSavedOffline(table); return; }   // v1.08.38: без сети сервер не дёргаем — очередь дошлёт
     const ts = Date.now();
     try {
-      let { error } = await state.sb.from(table).upsert(row);
+      let _q = state.sb.from(table).upsert(row);
+      const _back = table === 'jobs' && dfReady() && _q && typeof _q.select === 'function';   // v1.09.25: ревизию и номер читаем тем же запросом
+      if (_back) _q = _q.select('id,no,rev,updated_by,updated_at,doc_no,numbered_at');
+      let { data: _rows, error } = await _q;
       if (error && isNetErr(error)){ netSet(false); netSavedOffline(table); return; }   // v1.08.38: сеть пропала на ходу
+      if (error && table === 'jobs'){ const _code = dfRejectCode(error); if (_code) return await dfRejected(table, row, _code, opt); }   // v1.09.25
+      if (!error && _back) dfApplyBack(row, Array.isArray(_rows) ? _rows[0] : _rows);
       if (error) {
         // v1.07.10+: БД без новых колонок — убираем их по одной и повторяем (данные не теряются)
         let clean = row, guard = 0, stripped = false;
@@ -6770,6 +7017,7 @@ async function dbUpsert(table, row){
         dlog('🐢 upsert', table, 'медленно: ' + (Date.now()-ts) + ' мс');
       }
       if (!error){ pendingDone('upsert', table, row.id); netSet(true); }   // v1.07.21: доставлено — из очереди долой
+      if (error && table === 'jobs') return { ok: false, code: 'ERROR' };      // v1.09.26: вызывающий код не должен рапортовать об успехе
       /* v1.09.12: документ дошёл — файлы, ждавшие его (DOC_PENDING), отправляем сразу */
       if (!error && (table === 'jobs' || table === 'repairs')){
         try{ if (typeof mediaQ !== 'undefined' && mediaQ.some(x => mOwnId(x) === row.id && x.error === 'DOC_PENDING')) setTimeout(() => mediaFlush(), 300); }catch(e){}
@@ -6854,6 +7102,7 @@ function sharedJobsEnabled(){
 /* Я — коворкер этой задачи, и автор включил в ней «Общий доступ» (и функция не выключена админом) */
 function isJobSharedWithMe(j){
   return !!j && sharedJobsEnabled() && !!j.shared_with_helpers
+      && meProf().can_edit_docs !== false                       // v1.09.25: личное право «правка общих документов»
       && state.user && j.technician_id !== state.user.id
       && (j.helper_ids || []).includes(state.user.id);
 }
@@ -6863,7 +7112,7 @@ function isPlacementSharedWithMe(p){
   return isJobSharedWithMe(j);
 }
 /* v1.07.12: размещение «в ожидании вывоза» — не забрано и не закрыто продлением */
-function pkPending(p){ return !p.picked_up && !p.superseded; }
+function pkPending(p){ return !p.picked_up && !p.superseded && !p.archived_at; }   // v1.09.26: техника, убранная из инвойса, лежит в архиве
 /* Кто может забирать/продлевать этот пикап */
 function canTouchPk(p){ return isManager() || p.technician_id === state.user.id || isPlacementSharedWithMe(p); }
 /* Чип «Общий» на карточке задачи: виден автору и коворкерам, пока общий доступ действует */
@@ -7037,7 +7286,7 @@ async function initAuth(){
     state.data = loadLocal() || seedDemoData(); saveLocal();
     if (saved){
       const u = state.data.profiles.find(p => p.id === saved);
-      if (u){ state.user = u; state.screen = 'home'; }
+      if (u){ state.user = u; state.screen = 'home'; setTimeout(dftAdminWarn, 1500); }   // v1.09.27
     }
     return;
   }
@@ -7150,6 +7399,7 @@ function authWhy(code){ const w = AUTH_WHY[String(code || '').toLowerCase()]; re
 function sbFetch(input, init){
   const url = typeof input === 'string' ? input : ((input && input.url) || '');
   const p = window.fetch(input, init);
+  if (DFT.running) dftNetLog(url, init, p);                    // v1.09.27: тест документооборота пишет запросы и ответы сервера в отчёт
   if (!/\/auth\/v1\/(token|logout)/.test(url)) return p;
   return p.then(r => {
     try{
@@ -7257,7 +7507,7 @@ function demoLogin(id){
   const u = state.data.profiles.find(p => p.id === id);
   if (!u) return;
   if (u.blocked){ toast('⛔ ' + t('blocked_msg'), 'err'); return; }
-  state.user = u; localStorage.setItem(LS_SESSION, id);
+  state.user = u; localStorage.setItem(LS_SESSION, id); DFT.warned = false; setTimeout(dftAdminWarn, 1500);   // v1.09.27
   state.screen = 'home'; state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate);
   mqQuietSyncPref(); fontSyncPref(); densSyncPref();                        // v1.08.86 / v1.08.89 / v1.09.05
   render(); checkPickupBanner(true);
@@ -7385,17 +7635,19 @@ function jobById(id){ return (state.data.jobs || []).find(x => x.id === id); }
 function visibleJobs(){
   let js = scopeFilter(liveJobs(), 'technician_id');
   // v1.07.10: задачи с общим доступом, где я коворкер, видны наравне со своими
-  const shared = liveJobs().filter(j => isJobSharedWithMe(j) && !js.includes(j));
+  /* v1.09.25: бригада видит задачу всегда — правка по-прежнему зависит от «Общего доступа» и личного права */
+  const me = state.user.id, inCrew = j => (j.helper_ids || []).includes(me);
+  const shared = liveJobs().filter(j => (isJobSharedWithMe(j) || inCrew(j)) && !js.includes(j));
   if (shared.length) js = js.concat(shared);
-  if (!isManager() || state.filterMine) js = js.filter(j => j.technician_id === state.user.id || isJobSharedWithMe(j));
+  if (!isManager() || state.filterMine) js = js.filter(j => j.technician_id === me || isJobSharedWithMe(j) || inCrew(j));
   return js;
 }
 function visiblePlacements(){
   /* пикапы архивной задачи уезжают в архив вместе с ней */
   const dead = new Set(archJobs().map(j => j.id));
-  let ps = scopeFilter((state.data.placements || []).filter(p => !dead.has(p.job_id)), 'technician_id');
+  let ps = scopeFilter((state.data.placements || []).filter(p => !dead.has(p.job_id) && !p.archived_at), 'technician_id');   // v1.09.26: без архивных пикапов
   // v1.07.10: пикапы задач с общим доступом тоже видны коворкеру
-  const shared = state.data.placements.filter(p => isPlacementSharedWithMe(p) && !ps.includes(p));
+  const shared = state.data.placements.filter(p => !p.archived_at && isPlacementSharedWithMe(p) && !ps.includes(p));
   if (shared.length) ps = ps.concat(shared);
   if (!isManager() || state.filterMine) ps = ps.filter(p => p.technician_id === state.user.id || isPlacementSharedWithMe(p));
   return ps;
@@ -7468,8 +7720,16 @@ function mediaLimits(){
   return { photo: p >= 1 ? p : 30, video: v >= 0 ? v : 5, file: f >= 1 ? f : M_FILE_MAX };
 }
 function editLockDays(){ const v = +((state.data && state.data.org_settings || {}).edit_lock_days); return v >= 1 ? v : 0; }
-function editLocked(j){ const n = editLockDays(); if (!n || isManager()) return false; return j.date < addDaysISO(todayISO(), -n); }
-function canApprove(){ return isAdmin() || (state.user.role === 'manager' && !!((state.data.org_settings||{}).manager_can_approve)); }
+function editLocked(j){ const n = editLockDays(); if (!n || isManager()) return false; if (j.edit_open_until && Date.parse(j.edit_open_until) > Date.now()) return false;   // v1.09.25: согласующий разрешил правку — окно 24 ч
+  return j.date < addDaysISO(todayISO(), -n); }
+/* v1.09.25: право апрува — личное (profiles.can_approve); пока SQL 1.09.25 не выполнен — прежняя общая галочка */
+function canApprove(){
+  if (isAdmin()) return true;
+  if (!state.user || state.user.role !== 'manager') return false;
+  const p = meProf();
+  if (HAS_SB ? dfReady() : ('can_approve' in p)) return p.can_approve === true;
+  return !!((state.data.org_settings || {}).manager_can_approve);
+}
 function stockVisibleAll(){ return (state.data.org_settings || {}).stock_visible_all !== false; }
 function vmCur(){
   /* v1.07.40: единственный источник правды — localStorage (как в viewmode.js).
@@ -7493,7 +7753,7 @@ function canReorder(j){ return j && (isAdmin() || j.technician_id === state.user
    меняет ровно два поля (priority, sort_order) и ничего больше. */
 async function saveJobPatch(j, patch){
   if (isAdmin() || j.technician_id === state.user.id || isJobSharedWithMe(j)){
-    await dbUpsert('jobs', { ...j, ...patch, updated_at: new Date().toISOString() });
+    await dbUpsert('jobs', { ...j, ...patch, updated_at: new Date().toISOString() }, { svc: Object.keys(patch) });   // v1.09.25: служебная правка — при устаревшей строке накатывается на свежую
     return;
   }
   if (!HAS_SB){ Object.assign(j, patch); return; }
@@ -8048,6 +8308,7 @@ function sectionHelpModal(key){
    ===================================================================== */
 let auditDbMissing = false;
 function audit(action, entity, entityId, details){
+  if (DFT.running) details = { ...(details || {}), test: true };   // v1.09.27: записи журнала, сделанные во время теста документооборота, помечены
   try{
     const row = {
       id: uid(), at: new Date().toISOString(),
@@ -8083,6 +8344,7 @@ function audit(action, entity, entityId, details){
 const JR_PAGE = 300;
 /* v1.07.27: журнал разделён — документы (audit_log) и система (tech_log) */
 const JR_DOC_ACTIONS = ['job_create','job_update','job_done','job_reopen','job_approve','job_delete',
+  'job_return','job_overwrite','edit_request','edit_request_granted','edit_request_denied',   // v1.09.25
   'approve_reset','price_change','priority_set','crew_add','crew_remove',
   'pickup_done','pickup_early','pickup_restore','extension_create',
   'ext_request','ext_request_approved','ext_request_rejected',
@@ -8350,6 +8612,7 @@ function render(){
   else if (state.screen === 'acc') body = viewAcc();             // v1.08.39
   else if (state.screen === 'chat') body = viewChat();           // v1.09.17
   else if (state.screen === 'approvals') body = viewApprovals(); // v1.08.46
+  else if (state.screen === 'docflow') body = viewDocflow();      // v1.09.26
   else if (state.screen === 'study') body = viewStudy();         // v1.08.51
   /* v1.08.46: перерисовка ТОГО ЖЕ экрана (фото легло в очередь, тумблер,
      автообновление) не должна швырять страницу вверх — возвращаем прокрутку.
@@ -8366,7 +8629,8 @@ function render(){
   navTrack(_navY);                                       // v1.09.06: история экранов для кнопки «назад»
   if (!$('#overlay') && app.inert) modalTrap(false);   // v1.07.83: страховка от «залипшего» inert
   /* v1.07.67: класс экрана на #app — точка опоры для CSS и диагностики */
-  const scls = 'scr-' + state.screen;
+  if (JL.id && !jlAlive()) jlStop();                     // v1.09.25: ушли из документа — «занято» снимаем сразу
+  const scls = 'scr-' + state.screen + (state.screen === 'job' && jobDraft && !jobMode(jobDraft).edit ? ' job-ro' : '');
   if (app.className !== scls) app.className = scls;
   tabbarFit();                                           // v1.09.02: высота многорядного меню → --tbx
   window.TLBoardScroll && window.TLBoardScroll.bind();   // wheel — только на доске
@@ -8570,6 +8834,7 @@ function viewTabbar(){
     ['acc', ic('receipt'), t('tab_acc')],
     ...srchItem,
     ['chat', ic('chat'), t('tab_chat')],                                     // v1.09.17: сообщения
+    ['docflow', ic('clipboard'), t('tab_docflow_s')],                          // v1.09.26: документооборот
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
     ['dirs', ICONS.dirs, t('tab_dirs')],
@@ -8579,6 +8844,7 @@ function viewTabbar(){
     ['home', ICONS.home, t('tab_home')],
     ...srchItem,
     ['chat', ic('chat'), t('tab_chat')],                                     // v1.09.17: сообщения
+    ['docflow', ic('clipboard'), t('tab_docflow_s')],                          // v1.09.26: документооборот
     ...((isManager() || vmCur() === 'desktop') ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.49: воркеру — недельная доска в ПК-режиме
     ...(isManager() ? [['proposals', ICONS.prop, t('tab_proposals')]] : []),  // v1.07.27
     ...(repTabOn() ? [['repairs', ic('toolbox'), t('tab_repairs')]] : []),    // v1.08.23; v1.09.13: можно оставить только ремонтникам
@@ -8612,8 +8878,8 @@ function viewTabbar(){
     ? `<button class="tab hdr-srch" title="${esc(label)}" onclick="App.searchOpen()">${ic}<span>${label}</span></button>`
     : id === 'faq'
     ? `<button class="tab" title="${esc(label)}" onclick="App.faq()">${ic}<span>${label}</span></button>`
-    : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" title="${esc(label)}" ${id === 'chat' ? 'data-tab="chat" ' : ''}onclick="App.go('${id}')">
-      ${ic}<span>${label}</span>${id === 'chat' ? (() => { const n = chUnread(); return `<i class="tab-badge" data-b="chat" ${n ? '' : 'hidden'}>${n > 99 ? '99+' : n}</i>`; })() : ''}
+    : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" title="${esc(id === 'docflow' ? t('tab_docflow') : label)}" ${id === 'chat' ? 'data-tab="chat" ' : ''}onclick="App.go('${id}')">
+      ${ic}<span>${label}</span>${id === 'chat' ? (() => { const n = chUnread(); return `<i class="tab-badge" data-b="chat" ${n ? '' : 'hidden'}>${n > 99 ? '99+' : n}</i>`; })() : id === 'docflow' ? (() => { const n = dflCount(); return `<i class="tab-badge" data-b="docflow" ${n ? '' : 'hidden'}>${n > 99 ? '99+' : n}</i>`; })() : ''}
     </button>`).join('') + `</nav>`;
 }
 
@@ -8649,7 +8915,7 @@ function viewWeek(bare){   // v1.09.12: bare — главная: кнопки «
 }
 /* v1.09.12: «⌂ сегодня» и «Перенести день» переехали в строку дня (dayBar) — под лентой
    недели теперь ОДНА строка: дата · [сегодня] [карта] [перенос] [?] */
-function dayMoveOn(){ return (state.data.org_settings || {}).day_move_on === true; }
+function dayMoveOn(){ return false; }   // v1.09.26: «Перенести день» не используется — кнопка и настройка скрыты (код оставлен)
 function dayBarToolsHtml(){
   const today = todayISO();
   return (state.selDate !== today ? `<button type="button" class="mini-nav today-jump" onclick="App.jumpToday()" title="${t('back_today')}">⌂<span class="mn-t"> ${t('back_today')}</span></button>` : '')
@@ -8735,11 +9001,121 @@ function rowNumHtml(n){ return `<span class="row-num corner">${n}</span>`; }
    Решение ставится внутри самого документа — хаб только собирает и
    открывает, ничего не дублируя.
    ===================================================================== */
+/* =====================================================================
+   v1.09.26 · «ДОКУМЕНТООБОРОТ» — всё, что с документами не так или ждёт действия
+   · «Не записано на сервер»: версия, которую сервер отклонил (чужая правка, документ заперт, нет прав, нет перевода),
+     НЕ выбрасывается, а остаётся на этом устройстве — её можно открыть, записать заново или убрать. Конфликтов может
+     быть несколько (досыл очереди после офлайна) — раньше окно было одно, и правки первого документа терялись.
+   · дальше — вычисляемые списки: возвращены на доработку, в правке после апрува, без перевода, ждут апрува,
+     запросы правки, «зависли» дольше двух дней, апрув ≠ расчёт, документы заблокированных сотрудников.
+   Смотреть статусы может любой (что видит — решают права на документы), действовать — тот, у кого есть право.
+   ===================================================================== */
+const LS_DFP = 'techlog_df_problems';
+function dfProblems(){ try{ const a = JSON.parse(localStorage.getItem(LS_DFP) || '[]'); const me = state.user && state.user.id; return Array.isArray(a) ? a.filter(x => x && x.user === me) : []; }catch(e){ return []; } }
+function dfProblemsSave(list){ try{ const me = state.user && state.user.id; const all = JSON.parse(localStorage.getItem(LS_DFP) || '[]').filter(x => x && x.user !== me); localStorage.setItem(LS_DFP, JSON.stringify(all.concat(list).slice(-40))); }catch(e){} dflMemoDrop(); try{ dflBadgePaint(); }catch(e){} }
+function dfProblemAdd(table, row, code){
+  if (table !== 'jobs' || !row || !state.user) return;
+  const list = dfProblems().filter(x => x.doc_id !== row.id);            // по документу храним последнюю отклонённую версию
+  list.push({ id: uid(), user: state.user.id, doc_id: row.id, code, at: new Date().toISOString(), row: JSON.parse(JSON.stringify(row)) });
+  dfProblemsSave(list);
+}
+function dfProblemDrop(id){ dfProblemsSave(dfProblems().filter(x => x.id !== id)); }
+function dfProblemOpen(id){ const x = dfProblems().find(q => q.id === id); if (!x) return; if (jobOrig({ id: x.doc_id })) openJob(x.doc_id); else toast('⚠ ' + t('dfl_gone'), 'err'); }
+/* записать отклонённую версию заново: поверх свежей строки, со свежей ревизией (для запертого документа сервер откажет снова — честно) */
+async function dfProblemRetry(id){
+  const x = dfProblems().find(q => q.id === id); if (!x) return;
+  const fresh = (await jobRefetch(x.doc_id, true)) || jobOrig({ id: x.doc_id });
+  if (!fresh){ toast('⚠ ' + t('dfl_gone'), 'err'); dfProblemDrop(id); render(); return; }
+  if (!confirm(t('dfl_retry_q'))) return;
+  dfProblemDrop(id);
+  const r = await dbUpsert('jobs', { ...x.row, rev: fresh.rev, no: fresh.no, doc_no: fresh.doc_no, numbered_at: fresh.numbered_at });
+  if (!r || r.ok !== false){ audit('job_overwrite', 'job', x.doc_id, { unit: x.row.unit_number, from: 'docflow' }); toast('✓ ' + t('saved')); }
+  render();
+}
+function dfProblemDiscard(id){ if (!confirm(t('dfl_drop_q'))) return; dfProblemDrop(id); render(); }
+
+function dflDays(ts){ const d = Math.floor((Date.now() - Date.parse(ts || 0)) / 864e5); return isFinite(d) && d > 0 ? d : 0; }
+function dflCollect(){
+  const me = state.user.id, appr = canApprove(), wide = isManager() || isAcc();
+  const jobs = (state.data.jobs || []).filter(j => !isArch(j));
+  const mine = j => j.technician_id === me || ((j.helper_ids || []).includes(me) && isJobSharedWithMe(j));
+  const scope = wide ? jobs : jobs.filter(j => j.technician_id === me || (j.helper_ids || []).includes(me));
+  const blocked = new Set((state.data.profiles || []).filter(p => p.blocked).map(p => p.id));
+  const out = {
+    problems: dfProblems(),
+    returned: scope.filter(j => j.status === 'draft' && String(j.return_note || '').trim() && !(j.edit_open_until)),
+    reopened: scope.filter(j => j.status === 'draft' && j.edit_open_until),
+    noTr: jobs.filter(j => j.status === 'draft' && mine(j) && trMiss('job', j).length),
+    waiting: scope.filter(j => j.status === 'done'),
+    reqs: dfReqs().filter(r => r.status === 'pending' && (appr || wide || r.user_id === me)),
+    denied: dfReqs().filter(r => r.status === 'denied' && r.user_id === me && dflDays(r.decided_at) < 7),
+    /* v1.09.29: «правили после апрува» — по ревизии, которую сервер запомнил в момент апрува (approved_rev), а не по часам устройств */
+    sumDiff: (appr || wide) ? jobs.filter(j => j.status === 'approved' && j.approved_total != null && j.approved_rev != null && (+j.rev || 0) > +j.approved_rev && Math.abs(+j.approved_total - +j.total) > 0.009) : [],
+    orphan: isAdmin() ? jobs.filter(j => j.status !== 'approved' && j.technician_id && blocked.has(j.technician_id)) : []
+  };
+  out.stuck = out.returned.concat(out.reopened).filter(j => dflDays(j.updated_at) >= 2);
+  /* сколько требует МОЕГО действия — это число на значке меню */
+  out.mineN = out.problems.length + out.returned.filter(mine).length + out.reopened.filter(mine).length + out.denied.length
+            + (appr ? out.waiting.filter(j => !(j.technician_id === me && jobMode(j).selfAppr)).length + out.reqs.length : 0) + out.orphan.length;
+  return out;
+}
+/* счётчик зовётся из меню при КАЖДОЙ отрисовке — считаем не чаще раза в 1,5 с; любая запись документа и правка списка отказов сбрасывают кэш */
+let _dflMemo = { at: 0, n: 0, u: '' };
+function dflMemoDrop(){ _dflMemo.at = 0; }
+function dflCount(){
+  try{ if (!state.user || !state.data) return 0; const now = Date.now();
+    if (_dflMemo.u === state.user.id && now - _dflMemo.at < 1500) return _dflMemo.n;
+    const n = dflCollect().mineN; _dflMemo = { at: now, n, u: state.user.id }; return n; }catch(e){ return 0; }
+}
+function dflBadgePaint(){ const b = document.querySelector('.tab-badge[data-b="docflow"]'); if (!b) return; const n = dflCount(); b.hidden = !n; b.textContent = n > 99 ? '99+' : String(n); }
+function dflJobCard(j, sub, extra){
+  const cx = cxById(j.complex_id) || {};
+  return `<div class="rowline dfl-row clicky" role="button" tabindex="0" data-job="${j.id}" onclick="App.openJob('${j.id}')" onkeydown="App.bannerKey(event)">
+    <span class="mx">${ic('receipt')}</span>
+    <div class="grow"><b>${esc(docNo('job', j) || ((cx.abbr || cx.name || '—') + ' · ' + (j.unit_number || '—')))}</b> <span class="badge-status st-${j.status}">${t('status_' + j.status)}</span>
+      <div class="tiny">${esc(cx.abbr || cx.name || '—')} · Unit ${esc(j.unit_number || '—')} · ${fmtDMY(j.date)} · ${esc(shortName(profName(j.technician_id)) || t('dfl_nobody'))}${sub ? ' · ' + sub : ''}</div></div>
+    ${extra || ''}${ic('chev_r')}</div>`;
+}
+function viewDocflow(){
+  try{ dfLoad(); }catch(e){}
+  const c = dflCollect(), appr = canApprove();
+  const sec = (id, icon, title, hint, rows) => rows.length ? `<div class="section-title dfl-sec" id="dfl-${id}" style="margin-top:12px">${ic(icon)} ${title} <span class="hint">${rows.length}</span></div>
+    ${hint ? `<div class="tiny" style="margin-bottom:6px">${hint}</div>` : ''}<div class="card">${rows.join('')}</div>` : '';
+  const stop = 'event.stopPropagation();';
+  const pr = c.problems.map(x => { const j = jobOrig({ id: x.doc_id }) || x.row;
+    return `<div class="rowline dfl-row dfl-problem" data-p="${x.id}"><span class="mx">${ic('warn')}</span>
+      <div class="grow"><b>${esc(docNo('job', j) || ('Unit ' + (x.row.unit_number || '—')))}</b>
+        <div class="tiny">${t('df_rej_' + x.code)} · ${esc(dfWhen(x.at))}</div></div>
+      <button class="btn btn-ghost sm" onclick="App.dfProblemOpen('${x.id}')">${t('apv_open')}</button>
+      <button class="btn btn-blue sm" data-net="1" onclick="App.dfProblemRetry('${x.id}')">${t('dfl_retry')}</button>
+      <button class="btn btn-ghost sm" onclick="App.dfProblemDiscard('${x.id}')">${t('dfl_drop')}</button></div>`; });
+  const rq = c.reqs.map(r => { const j = (state.data.jobs || []).find(x => x.id === r.doc_id) || {};
+    return `<div class="rowline dfl-row clicky" role="button" tabindex="0" onclick="App.openJob('${r.doc_id}')" onkeydown="App.bannerKey(event)"><span class="mx">${ic('pencil')}</span>
+      <div class="grow"><b>${esc(docNo('job', j) || ('Unit ' + (j.unit_number || '—')))}</b><div class="tiny">${esc(shortName(profName(r.user_id)))} · ${esc(dfWhen(r.created_at))} · ${esc(r.reason)}</div></div>
+      ${appr ? `<button class="btn btn-green sm" data-net="1" onclick="${stop}App.dfReqDecide('${r.id}', true)">${t('df_req_grant')}</button>
+      <button class="btn btn-ghost sm" data-net="1" onclick="${stop}App.dfReqDecide('${r.id}', false)">${t('df_req_deny')}</button>` : ic('chev_r')}</div>`; });
+  const dn = c.denied.map(r => { const j = (state.data.jobs || []).find(x => x.id === r.doc_id); return j ? dflJobCard(j, t('df_req_was_denied') + (r.answer ? ': ' + esc(r.answer) : '')) : ''; }).filter(Boolean);
+  const total = c.problems.length + c.returned.length + c.reopened.length + c.noTr.length + c.waiting.length + c.reqs.length + dn.length + c.sumDiff.length + c.orphan.length;
+  return `<div class="section-title">${ic('clipboard')} ${t('tab_docflow')} <span class="hint">${total}</span>${helpBtn('docflow')}</div>
+    <div class="tiny" style="margin-bottom:6px">${t('dfl_hint')}</div>
+    ${total ? '' : `<div class="list-empty" id="dfl-empty">${ic('check')}<div>${t('dfl_empty')}</div></div>`}
+    ${sec('problems', 'warn', t('dfl_s_problems'), t('dfl_h_problems'), pr)}
+    ${sec('reqs', 'pencil', t('df_reqs'), '', rq)}
+    ${sec('returned', 'refresh', t('dfl_s_returned'), '', c.returned.map(j => dflJobCard(j, esc(String(j.return_note).slice(0, 90)) + (dflDays(j.updated_at) ? ' · ' + dflDays(j.updated_at) + ' ' + t('dfl_days') : ''))))}
+    ${sec('reopened', 'pencil', t('dfl_s_reopened'), t('dfl_h_reopened'), c.reopened.map(j => dflJobCard(j, (j.acc_status ? t('dfl_acc') + ': ' + esc(j.acc_status) + ' · ' : '') + (dflDays(j.updated_at) ? dflDays(j.updated_at) + ' ' + t('dfl_days') : t('today')))))}
+    ${sec('notr', 'globe', t('dfl_s_notr'), t('dfl_h_notr'), c.noTr.map(j => dflJobCard(j, t('tr_no_tr') + ': ' + trMiss('job', j).length)))}
+    ${sec('waiting', 'check', t('dfl_s_waiting'), appr ? '' : t('dfl_h_waiting'), c.waiting.map(j => dflJobCard(j, dflDays(j.updated_at) ? dflDays(j.updated_at) + ' ' + t('dfl_days') : '')))}
+    ${sec('denied', 'close', t('dfl_s_denied'), '', dn)}
+    ${sec('sum', 'receipt', t('dfl_s_sum'), t('dfl_h_sum'), c.sumDiff.map(j => dflJobCard(j, t('approve') + ' ' + money(j.approved_total) + ' ≠ ' + money(j.total))))}
+    ${sec('orphan', 'ban', t('dfl_s_orphan'), t('dfl_h_orphan'), c.orphan.map(j => dflJobCard(j, t('st_blocked'))))}`;
+}
+
 function apvCollect(){
   const jobs = (state.data.jobs || []).filter(j => j.status === 'done' && !isArch(j));
   const reps = (state.data.repairs || []).filter(r => r.status === 'sent' && !isArch(r));
-  const props = (state.data.proposals || []).filter(p => p.status === 'sent');
-  return { jobs, reps, props, n: jobs.length + reps.length + props.length };
+  const props = (state.data.proposals || []).filter(p => p.status === 'sent' && !p.is_test);
+  const reqs = canApprove() ? dfReqs().filter(r => r.status === 'pending') : [];   // v1.09.25: запросы на правку
+  return { jobs, reps, props, reqs, n: jobs.length + reps.length + props.length + reqs.length };
 }
 function apvCan(){ return isAdmin() || isManager(); }
 function apvRow(icon, title, sub, open){
@@ -8750,6 +9126,7 @@ function apvRow(icon, title, sub, open){
   </div>`;
 }
 function viewApprovals(){
+  try{ dfLoad(); }catch(e){}
   if (!apvCan()) return `<div class="list-empty">${t('no_access')}</div>`;
   const { jobs, reps, props, n } = apvCollect();
   const who = id => shortName((state.data.profiles.find(p => p.id === id) || {}).display_name || '—');
@@ -8772,7 +9149,7 @@ function viewApprovals(){
   return `<div class="section-title">${ic('check')} ${t('apv_title')} <span class="hint">${n}</span></div>
     <div class="tiny" style="margin-bottom:6px">${t('apv_hint')}</div>
     ${n ? '' : `<div class="list-empty">${t('apv_empty')}</div>`}
-    ${block(t('apv_jobs'), jH)}${block(t('apv_reps'), rH)}${block(t('apv_props'), pH)}`;
+    ${apvReqsHtml()}${block(t('apv_jobs'), jH)}${block(t('apv_reps'), rH)}${block(t('apv_props'), pH)}`;
 }
 
 function viewHome(){
@@ -8787,6 +9164,7 @@ function viewHome(){
       <div class="grow">${t('banner_pickups')}: <b>${due}</b>${over?` · ${t('banner_overdue')}: <b>${over}</b> <span class="info-i" title="${t('overdue_hint')}" onclick="event.stopPropagation();App.toastInfo('overdue_hint')">ⓘ</span>`:''}</div>${ic('chev_r')}
     </div>` : '';
   /* v1.08.46: жёлтая карточка «Ждут апрува» — вход в единое место решений */
+  try{ dfLoad(); }catch(e){}                         // v1.09.25: запросы правки и лента — не чаще раза в 15 с
   const apvN = apvCan() ? apvCollect().n : 0;
   const apvBanner = apvN > 0 ? `
     <div class="banner b-apv clicky" role="button" tabindex="0" onclick="App.go('approvals')" onkeydown="App.bannerKey(event)">${ic('check')}
@@ -8829,7 +9207,7 @@ function viewHome(){
         ${addrLineHtml(cx)}
         <div class="s meta"><span class="mt">${t('pickup')} · ${t('due')}: ${fmtDMY(p0.due_date)}${(!state.filterMine || isPlacementSharedWithMe(p0))?' · '+esc(profName(p0.technician_id)):''}</span>${overdue?`<span class="chip bad">${t('overdue')}</span>`:''}${list.some(p=>p.ext_of)?`<span class="chip info">${t('ext_chip')}</span>`:''}</div>
         ${codesLineHtml(cx, true)}
-        ${cardNoteLineHtml((state.data.jobs.find(x=>x.id===jobId)||{}).note)}
+        ${cardNoteLineHtml(pkNoteOf(jobId) || (state.data.jobs.find(x=>x.id===jobId)||{}).note)}
       </div>
       <div class="right">
         <div class="eq-dots">${eqDotsFor(list)}</div>
@@ -9170,6 +9548,7 @@ function sectionFaqHtml(key){
   S.home = H(`
     <h4>${ic('home')} Главная — день и его задачи</h4>
     <ul>
+      <li><b>Документооборот инвойса</b> (v1.09.25). <b>Черновик</b> правит основной исполнитель (★ в бригаде), менеджер и админ; помощник — только если основной включил в документе «Общий доступ», а админ оставил помощнику галочку «правка общих» (Справочники → Сотрудники). Бригада видит документ и добавляет фото всегда. <b>«Задача выполнена»</b> отправляет документ на согласование и запирает его; ошиблись — кнопка «Отозвать из согласования» вернёт черновик. Согласующий (админ и менеджеры с галочкой «апрув») ставит апрув или жмёт «Вернуть на доработку» с причиной — её видит вся бригада. <b>После апрува</b> документ заперт: «Запросить правку» с причиной → согласующий разрешает (документ уходит в черновик, апрув снимается, на правку даются сутки даже при запрете правки старых задач) или отказывает; запросы видны в «На апруве». <b>Двое сразу</b>: сверху видно «Сейчас редактирует …» — «Запросить редактирование» предупредит коллегу, и документ откроется сам, как только освободится; если правки всё-таки пересеклись (например, без связи), приложение ничего молча не затирает, а спрашивает: открыть свежую версию или записать свои поверх. <b>Номер</b> документ получает при первом сохранении НЕ черновиком и больше не меняется; сокращение сотрудника (кусочек {TECH}) задаёт админ в списке сотрудников. Удалить НЕ черновик может только админ.</li>
       <li><b>Строка дня</b> (v1.09.12): под лентой недели одна строка — дата, «⌂ сегодня» (когда выбран другой день), «Карта этого дня» и «?»; на телефоне и в компактной плотности — значками. «Перенести день» скрыт, пока админ не включит его в Настройки → Прочие функции. Плашки «Ждут апрува» и «Пикап сегодня» стоят в одну строку. Кнопка принтера на карточке открывает выбор: «Скачать PDF» или «Предпросмотр и печать»; та же кнопка есть в шапке открытого документа.</li>
       <li><b>Лента недели</b> сверху: точки под датой — есть задачи/пикапы; клик — выбрать день, стрелки ‹ › — листать недели, «Сегодня» — вернуться.</li>
       <li><b>Счётчики дня</b>: «N ЗАДАЧ» и «N ПИКАПОВ» с разбивкой по типам; «Карта этого дня» строит маршрут по точкам дня.</li>
@@ -9200,6 +9579,7 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('home')} Home — the day and its tasks</h4>
     <ul>
+      <li><b>Invoice workflow</b> (v1.09.25). A <b>draft</b> is edited by the lead (★ in the crew), a manager and the admin; a helper edits it only when the lead turned on Shared access in the document and the admin left the helper's "edit shared" box ticked (Directories → Staff). The crew always sees the document and adds photos. <b>"Job done"</b> sends the document for approval and locks it; made a mistake — "Withdraw from approval" brings the draft back. An approver (the admin and managers ticked "approve") approves it or presses "Return for rework" with a reason the whole crew sees. <b>After approval</b> the document is locked: "Request an edit" with a reason → an approver allows it (the document returns to draft, the approval is reset, editing stays open for a day even under the old-jobs edit lock) or refuses; requests are listed in Awaiting approval. <b>Two people at once</b>: the top shows "… is editing now" — "Request editing" notifies the colleague and the document opens by itself once free; if edits still collide (offline, for instance) nothing is overwritten silently — the app asks whether to open the fresh version or write yours over it. <b>The number</b> is issued when the document is first saved as non-draft and never changes; the employee tag (the {TECH} piece) is set by the admin in the staff list. Only the admin deletes a non-draft.</li>
       <li><b>Day row</b> (v1.09.12): one row under the week ribbon — date, "⌂ today" (when another day is selected), "Map of this day" and "?"; icons only on phones and in compact density. "Move day" stays hidden until the admin enables it in Settings → Other functions. The "Awaiting approval" and "Pickups today" banners share one row. The printer button on a card offers "Download PDF" or "Preview and print"; the same button sits in the header of an open document.</li>
       <li><b>Week strip</b> on top: dots under a date — there are jobs/pickups; click to pick a day, the ‹ › arrows flip weeks, "${t('today')}" brings you back.</li>
       <li><b>Day counters</b>: "N JOBS" and "N PICKUPS" with a breakdown by type; "${t('map_of_day')}" builds a route across the day's points.</li>
@@ -9532,9 +9912,50 @@ function sectionFaqHtml(key){
       <li><b>${ic('upload')} Unsent photos and video</b>: a summary by document, a five-line send log and the "Retry sending" / "Connection check" buttons — while one runs, the other is disabled.</li>
     </ul>`);
 
+  S.dft = H(`
+    <h4>${ic('flask')} Тест документооборота</h4>
+    <ul>
+      <li><b>Что это.</b> Полный цикл документа под вашей ролью — админ, менеджер и работник проверяют его каждый со своей стороны. Шаги СВОЕЙ роли идут настоящим путём приложения (те же запросы к базе: действуют и политики доступа, и сторожа); шаги остальных ролей выполняет служебная Edge Function <b>dft</b> от имени администратора, менеджера или выбранного работника. «+» — шаг обязан пройти, «−» — сервер обязан отказать именно этим кодом.</li>
+      <li><b>Что проверяется.</b> Назначение задачи, заполнение ВСЕЙ формы и техники, правка чужого черновика менеджером (и запрет на технику), бригада и «Общий доступ», отправка на согласование (без перевода — отказ), номер и его заморозка, замки «Выполнена» и «Апрув», отзыв, возврат на доработку, апрув (в том числе собственного инвойса), запрос правки (отказ, разрешение, авто-закрытие), своя заметка пикапа, продление аренды, техника в архив, «Забрал», конфликт ревизий и «занято», пропозал и привязка к запертому инвойсу, удаление, уборка.</li>
+      <li><b>Почему это не дыра.</b> Режим включает только администратор и только на срок (1, 4 или 24 часа) — каждое включение пишется в журнал событий, а админ при каждом входе видит предупреждение. Функция трогает ТОЛЬКО документы с пометкой «тестовый»; пометку ставит только база внутри самой функции — работник не может пометить свой настоящий инвойс и апрувить его через функцию (в тесте есть шаг, который это проверяет). Функцию можно не деплоить или удалить — приложение работает как раньше.</li>
+      <li><b>Тестовые документы</b> не тратят настоящую нумерацию (свой диапазон 90000001…), не двигают склад, не шлют пушей, не видны в рабочих списках, в конце удаляются насовсем. Если тест сорвался — кнопка «Убрать остатки тестов». Записи журнала событий, сделанные во время теста, помечены.</li>
+      <li><b>Отчёт.</b> В нём каждый шаг, время, и все запросы к серверу с ответами («→ / ←» — запросы приложения, «⇒ / ⇐» — вызовы функции). Кнопки «Копировать», «Скачать .txt», «Поделиться». В базе результаты не хранятся. «Пошагово» — тест ждёт «Дальше» после каждого шага.</li>
+    </ul>`, `
+    <h4>${ic('flask')} Workflow test</h4>
+    <ul>
+      <li><b>What it is.</b> The full document cycle under your role — the admin, a manager and a worker each check it from their side. Steps of YOUR role go the real app way (the same database requests: access policies and guards apply); the other roles are played by the <b>dft</b> Edge Function acting as the admin, a manager or the chosen worker. "+" must pass, "−" must be refused by the server with exactly that code.</li>
+      <li><b>What is checked.</b> Assigning a job, filling the WHOLE form and equipment, a manager editing someone else's draft (and the equipment ban), crew and Shared access, sending for approval (refused without translation), the number and freezing it, the Done and Approved locks, withdrawing, returning for rework, approval (including one's own invoice), edit requests (refusal, permission, auto-close), the pickup's own note, rental extension, archived equipment, "Picked up", revision conflict and "busy", proposals and linking to a locked invoice, deletion, cleanup.</li>
+      <li><b>Why it is not a hole.</b> Only the admin turns the mode on and only for a period (1, 4 or 24 hours) — every switch goes to the event journal and the admin sees a warning on every start. The function touches ONLY documents flagged as test; the flag is set only by the database inside the function itself — a worker cannot flag a real invoice and approve it through the function (one test step verifies exactly that). The function may stay undeployed or be deleted — the app works as before.</li>
+      <li><b>Test documents</b> do not use the real numbering (their own range 90000001…), do not move stock, send no pushes, are hidden from working lists and are deleted for good at the end. If a run broke — use "Remove test leftovers". Journal rows written during the test are tagged.</li>
+      <li><b>The report</b> has every step, timings and all server requests with answers ("→ / ←" are app requests, "⇒ / ⇐" are function calls). Copy, Download .txt, Share. Results are not stored in the database. "Step by step" waits for "Next" after every step.</li>
+    </ul>`);
+  S.docflow = H(`
+    <h4>${ic('clipboard')} Документооборот — что с документами не так и что ждёт действия</h4>
+    <ul>
+      <li><b>Число на значке меню</b> — то, что ждёт именно вас. Нажатие на строку открывает документ. Смотреть статусы может любой, действовать — тот, у кого есть право.</li>
+      <li><b>Не записано на сервер</b> — сервер отклонил запись: документ за это время изменил другой человек, документ заперт («Выполнена», «Апрув»), нет прав, нет перевода. Ваша версия НЕ пропала — она лежит на этом устройстве. «Открыть» — посмотреть документ, «Записать заново» — положить вашу версию поверх свежей (правки коллег заменятся вашими; запертый документ сервер снова не примет), «Убрать» — отказаться от неё.</li>
+      <li><b>Запросы на правку</b> — согласующий разрешает (документ уходит в черновик, апрув снимается, на правку — сутки) или отказывает. Запрос закрывается сам, если документ вернули в работу другим путём или удалили.</li>
+      <li><b>Возвращены на доработку</b> — с причиной от согласующего и числом дней. <b>В правке после апрува</b> — апрув снят по запросу; пока документ не сдан заново, он выпадает из реестра бухгалтерии (если на нём была отметка бухгалтерии — она показана, бухгалтер получила уведомление).</li>
+      <li><b>Без перевода</b> — на согласование уходит только полностью переведённый документ. При отметке «Задача выполнена» приложение само предложит «Сформировать переводы»; сервер документ без перевода не примет.</li>
+      <li><b>Ждут апрува</b>, <b>В правке отказано</b>, <b>Апрув не совпадает с расчётом</b> (документ правили после апрува и сумма изменилась), <b>Документы заблокированных сотрудников</b> (админу: откройте документ и назначьте другого основного — ☆ у члена бригады).</li>
+      <li><b>Пикапы.</b> Заметка пикапа — своя, в инвойс не попадает. Технику, убранную из инвойса, приложение не удаляет, а переносит в «Архив → Пикапы в архиве» с пояснением; склад получает её обратно. Менеджер технику в чужом документе только видит.</li>
+      <li><b>Настройки админа</b> (Настройки → Настройки документов → «Аренда оборудования и права»): менеджер апрувит собственный инвойс; менеджер привязывает пропозал к запертому инвойсу; пометки DRAFT и APPROVED на PDF. На Диск уходит только инвойс, отправленный на согласование.</li>
+    </ul>`, `
+    <h4>${ic('clipboard')} Workflow — documents with a problem or waiting for an action</h4>
+    <ul>
+      <li><b>The number on the menu badge</b> is what waits for you. Tapping a row opens the document. Anyone can view statuses; acting requires the right.</li>
+      <li><b>Not written to the server</b> — the server refused the write: someone else changed the document meanwhile, the document is locked (Done, Approved), no rights, no translation. Your version is NOT lost — it is kept on this device. "Open" shows the document, "Write again" puts your version over the fresh one (colleagues' edits are replaced by yours; a locked document will be refused again), "Discard" drops it.</li>
+      <li><b>Edit requests</b> — an approver allows (the document returns to draft, the approval is reset, editing stays open for a day) or refuses. A request closes by itself when the document went back to work another way or was deleted.</li>
+      <li><b>Returned for rework</b> — with the approver's reason and the number of days. <b>Being edited after approval</b> — the approval was reset on a request; until resubmitted the document drops out of the accounting register (an accounting mark, if any, is shown and the accountant is notified).</li>
+      <li><b>No translation</b> — only a fully translated document goes for approval. When you tick "Job done" the app offers "Generate translations"; the server refuses a document without them.</li>
+      <li><b>Awaiting approval</b>, <b>Edit refused</b>, <b>Approved amount differs from the total</b> (the document was edited after approval), <b>Documents of blocked employees</b> (admin: open the document and make someone else the lead — ☆ on a crew member).</li>
+      <li><b>Pickups.</b> A pickup note stays with the pickup and never goes into the invoice. Equipment removed from an invoice is not deleted but moved to "Archive → Archived pickups" with an explanation; the stock gets it back. A manager only views equipment in someone else's document.</li>
+      <li><b>Admin settings</b> (Settings → Document settings → "Equipment rental and rights"): a manager approves their own invoice; a manager links a proposal to a locked invoice; DRAFT and APPROVED marks on the PDF. Only an invoice sent for approval goes to Drive.</li>
+    </ul>`);
   S.chat = H(`
     <h4>${ic('chat')} Сообщения</h4>
     <ul>
+      <li><b>Новое в v1.09.25.</b> Под «Важными объявлениями» — лента <b>«Уведомления»</b>: всё, что система сообщила лично вам о документах — назначили задачу, добавили в бригаду или сняли с неё, задачу перенесли или удалили, документ ждёт апрува, апрувлен, апрув снят, возвращён на доработку, ответ на запрос правки, пикапы. Строка попадает в ленту, даже если пуш этого вида выключен; нажатие открывает документ. Писать сюда нельзя. <b>«Объявления» стали «Важными объявлениями»</b>: пишут админ, менеджеры, бухгалтер и те, кому админ поставил галочку «объявления» в Справочники → Сотрудники; пуш этого раздела не отключается — ни колокольчиком, ни галочкой «Сообщения в чате».</li>
       <li><b>Новое в v1.09.24.</b> <b>Модерация группы</b>: создатель группы назначает админов группы (шестерёнка → «Сделать админом»); создатель и админы группы удаляют любое сообщение в ней, правят название и состав. <b>«Не беспокоить»</b>: колокольчик в шапке переписки выключает её уведомления (сообщения с пометкой «Важно» всё равно приходят); такая переписка не идёт в красный счётчик. <b>Без связи</b>: сообщение остаётся в переписке с пометкой «ждёт сети» и уходит само, когда связь вернулась (снимки без связи не отправляются). <b>Поиск</b>: поле над списком ищет и людей, и сами сообщения — нажатие ведёт к сообщению. <b>«Переслать»</b> — в меню сообщения. <b>Бухгалтер</b> в чате — с правами менеджера. Срок хранения переписки по умолчанию не ограничен (Настройки → Прочие функции).</li>
       <li><b>Группы</b> (v1.09.20): кнопка «+ Группа» над списком — название и участники. Создать группу может любой сотрудник; добавлять людей — любой участник, убирать — создатель и администратор, выйти может каждый (шестерёнка в шапке группы). Новый участник видит всю историю. Сообщения группы видят только участники; документ можно отправить в группу прямо самолётиком из шапки документа.</li>
       <li><b>Объявления</b> — важное от менеджера и администратора: пишут только они, читают все. <b>Общий чат</b> — пишут и читают все сотрудники. Ниже — <b>личная переписка</b> с любым сотрудником: её видят только двое участников, админ чужую переписку не читает.</li>
@@ -9551,6 +9972,7 @@ function sectionFaqHtml(key){
   `, `
     <h4>${ic('chat')} Messages</h4>
     <ul>
+      <li><b>New in v1.09.25.</b> Under Important announcements there is the <b>Notifications</b> feed: everything the system told you about documents — a job assigned, added to or removed from a crew, a job moved or deleted, a document awaiting approval, approved, approval reset, returned for rework, an edit request answered, pickups. A row lands in the feed even when that push kind is off; tapping it opens the document. Nobody writes here. <b>Announcements became Important announcements</b>: the admin, managers, the accountant and people ticked "announce" in Directories → Staff post there; this channel's push cannot be turned off — neither by the bell nor by the "Chat messages" box.</li>
       <li><b>New in v1.09.24.</b> <b>Group moderation</b>: the group creator appoints group admins (gear → "Make admin"); the creator and group admins delete any message in it, edit the name and members. <b>Do not disturb</b>: the bell in the conversation header turns its notifications off (messages marked Important still arrive); such a conversation does not feed the red counter. <b>Offline</b>: a message stays in the conversation marked "waiting for network" and goes out by itself once the connection is back (pictures are not sent offline). <b>Search</b>: the box above the list finds both people and messages — a tap jumps to the message. <b>Forward</b> is in the message menu. <b>The accountant</b> has manager rights in the chat. Chat history is kept without a limit by default (Settings → Other functions).</li>
       <li><b>Groups</b> (v1.09.20): the "+ Group" button above the list — a name and members. Any employee can create a group; any member can add people, the creator and the admin can remove them, anyone can leave (the gear in the group header). A new member sees the whole history. Group messages are visible to members only; a document can be sent to a group with the paper plane in the document header.</li>
       <li><b>Announcements</b> — important notes from the manager and the admin: only they post, everyone reads. <b>Team chat</b> — every employee writes and reads. Below — <b>direct conversations</b> with any employee: only the two participants see them, the admin does not read other people's conversations.</li>
@@ -9780,6 +10202,7 @@ document.addEventListener('change', e => {
    ввода кода 2FA нельзя обойти, ткнув мимо него (это и был способ войти без
    кода: окно закрывалось, а сессия оставалась). */
 function openModal(html, opt){
+  try{ if (DFT.running){ const m = /<h3[^>]*>([\s\S]*?)<\/h3>/.exec(String(html)); dftLog('   ▣ ' + (m ? m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '(окно)'), 'ui'); } }catch(e){}   // v1.09.29: открывшиеся окна — в отчёт теста
   closeModal();
   const ov = document.createElement('div');
   ov.className = 'overlay'; ov.id = 'overlay';
@@ -10560,15 +10983,547 @@ async function tplMoveGo(){
   state.selDate = target; state.weekStart = mondayOf(target);
   toast('✓ ' + t('tpl_moved') + ': ' + n); render();
 }
+/* =====================================================================
+   v1.09.25 · ДОКУМЕНТООБОРОТ ИНВОЙСА
+   Кто что может — решает статус документа и личные права сотрудника (их ставит админ в списке
+   сотрудников: сокращение для номера, «правка общих документов», «апрув инвойсов», «важные объявления»).
+   · Черновик правит основной исполнитель, менеджер и админ; помощник — только если в документе
+     включён «Общий доступ» и у него есть личное право. Бригада видит документ всегда.
+   · «Выполнена» = на согласовании: заперта для всех, кроме согласующих. Основной может отозвать.
+   · «Апрув»: заперт. Нужна правка — «Запросить правку» с причиной; согласующий разрешает (документ
+     уходит в черновик, апрув снимается) или отказывает.
+   · Двое сразу: сервер сверяет ревизию строки (rev) и чужую правку затереть не даёт (STALE_DOC) —
+     приложение показывает окно «открыть свежий / записать мои поверх». Поверх этого — мягкое
+     «занято» (doc_lock, продление раз в 40 с, срок жизни 2 мин), чтобы до конфликта не доходило.
+   · Номер выдаётся при первом сохранении НЕ черновиком и замораживается текстом (doc_no).
+   · Лента «Уведомления» в Сообщениях: всё, что система сообщила человеку, даже если пуш выключен.
+   В демо-режиме сервера нет — правила, номер и события зеркалятся здесь же.
+   ===================================================================== */
+const DF = { reqs: [], notices: [], at: 0, busy: false, noDb: false, sig: '', conflict: null, legacyDone: false };
+const JL = { id: null, mine: false, held: null, beat: null, poll: null };
+const DF_REJECT = /STALE_DOC|DOC_LOCKED_DONE|DOC_LOCKED_APPROVED|DOC_LOCKED_DELETE|FORBIDDEN_CREW|FORBIDDEN_APPROVE|FORBIDDEN_EQUIPMENT|FORBIDDEN_FIELD|TRANSLATION_REQUIRED|SELF_APPROVE_OFF|LINK_LOCKED|LOCKED/;
+/* v1.09.26: метка устройства — ревизия различает телефон и компьютер одного человека */
+function dfDev(){ try{ let d = localStorage.getItem('techlog_dev'); if (!d){ d = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); localStorage.setItem('techlog_dev', d); } return d; }catch(e){ return 'nodev'; } }
+
+function meProf(){ return (state.data && state.user && (state.data.profiles || []).find(p => p.id === state.user.id)) || state.user || {}; }
+/* серверная часть 1.09.25 на месте (SQL выполнен); в демо — всегда */
+function dfReady(){ return !HAS_SB || ('docflow_v' in ((state.data && state.data.org_settings) || {})); }
+function dfReqs(){ return HAS_SB ? DF.reqs : ((state.data && state.data.doc_requests) || []); }
+function dfNotices(){ const me = state.user && state.user.id; return (HAS_SB ? DF.notices : ((state.data && state.data.notices) || [])).filter(n => n.user_id === me); }
+function dfApprovers(){ return (state.data.profiles || []).filter(p => !p.blocked && (p.role === 'admin' || (p.role === 'manager' && p.can_approve === true))).map(p => p.id); }
+function dfWhen(ts){ try{ return (chDayOf(ts) === todayISO() ? '' : fmtDM(chDayOf(ts)) + ' ') + chTimeShort(ts); }catch(e){ return ''; } }
+function jobOrig(j){ return (j && (state.data.jobs || []).find(x => x.id === j.id)) || null; }
+
+/* Режим открытого документа: можно ли править и почему нет */
+function jobMode(j){
+  const o = jobOrig(j);
+  if (!o) return { edit: true, why: '', role: 'main', st: 'draft', main: true, crew: false, appr: canApprove(), isNew: true };
+  return jobRights(o);
+}
+/* права на конкретную строку документа (её статус, исполнитель, бригада) — без оглядки на то, открыт ли он сейчас */
+function jobRights(o){
+  const me = state.user.id;
+  const st = o.status || 'draft', main = o.technician_id === me, crew = (o.helper_ids || []).includes(me), appr = canApprove();
+  let edit = false, why = '';
+  if (appr) edit = true;
+  else if (st === 'approved') why = 'approved';
+  else if (st === 'done') why = 'done';
+  else if (main || isManager()) edit = true;
+  else if (crew && isJobSharedWithMe(o)) edit = true;
+  else why = crew ? 'crew' : 'none';
+  if (edit && JL.id === o.id && JL.held){ edit = false; why = 'locked'; }
+  return { edit, why, st, main, crew, appr, role: appr ? 'appr' : main ? 'main' : isManager() ? 'mgr' : crew ? 'crew' : 'none',
+    /* v1.09.26: отозвать и запросить правку может тот, кто правит черновик: основной, менеджер, помощник с правом и «Общим доступом» */
+    canWithdraw: st === 'done' && !appr && (main || isManager() || (crew && isJobSharedWithMe(o))),
+    canRequest: st === 'approved' && !appr && (main || (crew && isJobSharedWithMe(o))),
+    eqLocked: isManager() && !isAdmin() && o.technician_id !== me,            // техника — пикапы и склад исполнителя: менеджер её только видит
+    selfAppr: !isAdmin() && o.technician_id === me && ((state.data.org_settings || {}).self_approve !== true) };
+}
+function jobPendingReq(id){ return dfReqs().find(r => r.doc_id === id && r.status === 'pending') || null; }
+function jobLastReq(id){ return dfReqs().filter(r => r.doc_id === id).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0] || null; }
+
+/* ---------- мягкое «занято» ---------- */
+function jlActive(){ return HAS_SB && !!state.sb && dfReady() && !netOff(); }
+async function jlTake(id, force){
+  if (!jlActive()) return true;
+  try{
+    const { data, error } = await state.sb.rpc('doc_lock', { p_kind: 'job', p_id: id, p_force: !!force });
+    if (error) throw error;
+    if (JL.id !== id) return true;
+    if (data && data.ok === false){ JL.held = { name: data.name || '—', since: data.since, by: data.by, asked: !!data.asked }; JL.mine = false; return false; }
+    JL.held = null; JL.mine = true; return true;
+  }catch(e){ dlog('⚠ doc_lock:', e); if (JL.id === id) JL.held = null; return true; }   // функции нет или сеть моргнула — правку не запрещаем: от затирания защищает ревизия
+}
+function jlStart(id){
+  jlStop();
+  JL.id = id;
+  if (!jlActive()) return;
+  jlTake(id, false).then(ok => { if (JL.id !== id) return; if (ok) jlBeatStart(); else { render(); jlPollStart(); } });
+}
+function jlAlive(){ return state.screen === 'job' && jobDraft && jobDraft.id === JL.id; }
+function jlBeatStart(){
+  clearInterval(JL.beat);
+  JL.beat = setInterval(() => {
+    if (!jlAlive()){ jlStop(); return; }
+    if (document.hidden) return;
+    jlTake(JL.id, false).then(ok => { if (!ok && jlAlive()){ clearInterval(JL.beat); JL.beat = null; render(); jlPollStart(); } });
+  }, 40000);
+}
+function jlPollStart(){
+  clearInterval(JL.poll);
+  JL.poll = setInterval(async () => {
+    if (!jlAlive()){ jlStop(); return; }
+    const id = JL.id, ok = await jlTake(id, false);
+    if (ok && JL.id === id){ clearInterval(JL.poll); JL.poll = null; await jobRefetch(id); toast('✓ ' + t('df_lock_free'), 'inf'); jlBeatStart(); render(); }
+  }, 10000);
+}
+function jlStop(){
+  clearInterval(JL.beat); clearInterval(JL.poll); JL.beat = JL.poll = null;
+  const id = JL.id, mine = JL.mine; JL.id = null; JL.mine = false; JL.held = null;
+  if (id && mine && jlActive()){ try{ state.sb.rpc('doc_unlock', { p_kind: 'job', p_id: id }).then(() => {}, () => {}); }catch(e){} }
+}
+/* «Запросить редактирование»: держателю — уведомление; менеджер и админ забирают документ сразу */
+async function jlAsk(){
+  const id = JL.id; if (!id) return;
+  const ok = await jlTake(id, true);
+  if (ok){ clearInterval(JL.poll); JL.poll = null; await jobRefetch(id); jlBeatStart(); toast('✓ ' + t('df_lock_taken'), 'inf'); render(); return; }
+  toast('🔔 ' + t(JL.held && JL.held.asked ? 'df_lock_asked' : 'df_lock_wait'), 'inf', 5000); render();
+}
+/* свежая строка документа с сервера → в данные и, если документ открыт, в черновик */
+async function jobRefetch(id, quiet){
+  if (!HAS_SB || !state.sb || netOff()) return jobOrig({ id });
+  try{
+    const { data, error } = await state.sb.from('jobs').select('*').eq('id', id).maybeSingle();
+    if (error) throw error;
+    const arr = state.data.jobs, i = arr.findIndex(x => x.id === id);
+    if (!data){ if (i >= 0) arr.splice(i, 1); saveLocal(); return null; }
+    if (i >= 0) arr[i] = data; else arr.push(data);
+    saveLocal();
+    if (!quiet && state.screen === 'job' && jobDraft && jobDraft.id === id){
+      jobDraft = JSON.parse(JSON.stringify(data));
+      jobDraft.form_data = Object.assign(emptyFormData(), jobDraft.form_data || {});
+      jobDraft.helper_ids = jobDraft.helper_ids || [];
+      localStorage.removeItem('techlog_draft');
+    }
+    return data;
+  }catch(e){ dlog('⚠ jobRefetch:', e); return null; }
+}
+
+/* ---------- сервер отклонил запись ---------- */
+function dfRejectCode(error){ const s = errStr(error); const m = DF_REJECT.exec(s); if (m) return m[0];
+  return /row-level security|42501/i.test(s) ? 'NO_RIGHTS' : ''; }   // v1.09.26: отказ политики доступа — тоже окончательный, в очереди ему делать нечего
+function dfApplyBack(row, b){
+  if (!b) return;
+  ['rev', 'updated_by', 'updated_at', 'doc_no', 'numbered_at'].forEach(k => { if (b[k] !== undefined) row[k] = b[k]; });
+  if (b.no != null) row.no = b.no;
+  if (jobDraft && jobDraft.id === row.id){ ['rev', 'updated_by', 'doc_no', 'numbered_at'].forEach(k => { if (b[k] !== undefined) jobDraft[k] = b[k]; }); if (b.no != null) jobDraft.no = b.no; }
+}
+async function dfRejected(table, row, code, opt){
+  pendingDone('upsert', table, row.id);
+  dlog('⛔ документ не записан:', code, 'id=' + String(row.id || '').slice(0, 8));
+  const fresh = await jobRefetch(row.id, true);
+  if (code === 'STALE_DOC' && fresh){
+    /* запись трогала только служебное (приоритет, порядок, архив), а содержимое у меня просто устарело —
+       накатываем эти поля на свежую строку и повторяем, человека не тревожим */
+    const svc = (opt && opt.svc) || (jobKey({ ...row, status: fresh.status }) === jobKey(fresh) ? ['priority', 'sort_order', 'archived_at', 'archived_by'] : null);
+    if (svc && !(opt && opt._retry)){
+      const merged = { ...fresh }; svc.forEach(k => { if (k in row) merged[k] = row[k]; });
+      return dbUpsert(table, merged, { svc, _retry: true });
+    }
+    dfProblemAdd(table, row, code);                           // v1.09.26: конфликтов может быть несколько — каждый остаётся в «Документообороте»
+    DF.conflict = { mine: row, fresh }; dfConflictModal();
+  } else {
+    dfProblemAdd(table, row, code);                           // v1.09.26: отклонённая версия остаётся на устройстве — «Документооборот»
+    toastGo('⛔ ' + t('df_rej_' + code) + ' · ' + t('dfl_open'), 'err', 9000, () => App.go('docflow'));
+  }
+  render();
+  return { ok: false, code };
+}
+function dfConflictModal(){
+  const c = DF.conflict; if (!c) return;
+  openModal(`${modalHead(t('df_cf_title'), 'warn')}
+    <div class="tiny" style="margin-bottom:10px">${t('df_cf_text').replace('{WHO}', esc(shortName(profName(c.fresh.updated_by)) || '—')).replace('{AT}', esc(dfWhen(c.fresh.updated_at)))}</div>
+    <button class="btn btn-blue" id="df-cf-fresh" onclick="App.dfConflictFresh()">${ic('refresh')} ${t('df_cf_fresh')}</button>
+    <button class="btn btn-ghost" id="df-cf-mine" style="margin-top:8px" onclick="App.dfConflictMine()">${ic('save')} ${t('df_cf_mine')}</button>
+    <div class="tiny" style="margin-top:8px">${t('df_cf_hint')}</div>`);
+}
+function dfConflictFresh(){
+  const c = DF.conflict; DF.conflict = null; closeModal(); if (!c) return;
+  dfProblemsSave(dfProblems().filter(x => x.doc_id !== c.fresh.id));
+  localStorage.removeItem('techlog_draft'); jobDraft = null; openJob(c.fresh.id);
+}
+async function dfConflictMine(){
+  const c = DF.conflict; DF.conflict = null; closeModal(); if (!c) return;
+  dfProblemsSave(dfProblems().filter(x => x.doc_id !== c.fresh.id));
+  const row = { ...c.mine, rev: c.fresh.rev, no: c.fresh.no, doc_no: c.fresh.doc_no, numbered_at: c.fresh.numbered_at };
+  const r = await dbUpsert('jobs', row);
+  if (!r || r.ok !== false){ audit('job_overwrite', 'job', row.id, { unit: row.unit_number, over: profName(c.fresh.updated_by) }); toast('✓ ' + t('saved')); }
+  render();
+}
+
+/* ---------- номер: заморозка при первом НЕ черновике ---------- */
+async function jobNoFreeze(j){
+  if (!j || j.status === 'draft' || j.doc_no) return;
+  { const r0 = jobOrig(j); if (r0){ if (j.no == null && r0.no != null) j.no = r0.no; if (!j.numbered_at && r0.numbered_at) j.numbered_at = r0.numbered_at; if (r0.doc_no){ j.doc_no = r0.doc_no; return; } } }
+  if (HAS_SB && (j.no == null || !j.numbered_at) && dfReady() && !netOff()){      // новая строка: номер выдаёт триггер ПОСЛЕ вставки — в ответе upsert его ещё нет
+    try{ const { data } = await state.sb.from('jobs').select('no,numbered_at,doc_no').eq('id', j.id).maybeSingle();
+      if (data){ const r1 = jobOrig(j); ['no', 'numbered_at', 'doc_no'].forEach(k => { if (data[k] != null){ j[k] = data[k]; if (r1) r1[k] = data[k]; } }); if (j.doc_no){ saveLocal(); return; } } }
+    catch(e){ dlog('⚠ номер документа:', e); }
+  }
+  if (j.no == null) await fetchDocNo('jobs', j);
+  if (j.no == null) return;
+  const text = renderNoFmt(docFmt(), docNoVals('job', j)); if (!text) return;
+  let out = text;
+  if (HAS_SB){
+    if (!dfReady() || netOff()) return;
+    try{ const { data, error } = await state.sb.rpc('job_fix_no', { p_job: j.id, p_text: text }); if (error) throw error; out = data || null; }
+    catch(e){ dlog('⚠ job_fix_no:', e); return; }
+  }
+  if (!out) return;
+  j.doc_no = out; const row = jobOrig(j); if (row) row.doc_no = out;
+  if (jobDraft && jobDraft.id === j.id) jobDraft.doc_no = out;
+  saveLocal();
+}
+/* после обмена: мои документы, сданные офлайн (номер пришёл с сервером), и — у админа — все старые документы пачкой */
+async function dfAfterSync(){
+  if (!state.user || !state.data || !dfReady()) return;
+  try{
+    const me = state.user.id;
+    const mine = (state.data.jobs || []).filter(j => j.status !== 'draft' && j.no != null && !j.doc_no && j.numbered_at && (j.technician_id === me || j.updated_by === me)).slice(0, 20);
+    for (const j of mine) await jobNoFreeze(j);
+    if (isAdmin() && HAS_SB && !DF.legacyDone && !netOff()){
+      DF.legacyDone = true;
+      const old = (state.data.jobs || []).filter(j => j.status !== 'draft' && j.no != null && !j.doc_no);
+      for (let i = 0; i < old.length; i += 400){
+        const part = old.slice(i, i + 400).map(j => ({ id: j.id, t: renderNoFmt(docFmt(), docNoVals('job', j)) })).filter(x => x.t);
+        if (!part.length) continue;
+        const { data, error } = await state.sb.rpc('job_fix_no_bulk', { p_items: part });
+        if (error){ dlog('⚠ job_fix_no_bulk:', error); break; }
+        part.forEach(x => { const r = state.data.jobs.find(j => j.id === x.id); if (r && !r.doc_no) r.doc_no = x.t; });
+        dlog('номера документов заморожены:', data, 'из', part.length);
+      }
+      saveLocal();
+    }
+  }catch(e){ dlog('⚠ dfAfterSync:', e); }
+}
+
+/* ---------- запросы правки и лента: загрузка ---------- */
+async function dfLoad(force){
+  if (!HAS_SB || !state.sb || !state.user || netOff() || DF.busy || !dfReady()) return;
+  if (!force && Date.now() - DF.at < 15000) return;
+  DF.busy = true;
+  try{
+    const [a, b] = await Promise.all([
+      Promise.resolve(state.sb.from('doc_requests').select('*').order('created_at', { ascending: false }).limit(200)).catch(e => ({ error: e })),
+      Promise.resolve(state.sb.from('notices').select('*').order('created_at', { ascending: false }).limit(200)).catch(e => ({ error: e }))]);
+    DF.noDb = !!(a.error || b.error);
+    if (!a.error) DF.reqs = a.data || [];
+    if (!b.error) DF.notices = b.data || [];
+    DF.at = Date.now();
+    const sig = DF.reqs.filter(r => r.status === 'pending').map(r => r.id).join(',') + '|' + DF.notices.length + ':' + ((DF.notices[0] || {}).id || '') + ':' + DF.notices.filter(n => !n.read_at).length;
+    if (sig !== DF.sig){
+      DF.sig = sig;
+      if (state.screen === 'home' || state.screen === 'approvals' || state.screen === 'docflow' || state.screen === 'job' && !jobDirty() || (state.screen === 'chat' && (!CH.thread || CH.thread === 'ntf'))) render();
+      else { try{ chBadgePaint(); }catch(e){} }
+    }
+  }catch(e){ dlog('⚠ dfLoad:', e); }
+  finally { DF.busy = false; }
+}
+
+/* ---------- демо: зеркало серверных событий ---------- */
+function dfDemoNotice(uid_, kind, title, body, url){
+  if (HAS_SB || !uid_ || uid_ === state.user.id) return;
+  const p = (state.data.profiles || []).find(x => x.id === uid_); if (!p || p.blocked) return;
+  (state.data.notices = state.data.notices || []).push({ id: uid(), user_id: uid_, kind, title, body: body || '', url: url || './', actor: state.user.id, created_at: new Date().toISOString(), read_at: null });
+}
+function dfDemoEvents(o, j){
+  if (HAS_SB || !j) return;
+  /* v1.09.28: как триггер сервера — висящий запрос правки закрывается, если документ ушёл из «Апрув» другим путём или удалён */
+  if (o && ((o.status === 'approved' && j.status !== 'approved') || (!o.archived_at && j.archived_at)))
+    (state.data.doc_requests || []).forEach(q => { if (q.doc_id === j.id && q.status === 'pending'){ q.status = 'closed'; q.decided_at = new Date().toISOString(); } });
+  const body = 'Unit ' + (j.unit_number || '—') + ' · ' + fmtDM(j.date), url = './?doc=job:' + j.id, who = shortName(state.user.display_name || '');
+  const crewOf = x => [x.technician_id].concat(x.helper_ids || []).filter(Boolean);
+  const oh = (o && o.helper_ids) || [], nh = j.helper_ids || [], om = o ? o.technician_id : null;
+  if (!o){ if (j.technician_id) dfDemoNotice(j.technician_id, 'job', 'Новая задача', body, url); nh.forEach(id => dfDemoNotice(id, 'job', 'Вас добавили в бригаду', body, url)); }
+  else {
+    if (om !== j.technician_id){
+      dfDemoNotice(j.technician_id, 'job', 'Задача передана вам', body, url);
+      if (om && !nh.includes(om)) dfDemoNotice(om, 'job', 'Вас сняли с задачи', body + ' · ' + who, './');
+    }
+    nh.filter(id => !oh.includes(id) && id !== om && id !== j.technician_id).forEach(id => dfDemoNotice(id, 'job', 'Вас добавили в бригаду', body, url));
+    oh.filter(id => !nh.includes(id) && id !== j.technician_id).forEach(id => dfDemoNotice(id, 'job', 'Вас сняли с задачи', body + ' · ' + who, './'));
+    const os = o.status, ns = j.status, note = j.return_note ? ' · ' + j.return_note : '';
+    if (os !== 'approved' && ns === 'approved') crewOf(j).forEach(id => dfDemoNotice(id, 'approve', 'Инвойс апрувлен', body + ' · $' + Math.round(+(j.approved_total ?? j.total) || 0), url));
+    else if (os === 'approved' && ns !== 'approved') crewOf(j).forEach(id => dfDemoNotice(id, 'reset', ns === 'draft' ? 'Апрув снят — документ в черновике' : 'Апрув снят с инвойса', body + ' · ' + who + note, url));
+    else if (os === 'done' && ns === 'draft'){
+      if (state.user.id !== j.technician_id) crewOf(j).forEach(id => dfDemoNotice(id, 'reset', 'Возвращён на доработку', body + ' · ' + who + note, url));
+      else dfApprovers().forEach(id => dfDemoNotice(id, 'reset', 'Документ отозван исполнителем', body + ' · ' + who, url));
+    }
+    else if (os === 'draft' && ns === 'done') dfApprovers().forEach(id => dfDemoNotice(id, 'approve', 'Ждёт апрува', body + ' · ' + who, url));
+  }
+  saveLocal();
+}
+
+/* ---------- действия в документе ---------- */
+async function jobWithdraw(){
+  const o = jobOrig(jobDraft); if (!o || !jobMode(jobDraft).canWithdraw) return;
+  if (!confirm(t('df_withdraw_q'))) return;
+  const row = { ...o, status: 'draft', return_note: null, returned_by: null, updated_at: new Date().toISOString() };
+  const r = await dbUpsert('jobs', row, { svc: ['status', 'return_note', 'returned_by'] }); if (r && r.ok === false) return;   // v1.09.26: строка устарела — статус накатывается на свежую, чужие правки целы
+  audit('job_reopen', 'job', o.id, { unit: o.unit_number, date: o.date, via: 'withdraw' });
+  dfDemoEvents(o, row);
+  pbPing(true);
+  toast('✓ ' + t('df_withdrawn'));
+  localStorage.removeItem('techlog_draft'); openJob(o.id);
+}
+function jobReturnModal(){
+  if (!canApprove() || !jobOrig(jobDraft)) return;
+  openModal(`${modalHead(t('df_return'), 'refresh')}
+    <div class="tiny" style="margin-bottom:8px">${t('df_return_h')}</div>
+    <textarea id="df-ret-note" rows="3" maxlength="300" placeholder="${esc(t('df_return_ph'))}"></textarea>
+    <button class="btn btn-blue" id="df-ret-go" style="margin-top:10px" onclick="App.jobReturnGo()">${ic('refresh')} ${t('df_return')}</button>`);
+  setTimeout(() => { const x = $('#df-ret-note'); if (x) x.focus(); }, 60);
+}
+async function jobReturnGo(){
+  const o = jobOrig(jobDraft); if (!o || !canApprove()) return;
+  const note = String(($('#df-ret-note') || {}).value || '').trim();
+  if (note.length < 3){ toast('⚠ ' + t('df_reason_req'), 'err'); return; }
+  closeModal();
+  const row = { ...o, status: 'draft', return_note: note, returned_by: state.user.id, approved_total: null, approved_by: null, approved_at: null, updated_at: new Date().toISOString() };
+  const r = await dbUpsert('jobs', row, { svc: ['status', 'return_note', 'returned_by', 'approved_total', 'approved_by', 'approved_at'] }); if (r && r.ok === false) return;
+  audit('job_return', 'job', o.id, { unit: o.unit_number, date: o.date, was: o.status, note });
+  dfDemoEvents(o, row);
+  pbPing(true); jlStop();
+  toast('↩ ' + t('df_returned'));
+  localStorage.removeItem('techlog_draft'); jobDraft = null; state.screen = 'home'; render();
+}
+function jobEditReqModal(){
+  const o = jobOrig(jobDraft); if (!o || !jobMode(jobDraft).canRequest) return;
+  if (HAS_SB && !dfReady()){ toast('⚠ ' + t('df_need_sql'), 'err'); return; }
+  openModal(`${modalHead(t('df_req'), 'pencil')}
+    <div class="tiny" style="margin-bottom:8px">${t('df_req_h')}</div>
+    <textarea id="df-req-reason" rows="3" maxlength="500" placeholder="${esc(t('df_req_ph'))}"></textarea>
+    <button class="btn btn-blue" id="df-req-go" data-net="1" style="margin-top:10px" onclick="App.jobEditReqGo()">${ic('send')} ${t('df_req_send')}</button>`);
+  setTimeout(() => { const x = $('#df-req-reason'); if (x) x.focus(); }, 60);
+}
+async function jobEditReqGo(){
+  const o = jobOrig(jobDraft); if (!o) return;
+  const reason = String(($('#df-req-reason') || {}).value || '').trim();
+  if (reason.length < 3){ toast('⚠ ' + t('df_reason_req'), 'err'); return; }
+  if (HAS_SB){
+    const { error } = await state.sb.rpc('doc_request_edit', { p_job: o.id, p_reason: reason });
+    if (error){ const s = errStr(error); toast('⚠ ' + (/ALREADY_PENDING/.test(s) ? t('df_req_dup') : rpcFail(error, 'doc_request_edit')), 'err'); return; }
+    closeModal(); await dfLoad(true);
+  } else {
+    closeModal();
+    (state.data.doc_requests = state.data.doc_requests || []).push({ id: uid(), kind: 'job', doc_id: o.id, user_id: state.user.id, reason, status: 'pending', answer: '', created_at: new Date().toISOString() });
+    dfApprovers().forEach(id => dfDemoNotice(id, 'approve', 'Запрос на правку документа', 'Unit ' + (o.unit_number || '—') + ' · ' + fmtDM(o.date) + ' · ' + shortName(state.user.display_name || '') + ' · ' + reason, './?doc=job:' + o.id));
+    audit('edit_request', 'job', o.id, { unit: o.unit_number, reason }); saveLocal();
+  }
+  toast('✓ ' + t('df_req_sent')); render();
+}
+async function dfReqDecide(id, grant){
+  if (!canApprove()) return;
+  const q = dfReqs().find(r => r.id === id); if (!q || q.status !== 'pending') return;
+  let answer = '';
+  if (!grant){ answer = prompt(t('df_req_deny_ph'), ''); if (answer === null) return; answer = String(answer).trim(); }
+  if (HAS_SB){
+    const { error } = await state.sb.rpc('doc_request_decide', { p_id: id, p_grant: !!grant, p_answer: answer });
+    if (error){ toast('⚠ ' + rpcFail(error, 'doc_request_decide'), 'err'); await dfLoad(true); render(); return; }
+    await jobRefetch(q.doc_id, true); await dfLoad(true);
+  } else {
+    const j = (state.data.jobs || []).find(x => x.id === q.doc_id), body = j ? 'Unit ' + (j.unit_number || '—') + ' · ' + fmtDM(j.date) + ' · ' + shortName(state.user.display_name || '') + (answer ? ' · ' + answer : '') : '';
+    Object.assign(q, { status: grant ? 'granted' : 'denied', answer, decided_by: state.user.id, decided_at: new Date().toISOString() });
+    if (grant && j){
+      const o = { ...j };
+      Object.assign(j, { status: 'draft', approved_total: null, approved_by: null, approved_at: null, return_note: t('df_req_granted_note') + (answer ? ': ' + answer : ''), returned_by: state.user.id,
+        edit_open_until: new Date(Date.now() + 864e5).toISOString(), rev: (+j.rev || 0) + 1, updated_by: state.user.id });
+      dfDemoEvents(o, j);
+    } else if (j) dfDemoNotice(q.user_id, 'reset', 'В правке отказано', body, './?doc=job:' + j.id);
+    audit(grant ? 'edit_request_granted' : 'edit_request_denied', 'job', q.doc_id, { answer }); saveLocal();
+  }
+  pbPing(true);
+  toast(grant ? '✓ ' + t('df_req_granted') : '✓ ' + t('df_req_denied'));
+  /* решение принято из открытого документа: у согласующего на экране копия ДО решения — сохрани он её, апрув вернулся бы. Открываем заново. */
+  if (grant && state.screen === 'job' && jobDraft && jobDraft.id === q.doc_id){ localStorage.removeItem('techlog_draft'); jlStop(); openJob(q.doc_id); return; }
+  render();
+}
+
+/* документ открыт только для просмотра, а строка в данных обновилась (обмен, решение по запросу, отзыв) — берём свежую */
+function dfRoRefresh(){
+  const o = jobOrig(jobDraft); if (!o || jobMode(jobDraft).edit) return;
+  if (o.updated_at === jobDraft.updated_at && o.status === jobDraft.status && (o.rev || 0) === (jobDraft.rev || 0)) return;
+  jobDraft = JSON.parse(JSON.stringify(o));
+  jobDraft.form_data = Object.assign(emptyFormData(), jobDraft.form_data || {}); jobDraft.helper_ids = jobDraft.helper_ids || [];
+}
+/* v1.09.26: «нужен перевод» при отправке на согласование */
+function trNeedModal(n, thenCall){
+  openModal(`${modalHead(t('tr_need_title'), 'globe')}
+    <div class="tiny" style="margin-bottom:10px">${t('tr_need_text').replace('{N}', n)}</div>
+    <button class="btn btn-blue" id="tr-need-go" data-net="1" onclick="App.trNeedGo('${thenCall.replace(/'/g, "\\'")}')">${ic('globe')} ${t('tr_need_btn')} (${n})</button>
+    <button class="btn btn-ghost" id="tr-need-manual" style="margin-top:8px" onclick="App.closeModal()">${t('tr_need_manual')}</button>
+    <div class="tiny" style="margin-top:8px">${t('tr_need_hint')}</div>`);
+}
+async function trNeedGo(thenCall){
+  const btn = $('#tr-need-go'); if (btn){ btn.disabled = true; btn.textContent = t('tr_busy'); }
+  let left = 0;
+  trBusy = true;
+  try{ await trDoc('job', jobDraft); }catch(e){ dlog('⚠ перевод при отправке:', e); }
+  trBusy = false; autosaveDraft();
+  left = trMiss('job', jobDraft).length;
+  closeModal();
+  if (left){ toast('⚠ ' + t('tr_need_left').replace('{N}', left), 'err', 8000); render(); return; }
+  saveJob._trOk = true;
+  try{ (new Function(thenCall))(); }catch(e){ dlog('⛔ trNeedGo:', e); }
+}
+function eqRoWhy(){ toast('🔒 ' + t('eq_ro_why'), 'inf', 9000); }
+/* ---------- плашки и кнопки в документе ---------- */
+function jobModeBannerHtml(j, md){
+  const o = jobOrig(j); if (!o) return '';
+  let out = '';
+  if (md.why === 'locked' && JL.held)
+    out += `<div class="banner b-yellow df-ban" id="df-ban-lock">${ic('lock')}<div class="grow"><b>${t('df_lock_by').replace('{NAME}', esc(shortName(JL.held.name)))}</b>
+      <div class="tiny">${t('df_lock_since')} ${esc(dfWhen(JL.held.since))} · ${t('df_lock_h')}</div></div>
+      <button class="btn btn-blue sm" id="df-lock-ask" data-net="1" onclick="App.jlAsk()">${t(isManager() ? 'df_lock_force' : 'df_lock_ask')}</button></div>`;
+  else if (md.why === 'done')
+    out += `<div class="banner b-yellow df-ban" id="df-ban-done">${ic('lock')}<div class="grow"><b>${t('df_ro_done')}</b><div class="tiny">${t(md.canWithdraw ? 'df_ro_done_h' : 'df_ro_view_h')}</div></div></div>`;
+  else if (md.why === 'approved'){
+    const pq = jobPendingReq(o.id), lq = jobLastReq(o.id);
+    out += `<div class="banner b-yellow df-ban" id="df-ban-appr">${ic('lock')}<div class="grow"><b>${t('df_ro_appr')}</b>
+      <div class="tiny">${pq ? t('df_req_pending') + ' · ' + esc(dfWhen(pq.created_at)) + ' · ' + esc(pq.reason)
+        : (lq && lq.status === 'denied' ? t('df_req_was_denied') + (lq.answer ? ': ' + esc(lq.answer) : '') + ' · ' : '') + t(md.canRequest ? 'df_ro_appr_h' : 'df_ro_view_h')}</div></div></div>`;
+  }
+  else if (md.why === 'crew')
+    out += `<div class="banner b-ds df-ban" id="df-ban-crew">${ic('crew')}<div class="grow"><b>${t('df_ro_crew')}</b><div class="tiny">${t('df_ro_crew_h')}</div></div></div>`;
+  if (o.status === 'draft' && String(o.return_note || '').trim())
+    out += `<div class="banner b-red df-ban" id="df-ban-ret">${ic('refresh')}<div class="grow"><b>${t('df_ret_ban')}</b>
+      <div class="tiny">${esc(o.return_note)}${o.returned_by ? ' · ' + esc(shortName(profName(o.returned_by))) : ''}</div></div></div>`;
+  if (md.appr && o.status === 'approved'){ const pq = jobPendingReq(o.id);
+    if (pq) out += `<div class="banner b-apv df-ban" id="df-ban-req">${ic('pencil')}<div class="grow"><b>${t('df_req_from')} ${esc(shortName(profName(pq.user_id)))}</b><div class="tiny">${esc(pq.reason)}</div></div>
+      <button class="btn btn-green sm" data-net="1" onclick="App.dfReqDecide('${pq.id}', true)">${t('df_req_grant')}</button>
+      <button class="btn btn-ghost sm" data-net="1" onclick="App.dfReqDecide('${pq.id}', false)">${t('df_req_deny')}</button></div>`; }
+  return out;
+}
+function jobEditedLineHtml(j){
+  const o = jobOrig(j); if (!o || !o.updated_by) return '';
+  return `<div class="tiny df-edited" id="df-edited">${ic('clock')} ${t('df_edited')}: ${esc(shortName(profName(o.updated_by)))} · ${esc(dfWhen(o.updated_at))}${o.edit_open_until && Date.parse(o.edit_open_until) > Date.now() ? ' · ' + t('df_open_until') + ' ' + esc(dfWhen(o.edit_open_until)) : ''}</div>`;
+}
+function jobRoActionsHtml(j, md){
+  if (md.canWithdraw) return `<button class="btn btn-blue" id="df-withdraw" onclick="App.jobWithdraw()">${ic('refresh')} ${t('df_withdraw')}</button>`;
+  if (md.canRequest) return jobPendingReq(j.id)
+    ? `<div class="note-purple" id="df-req-wait">${ic('clock')} ${t('df_req_pending')}</div>`
+    : `<button class="btn btn-blue" id="df-req" data-net="1" onclick="App.jobEditReqModal()">${ic('pencil')} ${t('df_req')}</button>`;
+  return '';
+}
+/* основной исполнитель — другим членом бригады (менеджер — в черновике, админ — всегда) */
+function crewMainCan(j){ const o = jobOrig(j) || j; return isAdmin() || (isManager() && (o.status || 'draft') === 'draft'); }
+function crewMain(id){
+  if (!jobDraft || !crewMainCan(jobDraft) || !id || id === jobDraft.technician_id) return;
+  const old = jobDraft.technician_id;
+  jobDraft.helper_ids = (jobDraft.helper_ids || []).filter(x => x !== id);
+  if (old) jobDraft.helper_ids.unshift(old);
+  jobDraft.technician_id = id;
+  const pr = state.data.profiles.find(p => p.id === id); jobDraft.technician_name = pr ? shortName(pr.display_name) : '';
+  autosaveDraft(); render();
+}
+
+/* ---------- «На апруве»: запросы правки ---------- */
+function apvReqsHtml(){
+  if (!canApprove()) return '';
+  const rows = dfReqs().filter(r => r.status === 'pending'); if (!rows.length) return '';
+  const cxN = id => (cxById(id) || {}).abbr || (cxById(id) || {}).name || '—';
+  return `<div class="section-title" style="margin-top:12px">${ic('pencil')} ${t('df_reqs')} <span class="hint">${rows.length}</span></div><div class="card" id="df-reqs">` + rows.map(r => {
+    const j = (state.data.jobs || []).find(x => x.id === r.doc_id) || {};
+    return `<div class="rowline df-req-row"><span class="mx">${ic('receipt')}</span>
+      <div class="grow"><b>${esc(docNo('job', j) || (cxN(j.complex_id) + ' · ' + (j.unit_number || '—')))}</b>
+        <div class="tiny">${esc(shortName(profName(r.user_id)))} · ${esc(dfWhen(r.created_at))} · ${esc(r.reason)}</div></div>
+      <button class="btn btn-ghost sm" onclick="App.openJob('${r.doc_id}')">${t('apv_open')}</button>
+      <button class="btn btn-green sm" data-net="1" onclick="App.dfReqDecide('${r.id}', true)">${t('df_req_grant')}</button>
+      <button class="btn btn-ghost sm" data-net="1" onclick="App.dfReqDecide('${r.id}', false)">${t('df_req_deny')}</button></div>`; }).join('') + `</div>`;
+}
+
+/* ---------- сотрудники: сокращение и личные права ---------- */
+function techTagAuto(id){ const p = (state.data.profiles || []).find(x => x.id === id); return p ? noPart(initials(p.display_name), 3) : ''; }
+function dfStaffLineHtml(u){
+  if (u.role === 'accountant') return '';
+  return `<div class="staff-df" data-uid="${u.id}">
+    <label class="df-tag-l" title="${esc(t('df_tag_t'))}">${t('df_tag')} <input class="df-tag" maxlength="4" size="4" autocapitalize="characters" autocomplete="off" spellcheck="false"
+      placeholder="${esc(techTagAuto(u.id))}" value="${esc(u.tag || '')}" onchange="App.dfTagSet('${u.id}', this.value)"></label>
+    <label class="df-chk"><input type="checkbox" ${u.can_edit_docs !== false ? 'checked' : ''} onchange="App.dfRightSet('${u.id}', 'can_edit_docs', this.checked)"> ${t('df_r_edit')}</label>
+    ${u.role === 'manager' ? `<label class="df-chk"><input type="checkbox" ${u.can_approve === true ? 'checked' : ''} onchange="App.dfRightSet('${u.id}', 'can_approve', this.checked)"> ${t('df_r_appr')}</label>` : ''}
+    ${u.role === 'tech' ? `<label class="df-chk"><input type="checkbox" ${u.can_announce === true ? 'checked' : ''} onchange="App.dfAnnounceSet('${u.id}', this.checked)"> ${t('df_r_ann')}</label>` : ''}
+    ${tipQ('df_rights_tip')}</div>`;
+}
+async function dfRightsSave(uid_, patch){
+  if (!isAdmin()) return;
+  const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
+  const next = { tag: u.tag || null, can_edit_docs: u.can_edit_docs !== false, can_approve: u.can_approve === true, ...patch };
+  if (HAS_SB){
+    if (!dfReady()){ toast('⚠ ' + t('df_need_sql'), 'err'); render(); return; }
+    const { error } = await state.sb.rpc('admin_set_doc_rights', { p_user: uid_, p_tag: next.tag || '', p_edit: next.can_edit_docs, p_approve: next.can_approve });
+    if (error){ const s = errStr(error); toast('⚠ ' + (/TAG_TAKEN/.test(s) ? t('df_tag_taken') : /BAD_TAG/.test(s) ? t('df_tag_bad') : rpcFail(error, 'admin_set_doc_rights')), 'err'); render(); return; }
+  } else audit('doc_rights', 'profile', uid_, { name: u.display_name, ...patch });
+  Object.assign(u, next); saveLocal(); toast('✓ ' + t('saved')); render();
+}
+function dfTagSet(uid_, v){
+  const tag = noPart(v, 4);
+  if (tag && tag.length < 2){ toast('⚠ ' + t('df_tag_bad'), 'err'); render(); return; }
+  if (tag && state.data.profiles.some(p => p.id !== uid_ && (p.tag || '') === tag)){ toast('⚠ ' + t('df_tag_taken'), 'err'); render(); return; }
+  dfRightsSave(uid_, { tag: tag || null });
+}
+function dfRightSet(uid_, key, on){ if (key === 'can_edit_docs' || key === 'can_approve') dfRightsSave(uid_, { [key]: !!on }); }
+async function dfAnnounceSet(uid_, on){
+  if (!isAdmin()) return;
+  const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
+  if (HAS_SB){
+    if (!dfReady()){ toast('⚠ ' + t('df_need_sql'), 'err'); render(); return; }
+    const { error } = await state.sb.rpc('admin_set_announce', { p_user: uid_, p_on: !!on });
+    if (error){ toast('⚠ ' + rpcFail(error, 'admin_set_announce'), 'err'); render(); return; }
+  } else audit('doc_rights', 'profile', uid_, { name: u.display_name, announce: !!on });
+  u.can_announce = !!on; saveLocal(); toast('✓ ' + t('saved')); render();
+}
+
+/* ---------- лента «Уведомления» в Сообщениях ---------- */
+function ntfUnread(){ return state.user ? dfNotices().filter(n => !n.read_at).length : 0; }
+function ntfLast(){ const a = dfNotices(); let m = null; a.forEach(n => { if (!m || String(n.created_at) > String(m.created_at)) m = n; }); return m; }
+function ntfIcon(k){ return ic(k === 'approve' ? 'check' : k === 'reset' ? 'refresh' : k === 'pickup' || k === 'overdue' ? 'bell' : k === 'edit' ? 'pencil' : k === 'order' ? 'list' : k === 'share' ? 'send' : 'receipt'); }
+function ntfMsgsHtml(){
+  const rows = dfNotices().slice().sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  if (!rows.length) return `<div class="list-empty ch-empty">${t('ntf_empty')}</div>`;
+  let day = '', out = '';
+  rows.forEach(n => {
+    const d = chDayOf(n.created_at);
+    if (d !== day){ day = d; out += `<div class="ch-day"><span>${d === todayISO() ? t('today') : fmtDMY(d)}</span></div>`; }
+    out += `<button type="button" class="ntf-row k-${esc(n.kind || '')} ${n.read_at ? '' : 'unread'}" data-id="${n.id}" onclick="App.ntfOpen('${n.id}')">
+      <span class="ntf-ic">${ntfIcon(n.kind)}</span>
+      <span class="grow"><b>${esc(n.title)}</b><span class="tiny">${esc(n.body || '')}</span></span>
+      <span class="tiny ntf-t">${chTimeShort(n.created_at)}</span></button>`;
+  });
+  return out;
+}
+function ntfOpen(id){
+  const n = dfNotices().find(x => x.id === id); if (!n) return;
+  if (deepLinkDoc(n.url || '') || deepLinkDay(n.url || '')) deepLinkApply(n.url);
+}
+function ntfMarkRead(){
+  const un = dfNotices().filter(n => !n.read_at); if (!un.length) return;
+  const at = new Date().toISOString(); un.forEach(n => { n.read_at = at; });
+  if (HAS_SB){ if (!netOff()) state.sb.rpc('notices_mark_read').then(({ error }) => { if (error) dlog('⚠ notices_mark_read:', error); }, () => {}); }
+  else saveLocal();
+  try{ chBadgePaint(); }catch(e){}
+}
+
 function openJob(id){
   const j = state.data.jobs.find(x=>x.id===id);
   if (!j) return;
   if (isAcc()){ accDoc('job', id); return; }                       // v1.08.39: бухгалтер — только чтение
-  if (!isManager() && j.technician_id !== state.user.id && !isJobSharedWithMe(j)){ toast(t('no_access'), 'err'); return; }
+  if (!isManager() && j.technician_id !== state.user.id && !(j.helper_ids || []).includes(state.user.id)){ toast(t('no_access'), 'err'); return; }   // v1.09.25: бригада видит документ всегда
   jobDraft = JSON.parse(JSON.stringify(j));
+  const _md0 = jobMode(jobDraft);
+  if (_md0.edit) jlStart(id); else jlStop();                     // v1.09.25: мягкое «занято»
   try{
     const saved = JSON.parse(localStorage.getItem('techlog_draft')||'null');
-    if (saved && saved.id === j.id && saved.ts > (Date.parse(j.updated_at||0)||0)){
+    if (_md0.edit && saved && saved.id === j.id && saved.ts > (Date.parse(j.updated_at||0)||0)){
       jobDraft = saved.draft; toast('♻ ' + t('draft_restored'), 'inf');
     }
   }catch(e){}
@@ -10688,6 +11643,7 @@ function stepperHtml(id, val, min){
 }
 
 function viewJob(){
+  dfRoRefresh();                                                  // v1.09.25: в режиме просмотра показываем то, что сейчас в данных, а не копию на момент открытия
   const j = jobDraft;
   const fd = j.form_data;
   const cp = cpById(j.counterparty_id) || {name:'—'};
@@ -10697,8 +11653,9 @@ function viewJob(){
   const sec = calcSections(fd, p);
   const total = calcTotal(fd, p);
   const isApproved = j.status === 'approved';
+  const md = jobMode(j);                                          // v1.09.25: режим документа — правка или только просмотр
   // v1.07.10: коворкер с общим доступом правит содержимое задачи, но не состав бригады и не саму галочку доступа
-  const crewEditable = isManager() || j.technician_id === state.user.id;
+  const crewEditable = md.edit && (isManager() || j.technician_id === state.user.id);
   const auxList = (wt.needs_aux && (wt.aux_ids||[]).length)
     ? (wt.aux_ids||[]).map(id => state.data.aux_equipment.find(a=>a.id===id)).filter(Boolean) : [];
   const auxTake = fd.aux_take || {};
@@ -10743,7 +11700,8 @@ function viewJob(){
   return `
   ${docBarHtml({ chain: `App.chain('job','${j.id}')`, print: 'App.printMenu()', share: state.data.jobs.some(x => x.id === j.id) ? `App.docShare('job','${j.id}')` : '',
                  title: `${docNo('job', j) ? esc(docNo('job', j)) + ' · ' : ''}${esc(cx.abbr || cx.name || '')} · Unit ${esc(j.unit_number || '—')}`,
-                 save: 'App.saveJob(false)', close: 'App.jobClose()', dirty: jobDirty() })}
+                 save: md.edit ? 'App.saveJob(false)' : '', close: 'App.jobClose()', dirty: md.edit && jobDirty() })}
+  ${jobModeBannerHtml(j, md)}
   <div class="card" style="border-left:6px solid ${wt.color}">
     <div style="display:flex;gap:10px;align-items:center">
       <div class="abbr" style="border-color:${wt.color}">${esc(cx.abbr||'—')}</div>
@@ -10755,7 +11713,8 @@ function viewJob(){
           <button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button></div>
         ${(cx.access_code||cx.callbox_code)?`<div class="tiny">${codeLineHtml(cx, true)}</div>`:''}
         ${ttJobLine(j)}
-        ${wtCanChange(j)
+        ${jobEditedLineHtml(j)}
+        ${md.edit && wtCanChange(j)
           ? `<button type="button" class="wt-change" style="color:${wt.color}" title="${t('wt_change')}" onclick="App.wtChangeModal()">${esc(biText(wt.name))} ${ic('pencil')}</button> ${tipQ('wt_tip')}`
           : `<div class="tiny" style="color:${wt.color};font-weight:800">${esc(biText(wt.name))}</div>`}
       </div>
@@ -10866,8 +11825,9 @@ function viewJob(){
     </div></div>
 
   <div class="inv-sec${invSecCls('equipment', sec)}" data-sec="equipment"><div class="inv-head" ${invSecHead('equipment', sec)}${ic('fan')} Equipment Rental ${helpBtn('equipment')} ${amtWrap('equipment',sec.equipment)}</div>
-    <div class="inv-body">
+    <div class="inv-body${md.edit && md.eqLocked ? ' eq-ro' : ''}"${md.edit && md.eqLocked ? ` id="eq-ro" onclick="App.eqRoWhy()"` : ''}>
       <div class="tiny">${t('equipment')}</div>
+      ${md.edit && md.eqLocked ? `<div class="tiny eq-ro-note" id="eq-ro-note">${ic('lock')} ${t('eq_ro_note')}</div>` : ''}
       ${eqRows}
     </div></div>
 
@@ -10907,9 +11867,9 @@ function viewJob(){
   ${mediaStripHtml(j.id)}
   ${proposalBoxHtml(j)}
   ${repBoxHtml(j)}
-  <label class="opt ${j.status!=='draft'?'on':''}" style="margin:4px 0 8px">
+  ${md.edit ? `<label class="opt ${j.status!=='draft'?'on':''}" style="margin:4px 0 8px">
     <input type="checkbox" id="jb-done" ${j.status!=='draft'?'checked':''}> ${t('job_done_chk')}
-  </label>
+  </label>${md.appr ? '' : `<div class="tiny df-done-h" style="margin:-4px 0 8px">${t('df_done_h')}</div>`}` : ''}
 
   ${canApprove() ? `
   <div class="card" style="border-color:var(--purple)">
@@ -10917,10 +11877,12 @@ function viewJob(){
     <div class="qty-line">
       <span class="name">${t('approved_total')}</span>
       <input id="jb-approved" class="price-input" inputmode="decimal" value="${j.approved_total ?? total}">
-      <button class="btn btn-blue sm" data-net="${(!isAdmin() && j.technician_id !== state.user.id) ? '1' : '0'}" onclick="App.approveJob()">${ic(isApproved ? 'refresh' : 'check')} ${t('approve')}</button>
+      ${md.selfAppr ? '' : `<button class="btn btn-blue sm" data-net="${(!isAdmin() && j.technician_id !== state.user.id) ? '1' : '0'}" onclick="App.approveJob()">${ic(isApproved ? 'refresh' : 'check')} ${t('approve')}</button>`}
     </div>
+    ${md.selfAppr ? `<div class="tiny" id="df-self-appr" style="margin-top:6px">${ic('lock')} ${t('df_self_appr')}</div>` : ''}
     ${isApproved ? `<div class="tiny">${ic('check')} ${t('approved_by')}: ${esc(profName(j.approved_by))} · ${j.approved_at ? j.approved_at.slice(0,16).replace('T',' ') : ''}</div>` : ''}
-    <div class="tiny" style="margin-top:6px">${t('approve_reset_note')}</div>
+    ${(jobOrig(j) || {}).status && (jobOrig(j) || {}).status !== 'draft' ? `<button class="btn btn-ghost sm" id="df-return" style="margin-top:8px" onclick="App.jobReturnModal()">${ic('refresh')} ${t('df_return')}</button>` : ''}
+    <div class="tiny" style="margin-top:6px">${t('df_appr_note')}</div>
   </div>` : (isApproved ? `<div class="note-purple">${ic('check')} ${t('status_approved')}: ${esc(profName(j.approved_by))} — ${money(j.approved_total ?? total)}</div>` : '')}
 
   <button class="btn btn-ghost jb-hist" style="margin-bottom:8px" onclick="App.jobHistory('${j.id}')">${ic('clock')} ${t('job_history')}</button>
@@ -10928,7 +11890,7 @@ function viewJob(){
   <div class="total-bar"><span>${t('total')}</span><span class="sum ${j.status==='approved'?'ok':'pend'}" id="jb-total">${money(total)}</span></div>
 
   ${editLocked(j) ? `<div class="banner b-red" style="margin-bottom:8px">${ic('lock')} ${t('lock_note').replace('{N}', editLockDays())}</div>` : ''}
-  <button class="btn btn-green" onclick="App.saveJob()">${ic('save')} ${t('save')}</button>
+  ${md.edit ? `<button class="btn btn-green" onclick="App.saveJob()">${ic('save')} ${t('save')}</button>` : jobRoActionsHtml(j, md)}
   <div class="btn-rowpp">
     <button class="btn btn-ghost" onclick="App.pdfPreview()">${ic('search')} ${t('pdf_preview')}</button>
     <button class="btn btn-ghost" onclick="App.pdfPrint()">${ic('report')} ${t('pdf_print')}</button>
@@ -10939,7 +11901,7 @@ function viewJob(){
   <div class="btn-row3">
     <button class="btn btn-ghost" onclick="App.go('home')">← ${t('back')}</button>
     <button class="btn btn-blue" onclick="App.makePdf()">${ic('download')} ${t('pdf')}</button>
-    ${(isAdmin() || j.technician_id===state.user.id)
+    ${(isAdmin() || (j.technician_id===state.user.id && ((jobOrig(j) || j).status || 'draft') === 'draft' && !(jobOrig(j) || j).numbered_at))   /* v1.09.25: основной удаляет только черновик; v1.09.26: и только пока документ ни разу не отправляли на согласование */
       ? `<button class="btn btn-red" onclick="App.deleteJob()">${ic('trash')} ${t('delete')}</button>`
       : `<span></span>`}
   </div>
@@ -11079,7 +12041,7 @@ function docBarHtml(o){
       onclick="${o.share}">${ic('send')}</button>` : ''}
     ${o.print ? `<button type="button" class="db-chain db-print" id="db-print" title="${t('print_inv')}" aria-label="${t('print_inv')}"
       onclick="${o.print}">${ic('printer')}</button>` : ''}
-    <button type="button" class="db-save" onclick="${o.save}">${ic('save')}<span>${t('save')}</span></button>
+    ${o.save ? `<button type="button" class="db-save" onclick="${o.save}">${ic('save')}<span>${t('save')}</span></button>` : ''}
     <button type="button" class="db-x" title="${t('doc_close')}" aria-label="${t('doc_close')}" onclick="${o.close}">${ic('close')}</button>
   </div>`;
 }
@@ -11160,7 +12122,7 @@ function wtChangeDo(id, reset){
   toast('✓ ' + t('wt_changed') + ' · ' + t(reset ? 'wt_changed_std' : 'wt_changed_keep'));
 }
 function jobClose(){
-  if (!jobDirty()){ localStorage.removeItem('techlog_draft'); App.go('home'); return; }
+  if (!jobDraft || !jobMode(jobDraft).edit || !jobDirty()){ localStorage.removeItem('techlog_draft'); App.go('home'); return; }   // v1.09.25: просмотр закрывается без вопросов
   docCloseModal('App.jobSaveClose()', 'App.jobDrop()');
 }
 async function jobSaveClose(){ closeModal(); await saveJob(true); }
@@ -11317,6 +12279,8 @@ function recalcJob(){
 async function saveJob(goHome){
   if (saveJob._busy) return;                               // v1.07.26: даблклик «Сохранить»
   const j = jobDraft;
+  if (!j) return;
+  if (!jobMode(j).edit) return;                            // v1.09.25: только просмотр — сохранять нечего (и «назад» молча не пересохраняет)
   if (editLocked(j)){ toast('🔒 ' + t('lock_note').replace('{N}', editLockDays()), 'err'); return; }
   saveJob._busy = true;
   dictStop();
@@ -11326,26 +12290,41 @@ async function saveJob(goHome){
   const p = priceResolver(j.counterparty_id);
   j.total = calcTotal(j.form_data, p);
   const doneChk = $('#jb-done');
+  /* v1.09.26: на согласование уходит только полностью переведённый документ — сервер без перевода не примет.
+     Не хватает перевода — окно с кнопкой «Сформировать переводы»: переводит, и сохранение идёт дальше само. */
+  if (doneChk && doneChk.checked && (!orig || (orig.status || 'draft') === 'draft') && !saveJob._trOk){
+    const miss = trMiss('job', j);
+    if (miss.length){ saveJob._busy = false; trNeedModal(miss.length, 'App.saveJob(' + (goHome === false ? 'false' : '') + ')'); return; }
+  }
+  saveJob._trOk = false;
   if (doneChk && doneChk.checked){                          // v1.09.16: обязательные пункты чек-листа — предупреждение, не запрет
     try{ const miss = clMissingReq(j); if (miss.length) toast('⚠ ' + t('cl_req_warn').replace('{N}', miss.length) + ': ' + miss.slice(0, 3).join(' · ') + (miss.length > 3 ? ' …' : ''), 'err', 7000); }catch(e){}
   }
   if (doneChk){
-    if (orig.status === 'approved'){
-      // апрув снимается при изменении итоговой стоимости не-админом
-      if (!isAdmin() && j.total !== orig.total){
-        j.status = 'done'; j.approved_total = null; j.approved_by = null; j.approved_at = null;
-        toast(t('approve_reset_note'), 'inf');
-        audit('approve_reset', 'job', j.id, { unit: j.unit_number, old_total: +orig.total, new_total: +j.total });
-      } else { j.status = 'approved'; }
+    /* v1.09.25: (а) заапрувленный документ открыт на правку только у согласующего — молчаливого сброса апрува больше нет;
+       (б) СТАРЫЙ БАГ: кнопка «Апрув» ставила j.status = 'approved', а эта ветка смотрела только на прежний статус (orig) и тут же
+       возвращала документу «Выполнено» — сумма и автор апрува записывались, а статус нет. Теперь свежий апрув (его ставит
+       approveJob, и только согласующему) сохраняется. */
+    if ((orig && orig.status === 'approved') || (j.status === 'approved' && canApprove())){
+      j.status = 'approved';
+      /* v1.09.26: согласующий поправил уже заапрувленный документ, и расчётная сумма изменилась — апрувленная молча прежней не остаётся */
+      if (orig && orig.status === 'approved' && doneChk.checked && Math.round(+j.total * 100) !== Math.round(+orig.total * 100)
+          && Math.round(+(orig.approved_total ?? orig.total) * 100) !== Math.round(+j.total * 100)){
+        if (confirm(t('df_sum_q').replace('{OLD}', money(orig.approved_total ?? orig.total)).replace('{NEW}', money(j.total)))){
+          j.approved_total = j.total; j.approved_by = state.user.id; j.approved_at = new Date().toISOString();
+          audit('approve_resum', 'job', j.id, { unit: j.unit_number, old: +(orig.approved_total ?? orig.total), new: +j.total });
+        }
+      }
       if (!doneChk.checked){
-        j.status = 'draft';
+        j.status = 'draft'; j.approved_total = null; j.approved_by = null; j.approved_at = null;
         /* v1.07.95: снятие отметки «задача выполнена» — это и есть отмена
            задачи; отдельного статуса в модели нет, а событие в журнале нужно */
-        audit('job_cancel', 'job', j.id, { unit: j.unit_number, date: j.date, was: orig.status });
+        audit('job_cancel', 'job', j.id, { unit: j.unit_number, date: j.date, was: orig ? orig.status : '' });
       }
     } else {
       j.status = doneChk.checked ? 'done' : 'draft';
-      if (orig.status === 'done' && !doneChk.checked)
+      if (j.status === 'done' && (!orig || orig.status === 'draft')){ j.return_note = null; j.returned_by = null; }   // v1.09.28: сдали заново — причина возврата снята (как на сервере)
+      if (orig && orig.status === 'done' && !doneChk.checked)
         audit('job_cancel', 'job', j.id, { unit: j.unit_number, date: j.date, was: orig.status });
     }
   }
@@ -11353,8 +12332,10 @@ async function saveJob(goHome){
   j.updated_at = new Date().toISOString();
   localStorage.removeItem('techlog_draft');
   navigator.vibrate?.(30);
-  await dbUpsert('jobs', JSON.parse(JSON.stringify(j)));
-  await fetchDocNo('jobs', j);            // v1.07.86: номер присваивает база
+  const _res = await dbUpsert('jobs', JSON.parse(JSON.stringify(j)));
+  if (_res && _res.ok === false){ saveJob._busy = false; return; }   // v1.09.25: сервер отклонил (чужая правка / документ заперт) — остаёмся в документе
+  await jobNoFreeze(j);                   // v1.09.25: номер — при первом НЕ черновике, сразу замораживается текстом
+  dfDemoEvents(orig, j);
   await syncPlacementsForJob(j);
   { // v1.07.18: журнал — статус и бригада
     const cx = cxById(j.complex_id) || {};
@@ -11377,7 +12358,7 @@ async function saveJob(goHome){
   pbPing(true);   // v1.08.33: назначение/апрув/пикапы — разослать сразу
   toast('✓ ' + t('saved'));
   try{ if (typeof CT2 !== 'undefined' && CT2.running && CT2.st && CT2.st.phase === 'save-wait') CT2.saved = Date.now(); }catch(e){}   // v1.08.80
-  if (goHome !== false){ state.screen = 'home'; state.selDate = j.date; state.weekStart = mondayOf(j.date); }
+  if (goHome !== false){ jlStop(); state.screen = 'home'; state.selDate = j.date; state.weekStart = mondayOf(j.date); }
   render();
   maybeApplyPendingUpdate();
 }
@@ -11386,7 +12367,7 @@ async function saveJob(goHome){
    v1.07.12: продления (ext_of) и строки, закрытые продлением или уже продлённые
    частично, живут своей жизнью — форма задачи их не пересоздаёт и не удаляет. */
 async function syncPlacementsForJob(j){
-  const all = state.data.placements.filter(p => p.job_id === j.id);
+  const all = state.data.placements.filter(p => p.job_id === j.id && !p.archived_at);   // v1.09.26: архивные строки форма не видит — ту же технику можно поставить заново
   const originals = all.filter(p => !p.ext_of);
   const touchedByExt = (p) => p.superseded || all.some(x => x.ext_of === p.id);
   const want = Object.entries(j.form_data.equipment).filter(([,e]) => (+e.qty||0) > 0);
@@ -11411,19 +12392,34 @@ async function syncPlacementsForJob(j){
   }
   for (const p of originals){
     if (touchedByExt(p)) continue;                // историю продлений не удаляем
-    if (!want.find(([etId]) => etId === p.equipment_type_id)) await dbDelete('placements', p.id);
+    if (!want.find(([etId]) => etId === p.equipment_type_id)) await plArchive(p, t('pl_arch_removed').replace('{DOC}', docNo('job', j) || ('Unit ' + (j.unit_number || '—'))));
   }
+  /* v1.09.26: сменился основной исполнитель — за ним едут ВСЕ незабранные пикапы документа, включая продления */
+  for (const p of state.data.placements.filter(x => x.job_id === j.id && !x.archived_at && !x.picked_up && (x.technician_id || null) !== (j.technician_id || null))){
+    await dbUpsert('placements', { ...p, technician_id: j.technician_id || null });
+  }
+}
+/* v1.09.26: пикап не удаляется, а уходит в архив с пояснением — кто, когда, из-за чего и с каким документом был связан.
+   superseded = true ставится намеренно: все счётчики (приложение, утренняя сводка, ТВ, склад) такие строки уже пропускают. */
+async function plArchive(p, why){
+  const et = (state.data.equipment_types || []).find(e => e.id === p.equipment_type_id) || {};
+  const note = why + ' · ' + (et.abbr || et.name || '') + '×' + (+p.qty || 1) + ' · ' + shortName(state.user.display_name || '') + ' · ' + fmtDMY(todayISO());
+  await dbUpsert('placements', { ...p, archived_at: new Date().toISOString(), archived_by: state.user.id, arch_note: note, superseded: true, superseded_at: p.superseded_at || new Date().toISOString() });
+  audit('pickup_archive', 'job', p.job_id, { unit: p.unit_number, eq: et.abbr || et.name || '', qty: +p.qty || 1, why });
 }
 
 async function approveJob(){
   const j = jobDraft;
   if (!canApprove()) return;
+  if (jobMode(j).selfAppr){ toast('🔒 ' + t('df_self_appr'), 'err', 7000); return; }   // v1.09.26
+  { const _m = trMiss('job', j); if (_m.length){ trNeedModal(_m.length, 'App.approveJob()'); return; } }   // v1.09.26: апрув — только переведённого документа
   const val = parseFloat($('#jb-approved').value);
   const calc = calcTotal(j.form_data, priceResolver(j.counterparty_id));
   const at = (isNaN(val) || val <= 0) ? calc : val;        // v1.07.26: 0/пусто = цену не менять
-  if (isAdmin() || j.technician_id === state.user.id){
+  if (isAdmin() || j.technician_id === state.user.id || !HAS_SB || dfReady()){   // v1.09.25: согласующему запись открыта политикой базы; RPC — только для базы до 1.09.25
     j.approved_total = at; j.status = 'approved';
     j.approved_by = state.user.id; j.approved_at = new Date().toISOString();
+    j.approved_crew = { main: j.technician_id, crew: j.helper_ids || [] };   // v1.09.28: снимок бригады (сервер ставит его сам; в демо сервера нет)
     const chkEl = $('#jb-done'); if (chkEl) chkEl.checked = true;
     await saveJob(false);
   } else {
@@ -11444,6 +12440,7 @@ async function approveJob(){
    уходит в Архив, файлы на Диске переезжают в «Архив TechLog». Насовсем всё
    стирается только из Архива, кнопкой «Удалить навсегда». */
 async function deleteJob(){
+  { const _o = jobOrig(jobDraft) || jobDraft; if (!isAdmin() && ((_o.status || 'draft') !== 'draft' || _o.numbered_at)){ toast('⛔ ' + t('df_rej_DOC_LOCKED_DELETE'), 'err'); return; } }   // v1.09.25
   if (editLocked(jobDraft)){ toast('🔒 ' + t('lock_note').replace('{N}', editLockDays()), 'err'); return; }
   if (docBlockers('job', jobDraft.id).length){ chainBlockModal('job', jobDraft.id); return; }   // v1.08.30
   if (!confirm(t('arch_q'))) return;
@@ -11452,11 +12449,17 @@ async function deleteJob(){
   state.screen = 'home'; render();
 }
 /* Пометить документ на удаление (задача, пропозал или ремонт) */
-async function archiveDoc(kind, id){
+async function archiveDoc(kind, id, why){
   const row = kind === 'prop' ? propById(id) : kind === 'rep' ? repById(id) : jobById(id);
   if (!row || isArch(row)) return;
-  const patch = { archived_at: new Date().toISOString(), archived_by: state.user.id };
-  await dbUpsert(kind === 'prop' ? 'proposals' : kind === 'rep' ? 'repairs' : 'jobs', { ...row, ...patch });
+  /* v1.09.26: в архив — с пояснением: кто, когда, по какой причине и с каким документом был связан */
+  const links = [];
+  if (kind === 'rep' && row.job_id){ const lj = jobById(row.job_id); if (lj) links.push(docNo('job', lj) || ('Unit ' + (lj.unit_number || '—'))); }
+  if (kind === 'job' && row.proposal_id){ const lp = propById(row.proposal_id); if (lp) links.push(docNo('prop', lp) || 'PROP'); }
+  if (kind === 'job') (state.data.repairs || []).filter(r => r.job_id === id).forEach(r => links.push(docNo('rep', r) || ('R-' + (r.no ?? '·'))));
+  const note = (why || t('arch_by_hand')) + ' · ' + shortName(state.user.display_name || '') + ' · ' + fmtDMY(todayISO()) + (links.length ? ' · ' + t('arch_linked') + ': ' + links.join(', ') : '');
+  const patch = { archived_at: new Date().toISOString(), archived_by: state.user.id, arch_note: note };
+  await dbUpsert(kind === 'prop' ? 'proposals' : kind === 'rep' ? 'repairs' : 'jobs', { ...row, ...patch }, { svc: ['archived_at', 'archived_by'] });
   if (kind === 'rep'){                                            // v1.08.30
     audit('repair_archive', 'repair', id, { no: row.no });
     toast('🗄 ' + t('arch_to'));
@@ -11692,6 +12695,7 @@ function archRowHtml(kind, o){
   return `<div class="rowline">
     <div class="grow"><b>${esc(title)}</b>
       <div class="tiny">${esc(cx.abbr || cx.name || '')} · ${fmtDMY(o.date)} · ${t('arch_by')} ${fmtDMY(String(o.archived_at || '').slice(0, 10))}${who && who !== '—' ? ' · ' + esc(who) : ''}</div>
+      ${o.arch_note ? `<div class="tiny arch-note">${esc(o.arch_note)}</div>` : ''}
       ${kind === 'job' ? `<div class="tiny" style="margin-top:2px">${mediaChips(o.id)}</div>` : ''}</div>
     <button class="btn btn-ghost sm" title="${t('arch_back')}" onclick="App.unarchive('${kind}','${o.id}')">${ic('refresh')}</button>
     ${isAdmin() ? `<button class="btn btn-red sm" title="${t('arch_purge')}" onclick="App.purgeDoc('${kind}','${o.id}')">${ic('trash')}</button>` : ''}
@@ -11766,6 +12770,20 @@ function viewArchive(){
     ${n ? jobs.map(j => archRowHtml('job', j)).join('') + props.map(p => archRowHtml('prop', p)).join('')
           + reps.map(r => archRowHtml('rep', r)).join('')
         : `<div class="list-empty"><div class="big">${ic('archive')}</div>${t('arch_empty')}</div>`}
+  </div>
+  ${archPickupsHtml()}`;
+}
+/* v1.09.26: пикапы в архиве — техника, убранная из инвойса. Строка не удаляется: видно, что это было, сколько, кто убрал и из какого документа. */
+function archPickupsHtml(){
+  const rows = (state.data.placements || []).filter(p => p.archived_at).sort((a, b) => String(b.archived_at).localeCompare(String(a.archived_at))).slice(0, 200);
+  if (!rows.length) return '';
+  return `<div class="card" id="arch-pickups">
+    <div style="font-weight:900;margin-bottom:6px">${ic('box')} ${t('arch_pk_title')} <span class="chip">${rows.length}</span></div>
+    <div class="tiny" style="margin-bottom:6px">${t('arch_pk_hint')}</div>
+    ${rows.map(p => { const j = (state.data.jobs || []).find(x => x.id === p.job_id), et = (state.data.equipment_types || []).find(e => e.id === p.equipment_type_id) || {};
+      return `<div class="rowline"><div class="grow"><b>${esc(pickNo(p) || 'PICK')}</b> · ${esc(et.abbr || et.name || '')}×${+p.qty || 1} · Unit ${esc(p.unit_number || '—')}
+        <div class="tiny">${esc(p.arch_note || '')}${j ? '' : ' · ' + t('dfl_gone')}</div></div>
+        ${j ? `<button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.openJob('${j.id}')">${ic('chev_r')}</button>` : ''}</div>`; }).join('')}
   </div>`;
 }
 /* Сверка: что у документов есть на Диске + опрос самого Диска */
@@ -13089,7 +14107,7 @@ function initSW(){
     location.reload();
   });
   navigator.serviceWorker.addEventListener('message', (e) => {
-    if (e.data?.type === 'PUSH'){ try{ if (!pdOnPush(e.data)) pushInAppPop(e.data); }catch(_e){} return; }          // v1.09.13; v1.09.22: проверочный пуш — в экран доставки
+    if (e.data?.type === 'PUSH'){ try{ if (!pdOnPush(e.data)) pushInAppPop(e.data); }catch(_e){} try{ if (e.data.kind !== 'chat') dfLoad(true); }catch(_e){} return; }          // v1.09.13; v1.09.22: проверочный пуш — в экран доставки
     if (e.data?.type === 'PUSH_RESUB'){ pbSyncSub(true); return; }                              // v1.09.22: браузер сменил адрес подписки
     if (e.data?.type === 'OPEN_URL'){ try{ deepLinkApply(e.data.url); }catch(_e){} return; }   // v1.09.13
     if (e.data?.type !== 'SW_ACTIVATED') return;
@@ -14192,6 +15210,9 @@ const App = {
     autosaveDraft(); render();
   },
   fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} fontSavePref(); render(); },
+  trNeedGo, eqRoWhy, dfProblemOpen, dfProblemRetry, dfProblemDiscard,   // v1.09.26
+  dftRun, dftNext, dftStop, dftSetMode, dftCleanup, dftAdminWarn,       // v1.09.27
+  jobWithdraw, jobReturnModal, jobReturnGo, jobEditReqModal, jobEditReqGo, dfReqDecide, dfConflictFresh, dfConflictMine, jlAsk, crewMain, dfTagSet, dfRightSet, dfAnnounceSet, ntfOpen,   // v1.09.25
   chGroupNew, chgPick, chGroupCreate, chGroupInfo, chGroupRename, chGroupAdd, chGroupKick, chGroupDelete, chGroupRoleSet, chMuteToggle, chGoMsg, chForward, chForwardGo,
   chMenu, chReply, chEdit, chCtxOff, chCopy, chReact, chJump, chMore, chImgPick, chImgOff, chImgOpen,
   chOpen, chBack, chQ, chInput, chKey, chImp, chAttach, chDocOpen, chPick, chPickList(q){ return chPickListHtml(q); }, chSend, chDel,
@@ -14332,7 +15353,7 @@ const App = {
   propItemDel(i){ if (!propDraft) return; propDraft.items.splice(i, 1);
     if (!propDraft.items.length) propDraft.items.push({ q: 1, code: '', d: '', d_en: '', a: 0 });
     const el = $('#prop-rows'); if (el) el.innerHTML = propItemsHtml(); propRecalc(); },
-  setPropStatus(s){ if (!propDraft) return; propDraft.status = s;
+  setPropStatus(s){ if (!propDraft) return; if (s === 'sent' && !propSendOn() && propDraft.status !== 'sent'){ toast('🔒 ' + t('prop_send_off'), 'err', 7000); return; } propDraft.status = s;
     if (s === 'approved' || s === 'declined'){ propDraft.decided_by = state.user.id;
       propDraft.decided_at = new Date().toISOString(); } render(); },
   batchPreview, batchPrint, extReqCreate, extReqDecide,
@@ -15837,24 +16858,32 @@ function auxToggle(id){
   autosaveDraft();
 }
 
-/* Заметка из карточки пикапа (та же заметка задачи, попадает в PDF) */
+/* v1.09.26: заметка пикапа — СВОЯ. Пикап — отдельный документ: его заметка хранится в строках пикапа (placements.note),
+   в инвойс не переходит и запертый инвойс не трогает. Заметка инвойса показана тут же только для чтения. */
+function pkLiveRows(jobId){ return (state.data.placements || []).filter(p => p.job_id === jobId && !p.archived_at && !p.superseded); }
+function pkNoteOf(jobId){ const r = pkLiveRows(jobId).find(p => String(p.note || '').trim()); return r ? String(r.note).trim() : ''; }
 function noteModal(jobId){
   const j = state.data.jobs.find(x=>x.id===jobId); if (!j) return;
+  const rows = pkLiveRows(jobId), src = rows.find(p => String(p.note || '').trim()) || {};
+  const can = rows.some(canTouchPk);
   openModal(`
-    ${modalHead(t('note'), 'note')}
-    ${dictationHTML('pk-note', j.note || '', 'pk-note-en')}
+    ${modalHead(t('pk_note_title'), 'note')}
+    ${String(j.note || '').trim() ? `<div class="tiny" style="margin-bottom:2px">${t('pk_note_inv')}</div><div class="note-green" id="pk-note-inv" style="display:block;margin-bottom:10px">${esc(j.note)}</div>` : ''}
+    <div class="tiny" style="margin-bottom:2px">${t('pk_note_own')}</div>
+    ${dictationHTML('pk-note', src.note || '', 'pk-note-en')}
     <div class="tiny" style="margin:6px 0 2px">${t('tr_en_lbl')}</div>
-    <textarea id="pk-note-en" class="note-ta" rows="2" placeholder="English…">${esc(j.note_en || '')}</textarea>
-    <div class="tiny" style="margin-bottom:10px">${t('note_hint')}</div>
-    <button class="btn btn-green" onclick="App.saveNote('${jobId}')">${t('save')}</button>
+    <textarea id="pk-note-en" class="note-ta" rows="2" placeholder="English…">${esc(src.note_en || '')}</textarea>
+    <div class="tiny" style="margin-bottom:10px">${t('pk_note_hint')}</div>
+    ${can ? `<button class="btn btn-green" id="pk-note-save" onclick="App.saveNote('${jobId}')">${t('save')}</button>` : ''}
   `);
 }
 async function saveNote(jobId){
   dictStop();
-  const j = state.data.jobs.find(x=>x.id===jobId); if (!j) return;
-  const v = document.getElementById('pk-note')?.value ?? '';
-  const ven = document.getElementById('pk-note-en')?.value ?? '';
-  await dbUpsert('jobs', { ...j, note: v, note_en: ven, updated_at: new Date().toISOString() });
+  const rows = pkLiveRows(jobId).filter(canTouchPk); if (!rows.length){ closeModal(); return; }
+  const v = String(document.getElementById('pk-note')?.value ?? '').trim();
+  const ven = String(document.getElementById('pk-note-en')?.value ?? '').trim();
+  for (const p of rows) await dbUpsert('placements', { ...p, note: v, note_en: ven });
+  audit('pickup_note', 'job', jobId, { unit: rows[0].unit_number, note: v.slice(0, 80) });
   closeModal(); toast('✓ ' + t('saved')); render();
 }
 
@@ -17840,6 +18869,29 @@ function drawInvoiceVert(doc, j, left, top, cont){
   txt('PRINT NAME', L+2, y+2.2); doc.setLineDashPattern([1,0.8],0); line(L+18, y+2.8, R-2, y+2.8);
   y += 6.4;
   txt('SIGNATURE:', L+2, y+2.2); line(L+18, y+2.8, R-2, y+2.8); doc.setLineDashPattern([],0);
+  invStatusMark(doc, j, L, W);
+}
+/* v1.09.26: пометка статуса на бланке. Черновик — крупное серое DRAFT по диагонали (документ ещё не отправлен на согласование,
+   номера у него нет); заапрувленный — штамп APPROVED с датой. Обе пометки включает и выключает админ
+   (Настройки → Настройки документов → «Аренда оборудования и права»). */
+function invStatusMark(doc, j, L, W){
+  try{
+    const org = (state.data && state.data.org_settings) || {}, st = (jobOrig(j) || j).status || 'draft';
+    try{ if (DFT.running) DFT.marks.push(st === 'draft' && org.pdf_draft_mark !== false ? 'DRAFT' : st === 'approved' && org.pdf_approved_mark !== false ? 'APPROVED' : '-'); }catch(e){}
+    if (st === 'draft' && org.pdf_draft_mark !== false){
+      doc.saveGraphicsState && doc.saveGraphicsState();
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(64); doc.setTextColor(205, 205, 205);
+      doc.text('DRAFT', L + W / 2, 120, { align: 'center', angle: 35 });
+      doc.setTextColor(0, 0, 0); doc.restoreGraphicsState && doc.restoreGraphicsState();
+    } else if (st === 'approved' && org.pdf_approved_mark !== false){
+      const d = String(j.approved_at || '').slice(0, 10), dt = d ? d.slice(5, 7) + '/' + d.slice(8, 10) + '/' + d.slice(0, 4) : '';
+      doc.setDrawColor(0, 130, 60); doc.setTextColor(0, 130, 60); doc.setLineWidth(0.5);
+      doc.roundedRect(L + W - 47, 3.2, 44, 8.6, 1.2, 1.2);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('APPROVED', L + W - 25, 7.2, { align: 'center' });
+      doc.setFontSize(5.6); doc.text(dt, L + W - 25, 10.3, { align: 'center' });
+      doc.setDrawColor(0, 0, 0); doc.setTextColor(0, 0, 0); doc.setLineWidth(0.2);
+    }
+  }catch(e){ dlog('⚠ пометка статуса в PDF:', e); }
 }
 
 /* =====================================================================
@@ -18184,6 +19236,7 @@ function dirStaff(){
         <b>${esc(u.display_name)}</b>${u.car_no != null ? ` <span class="car-no" title="${t('car_no')}">${carNoSvg(u.car_no)}</span>` : ''}
         <span class="chip ${u.blocked?'bad':'ok'} chip-st">${u.blocked?t('st_blocked'):t('st_active')}</span>
         <div class="tiny">@${esc(u.login)} · ${t('registered')} ${reg}${canSeeSessions() && HAS_SB ? ` · ${t('st_last_seen')}: ${fmtSeen(LS_SEEN.map[u.id])}` : ''}</div>
+        ${adm ? dfStaffLineHtml(u) : ''}
       </div>
       <div class="staff-ctl">
         ${adm ? carNoStepHtml(u) : ''}
@@ -18283,6 +19336,8 @@ async function staffBlock(uid_){
   audit(want ? 'user_block' : 'user_unblock', 'profile', uid_, { name: u.display_name });   // v1.07.18
   navigator.vibrate?.(20);
   toast(want ? '🚫 ' + t('blocked_done') : '✓ ' + t('unblocked_done'));
+  if (want){ const left = (state.data.jobs || []).filter(j => !isArch(j) && j.status !== 'approved' && j.technician_id === uid_).length;   // v1.09.26: незакрытые документы заблокированного — на переназначение
+    if (left) setTimeout(() => toastGo('⚠ ' + t('dfl_orphan_toast').replace('{N}', left), 'err', 12000, () => App.go('docflow')), 900); }
   render();
   staffDirRename(uid_, want);                            // v1.09.10: папка на Диске → «Имя Ф Заблокирован» (и обратно)
 }
@@ -18453,13 +19508,15 @@ async function saveVis(managerId){
 function crewChipsHtml(j){
   const ids = [j.technician_id, ...(j.helper_ids||[])].filter(Boolean);
   if (!ids.length) return `<span class="tiny">—</span>`;
-  const editable = isManager() || j.technician_id === state.user.id;   // v1.07.10: коворкер не меняет состав бригады
+  const ro = (j === jobDraft) && !jobMode(j).edit;                     // v1.09.25: документ только для просмотра
+  const editable = !ro && (isManager() || j.technician_id === state.user.id);   // v1.07.10: коворкер не меняет состав бригады
+  const canMain = !ro && j.technician_id && crewMainCan(j);           // v1.09.25: сделать основным другого члена бригады
   return ids.map((id, i) => {
     const pr = state.data.profiles.find(p=>p.id===id);
     const nm = pr ? shortName(pr.display_name) : '?';
-    const primary = i === 0;
+    const primary = !!j.technician_id && i === 0;
     return `<span class="chip-tech ${primary?'primary':''}">
-      ${esc(nm)}${(primary || !editable) ? '' : ` <button class="x" onclick="App.crewRemove('${id}')" aria-label="remove">${ic('close')}</button>`}
+      ${primary ? `<span class="crew-star" title="${t('df_main')}">★</span> ` : (canMain ? `<button class="crew-mk" title="${t('df_main_set')}" aria-label="${t('df_main_set')}" onclick="App.crewMain('${id}')">☆</button> ` : '')}${esc(nm)}${pr && (pr.tag || '') ? ` <span class="crew-tag">${esc(pr.tag)}</span>` : ''}${(primary || !editable) ? '' : ` <button class="x" onclick="App.crewRemove('${id}')" aria-label="remove">${ic('close')}</button>`}
     </span>`;
   }).join('');
 }
@@ -18493,6 +19550,7 @@ function crewRemove(id){
 
 let autosaveT = null;
 function autosaveDraft(){
+  if (jobDraft && state.screen === 'job' && !jobMode(jobDraft).edit) return;   // v1.09.25: просмотр — черновик на устройстве не заводим
   if (state.screen !== 'job' || !jobDraft) return;
   clearTimeout(autosaveT);
   autosaveT = setTimeout(() => {
@@ -19022,9 +20080,8 @@ function trCanWrite(kind, doc){
   if (!state.user) return false;
   if (kind === 'rep') return repCanEdit(doc);              /* v1.08.23 */
   if (kind === 'prop') return isManager();
-  /* как в политике jobs_upd: свои, общие, админ — и ничейная задача у менеджера */
-  return isAdmin() || doc.technician_id === state.user.id || isJobSharedWithMe(doc)
-      || (isManager() && !doc.technician_id);
+  /* v1.09.26: перевод — часть документа: пишет тот, кто сейчас может править сам документ (запертый — только согласующий) */
+  return jobRights(jobOrig(doc) || doc).edit === true;
 }
 /* v1.08.01: на экране «Настройки» карточки переводов и сверки пересчитывали
    всю базу на КАЖДЫЙ рендер — а рендер случается и по таймеру синхронизации.
@@ -19097,7 +20154,8 @@ async function trDoc(kind, doc){
 async function trSaveDoc(kind, doc, fields){
   const row = JSON.parse(JSON.stringify(doc));
   row.updated_at = new Date().toISOString();
-  await dbUpsert(kind === 'rep' ? 'repairs' : kind === 'prop' ? 'proposals' : 'jobs', row);
+  const _r = await dbUpsert(kind === 'rep' ? 'repairs' : kind === 'prop' ? 'proposals' : 'jobs', row);
+  if (_r && _r.ok === false) return;                          // v1.09.26: перевод не записан — в журнал «переведено» не пишем
   audit('doc_translate', kind === 'rep' ? 'repair' : kind === 'prop' ? 'proposal' : 'job', doc.id,
         { doc: trDocLabel(kind, doc), fields });
 }
@@ -19195,8 +20253,8 @@ function trTick(){
     localStorage.setItem(TR_LS_LAST, String(Date.now()));
     if (!pend.length) return;
     dlog('перевод: без английского', pend.length, 'док.,', o.tr_auto ? 'перевожу сам' : 'напоминаю');
-    if (o.tr_auto) trRunPending(true);
-    else if (remind) trPop(pend.length);
+    /* v1.09.26: автоперевод по таймеру больше НЕ пишет в документы — перевод обязателен при отправке на согласование и делается там же */
+    if (remind) trPop(pend.length);
   }catch(e){ dlog('⛔ trTick:', e); }
 }
 function trPop(n){
@@ -19970,6 +21028,9 @@ function propMoneyHidden(){
   return (o.prop_hide_prices !== false) && !isAdmin();
 }
 function propMoney(v){ return propMoneyHidden() ? '—' : money(+v || 0); }
+/* v1.09.31: пропозал клиенту не отправляется — статус «Отправлен» выключен, включает админ (Настройки → Пропозалы) */
+function propSendOn(){ return ((state.data && state.data.org_settings) || {}).prop_send_on === true; }
+function propStatuses(cur){ return ['draft', 'sent', 'approved', 'declined'].filter(x => x !== 'sent' || propSendOn() || cur === 'sent'); }
 function propCanCreate(){
   const o = (state.data && state.data.org_settings) || {};
   return isAdmin() || (o.prop_mgr_create && isManager());
@@ -20060,7 +21121,7 @@ function mediaLockOn(){ return ((state.data && state.data.org_settings) || {}).m
 function mediaLocked(j){ return !!j && j.status === 'approved' && mediaLockOn() && !isAdmin(); }
 function canArchDoc(b){
   if (b.t === 'rep') return isAdmin() || b.o.created_by === state.user.id;
-  return (isAdmin() || b.o.technician_id === state.user.id) && !editLocked(b.o) && !mediaLocked(b.o);
+  return (isAdmin() || (b.o.technician_id === state.user.id && (b.o.status || 'draft') === 'draft' && !b.o.numbered_at)) && !editLocked(b.o) && !mediaLocked(b.o);   // v1.09.25: НЕ черновик удаляет только админ; v1.09.26: документ с выданным номером — тоже
 }
 function chainBlockModal(kind, id){
   const bl = docBlockers(kind, id);
@@ -20099,8 +21160,11 @@ async function chainArchive(kind, id){
   const bl = docBlockers(kind, id);
   if (!bl.every(canArchDoc)){ toast('⚠ ' + t('ch_block_admin_only'), 'err'); return; }
   closeModal();
-  for (const b of bl.filter(x => x.t === 'rep')) await archiveDoc('rep', b.o.id);
-  for (const b of bl.filter(x => x.t === 'job')) await archiveDoc('job', b.o.id);
+  /* v1.09.26: связанные документы уходят в архив вместе с основным — с пояснением, из-за какого документа */
+  const _root = kind === 'prop' ? propById(id) : jobById(id);
+  const _why = t('arch_with').replace('{DOC}', (_root && (docNo(kind === 'prop' ? 'prop' : 'job', _root) || ('Unit ' + (_root.unit_number || '—')))) || '');
+  for (const b of bl.filter(x => x.t === 'rep')) await archiveDoc('rep', b.o.id, _why);
+  for (const b of bl.filter(x => x.t === 'job')) await archiveDoc('job', b.o.id, _why);
   await archiveDoc(kind === 'prop' ? 'prop' : 'job', id);
   if (kind === 'prop') propDraft = null;
   else { localStorage.removeItem('techlog_draft'); jobDraft = null; state.screen = 'home'; }
@@ -20203,7 +21267,7 @@ function proposalBoxHtml(j){
         : `<span class="tiny">${t('prop_pick_none')}</span>`}
         ${propCanCreate() ? `<button class="btn btn-ghost sm" onclick="App.propFromJob()">${ic('plus')} ${t('prop_from_job')}</button>` : ''}`;   // v1.09.08
     }
-    return `<div class="card" style="margin:4px 0 0;padding:8px 10px">
+    return `<div class="card prop-box" style="margin:4px 0 0;padding:8px 10px">
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${ic('prop')} <b>PROPOSAL</b> ${inner}</div></div>`;
   }
   if (p) return `<div class="tiny" style="margin:4px 0 0"><span class="chip pr">P-${p.no ?? '·'}</span> PROPOSAL</div>`;
@@ -20214,6 +21278,8 @@ function proposalBoxHtml(j){
 }
 async function linkProposal(jobId, propId){
   if (!isManager()) return;
+  { const _j = state.data.jobs.find(x => x.id === jobId);        // v1.09.26: запертый инвойс — привязка только с разрешения админа
+    if (_j && (_j.status || 'draft') !== 'draft' && !canApprove() && (state.data.org_settings || {}).mgr_link_locked !== true){ toast('🔒 ' + t('df_rej_LINK_LOCKED'), 'err', 9000); return; } }
   if (propId === '' || propId === undefined){ toast('⚠ ' + t('prop_pick'), 'err'); return; }
   const apply = () => {
     const jj = state.data.jobs.find(x => x.id === jobId);
@@ -20230,6 +21296,7 @@ async function linkProposal(jobId, propId){
     render(); return;
   }
   const { error } = await state.sb.rpc('link_job_proposal', { p_job: jobId, p_prop: propId });
+  if (error && /LINK_LOCKED/.test(errStr(error))){ toast('🔒 ' + t('df_rej_LINK_LOCKED'), 'err', 9000); return; }   // v1.09.26
   if (error){ toast('⛔ ' + rpcFail(error, 'link_job_proposal'), 'err'); return; }
   apply(); toast('✓ ' + t('saved')); render();
 }
@@ -20315,7 +21382,7 @@ function viewProposals(){
 }
 function viewProposalList(){
   const f = state.propFilter || 'all';
-  const chips = ['all','draft','sent','approved','declined'].map(s =>
+  const chips = ['all'].concat(propStatuses((state.data.proposals || []).some(p => p.status === 'sent' && !isArch(p)) ? 'sent' : '')).map(s =>
     `<button class="tabbtn ${f===s?'active':''}" onclick="App.propFilter('${s}')">${s==='all'?t('all'):t('pst_'+s)}</button>`).join('');
   const list = [...(state.data.proposals || [])].filter(p => !isArch(p))
     .filter(p => f === 'all' || p.status === f)
@@ -20433,8 +21500,8 @@ function viewProposalForm(){
   const cp = cpById(p.counterparty_id) || {};
   const cx = cxById(p.complex_id) || {};
   const linked = state.data.jobs.filter(j => j.proposal_id === p.id);
-  const stSeg = ['draft','sent','approved','declined'].map(s =>
-    `<button class="${p.status===s?'on':''}" onclick="App.setPropStatus('${s}')">${t('pst_'+s)}</button>`).join('');
+  const stSeg = propStatuses(p.status).map(s =>
+    `<button class="${p.status===s?'on':''}" data-pst="${s}" onclick="App.setPropStatus('${s}')">${t('pst_'+s)}</button>`).join('');
   return `<div class="prop-wrap">
   ${docBarHtml({ chain: `App.chain('prop','${p.id}')`, share: (state.data.proposals || []).some(x => x.id === p.id) ? `App.docShare('prop','${p.id}')` : '',
                  title: `${docNo('prop', p) || t('tab_proposals') + ' · P-' + (p.no ?? '…')}`,
@@ -20976,6 +22043,9 @@ function myCarQty(etId){ return emRow(etId).cars[state.user.id] || 0; }
    ветки equip_pl_sync(): создание (с авто-добором), «забрал»/отмена,
    «вернул»/отмена, правка количества, удаление строки аренды. */
 function demoPlMoves(op, row, prev){
+  if (op === 'update' && prev && !prev.archived_at && row && row.archived_at && !row.picked_up){   // v1.09.26: в архив — как удаление: движения строки исчезают
+    state.data.equip_moves = (state.data.equip_moves || []).filter(mv => mv.placement_id !== row.id); return;
+  }
   if (HAS_SB || !row || !state.user) return;
   let next = [...(state.data.equip_moves || [])];
   const bal = (loc, tech) => next.reduce((n, m) => m.equipment_type_id !== row.equipment_type_id ? n
@@ -21846,7 +22916,10 @@ async function repToInvoice(id){
   const free = fd.others.findIndex(o => !String(o.desc || '').trim() && !(+o.amount));
   if (free >= 0) fd.others[free] = line; else fd.others.push(line);
   const total = calcTotal(fd, priceResolver(j.counterparty_id));
-  await dbUpsert('jobs', { ...j, form_data: fd, total, updated_at: new Date().toISOString() });
+  { const _md = jobMode(j);                                   // v1.09.26: запертый инвойс принимает сумму ремонта только от согласующего
+    if (!_md.edit){ toast('🔒 ' + t(_md.st === 'approved' ? 'df_rej_DOC_LOCKED_APPROVED' : _md.st === 'done' ? 'df_rej_DOC_LOCKED_DONE' : 'no_access'), 'err', 7000); return; } }
+  const _r = await dbUpsert('jobs', { ...j, form_data: fd, total, updated_at: new Date().toISOString() });
+  if (_r && _r.ok === false) return;
   audit('repair_to_invoice', 'repair', r.id, { no: r.no, job: j.id, amount: line.amount });
   toast('✓ ' + t('rep_moved')); render();
 }
@@ -22198,10 +23271,10 @@ async function assignJob(id, techId){
   if (!isManager() || !techId) return;
   const j = (state.data.jobs || []).find(x => x.id === id); if (!j) return;
   const pr = state.data.profiles.find(p => p.id === techId);
-  j.technician_id = techId;
-  j.technician_name = pr ? shortName(pr.display_name) : '';
-  j.updated_at = new Date().toISOString();
-  await dbUpsert('jobs', JSON.parse(JSON.stringify(j)));
+  const _row = { ...JSON.parse(JSON.stringify(j)), technician_id: techId, technician_name: pr ? shortName(pr.display_name) : '', updated_at: new Date().toISOString() };
+  const _r = await dbUpsert('jobs', _row);                     // v1.09.26: сервер отказал — пикапы никуда не едут, строка в данных остаётся серверной
+  if (_r && _r.ok === false) return;
+  dfDemoEvents(j, _row);
   /* пикапы этой задачи едут за исполнителем */
   for (const pl of (state.data.placements || []).filter(x => x.job_id === id && !x.picked_up)){
     pl.technician_id = techId;
@@ -23310,6 +24383,7 @@ async function invToDrive(jobId){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   const j = (jobDraft && jobDraft.id === jobId) ? jobDraft : state.data.jobs.find(x => x.id === jobId);
   if (!j){ toast('⚠ ' + t('inv_need_save'), 'err'); return; }
+  if (((jobOrig(j) || j).status || 'draft') === 'draft'){ toast('🔒 ' + t('inv_drive_draft'), 'err', 8000); return; }   // v1.09.26: на Диск — только отправленный на согласование документ (у черновика и номера ещё нет)
   const go = async () => {
     const doc = buildInvoicePdfDoc(true);
     if (!doc){ toast('⛔ PDF', 'err'); return; }
@@ -23985,7 +25059,11 @@ function tlogGet(){
 }
 function tlogSaveNow(){
   clearTimeout(TLOG._t); TLOG._t = null;
-  try{ if (TLOG.cur) localStorage.setItem(LS_TLOG, JSON.stringify(TLOG.cur)); }catch(e){ dlog('⚠ tlog save:', e); }
+  try{ if (TLOG.cur) localStorage.setItem(LS_TLOG, JSON.stringify(TLOG.cur)); }
+  catch(e){   /* v1.09.29: отчёт не помещается в память браузера — в памяти вкладки он цел; кладём укороченную копию и предупреждаем */
+    try{ const c = TLOG.cur; c.big = true; localStorage.setItem(LS_TLOG, JSON.stringify({ ...c, lines: c.lines.slice(-600), txt: '' })); }catch(e2){ try{ localStorage.removeItem(LS_TLOG); }catch(e3){} }
+    if (!TLOG._bigSaid){ TLOG._bigSaid = true; try{ console.warn('tlog: report does not fit into localStorage'); }catch(e4){} }
+  }
 }
 function tlogSaveSoon(){ if (TLOG._t) return; TLOG._t = setTimeout(tlogSaveNow, 300); }
 function tlogStart(kind, title){
@@ -26423,6 +27501,8 @@ function mediaSettingsCardHtml(){
     ${isAdmin() ? `<label class="opt ${((state.data.org_settings || {}).prop_mgr_create) ? 'on' : ''}">
       <input type="checkbox" ${((state.data.org_settings || {}).prop_mgr_create) ? 'checked' : ''}
         onchange="App.setOrgFlag('prop_mgr_create', this.checked)"> ${t('prop_mgr')}</label>
+    <label class="opt ${propSendOn() ? 'on' : ''}" id="opt-prop-send">
+      <input type="checkbox" ${propSendOn() ? 'checked' : ''} onchange="App.setOrgFlag('prop_send_on', this.checked)"> ${t('prop_send_chk')}</label>
     <div class="tiny gd-hint">${t('prop_mgr_h')}</div>
     <label class="opt ${((state.data.org_settings || {}).prop_hide_prices !== false) ? 'on' : ''}">
       <input type="checkbox" ${((state.data.org_settings || {}).prop_hide_prices !== false) ? 'checked' : ''}
@@ -26913,6 +27993,7 @@ function dgsCardHtml(){
   const adm = isAdmin();
   return dgsNetCardHtml()
     + fold('uid', t('dg_ui'), 'layers', uiDiagCardHtml(), true)
+    + ((adm || dftOn()) ? fold('dft', t('dft_card'), 'flask', dftCardHtml(), true) : '')   // v1.09.27: тест документооборота
     + (adm ? fold('diag', t('diag_card'), 'flask', diagCardHtml(), true)
            + fold('bkp', t('bk_card'), 'save', backupCardHtml(), true)
            + fold('abk', t('abk_card'), 'save', abkCardHtml(), true) : '');
@@ -26941,6 +28022,867 @@ function diagCardHtml(){
     ${tlogCardHtml()}` : ''}
   </div>`;
 }
+/* =====================================================================
+   v1.09.27 · ТЕСТ ДОКУМЕНТООБОРОТА — полный цикл под настоящим пользователем
+   ---------------------------------------------------------------------
+   Настройки → Диагностика → «Тест документооборота». Запускает админ, менеджер или работник — каждый проверяет цикл
+   со своей стороны. Шаги СВОЕЙ роли идут настоящим путём (те же запросы к базе, что шлёт приложение: действуют и
+   политики доступа, и сторожа); шаги остальных ролей выполняет Edge Function dft от имени админа, менеджера или
+   выбранного работника. Позитивные шаги ждут успеха, негативные — конкретного отказа сервера.
+   Всё тестовое помечено is_test: такие документы не тратят нумерацию, не двигают склад, не шлют пушей, скрыты из
+   рабочих списков и в конце удаляются насовсем. Режим включает только админ, на срок; пока он включён, админ при
+   каждом входе видит предупреждение. Результаты в базе не хранятся — отчёт копируется или сохраняется файлом.
+   В демо-режиме сервера нет: его правила повторяет dftDemoExec — так проверяется сам сценарий.
+   ===================================================================== */
+const DFT = { running: false, stop: false, stepMode: false, next: null, status: null, statusAt: 0, worker: '', run: '', rows: [], warned: false, locks: {}, seq: 0, net: 0, asked: [], marks: [], jsErr: 0 };
+/* v1.09.29: в отчёт идут ВСЕ запросы приложения к базе и функциям во время теста, кроме шума (переписка, пуш-подписки, сессии).
+   DFT_NET_RE оставлен для совместимости проверок: «основные» адреса документооборота. */
+const DFT_NET_RE = /\/rest\/v1\/(jobs|placements|proposals|doc_requests|doc_locks|rpc\/(approve_job|doc_request_edit|doc_request_decide|doc_lock|doc_unlock|job_fix_no|link_job_proposal|notices_mark_read))|\/functions\/v1\/dft/;
+const DFT_NET_SKIP = /\/rest\/v1\/(chat_|push_sub|user_sessions|rpc\/(chat_|push_|session_|seen_))|\/realtime\/|\/auth\/v1\//
+
+function dftOn(){ const o = (state.data && state.data.org_settings) || {}; return o.dft_on === true && (!o.dft_until || Date.parse(o.dft_until) > Date.now()); }
+function dftSchemaOk(){ return !HAS_SB || +(((state.data || {}).org_settings || {}).docflow_v) >= 7; }   // v1.09.28: нужен job_adopt и номер пикапа после вставки
+function dftCut(v, n){ let s = typeof v === 'string' ? v : JSON.stringify(v); s = String(s == null ? '' : s).replace(/\s+/g, ' '); return s.length > (n || 700) ? s.slice(0, n || 700) + ' …[' + s.length + ']' : s; }
+/* text — строка для панели (короткая), full — строка для отчёта (длинная, до 6000 знаков тела) */
+function dftLog(text, cls, full){ tlogLine(full || text, cls); const b = document.getElementById('dft-log'); if (b){ const d = document.createElement('div'); d.className = 'dft-l ' + (cls || ''); d.textContent = text; b.appendChild(d); while (b.children.length > 60) b.removeChild(b.firstChild); b.scrollTop = b.scrollHeight; } }
+function dftHdr(h, names){ const out = []; try{ names.forEach(n => { const v = h && (typeof h.get === 'function' ? h.get(n) : (h[n] || h[n.toLowerCase()])); if (v) out.push(n + ': ' + v); }); }catch(e){} return out.length ? ' [' + out.join('; ') + ']' : ''; }
+/* запросы приложения к серверу во время теста — в отчёт: что ушло и что вернулось, заголовки, номер запроса у Supabase, время */
+function dftNetLog(url, init, p){
+  try{
+    if (!DFT.running || !/\/(rest|functions)\/v1\//.test(url) || DFT_NET_SKIP.test(url)) return;
+    const path = url.replace(/^https?:\/\/[^/]+/, ''), m = (init && init.method) || 'GET', n = ++DFT.net, t0 = performance.now(), body = init && init.body ? (typeof init.body === 'string' ? init.body : '[binary]') : '';
+    const hq = dftHdr(init && init.headers, ['Prefer', 'Range', 'Accept-Profile', 'Content-Profile']);
+    dftLog('   → #' + n + ' ' + m + ' ' + dftCut(path, 300) + (body ? ' · ' + dftCut(body, 600) : ''), 'net', '   → #' + n + ' ' + m + ' ' + dftCut(path, 1200) + hq + (body ? ' · ' + dftCut(body, 6000) : ''));
+    p.then(r => { const ms = Math.round(performance.now() - t0), hr = dftHdr(r.headers, ['sb-request-id', 'x-request-id', 'content-range', 'x-envoy-upstream-service-time']);
+      try{ r.clone().text().then(tx => dftLog('   ← #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms' + (tx ? ' · ' + dftCut(tx, 600) : ''), r.ok ? 'net' : 'neterr', '   ← #' + n + ' HTTP ' + r.status + ' ' + (r.statusText || '') + ' · ' + ms + ' ms' + hr + (tx ? ' · ' + dftCut(tx, 6000) : ''))).catch(() => {}); }catch(e){} },
+      e => dftLog('   ← #' + n + ' сеть: ' + errStr(e), 'neterr'));
+  }catch(e){}
+}
+async function dftCall(action, body){
+  const payload = { action, ...(body || {}) }, n = ++DFT.net, t0 = performance.now();
+  dftLog('   ⇒ #' + n + ' dft ' + dftCut(payload, 600), 'net', '   ⇒ #' + n + ' dft ' + dftCut(payload, 6000));
+  try{
+    const token = await mediaJwt();
+    const r = await fetch(mediaFN() + '/dft', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const js = await r.json().catch(() => ({ ok: false, error: { message: 'BAD_JSON' } })), ms = Math.round(performance.now() - t0);
+    dftLog('   ⇐ #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms · ' + dftCut(js, 600), (r.ok && js.ok !== false) ? 'net' : 'neterr',
+           '   ⇐ #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms' + dftHdr(r.headers, ['sb-request-id', 'x-request-id', 'x-served-by']) + ' · ' + dftCut(js, 6000));
+    if (!r.ok && js.ok === undefined) return { ok: false, error: { message: js.error || ('HTTP ' + r.status) } };
+    return js;
+  }catch(e){ dftLog('   ⇐ функция dft недоступна: ' + errStr(e), 'neterr'); return { ok: false, error: { message: 'DFT_UNREACHABLE', details: errStr(e) } }; }
+}
+function dftErrOf(r){ const e = (r && r.error) || {}; return String(e.message || e.code || 'нет ошибки') + (e.details ? ' (' + e.details + ')' : ''); }
+function dftNorm(res){   // ответ supabase-js → общий вид; «0 строк» при update — это отказ политики доступа
+  if (res && res.error){ const s = errStr(res.error); return { ok: false, error: { message: /row-level security|42501/i.test(s) ? 'RLS_DENIED' : (res.error.message || s), code: res.error.code || null } }; }
+  if (res && Array.isArray(res.data) && !res.data.length) return { ok: false, error: { message: 'RLS_DENIED', details: 'политика доступа не пропустила запись: 0 строк' } };
+  return { ok: true, data: Array.isArray(res && res.data) ? res.data[0] : (res ? res.data : null) };
+}
+
+/* ---------- режим: включает только админ, на срок ---------- */
+async function dftSetMode(on, hours){
+  if (!isAdmin()) return;
+  if (on && !confirm(t('dft_on_q'))){ render(); return; }
+  const org = state.data.org_settings;
+  if (HAS_SB){
+    if (!dftSchemaOk()){ toast('⚠ ' + t('dft_need_sql'), 'err'); render(); return; }
+    const { data, error } = await state.sb.rpc('admin_set_dft', { p_on: !!on, p_hours: +hours || 4 });
+    if (error){ toast('⚠ ' + rpcFail(error, 'admin_set_dft'), 'err'); render(); return; }
+    Object.assign(org, { dft_on: !!on, dft_until: on ? data : null, dft_by: on ? state.user.id : null });
+  } else {
+    Object.assign(org, { dft_on: !!on, dft_until: on ? new Date(Date.now() + (+hours || 4) * 36e5).toISOString() : null, dft_by: on ? state.user.id : null });
+    audit(on ? 'dft_on' : 'dft_off', 'org', 'org', { until: org.dft_until });
+  }
+  saveLocal(); DFT.statusAt = 0; toast(on ? '⚠ ' + t('dft_on_done') : '✓ ' + t('dft_off_done'), on ? 'err' : ''); render();
+}
+/* админ видит это при КАЖДОМ входе, пока режим включён: режим — потенциальная дыра */
+function dftAdminWarn(){
+  if (DFT.warned || !isAdmin() || !dftOn() || DFT.running) return;
+  DFT.warned = true;
+  const o = state.data.org_settings;
+  openModal(`${modalHead(t('dft_warn_t'), 'warn')}
+    <div class="ask-text" id="dft-warn">${t('dft_warn_text').replace('{UNTIL}', esc(o.dft_until ? dfWhen(o.dft_until) : '—')).replace('{WHO}', esc(shortName(profName(o.dft_by)) || '—'))}</div>
+    <button class="btn btn-red" id="dft-warn-off" data-net="1" onclick="App.closeModal();App.dftSetMode(false)">${ic('ban')} ${t('dft_warn_off')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.closeModal()">${t('dft_warn_keep')}</button>`);
+}
+/* тестовые документы в рабочие списки не попадают (остатки после сорвавшегося теста — тоже) */
+function dftStripTest(data){
+  if (!data || DFT.running) return;
+  const dead = new Set((data.jobs || []).filter(j => j.is_test).map(j => j.id));
+  DFT.left = dead.size;
+  if (!dead.size && !(data.proposals || []).some(p => p.is_test) && !(data.repairs || []).some(r => r.is_test)) return;
+  data.jobs = (data.jobs || []).filter(j => !j.is_test);
+  data.placements = (data.placements || []).filter(p => !p.is_test && !dead.has(p.job_id));
+  data.proposals = (data.proposals || []).filter(p => !p.is_test);
+  data.repairs = (data.repairs || []).filter(r => !r.is_test && !dead.has(r.job_id));   // v1.09.30
+}
+async function dftStatusLoad(force){
+  if (!force && DFT.status && Date.now() - DFT.statusAt < 20000) return DFT.status;
+  let st;
+  if (!HAS_SB){
+    const ps = (state.data.profiles || []).filter(p => !p.blocked), me = state.user.id, pub = p => p ? { id: p.id, name: p.display_name, role: p.role } : null;
+    st = { ok: true, demo: true, on: dftOn(), until: state.data.org_settings.dft_until || null, mine: (state.data.jobs || []).filter(j => j.is_test && j.test_owner === me).length, all: null,
+      actors: { admin: pub(ps.find(p => p.role === 'admin')), manager: pub(ps.find(p => p.role === 'manager' && p.can_approve !== true)), manager_appr: pub(ps.find(p => p.role === 'manager' && p.can_approve === true)),
+                techs: ps.filter(p => p.role === 'tech' && p.id !== me).map(pub) } };
+  } else {
+    st = await dftCallQuiet('status');
+  }
+  DFT.status = st; DFT.statusAt = Date.now();
+  return st;
+}
+async function dftCallQuiet(action, body){
+  try{ const token = await mediaJwt(); const r = await fetch(mediaFN() + '/dft', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...(body || {}) }) });
+    const js = await r.json().catch(() => null); return js || { ok: false, error: { message: 'HTTP ' + r.status } }; }
+  catch(e){ return { ok: false, error: { message: 'DFT_UNREACHABLE', details: errStr(e) } }; }
+}
+async function dftCleanup(all){
+  let r;
+  if (HAS_SB) r = await dftCallQuiet('cleanup', { all: !!all });
+  else { const me = state.user.id, mineJ = (state.data.jobs || []).filter(j => j.is_test && (all && isAdmin() ? true : j.test_owner === me)); dftPurgeLocal(mineJ.map(j => j.id)); r = { ok: true, deleted: mineJ.length }; }
+  if (r && r.ok){ dftPurgeLocal(); toast('✓ ' + t('dft_cleaned').replace('{N}', r.deleted || 0)); } else toast('⚠ ' + dftErrOf(r), 'err');
+  DFT.statusAt = 0; await dftStatusLoad(true); render();
+}
+function dftPurgeLocal(ids){
+  const d = state.data, dead = new Set(ids || (d.jobs || []).filter(j => j.is_test).map(j => j.id));
+  d.jobs = (d.jobs || []).filter(j => !dead.has(j.id) && !(ids ? false : j.is_test));
+  d.placements = (d.placements || []).filter(p => !dead.has(p.job_id));
+  d.proposals = (d.proposals || []).filter(p => !p.is_test);
+  d.repairs = (d.repairs || []).filter(r => !r.is_test && !dead.has(r.job_id));   // v1.09.30
+  if (d.ext_requests) d.ext_requests = d.ext_requests.filter(r => !dead.has(r.job_id));
+  if (d.doc_requests) d.doc_requests = d.doc_requests.filter(r => !dead.has(r.doc_id));
+  if (d.notices) d.notices = d.notices.filter(n => ![...dead].some(id => String(n.url || '').includes(id)));
+  DF.reqs = DF.reqs.filter(r => !dead.has(r.doc_id)); DF.notices = DF.notices.filter(n => ![...dead].some(id => String(n.url || '').includes(id)));
+  try{ dfProblemsSave(dfProblems().filter(x => !dead.has(x.doc_id))); }catch(e){}
+  DFT.left = 0; saveLocal();
+}
+
+/* ---------- карточка в «Диагностике» ---------- */
+function dftCardHtml(){
+  if (!isAdmin() && !dftOn()) return '';
+  const o = state.data.org_settings || {}, on = dftOn(), st = DFT.status, techs = (st && st.actors && st.actors.techs) || [];
+  if (!st || Date.now() - DFT.statusAt > 20000) dftStatusLoad().then(() => { if (state.screen === 'settings' && !DFT.running) render(); }).catch(() => {});
+  const left = st ? (isAdmin() && st.all != null ? st.all : st.mine) : 0;
+  return `<div class="card" id="dft-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('flask')} ${t('dft_card')} ${helpBtn('dft')}</div>
+    <div class="tiny" style="margin-bottom:8px">${t('dft_hint')}</div>
+    ${isAdmin() ? `<div class="banner ${on ? 'b-red' : 'b-ds'}" id="dft-mode" style="margin-bottom:8px">${ic(on ? 'warn' : 'lock')}<div class="grow"><b>${t(on ? 'dft_mode_on' : 'dft_mode_off')}</b>
+        <div class="tiny">${on ? t('dft_mode_until').replace('{UNTIL}', esc(dfWhen(o.dft_until))).replace('{WHO}', esc(shortName(profName(o.dft_by)) || '—')) : t('dft_mode_h')}</div></div>
+      ${on ? `<button class="btn btn-ghost sm" id="dft-off" data-net="1" onclick="App.dftSetMode(false)">${t('dft_mode_btn_off')}</button>`
+           : `<select id="dft-hours" class="role-sel"><option value="1">1 ${t('dft_h')}</option><option value="4" selected>4 ${t('dft_h')}</option><option value="24">24 ${t('dft_h')}</option></select>
+              <button class="btn btn-blue sm" id="dft-onb" data-net="1" onclick="App.dftSetMode(true, document.getElementById('dft-hours').value)">${t('dft_mode_btn_on')}</button>`}</div>` : ''}
+    ${!dftSchemaOk() ? `<div class="banner b-yellow">${ic('warn')} ${t('dft_need_sql')}</div>` : ''}
+    ${on ? `${st && st.ok === false ? `<div class="banner b-yellow" id="dft-nofn">${ic('warn')} ${t('dft_no_fn')} · ${esc(dftErrOf(st))}</div>` : ''}
+      ${state.user.role !== 'tech' || techs.length ? `<div class="qty-line"><span class="name">${t(state.user.role === 'tech' ? 'dft_worker2' : 'dft_worker')}</span>
+        <select id="dft-worker" class="role-sel" onchange="DFT.worker = this.value">${state.user.role === 'tech' ? `<option value="">— ${t('dft_none')} —</option>` : ''}${techs.map(p => `<option value="${p.id}" ${DFT.worker === p.id ? 'selected' : ''}>${esc(shortName(p.name))}</option>`).join('')}</select></div>` : ''}
+      <label class="opt ${DFT.stepMode ? 'on' : ''}" style="margin:6px 0"><input type="checkbox" id="dft-stepmode" ${DFT.stepMode ? 'checked' : ''} onchange="DFT.stepMode = this.checked"> ${t('dft_stepmode')}</label>
+      <label class="opt ${DFT.wide ? 'on' : ''}" style="margin:0 0 6px"><input type="checkbox" id="dft-wide" ${DFT.wide ? 'checked' : ''} onchange="DFT.wide = this.checked"> ${t('dft_wide')}</label>
+      <label class="opt ${DFT.noMedia ? '' : 'on'}" style="margin:0 0 6px"><input type="checkbox" id="dft-media" ${DFT.noMedia ? '' : 'checked'} onchange="DFT.noMedia = !this.checked"> ${t('dft_media_chk')}</label>
+      <button class="btn btn-green" id="dft-run" ${DFT.running ? 'disabled' : ''} onclick="App.dftRun()">${ic('play')} ${DFT.running ? t('rg_running') : t('dft_run')}</button>` : (isAdmin() ? '' : '')}
+    ${left ? `<button class="btn btn-ghost" id="dft-clean" style="margin-top:8px" data-net="1" onclick="App.dftCleanup(${isAdmin() ? 'true' : 'false'})">${ic('trash')} ${t('dft_clean').replace('{N}', left)}</button>` : ''}
+    ${tlogCardHtml()}
+  </div>`;
+}
+
+/* ---------- демо: правила сервера, повторённые здесь (только чтобы проверять сам сценарий) ---------- */
+function dftDemoExec(actorId, op, args){
+  const d = state.data, A = (d.profiles || []).find(p => p.id === actorId), fail = (c, det) => ({ ok: false, error: { message: c, details: det || null } });
+  if (!A || A.blocked) return fail('DFT_NO_ACTOR');
+  const role = A.role, appr = role === 'admin' || (role === 'manager' && A.can_approve === true), org = d.org_settings || {}, owner = DFT.owner;
+  const cyr = s => /[А-Яа-яЁё]/.test(String(s || '')), blank = s => !String(s || '').trim();
+  const trMissing = j => (cyr(j.note) && blank(j.note_en) ? 1 : 0) + ((j.form_data && j.form_data.others) || []).filter(o => cyr(o.desc) && blank(o.desc_en)).length
+    + (j.form_data && j.form_data.airduct && cyr(j.form_data.airduct.note) && blank(j.form_data.airduct.note_en) ? 1 : 0);
+  const eqN = fd => JSON.stringify(Object.entries((fd && fd.equipment) || {}).filter(([, e]) => +e.qty > 0).map(([k, e]) => [k, +e.qty, +e.days]).sort());
+  const sharedHelper = j => org.allow_shared_jobs !== false && A.can_edit_docs !== false && j.shared_with_helpers && (j.helper_ids || []).includes(actorId);
+  const notice = (uid_, kind, title, body, j) => { if (uid_ && uid_ !== actorId && uid_ === owner) (d.notices = d.notices || []).push({ id: uid(), user_id: uid_, kind, title, body: body || '', url: './?doc=job:' + j.id, actor: actorId, created_at: new Date().toISOString(), read_at: null }); };
+  const crewOf = j => [j.technician_id].concat(j.helper_ids || []).filter(Boolean), approvers = () => (d.profiles || []).filter(p => !p.blocked && (p.role === 'admin' || (p.role === 'manager' && p.can_approve === true))).map(p => p.id);
+  const getJob = id => (d.jobs || []).find(j => j.id === id);
+
+  if (op === 'job_create'){
+    const row = args.row || {};
+    if (!(role === 'admin' || role === 'manager' || row.technician_id === actorId)) return fail('RLS_DENIED');
+    const j = { id: row.id || uid(), date: row.date || todayISO(), counterparty_id: row.counterparty_id || null, complex_id: row.complex_id || null, unit_number: row.unit_number || 'DFTEST', work_type_id: row.work_type_id || null,
+      technician_id: row.technician_id || null, technician_name: row.technician_name || '', helper_ids: row.helper_ids || [], shared_with_helpers: !!row.shared_with_helpers, priority: false, sort_order: 0, status: row.status || 'draft',
+      note: row.note || '', note_en: row.note_en || '', form_data: row.form_data || emptyFormData(), total: +row.total || 0, approved_total: null, approved_by: null, approved_at: null, no: null, doc_no: null, numbered_at: null,
+      rev: 0, updated_by: actorId, is_test: true, test_owner: owner, test_run: args.run || '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    if (j.status !== 'draft' && trMissing(j)) return fail('TRANSLATION_REQUIRED');
+    d.jobs.push(j); notice(j.technician_id, 'job', 'Новая задача', 'Unit ' + j.unit_number, j);
+    return { ok: true, data: JSON.parse(JSON.stringify(j)) };
+  }
+  if (op === 'job_get' || op === 'job_update'){
+    const old = getJob(args.id); if (!old) return fail('NOT_FOUND'); if (!old.is_test) return fail('DFT_NOT_TEST_DOC');
+    if (op === 'job_get') return { ok: true, data: JSON.parse(JSON.stringify(old)) };
+    if (!(old.technician_id === actorId || role === 'admin' || role === 'manager' || sharedHelper(old))) return fail('RLS_DENIED');
+    if (role === 'tech' && editLockDays() > 0 && old.date < addDaysISO(todayISO(), -editLockDays()) && !(old.edit_open_until && Date.parse(old.edit_open_until) > Date.now())) return fail('LOCKED');
+    const p = args.patch || {}, nw = { ...old, ...p, no: old.no, numbered_at: old.numbered_at, doc_no: old.doc_no, is_test: true, test_owner: old.test_owner, test_run: old.test_run };
+    if (!appr){ nw.approved_total = old.approved_total; nw.approved_by = old.approved_by; nw.approved_at = old.approved_at; nw.edit_open_until = old.edit_open_until;
+      if (!(nw.status === 'draft' && old.status === 'done')){ nw.return_note = old.return_note; nw.returned_by = old.returned_by; } }
+    if ((nw.proposal_id || null) !== (old.proposal_id || null) && old.status !== 'draft' && !(role === 'admin' || appr || (role === 'manager' && org.mgr_link_locked === true))) return fail('LINK_LOCKED');
+    const J = o => JSON.stringify([o.form_data, o.note || '', o.note_en || '', o.date, o.unit_number || '', o.complex_id, o.counterparty_id, o.work_type_id, o.technician_id, o.helper_ids || [], !!o.shared_with_helpers, +o.total || 0]);
+    const content = J(nw) !== J(old);
+    if ((nw.technician_id || null) !== (old.technician_id || null) && !(role === 'admin' || (role === 'manager' && old.status === 'draft'))) return fail('FORBIDDEN_FIELD');
+    if ((JSON.stringify(nw.helper_ids || []) !== JSON.stringify(old.helper_ids || []) || !!nw.shared_with_helpers !== !!old.shared_with_helpers) && !(role === 'admin' || role === 'manager' || old.technician_id === actorId)) return fail('FORBIDDEN_CREW');
+    if (role === 'manager' && old.technician_id !== actorId && eqN(nw.form_data) !== eqN(old.form_data)) return fail('FORBIDDEN_EQUIPMENT');
+    if ((nw.archived_at || null) !== (old.archived_at || null) && role !== 'admin' && (old.numbered_at || old.status !== 'draft')) return fail('DOC_LOCKED_DELETE');
+    if (nw.status === 'approved' && old.status !== 'approved'){ if (!appr) return fail('FORBIDDEN_APPROVE'); if (role !== 'admin' && old.technician_id === actorId && org.self_approve !== true) return fail('SELF_APPROVE_OFF'); }
+    if (!appr){
+      if (old.status === 'approved' && (content || nw.status !== 'approved')) return fail('DOC_LOCKED_APPROVED');
+      if (old.status === 'done'){ if (nw.status === 'draft'){ if (!(old.technician_id === actorId || role === 'manager' || sharedHelper(old))) return fail('DOC_LOCKED_DONE'); } else if (content) return fail('DOC_LOCKED_DONE'); }
+    }
+    if (old.status === 'draft' && nw.status !== 'draft' && trMissing(nw)) return fail('TRANSLATION_REQUIRED');
+    if (content || nw.status !== old.status){
+      if (p.rev != null && +p.rev !== +old.rev && (old.updated_by !== actorId || (old.updated_dev || '') !== (nw.updated_dev || ''))) return fail('STALE_DOC');
+      nw.rev = (+old.rev || 0) + 1; nw.updated_by = actorId;
+    } else { nw.rev = old.rev; nw.updated_by = old.updated_by; nw.updated_dev = old.updated_dev; }
+    if (nw.status === 'approved' && old.status !== 'approved'){ nw.approved_by = nw.approved_by || actorId; nw.approved_at = nw.approved_at || new Date().toISOString(); nw.approved_crew = { main: nw.technician_id, crew: nw.helper_ids || [] }; nw.approved_rev = nw.rev; nw.edit_open_until = null; nw.return_note = null; nw.returned_by = null; }
+    else if (old.status === 'approved' && nw.status !== 'approved'){ nw.approved_total = null; nw.approved_by = null; nw.approved_at = null; nw.approved_crew = null; nw.approved_rev = null; }
+    else if (old.status === 'approved' && nw.status === 'approved' && appr && (+nw.approved_total || 0) !== (+old.approved_total || 0)) nw.approved_rev = nw.rev;
+    if (nw.status === 'done' && old.status === 'draft'){ nw.return_note = null; nw.returned_by = null; }
+    if (nw.status === 'draft' && old.status !== 'draft'){ if (old.technician_id !== actorId && String(nw.return_note || '').trim()) nw.returned_by = actorId; else if (old.technician_id === actorId){ nw.return_note = null; nw.returned_by = null; } }
+    if (nw.status !== 'draft'){ if (nw.no == null) nw.no = 90000000 + (++DFT.seq); if (!nw.numbered_at) nw.numbered_at = new Date().toISOString(); }
+    nw.updated_at = new Date().toISOString();
+    /* события — как у триггера, но только владельцу прогона */
+    const who = shortName(A.display_name), body = 'Unit ' + (nw.unit_number || '—') + ' · ' + who;
+    if ((nw.technician_id || null) !== (old.technician_id || null)){ notice(nw.technician_id, 'job', 'Задача передана вам', body, nw); if (old.technician_id && !(nw.helper_ids || []).includes(old.technician_id)) notice(old.technician_id, 'job', 'Вас сняли с задачи', body, nw); }
+    (nw.helper_ids || []).filter(x => !(old.helper_ids || []).includes(x)).forEach(x => notice(x, 'job', 'Вас добавили в бригаду', body, nw));
+    (old.helper_ids || []).filter(x => !(nw.helper_ids || []).includes(x)).forEach(x => notice(x, 'job', 'Вас сняли с задачи', body, nw));
+    if (old.status !== 'approved' && nw.status === 'approved') crewOf(nw).forEach(x => notice(x, 'approve', 'Инвойс апрувлен', body, nw));
+    else if (old.status === 'approved' && nw.status !== 'approved') crewOf(nw).forEach(x => notice(x, 'reset', nw.status === 'draft' ? 'Апрув снят — документ в черновике' : 'Апрув снят с инвойса', body + (nw.return_note ? ' · ' + nw.return_note : ''), nw));
+    else if (old.status === 'done' && nw.status === 'draft'){ if (appr && actorId !== nw.technician_id) crewOf(nw).forEach(x => notice(x, 'reset', 'Возвращён на доработку', body + (nw.return_note ? ' · ' + nw.return_note : ''), nw)); else approvers().concat(crewOf(nw)).forEach(x => notice(x, 'reset', 'Документ отозван из согласования', body, nw)); }
+    else if (old.status === 'draft' && nw.status === 'done') approvers().forEach(x => notice(x, 'approve', 'Ждёт апрува', body, nw));
+    if (!old.archived_at && nw.archived_at) crewOf(nw).forEach(x => notice(x, 'job', 'Задача удалена', body, nw));
+    else if (nw.date !== old.date) crewOf(nw).forEach(x => notice(x, 'edit', 'Задача перенесена на ' + fmtDM(nw.date), body, nw));
+    if ((old.status === 'approved' && nw.status !== 'approved') || (!old.archived_at && nw.archived_at)) (d.doc_requests || []).forEach(q => { if (q.doc_id === nw.id && q.status === 'pending'){ q.status = 'closed'; q.decided_at = new Date().toISOString(); } });
+    d.jobs[d.jobs.indexOf(old)] = nw;
+    return { ok: true, data: JSON.parse(JSON.stringify(nw)) };
+  }
+  if (op === 'pl_upsert'){
+    const row = args.row || {}, j = getJob(row.job_id); if (!j || !j.is_test) return fail('DFT_NOT_TEST_DOC');
+    if (!(role === 'admin' || role === 'manager' || row.technician_id === actorId || sharedHelper(j))) return fail('RLS_DENIED');
+    const i = d.placements.findIndex(p => p.id === row.id), base = i >= 0 ? d.placements[i] : { id: row.id || uid(), job_id: j.id, picked_up: false, superseded: false, note: '', note_en: '', no: 90000000 + (++DFT.seq), is_test: true,
+      complex_id: j.complex_id, counterparty_id: j.counterparty_id, unit_number: j.unit_number, placed_date: todayISO() };
+    const nw = { ...base, ...row, is_test: true }; if (i >= 0) d.placements[i] = nw; else d.placements.push(nw);
+    return { ok: true, data: JSON.parse(JSON.stringify(nw)) };
+  }
+  if (op === 'prop_adopt' || op === 'rep_adopt'){
+    const list = op === 'prop_adopt' ? d.proposals : d.repairs, x = (list || []).find(r => r.id === args.id); if (!x) return fail('NOT_FOUND');
+    if (!x.is_test){ if (x.status !== 'draft' || x.created_by !== state.user.id || !/^DFTEST/.test(x.unit_number || '') || Date.parse(x.created_at) < Date.now() - 6e5) return fail('DFT_ADOPT_DENIED'); Object.assign(x, { is_test: true, test_owner: owner, test_run: args.run || '' }); }
+    return { ok: true, data: JSON.parse(JSON.stringify(x)) };
+  }
+  if (op === 'rep_create'){
+    const row = args.row || {}; if (row.created_by && row.created_by !== actorId) return fail('RLS_DENIED'); if (row.job_id && !(getJob(row.job_id) || {}).is_test) return fail('DFT_NOT_TEST_DOC');
+    if ((row.status === 'approved' || row.status === 'declined') && !appr) row.status = 'draft';
+    const r = { id: row.id || uid(), no: 90000000 + (++DFT.seq), date: row.date || todayISO(), counterparty_id: row.counterparty_id || null, complex_id: row.complex_id || null, unit_number: row.unit_number || 'DFTEST', job_id: row.job_id || null, proposal_id: null,
+      helper_ids: row.helper_ids || [], items: row.items || [], materials: row.materials || [], note: row.note || '', note_en: row.note_en || '', total: +row.total || 0, status: row.status || 'draft', hist: [], decline_reason: '', created_by: actorId,
+      decided_by: null, decided_at: null, photos: { before: [], after: [] }, is_test: true, test_owner: owner, test_run: args.run || '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    (d.repairs = d.repairs || []).push(r); return { ok: true, data: JSON.parse(JSON.stringify(r)) };
+  }
+  if (op === 'rep_get' || op === 'rep_update'){
+    const old = (d.repairs || []).find(r => r.id === args.id); if (!old) return fail('NOT_FOUND'); if (!old.is_test) return fail('DFT_NOT_TEST_DOC');
+    if (op === 'rep_get') return { ok: true, data: JSON.parse(JSON.stringify(old)) };
+    if (!(role === 'admin' || role === 'manager' || old.created_by === actorId)) return fail('RLS_DENIED');
+    const nw = { ...old, ...(args.patch || {}), is_test: true, test_owner: old.test_owner, test_run: old.test_run, updated_at: new Date().toISOString() };
+    if (nw.status !== old.status && (nw.status === 'approved' || nw.status === 'declined') && !appr) return fail('FORBIDDEN_APPROVE');
+    if (nw.status !== old.status && (nw.status === 'approved' || nw.status === 'declined')){ nw.decided_by = actorId; nw.decided_at = new Date().toISOString(); }
+    const n2 = (uid_, title) => { if (uid_ && uid_ !== actorId && uid_ === owner) (d.notices = d.notices || []).push({ id: uid(), user_id: uid_, kind: 'approve', title, body: 'REP-' + nw.no + ' · Unit ' + nw.unit_number, url: './?doc=rep:' + nw.id, actor: actorId, created_at: new Date().toISOString(), read_at: null }); };
+    if (old.status !== 'approved' && nw.status === 'approved') [nw.created_by].concat(nw.helper_ids || []).forEach(x => n2(x, 'Ремонт апрувлен'));
+    else if (old.status === 'approved' && nw.status !== 'approved') [nw.created_by].concat(nw.helper_ids || []).forEach(x => n2(x, 'Апрув снят с ремонта'));
+    d.repairs[d.repairs.indexOf(old)] = nw; return { ok: true, data: JSON.parse(JSON.stringify(nw)) };
+  }
+  if (op === 'prop_create'){
+    if (role !== 'admin' && role !== 'manager') return fail('RLS_DENIED');
+    const row = args.row || {}, p = { id: row.id || uid(), no: 90000000 + (++DFT.seq), date: todayISO(), counterparty_id: row.counterparty_id || null, complex_id: row.complex_id || null, unit_number: row.unit_number || 'DFTEST', note: '', items: row.items || [],
+      total: +row.total || 0, status: row.status || 'draft', created_by: actorId, is_test: true, test_owner: owner, test_run: args.run || '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    d.proposals.push(p); return { ok: true, data: JSON.parse(JSON.stringify(p)) };
+  }
+  if (op === 'rpc'){
+    const fn = args.fn, a = args.args || {};
+    const jid = a.p_job || (fn === 'doc_request_decide' ? ((d.doc_requests || []).find(q => q.id === a.p_id) || {}).doc_id : (fn === 'doc_lock' || fn === 'doc_unlock') ? a.p_id : null), j = getJob(jid);
+    if (!j || !j.is_test) return fail('DFT_NOT_TEST_DOC');
+    const wrap = r => r.ok ? { ok: true, data: { result: r.result === undefined ? null : r.result, job: JSON.parse(JSON.stringify(getJob(jid))) } } : r;
+    if (fn === 'approve_job'){ if (!appr) return fail('FORBIDDEN'); const r = dftDemoExec(actorId, 'job_update', { id: jid, patch: { status: 'approved', approved_total: +a.p_total, approved_by: actorId, approved_at: new Date().toISOString() } }); return wrap(r); }
+    if (fn === 'doc_request_edit'){
+      if (!(j.technician_id === actorId || sharedHelper(j))) return fail('FORBIDDEN'); if (j.status !== 'approved') return fail('BAD_STATUS');
+      if (String(a.p_reason || '').trim().length < 3) return fail('REASON_REQUIRED'); if ((d.doc_requests || []).some(q => q.doc_id === jid && q.status === 'pending')) return fail('ALREADY_PENDING');
+      const q = { id: uid(), kind: 'job', doc_id: jid, user_id: actorId, reason: String(a.p_reason).trim(), status: 'pending', answer: '', created_at: new Date().toISOString() }; (d.doc_requests = d.doc_requests || []).push(q);
+      approvers().forEach(x => notice(x, 'approve', 'Запрос на правку документа', q.reason, j)); return wrap({ ok: true, result: q.id });
+    }
+    if (fn === 'doc_request_decide'){
+      if (!appr) return fail('FORBIDDEN'); const q = (d.doc_requests || []).find(x => x.id === a.p_id); if (!q) return fail('NOT_FOUND'); if (q.status !== 'pending') return fail('ALREADY_DECIDED');
+      Object.assign(q, { status: a.p_grant ? 'granted' : 'denied', answer: a.p_answer || '', decided_by: actorId, decided_at: new Date().toISOString() });
+      if (a.p_grant){ const r = dftDemoExec(actorId, 'job_update', { id: jid, patch: { status: 'draft', return_note: 'Правка разрешена' + (a.p_answer ? ': ' + a.p_answer : ''), edit_open_until: new Date(Date.now() + 864e5).toISOString() } }); if (!r.ok) return r; }
+      else notice(q.user_id, 'reset', 'В правке отказано', a.p_answer || '', j);
+      return wrap({ ok: true });
+    }
+    if (fn === 'doc_lock'){ const l = DFT.locks[jid]; if (l && l.by !== actorId && Date.now() - l.at < 120000 && !(a.p_force && (role === 'admin' || role === 'manager'))) return wrap({ ok: true, result: { ok: false, by: l.by, name: l.name, since: new Date(l.since).toISOString(), asked: !!a.p_force } });
+      DFT.locks[jid] = { by: actorId, name: A.display_name, since: (l && l.by === actorId) ? l.since : Date.now(), at: Date.now() }; return wrap({ ok: true, result: { ok: true } }); }
+    if (fn === 'doc_unlock'){ if (DFT.locks[jid] && DFT.locks[jid].by === actorId) delete DFT.locks[jid]; return wrap({ ok: true }); }
+    if (fn === 'job_fix_no'){ if (j.no == null || j.status === 'draft') return wrap({ ok: true, result: null }); if (j.doc_no) return wrap({ ok: true, result: j.doc_no }); const tx = String(a.p_text || '').replace(/[^A-Za-z0-9._-]/g, ''); if (!tx.includes(String(j.no))) return fail('BAD_NUMBER_TEXT'); j.doc_no = tx; return wrap({ ok: true, result: tx }); }
+    if (fn === 'link_job_proposal'){ if (role !== 'admin' && role !== 'manager') return fail('FORBIDDEN'); if (a.p_prop && !(d.proposals || []).some(p => p.id === a.p_prop && p.is_test)) return fail('DFT_NOT_TEST_DOC');
+      const r = dftDemoExec(actorId, 'job_update', { id: jid, patch: { proposal_id: a.p_prop || null, has_proposal: !!a.p_prop } }); return wrap(r); }
+    return fail('DFT_BAD_FN');
+  }
+  return fail('DFT_BAD_OP');
+}
+
+/* ---------- один шаг «от имени роли»: свой — настоящим путём, чужой — через функцию ---------- */
+function dftWho(who){
+  const me = state.user, S = (DFT.status && DFT.status.actors) || {}, appr = canApprove();
+  const viaFn = (as, p, tech) => p ? { me: false, as, tech: tech || null, id: p.id, name: shortName(p.name) } : null, self = { me: true, as: 'self', id: me.id, name: shortName(me.display_name || me.login || '') };
+  if (who === 'ADM') return me.role === 'admin' ? self : viaFn('admin', S.admin);
+  if (who === 'MGR') return (me.role === 'manager' && !appr) ? self : viaFn('manager', S.manager);
+  if (who === 'APR') return (me.role === 'manager' && appr) ? self : viaFn('manager_appr', S.manager_appr);
+  const techs = S.techs || [];
+  if (who === 'W'){ if (me.role === 'tech') return self; const p = techs.find(x => x.id === DFT.worker) || techs[0]; return viaFn('tech', p, p && p.id); }
+  if (who === 'W2'){ const w = dftWho('W'); const p = techs.find(x => w && x.id !== w.id && (me.role !== 'tech' || !DFT.worker || x.id === DFT.worker)); return viaFn('tech', p, p && p.id); }
+  return null;
+}
+async function dftExec(who, op, args){
+  const a = dftWho(who); if (!a) return { ok: false, skip: true, error: { message: 'NO_ACTOR_' + who } };
+  const A = { run: DFT.run, wide: !!DFT.wide, ...(args || {}) };
+  let r;
+  if (!HAS_SB){ dftLog('   ⇒ ' + who + ' (' + a.name + ') · ' + op + ' · ' + dftCut(args, 500), 'net'); r = dftDemoExec(a.id, op, A); dftLog('   ⇐ ' + dftCut(r.ok ? { ok: true, status: r.data && (r.data.status || (r.data.job && r.data.job.status)), rev: r.data && r.data.rev } : r, 400), r.ok ? 'net' : 'neterr'); }
+  else if (a.me && op === 'job_update') r = dftNorm(await state.sb.from('jobs').update(A.patch).eq('id', A.id).select());
+  else if (a.me && op === 'job_get') r = dftNorm(await state.sb.from('jobs').select('*').eq('id', A.id));
+  else if (a.me && op === 'pl_upsert' && (state.data.placements || []).some(p => p.id === (A.row || {}).id)) r = dftNorm(await state.sb.from('placements').update(A.row).eq('id', A.row.id).select());   // новую строку пикапа создаёт функция: только так номер берётся из тестового диапазона
+  else if (a.me && op === 'rep_update') r = dftNorm(await state.sb.from('repairs').update(A.patch).eq('id', A.id).select());
+  else if (a.me && op === 'rep_get') r = dftNorm(await state.sb.from('repairs').select('*').eq('id', A.id));
+  else if (a.me && op === 'rpc'){ const x = await state.sb.rpc(A.fn, /^doc_(un)?lock$/.test(A.fn) ? { p_kind: 'job', ...A.args } : A.args); r = x.error ? dftNorm(x) : { ok: true, data: { result: x.data, job: null } }; }
+  else r = await dftCall('exec', { as: a.as, tech: a.tech, op, args: A });     // создание документов — всегда через функцию: только она ставит пометку «тестовый»
+  r.by = a; return r;
+}
+async function dftPull(id){
+  if (!HAS_SB) return (state.data.jobs || []).find(j => j.id === id) || null;
+  let row = null;
+  try{ const x = await state.sb.from('jobs').select('*').eq('id', id).maybeSingle(); row = x.data || null; }catch(e){}
+  if (!row){ const g = await dftCall('exec', { as: 'self', op: 'job_get', args: { id } }); row = g.ok ? g.data : null; }
+  const arr = state.data.jobs, i = arr.findIndex(x => x.id === id);
+  if (row){ if (i >= 0) arr[i] = row; else arr.push(row); } else if (i >= 0) arr.splice(i, 1);
+  try{ const p = await state.sb.from('placements').select('*').eq('job_id', id); if (p.data){ state.data.placements = (state.data.placements || []).filter(x => x.job_id !== id).concat(p.data); } }catch(e){}
+  return row;
+}
+function dftFullForm(){
+  const fd = emptyFormData(), fill = o => Object.keys(o).forEach(k => { const v = o[k]; if (typeof v === 'boolean') o[k] = true; else if (typeof v === 'number') o[k] = 2; else if (v && typeof v === 'object' && !Array.isArray(v)) fill(v); });
+  ['steam', 'removals', 'repairs', 'dye', 'other', 'fog', 'treatments', 'wetvac'].forEach(k => fill(fd[k]));
+  Object.assign(fd, { vacant: true, occupied: false, emergency: true, no_water: true, second_call: true, po: 'DFT-PO-1' });
+  fd.airduct = { air_duct: true, dryer_vent: true, bedrooms: 2, note: 'чистка воздуховодов — тест', note_en: '' };
+  fd.pad = { on: true, size: 'q12', rooms: 2, all_unit: false };
+  fd.others = [{ desc: 'вынос мебели — тест', desc_en: '', amount: 50 }, { desc: 'Haul away (test)', desc_en: '', amount: 25 }, { desc: '', desc_en: '', amount: 0 }];
+  (state.data.equipment_types || []).slice(0, 2).forEach((et, i) => { fd.equipment[et.id] = { qty: i ? 1 : 2, days: i ? 2 : 3 }; });
+  return fd;
+}
+
+/* ---------- драйвер интерфейса: тест нажимает те же кнопки, что и человек ----------
+   v1.09.28. Правило теста: всё, что роли ДОСТУПНО в интерфейсе, делается кнопками и полями самого приложения (☛ нажал, ⌨ ввёл);
+   «служебно» (⇒ функция dft) выполняется только то, что этой роли недоступно: шаги других ролей и пометка документа тестовым.
+   Кнопка считается доступной, только если она есть на экране, не выключена и по ней можно нажать (pointer-events) — поэтому
+   «кнопки нет» — это тоже проверка: негативные шаги своей роли сначала убеждаются, что интерфейс действия не предлагает,
+   а затем (отдельной строкой «запрос в обход интерфейса») — что и сервер такой запрос отклоняет. */
+const U = {
+  sleep: ms => new Promise(r => setTimeout(r, ms)),
+  vis(el){ if (!el || el.disabled) return false; const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden' || cs.pointerEvents === 'none') return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; },
+  hit(el){ return U.vis(el) ? el : (el && el.closest && U.vis(el.closest('label')) ? el.closest('label') : null); },   // галочка может быть спрятана внутри своей подписи-кнопки
+  q(sel){ return [...document.querySelectorAll(sel)].map(U.hit).find(Boolean) || null; },
+  has(sel){ return !!U.q(sel); },
+  async wait(fn, ms, what){ const t0 = Date.now(); for (;;){ let v = null; try{ v = fn(); }catch(e){} if (v) return v; if (Date.now() - t0 > (ms || 7000)) throw new Error(t('dft_ui_wait') + ': ' + (what || '')); await U.sleep(80); } },
+  async click(sel, what){ const el = await U.wait(() => U.q(sel), 7000, what || sel); dftLog('   ☛ ' + (what || sel), 'ui'); try{ el.scrollIntoView({ block: 'center' }); }catch(e){} el.click(); await U.sleep(160); return el; },
+  async type(sel, val, what){ const el = await U.wait(() => U.q(sel), 7000, what || sel); dftLog('   ⌨ ' + (what || sel) + ' = ' + dftCut(val, 70), 'ui'); try{ el.focus(); }catch(e){} el.value = val;
+    el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); await U.sleep(90); return el; },
+  async check(sel, on, what){ const inp = await U.wait(() => document.querySelector(sel), 7000, what || sel), tgt = U.hit(inp); if (!tgt) throw new Error(t('dft_ui_off') + ': ' + (what || sel));
+    if (inp.checked !== !!on){ dftLog('   ☛ ' + (what || sel) + (on ? ' ✓' : ' ✗'), 'ui'); tgt.click(); await U.sleep(70); } },
+  async stepTo(id, target){ const st = await U.wait(() => document.querySelector('.stepper[data-st="' + id + '"]'), 7000, id);
+    for (let i = 0; i < 14; i++){ const v = parseInt(st.querySelector('.val').textContent) || 0; if (v === target) return; const b = st.querySelector('button[data-act="' + (v < target ? '+' : '-') + '"]');
+      if (!U.vis(b)) throw new Error(t('dft_ui_off') + ': ' + id); if (!i) dftLog('   ☛ ' + id + ' → ' + target, 'ui'); b.click(); await U.sleep(50); } },
+  toast(){ const x = document.querySelectorAll('#toasts .toast'); return x.length ? (x[x.length - 1].textContent || '') : ''; },
+  clearToasts(){ document.querySelectorAll('#toasts .toast').forEach(x => x.remove()); }
+};
+
+/* ---------- прогон ---------- */
+function dftPanelOpen(){
+  let p = document.getElementById('dft-panel'); if (p) p.remove();
+  p = document.createElement('div'); p.id = 'dft-panel'; p.className = 'dft-panel';
+  p.innerHTML = `<div class="dft-ph"><b>${ic('flask')} ${t('dft_card')}</b><span class="tiny" id="dft-head"></span>
+      <button type="button" class="btn btn-ghost sm" id="dft-min" onclick="document.getElementById('dft-panel').classList.toggle('min')">${ic('minus')}</button></div>
+    <div id="dft-steps" class="dft-steps"></div><div id="dft-log" class="dft-log"></div>
+    <div class="dft-bar" id="dft-bar"><button class="btn btn-blue sm" id="dft-next" disabled onclick="App.dftNext()">${t('dft_next')}</button>
+      <button class="btn btn-ghost sm" id="dft-stop" onclick="App.dftStop()">${t('dft_stop')}</button></div>`;
+  document.body.appendChild(p);
+}
+function dftPanelClose(){ const p = document.getElementById('dft-panel'); if (p) p.remove(); }
+function dftPaint(){
+  const o = document.getElementById('dft-steps'); if (o){ o.innerHTML = DFT.rows.slice(-40).join(''); o.scrollTop = o.scrollHeight; }
+  const n = document.getElementById('dft-next'); if (n) n.disabled = !DFT.next;
+}
+function dftNext(){ if (DFT.next){ const f = DFT.next; DFT.next = null; dftPaint(); f(); } }
+function dftStop(){ DFT.stop = true; dftNext(); toast('⏹ ' + t('dft_stopping'), 'inf'); }
+async function dftRun(){
+  if (DFT.running) return;
+  if (HAS_SB && netOff()){ toast('📴 ' + t('net_off_hint'), 'err'); return; }
+  if (!dftOn()){ toast('🔒 ' + t('dft_mode_off'), 'err'); return; }
+  const w = document.getElementById('dft-worker'); if (w) DFT.worker = w.value;
+  Object.assign(DFT, { running: true, stop: false, next: null, rows: [], run: 'dft-' + Date.now().toString(36), owner: state.user.id, locks: {}, seq: 0, net: 0, asked: [], marks: [], jsErr: 0 });
+  tlogStart('docflow', t('dft_card'));
+  const scr0 = state.screen, confirm0 = window.confirm, prompt0 = window.prompt; let promptAns = '';
+  /* v1.09.29: вопросы приложения, на которые тест отвечает сам, — в отчёт; ошибки кода во время теста — тоже */
+  window.confirm = q => { DFT.asked.push(String(q)); dftLog('   ? ' + dftCut(q, 200) + ' → ' + t('dft_yes'), 'ui'); return true; };
+  window.prompt = (q, d) => { DFT.asked.push(String(q)); dftLog('   ? ' + dftCut(q, 200) + ' → «' + promptAns + '»', 'ui'); return promptAns; };
+  const onErr = e => { DFT.jsErr++; dftLog('⛔ JS: ' + dftCut((e && (e.message || (e.reason && (e.reason.stack || e.reason.message || e.reason)))) || e, 600) + (e && e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : ''), 'err'); };
+  window.addEventListener('error', onErr); window.addEventListener('unhandledrejection', onErr);
+  try{ closeModal(); }catch(e){}
+  dftPanelOpen();
+  const hd = document.getElementById('dft-head'); if (hd) hd.textContent = shortName(state.user.display_name || '') + ' · ' + t('role_' + state.user.role) + ' · ' + DFT.run + (HAS_SB ? '' : ' · demo');
+  const out = [], sleep = U.sleep, n0 = new Set(dfNotices().map(n => n.id));
+  { const o = state.data.org_settings || {};      // шапка отчёта: всё, от чего зависят ожидания шагов
+    dftLog(t('dft_hdr_env') + ': app ' + APP_VERSION + ' · db docflow_v=' + (o.docflow_v ?? '—') + ' · ' + (HAS_SB ? 'Supabase' : 'demo') + ' · ' + t('dft_hdr_view') + '=' + vmCur() + '/' + densCur() + ' · lang=' + (state.lang || 'ru') + ' · ' + (netOff() ? 'offline' : 'online') + ' · dev=' + dfDev(), 'grp');
+    dftLog(t('dft_hdr_push') + ': Notification=' + (typeof Notification !== 'undefined' ? Notification.permission : 'нет') + ' · ' + t('dft_wide') + '=' + (DFT.wide ? t('dft_yes') : 'нет') + ' · ' + t('dft_media_chk') + '=' + (DFT.noMedia ? 'нет' : t('dft_yes')), 'grp');
+    dftLog(t('dft_hdr_set') + ': self_approve=' + (o.self_approve === true) + ' · mgr_link_locked=' + (o.mgr_link_locked === true) + ' · allow_shared_jobs=' + (o.allow_shared_jobs !== false) + ' · edit_lock_days=' + (+o.edit_lock_days || 0)
+      + ' · prop_send_on=' + (o.prop_send_on === true) + ' · max_extend_days=' + maxExtendDays() + ' · doc_no_fmt=' + docFmt() + ' · pdf_marks=' + (o.pdf_draft_mark !== false) + '/' + (o.pdf_approved_mark !== false) + ' · dft_until=' + (o.dft_until || '—'), 'grp'); }
+  const snapIds = () => [['J', J], ['J2', J2], ['JA', JA], ['J3', J3]].filter(x => x[1]);
+  const snap = () => snapIds().map(([k, id]) => { const j = (state.data.jobs || []).find(x => x.id === id); if (!j) return k + ': —';
+      const pl = (state.data.placements || []).filter(p => p.job_id === id), rq = dfReqs().filter(r => r.doc_id === id);
+      return k + ': ' + (j.archived_at ? 'АРХИВ ' : '') + j.status + ' rev=' + (j.rev ?? '—') + ' №' + (j.no ?? '—') + (j.doc_no ? ' «' + j.doc_no + '»' : '') + ' $' + (+j.total || 0) + (j.approved_total != null ? ' апрув $' + j.approved_total : '')
+        + (j.return_note ? ' возврат«' + dftCut(j.return_note, 40) + '»' : '') + (j.edit_open_until ? ' окно→' + dfWhen(j.edit_open_until) : '') + ' осн=' + (shortName(profName(j.technician_id)) || '—') + ' бриг=' + (j.helper_ids || []).length + (j.shared_with_helpers ? '+общ' : '')
+        + ' · пикапы ждут/продл/архив/забр=' + pl.filter(pkPending).length + '/' + pl.filter(p => p.ext_of).length + '/' + pl.filter(p => p.archived_at).length + '/' + pl.filter(p => p.picked_up).length
+        + (rq.length ? ' · запросы ' + rq.map(r => r.status).join(',') : ''); }).join(' ‖ ');
+  const ctx = () => { const ov = document.querySelector('#overlay h3'), md = (state.screen === 'job' && jobDraft) ? jobMode(jobDraft) : null;
+    return t('dft_ctx') + ': ' + t('dft_ctx_scr') + '=' + state.screen + (ov ? ' · ▣ ' + (ov.textContent || '').trim().slice(0, 60) : '') + (md ? ' · mode=' + (md.edit ? 'edit' : 'ro:' + md.why) + ' appr=' + md.appr : '')
+      + ' · ' + t('dft_ctx_ban') + '=[' + [...document.querySelectorAll('.df-ban[id]')].map(x => x.id).join(',') + '] · toast=«' + dftCut(U.toast(), 120) + '»'; };
+  const G = name => { DFT.rows.push(`<div class="dft-g">${esc(name)}</div>`); dftLog('', ''); dftLog('=== ' + name + ' ===', 'grp'); dftPaint(); };
+  const SKIP = msg => { const e = new Error(msg); e.skip = true; return e; };
+  const step = async (kind, name, fn) => {   // '+' обязан пройти · '−' обязан получить отказ / быть недоступным · '·' служебный
+    if (DFT.stop) throw new Error(t('dft_stopped'));
+    const i = out.push({ name: kind + ' ' + name, ok: null, ms: 0, extra: '' }) - 1, row = DFT.rows.push(`<div>… ${esc(kind + ' ' + name)}</div>`) - 1, a = performance.now();
+    dftLog((kind === '−' ? '▽ ' : kind === '+' ? '△ ' : '• ') + name, 'st'); dftPaint();
+    try{ const r = await fn(); out[i].ok = true; out[i].extra = (r && r.note) || (typeof r === 'string' ? r : ''); }
+    catch(e){ if (e && e.skip){ out[i].ok = null; out[i].extra = t('dft_skipped') + ': ' + e.message; } else { out[i].ok = false; out[i].extra = errStr(e); try{ dftLog('   ✗ ' + ctx(), 'err'); }catch(e2){} } }
+    out[i].ms = Math.round(performance.now() - a);
+    try{ const sn = snap(); if (sn) dftLog('   ∑ ' + dftCut(sn, 300), 'dim', '   ∑ ' + sn); }catch(e){}
+    const icn = out[i].ok === true ? ic('check', 'color:var(--green)') : out[i].ok === false ? ic('warn', 'color:var(--red)') : ic('minus', 'color:var(--dim)');
+    DFT.rows[row] = `<div class="${out[i].ok === false ? 'dft-bad' : ''}">${icn} <span class="dft-k">${esc(kind)}</span> ${esc(name)} <span class="tiny">— ${out[i].ms} мс${out[i].extra ? ' · ' + esc(out[i].extra) : ''}</span></div>`;
+    dftLog((out[i].ok === true ? '✓ ' : out[i].ok === false ? '✗ ' : '– ') + name + ' — ' + out[i].ms + ' ms' + (out[i].extra ? ' · ' + out[i].extra : ''), out[i].ok === false ? 'err' : ''); tlogStep(out[i]); dftPaint();
+    if (out[i].ok === false){ try{ await ui.reset(); }catch(e){} }
+    if (DFT.stepMode && !DFT.stop) await new Promise(res => { DFT.next = res; dftPaint(); });
+  };
+  const need = (...whos) => { const miss = whos.filter(x => !dftWho(x)); if (miss.length) throw SKIP(t('dft_no_actor') + ' ' + miss.join(', ')); };
+  const okR = (r, what) => { if (r.skip) throw SKIP(dftErrOf(r)); if (!r.ok) throw new Error((what || '') + ' ' + t('dft_exp_ok') + ': ' + dftErrOf(r)); return r.data; };
+  const errR = (r, codes, what) => { codes = [].concat(codes); if (r.skip) throw SKIP(dftErrOf(r)); if (r.ok) throw new Error((what || '') + ' ' + t('dft_exp_err') + ' ' + codes.join(' | ') + ' — ' + t('dft_but_ok'));
+    const e = dftErrOf(r); if (!codes.some(c => e.includes(c))) throw new Error((what || '') + ' ' + t('dft_exp_err') + ' ' + codes.join(' | ') + ', ' + t('dft_got') + ' ' + e); return { note: '→ ' + codes.find(c => e.includes(c)) }; };
+  const upd = (who, id, patch) => dftExec(who, 'job_update', { id, patch }), rpc = (who, fn, args) => dftExec(who, 'rpc', { fn, args });
+  const isMe = who => !!(dftWho(who) && dftWho(who).me), first = (...whos) => whos.find(x => dftWho(x)) || whos[whos.length - 1], mineOf = (...whos) => whos.find(isMe) || first(...whos);
+  const cx = (state.data.complexes || [])[0] || {}, cp = (state.data.counterparties || []).find(c => c.id === cx.counterparty_id) || {}, wt = (state.data.work_types || []).filter(x => !/proposal/i.test(x.name))[0] || {}, org = state.data.org_settings || {};
+  const Y = addDaysISO(todayISO(), -1), ets = (state.data.equipment_types || []).slice(0, 2);
+  const must = (cond, msg) => { if (!cond) throw new Error(msg); };
+  const absent = (sel, what) => must(!U.has(sel), t('dft_ui_avail') + ': ' + what), present = (sel, what) => must(U.has(sel), t('dft_ui_none') + ': ' + what);
+
+  /* ---- действия в интерфейсе ---- */
+  const ui = {
+    async reset(){ for (let i = 0; i < 4 && document.getElementById('overlay'); i++){ const b = U.q('#overlay .back-x'); if (b){ b.click(); await sleep(150); } else { closeModal(); } }
+      if (state.screen === 'job'){ const x = U.q('.db-x'); if (x){ x.click(); await sleep(200); const dr = U.q('[onclick="App.jobDrop()"]'); if (dr){ dr.click(); await sleep(150); } } } jlStop(); },
+    async tab(name){ await ui.reset(); await U.click(`.tabbar .tab[onclick="App.go('${name}')"]`, t('dft_u_menu') + ' → ' + name); await sleep(220); if (state.screen === name) render(); await sleep(120); },
+    async goDay(iso){ await ui.tab('home'); for (let i = 0; i < 10; i++){ const c = U.q(`.day-cell[onclick="App.selDay('${iso}')"]`); if (c){ if (state.selDate !== iso){ dftLog('   ☛ ' + t('dft_u_day') + ' ' + fmtDM(iso), 'ui'); c.click(); await sleep(220); } return; }
+      await U.click(iso < state.weekStart ? '.wk-arrow[aria-label="prev week"]' : '.wk-arrow[aria-label="next week"]', t('dft_u_week')); } throw new Error(t('dft_ui_wait') + ': ' + iso); },
+    async openDoc(id){ const row = await dftPull(id); must(row, t('dft_ui_noopen')); await ui.goDay(row.date);
+      if (!U.has(`.item.clicky[data-drag-id="${id}"]`) && U.has('[onclick="App.setMine(false)"]')) await U.click('[onclick="App.setMine(false)"]', t('all'));
+      await U.click(`.item.clicky[data-drag-id="${id}"]`, t('dft_u_card') + ' Unit ' + (row.unit_number || '')); await U.wait(() => state.screen === 'job' && jobDraft && jobDraft.id === id, 6000, t('dft_ui_noopen')); await sleep(350); return row; },
+    async save(){ await U.click('.db-save', t('save')); await U.wait(() => !saveJob._busy, 15000, 'saveJob'); await sleep(450); },
+    async closeDoc(){ if (state.screen === 'job'){ await U.click('.db-x', t('doc_close')); await sleep(200); const dr = U.q('[onclick="App.jobDrop()"]'); if (dr){ dr.click(); await sleep(150); } } },
+    async expand(){ const b = U.q('#inv-tools-btn'); if (b && b.dataset.mode === 'open'){ dftLog('   ☛ ' + t('dft_u_expand'), 'ui'); b.click(); await sleep(250); } },
+    /* «Добавить задание»: дата, контрагент, комплекс, юнит, исполнитель, вид задачи, «Создать» */
+    async createTask(date, unit, techId){ await ui.goDay(date); await U.click('[onclick="App.addTaskModal()"]', t('add_task'));
+      await U.type('#nt-date', date, t('date')); await U.type('#cb-cp .combo-in', cp.name || '', t('counterparty')); await U.click('#cb-cp-list .combo-opt:not(.dim)', cp.name || '');
+      await U.type('#cb-cx .combo-in', cx.name || '', t('complex')); await U.click('#cb-cx-list .combo-opt:not(.dim)', cx.name || ''); await U.type('#nt-unit', unit, t('unit'));
+      if (document.getElementById('nt-tech')) await U.type('#nt-tech', techId || '', t('nt_tech'));
+      await U.click(`#nt-wt .opt[data-id="${wt.id}"]`, wt.name || ''); await U.click('[onclick="App.createTask()"]', t('create'));
+      await U.wait(() => state.screen === 'job' && jobDraft && jobDraft.unit_number === unit, 8000, t('dft_ui_noopen')); await sleep(300); return jobDraft.id; },
+    async fillForm(){ await ui.expand();
+      for (const el of [...document.querySelectorAll('#app [data-s][data-k]')]){ if ((el.dataset.s === 'root' && /^(occupied|f_proposal)$/.test(el.dataset.k)) || el.checked) continue; const h = U.hit(el); if (h){ h.click(); await sleep(25); } }
+      for (const el of [...document.querySelectorAll('#app [data-area]')]){ const h = U.hit(el); if (h && !el.checked){ h.click(); await sleep(25); } }
+      dftLog('   ☛ ' + t('dft_u_allboxes'), 'ui');
+      const pad = document.querySelector('#app [data-pad="q12"]'); if (pad && U.hit(pad)){ U.hit(pad).click(); await sleep(40); }
+      for (const [id, v] of [['steam-rooms', 2], ['other-rooms', 2], ['ad-bedrooms', 2], ['pad-rooms', 2]]) if (document.querySelector('.stepper[data-st="' + id + '"]')) await U.stepTo(id, v);
+      await U.type('#jb-adnote', 'чистка воздуховодов — тест', 'Air Duct note'); await U.type('[data-oth-d="0"]', 'вынос мебели — тест', 'Other 1'); await U.type('[data-oth-a="0"]', '50', '$');
+      await U.type('[data-oth-d="1"]', 'Haul away (test)', 'Other 2'); await U.type('[data-oth-a="1"]', '25', '$'); await U.type('#jb-po', 'DFT-PO-1', 'PO'); await U.type('#jb-note', 'ключ у консьержа — тест', t('note'));
+      for (let i = 0; i < ets.length; i++){ await U.stepTo('eq-q-' + ets[i].id, i ? 1 : 2); await U.stepTo('eq-d-' + ets[i].id, 1); } },
+    async typeTr(id, val){ let el = document.querySelector(`textarea.tr-en[data-tr="${id}"]`); if (el && !U.vis(el)){ const d = el.closest('details'); if (d && !d.open){ const sm = d.querySelector('summary'); if (sm){ sm.click(); await sleep(200); } } }
+      await U.type(`textarea.tr-en[data-tr="${id}"]`, val, 'EN · ' + id); },
+    async dflHas(sec, id){ if (HAS_SB){ DF.at = 0; await dfLoad(true); } dflMemoDrop(); await ui.tab('docflow'); await sleep(250); const h = document.getElementById('dfl-' + sec); let has = false;
+      if (h){ let n = h.nextElementSibling; while (n && !n.classList.contains('dfl-sec')){ if ([...n.querySelectorAll('.dfl-row')].some(r => r.dataset.job === id || (r.getAttribute('onclick') || '').includes(id))) has = true; n = n.nextElementSibling; } }
+      must(has, t('tab_docflow') + ' · ' + sec + ' = ∅'); return { note: t('tab_docflow') + ' → ' + sec }; },
+    async setOrgBox(id, on){ foldSet('docs', true); await ui.tab('settings'); _foldForce = true; render(); await sleep(250); await U.check('#' + id + ' input', on, id); _foldForce = false; await sleep(400); },
+    async feedHas(title){ if (HAS_SB){ DF.at = 0; await dfLoad(true); } await ui.tab('chat'); if (CH.thread !== 'ntf') await U.click('#ch-ths .ch-th[data-k="ntf"]', t('ch_ntf')); await sleep(300);
+      const okk = [...document.querySelectorAll('#ch-msgs .ntf-row')].some(r => (r.textContent || '').includes(title)); const bk = U.q('.ch-back, [onclick="App.chBack()"]'); if (bk){ bk.click(); await sleep(150); }
+      must(okk, t('dft_no_notice') + ' «' + title + '»'); return { note: '«' + title + '»' }; }
+  };
+  let J = '', J2 = '', JA = '', J3 = '', P = '', W = null, total = 0, REQ = '';
+  const T0 = performance.now();
+  const adopt = async id => { if (HAS_SB){ const r = await dftCall('exec', { as: 'self', op: 'job_adopt', args: { run: DFT.run, wide: !!DFT.wide, id } }); okR(r); } else { const j = state.data.jobs.find(x => x.id === id); Object.assign(j, { is_test: true, test_owner: DFT.owner, test_run: DFT.run }); saveLocal(); } await dftPull(id); };
+  try{
+    G(t('dft_g_prep'));
+    await step('·', t('dft_s_status'), async () => { const st = await dftStatusLoad(true); if (!st || st.ok === false) throw new Error(t('dft_no_fn') + ': ' + dftErrOf(st)); if (!st.on) throw new Error('DFT_OFF');
+      W = dftWho('W'); if (!W) throw new Error(t('dft_no_worker')); if (!cx.id || !wt.id || !cp.id) throw new Error(t('dft_no_dirs'));
+      dftLog(t('dft_hdr_fn') + ': ' + (st.demo ? 'demo' : ('dft ' + (st.ver || '?'))) + ' · ' + t('dft_hdr_left') + '=' + (st.mine || 0), 'grp');
+      return { note: ['ADM', 'APR', 'MGR', 'W', 'W2'].map(k => k + '=' + ((dftWho(k) || {}).name || '—') + ((dftWho(k) || {}).me ? '(' + t('dft_me') + ')' : '')).join(' · ') }; });
+    await step('·', t('dft_s_clean0'), async () => { if (HAS_SB){ const r = await dftCall('cleanup', {}); okR(r); dftPurgeLocal(); return { note: String(r.deleted || 0) }; } const mine = state.data.jobs.filter(j => j.is_test && j.test_owner === state.user.id); dftPurgeLocal(mine.map(j => j.id)); return { note: String(mine.length) }; });
+    await step('·', t('dft_s_begin'), async () => { if (HAS_SB) okR(await dftCall('begin', { run: DFT.run })); else audit('dft_run', 'org', 'org', { run: DFT.run, role: state.user.role }); });
+
+    G(t('dft_g_a'));
+    if (state.user.role !== 'tech'){
+      await step('+', t('dft_a1ui'), async () => { J = await ui.createTask(Y, 'DFTEST', ''); must(jobDraft.technician_id == null, 'technician_id'); return { note: t('nt_tech_none') }; });
+      await step('·', t('dft_adopt'), async () => { await ui.closeDoc(); await adopt(J); must((jobOrig({ id: J }) || {}).is_test, 'is_test'); });
+      await step('+', t('dft_a1as'), async () => { await ui.openDoc(J); await U.type('#jb-tech', W.id, t('b_assign') + ' → ' + W.name); await sleep(300); await ui.save(); await ui.closeDoc(); const r = await dftPull(J); must(r.technician_id === W.id, 'technician_id=' + r.technician_id); return { note: W.name }; });
+    } else {
+      await step('+', t('dft_a1'), async () => { const who = first('MGR', 'APR', 'ADM');
+        const d = okR(await dftExec(who, 'job_create', { row: { technician_id: W.id, technician_name: W.name, counterparty_id: cx.counterparty_id || null, complex_id: cx.id, work_type_id: wt.id, unit_number: 'DFTEST', date: addDaysISO(Y, -1) } }));
+        J = d.id; must(d.is_test && d.status === 'draft' && d.no == null, dftCut(d, 160)); await dftPull(J); return { note: who + ' → ' + W.name }; });
+      await step('+', t('dft_a2'), () => ui.feedHas('Новая задача'));
+      await step('+', t('dft_a2move'), async () => { okR(await upd(first('MGR', 'APR', 'ADM'), J, { date: Y })); must((await dftPull(J)).date === Y, 'date'); return ui.feedHas('Задача перенесена'); });
+      await step('+', t('dft_a2own'), async () => { J2 = await ui.createTask(todayISO(), 'DFTEST-OWN', null); must(jobDraft.technician_id === state.user.id, 'technician_id'); await ui.closeDoc(); });
+      await step('·', t('dft_adopt'), async () => { await adopt(J2); must((jobOrig({ id: J2 }) || {}).is_test, 'is_test'); });
+    }
+    await step('+', isMe('W') ? t('dft_a3ui') : t('dft_a3'), async () => {
+      if (isMe('W')){ await ui.openDoc(J); await ui.fillForm(); await ui.save(); await ui.closeDoc(); }
+      else { const fd = dftFullForm(); Object.keys(fd.equipment).forEach(k => { fd.equipment[k].days = 1; }); okR(await upd('W', J, { form_data: fd, total: calcTotal(fd, priceResolver(cx.counterparty_id)), note: 'ключ у консьержа — тест', note_en: '' }));
+        for (const [et, e] of Object.entries(fd.equipment)) okR(await dftExec('W', 'pl_upsert', { row: { id: uid(), job_id: J, equipment_type_id: et, qty: e.qty, days: 1, placed_date: Y, due_date: todayISO(), technician_id: W.id, complex_id: cx.id, counterparty_id: cx.counterparty_id || null, unit_number: 'DFTEST' } })); }
+      const r = await dftPull(J), n = state.data.placements.filter(p => p.job_id === J && !p.archived_at).length; total = +r.total;
+      must(total > 0 && r.form_data.steam.deep_scrub === true && r.form_data.others[0].amount === 50 && n === ets.length, dftCut({ total, n }, 120)); return { note: '$' + total + ' · ' + t('dft_pickups') + ' ' + n }; });
+    if (isMe('W')) await step('+', t('dft_pdf_draft'), async () => { DFT.marks.length = 0; await ui.openDoc(J); const doc = buildInvoicePdfDoc(true); await ui.closeDoc(); if (!doc) throw SKIP('jsPDF'); must(DFT.marks.includes((state.data.org_settings || {}).pdf_draft_mark === false ? '-' : 'DRAFT'), 'marks=' + DFT.marks.join()); return { note: DFT.marks.join() }; });
+    if (!DFT.noMedia){
+      G(t('dft_g_m'));
+      let nPh = 2, nVd = 1, mRows = [];
+      await step('·', t('dft_m0'), async () => { if (!HAS_SB) throw SKIP(t('ct_demo')); if (!isAdmin()) return { note: t('dft_m0_na') };
+        const token = await mediaJwt(), r = await fetch(mediaFN() + '/media-health', { headers: { Authorization: 'Bearer ' + token } }), j = await r.json().catch(() => ({}));
+        dftLog('   ← media-health HTTP ' + r.status + ' · ' + dftCut(j, 400), r.ok ? 'net' : 'neterr', '   ← media-health HTTP ' + r.status + ' · ' + dftCut(j, 3000)); must(j.auth && j.auth.ok && j.drive && j.drive.ok, t('gd_not_conn')); return { note: (j.drive.account || '') + ' · ' + j.drive.used_gb + '/' + j.drive.limit_gb + ' GB' }; });
+      await step('+', t('dft_m1'), async () => { if (!camInCan()) throw new Error(t('cam_in_denied')); const free = mediaFree(J, 'photo', 'job'); nPh = Math.min(nPh, free); await ui.openDoc(J); CAMIN.noFallback = true;
+        try{ await camInOpen(J, 'photo', 'job'); const v = document.querySelector('#camin video'); await U.wait(() => v && v.videoWidth > 0, 15000, t('dft_m_prev'));
+          for (let k = 1; k <= nPh; k++){ dftLog('   ☛ ' + t('dft_m_shot') + ' ' + k, 'ui'); await camInShot(); await U.wait(() => !CAMIN.busy, 20000, t('dft_m_shot') + ' ' + k); await sleep(400); }
+          must(CAMIN.shots === nPh, 'shots=' + CAMIN.shots); camInClose(true); } finally { CAMIN.noFallback = false; try{ if (CAMIN.el) camInClose(true); }catch(e){} }
+        await U.wait(() => (ctQOf(J).filter(x => x.kind === 'photo').length + (state.data.media || []).filter(m => m.job_id === J && m.kind === 'photo').length) >= nPh && !(mPrepN.get(J) > 0), 90000, t('dft_m_queue')); return { note: nPh + ' · ' + t('way1') }; });
+      await step('+', t('dft_m2'), async () => { if (typeof MediaRecorder === 'undefined') throw SKIP('MediaRecorder'); if (mediaFree(J, 'video', 'job') <= 0) throw SKIP(t('dft_m_limit')); if (state.screen !== 'job') await ui.openDoc(J); CAMIN.noFallback = true;
+        try{ await camInOpen(J, 'video', 'job'); const v = document.querySelector('#camin video'); await U.wait(() => v && v.videoWidth > 0, 15000, t('dft_m_prev')); dftLog('   ☛ ' + t('dft_m_rec') + ' 3 s', 'ui'); camInRecStart(); await U.wait(() => !!CAMIN.rec, 5000, 'rec'); await sleep(3000); camInRecStop();
+          await U.wait(() => !CAMIN.rec, 10000, 'rec stop'); await sleep(600); if (CAMIN.el) camInClose(true); } finally { CAMIN.noFallback = false; try{ if (CAMIN.el) camInClose(true); }catch(e){} }
+        await U.wait(() => (ctQOf(J).filter(x => x.kind === 'video').length + (state.data.media || []).filter(m => m.job_id === J && m.kind === 'video').length) >= nVd && !(mPrepN.get(J) > 0), 90000, t('dft_m_queue')); return { note: '1 · 3 s' }; });
+      await step('+', t('dft_m3'), async () => { if (state.screen === 'job'){ if (jobMode(jobDraft).edit) await ui.save(); await ui.closeDoc(); } const r = await ctStepSend(J); mRows = r.rows || []; if (!HAS_SB) throw SKIP(t('ct_demo'));
+        must(mRows.filter(m => m.kind === 'photo').length >= nPh && mRows.some(m => m.kind === 'video') && mRows.every(m => m.drive_file_id), dftCut(mRows.map(m => m.kind + ':' + (m.drive_file_id ? 'ok' : '—')), 200)); return r; });
+      await step('+', t('dft_m4'), async () => { if (!HAS_SB) throw SKIP(t('ct_demo')); await ctStepSrv(J, nPh); return ctStepView(mRows); });
+      await step('−', t('dft_m5'), async () => { if (!HAS_SB) throw SKIP(t('ct_demo')); await ui.openDoc(J); const b = U.q(`[onclick="App.invToDrive('${J}')"]`); if (!b){ await ui.closeDoc(); throw SKIP(t('dft_m_nobtn')); } U.clearToasts(); await U.click(`[onclick="App.invToDrive('${J}')"]`, t('inv_drive_hint')); await sleep(600);
+        const has = (state.data.media || []).some(m => m.job_id === J && m.kind === 'invoice'); await ui.closeDoc(); must(!has && /Диск|Drive/i.test(U.toast()), t('dft_ui_notoast')); return { note: t('inv_drive_draft').slice(0, 60) + '…' }; });
+      DFT.pdfToDrive = async () => { if (!HAS_SB) throw SKIP(t('ct_demo')); await ui.openDoc(J); if (!U.q(`[onclick="App.invToDrive('${J}')"]`)){ await ui.closeDoc(); throw SKIP(t('dft_m_nobtn')); } await U.click(`[onclick="App.invToDrive('${J}')"]`, t('inv_drive_hint'));
+        await U.wait(() => (state.data.media || []).some(m => m.job_id === J && m.kind === 'invoice' && m.drive_file_id), 90000, 'PDF → Drive'); await ui.closeDoc(); const m = state.data.media.find(x => x.job_id === J && x.kind === 'invoice'); return { note: (m.file_name || 'PDF') + ' · drive ' + String(m.drive_file_id).slice(0, 8) + '…' }; };
+    }
+    await step('−', t('dft_a4'), async () => { const who = mineOf('MGR', 'APR'); need(who); if (!ets.length) throw SKIP(t('dft_no_eq'));
+      if (isMe(who)){ await ui.openDoc(J); present('#eq-ro', t('eq_ro_note')); must(!U.vis(document.querySelector('.stepper[data-st="eq-q-' + ets[0].id + '"] button')), t('dft_ui_avail') + ': eq stepper'); U.clearToasts(); await U.click('#eq-ro', 'Equipment Rental'); must(/пикап|pickup/i.test(U.toast()), t('dft_ui_notoast')); await ui.closeDoc(); }
+      const f2 = JSON.parse(JSON.stringify((await dftPull(J)).form_data)); f2.equipment[ets[0].id].qty = 9; return errR(await upd(who, J, { form_data: f2 }), 'FORBIDDEN_EQUIPMENT', isMe(who) ? t('dft_raw') : ''); });
+    await step('+', t('dft_a5'), async () => { const who = mineOf('MGR', 'APR'); need(who); if (isMe(who)){ await ui.openDoc(J); await U.type('#jb-unit', 'DFTEST-M', t('unit')); await ui.save(); await ui.closeDoc(); } else okR(await upd(who, J, { unit_number: 'DFTEST-M' })); must((await dftPull(J)).unit_number === 'DFTEST-M', 'unit'); });
+    await step('+', t('dft_a6'), async () => { need('W2'); const who = mineOf('MGR', 'APR', 'ADM'), w2 = dftWho('W2');
+      if (isMe(who)){ await ui.openDoc(J); await U.type('#crew-sel', w2.id, t('dft_u_crew') + ' + ' + w2.name); await sleep(250); await ui.save(); await ui.closeDoc(); } else okR(await upd(who, J, { helper_ids: [w2.id] }));
+      must(((await dftPull(J)).helper_ids || []).includes(w2.id), 'helper_ids'); okR(await dftExec('W2', 'job_get', { id: J })); return { note: w2.name }; });
+    await step('−', t('dft_a7'), async () => { need('W2'); return errR(await upd('W2', J, { note_en: 'helper edit' }), 'RLS_DENIED'); });
+    await step('+', t('dft_a8'), async () => { need('W2'); if (isMe('W')){ await ui.openDoc(J); await U.check('#jb-shared', true, t('shared_chk')); await ui.save(); await ui.closeDoc(); } else okR(await upd('W', J, { shared_with_helpers: true }));
+      const d = okR(await upd('W2', J, { unit_number: 'DFTEST-H' })); must(d.unit_number === 'DFTEST-H', d.unit_number); });
+    await step('−', t('dft_a9'), async () => { need('W2'); return errR(await upd('W2', J, { helper_ids: [] }), 'FORBIDDEN_CREW'); });
+    await step('−', t('dft_a10'), async () => { if (isMe('W')){ await ui.openDoc(J); absent('.crew-mk', '☆'); absent('#jb-tech', t('b_assign')); await ui.closeDoc(); }
+      return errR(await upd('W', J, { technician_id: (dftWho('W2') || dftWho('ADM') || {}).id || state.user.id }), ['FORBIDDEN_FIELD', 'RLS_DENIED'], isMe('W') ? t('dft_raw') : ''); });
+    await step('+', t('dft_a11'), async () => { need('W2'); const who = mineOf('MGR', 'APR', 'ADM'), w2 = dftWho('W2').id;
+      if (isMe(who)){ await ui.openDoc(J); await U.click('.crew-mk', '☆ ' + dftWho('W2').name); await ui.save(); must((await dftPull(J)).technician_id === w2, 'main≠W2'); await U.click('.crew-mk', '☆ ' + W.name); await ui.save(); await ui.closeDoc(); }
+      else { okR(await upd(who, J, { technician_id: w2, helper_ids: [W.id] })); okR(await upd(who, J, { technician_id: W.id, helper_ids: [w2] })); }
+      const r = await dftPull(J); must(r.technician_id === W.id && (r.helper_ids || []).includes(w2), 'main/crew'); const pl = state.data.placements.filter(p => p.job_id === J && !p.archived_at); must(pl.every(p => p.technician_id === W.id), t('dft_pk_lost')); return { note: t('dft_pk_follow') }; });
+    if (isMe('W')) await step('+', t('dft_n_given'), async () => { need('W2'); return ui.feedHas('Задача передана вам'); });
+
+    G(t('dft_g_b'));
+    await step('−', t('dft_b1'), async () => { if (isMe('W')){ await ui.openDoc(J); await U.check('#jb-done', true, t('job_done_chk')); await U.click('.db-save', t('save')); await U.wait(() => U.has('#tr-need-go'), 6000, t('tr_need_title'));
+        must((await dftPull(J)).status === 'draft', 'status'); await U.click('#tr-need-manual', t('tr_need_manual')); await ui.closeDoc(); await ui.dflHas('notr', J); return { note: '«' + t('tr_need_title') + '» · ' + t('dfl_s_notr') }; }
+      return errR(await upd('W', J, { status: 'done' }), 'TRANSLATION_REQUIRED'); });
+    await step('+', t('dft_b2'), async () => {
+      if (isMe('W')){ if (state.screen !== 'job') await ui.openDoc(J); await ui.expand(); const needCl = clMissingReq(jobDraft).length; DFT.asked.length = 0;
+        /* кнопка «Сформировать переводы» — настоящая; переводчик недоступен (нет сети, лимит) — перевод вводится руками в карточке «Перевод для PDF» */
+        await U.check('#jb-done', true, t('job_done_chk')); await U.click('.db-save', t('save')); await U.wait(() => U.has('#tr-need-go'), 6000, t('tr_need_title')); await U.click('#tr-need-go', t('tr_need_btn'));
+        await U.wait(() => !document.getElementById('tr-need-go') && !saveJob._busy, 40000, t('tr_need_btn')); await sleep(600); let how = t('tr_need_btn');
+        if ((await dftPull(J)).status !== 'done'){ how = t('tr_need_manual'); if (state.screen !== 'job') await ui.openDoc(J); await ui.expand(); await ui.typeTr('note', 'key at the concierge — test'); await ui.typeTr('ad', 'air duct cleaning — test'); await ui.typeTr('oth0', 'furniture haul away — test');
+          await U.check('#jb-done', true, t('job_done_chk')); await ui.save(); must(!U.has('#tr-need-go'), t('tr_need_title')); }
+        if (needCl) must(DFT.asked.length > 0, t('dft_no_question')); await ui.closeDoc(); DFT.b2how = how + (needCl ? ' · ' + t('dft_cl_asked') : ''); }
+      else { const f2 = JSON.parse(JSON.stringify((await dftPull(J)).form_data)); f2.airduct.note_en = 'air duct cleaning — test'; f2.others[0].desc_en = 'furniture haul away — test'; okR(await upd('W', J, { form_data: f2, note_en: 'key at the concierge — test', status: 'done' })); }
+      const d = await dftPull(J); must(d.status === 'done' && d.no != null && d.numbered_at, 'status/no: ' + dftCut({ s: d.status, no: d.no }, 80)); if (HAS_SB) must(d.no > 90000000, t('dft_real_no') + ' ' + d.no); return { note: '№ ' + d.no + (DFT.b2how ? ' · ' + DFT.b2how : '') }; });
+    if (canApprove()) await step('+', t('dft_n_wait'), () => ui.feedHas('Ждёт апрува'));
+    if (isMe('W') || canApprove()) await step('+', t('dft_s_waiting'), () => ui.dflHas('waiting', J));
+    if (!DFT.noMedia) await step('+', t('dft_m6'), async () => DFT.pdfToDrive());
+    await step('−', t('dft_b3'), async () => { if ((await dftPull(J)).doc_no) throw SKIP(t('dft_already_frozen')); return errR(await rpc('W', 'job_fix_no', { p_job: J, p_text: 'WORK-ABC' }), 'BAD_NUMBER_TEXT'); });
+    await step('+', t('dft_b4'), async () => { const row = await dftPull(J); let tx = row.doc_no || renderNoFmt(docFmt(), docNoVals('job', row)); if (!tx.includes(String(row.no))) tx = 'DFT-' + row.no;
+      const d = okR(await rpc('W', 'job_fix_no', { p_job: J, p_text: tx })), again = okR(await rpc('W', 'job_fix_no', { p_job: J, p_text: 'OTHER-' + row.no })); must(d.result === tx && again.result === tx, dftCut([d.result, again.result]));
+      const tg = techTag(W.id), hasTok = /\{TECH\}/.test(docFmt()); if (hasTok && tg) must(tx.includes(tg), t('dft_tag_missing') + ' ' + tg); return { note: tx + (hasTok ? ' · ' + t('df_tag') + ' ' + tg : ' · ' + t('dft_no_tech_tok')) }; });
+    await step('−', t('dft_b5'), async () => { if (isMe('W')){ await ui.openDoc(J); present('#df-ban-done', t('df_ro_done')); present('#df-withdraw', t('df_withdraw')); absent('.db-save', t('save')); absent('#jb-done', t('job_done_chk')); absent('#jb-unit', t('unit'));
+        absent('#jb-approved', t('approve')); absent('.btn-red[onclick*="deleteJob"]', t('delete')); await ui.closeDoc(); }
+      return errR(await upd('W', J, { note_en: 'edit while waiting' }), 'DOC_LOCKED_DONE', isMe('W') ? t('dft_raw') : ''); });
+    await step('−', t('dft_b6'), async () => errR(await rpc('W', 'approve_job', { p_job: J, p_total: total }), 'FORBIDDEN', isMe('W') ? t('dft_raw') : ''));
+    await step('−', t('dft_b7'), async () => { need('MGR'); if (isMe('MGR')){ await ui.openDoc(J); absent('#jb-approved', t('approve')); absent('.db-save', t('save')); absent('.crew-mk', '☆'); await ui.closeDoc(); } return errR(await rpc('MGR', 'approve_job', { p_job: J, p_total: total }), 'FORBIDDEN', isMe('MGR') ? t('dft_raw') : ''); });
+    await step('−', t('dft_b8'), async () => { need('MGR', 'W2'); return errR(await upd('MGR', J, { technician_id: dftWho('W2').id }), 'FORBIDDEN_FIELD', isMe('MGR') ? t('dft_raw') : ''); });
+    await step('−', t('dft_b9'), async () => errR(await upd('W', J, { archived_at: new Date().toISOString() }), 'DOC_LOCKED_DELETE', isMe('W') ? t('dft_raw') : ''));
+    await step('+', t('dft_b11'), async () => { const before = (await dftPull(J)).no;
+      if (isMe('W')){ await ui.openDoc(J); await U.click('#df-withdraw', t('df_withdraw')); await U.wait(() => state.screen === 'job' && U.has('.db-save'), 8000, t('df_withdrawn')); must((await dftPull(J)).status === 'draft', 'status'); await ui.typeTr('note', 'key at the concierge — test (fixed)');
+        await U.check('#jb-done', true, t('job_done_chk')); await ui.save(); await ui.closeDoc(); }
+      else { okR(await upd('W', J, { status: 'draft', note_en: 'key at the concierge — test (fixed)' })); okR(await upd('W', J, { status: 'done' })); }
+      const d = await dftPull(J); must(d.status === 'done' && d.no === before && /fixed/.test(d.note_en || ''), dftCut({ s: d.status, no: [before, d.no] }, 100)); });
+
+    if (canApprove()) await step('+', t('dft_n_withdrawn'), () => ui.feedHas('Документ отозван из согласования'));
+    G(t('dft_g_c'));
+    await step('−', t('dft_c0'), async () => { need('MGR'); return errR(await upd('MGR', J, { status: 'approved' }), 'FORBIDDEN_APPROVE', isMe('MGR') ? t('dft_raw') : ''); });
+    await step('+', t('dft_c1'), async () => { const who = mineOf('APR', 'ADM');
+      if (isMe(who)){ await ui.openDoc(J); present('#jb-approved', t('approve')); await U.click('#df-return', t('df_return')); U.clearToasts(); await U.click('#df-ret-go', t('df_return') + ' (' + t('dft_u_empty') + ')'); must(U.has('#df-ret-note') && (await dftPull(J)).status === 'done', t('dft_ui_noreason'));
+        await U.type('#df-ret-note', 'нет фото счётчика — тест', t('df_return_ph')); await U.click('#df-ret-go', t('df_return')); await U.wait(() => state.screen !== 'job', 8000, 'return'); }
+      else okR(await upd(who, J, { status: 'draft', return_note: 'нет фото счётчика — тест' }));
+      const d = await dftPull(J); must(d.status === 'draft' && d.returned_by && /нет фото/.test(d.return_note || ''), dftCut({ s: d.status, n: d.return_note }, 120)); return { note: who }; });
+    if (isMe('W')) await step('+', t('dft_c2'), () => ui.feedHas('Возвращён на доработку'));
+    if (isMe('W') || isManager()) await step('+', t('dft_s_returned'), () => ui.dflHas('returned', J));
+    await step('+', t('dft_c3'), async () => { if (isMe('W')){ await ui.openDoc(J); must(/нет фото счётчика/.test((document.getElementById('df-ban-ret') || {}).textContent || ''), t('df_ret_ban')); await U.check('#jb-done', true, t('job_done_chk')); await ui.save(); await ui.closeDoc(); } else okR(await upd('W', J, { status: 'done' }));
+      const d = await dftPull(J); must(d.status === 'done' && !d.return_note, 'return_note'); });
+    await step('+', t('dft_c4'), async () => { const who = mineOf('APR', 'ADM');
+      if (isMe(who)){ await ui.openDoc(J); await U.type('#jb-approved', String(total + 1), t('approved_total')); await U.click('[onclick="App.approveJob()"]', t('approve')); await U.wait(() => (jobOrig({ id: J }) || {}).status === 'approved', 10000, t('approve')); await ui.closeDoc(); }
+      else okR(await rpc(who, 'approve_job', { p_job: J, p_total: total + 1 }));
+      const row = await dftPull(J); must(row.status === 'approved' && +row.approved_total === total + 1 && row.approved_crew, dftCut({ s: row.status, a: row.approved_total }, 120)); return { note: who + ' · $' + row.approved_total }; });
+    if (isMe('W')) await step('+', t('dft_c5'), () => ui.feedHas('Инвойс апрувлен'));
+    if (isMe('W')) await step('+', t('dft_pdf_appr'), async () => { DFT.marks.length = 0; await ui.openDoc(J); const doc = buildInvoicePdfDoc(true); await ui.closeDoc(); if (!doc) throw SKIP('jsPDF'); must(DFT.marks.includes((state.data.org_settings || {}).pdf_approved_mark === false ? '-' : 'APPROVED'), 'marks=' + DFT.marks.join()); return { note: DFT.marks.join() }; });
+    await step('+', t('dft_c_sum'), async () => { const who = mineOf('APR', 'ADM'), before = await dftPull(J);
+      if (isMe(who)){ DFT.asked.length = 0; await ui.openDoc(J); await ui.expand(); await U.type('[data-oth-a="1"]', '35', 'Other 2 $'); await ui.save(); await ui.closeDoc(); const a = await dftPull(J);
+        must(DFT.asked.some(q => /апрув|approved/i.test(q)), t('dft_no_question')); must(a.status === 'approved' && +a.total === +before.total + 10 && +a.approved_total === +a.total, dftCut({ t: a.total, a: a.approved_total }, 80)); total = +a.total; return { note: '$' + before.approved_total + ' → $' + a.approved_total }; }
+      const f2 = JSON.parse(JSON.stringify(before.form_data)); f2.others[1].amount = 35; const nt = calcTotal(f2, priceResolver(cx.counterparty_id)); okR(await upd(who, J, { form_data: f2, total: nt })); const a = await dftPull(J);
+      must(a.status === 'approved' && +a.approved_total === +before.approved_total && +a.total === nt, dftCut({ t: a.total, a: a.approved_total }, 80)); total = nt;
+      if (isManager()) await ui.dflHas('sum', J); okR(await upd(who, J, { approved_total: nt })); return { note: t('dfl_s_sum') }; });
+    await step('−', t('dft_c6'), async () => { if (isMe('W')){ await ui.openDoc(J); present('#df-ban-appr', t('df_ro_appr')); present('#df-req', t('df_req')); absent('.db-save', t('save')); absent('#df-withdraw', t('df_withdraw')); absent('.btn-red[onclick*="deleteJob"]', t('delete')); await ui.closeDoc(); }
+      return errR(await upd('W', J, { note_en: 'edit approved' }), 'DOC_LOCKED_APPROVED', isMe('W') ? t('dft_raw') : ''); });
+    await step('−', t('dft_c7'), async () => errR(await upd('W', J, { status: 'draft' }), 'DOC_LOCKED_APPROVED', isMe('W') ? t('dft_raw') : ''));
+    await step('−', t('dft_c8'), async () => errR(await upd('W', J, { archived_at: new Date().toISOString() }), 'DOC_LOCKED_DELETE', isMe('W') ? t('dft_raw') : ''));
+    await step(org.self_approve === true ? '+' : '−', t('dft_c10'), async () => { need('APR'); const a = dftWho('APR');
+      if (a.me){ JA = await ui.createTask(todayISO(), 'DFTEST-SELF', state.user.id); await ui.closeDoc(); await adopt(JA); await ui.openDoc(JA); await U.check('#jb-done', true, t('job_done_chk')); await ui.save(); await ui.closeDoc(); await ui.openDoc(JA);
+        if (org.self_approve === true){ await U.click('[onclick="App.approveJob()"]', t('approve')); await U.wait(() => (jobOrig({ id: JA }) || {}).status === 'approved', 10000, t('approve')); await ui.closeDoc(); return { note: 'self_approve = on' }; }
+        present('#df-self-appr', t('df_self_appr')); absent('[onclick="App.approveJob()"]', t('approve')); await ui.closeDoc(); return errR(await rpc('APR', 'approve_job', { p_job: JA, p_total: 1 }), 'SELF_APPROVE_OFF', t('dft_raw')); }
+      const d = okR(await dftExec('APR', 'job_create', { row: { technician_id: a.id, technician_name: a.name, complex_id: cx.id, counterparty_id: cx.counterparty_id || null, work_type_id: wt.id, unit_number: 'DFTEST-SELF', status: 'done' } })); JA = d.id;
+      const r = await rpc('APR', 'approve_job', { p_job: JA, p_total: 1 }); return org.self_approve === true ? (okR(r), { note: 'self_approve = on' }) : errR(r, 'SELF_APPROVE_OFF'); });
+
+    G(t('dft_g_d'));
+    await step('−', t('dft_d1'), async () => { if (isMe('W')){ await ui.openDoc(J); await U.click('#df-req', t('df_req')); U.clearToasts(); await U.click('#df-req-go', t('df_req_send') + ' (' + t('dft_u_empty') + ')'); must(U.has('#df-req-reason') && !jobPendingReq(J), t('dft_ui_noreason')); await ui.reset(); return { note: t('df_reason_req') }; }
+      return errR(await rpc('W', 'doc_request_edit', { p_job: J, p_reason: ' ' }), 'REASON_REQUIRED'); });
+    await step('−', t('dft_d2'), async () => { const who = mineOf('MGR', 'ADM'); if (isMe(who) && !canApprove()){ await ui.openDoc(J); absent('#df-req', t('df_req')); await ui.closeDoc(); } return errR(await rpc(who, 'doc_request_edit', { p_job: J, p_reason: 'чужой запрос' }), 'FORBIDDEN', isMe(who) ? t('dft_raw') : ''); });
+    const askEdit = async reason => { if (isMe('W')){ await ui.openDoc(J); await U.click('#df-req', t('df_req')); await U.type('#df-req-reason', reason, t('df_req_ph')); await U.click('#df-req-go', t('df_req_send')); await U.wait(() => !!jobPendingReq(J), 8000, t('df_req_sent')); present('#df-req-wait', t('df_req_pending')); absent('#df-req', t('df_req')); await ui.closeDoc(); return jobPendingReq(J).id; }
+      return okR(await rpc('W', 'doc_request_edit', { p_job: J, p_reason: reason })).result; };
+    await step('+', t('dft_d3'), async () => { REQ = await askEdit('забыл осушитель — тест'); must(REQ, 'id'); });
+    if (canApprove()) await step('+', t('dft_n_req'), () => ui.feedHas('Запрос на правку документа'));
+    await step('−', t('dft_d4'), async () => errR(await rpc('W', 'doc_request_edit', { p_job: J, p_reason: 'ещё раз' }), 'ALREADY_PENDING', isMe('W') ? t('dft_raw') : ''));
+    await step('+', t('dft_d3ui'), async () => { if (HAS_SB){ DF.at = 0; await dfLoad(true); } await ui.tab('docflow'); must([...document.querySelectorAll('.dfl-row')].some(r => /забыл осушитель/.test(r.textContent || '')), t('dft_dfl_noreq')); return { note: t('tab_docflow') }; });
+    await step('−', t('dft_d5'), async () => { need('MGR'); if (isMe('MGR')){ await ui.tab('docflow'); absent('.dfl-row .btn-green', t('df_req_grant')); } return errR(await rpc('MGR', 'doc_request_decide', { p_id: REQ, p_grant: true, p_answer: '' }), 'FORBIDDEN', isMe('MGR') ? t('dft_raw') : ''); });
+    await step('+', t('dft_d6'), async () => { const who = mineOf('APR', 'ADM');
+      if (isMe(who)){ promptAns = 'всё верно — тест'; await ui.tab('docflow'); const row = [...document.querySelectorAll('.dfl-row')].find(r => /забыл осушитель/.test(r.textContent || '')); must(row, t('dft_dfl_noreq')); const b = [...row.querySelectorAll('.btn')].find(x => /dfReqDecide\([^)]*false\)/.test(x.getAttribute('onclick') || '')); must(U.vis(b), t('df_req_deny'));
+        dftLog('   ☛ ' + t('df_req_deny'), 'ui'); b.click(); await U.wait(() => !jobPendingReq(J), 8000, t('df_req_denied')); }
+      else okR(await rpc(who, 'doc_request_decide', { p_id: REQ, p_grant: false, p_answer: 'всё верно — тест' }));
+      must((await dftPull(J)).status === 'approved', 'status'); });
+    if (isMe('W')) await step('+', t('dft_d7'), () => ui.feedHas('В правке отказано'));
+    if (isMe('W')) await step('+', t('dft_s_denied'), () => ui.dflHas('denied', J));
+    await step('−', t('dft_d8'), async () => errR(await rpc(first('ADM', 'APR'), 'doc_request_decide', { p_id: REQ, p_grant: true, p_answer: '' }), 'ALREADY_DECIDED', isMe(first('ADM', 'APR')) ? t('dft_raw') : ''));
+    await step('+', t('dft_d9'), async () => { REQ = await askEdit('всё же нужен осушитель — тест'); const who = mineOf('APR', 'ADM');
+      if (isMe(who)){ if (HAS_SB){ DF.at = 0; await dfLoad(true); } await ui.openDoc(J); must(/нужен осушитель/.test((document.getElementById('df-ban-req') || {}).textContent || ''), t('df_req_from')); await U.click('#df-ban-req .btn-green', t('df_req_grant')); await U.wait(() => (jobOrig({ id: J }) || {}).status === 'draft', 10000, t('df_req_granted')); await sleep(400); await ui.closeDoc(); }
+      else okR(await rpc(who, 'doc_request_decide', { p_id: REQ, p_grant: true, p_answer: 'правь' }));
+      const row = await dftPull(J); must(row.status === 'draft' && row.approved_total == null && Date.parse(row.edit_open_until) > Date.now() + 23 * 36e5, dftCut({ s: row.status, a: row.approved_total }, 120)); });
+    if (isMe('W')) await step('+', t('dft_d10'), () => ui.feedHas('Апрув снят — документ в черновике'));
+    if (isMe('W') || isManager()) await step('+', t('dft_s_reopened'), () => ui.dflHas('reopened', J));
+    /* одно и то же действие — от имени ЛЮБОГО согласующего: у ведущего — кнопками, у остальных — через функцию */
+    const approveBy = async (who, sum) => { if (isMe(who)){ await ui.openDoc(J); if (sum != null) await U.type('#jb-approved', String(sum), t('approved_total')); await U.click('[onclick="App.approveJob()"]', t('approve')); await U.wait(() => (jobOrig({ id: J }) || {}).status === 'approved', 10000, t('approve')); await ui.closeDoc(); }
+      else okR(await rpc(who, 'approve_job', { p_job: J, p_total: sum != null ? sum : total })); const r = await dftPull(J); must(r.status === 'approved' && r.approved_by === dftWho(who).id, 'approved_by=' + shortName(profName(r.approved_by))); };
+    const returnBy = async (who, note) => { if (isMe(who)){ await ui.openDoc(J); await U.click('#df-return', t('df_return')); await U.type('#df-ret-note', note, t('df_return_ph')); await U.click('#df-ret-go', t('df_return')); await U.wait(() => state.screen !== 'job', 8000, 'return'); }
+      else okR(await upd(who, J, { status: 'draft', return_note: note })); const r = await dftPull(J); must(r.status === 'draft' && r.returned_by === dftWho(who).id, 'returned_by'); };
+    const decideBy = async (who, grant, answer) => { const q = jobPendingReq(J) || dfReqs().find(x => x.doc_id === J && x.status === 'pending');
+      if (isMe(who)){ if (HAS_SB){ DF.at = 0; await dfLoad(true); } if (grant){ await ui.openDoc(J); await U.click('#df-ban-req .btn-green', t('df_req_grant')); await U.wait(() => (jobOrig({ id: J }) || {}).status === 'draft', 10000, t('df_req_granted')); await sleep(400); await ui.closeDoc(); }
+        else { promptAns = answer || ''; await ui.tab('docflow'); const row = [...document.querySelectorAll('.dfl-row')].find(r => (r.getAttribute('onclick') || '').includes(J) && r.querySelector('.btn')); must(row, t('dft_dfl_noreq')); const b = [...row.querySelectorAll('.btn')].find(x => /false\)/.test(x.getAttribute('onclick') || '')); must(U.vis(b), t('df_req_deny')); dftLog('   ☛ ' + t('df_req_deny'), 'ui'); b.click(); await U.wait(() => !jobPendingReq(J), 8000, t('df_req_denied')); } }
+      else okR(await rpc(who, 'doc_request_decide', { p_id: REQ || (q && q.id), p_grant: !!grant, p_answer: answer || '' })); };
+    const submit = async () => { if (isMe('W')){ await ui.openDoc(J); await U.check('#jb-done', true, t('job_done_chk')); await ui.save(); await ui.closeDoc(); } else okR(await upd('W', J, { status: 'done' })); must((await dftPull(J)).status === 'done', 'status'); };
+    const approve = async () => { const who = mineOf('APR', 'ADM'); if (isMe(who)){ await ui.openDoc(J); await U.click('[onclick="App.approveJob()"]', t('approve')); await U.wait(() => (jobOrig({ id: J }) || {}).status === 'approved', 10000, t('approve')); await ui.closeDoc(); } else okR(await rpc(who, 'approve_job', { p_job: J, p_total: total })); };
+    const giveBack = async note => { const who = mineOf('APR', 'ADM'); if (isMe(who)){ await ui.openDoc(J); await U.click('#df-return', t('df_return')); await U.type('#df-ret-note', note, t('df_return_ph')); await U.click('#df-ret-go', t('df_return')); await U.wait(() => state.screen !== 'job', 8000, 'return'); } else okR(await upd(who, J, { status: 'draft', return_note: note })); };
+    await step('+', t('dft_d11'), async () => { await submit(); await approve(); const q = await askEdit('запрос, который закроется сам'); await giveBack('вернул сам — тест'); if (HAS_SB){ DF.at = 0; await dfLoad(true); }
+      const rq = dfReqs().find(x => x.id === q); if (!rq) throw SKIP(t('dft_req_hidden')); must(rq.status === 'closed', 'status=' + rq.status); return { note: 'closed' }; });
+
+    /* ---- второй согласующий: тот же круг «сдал → вернули → сдал → апрув → запрос → отказ → запрос → разрешили», но от имени ДРУГОГО согласующего ---- */
+    G(t('dft_g_c2'));
+    { const cyc1 = mineOf('APR', 'ADM'), other = cyc1 === 'APR' ? 'ADM' : 'APR', nm = () => (dftWho(other) || {}).name || other;
+      await step('+', t('dft_c2_ret'), async () => { need(other); await submit(); await returnBy(other, 'второй согласующий: вернул — тест'); return { note: other + ' · ' + nm() }; });
+      await step('+', t('dft_c2_appr'), async () => { need(other); await submit(); await approveBy(other, total + 2); return { note: other + ' · $' + (total + 2) }; });
+      await step('+', t('dft_c2_deny'), async () => { need(other); REQ = await askEdit('второй круг: запрос — тест'); await decideBy(other, false, 'отказ второго согласующего'); must((await dftPull(J)).status === 'approved', 'status'); return { note: other }; });
+      await step('+', t('dft_c2_grant'), async () => { need(other); REQ = await askEdit('второй круг: ещё запрос — тест'); await decideBy(other, true, 'правь'); const r = await dftPull(J); must(r.status === 'draft' && r.approved_total == null, r.status); return { note: other }; }); }
+
+    /* ---- запрет правки по давности и суточное окно правки ---- */
+    G(t('dft_g_l'));
+    { let flipped = false; const lockOn = () => editLockDays() > 0;
+      await step('·', t('dft_l0'), async () => { if (lockOn()) return { note: editLockDays() + ' ' + t('dft_days_w') }; if (!isAdmin()) throw SKIP(t('dft_lock_off'));
+        foldSet('docs', true); await ui.tab('settings'); _foldForce = true; render(); await sleep(250); await U.check('#lock-chk', true, t('lock_chk')); _foldForce = false; await sleep(500); must(lockOn(), 'edit_lock_days'); flipped = true; return { note: editLockDays() + ' ' + t('dft_days_w') + ' · ' + t('dft_u_settings') }; });
+      try{
+        await step('−', t('dft_l1'), async () => { if (!lockOn()) throw SKIP(t('dft_lock_off')); const old = addDaysISO(todayISO(), -(editLockDays() + 3));
+          const d = okR(await dftExec(first('ADM', 'APR', 'MGR'), 'job_create', { row: { technician_id: W.id, technician_name: W.name, complex_id: cx.id, counterparty_id: cx.counterparty_id || null, work_type_id: wt.id, unit_number: 'DFTEST-OLD', date: old, status: 'done' } })); J3 = d.id; await dftPull(J3);
+          if (isMe('W')){ must(editLocked(jobOrig({ id: J3 })), 'editLocked'); } return errR(await upd('W', J3, { status: 'draft' }), HAS_SB ? 'LOCKED' : ['LOCKED', 'DOC_LOCKED'], isMe('W') ? t('dft_raw') : ''); });
+        await step('+', t('dft_l2'), async () => { if (!J3) throw SKIP(t('dft_lock_off')); const ap = first('ADM', 'APR'); okR(await rpc(ap, 'approve_job', { p_job: J3, p_total: 1 })); const q = okR(await rpc('W', 'doc_request_edit', { p_job: J3, p_reason: 'старый документ — тест окна правки' })).result;
+          okR(await rpc(ap, 'doc_request_decide', { p_id: q, p_grant: true, p_answer: '' })); const r = await dftPull(J3); must(r.status === 'draft' && Date.parse(r.edit_open_until) > Date.now(), 'edit_open_until'); if (isMe('W')) must(!editLocked(r), 'editLocked');
+          const e = okR(await upd('W', J3, { note_en: 'edited inside the window — test' })); must(e.note_en === 'edited inside the window — test', 'note_en'); return { note: t('df_open_until') + ' ' + dfWhen(r.edit_open_until) }; });
+      } finally { if (flipped) await step('·', t('dft_l3'), async () => { foldSet('docs', true); await ui.tab('settings'); _foldForce = true; render(); await sleep(250); await U.check('#lock-chk', false, t('lock_chk')); _foldForce = false; await sleep(500); must(!lockOn(), 'edit_lock_days'); }); } }
+
+    G(t('dft_g_e'));
+    await step('+', t('dft_e1'), async () => { const row0 = await dftPull(J), live = state.data.placements.filter(p => p.job_id === J && pkPending(p)); if (!live.length) throw SKIP(t('dft_no_eq'));
+      if (isMe('W')){ await ui.goDay(todayISO()); await U.click(`[onclick="App.noteModal('${J}')"]`, t('pk_note_title')); must(/ключ у консьержа/.test((document.getElementById('pk-note-inv') || {}).textContent || ''), t('pk_note_inv'));
+        await U.type('#pk-note', 'забрать после 15:00 — тест', t('pk_note_own')); await U.type('#pk-note-en', 'pick up after 3 pm — test', 'EN'); await U.click('#pk-note-save', t('save')); await sleep(500); }
+      else for (const p of live) okR(await dftExec('W', 'pl_upsert', { row: { ...p, note: 'забрать после 15:00 — тест', note_en: 'pick up after 3 pm — test' } }));
+      const row1 = await dftPull(J); must(row1.note === row0.note && row1.rev === row0.rev, t('dft_inv_touched')); must(pkNoteOf(J) === 'забрать после 15:00 — тест', 'pkNoteOf'); });
+    await step('+', t('dft_e3'), async () => { if (ets.length < 2) throw SKIP(t('dft_no_eq2')); const k = ets[1].id, p = state.data.placements.find(x => x.job_id === J && x.equipment_type_id === k && !x.archived_at && !x.ext_of); must(p, 'placement');
+      if (isMe('W')){ await ui.openDoc(J); await ui.expand(); await U.stepTo('eq-q-' + k, 0); await ui.save(); await ui.closeDoc(); }
+      else { const f2 = JSON.parse(JSON.stringify((await dftPull(J)).form_data)); delete f2.equipment[k]; okR(await upd('W', J, { form_data: f2, total: calcTotal(f2, priceResolver(cx.counterparty_id)) }));
+        okR(await dftExec('W', 'pl_upsert', { row: { ...p, archived_at: new Date().toISOString(), archived_by: W.id, arch_note: 'Техника удалена из инвойса — тест', superseded: true } })); }
+      await dftPull(J); const a = state.data.placements.find(x => x.id === p.id); must(a && a.archived_at && !pkPending(a) && /удалена из инвойса/i.test(a.arch_note || ''), 'archived'); return { note: t('dft_arch_kept') }; });
+    await step('+', t('dft_e_req'), async () => { const p0 = state.data.placements.find(p => p.job_id === J && pkPending(p)); if (!p0) throw SKIP(t('dft_no_eq')); if (!isMe('W')) throw SKIP(t('dft_only_ui'));
+      promptAns = String(maxExtendDays() + 1); await ui.goDay(todayISO()); await U.click(`.item.clicky[onclick*="pickupModal('${J}'"]`, t('pickup') + ' Unit'); await U.click('[onclick^="App.extendModal("]', t('extend_rent')); await U.click('[onclick="App.extReqCreate()"]', t('ext_req_btn')); await sleep(600);
+      const rq = (state.data.ext_requests || []).find(r => r.job_id === J && r.status === 'pending'); must(rq && +rq.days === maxExtendDays() + 1, 'ext_request'); DFT.extReq = rq.id; return { note: rq.days + ' ' + t('days') }; });
+    await step('+', t('dft_e_req_no'), async () => { if (!DFT.extReq) throw SKIP(t('dft_only_ui')); if (!HAS_SB){ state.data.ext_requests = (state.data.ext_requests || []).filter(r => r.id !== DFT.extReq); throw SKIP(t('dft_only_sb')); }
+      const who = first('MGR', 'APR', 'ADM'); okR(await rpc(who, 'decide_ext_request', { p_id: DFT.extReq, p_ok: false })); const x = await state.sb.from('ext_requests').select('status').eq('id', DFT.extReq).maybeSingle(); must(x.data && x.data.status === 'rejected', 'status'); return { note: who }; });
+    await step('+', t('dft_e2'), async () => { const p0 = state.data.placements.find(p => p.job_id === J && pkPending(p) && !p.ext_of); if (!p0) throw SKIP(t('dft_no_eq')); const part = isMe('W') && +p0.qty >= 2;
+      if (isMe('W')){ await ui.goDay(todayISO()); await U.click(`.item.clicky[onclick*="pickupModal('${J}'"]`, t('pickup') + ' Unit'); await U.click('[onclick^="App.extendModal("]', t('extend_rent'));
+        if (part){ await U.click(`[onclick="App.extMode('sel')"]`, t('ext_partial')); await U.click(`[onclick="App.extQty('${p0.id}',-1)"]`, '−1'); }
+        await U.click('[onclick="App.extDays(1)"]', '+1 ' + t('days')); await U.click('[onclick="App.extApply()"]', t('extend_rent')); await sleep(600);
+        if (part){ await dftPull(J); const o = state.data.placements.find(p => p.id === p0.id), e = state.data.placements.find(p => p.ext_of === p0.id); must(o && !o.superseded && +o.qty === +p0.qty - 1 && e && +e.qty === 1, t('ext_partial')); return { note: t('ext_partial') + ': ' + o.qty + ' + ' + e.qty }; } }
+      else { okR(await dftExec('W', 'pl_upsert', { row: { id: uid(), job_id: J, equipment_type_id: p0.equipment_type_id, qty: p0.qty, days: 2, placed_date: p0.due_date, due_date: addDaysISO(p0.due_date, 2), technician_id: p0.technician_id, complex_id: p0.complex_id, counterparty_id: p0.counterparty_id, unit_number: p0.unit_number, ext_of: p0.id } }));
+        okR(await dftExec('W', 'pl_upsert', { row: { ...p0, superseded: true, superseded_at: new Date().toISOString() } })); }
+      await dftPull(J); const pend = state.data.placements.filter(p => p.job_id === J && pkPending(p)); must(pend.some(p => p.ext_of === p0.id) && !pend.some(p => p.id === p0.id), 'pending: ' + pend.length); return { note: '+2 ' + t('days') }; });
+    await step('+', t('dft_e_helper'), async () => { need('W2'); const rows = state.data.placements.filter(p => p.job_id === J && pkPending(p)); if (rows.length < 2) throw SKIP(t('dft_one_row'));
+      okR(await dftExec('W2', 'pl_upsert', { row: { ...rows[0], picked_up: true, picked_up_at: new Date().toISOString(), picked_up_by: dftWho('W2').id } })); await dftPull(J); must(state.data.placements.find(p => p.id === rows[0].id).picked_up, 'picked_up'); return { note: dftWho('W2').name }; });
+    await step('+', t('dft_e4'), async () => { const ext = state.data.placements.find(p => p.job_id === J && pkPending(p)); if (!ext) throw SKIP(t('dft_no_eq'));
+      if (isMe('W')){ await ui.goDay(ext.due_date); await U.click(`.item.clicky[onclick*="pickupModal('${J}'"]`, t('pickup') + ' Unit'); await U.click('[onclick^="App.pickupGroup("]', t('pick_all_btn')); await sleep(700); await ui.reset(); }
+      else okR(await dftExec('W', 'pl_upsert', { row: { ...ext, picked_up: true, picked_up_at: new Date().toISOString(), picked_up_by: W.id } }));
+      await dftPull(J); must(!state.data.placements.some(p => p.job_id === J && pkPending(p)), 'pending'); });
+
+    await step('+', t('dft_e_ret'), async () => { await dftPull(J); const outRows = state.data.placements.filter(p => p.job_id === J && p.picked_up && !p.returned_at && !p.archived_at); if (!outRows.length) return { note: t('dft_ret_auto') };
+      if (isMe('W')){ await ui.goDay(todayISO()); if (!U.q(`[onclick="App.returnJob('${J}')"]`)) throw SKIP(t('dft_ret_nobtn')); await U.click(`[onclick="App.returnJob('${J}')"]`, t('sb_return')); await sleep(600); }
+      else for (const p of outRows) okR(await dftExec('W', 'pl_upsert', { row: { ...p, returned_at: new Date().toISOString(), returned_by: W.id } }));
+      await dftPull(J); must(!state.data.placements.some(p => p.job_id === J && p.picked_up && !p.returned_at && !p.archived_at), 'returned_at'); });
+    G(t('dft_g_f'));
+    await step('−', t('dft_f1'), async () => { const other = isMe('W') ? first('ADM', 'APR') : 'ADM';
+      if (isMe('W') && HAS_SB){ await ui.openDoc(J); okR(await upd(other, J, { note_en: 'edited by admin — test' })); await U.type('#jb-note', 'ключ у консьержа — тест (правка работника)', t('note')); await U.click('.db-save', t('save'));
+        await U.wait(() => U.has('#df-cf-fresh'), 12000, t('df_cf_title')); must((jobOrig({ id: J }) || {}).note_en === 'edited by admin — test', 'fresh'); await U.click('#df-cf-fresh', t('df_cf_fresh')); await sleep(500); must(jobDraft && jobDraft.note_en === 'edited by admin — test', 'draft'); await ui.closeDoc(); return { note: '→ STALE_DOC · ' + t('df_cf_title') }; }
+      const before = await dftPull(J); okR(await upd(other, J, { note_en: 'edited by admin — test' })); return errR(await upd('W', J, { note_en: 'stale write — test', rev: before.rev, updated_dev: 'dft-' + dfDev() }), 'STALE_DOC'); });
+    await step('+', t('dft_f2'), async () => { if (isMe('W')){ await ui.openDoc(J); await ui.typeTr('note', 'fresh write — test'); await ui.save(); await ui.closeDoc(); } else { const fresh = await dftPull(J); okR(await upd('W', J, { note_en: 'fresh write — test', rev: fresh.rev, updated_dev: 'dft-' + dfDev() })); }
+      must((await dftPull(J)).note_en === 'fresh write — test', 'note_en'); });
+    await step('+', t('dft_f_off'), async () => { if (!(isMe('W') && HAS_SB)) throw SKIP(t('dft_only_sb_w')); const other = first('ADM', 'APR'); await ui.openDoc(J); netSet(false); dftLog('   ' + t('dft_service') + ': ' + t('dft_net_off'), 'net');
+      try{ await U.type('#jb-note', 'ключ у консьержа — тест (правка без связи)', t('note')); await U.click('.db-save', t('save')); await sleep(900); must(pendingLoad().some(x => x.table === 'jobs'), t('dft_no_queue')); await ui.closeDoc();
+        okR(await upd(other, J, { note_en: 'edited while the worker was offline — test' })); } finally { netSet(true); dftLog('   ' + t('dft_service') + ': ' + t('dft_net_on'), 'net'); }
+      await pendingFlush(); await U.wait(() => U.has('#df-cf-mine'), 15000, t('df_cf_title')); await U.click('#df-cf-mine', t('df_cf_mine')); await sleep(900); const r = await dftPull(J); must(/правка без связи/.test(r.note || ''), 'note'); return { note: t('df_cf_mine') }; });
+    await step('−', t('dft_f3'), async () => { const holder = isMe('W') ? first('ADM', 'APR') : 'ADM'; okR(await rpc(holder, 'doc_lock', { p_id: J, p_force: false }));
+      if (isMe('W') && HAS_SB){ await ui.openDoc(J); await U.wait(() => U.has('#df-ban-lock'), 8000, t('df_lock_by')); absent('.db-save', t('save')); U.clearToasts(); await U.click('#df-lock-ask', t('df_lock_ask')); must((JL.held || {}).name, 'held'); return { note: t('df_lock_by').replace('{NAME}', JL.held.name) }; }
+      const r = okR(await rpc('W', 'doc_lock', { p_id: J, p_force: false })).result; must(r && r.ok === false && r.name, dftCut(r)); const asked = okR(await rpc('W', 'doc_lock', { p_id: J, p_force: true })).result; must(asked && asked.ok === false, t('dft_lock_taken_bad')); return { note: t('df_lock_by').replace('{NAME}', r.name) }; });
+    await step('+', t('dft_f4'), async () => { const holder = isMe('W') ? first('ADM', 'APR') : 'ADM'; okR(await rpc(holder, 'doc_unlock', { p_id: J }));
+      if (isMe('W') && HAS_SB){ await U.wait(() => state.screen === 'job' && !U.has('#df-ban-lock') && U.has('.db-save'), 16000, t('df_lock_free')); await ui.closeDoc(); return { note: t('df_lock_free') }; }
+      const r = okR(await rpc('W', 'doc_lock', { p_id: J, p_force: false })).result; must(r && r.ok === true, dftCut(r)); okR(await rpc('W', 'doc_unlock', { p_id: J })); });
+
+    await step('+', t('dft_s_retry'), async () => { const row = await dftPull(J); if (!row || row.status !== 'draft') throw SKIP('status'); dfProblemAdd('jobs', { ...row, note_en: 'retry write — test' }, 'STALE_DOC'); dftLog('   ' + t('dft_service') + ': dfProblemAdd', 'net'); await ui.tab('docflow'); await U.click('.dfl-problem .btn-blue', t('dfl_retry'));
+      await U.wait(() => !dfProblems().some(x => x.doc_id === J), 10000, t('dfl_retry')); await sleep(400); must((await dftPull(J)).note_en === 'retry write — test', 'note_en'); return { note: t('dfl_retry') }; });
+    G(t('dft_g_g'));
+    await step('+', t('dft_p1'), async () => { const j0 = await dftPull(J); if (j0.status !== 'draft') throw SKIP('status=' + j0.status);
+      if (isMe('W') && allowTechProposal()){ await ui.openDoc(J); await U.check('input[onchange="App.setProposal(this.checked)"]', true, t('proposal_chk')); await ui.save(); await ui.closeDoc(); } else okR(await upd('W', J, { has_proposal: true }));
+      must((await dftPull(J)).has_proposal === true, 'has_proposal'); if (isManager()){ await ui.openDoc(J); present('.chip.prq', 'P?'); await ui.closeDoc(); } return { note: 'P?' }; });
+    await step('−', t('dft_p2'), async () => { if (propSendOn()) throw SKIP('prop_send_on'); if (!(isManager() && propCanCreate())) throw SKIP(t('dft_p_noright')); await ui.tab('proposals'); await U.click('[onclick="App.openProposal()"]', t('prop_new')); absent('[data-pst="sent"]', t('pst_sent')); present('[data-pst="approved"]', t('pst_approved')); await ui.reset(); const b = U.q('.db-x'); if (b){ b.click(); await sleep(250); } const dr = U.q('[onclick*="propDrop"], [onclick*="propClose(true)"]'); if (dr){ dr.click(); await sleep(200); } return { note: t('prop_send_off').slice(0, 50) + '…' }; });
+    await step('−', t('dft_g1'), async () => errR(await dftExec('W', 'prop_create', { row: { complex_id: cx.id, unit_number: 'DFTEST' } }), 'RLS_DENIED', isMe('W') ? t('dft_raw') : ''));
+    await step('·', t('dft_g2'), async () => { const who = first('MGR', 'APR', 'ADM'); const d = okR(await dftExec(who, 'prop_create', { row: { complex_id: cx.id, counterparty_id: cx.counterparty_id || null, unit_number: 'DFTEST', status: 'approved', items: [{ d: 'Test proposal line', a: 10 }], total: 10 } })); P = d.id; must(d.is_test, 'is_test');
+      if (HAS_SB){ const x = await state.sb.from('proposals').select('*').eq('id', P).maybeSingle(); if (x.data){ state.data.proposals = state.data.proposals.filter(p => p.id !== P).concat([x.data]); } } return { note: who + ' · ' + t('dft_service') }; });
+    await step('+', t('dft_g3'), submit);
+    const link = async (who, expectErr) => { if (isMe(who)){ await ui.openDoc(J); U.clearToasts(); await U.type('#jb-prop-sel', P, 'PROPOSAL'); await U.click('[onclick^="App.linkProposal("]', t('prop_link')); await sleep(700);
+        const linked = ((await dftPull(J)).proposal_id || null) === P; await ui.closeDoc(); if (expectErr){ must(!linked && /администратор|admin/i.test(U.toast()), t('dft_ui_notoast')); return { note: '→ ' + expectErr }; } must(linked, 'proposal_id'); return; }
+      const r = await rpc(who, 'link_job_proposal', { p_job: J, p_prop: P }); return expectErr ? errR(r, expectErr) : (okR(r), undefined); };
+    await step(org.mgr_link_locked === true ? '+' : '−', t('dft_g4'), async () => { need('MGR'); return link('MGR', org.mgr_link_locked === true ? '' : 'LINK_LOCKED'); });
+    await step('+', t('dft_g5'), async () => { const b = await dftPull(J); await link(mineOf('APR', 'ADM'), ''); const a = await dftPull(J); must(a.proposal_id === P && a.status === 'done' && a.rev === b.rev, dftCut({ p: a.proposal_id, st: a.status, rev: [b.rev, a.rev] })); });
+
+    if (isAdmin()){
+      const flip = (id, key, name, run) => step('+', name, async () => { const was = org[key] === true; try{ await ui.setOrgBox(id, !was); must((state.data.org_settings || {})[key] === !was, key); return await run(!was); } finally { try{ await ui.setOrgBox(id, was); }catch(e){ state.data.org_settings[key] = was; dftLog('⚠ ' + t('dft_restore_fail') + ': ' + key, 'err'); } } });
+      await flip('opt-self-approve', 'self_approve', t('dft_x_self'), async on => { need('APR'); if (!JA) throw SKIP('JA'); const cur = await dftPull(JA); if (cur && cur.status === 'approved') okR(await upd('ADM', JA, { status: 'done' }));
+        const r = await rpc('APR', 'approve_job', { p_job: JA, p_total: 1 }); return on ? (okR(r), { note: 'self_approve=on → ✓' }) : errR(r, 'SELF_APPROVE_OFF'); });
+      await flip('opt-link-locked', 'mgr_link_locked', t('dft_x_link'), async on => { need('MGR'); okR(await rpc('ADM', 'link_job_proposal', { p_job: J, p_prop: null })); const r = await rpc('MGR', 'link_job_proposal', { p_job: J, p_prop: P });
+        const res = on ? (okR(r), { note: 'mgr_link_locked=on → ✓' }) : errR(r, 'LINK_LOCKED'); okR(await rpc('ADM', 'link_job_proposal', { p_job: J, p_prop: P })); return res; });
+      await step('−', t('dft_x_right'), async () => { need('W2'); const w2 = dftWho('W2'), box = `.staff-df[data-uid="${w2.id}"] input[onchange*="can_edit_docs"]`; okR(await upd('ADM', J, { status: 'draft', return_note: 'тест личного права' }));
+        try{ await ui.tab('dirs'); await U.click(`[onclick="App.dirTab('staff')"]`, t('dft_u_staff')); await U.check(box, false, t('df_r_edit') + ' ✗ ' + w2.name); await sleep(500); return errR(await upd('W2', J, { unit_number: 'DFTEST-NR' }), 'RLS_DENIED'); }
+        finally { try{ await ui.tab('dirs'); await U.click(`[onclick="App.dirTab('staff')"]`, t('dft_u_staff')); await U.check(box, true, t('df_r_edit') + ' ✓'); await sleep(500); }catch(e){ dftLog('⚠ ' + t('dft_restore_fail') + ': can_edit_docs ' + w2.name, 'err'); } okR(await upd('W', J, { status: 'done' })); } });
+    }
+    /* ---- пропозал кнопками (менеджер и админ): «Новый пропозал» → поля → строка → «Сохранить» → приём в тест ---- */
+    if (isManager()) await step(propCanCreate() ? '+' : '−', t('dft_p_ui'), async () => { await ui.tab('proposals'); if (!propCanCreate()){ absent('[onclick="App.openProposal()"]', t('prop_new')); return { note: t('dft_p_noright') }; }
+      await U.click('[onclick="App.openProposal()"]', t('prop_new')); await U.type('#cb-cp .combo-in', cp.name || '', t('counterparty')); await U.click('#cb-cp-list .combo-opt:not(.dim)', cp.name || '');
+      await U.type('#cb-cx .combo-in', cx.name || '', t('complex')); await U.click('#cb-cx-list .combo-opt:not(.dim)', cx.name || ''); await U.type('#pr-unit', 'DFTEST-P', t('unit')); await U.click('[onclick="App.propItemAdd()"]', t('prop_add_row'));
+      await U.type('.prop-row .pd', 'Test proposal line (buttons)', t('prop_desc')); await U.type('.prop-row .pa', '15', '$'); const pid = propDraft && propDraft.id; await U.click('.db-save', t('save')); await sleep(700); must(pid && propById(pid), 'proposal');
+      if (HAS_SB) okR(await dftCall('exec', { as: 'self', op: 'prop_adopt', args: { run: DFT.run, id: pid } })); else okR(dftDemoExec(state.user.id, 'prop_adopt', { run: DFT.run, id: pid })); const x = propById(pid); if (x) Object.assign(x, { is_test: true, test_owner: DFT.owner, test_run: DFT.run });
+      await ui.reset(); if (state.screen === 'proposals' && propDraft){ const b = U.q('.db-x'); if (b){ b.click(); await sleep(200); } } return { note: 'P · ' + t('dft_adopt_s') }; });
+
+    /* ---- документ ремонта: создаёт работник, апрувят ОБА согласующих (менеджер с правом и админ), отклонение, права ---- */
+    G(t('dft_g_r'));
+    { let R = ''; const repRow = async () => { if (!HAS_SB) return (state.data.repairs || []).find(r => r.id === R) || null; const g = await dftCall('exec', { as: 'self', op: 'rep_get', args: { id: R } }); const row = g.ok ? g.data : null;
+        if (row){ state.data.repairs = (state.data.repairs || []).filter(r => r.id !== R).concat([row]); } return row; };
+      const repUpd = (who, patch) => dftExec(who, 'rep_update', { id: R, patch });
+      const repOpen = async () => { await ui.tab('repairs'); await U.click(`[onclick="App.openRepair('${R}')"]`, 'REP'); await U.wait(() => repDraft && repDraft.id === R, 6000, 'REP'); await sleep(250); };
+      const repClose = async () => { const b = U.q('.db-x'); if (b){ b.click(); await sleep(250); } };
+      const repSet = async (who, st, why) => { if (isMe(who)){ await repOpen(); if (st === 'declined') await U.type('#rep-why', why || '', t('rep_why')); await U.click(`[onclick="App.repSetStatus('${st}')"]`, t(st === 'sent' ? 'rep_send' : st === 'approved' ? 'rep_approve' : 'rep_decline')); await sleep(800); await repClose(); }
+        else okR(await repUpd(who, st === 'declined' ? { status: st, decline_reason: why || '' } : { status: st })); const r = await repRow(); must(r && r.status === st, 'REP status=' + (r && r.status)); return r; };
+      await step('+', t('dft_r1'), async () => {
+        if (isMe('W')){ await ui.openDoc(J); await U.click(`[onclick="App.newRepairFromJob('${J}')"]`, t('rep_new')); await U.wait(() => !!repDraft, 6000, 'REP'); R = repDraft.id; await U.click(`[onclick="App.repItemAdd('work')"]`, t('prop_add_row'));
+          await U.type('.prop-row .pd', 'Patch drywall (test)', t('prop_desc')); await U.type('.prop-row .pa', '40', '$'); await U.click('.db-save', t('save')); await sleep(800); must(repById(R), 'REP');
+          if (HAS_SB) okR(await dftCall('exec', { as: 'self', op: 'rep_adopt', args: { run: DFT.run, id: R } })); else okR(dftDemoExec(state.user.id, 'rep_adopt', { run: DFT.run, id: R })); await repClose(); }
+        else { const d = okR(await dftExec('W', 'rep_create', { row: { job_id: J, complex_id: cx.id, counterparty_id: cx.counterparty_id || null, unit_number: 'DFTEST', items: [{ q: 1, d: 'Patch drywall (test)', a: 40 }], total: 40, helper_ids: [W.id] } })); R = d.id; }
+        const r = await repRow(); must(r && r.is_test && r.job_id === J && r.status === 'draft', dftCut(r && { t: r.is_test, j: r.job_id === J, s: r.status }, 80)); return { note: 'REP · $' + r.total }; });
+      await step('+', t('dft_r2'), async () => { if (!R) throw SKIP('REP'); await repSet('W', 'sent'); });
+      await step('−', t('dft_r3'), async () => { if (!R) throw SKIP('REP'); if (isMe('W')){ await repOpen(); absent(`[onclick="App.repSetStatus('approved')"]`, t('rep_approve')); await repClose(); } return errR(await repUpd('W', { status: 'approved' }), 'FORBIDDEN_APPROVE', isMe('W') ? t('dft_raw') : ''); });
+      await step('−', t('dft_r4'), async () => { if (!R) throw SKIP('REP'); need('MGR'); if (isMe('MGR')){ await repOpen(); absent(`[onclick="App.repSetStatus('approved')"]`, t('rep_approve')); await repClose(); } return errR(await repUpd('MGR', { status: 'approved' }), 'FORBIDDEN_APPROVE', isMe('MGR') ? t('dft_raw') : ''); });
+      await step('+', t('dft_r5'), async () => { if (!R) throw SKIP('REP'); need('APR'); const r = await repSet('APR', 'approved'); must(r.decided_by === dftWho('APR').id, 'decided_by'); return { note: dftWho('APR').name }; });
+      if (isMe('W')) await step('+', t('dft_r5n'), async () => { need('APR'); return ui.feedHas('Ремонт апрувлен'); });
+      await step('+', t('dft_r6'), async () => { if (!R) throw SKIP('REP'); need('ADM'); const r = await repSet('ADM', 'declined', 'не та квартира — тест'); must(/не та квартира/.test(r.decline_reason || ''), 'decline_reason'); return { note: dftWho('ADM').name }; });
+      await step('+', t('dft_r7'), async () => { if (!R) throw SKIP('REP'); need('ADM'); await repSet('W', 'sent'); const r = await repSet('ADM', 'approved'); must(r.decided_by === dftWho('ADM').id, 'decided_by'); return { note: dftWho('ADM').name }; });
+      DFT.rep = () => R; }
+    await step('+', t('dft_p3'), async () => { const who = mineOf('APR', 'ADM');
+      if (isMe(who)){ await ui.openDoc(J); await U.click(`[onclick="App.linkProposal('${J}', null)"]`, t('prop_unlink')); await sleep(700); must(((await dftPull(J)).proposal_id || null) === null, 'proposal_id'); await U.type('#jb-prop-sel', P, 'PROPOSAL'); await U.click('[onclick^="App.linkProposal("]', t('prop_link')); await sleep(700); await ui.closeDoc(); }
+      else { okR(await rpc(who, 'link_job_proposal', { p_job: J, p_prop: null })); must(((await dftPull(J)).proposal_id || null) === null, 'proposal_id'); okR(await rpc(who, 'link_job_proposal', { p_job: J, p_prop: P })); }
+      must((await dftPull(J)).proposal_id === P, 'proposal_id'); return { note: t('prop_unlink') + ' → ' + t('prop_link') }; });
+    if (isMe('W')) await step('+', t('dft_p4'), async () => { await ui.openDoc(J); present('.chip.pr', 'P-№'); absent('#jb-prop-sel', t('prop_link')); absent('[onclick^="App.linkProposal("]', t('prop_link')); await ui.closeDoc(); return { note: 'P-№' }; });
+    G(t('dft_g_h'));
+    await step('+', t('dft_h1'), async () => {
+      if (isMe('W')){ await ui.openDoc(J2); await U.click('.btn-red[onclick*="deleteJob"]', t('delete')); await U.wait(() => state.screen !== 'job', 8000, t('delete')); }
+      else { const d = okR(await dftExec(first('ADM', 'APR', 'MGR'), 'job_create', { row: { technician_id: W.id, technician_name: W.name, complex_id: cx.id, counterparty_id: cx.counterparty_id || null, work_type_id: wt.id, unit_number: 'DFTEST-DEL' } })); J2 = d.id; okR(await upd('W', J2, { archived_at: new Date().toISOString(), archived_by: W.id, arch_note: 'тест удаления' })); }
+      const r = HAS_SB ? await dftCall('exec', { as: 'self', op: 'job_get', args: { id: J2 } }).then(x => x.data) : state.data.jobs.find(j => j.id === J2); must(r && r.archived_at, 'archived_at'); });
+    await step('−', t('dft_h2'), async () => errR(await upd('W', J, { archived_at: new Date().toISOString() }), 'DOC_LOCKED_DELETE', isMe('W') ? t('dft_raw') : ''));
+    await step('+', t('dft_h3'), async () => { const R = DFT.rep ? DFT.rep() : '';
+      if (isMe('ADM')){ await ui.openDoc(J); await U.click('.btn-red[onclick*="deleteJob"]', t('delete')); await sleep(500); if (U.has('[onclick^="App.chainArchive("]')){ await U.click('[onclick^="App.chainArchive("]', t('ch_block_btn')); } await U.wait(() => state.screen !== 'job' || !jobDraft, 10000, t('delete'));
+        if (R){ const rr = (state.data.repairs || []).find(x => x.id === R); must(rr && rr.archived_at && /DFTEST|WORK|документ/i.test(rr.arch_note || ''), t('dft_rep_arch')); } }
+      else { if (R) okR(await dftExec('ADM', 'rep_update', { id: R, patch: { archived_at: new Date().toISOString(), arch_note: 'В архив вместе с документом — тест' } })); okR(await upd('ADM', J, { archived_at: new Date().toISOString(), arch_note: 'тест: удаляет админ' })); }
+      const r = HAS_SB ? await dftCall('exec', { as: 'self', op: 'job_get', args: { id: J } }).then(x => x.data) : state.data.jobs.find(j => j.id === J); must(r && r.archived_at, 'archived_at'); });
+    if (isMe('W')) await step('+', t('dft_n_deleted'), () => ui.feedHas('Задача удалена'));
+    if (isManager()) await step('+', t('dft_ar1'), async () => { await ui.tab('archive'); await sleep(300); must(/удалена из инвойса|removed from invoice/i.test((document.getElementById('arch-pickups') || {}).textContent || ''), t('arch_pk_title')); must(U.has(`[onclick="App.unarchive('job','${J}')"]`), 'J'); return { note: t('arch_pk_title') }; });
+    if (isAdmin()) await step('+', t('dft_ar2'), async () => { await ui.tab('archive'); await U.click(`[onclick="App.unarchive('job','${J2}')"]`, t('arch_back')); await sleep(700); const r = HAS_SB ? (await dftCall('exec', { as: 'self', op: 'job_get', args: { id: J2 } })).data : state.data.jobs.find(j => j.id === J2); must(r && !r.archived_at, 'archived_at');
+      okR(await upd('ADM', J2, { archived_at: new Date().toISOString(), arch_note: 'тест: снова в архив' })); if (HAS_SB) await dftPull(J2); await ui.tab('archive'); await U.click(`[onclick="App.purgeDoc('job','${J2}')"]`, t('arch_purge')); await sleep(900);
+      const g = HAS_SB ? await dftCall('exec', { as: 'self', op: 'job_get', args: { id: J2 } }) : { ok: !!state.data.jobs.find(j => j.id === J2) }; must(!g.ok, t('dft_not_purged')); return { note: t('arch_back') + ' → ' + t('arch_purge') }; });
+    if (HAS_SB) await step('−', t('dft_h4'), async () => { const real = (state.data.jobs || []).find(j => !j.is_test); if (!real) throw SKIP(t('dft_no_real'));
+      const a = errR(await dftCall('exec', { as: 'admin', op: 'job_get', args: { id: real.id } }), 'DFT_NOT_TEST_DOC'); errR(await dftCall('exec', { as: 'admin', op: 'rpc', args: { fn: 'approve_job', args: { p_job: real.id, p_total: 1 } } }), 'DFT_NOT_TEST_DOC');
+      errR(await dftCall('exec', { as: 'self', op: 'job_adopt', args: { id: real.id } }), ['DFT_ADOPT_DENIED', 'DFT_NOT_YOUR_RUN']); return a; });
+  }catch(e){ dftLog('⛔ ' + errStr(e), 'err'); }
+  finally{
+    try{ await ui.reset(); }catch(e){}
+    G(t('dft_g_i')); DFT.stop = false; const sm = DFT.stepMode; DFT.stepMode = false;
+    if (HAS_SB) await step('+', t('dft_i_push'), async () => { let rows = []; for (let i = 0; i < 8; i++){ const r = await dftCall('pushes', { run: DFT.run }); rows = (r && r.rows) || []; if (rows.length && rows.every(x => x.sent_at || x.err)) break; await sleep(3000); }
+        rows.forEach(x => dftLog('   ✉ ' + x.title + ' → ' + (x.to || '—') + ' · ' + (x.sent_at ? 'отправлен' : x.err ? 'ОШИБКА: ' + x.err : 'в очереди'), x.err ? 'neterr' : 'net')); const sent = rows.filter(x => x.sent_at).length, bad = rows.filter(x => x.err && !x.sent_at).length;
+        must(rows.length > 0, t('dft_push_none')); must(sent > 0 || !bad, t('dft_push_bad') + ': ' + dftCut(rows.filter(x => x.err).map(x => x.err).slice(0, 2), 200)); return { note: t('dft_push_q') + ' ' + rows.length + ' · ' + t('dft_push_s') + ' ' + sent + (bad ? ' · ' + t('dft_push_e') + ' ' + bad : '') }; }).catch(() => {});
+    if (!DFT.noMedia) await step('·', t('dft_i_media'), async () => { let n = 0; for (const id of [J, J2, JA, J3].filter(Boolean)){ const has = (state.data.media || []).some(m => m.job_id === id) || ctQOf(id).length; if (has){ await mediaDropJob(id); n++; } } return { note: String(n) }; }).catch(() => {});
+    try{ await step('·', t('dft_i1'), async () => { let n = 0; if (HAS_SB){ const r = await dftCall('cleanup', { run: DFT.run }); okR(r); n = r.deleted || 0; const st = await dftStatusLoad(true); if (st && st.mine) throw new Error(t('dft_left') + ' ' + st.mine); }
+      else { const ids = state.data.jobs.filter(j => j.is_test && j.test_run === DFT.run).map(j => j.id); n = ids.length; dftPurgeLocal(ids); state.data.proposals = state.data.proposals.filter(p => !p.is_test); }
+      dftPurgeLocal(); if (state.data.jobs.some(j => j.is_test)) throw new Error(t('dft_left')); return { note: t('dft_deleted') + ' ' + n }; }); }catch(e){}
+    /* v1.09.29: что пришло в ленту за прогон и что записано в журнал событий (пометка test) */
+    try{ if (HAS_SB){ DF.at = 0; await dfLoad(true); } const got = dfNotices().filter(n => !n0.has(n.id)); dftLog('', ''); dftLog(t('dft_end_feed') + ': ' + got.length + (got.length ? ' — ' + got.map(n => '«' + n.title + '»').join(', ') : ''), 'grp');
+      let au = []; if (!HAS_SB) au = (state.data.audit_log || []).filter(a => a.details && a.details.test && a.created_at >= TLOG.cur.started);
+      else if (isManager()){ const x = await state.sb.from('audit_log').select('action,created_at').gte('created_at', TLOG.cur.started).eq('details->>test', 'true').limit(400); au = x.data || []; }
+      const hist = {}; au.forEach(a => { hist[a.action] = (hist[a.action] || 0) + 1; }); dftLog(t('dft_end_audit') + ': ' + au.length + (au.length ? ' — ' + Object.entries(hist).map(([k, v]) => k + '×' + v).join(', ') : ''), 'grp');
+      dftLog(t('dft_end_asked') + ': ' + DFT.asked.length + ' · ' + t('dft_end_net') + ': ' + DFT.net + ' · JS: ' + DFT.jsErr, 'grp'); }catch(e){ dftLog('⚠ ' + errStr(e), 'err'); }
+    window.removeEventListener('error', onErr); window.removeEventListener('unhandledrejection', onErr);
+    DFT.stepMode = sm; window.confirm = confirm0; window.prompt = prompt0; DFT.running = false; DFT.next = null;
+    const okN = out.filter(x => x.ok === true).length, badN = out.filter(x => x.ok === false).length + (DFT.jsErr ? 1 : 0), skipN = out.filter(x => x.ok === null).length;
+    if (DFT.jsErr) tlogStep({ name: '· ' + t('dft_js_err'), ok: false, ms: 0, extra: String(DFT.jsErr) });
+    dftLog('', ''); dftLog(`${t('dft_total')}: ✓ ${okN} · ✗ ${badN} · – ${skipN} · ${Math.round((performance.now() - T0) / 1000)} s`, badN ? 'err' : '');
+    tlogEnd(okN, okN + badN);
+    const bar = document.getElementById('dft-bar'); if (bar) bar.innerHTML = `<div class="grow"><b id="dft-sum" class="${badN ? 'dft-bad' : ''}">${badN ? '⚠' : '✓'} ${okN} / ${okN + badN}${skipN ? ' · ' + t('dft_skipped') + ' ' + skipN : ''}</b></div>${tlogBtnsHtml('')}
+      <button class="btn btn-ghost sm" id="dft-close" onclick="document.getElementById('dft-panel').remove()">${t('doc_close')}</button>${TLOG.cur && TLOG.cur.big ? `<div class="tiny dft-bad" id="dft-big" style="flex-basis:100%">${t('dft_big')}</div>` : ''}`;
+    if (TLOG.cur && TLOG.cur.big) toast('⚠ ' + t('dft_big'), 'err', 12000);
+    const pn = document.getElementById('dft-panel'); if (pn) pn.classList.remove('min');
+    state.screen = scr0; render();
+  }
+}
+
 /* =====================================================================
    v1.08.72 · РЕГРЕСС ОСНОВНЫХ ФУНКЦИЙ — сквозной сценарий на живых данных
    (Настройки → Диагностика, только админ; телефон, ПК и демо-режим).
@@ -27883,7 +29825,7 @@ function renderNoFmt(fmt, vals){
 /* Инициалы сотрудника для номера: «Иван Петров» → IP */
 function techTag(id){
   const p = (state.data.profiles || []).find(x => x.id === id);
-  return p ? noPart(initials(p.display_name), 3) : '';
+  return p ? (p.tag || noPart(initials(p.display_name), 3)) : '';   // v1.09.25: личное сокращение из карточки сотрудника; нет — инициалы
 }
 function docNoVals(kind, o){
   const cx = cxById(o.complex_id) || {}, cp = cpById(o.counterparty_id) || {};
@@ -27892,13 +29834,16 @@ function docNoVals(kind, o){
   return {
     TYPE: DOC_TYPE_TAG[kind] || '', DATE: date.replace(/-/g, ''), YEAR: date.slice(0, 4),
     CP: noPart(cp.abbr || cp.name, 4), CX: noPart(cx.abbr || cx.name, 4),
-    UNIT: (noPart(o.unit_number, 6) ? 'U' + noPart(o.unit_number, 6) : ''), TECH: techTag(o.technician_id || o.created_by),
+    UNIT: (noPart(o.unit_number, 6) ? 'U' + noPart(o.unit_number, 6) : ''),
+    /* v1.09.25: сокращения действуют для инвойсов, нумеруемых по новой схеме; у остального — прежние инициалы, чтобы старые номера не поехали */
+    TECH: (kind === 'job' && (o.no == null || o.numbered_at)) ? techTag(o.technician_id || o.created_by) : techTagAuto(o.technician_id || o.created_by),
     WT: noPart(enName(wt.name), 6),
     SEQ: o.no == null ? '' : String(o.no).padStart(docPad(), '0')
   };
 }
 /* Номер документа: задача, пропозал, пикап, продление */
-function docNo(kind, o){ return o ? renderNoFmt(docFmt(), docNoVals(kind, o)) : ''; }
+function docNo(kind, o){ if (kind === 'job' && o && o.doc_no) return String(o.doc_no);   // v1.09.25: замороженный текст номера
+  return o ? renderNoFmt(docFmt(), docNoVals(kind, o)) : ''; }
 function pickNo(pk){
   const j = (state.data.jobs || []).find(x => x.id === pk.job_id) || {};
   return renderNoFmt(docFmt(), { ...docNoVals(pk.ext_of ? 'ext' : 'pick', { ...j, ...pk }),
@@ -28481,7 +30426,9 @@ function accF(){
   return state.acc;
 }
 function accCrewOf(kind, d){
-  const ids = kind === 'job' ? [d.technician_id].concat(d.helper_ids || []) : [d.created_by].concat(d.helper_ids || []);
+  /* v1.09.26: у заапрувленного инвойса бригада — та, что зафиксирована в момент апрува (approved_crew), а не нынешняя */
+  const snap = kind === 'job' && d.status === 'approved' && d.approved_crew && d.approved_crew.main ? [d.approved_crew.main].concat(d.approved_crew.crew || []) : null;
+  const ids = snap || (kind === 'job' ? [d.technician_id].concat(d.helper_ids || []) : [d.created_by].concat(d.helper_ids || []));
   const seen = new Set(); const out = [];
   ids.forEach(id => { if (id && !seen.has(id)){ seen.add(id); out.push(id); } });
   return out;

@@ -28,7 +28,7 @@ const EXE = process.env.PW_CHROME || '/opt/pw-browsers/chromium-1194/chrome-linu
 const STRICT = process.env.UI_STRICT === '1';
 const DENS = process.env.UI_DENS === 'compact' ? 'compact' : '';   // v1.09.05
 
-const SCREENS = ['home', 'chat', 'board', 'proposals', 'repairs', 'map', 'reports', 'stats', 'study', 'dirs', 'journal', 'settings'];   // v1.08.51: + учёба
+const SCREENS = ['home', 'chat', 'docflow', 'board', 'proposals', 'repairs', 'map', 'reports', 'stats', 'study', 'dirs', 'journal', 'settings'];   // v1.08.51: + учёба; v1.09.26: + документооборот
 const MODES = [
   { name: 'телефон', vp: { width: 414, height: 896 }, mode: 'mobile' },
   { name: 'ПК',      vp: { width: 1440, height: 900 }, mode: 'desktop' },

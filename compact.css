@@ -520,6 +520,19 @@ html.tl-desktop.tl-compact .day-cell{ padding:4px 2px 10px; }
   html.tl-desktop.tl-compact .tabbar .tab span,
   html.tl-desktop.tl-compact .tabbar.tb-tight .tab span{ font-size:.56rem; }
   html.tl-desktop.tl-compact.tl-fit .tabbar{ padding-top:24px; }
+  /* v1.09.26: пунктов стало 18 («Документооборот»), а 17 уже не влезали в 768px на 7px (с «Сообщений», 1.09.17).
+     В невысоком окне пункт чуть плотнее: значок 18px, подпись в одну плотную строку — 18 пунктов входят без прокрутки;
+     цель для мыши остаётся 30px. */
+  @media (max-height:820px){
+    html.tl-desktop.tl-compact .tabbar,
+    html.tl-desktop.tl-compact .tabbar.tb-tight{ padding:4px 6px; }
+    html.tl-desktop.tl-compact .tabbar .tab,
+    html.tl-desktop.tl-compact .tabbar.tb-tight .tab{ padding:2px 4px; gap:0; }
+    html.tl-desktop.tl-compact .tabbar .tab svg,
+    html.tl-desktop.tl-compact .tabbar.tb-tight .tab svg{ width:18px; height:18px; }
+    html.tl-desktop.tl-compact .tabbar .tab span,
+    html.tl-desktop.tl-compact .tabbar.tb-tight .tab span{ line-height:1.1; }
+  }
   /* палец в ПК-раскладке (планшет, телефон на холсте): пункт меню — 40px */
   @media (pointer:coarse){
     html.tl-desktop.tl-compact .tabbar .tab,
