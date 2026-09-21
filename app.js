@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.21';
-const DB_SQL_FILE = 'full-install-1_09_21.sql';
+const APP_VERSION = '1.09.24';
+const DB_SQL_FILE = 'full-install-1_09_24.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -929,7 +929,7 @@ const I18N = {
     ch_reply: 'Ответить', ch_copy: 'Копировать', ch_edited: 'изменено', ch_editing: 'Изменение:', ch_edit_empty: 'Сообщение не может стать пустым — удалите его, если оно не нужно',
     ch_photo: 'Фото', ch_photo_add: 'Приложить фото', ch_img_bad: 'Не удалось обработать снимок — выберите файл JPG, PNG или HEIC', ch_img_loading: 'загружаю снимок целиком…', ch_img_fail: 'Снимок не загрузился — показана миниатюра',
     ch_img_offline: 'Нет связи — показана миниатюра', ch_img_demo: 'В демо полный снимок живёт до перезагрузки страницы — показана миниатюра', ch_quote_gone: 'сообщение удалено', ch_quote_far: 'Это сообщение выше по переписке — нажмите «Показать более ранние»',
-    ch_more: 'Показать более ранние', ch_need_sql2: 'Ответы, правка, реакции и фото появятся после supabase/update-to-1_09_19.sql', chat_keep_lbl: 'Хранить переписку, дней', chat_keep_hint: '0 — бессрочно. Старше срока сообщения и снимки удаляются из базы сами. По умолчанию 180 дней: чем меньше лежит на сервере, тем меньше может утечь.',
+    ch_more: 'Показать более ранние', ch_need_sql2: 'Ответы, правка, реакции и фото появятся после supabase/update-to-1_09_19.sql', chat_keep_lbl: 'Хранить переписку, дней', chat_keep_hint: 'По умолчанию переписка хранится без ограничения. Включите, если хотите, чтобы сообщения и снимки старше заданного числа дней удалялись из базы сами: чем меньше лежит на сервере, тем меньше может утечь. Удалённое не восстановить.',
     chg_sec: 'Группы', ch_sec_dm: 'Сотрудники', chg_new: 'Новая группа', chg_new_s: 'Группа', chg_name: 'Название', chg_name_ph: 'Например: Бригада Magnolia', chg_members: 'Участники', chg_create: 'Создать группу',
     chg_tip: 'Группу может создать любой сотрудник. Добавлять людей может любой участник, убирать — создатель группы и администратор; выйти может каждый. Новый участник видит всю историю группы. Сообщения группы видят только её участники; администратор видит, какие группы есть и кто в них, но не читает их, если сам не участник.',
     chg_need_name: 'Дайте группе название', chg_need_members: 'Отметьте хотя бы одного человека', chg_n: 'участников: {N}', chg_info: 'Группа: состав и название', chg_owner: 'создатель', chg_kick: 'Убрать', chg_rename: 'Сохранить название',
@@ -955,8 +955,41 @@ const I18N = {
     ck_org: 'Ключ восстановления фирмы', ck_org_mine: 'он у вас есть', ck_org_notmine: 'у вас его пока нет — получите автоматически, когда приложение откроет админ с ключом', ck_org_none: 'ещё не создан', ck_nokey: 'ключа нет',
     ck_reset_total_t: 'У сотрудника полное шифрование', ck_reset_total_q: 'Его ключ заперт только паролем. Если у него не осталось устройства, где он вошёл, после сброса пароля ключ будет потерян навсегда. Сбросить пароль всё равно?', ck_reset_anyway: 'Сбросить',
     ck_adm_ok: 'Сейф ключа сотрудника перезаперт новым паролем — доступ к переписке сохранится', ck_adm_total: 'У сотрудника полное шифрование: сейф перезапрёт только его собственное вошедшее устройство', ck_adm_noorg: 'У вас нет ключа фирмы — сейф сотрудника остался под старым паролем. Пусть пароль сбросит админ с ключом фирмы',
-    ck_adm_noescrow: 'У сотрудника ещё нет второго замка — сейф остался под старым паролем; помочь может только его вошедшее устройство', ck_adm_fail: 'Сейф сотрудника перезапереть не удалось — подробности в журнале',
+    ck_adm_noescrow: 'У сотрудника ещё нет второго замка — сейф остался под старым паролем; помочь может только его вошедшее устройство', ck_adm_fail: 'Сейф сотрудника перезапереть не удалось — подробности в журнале', ck_adm_notready: 'Ваш собственный ключ переписки на этом устройстве не открыт, поэтому сейф сотрудника остался под СТАРЫМ паролем. Откройте свой ключ (Настройки → Защита переписки) и задайте сотруднику пароль ещё раз',
     act_chat_key_new: 'создан ключ переписки', act_chat_key_rewrap: 'сейф ключа перезаперт', act_chat_key_mode: 'изменён режим хранения ключа', act_chat_org_key: 'создан ключ восстановления фирмы',
+    push_k_edit: 'Мой документ изменил кто-то другой', push_k_test: 'Проверка доставки', act_push_resub: 'подписка на уведомления передана серверу заново', act_push_test: 'проверка доставки уведомлений',
+    pd_title: 'Доставка уведомлений', pd_tip: 'Проверка всей цепочки: браузер и установка → разрешение → подписка устройства → сервер → отправка от базы и расписание → последний полученный пуш. Красный крестик показывает звено, на котором уведомления обрываются, и что с этим делать. «Проверить доставку» отправляет настоящее уведомление самому себе тем же путём, что и рабочие, и показывает, за сколько секунд оно дошло.',
+    pd_test: 'Проверить доставку', pd_refresh: 'Обновить', pd_never: 'ни разу', pd_now: 'только что', pd_min: 'мин назад', pd_h: 'ч назад', pd_d: 'дн. назад',
+    pd_c_browser_ok: 'Браузер умеет push-уведомления', pd_c_browser_bad: 'Этот браузер не умеет push-уведомления', pd_h_browser: 'Нужен Chrome, Edge, Firefox или Safari 16.4+. В режиме инкогнито пуши не работают.',
+    pd_c_inst_ok: 'Приложение установлено (ярлык на экране)', pd_c_inst_tab: 'Открыто во вкладке браузера, а не с ярлыка', pd_c_inst_ios: 'На iPhone пуши работают ТОЛЬКО с ярлыка на экране «Домой»',
+    pd_h_install: 'Пуши приходят и так, но надёжнее с ярлыка: меню браузера → «Установить приложение» / «Добавить на главный экран».', pd_h_ios_install: 'Safari → «Поделиться» → «На экран „Домой“». Откройте TechLog с ярлыка и включите уведомления уже в нём (нужна iOS 16.4 или новее).',
+    pd_c_perm_granted: 'Уведомления разрешены', pd_c_perm_denied: 'Уведомления ЗАПРЕЩЕНЫ в браузере', pd_c_perm_default: 'Разрешение на уведомления ещё не запрошено', pd_h_enable: 'Нажмите «Включить на устройстве» выше.',
+    pd_c_sub_ok: 'Подписка этого устройства есть', pd_c_sub_no: 'На этом устройстве подписки нет', pd_c_demo: 'Демо-режим: сервера нет — проверяется только цепочка на устройстве', pd_c_server_wait: 'Спрашиваю сервер…',
+    pd_c_srv_ok: 'Сервер знает это устройство (ваших устройств: {N})', pd_c_srv_no: 'Сервер НЕ знает подписку этого устройства (ваших устройств у него: {N})', pd_h_resync: 'Нажмите «Проверить доставку» — подписка передастся заново. Приложение делает это и само при каждом запуске.',
+    pd_c_fn_ok: 'Edge Function push — версия {V}', pd_c_fn_old: 'Edge Function push устарела: {V}, нужна 1.09.22', pd_h_fn: 'Передеплойте функцию push из архива: без неё нет группировки сообщений, срочной доставки и этой проверки.',
+    pd_c_kick_ok: 'Отправка сразу от базы работает (последний раз: {T})', pd_c_kick_no: 'Отправка сразу от базы ещё не срабатывала', pd_c_cron_ok: 'Расписание работает (последний запуск: {T})', pd_c_cron_old: 'Расписание давно не запускалось (последний раз: {T})', pd_c_cron_no: 'Расписание не настроено — напоминания о пикапах приходить НЕ будут, пока TechLog у всех закрыт',
+    pd_h_jwt: 'У проекта ключи нового формата (sb_publishable_…): в Supabase → Edge Functions → push → Details выключите «Verify JWT», иначе вызовы от базы и расписания получают 401.',
+    pd_h_setup: 'Выполните один раз supabase/push-setup.sql (включает pg_net и pg_cron, ставит расписание). Ключ расписания функция создаёт сама при первом обращении.',
+    pd_c_queue: 'В очереди для вас: {N} · последняя успешная отправка: {T}', pd_c_lasterr: 'последняя ошибка', pd_c_got: 'Последний пуш на ЭТОМ устройстве: {T} · {K}', pd_c_got_no: 'На это устройство ещё не приходило ни одного пуша', pd_h_test: 'Нажмите «Проверить доставку».',
+    pd_t_wait: 'Отправил проверочное уведомление — жду его на этом устройстве (до 25 с)…', pd_t_ok: 'Дошло за {S} с — уведомления на этом устройстве работают', pd_t_body: 'Если вы это видите — уведомления работают',
+    pd_t_nosub: 'Сначала включите уведомления на этом устройстве (кнопка выше)', pd_t_nosend: 'Сервер не смог отправить уведомление', pd_t_nosubs_srv: 'у сервера нет подписок этого пользователя', pd_t_fn: 'Функция push не ответила',
+    pd_t_timeout: 'Сервер отправил, но за 25 секунд уведомление на это устройство не пришло. Значит, его задерживает сам телефон: смотрите памятку ниже (автозапуск и батарея для браузера), режим «Не беспокоить» и экономию трафика.',
+    pd_t_demo: 'Демо: цепочка на устройстве работает', pd_t_demo_ok: 'Демо: уведомление показано — воркер и разрешение в порядке (сервер в демо не участвует)',
+    pd_memo_t: 'Чтобы телефон не душил уведомления', pd_b_ios: 'iPhone / iPad', pd_b_xiaomi: 'Xiaomi · Redmi · POCO', pd_b_samsung: 'Samsung', pd_b_huawei: 'Huawei · Honor', pd_b_oppo: 'OnePlus · OPPO · realme', pd_b_android: 'Android', pd_b_desktop: 'Компьютер',
+    pd_memo_ios: '1. TechLog должен быть открыт с ярлыка на экране «Домой» — во вкладке Safari пушей нет.\n2. Настройки → Уведомления → TechLog → Разрешить; включите «Звуки» и «Наклейки».\n3. Режим «Фокус» / «Не беспокоить» скрывает уведомления — добавьте TechLog в разрешённые.\n4. Кнопок в уведомлении на iPhone нет — только нажатие.',
+    pd_memo_xiaomi: '1. Настройки → Приложения → Chrome (или ваш браузер) → «Автозапуск» — ВКЛ.\n2. Там же → «Контроль активности» (Экономия заряда) → «Нет ограничений».\n3. Уведомления Chrome: разрешить, включая «Экран блокировки» и «Всплывающие».\n4. В списке недавних приложений закрепите браузер замком — MIUI перестанет его выгружать.\n5. Отключите «Экономию трафика» в Chrome.',
+    pd_memo_samsung: '1. Настройки → Батарея → Ограничения в фоновом режиме → «Приложения в спящем режиме» — уберите оттуда Chrome / Samsung Internet и добавьте в «Никогда не переводить в спящий режим».\n2. Настройки → Уведомления → браузер → разрешить, включить «Всплывающие».\n3. Отключите «Адаптивный аккумулятор» для браузера, если уведомления опаздывают.',
+    pd_memo_huawei: '1. Настройки → Батарея → Запуск приложений → браузер → «Управлять вручную»: включите автозапуск, косвенный запуск и работу в фоне.\n2. Настройки → Уведомления → браузер → разрешить.\n3. На устройствах без сервисов Google пуши Chrome не работают — нужен браузер с собственной службой доставки (Firefox).',
+    pd_memo_oppo: '1. Настройки → Батарея → браузер → «Разрешить фоновую активность» и «Автозапуск».\n2. В списке недавних приложений закрепите браузер замком.\n3. Уведомления браузера: разрешить, включая экран блокировки.',
+    pd_memo_android: '1. Настройки → Приложения → Chrome → Батарея → «Без ограничений».\n2. Уведомления Chrome → разрешить, включая экран блокировки.\n3. Отключите «Экономию трафика» и проверьте режим «Не беспокоить».',
+    pd_memo_desktop: '1. Уведомления приходят, пока браузер запущен (Chrome и Edge могут работать в фоне: Настройки → Система → «Продолжать работу фоновых приложений»).\n2. Windows: Параметры → Система → Уведомления → разрешить браузеру; «Фокусировка внимания» их скрывает.\n3. macOS: Системные настройки → Уведомления → браузер → разрешить.',
+    ch_peer_off: 'Сотрудник заблокирован — написать ему нельзя, переписка сохранена', chg_not_member: 'Вы не участник этой группы',
+    chg_admin: 'админ группы', chg_mkadmin: 'Сделать админом', chg_unadmin: 'Снять админа', act_chat_group_role: 'изменена роль в группе чата',
+    ch_mute_on: 'Уведомления этой переписки выключены', ch_mute_off: 'Уведомления этой переписки включены', ch_mute_on_t: 'Не беспокоить: выключить уведомления этой переписки', ch_mute_off_t: 'Включить уведомления этой переписки',
+    ch_out_queued: 'Нет связи — сообщение отправится само, когда она появится', ch_out_wait: 'ждёт сети', ch_out_drop: 'Не отправлять', ch_out_noimg: 'Снимок без связи не отправить — дождитесь сети',
+    ch_rate: 'Слишком много сообщений за минуту — подождите немного', chg_rate: 'Слишком много новых групп за сутки',
+    ch_found: 'Сообщения', ch_found_none: 'В сообщениях ничего не найдено', ch_fwd: 'Переслать', ch_fwd_noimg: 'Снимок ещё не загружен — откройте его и перешлите снова',
+    chat_keep_on: 'Ограничить срок хранения переписки',
     ch_read: 'прочитано', ch_sent: 'отправлено',
     ch_need_sql: 'Сообщения появятся после supabase/update-to-1_09_17.sql', push_k_chat: 'Сообщения в чате', act_chat_del: 'админ удалил чужое сообщение',
     set_q_ph: 'Поиск по настройкам: слово из названия или описания', set_q_none: 'Ничего не найдено — попробуйте другое слово',
@@ -2257,7 +2290,7 @@ const I18N = {
     ch_reply: 'Reply', ch_copy: 'Copy', ch_edited: 'edited', ch_editing: 'Editing:', ch_edit_empty: 'A message cannot become empty — delete it if you do not need it',
     ch_photo: 'Photo', ch_photo_add: 'Attach a photo', ch_img_bad: 'Could not process the picture — pick a JPG, PNG or HEIC file', ch_img_loading: 'loading the full picture…', ch_img_fail: 'The picture did not load — the thumbnail is shown',
     ch_img_offline: 'No connection — the thumbnail is shown', ch_img_demo: 'In demo the full picture lives until the page reloads — the thumbnail is shown', ch_quote_gone: 'message deleted', ch_quote_far: 'That message is further up — press "Show earlier"',
-    ch_more: 'Show earlier', ch_need_sql2: 'Replies, editing, reactions and photos need supabase/update-to-1_09_19.sql', chat_keep_lbl: 'Keep chat history, days', chat_keep_hint: '0 — forever. Messages and pictures older than this are deleted from the database automatically. Default 180 days: the less sits on the server, the less can leak.',
+    ch_more: 'Show earlier', ch_need_sql2: 'Replies, editing, reactions and photos need supabase/update-to-1_09_19.sql', chat_keep_lbl: 'Keep chat history, days', chat_keep_hint: 'By default chat history is kept without a limit. Turn this on if messages and pictures older than the given number of days should be deleted from the database automatically: the less sits on the server, the less can leak. Deleted history cannot be restored.',
     chg_sec: 'Groups', ch_sec_dm: 'Employees', chg_new: 'New group', chg_new_s: 'Group', chg_name: 'Name', chg_name_ph: 'For example: Magnolia crew', chg_members: 'Members', chg_create: 'Create group',
     chg_tip: 'Any employee can create a group. Any member can add people, the group creator and the admin can remove them; anyone can leave. A new member sees the whole group history. Group messages are visible to its members only; the admin sees which groups exist and who is in them but does not read them unless a member.',
     chg_need_name: 'Give the group a name', chg_need_members: 'Tick at least one person', chg_n: 'members: {N}', chg_info: 'Group: members and name', chg_owner: 'creator', chg_kick: 'Remove', chg_rename: 'Save name',
@@ -2283,8 +2316,41 @@ const I18N = {
     ck_org: 'Company recovery key', ck_org_mine: 'you hold it', ck_org_notmine: 'you do not hold it yet — you get it automatically when an admin with the key opens the app', ck_org_none: 'not created yet', ck_nokey: 'no key',
     ck_reset_total_t: 'This employee uses full encryption', ck_reset_total_q: 'Their key is locked by the password only. If they have no signed-in device left, the key is lost for good after the reset. Reset the password anyway?', ck_reset_anyway: 'Reset',
     ck_adm_ok: 'The employee key safe was re-locked with the new password — chat access is kept', ck_adm_total: 'The employee uses full encryption: only their own signed-in device can re-lock the safe', ck_adm_noorg: 'You do not hold the company key — the employee safe stays under the old password. Let an admin with the company key reset the password',
-    ck_adm_noescrow: 'The employee has no second lock yet — the safe stays under the old password; only their signed-in device can help', ck_adm_fail: 'Could not re-lock the employee safe — see the event log',
+    ck_adm_noescrow: 'The employee has no second lock yet — the safe stays under the old password; only their signed-in device can help', ck_adm_fail: 'Could not re-lock the employee safe — see the event log', ck_adm_notready: 'Your own chat key is not open on this device, so the employee safe stays under the OLD password. Open your key (Settings → Chat protection) and set the employee password once more',
     act_chat_key_new: 'chat key created', act_chat_key_rewrap: 'key safe re-locked', act_chat_key_mode: 'key storage mode changed', act_chat_org_key: 'company recovery key created',
+    push_k_edit: 'Someone else changed my document', push_k_test: 'Delivery check', act_push_resub: 'push subscription re-sent to the server', act_push_test: 'notification delivery check',
+    pd_title: 'Notification delivery', pd_tip: 'A check of the whole chain: browser and install → permission → device subscription → server → database-driven sending and schedule → the last push received. A red cross shows the link where notifications break and what to do about it. "Check delivery" sends a real notification to yourself along the same path as the working ones and shows how many seconds it took.',
+    pd_test: 'Check delivery', pd_refresh: 'Refresh', pd_never: 'never', pd_now: 'just now', pd_min: 'min ago', pd_h: 'h ago', pd_d: 'd ago',
+    pd_c_browser_ok: 'The browser supports push notifications', pd_c_browser_bad: 'This browser does not support push notifications', pd_h_browser: 'Chrome, Edge, Firefox or Safari 16.4+ is required. Push does not work in incognito mode.',
+    pd_c_inst_ok: 'The app is installed (home-screen shortcut)', pd_c_inst_tab: 'Opened in a browser tab, not from the shortcut', pd_c_inst_ios: 'On iPhone push works ONLY from the Home Screen shortcut',
+    pd_h_install: 'Push works anyway, but the shortcut is more reliable: browser menu → "Install app" / "Add to Home screen".', pd_h_ios_install: 'Safari → Share → "Add to Home Screen". Open TechLog from the shortcut and enable notifications there (iOS 16.4 or newer).',
+    pd_c_perm_granted: 'Notifications are allowed', pd_c_perm_denied: 'Notifications are BLOCKED in the browser', pd_c_perm_default: 'Notification permission has not been requested yet', pd_h_enable: 'Press "Enable on this device" above.',
+    pd_c_sub_ok: 'This device has a subscription', pd_c_sub_no: 'This device has no subscription', pd_c_demo: 'Demo mode: no server — only the on-device chain is checked', pd_c_server_wait: 'Asking the server…',
+    pd_c_srv_ok: 'The server knows this device (your devices: {N})', pd_c_srv_no: 'The server does NOT know this device subscription (your devices there: {N})', pd_h_resync: 'Press "Check delivery" — the subscription is re-sent. The app also does it by itself on every start.',
+    pd_c_fn_ok: 'Edge Function push — version {V}', pd_c_fn_old: 'Edge Function push is outdated: {V}, 1.09.22 is required', pd_h_fn: 'Redeploy the push function from the archive: without it there is no message grouping, urgent delivery or this check.',
+    pd_c_kick_ok: 'Database-driven sending works (last time: {T})', pd_c_kick_no: 'Database-driven sending has not fired yet', pd_c_cron_ok: 'The schedule works (last run: {T})', pd_c_cron_old: 'The schedule has not run for a long time (last: {T})', pd_c_cron_no: 'No schedule — pickup reminders will NOT arrive while TechLog is closed for everyone',
+    pd_h_jwt: 'The project uses new-format keys (sb_publishable_…): in Supabase → Edge Functions → push → Details turn "Verify JWT" off, otherwise calls from the database and the schedule get 401.',
+    pd_h_setup: 'Run supabase/push-setup.sql once (enables pg_net and pg_cron, sets the schedule). The function creates the schedule key itself on first use.',
+    pd_c_queue: 'Queued for you: {N} · last successful send: {T}', pd_c_lasterr: 'last error', pd_c_got: 'Last push on THIS device: {T} · {K}', pd_c_got_no: 'No push has reached this device yet', pd_h_test: 'Press "Check delivery".',
+    pd_t_wait: 'Test notification sent — waiting for it on this device (up to 25 s)…', pd_t_ok: 'Arrived in {S} s — notifications work on this device', pd_t_body: 'If you see this, notifications work',
+    pd_t_nosub: 'Enable notifications on this device first (button above)', pd_t_nosend: 'The server could not send the notification', pd_t_nosubs_srv: 'the server has no subscriptions for this user', pd_t_fn: 'The push function did not answer',
+    pd_t_timeout: 'The server sent it, but nothing reached this device in 25 seconds. So the phone itself delays it: see the guide below (autostart and battery for the browser), Do Not Disturb and data saver.',
+    pd_t_demo: 'Demo: the on-device chain works', pd_t_demo_ok: 'Demo: the notification was shown — the worker and the permission are fine (no server in demo)',
+    pd_memo_t: 'So that the phone does not choke notifications', pd_b_ios: 'iPhone / iPad', pd_b_xiaomi: 'Xiaomi · Redmi · POCO', pd_b_samsung: 'Samsung', pd_b_huawei: 'Huawei · Honor', pd_b_oppo: 'OnePlus · OPPO · realme', pd_b_android: 'Android', pd_b_desktop: 'Computer',
+    pd_memo_ios: '1. TechLog must be opened from the Home Screen shortcut — a Safari tab gets no push.\n2. Settings → Notifications → TechLog → Allow; turn on Sounds and Badges.\n3. Focus / Do Not Disturb hides notifications — add TechLog to the allowed apps.\n4. iPhone notifications have no buttons — tap only.',
+    pd_memo_xiaomi: '1. Settings → Apps → Chrome (or your browser) → Autostart — ON.\n2. Same place → Battery saver → No restrictions.\n3. Chrome notifications: allow, including Lock screen and Floating.\n4. In the recent-apps list lock the browser with the padlock — MIUI stops unloading it.\n5. Turn off Data Saver in Chrome.',
+    pd_memo_samsung: '1. Settings → Battery → Background usage limits → Sleeping apps — remove Chrome / Samsung Internet from there and add it to Never sleeping apps.\n2. Settings → Notifications → browser → allow, enable pop-ups.\n3. Turn off Adaptive battery for the browser if notifications arrive late.',
+    pd_memo_huawei: '1. Settings → Battery → App launch → browser → Manage manually: enable auto-launch, secondary launch and run in background.\n2. Settings → Notifications → browser → allow.\n3. On devices without Google services Chrome push does not work — use a browser with its own delivery service (Firefox).',
+    pd_memo_oppo: '1. Settings → Battery → browser → Allow background activity and Auto-launch.\n2. In the recent-apps list lock the browser with the padlock.\n3. Browser notifications: allow, including the lock screen.',
+    pd_memo_android: '1. Settings → Apps → Chrome → Battery → Unrestricted.\n2. Chrome notifications → allow, including the lock screen.\n3. Turn off Data Saver and check Do Not Disturb.',
+    pd_memo_desktop: '1. Notifications arrive while the browser is running (Chrome and Edge can stay in the background: Settings → System → Continue running background apps).\n2. Windows: Settings → System → Notifications → allow the browser; Focus assist hides them.\n3. macOS: System Settings → Notifications → browser → allow.',
+    ch_peer_off: 'The employee is blocked — you cannot write to them, the history is kept', chg_not_member: 'You are not a member of this group',
+    chg_admin: 'group admin', chg_mkadmin: 'Make admin', chg_unadmin: 'Remove admin', act_chat_group_role: 'chat group role changed',
+    ch_mute_on: 'Notifications of this conversation are off', ch_mute_off: 'Notifications of this conversation are on', ch_mute_on_t: 'Do not disturb: turn this conversation notifications off', ch_mute_off_t: 'Turn this conversation notifications on',
+    ch_out_queued: 'No connection — the message will go out by itself once it is back', ch_out_wait: 'waiting for network', ch_out_drop: 'Do not send', ch_out_noimg: 'A picture cannot be sent offline — wait for the network',
+    ch_rate: 'Too many messages per minute — wait a little', chg_rate: 'Too many new groups per day',
+    ch_found: 'Messages', ch_found_none: 'Nothing found in messages', ch_fwd: 'Forward', ch_fwd_noimg: 'The picture is not loaded yet — open it and forward again',
+    chat_keep_on: 'Limit how long chat history is kept',
     ch_read: 'read', ch_sent: 'sent',
     ch_need_sql: 'Messages need supabase/update-to-1_09_17.sql', push_k_chat: 'Chat messages', act_chat_del: 'admin deleted someone else\'s message',
     set_q_ph: 'Search settings: a word from the name or description', set_q_none: 'Nothing found — try another word',
@@ -3212,6 +3278,7 @@ async function pbSubscribe(){
     const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pbB64ToU8(pub) });
     await pbFetch('', { op: 'sub', sub: sub.toJSON(), ua: navigator.userAgent.slice(0, 180) });
     PB.sub = sub;
+    try{ const opt = sub.options && sub.options.applicationServerKey; if (opt && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'VAPID', key: opt }); localStorage.removeItem('techlog_push_sync_' + state.user.id); }catch(_e){}   // v1.09.22
     audit('push_sub', 'push', state.user.id, {});
     toast('✓ ' + t('push_state_on'));
   }catch(e){
@@ -3253,6 +3320,7 @@ function deepLinkChat(url){
   try{ const v = new URL(url, location.href).searchParams.get('chat') || ''; return (v === 'ann' || v === 'all' || /^(g:)?[A-Za-z0-9_-]{3,40}$/.test(v)) ? v : ''; }catch(e){ return ''; }
 }
 function deepLinkApply(url){
+  if (/[?&]pushtest=/.test(String(url || ''))){ try{ history.replaceState(history.state, '', location.pathname); }catch(e){} if (state.user){ foldSet('push', true); state.screen = 'settings'; render(); } return true; }   // v1.09.22
   const dc = deepLinkChat(url);
   if (dc && state.user){
     if (state.screen === 'job' && jobDraft && jobDirty()){ toast('ℹ ' + t('ch_open_later'), 'inf'); return false; }
@@ -3274,6 +3342,7 @@ function pushInAppPop(d){
   if (!state.user || !d || !(d.title || d.body)) return;
   const day = deepLinkDay(d.url || ''), ddoc = deepLinkDoc(d.url || ''), dchat = deepLinkChat(d.url || '');
   if (dchat){
+    CH.metaAt = 0;                                              // v1.09.24: «Вас добавили в группу» — состав групп перечитываем сразу
     chLoad(true).catch(() => {});
     if (state.screen === 'chat' && CH.thread === dchat && !document.hidden) return;      // переписка и так на экране — просто обновится
   }
@@ -3397,7 +3466,9 @@ async function ckInit(force){
     CK.at = Date.now();
     return CK.st;
   }catch(e){ dlog('⛔ ключи переписки:', e); CK.err = errStr(e); return CK.st; }
-  finally{ CK.busy = false; CK.pw = ''; try{ ckPaint(); }catch(e){} }
+  /* v1.09.23 (ревью): CK.at ставится ВСЕГДА. Раньше ранний выход (нет сети, нет таблицы) его не трогал: карточка в настройках
+     перерисовывалась → снова звала ckInit → снова перерисовывалась… — бесконечный цикл запросов, пока открыт экран настроек. */
+  finally{ CK.busy = false; CK.pw = ''; CK.at = Date.now(); try{ ckPaint(); }catch(e){} }
 }
 async function ckStoreDevice(pkcs8, pubJwk, keyId, mode){
   const priv = await ckImportPriv(pkcs8, false);                               // рабочий ключ — неизвлекаемый
@@ -3483,7 +3554,8 @@ async function ckModeSet(mode, pw){
 /* ---------- админ сбросил пароль сотруднику: перезапереть его сейф новым паролем (режим «с восстановлением») ---------- */
 async function ckAdminRewrap(uid_, newPw){
   try{
-    if (!isAdmin() || CK.st !== 'ready') return 'skip';
+    if (!isAdmin() || CK.noDb || !ckSupported()) return 'skip';
+    if (CK.st !== 'ready') return CK.pubs.some(k => k.user_id === uid_) ? 'notready' : 'skip';   // v1.09.23: у админа ключ не открыт — сейф сотрудника останется под старым паролем, об этом надо сказать
     const pubRow = CK.pubs.find(k => k.user_id === uid_); if (!pubRow) return 'nokey';
     if (pubRow.mode === 'total') return 'total';
     const org = await ckOrgPriv(); if (!org) return 'noorg';
@@ -3693,23 +3765,48 @@ function chMe(){ return state.user ? state.user.id : ''; }
 /* только то, что видно мне: каналы и личное, где я автор или получатель (в базе это делает RLS; в демо общий
    localStorage хранит переписку всех «пользователей» — без фильтра чужое личное попадало бы в мои счётчики) */
 /* v1.09.20: группы. Ключ переписки: 'ann' | 'all' | 'g:<id группы>' | <id собеседника> */
-function chGroups(){ return HAS_SB ? CH.groups : ((state.data && state.data.chat_groups) || []); }
-function chMembersAll(){ return HAS_SB ? CH.members : ((state.data && state.data.chat_members) || []); }
+const CH_NONE = Object.freeze([]);                          // один и тот же пустой массив: иначе «|| []» каждый раз новый и запоминание не срабатывает
+function chGroups(){ return HAS_SB ? CH.groups : ((state.data && state.data.chat_groups) || CH_NONE); }
+function chMembersAll(){ return HAS_SB ? CH.members : ((state.data && state.data.chat_members) || CH_NONE); }
 function chIsG(k){ return typeof k === 'string' && k.indexOf('g:') === 0; }
 function chGid(k){ return chIsG(k) ? k.slice(2) : ''; }
 function chGroup(k){ const id = chIsG(k) ? chGid(k) : k; return chGroups().find(g => g.id === id) || null; }
 function chGroupMembers(gid){ return chMembersAll().filter(x => x.group_id === gid).map(x => x.user_id); }
 function chInGroup(gid){ return chGroupMembers(gid).includes(chMe()); }
+/* v1.09.24: модераторы группы — её создатель и назначенные им админы группы: удаляют любое сообщение, правят название и состав */
+function chGroupRole(gid, uid_){ const m = chMembersAll().find(x => x.group_id === gid && x.user_id === uid_); return m ? (m.role || 'member') : ''; }
+function chIsGroupMod(gid){ const g = chGroup(gid); return !!g && (g.created_by === chMe() || chGroupRole(gid, chMe()) === 'admin'); }
+function chMuteList(){ const v = state.user && state.user.push_prefs && state.user.push_prefs.chat_mute; return Array.isArray(v) ? v : []; }
+function chMuted(k){ return chMuteList().includes(k); }
+async function chMuteToggle(k){
+  const on = !chMuted(k), list = on ? chMuteList().concat([k]) : chMuteList().filter(x => x !== k);
+  const me = (state.data.profiles || []).find(p => p.id === state.user.id);
+  const prefs = { ...((me && me.push_prefs) || {}), ...(state.user.push_prefs || {}), chat_mute: list.slice(-100) };
+  state.user.push_prefs = prefs;
+  try{ if (me){ me.push_prefs = prefs; if (HAS_SB) await dbUpsert('profiles', { ...me, push_prefs: prefs }); else saveLocal(); } }catch(e){ dlog('⚠ chat_mute:', e); }
+  toast((on ? '🔕 ' : '🔔 ') + t(on ? 'ch_mute_on' : 'ch_mute_off')); chBadgePaint(); render();
+}
+function chCanDelete(m){ return !!m && (m.from_user === chMe() || (m.channel && isAdmin()) || (m.group_id && chIsGroupMod(m.group_id))); }
 function chIsCh(k){ return k === 'ann' || k === 'all'; }
-function chRows(){ const me = chMe(); return (HAS_SB ? CH.rows : ((state.data && state.data.chat_msgs) || [])).filter(m => m.group_id ? chInGroup(m.group_id) : (m.channel || m.from_user === me || m.to_user === me)); }
+let _chRowsMemo = { src: null, mem: null, me: '', out: [] };
+function chRows(){
+  const me = chMe(), src = HAS_SB ? CH.rows : ((state.data && state.data.chat_msgs) || CH_NONE), mem = chMembersAll();
+  /* v1.09.23 (ревью): фильтр звался десятки раз за одну отрисовку (счётчик в меню, список, лента). Результат запоминается, пока
+     не сменились сами массивы; в демо массив правится на месте — там сверяется ещё и длина. */
+  if (_chRowsMemo.src === src && _chRowsMemo.mem === mem && _chRowsMemo.me === me && _chRowsMemo.n === src.length && _chRowsMemo.mn === mem.length) return _chRowsMemo.out;
+  const mine = new Set(mem.filter(x => x.user_id === me).map(x => x.group_id));
+  const out = src.filter(m => m.group_id ? mine.has(m.group_id) : (m.channel || m.from_user === me || m.to_user === me));
+  _chRowsMemo = { src, mem, me, n: src.length, mn: mem.length, out };
+  return out;
+}
 function chReadAt(k){ if (HAS_SB) return CH.reads[k] || ''; const m = (state.data && state.data.chat_reads) || {}; return m[chMe() + '|' + k] || ''; }
 function chThreadOf(m){ return m.group_id ? 'g:' + m.group_id : (m.channel || (m.from_user === chMe() ? m.to_user : m.from_user)); }
-function chMsgsOf(k){ return chRows().filter(m => chThreadOf(m) === k).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))); }
+function chMsgsOf(k, withPending){ const a = chRows().filter(m => chThreadOf(m) === k).sort((x, y) => String(x.created_at).localeCompare(String(y.created_at))); return withPending ? a.concat(chPending(k)) : a; }
 function chUnread(k){
   const me = chMe(); if (!me) return 0;
   const cnt = key => { const ra = chReadAt(key); return chRows().filter(m => chThreadOf(m) === key && m.from_user !== me && String(m.created_at) > ra).length; };
   if (k) return cnt(k);
-  const keys = new Set(chRows().map(chThreadOf)); let n = 0; keys.forEach(key => { n += cnt(key); }); return n;
+  const keys = new Set(chRows().map(chThreadOf)); let n = 0; keys.forEach(key => { if (!chMuted(key)) n += cnt(key); }); return n;   // v1.09.24: «не беспокоить» в общий счётчик не идёт
 }
 /* собеседник прочитал мои сообщения до этого момента (только личная переписка) */
 function chPeerReadAt(k){ if (chIsCh(k) || chIsG(k)) return ''; if (HAS_SB) return CH.peer[k] || ''; const m = (state.data && state.data.chat_reads) || {}; return m[k + '|' + chMe()] || ''; }
@@ -3721,7 +3818,9 @@ function chRtStart(){
     CH.rt = state.sb.channel('tl-chat')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_msgs' }, (pl) => { try{
         const m = pl && pl.new; if (!m || !m.id || CH.rows.some(x => x.id === m.id)) return;
-        CH.rows = CH.rows.concat([m]); chChanged(); }catch(e){} })
+        CH.rows = CH.rows.concat([m]);
+        if (m.group_id && !chGroup(m.group_id)){ CH.metaAt = 0; chLoad(true); }      // v1.09.24: сообщение из группы, о которой мы ещё не знаем
+        chChanged(); }catch(e){} })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_msgs' }, (pl) => { try{
         const m = pl && pl.new; if (!m || !m.id || !CH.rows.some(x => x.id === m.id)) return;
         CH.rows = CH.rows.map(x => x.id === m.id ? Object.assign({}, x, m) : x); chChanged(); }catch(e){} })
@@ -3732,14 +3831,17 @@ function chRtStart(){
   }catch(e){ dlog('⚠ чат: realtime не запустился —', e); CH.rt = null; }
 }
 function chRtStop(){ try{ if (CH.rt && state.sb) state.sb.removeChannel(CH.rt); }catch(e){} CH.rt = null; CH.rtOk = false; }
-function chCanPost(k){ if (chIsG(k)) return chInGroup(chGid(k)); return k !== 'ann' || isAdmin() || isManager(); }
+/* v1.09.24: в чате бухгалтер — с правами менеджера: пишет в «Объявления», ставит «Важно» */
+function chBoss(){ return isAdmin() || isManager() || isAcc(); }
+function chCanPost(k){ if (chIsG(k)) return chInGroup(chGid(k)); if (!chIsCh(k)){ const p = (state.data.profiles || []).find(x => x.id === k); if (!p || p.blocked) return false; }   // v1.09.23: заблокированному не пишем — сервер всё равно откажет
+  return k !== 'ann' || chBoss(); }
 function chName(k){ if (chIsG(k)){ const g = chGroup(k); return g ? g.name : t('chg_gone'); } return k === 'ann' ? t('ch_ann') : k === 'all' ? t('ch_all') : profName(k); }
 function chNarrow(){ try{ return !document.documentElement.classList.contains('tl-desktop') || innerWidth < 900; }catch(e){ return true; } }
 function chThreads(){
   const me = chMe(), last = {};
   chRows().forEach(m => { const k = chThreadOf(m); if (!last[k] || String(m.created_at) > String(last[k].created_at)) last[k] = m; });
-  const people = (state.data.profiles || []).filter(p => !p.blocked && p.id !== me)
-    .map(p => ({ key: p.id, name: p.display_name, role: p.role, last: last[p.id] || null }))
+  const people = (state.data.profiles || []).filter(p => p.id !== me && (!p.blocked || last[p.id]))          // v1.09.23: с кем есть переписка — остаётся в списке и после блокировки
+    .map(p => ({ key: p.id, name: p.display_name, role: p.role, off: !!p.blocked, last: last[p.id] || null }))
     .sort((a, b) => (b.last ? String(b.last.created_at) : '').localeCompare(a.last ? String(a.last.created_at) : '') || a.name.localeCompare(b.name));
   const groups = chGroups().filter(g => chInGroup(g.id)).map(g => ({ key: 'g:' + g.id, name: g.name, grp: true, n: chGroupMembers(g.id).length, last: last['g:' + g.id] || null }))
     .sort((a, b) => (b.last ? String(b.last.created_at) : '').localeCompare(a.last ? String(a.last.created_at) : '') || a.name.localeCompare(b.name));
@@ -3760,17 +3862,26 @@ async function chLoad(force){
     if (error && !full && !CH.noUpd && /updated_at/i.test(errStr(error))){ CH.noUpd = true; CH.busy = false; return chLoad(true); }   // база ещё без 1.09.19 — работаем по-старому
     if (error){ CH.noDb = /chat_msgs|PGRST205|does not exist|schema cache/i.test(errStr(error)); if (!CH.noDb) dlog('⚠ chat_msgs:', error); return; }
     const before = chUnread(), n0 = CH.rows.length; let upd = false;
-    if (full){ CH.rows = data || []; CH.fullAt = Date.now(); }
+    if (full){
+      /* v1.09.23 (ревью): полная перезагрузка (раз в 5 минут) брала последние 600 строк и ВЫБРАСЫВАЛА историю, подгруженную
+         кнопкой «Показать более ранние» — лента под пальцем укорачивалась. Строки старше окна выборки сохраняем. */
+      const fresh = data || [], oldest = fresh.length >= 600 ? fresh.reduce((a, m) => String(m.created_at) < a ? String(m.created_at) : a, '9') : '';
+      const ids = new Set(fresh.map(m => m.id));
+      CH.rows = oldest ? fresh.concat(CH.rows.filter(m => !ids.has(m.id) && String(m.created_at) < oldest)) : fresh;
+      CH.fullAt = Date.now();
+    }
     /* v1.09.20: группы и их состав (RLS отдаёт только мои группы; админу — все, для управления) */
-    if ((full || state.screen === 'chat') && !CH.noGrp){
-      const g1 = await state.sb.from('chat_groups').select('*'), g2 = await state.sb.from('chat_members').select('group_id, user_id');
+    const slow = full || Date.now() - (CH.metaAt || 0) > (CH.rtOk ? 60000 : 24000);   // v1.09.23: группы и отметки чтения — не на каждый 8-секундный опрос
+    if (slow) CH.metaAt = Date.now();
+    if (slow && !CH.noGrp){
+      const g1 = await state.sb.from('chat_groups').select('*'), g2 = await state.sb.from('chat_members').select('*');
       if (g1.error || g2.error){ if (/chat_groups|chat_members|PGRST205|does not exist|schema cache/i.test(errStr(g1.error || g2.error))) CH.noGrp = true; else dlog('⚠ chat_groups:', g1.error || g2.error); }
       else { const sig = JSON.stringify([g1.data, g2.data]); if (sig !== CH._gsig){ CH._gsig = sig; CH.groups = g1.data || []; CH.members = g2.data || []; upd = true; } }
     }
     /* отметки прочтения: свои (счётчики) и собеседника по переписке со мной («прочитано» у моих сообщений, v1.09.18).
        RLS отдаёт ровно эти строки: user_id = я или thread = мой id. */
     let peerChanged = false;
-    if (full || state.screen === 'chat'){
+    if (slow){
       const rr = await state.sb.from('chat_reads').select('user_id, thread, read_at');
       if (!rr.error){
         const me = chMe(), m = {}, pr = {};
@@ -3787,6 +3898,7 @@ async function chLoad(force){
     }
     CH.noDb = false; CH.at = Date.now();
     if (CH.rows.length !== n0 || chUnread() !== before || peerChanged || upd) chChanged();
+    chOutboxFlush();                                           // v1.09.24: сервер отвечает — досылаем написанное без связи
     chRtStart();
   }catch(e){ dlog('⚠ chat_msgs:', e); }
   finally{ CH.busy = false; }
@@ -3799,15 +3911,18 @@ function chChanged(){
 function chBadgePaint(){
   const n = state.user ? chUnread() : 0;
   try{ if (navigator.setAppBadge){ if (n) navigator.setAppBadge(n); else navigator.clearAppBadge(); } }catch(e){}   // v1.09.19: счётчик на значке приложения
+  try{ if (CH._badgeSent !== n && navigator.serviceWorker && navigator.serviceWorker.controller){ CH._badgeSent = n; navigator.serviceWorker.controller.postMessage({ type: 'BADGE', n }); } }catch(e){}   // v1.09.22: воркер продолжит счёт с этого числа
   document.querySelectorAll('.tab-badge[data-b="chat"]').forEach(el => { el.textContent = n > 99 ? '99+' : String(n); el.hidden = !n; });
 }
 function chTickStart(){
   if (CH.timer) return;
   window.addEventListener('resize', () => { if (state.screen === 'chat') chLayout(false); }, { passive: true });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && state.user){ chLoad(true); if (state.screen === 'chat' && CH.thread) chMarkRead(CH.thread); } });
+  try{ if (window.visualViewport) window.visualViewport.addEventListener('resize', () => { if (state.screen === 'chat') chLayout(false); }, { passive: true }); }catch(e){}   // v1.09.23: экранная клавиатура на iPhone
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && state.user){ CH._badgeSent = null; chBadgePaint(); chLoad(true); if (state.screen === 'chat' && CH.thread) chMarkRead(CH.thread); } });
   CH.timer = setInterval(() => { try{
     if (!state.user || document.hidden) return;
-    if (state.screen === 'chat'){ if (!CH.rtOk || Date.now() - CH.at > 30000) chLoad(true); } else chLoad(false);   // realtime подключён — опрос раз в 30 с «на всякий случай»
+    if (state.screen === 'chat'){ if (!CH.rtOk || Date.now() - CH.at > 30000) chLoad(true); } else chLoad(false);
+    if (chOutbox().length) chOutboxFlush();                                        // v1.09.24   // realtime подключён — опрос раз в 30 с «на всякий случай»
   }catch(e){} }, 8000);
 }
 let _chReadT = 0;
@@ -3861,18 +3976,20 @@ function chReactHtml(m){
   return chips ? `<div class="ch-rcs">${chips}</div>` : '';
 }
 function chMenuHtml(m){
+  if (m.pending) return `<div class="ch-menu" id="ch-menu" onclick="event.stopPropagation()"><div class="ch-menu-a"><button type="button" class="dng" onclick="App.chDel('${m.id}')">${ic('trash')} ${t('ch_out_drop')}</button></div></div>`;
   const mine = m.from_user === chMe();
   return `<div class="ch-menu" id="ch-menu" onclick="event.stopPropagation()">
     <div class="ch-menu-e">${CH_EMOJI.map(e => `<button type="button" aria-label="${e}" onclick="App.chReact('${m.id}','${e}')">${e}</button>`).join('')}</div>
     <div class="ch-menu-a">
       ${chCanPost(CH.thread) ? `<button type="button" onclick="App.chReply('${m.id}')">${ic('send')} ${t('ch_reply')}</button>` : ''}
+      <button type="button" onclick="App.chForward('${m.id}')">${ic('chev_r')} ${t('ch_fwd')}</button>
       ${m.body ? `<button type="button" onclick="App.chCopy('${m.id}')">${ic('copy')} ${t('ch_copy')}</button>` : ''}
       ${chCanEdit(m) ? `<button type="button" onclick="App.chEdit('${m.id}')">${ic('pencil')} ${t('edit')}</button>` : ''}
-      ${(mine || (isAdmin() && m.channel)) ? `<button type="button" class="dng" onclick="App.chDel('${m.id}')">${ic('trash')} ${t('delete')}</button>` : ''}
+      ${chCanDelete(m) ? `<button type="button" class="dng" onclick="App.chDel('${m.id}')">${ic('trash')} ${t('delete')}</button>` : ''}
     </div></div>`;
 }
 function chMsgsHtml(k){
-  const me = chMe(), msgs = chMsgsOf(k), ra0 = CH._openReadAt || '', peerAt = chPeerReadAt(k), dm = !chIsCh(k) && !chIsG(k);
+  const me = chMe(), msgs = chMsgsOf(k, true), ra0 = CH._openReadAt || '', peerAt = chPeerReadAt(k), dm = !chIsCh(k) && !chIsG(k);
   if (!msgs.length) return `<div class="list-empty ch-empty">${t(k === 'ann' ? 'ch_empty_ann' : 'chm_empty')}</div>`;
   const byId = {}; msgs.forEach(m => { byId[m.id] = m; });
   let day = '', out = '', cut = false, prev = null;
@@ -3884,35 +4001,36 @@ function chMsgsHtml(k){
     const mine = m.from_user === me;
     const cont = prev && prev.from_user === m.from_user && !m.important && (new Date(m.created_at) - new Date(prev.created_at)) < 300000;   // подряд от одного человека — одной «пачкой»
     const rp = m.reply_to ? byId[m.reply_to] || chRows().find(x => x.id === m.reply_to) : null;
-    out += `<div class="ch-msg ${mine ? 'mine' : ''} ${m.important ? 'imp' : ''} ${cont ? 'cont' : ''} ${CH.menu === m.id ? 'menu-on' : ''}" data-id="${m.id}">
+    out += `<div class="ch-msg ${mine ? 'mine' : ''} ${m.important ? 'imp' : ''} ${cont ? 'cont' : ''} ${m.pending ? 'pending' : ''} ${CH.menu === m.id ? 'menu-on' : ''}" data-id="${m.id}">
       <div class="ch-bub" onclick="App.chMenu('${m.id}', event)">${!mine && !dm && !cont ? `<div class="ch-who">${esc(shortName(profName(m.from_user)))}</div>` : ''}
         ${m.important ? `<div class="ch-imp">${ic('warn')} ${t('ch_important')}</div>` : ''}
         ${m.reply_to ? `<button type="button" class="ch-quote" onclick="event.stopPropagation();App.chJump('${m.reply_to}')"><b>${esc(rp ? shortName(profName(rp.from_user)) : '')}</b><span>${esc(rp ? chSnippet(rp) : t('ch_quote_gone'))}</span></button>` : ''}
         ${m.img_thumb ? `<button type="button" class="ch-img" aria-label="${t('ch_photo')}" onclick="event.stopPropagation();App.chImgOpen('${m.id}')"><img alt="" src="${esc(m.img_thumb)}" ${m.img_w && m.img_h ? `style="aspect-ratio:${+m.img_w}/${+m.img_h}"` : ''}></button>` : ''}
         ${m.body ? `<div class="ch-text">${chTextHtml(m.body)}</div>` : ''}${chDocCardHtml(m)}
-        <div class="ch-meta">${m.edited_at ? `<span class="ch-edited">${t('ch_edited')}</span>` : ''}${chTimeShort(m.created_at)}${mine && dm ? (String(m.created_at) <= String(peerAt) && peerAt ? `<span class="ch-tick read" title="${t('ch_read')}">✓✓</span>` : `<span class="ch-tick" title="${t('ch_sent')}">✓</span>`) : ''}</div>
+        <div class="ch-meta">${m.edited_at ? `<span class="ch-edited">${t('ch_edited')}</span>` : ''}${m.pending ? `<span class="ch-wait" title="${t('ch_out_wait')}">🕓 ${t('ch_out_wait')}</span> ` : ''}${chTimeShort(m.created_at)}${mine && dm && !m.pending ? (String(m.created_at) <= String(peerAt) && peerAt ? `<span class="ch-tick read" title="${t('ch_read')}">✓✓</span>` : `<span class="ch-tick" title="${t('ch_sent')}">✓</span>`) : ''}</div>
       </div>${chReactHtml(m)}${CH.menu === m.id ? chMenuHtml(m) : ''}</div>`;
     prev = m;
   });
   return out;
 }
-function chListHtml(){
+function chListHtml(){ const q0 = String(CH.q || '').trim().toLowerCase(); return chListOnlyHtml() + chFoundHtml(q0); }
+function chListOnlyHtml(){
   const q = String(CH.q || '').trim().toLowerCase();
   let sec = '';
-  return chThreads().filter(x => !q || x.ch || String(x.name).toLowerCase().includes(q)).map(x => {
+  return chThreads().filter(x => !q || String(x.name).toLowerCase().includes(q)).map(x => {
     const n = chUnread(x.key), l = x.last;
     const who = l && (x.ch || x.grp) && l.from_user !== chMe() ? shortName(profName(l.from_user)).split(' ')[0] + ': ' : '';
     const prev = l ? ((l.from_user === chMe() ? t('ch_you') + ': ' : who) + chSnippet(l).slice(0, 60)) : (x.ch ? t(x.key === 'ann' ? 'ch_ann_sub' : 'ch_all_sub') : x.grp ? t('chg_n').replace('{N}', x.n) : t('role_' + x.role));
     const kind = x.ch ? 'ch' : x.grp ? 'grp' : 'dm', cap = kind !== sec && kind !== 'ch' ? `<div class="ch-sec">${t(kind === 'grp' ? 'chg_sec' : 'ch_sec_dm')}</div>` : ''; sec = kind;
-    return `${cap}<button type="button" class="ch-th ${CH.thread === x.key ? 'on' : ''} ${n ? 'unread' : ''}" data-k="${x.key}" onclick="App.chOpen('${x.key}')">
+    return `${cap}<button type="button" class="ch-th ${CH.thread === x.key ? 'on' : ''} ${n ? 'unread' : ''} ${x.off ? 'off' : ''}" data-k="${x.key}" onclick="App.chOpen('${x.key}')">
       <span class="ch-ava ${x.ch ? 'ch' : x.grp ? 'grp' : 'role-' + x.role}">${x.ch ? ic(x.key === 'ann' ? 'bell' : 'crew') : x.grp ? ic('crew') : esc(initials(x.name))}</span>
       <span class="grow"><b>${esc(x.ch || x.grp ? x.name : shortName(x.name))}</b><span class="tiny">${esc(prev || '')}</span></span>
-      <span class="ch-th-r">${l ? `<span class="tiny">${chDayOf(l.created_at) === todayISO() ? chTimeShort(l.created_at) : fmtDM(chDayOf(l.created_at))}</span>` : ''}${n ? `<i class="ch-n">${n > 99 ? '99+' : n}</i>` : ''}</span></button>`;
+      <span class="ch-th-r">${l ? `<span class="tiny">${chDayOf(l.created_at) === todayISO() ? chTimeShort(l.created_at) : fmtDM(chDayOf(l.created_at))}</span>` : ''}${chMuted(x.key) ? `<span class="ch-muted" title="${t('ch_mute_on')}">${ic('bell_off')}</span>` : ''}${n ? `<i class="ch-n ${chMuted(x.key) ? 'mut' : ''}">${n > 99 ? '99+' : n}</i>` : ''}</span></button>`;
   }).join('');
 }
 function chComposeHtml(k){
-  if (!chCanPost(k)) return `<div class="ch-ro tiny">${ic('lock')} ${t('ch_ann_ro')}</div>`;
-  const boss = isAdmin() || isManager(), a = CH.attach, rp = CH.reply ? chRows().find(x => x.id === CH.reply) : null, ed = CH.edit ? chRows().find(x => x.id === CH.edit) : null;
+  if (!chCanPost(k)) return `<div class="ch-ro tiny">${ic('lock')} ${t(k === 'ann' ? 'ch_ann_ro' : chIsG(k) ? 'chg_not_member' : 'ch_peer_off')}</div>`;
+  const boss = chBoss(), a = CH.attach, rp = CH.reply ? chRows().find(x => x.id === CH.reply) : null, ed = CH.edit ? chRows().find(x => x.id === CH.edit) : null;
   return `<div class="ch-compose" id="ch-compose">
     ${ed ? `<div class="ch-att ch-ctx" id="ch-editing">${ic('pencil')} <span class="grow"><b>${t('ch_editing')}</b> ${esc(chSnippet(ed))}</span><button type="button" class="ch-att-x" aria-label="${t('cancel')}" onclick="App.chCtxOff()">×</button></div>` : ''}
     ${rp && !ed ? `<div class="ch-att ch-ctx" id="ch-replying">${ic('send')} <span class="grow"><b>${esc(shortName(profName(rp.from_user)))}</b> ${esc(chSnippet(rp))}</span><button type="button" class="ch-att-x" aria-label="${t('cancel')}" onclick="App.chCtxOff()">×</button></div>` : ''}
@@ -3937,6 +4055,7 @@ function viewChat(){
   const pane = k ? `<section class="ch-pane" id="ch-pane">
       <div class="ch-head"><button type="button" class="back-x ch-back" aria-label="${t('back')}" onclick="App.chBack()">${ic('arr_l')}</button>
         <div class="grow"><b>${esc(chIsCh(k) || chIsG(k) ? chName(k) : profName(k))}</b><div class="tiny">${esc(k === 'ann' ? t('ch_ann_sub') : k === 'all' ? t('ch_all_sub') : chIsG(k) ? chGroupMembers(chGid(k)).map(id => shortName(profName(id)).split(' ')[0]).join(', ') : t('role_' + ((state.data.profiles.find(p => p.id === k) || {}).role || 'tech')))}</div></div>
+        <button type="button" class="btn btn-ghost ch-ib ${chMuted(k) ? 'on-mute' : ''}" id="ch-mute" title="${t(chMuted(k) ? 'ch_mute_off_t' : 'ch_mute_on_t')}" aria-label="${t(chMuted(k) ? 'ch_mute_off_t' : 'ch_mute_on_t')}" aria-pressed="${chMuted(k) ? 'true' : 'false'}" onclick="App.chMuteToggle('${k}')">${ic(chMuted(k) ? 'bell_off' : 'bell')}</button>
         ${chIsG(k) ? `<button type="button" class="btn btn-ghost ch-ib" id="ch-ginfo" title="${t('chg_info')}" aria-label="${t('chg_info')}" onclick="App.chGroupInfo('${chGid(k)}')">${ic('gear')}</button>` : ''}</div>
       <div class="ch-msgs" id="ch-msgs" tabindex="0">${chMsgsHtml(k)}</div>
       ${chComposeHtml(k)}</section>`
@@ -3972,6 +4091,44 @@ function chOpen(k){
 }
 function chBack(){ CH.thread = null; CH.attach = null; CH.reply = null; CH.edit = null; CH.img = null; CH.menu = null; render(); }
 function chQ(v){ CH.q = v; const ths = document.getElementById('ch-ths'); if (ths) ths.innerHTML = chListHtml(); }
+/* v1.09.24: поиск по сообщениям — по тем, что уже на устройстве (последние 600 и всё подгруженное «Показать более ранние») */
+function chFoundHtml(q){
+  if (q.length < 2) return '';
+  const hits = chRows().filter(m => String(m.body || '').toLowerCase().includes(q) || String(m.doc_title || '').toLowerCase().includes(q))
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 25);
+  if (!hits.length) return `<div class="ch-sec">${t('ch_found')}</div><div class="tiny" style="padding:6px 4px">${t('ch_found_none')}</div>`;
+  return `<div class="ch-sec">${t('ch_found')} · ${hits.length}</div>` + hits.map(m => { const k = chThreadOf(m), body = String(m.body || m.doc_title || ''), i = body.toLowerCase().indexOf(q), from = Math.max(0, i - 24);
+    return `<button type="button" class="ch-th ch-hit" onclick="App.chGoMsg('${k}','${m.id}')"><span class="grow"><b>${esc(chIsCh(k) || chIsG(k) ? chName(k) : shortName(profName(k)))}</b>
+      <span class="tiny">${esc(shortName(profName(m.from_user)).split(' ')[0])}: ${from ? '…' : ''}${esc(body.slice(from, i))}<mark>${esc(body.slice(i, i + q.length))}</mark>${esc(body.slice(i + q.length, i + q.length + 40))}</span></span>
+      <span class="ch-th-r"><span class="tiny">${fmtDM(chDayOf(m.created_at))}</span></span></button>`; }).join('');
+}
+function chGoMsg(k, id){ chOpen(k); setTimeout(() => chJump(id), 250); }
+/* переслать сообщение в другую переписку: текст, документ и снимок (полный снимок при нужде дочитывается с сервера) */
+function chForward(id){
+  const m = chRows().find(x => x.id === id); if (!m) return; CH.menu = null; CH.fwd = id; CH.sel = new Set();
+  const ths = chThreads().filter(x => chCanPost(x.key));
+  openModal(`${modalHead(t('ch_fwd'), 'send')}
+    <div class="tiny" style="margin-bottom:8px">${esc(chSnippet(m))}</div>
+    <div class="ds-chips" id="ds-chips">${ths.map(x => `<button type="button" class="chip ds-chip" data-u="${x.key}" onclick="App.dsPick('${x.key}')">${x.ch || x.grp ? ic('crew') + ' ' : ''}${esc(x.ch || x.grp ? x.name : shortName(x.name))}</button>`).join('')}</div>
+    <button type="button" class="btn btn-green" id="ch-fwd-go" style="margin-top:12px;width:100%" onclick="App.chForwardGo()">${ic('send')} ${t('ch_fwd')}</button>`);
+}
+async function chForwardGo(){
+  const m = chRows().find(x => x.id === CH.fwd), to = [...(CH.sel || [])]; if (!m) return;
+  if (!to.length){ toast('⚠ ' + t('ds_pick_one'), 'err'); return; }
+  const btn = $('#ch-fwd-go'); if (btn) btn.disabled = true;
+  try{
+    let img = null;
+    if (m.img_thumb){
+      let fullImg = CH.files[m.id] || null;
+      if (!fullImg && HAS_SB && m.img_id && !netOff()){ const { data } = await state.sb.from('chat_files').select('data').eq('id', m.img_id).maybeSingle(); fullImg = data && data.data; if (fullImg) CH.files[m.id] = fullImg; }
+      if (fullImg) img = { full: fullImg, thumb: m.img_thumb, w: m.img_w, h: m.img_h, bytes: Math.round(fullImg.length * 0.75) };
+      else if (!m.body && !m.doc_id){ toast('⚠ ' + t('ch_fwd_noimg'), 'err'); return; }
+    }
+    const doc = m.doc_id && dsDoc(m.doc_kind, m.doc_id) ? { kind: m.doc_kind, id: m.doc_id } : null;
+    let n = 0; for (const k of to){ if (await chSendTo(k, m.body, doc, false, { img })) n++; else break; }
+    if (n){ closeModal(); toast('✓ ' + t('ds_sent').replace('{N}', n)); if (state.screen === 'chat') render(); }
+  } finally { if (btn) btn.disabled = false; }
+}
 function chInput(el){ if (CH.thread) CH.draft[CH.thread] = el.value; el.style.height = 'auto'; el.style.height = Math.min(140, el.scrollHeight) + 'px'; chLayout(false); }
 function chKey(e){ if (e.key === 'Escape' && (CH.edit || CH.reply)){ e.preventDefault(); chCtxOff(); return; }
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !chNarrow()){ e.preventDefault(); chSend(); } }
@@ -4048,6 +4205,38 @@ async function chImgOpen(id){
     if (im){ im.src = data.data; } if (dl) dl.href = data.data; if (nt) nt.textContent = '';
   }catch(e){ dlog('⚠ чат: фото не загрузилось —', e); const nt = $('#ch-view-note'); if (nt) nt.textContent = t('ch_img_fail'); }
 }
+/* v1.09.24: ОЧЕРЕДЬ НЕОТПРАВЛЕННОГО. Сообщение, написанное без связи, остаётся в переписке с часами «ждёт сети» и уходит само,
+   как только связь вернулась (как записи и фото). Хранится на устройстве (localStorage) — переживает закрытие приложения.
+   Снимки в очередь не кладём: сотни килобайт в localStorage — это риск переполнить хранилище. */
+function chOutboxKey(){ return 'techlog_chat_outbox_' + chMe(); }
+function chOutbox(){ try{ const a = JSON.parse(localStorage.getItem(chOutboxKey()) || '[]'); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+function chOutboxSave(a){ try{ localStorage.setItem(chOutboxKey(), JSON.stringify(a.slice(-50))); }catch(e){ dlog('⚠ чат: очередь неотправленного не сохранилась —', e); } }
+function chOutboxPut(k, body, doc, imp, reply, img){
+  if (img){ toast('⚠ ' + t('ch_out_noimg'), 'err'); return false; }
+  const a = chOutbox(); a.push({ id: 'tmp-' + uid().slice(0, 12), k, body, doc: doc || null, imp: !!imp, reply: reply || null, at: new Date().toISOString() });
+  chOutboxSave(a); toast('🕓 ' + t('ch_out_queued'), 'inf'); return true;
+}
+function chOutboxDrop(id){ chOutboxSave(chOutbox().filter(x => x.id !== id)); CH.menu = null; if (state.screen === 'chat') render(); }
+let _chOutBusy = false;
+async function chOutboxFlush(){
+  if (_chOutBusy || !state.user || !HAS_SB || netOff()) return 0;
+  const a = chOutbox(); if (!a.length) return 0;
+  _chOutBusy = true; let sent = 0;
+  try{
+    for (const it of a){
+      if (netOff()) break;
+      const left = chOutbox().filter(x => x.id !== it.id); chOutboxSave(left);          // сначала вынимаем: при обрыве связи chSendTo сам вернёт сообщение в очередь
+      const okk = await chSendTo(it.k, it.body, it.doc, it.imp, { reply: it.reply });
+      if (chOutbox().length > left.length) break;                                       // связь снова пропала — сообщение уже лежит в очереди заново
+      if (!okk){ const b = chOutbox(); b.unshift(it); chOutboxSave(b); break; }         // сервер отказал (нет прав, лимит) — не теряем, вернём и попробуем позже
+      sent++;
+    }
+  } finally { _chOutBusy = false; }
+  if (sent){ dlog('чат: из очереди отправлено сообщений: ' + sent); if (state.screen === 'chat') render(); }
+  return sent;
+}
+function chPending(k){ return chOutbox().filter(x => x.k === k).map(x => ({ id: x.id, pending: true, from_user: chMe(), to_user: null, channel: null, group_id: null, body: x.body, important: x.imp,
+  doc_kind: x.doc ? x.doc.kind : null, doc_id: x.doc ? x.doc.id : null, doc_title: x.doc ? dsTitle(x.doc.kind, x.doc.id) : '', reply_to: x.reply, created_at: x.at, reactions: {} })); }
 /* отправка: одно место для чата и для «Поделиться документом» */
 async function chSendTo(k, body, doc, important, extra){
   body = String(body || '').trim().slice(0, 2000); extra = extra || {};
@@ -4055,7 +4244,7 @@ async function chSendTo(k, body, doc, important, extra){
   if (!body && !doc && !img) return false;
   if (!chCanPost(k)){ toast('⚠ ' + t('ch_ann_ro'), 'err'); return false; }
   const title = doc ? dsTitle(doc.kind, doc.id) : '';
-  const imp = !!important && (isAdmin() || isManager()), ch = chIsCh(k), gid = chGid(k);
+  const imp = !!important && chBoss(), ch = chIsCh(k), gid = chGid(k);
   if (!HAS_SB){
     const id = uid(), now = new Date().toISOString();
     const row = { id, from_user: chMe(), to_user: (ch || gid) ? null : k, channel: ch ? k : null, group_id: gid || null, body, important: imp,
@@ -4064,7 +4253,7 @@ async function chSendTo(k, body, doc, important, extra){
     if (img) CH.files[id] = img.full;
     state.data.chat_msgs = (state.data.chat_msgs || []).concat([row]); saveLocal(); return true;
   }
-  if (netOff()){ netBlocked(); return false; }
+  if (netOff()) return chOutboxPut(k, body, doc, imp, reply, img);                                   // v1.09.24: нет связи — в очередь, а не отказ
   const args = { p_to: (ch || gid) ? null : k, p_channel: ch ? k : null, p_group: gid || null, p_body: body, p_important: imp,
     p_doc_kind: doc ? doc.kind : null, p_doc: doc ? doc.id : null, p_doc_title: title,
     p_reply: reply, p_thumb: img ? img.thumb : null, p_img: img ? img.full : null, p_w: img ? img.w : null, p_h: img ? img.h : null };
@@ -4080,7 +4269,9 @@ async function chSendTo(k, body, doc, important, extra){
     const r2 = await state.sb.rpc('chat_send', { p_to: args.p_to, p_channel: args.p_channel, p_body: body, p_important: imp, p_doc_kind: args.p_doc_kind, p_doc: args.p_doc, p_doc_title: title });
     data = r2.data; error = r2.error;
   }
-  if (error){ toast('⛔ ' + (/chat_send|PGRST202|does not exist|Could not find/i.test(errStr(error)) ? t('ch_need_sql2') : rpcFail(error, 'chat_send')), 'err'); return false; }
+  if (error){
+    if (isNetErr(error)) return chOutboxPut(k, body, doc, imp, reply, img);                        // v1.09.24: связь оборвалась посреди отправки
+    toast('⛔ ' + (/RATE_LIMIT/.test(errStr(error)) ? t('ch_rate') : /chat_send|PGRST202|does not exist|Could not find/i.test(errStr(error)) ? t('ch_need_sql2') : rpcFail(error, 'chat_send')), 'err'); return false; }
   if (data && data.id){ if (img) CH.files[data.id] = img.full; if (!CH.rows.some(m => m.id === data.id)) CH.rows = CH.rows.concat([data]); }
   pbPing(true);
   return true;
@@ -4105,9 +4296,23 @@ async function chSend(){
 function chMenu(id, ev){
   if (ev && ev.target && ev.target.closest && ev.target.closest('a, .ch-doc, .ch-img, .ch-quote')) return;
   CH.menu = CH.menu === id ? null : id; chPaint();
-  if (CH.menu){ const el = document.getElementById('ch-menu'); if (el){ try{ el.scrollIntoView({ block: 'nearest' }); }catch(e){} }
-    setTimeout(() => { const off = () => { document.removeEventListener('click', off, true); if (CH.menu){ CH.menu = null; chPaint(); } };
-      document.addEventListener('click', (e2) => { if (e2.target.closest && e2.target.closest('#ch-menu, .ch-bub')) return; off(); }, { capture: true, once: true }); }, 0); }
+  if (CH.menu){ const el = document.getElementById('ch-menu'); if (el){ try{ el.scrollIntoView({ block: 'nearest' }); }catch(e){} } }
+  chMenuArm();
+}
+/* v1.09.23 (ревью): закрытие меню нажатием мимо. Было { once:true }: первый же клик ВНУТРИ пузыря съедал слушателя, и меню
+   переставало закрываться. Теперь слушатель один на всё время жизни меню и снимает себя сам, когда меню закрыто. */
+let _chMenuOff = null;
+function chMenuArm(){
+  if (_chMenuOff || !CH.menu) return;
+  const h = (e2) => {
+    if (!CH.menu){ done(); return; }
+    if (e2.type === 'keydown'){ if (e2.key !== 'Escape') return; }
+    else if (e2.target.closest && e2.target.closest('#ch-menu, .ch-bub')) return;
+    CH.menu = null; done(); chPaint();
+  };
+  const done = () => { document.removeEventListener('click', h, true); document.removeEventListener('keydown', h, true); _chMenuOff = null; };
+  _chMenuOff = done;
+  setTimeout(() => { if (CH.menu){ document.addEventListener('click', h, true); document.addEventListener('keydown', h, true); } else _chMenuOff = null; }, 0);
 }
 function chCtxOff(){ const was = !!CH.edit; CH.reply = null; if (was){ CH.edit = null; if (CH.thread) CH.draft[CH.thread] = ''; } else { const keep = ($('#ch-in') || {}).value; if (CH.thread && keep != null) CH.draft[CH.thread] = keep; } render(); }
 function chReply(id){ const keep = ($('#ch-in') || {}).value; if (CH.thread && keep != null) CH.draft[CH.thread] = keep; CH.menu = null; CH.edit = null; CH.reply = id; render(); setTimeout(() => { const i = $('#ch-in'); if (i) i.focus(); }, 60); }
@@ -4160,7 +4365,8 @@ async function chMore(){
   else chPaint();
 }
 async function chDel(id){
-  const m = chRows().find(x => x.id === id); if (!m || !(m.from_user === chMe() || isAdmin())) return;
+  if (String(id).indexOf('tmp-') === 0){ chOutboxDrop(id); return; }                  // v1.09.24: неотправленное — просто убираем из очереди
+  const m = chRows().find(x => x.id === id); if (!chCanDelete(m)) return;
   CH.menu = null;
   if (!(await askModal({ title: t('ch_del_t'), text: t('ch_del_q'), ok: t('delete'), okIcon: 'trash', danger: true }))) return;
   if (HAS_SB){
@@ -4169,7 +4375,7 @@ async function chDel(id){
     if (error){ toast('⛔ ' + errStr(error), 'err'); return; }
     CH.rows = CH.rows.filter(x => x.id !== id);
   } else { state.data.chat_msgs = (state.data.chat_msgs || []).filter(x => x.id !== id); saveLocal(); }
-  if (m.from_user !== chMe()) audit('chat_del', 'chat', id, { from: profName(m.from_user), text: String(m.body || '').slice(0, 80) });
+  if (m.from_user !== chMe()) audit('chat_del', 'chat', id, { from: profName(m.from_user), where: chName(chThreadOf(m)), text: String(m.body || '').slice(0, 80) });
   if (state.screen === 'chat') render();
 }
 /* ---------- v1.09.20: группы — создать, состав, название, выйти, удалить ---------- */
@@ -4201,8 +4407,8 @@ async function chGroupCreate(){
   if (HAS_SB){
     if (netOff()){ netBlocked(); return; }
     const { data, error } = await state.sb.rpc('chat_group_create', { p_name: name, p_members: ids });
-    if (error){ toast('⛔ ' + (/chat_group_create|PGRST202|Could not find/i.test(errStr(error)) ? t('chg_need_sql') : rpcFail(error, 'chat_group_create')), 'err'); return; }
-    gid = data; CH._gsig = ''; await chLoad(true); pbPing(true);
+    if (error){ toast('⛔ ' + (/RATE_LIMIT/.test(errStr(error)) ? t('chg_rate') : /chat_group_create|PGRST202|Could not find/i.test(errStr(error)) ? t('chg_need_sql') : rpcFail(error, 'chat_group_create')), 'err'); return; }
+    gid = data; CH._gsig = ''; CH.metaAt = 0; await chLoad(true); pbPing(true);
   } else {
     gid = uid(); const now = new Date().toISOString();
     state.data.chat_groups = (state.data.chat_groups || []).concat([{ id: gid, name, created_by: chMe(), created_at: now }]);
@@ -4214,11 +4420,12 @@ async function chGroupCreate(){
 }
 function chGroupInfo(gid){
   const g = chGroup(gid); if (!g) return;
-  const mem = chGroupMembers(gid), boss = g.created_by === chMe() || isAdmin();
+  const mem = chGroupMembers(gid), owner = g.created_by === chMe() || isAdmin(), boss = owner || chIsGroupMod(gid);
   CH.gsel = new Set();
   const rows = mem.map(id => `<div class="rowline chg-m" data-u="${id}"><span class="ch-ava role-${(state.data.profiles.find(p => p.id === id) || {}).role || 'tech'}">${esc(initials(profName(id)))}</span>
-      <div class="grow"><b>${esc(shortName(profName(id)))}</b>${id === g.created_by ? ` <span class="chip">${t('chg_owner')}</span>` : ''}${id === chMe() ? ` <span class="tiny">${t('ch_you')}</span>` : ''}</div>
-      ${boss && id !== chMe() ? `<button type="button" class="btn btn-ghost sm" onclick="App.chGroupKick('${gid}','${id}')">${t('chg_kick')}</button>` : ''}</div>`).join('');
+      <div class="grow"><b>${esc(shortName(profName(id)))}</b>${id === g.created_by ? ` <span class="chip">${t('chg_owner')}</span>` : chGroupRole(gid, id) === 'admin' ? ` <span class="chip ok">${t('chg_admin')}</span>` : ''}${id === chMe() ? ` <span class="tiny">${t('ch_you')}</span>` : ''}</div>
+      ${owner && id !== g.created_by ? `<button type="button" class="btn btn-ghost sm chg-role" onclick="App.chGroupRoleSet('${gid}','${id}','${chGroupRole(gid, id) === 'admin' ? 'member' : 'admin'}')">${t(chGroupRole(gid, id) === 'admin' ? 'chg_unadmin' : 'chg_mkadmin')}</button>` : ''}
+      ${boss && id !== chMe() && id !== g.created_by ? `<button type="button" class="btn btn-ghost sm" onclick="App.chGroupKick('${gid}','${id}')">${t('chg_kick')}</button>` : ''}</div>`).join('');
   const lock = new Set(mem);
   openModal(`${modalHead(t('chg_info'), 'crew')}
     <div class="form-row"><span class="lbl">${t('chg_name')}</span><input id="chg-name" maxlength="60" value="${esc(g.name)}" ${boss ? '' : 'readonly'}></div>
@@ -4230,7 +4437,7 @@ function chGroupInfo(gid){
     <button type="button" class="btn btn-blue sm" style="margin-top:8px" onclick="App.chGroupAdd('${gid}')">${ic('plus')} ${t('chg_add_btn')}</button>
     <div class="btn-rowpp" style="margin-top:16px">
       <button type="button" class="btn btn-ghost" id="chg-leave" onclick="App.chGroupKick('${gid}','${chMe()}')">${t('chg_leave')}</button>
-      ${boss ? `<button type="button" class="btn btn-red" id="chg-del" onclick="App.chGroupDelete('${gid}')">${ic('trash')} ${t('chg_delete')}</button>` : ''}
+      ${owner ? `<button type="button" class="btn btn-red" id="chg-del" onclick="App.chGroupDelete('${gid}')">${ic('trash')} ${t('chg_delete')}</button>` : ''}
     </div>`);
 }
 async function chGroupRpc(fn, args, demo){
@@ -4238,9 +4445,14 @@ async function chGroupRpc(fn, args, demo){
     if (netOff()){ netBlocked(); return false; }
     const { error } = await state.sb.rpc(fn, args);
     if (error){ toast('⛔ ' + (/PGRST202|Could not find/i.test(errStr(error)) ? t('chg_need_sql') : rpcFail(error, fn)), 'err'); return false; }
-    CH._gsig = ''; await chLoad(true);
+    CH._gsig = ''; CH.metaAt = 0; await chLoad(true);
   } else { demo(); saveLocal(); }
   return true;
+}
+async function chGroupRoleSet(gid, uid_, role){
+  if (await chGroupRpc('chat_group_set_role', { p_group: gid, p_user: uid_, p_role: role }, () => { const m = (state.data.chat_members || []).find(x => x.group_id === gid && x.user_id === uid_); if (m) m.role = role; })){
+    audit('chat_group_role', 'chat', gid, { name: (chGroup(gid) || {}).name || '', who: profName(uid_), role });
+    closeModal(); render(); chGroupInfo(gid); }
 }
 async function chGroupRename(gid){
   const name = String(($('#chg-name') || {}).value || '').trim().slice(0, 60); if (!name){ toast('⚠ ' + t('chg_need_name'), 'err'); return; }
@@ -4327,13 +4539,140 @@ function pbPing(force){
   PB.lastPing = now;
   pbFetch('?send=1').catch(()=>{});
 }
+/* =====================================================================
+   v1.09.22 · ДОСТАВКА УВЕДОМЛЕНИЙ — самопроверка и самовосстановление.
+   · pbSyncSub: при каждом запуске подписка этого устройства сверяется с сервером и передаётся заново, если сервер
+     её не знает (браузер сменил адрес, базу восстановили, подписку удалили по ошибке) — раньше пуши молча умирали.
+   · Экран «Доставка уведомлений» (Настройки → Уведомления): девять проверок по цепочке «телефон → браузер →
+     подписка → сервер → расписание» с понятным вердиктом по каждой и кнопка «Проверить доставку»: настоящее
+     уведомление проходит весь путь, экран показывает, за сколько секунд оно дошло, или где оборвалось.
+   · Памятка «как разрешить фон» по марке телефона — самая частая причина «не приходит» не в коде, а в батарее.
+   ===================================================================== */
+const PD = { info: null, last: null, busy: false, test: null, at: 0 };
+function pdBrand(){
+  const ua = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/.test(ua)) return 'ios';
+  if (/Xiaomi|Redmi|POCO|MIUI|\bMi \w|; M2\d{3}|HyperOS/i.test(ua)) return 'xiaomi';
+  if (/SM-[A-Z]\d|SAMSUNG|Samsung/i.test(ua)) return 'samsung';
+  if (/HUAWEI|HONOR|\bHW-|; (ANE|ELE|VOG|LYA|JNY)-/i.test(ua)) return 'huawei';
+  if (/OnePlus|OPPO|realme|CPH\d{4}|RMX\d{4}/i.test(ua)) return 'oppo';
+  if (/Android/i.test(ua)) return 'android';
+  return 'desktop';
+}
+function pdStandalone(){ try{ return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }catch(e){ return false; } }
+function pdSwAsk(){
+  return new Promise(res => { try{
+    const sw = navigator.serviceWorker && navigator.serviceWorker.controller; if (!sw) return res(null);
+    const ch = new MessageChannel(); const tm = setTimeout(() => res(null), 1500);
+    ch.port1.onmessage = e => { clearTimeout(tm); res(e.data || null); };
+    sw.postMessage({ type: 'PUSH_LAST' }, [ch.port2]);
+  }catch(e){ res(null); } });
+}
+/* подписка устройства ↔ сервер: раз в сутки и сразу после сигнала воркера о смене адреса */
+async function pbSyncSub(force){
+  try{
+    if (!HAS_SB || !state.user || !pbSupported() || Notification.permission !== 'granted' || netOff()) return 'skip';
+    const sub = await pbCurrentSub(); if (!sub) return 'nosub';
+    const key = 'techlog_push_sync_' + state.user.id, sig = sub.endpoint.slice(-24);
+    const prev = (localStorage.getItem(key) || '').split('|');
+    if (!force && prev[0] === sig && Date.now() - (+prev[1] || 0) < 86400000) return 'fresh';
+    const chk = await pbFetch('', { op: 'check', endpoint: sub.endpoint });
+    if (!chk.known){
+      await pbFetch('', { op: 'sub', sub: sub.toJSON(), ua: navigator.userAgent });
+      dlog('пуши: сервер не знал подписку этого устройства — передана заново (браузер сменил адрес или подписка была удалена)');
+      audit('push_resub', 'push', state.user.id, {});
+    }
+    try{ localStorage.setItem(key, sig + '|' + Date.now()); }catch(e){}
+    try{ const opt = sub.options && sub.options.applicationServerKey; if (opt && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'VAPID', key: opt }); }catch(e){}
+    return chk.known ? 'ok' : 'fixed';
+  }catch(e){ dlog('⚠ пуши: сверка подписки —', e); return 'err'; }
+}
+function pdAgo(ts){ if (!ts) return t('pd_never'); const m = Math.round((Date.now() - new Date(ts).getTime()) / 60000); return m < 1 ? t('pd_now') : m < 90 ? m + ' ' + t('pd_min') : m < 2880 ? Math.round(m / 60) + ' ' + t('pd_h') : Math.round(m / 1440) + ' ' + t('pd_d'); }
+function pdChecks(){
+  const sup = pbSupported(), perm = sup ? Notification.permission : 'default', brand = pdBrand(), inst = pdStandalone(), i = PD.info, L = PD.last;
+  const out = [];
+  const add = (key, st, text, hint) => out.push({ key, st, text, hint: hint || '' });            // st: ok | warn | bad | wait
+  add('browser', sup ? 'ok' : 'bad', t(sup ? 'pd_c_browser_ok' : 'pd_c_browser_bad'), sup ? '' : t(brand === 'ios' ? 'pd_h_ios_install' : 'pd_h_browser'));
+  if (brand === 'ios') add('install', inst ? 'ok' : 'bad', t(inst ? 'pd_c_inst_ok' : 'pd_c_inst_ios'), inst ? '' : t('pd_h_ios_install'));
+  else add('install', inst ? 'ok' : 'warn', t(inst ? 'pd_c_inst_ok' : 'pd_c_inst_tab'), inst ? '' : t('pd_h_install'));
+  add('perm', perm === 'granted' ? 'ok' : perm === 'denied' ? 'bad' : 'warn', t('pd_c_perm_' + perm), perm === 'denied' ? t('push_fail_denied') : perm === 'default' ? t('pd_h_enable') : '');
+  add('sub', PB.sub ? 'ok' : 'bad', t(PB.sub ? 'pd_c_sub_ok' : 'pd_c_sub_no'), PB.sub ? '' : t('pd_h_enable'));
+  if (!HAS_SB){ add('server', 'wait', t('pd_c_demo')); return out; }
+  if (!i){ add('server', 'wait', t('pd_c_server_wait')); return out; }
+  add('server', i.known ? 'ok' : (PB.sub ? 'bad' : 'warn'), t(i.known ? 'pd_c_srv_ok' : 'pd_c_srv_no').replace('{N}', i.devices || 0), i.known ? '' : t('pd_h_resync'));
+  add('fn', i.ver >= '1.09.22' ? 'ok' : 'bad', t(i.ver >= '1.09.22' ? 'pd_c_fn_ok' : 'pd_c_fn_old').replace('{V}', i.ver || '?'), i.ver >= '1.09.22' ? '' : t('pd_h_fn'));
+  const kickAge = i.last_kick ? Date.now() - new Date(i.last_kick).getTime() : Infinity, cronAge = i.last_cron ? Date.now() - new Date(i.last_cron).getTime() : Infinity;
+  const jwtHint = /^sb_/.test(String(CFG.SUPABASE_ANON_KEY || '')) ? ' ' + t('pd_h_jwt') : '';      // ключи нового формата — не JWT: у функции push надо выключить Verify JWT
+  add('kick', i.last_kick ? 'ok' : 'warn', t(i.last_kick ? 'pd_c_kick_ok' : 'pd_c_kick_no').replace('{T}', pdAgo(i.last_kick)), i.last_kick ? '' : t('pd_h_setup') + jwtHint);
+  add('cron', cronAge < 20 * 60000 ? 'ok' : (i.last_cron ? 'warn' : 'bad'), t(cronAge < 20 * 60000 ? 'pd_c_cron_ok' : i.last_cron ? 'pd_c_cron_old' : 'pd_c_cron_no').replace('{T}', pdAgo(i.last_cron)), cronAge < 20 * 60000 ? '' : t('pd_h_setup') + jwtHint);
+  add('queue', i.unsent > 3 ? 'warn' : 'ok', t('pd_c_queue').replace('{N}', i.unsent || 0).replace('{T}', pdAgo(i.last_sent)) + (i.last_err ? ' · ' + t('pd_c_lasterr') + ': ' + i.last_err : ''), i.unsent > 3 ? t('pd_h_setup') : '');
+  add('got', L && L.last ? 'ok' : 'warn', L && L.last ? t('pd_c_got').replace('{T}', pdAgo(L.last.at)).replace('{K}', L.last.title || L.last.kind || '') : t('pd_c_got_no'), L && L.last ? '' : t('pd_h_test'));
+  return out;
+}
+async function pdRefresh(){
+  if (PD.busy) return; PD.busy = true;
+  try{
+    await pbCurrentSub(); PD.last = await pdSwAsk();
+    if (HAS_SB && state.user && !netOff()){ try{ PD.info = await pbFetch('', { op: 'check', endpoint: PB.sub ? PB.sub.endpoint : '' }); }catch(e){ PD.info = { err: errStr(e), ver: '', known: false }; } }
+    PD.at = Date.now();
+  } finally { PD.busy = false; pdPaint(); }
+}
+function pdCardHtml(){
+  if (state.user && Date.now() - PD.at > 30000) setTimeout(pdRefresh, 0);
+  const rows = pdChecks().map(c => `<div class="pd-row pd-${c.st}" data-k="${c.key}"><span class="pd-ic">${c.st === 'ok' ? '✓' : c.st === 'bad' ? '✕' : c.st === 'warn' ? '!' : '…'}</span>
+      <div class="grow"><div>${esc(c.text)}</div>${c.hint ? `<div class="tiny">${esc(c.hint)}</div>` : ''}</div></div>`).join('');
+  const brand = pdBrand(), tst = PD.test;
+  return `<div class="card" id="pd-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('bell')} ${t('pd_title')} ${tipQ('pd_tip')}</div>
+    <div id="pd-rows">${rows}</div>
+    <div class="btn-rowpp" style="margin-top:10px">
+      <button type="button" class="btn btn-green" id="pd-test" onclick="App.pdTest()" ${tst && tst.st === 'run' ? 'disabled' : ''}>${ic('send')} ${t('pd_test')}</button>
+      <button type="button" class="btn btn-ghost" id="pd-refresh" onclick="App.pdRefresh()">${ic('refresh')} ${t('pd_refresh')}</button>
+    </div>
+    ${tst ? `<div class="pd-test pd-${tst.st === 'ok' ? 'ok' : tst.st === 'run' ? 'wait' : 'bad'}" id="pd-test-res">${esc(tst.text)}</div>` : ''}
+    <div class="pd-memo" id="pd-memo"><b>${ic('phone')} ${t('pd_memo_t')} · ${t('pd_b_' + brand)}</b><div class="tiny" style="margin-top:4px;white-space:pre-line">${esc(t('pd_memo_' + brand))}</div></div>
+  </div>`;
+}
+function pdPaint(){ const c = document.getElementById('pd-card'); if (!c || state.screen !== 'settings') return; const tmp = document.createElement('div'); tmp.innerHTML = pdCardHtml(); c.replaceWith(tmp.firstElementChild); }
+/* проверка «от и до»: настоящее уведомление самому себе тем же путём, что и рабочие */
+async function pdTest(){
+  if (PD.test && PD.test.st === 'run') return;
+  const say = (st, text) => { PD.test = { st, text, nonce: (PD.test || {}).nonce, t0: (PD.test || {}).t0 }; pdPaint(); };
+  if (!pbSupported()){ say('bad', t('pd_c_browser_bad')); return; }
+  if (Notification.permission !== 'granted' || !(await pbCurrentSub())){ say('bad', t('pd_t_nosub')); return; }
+  if (!HAS_SB){
+    /* демо: сервера нет — проверяем половину цепочки «воркер → уведомление → приложение» */
+    PD.test = { st: 'run', text: t('pd_t_wait'), nonce: 'demo', t0: Date.now() }; pdPaint();
+    try{ const reg = await navigator.serviceWorker.ready; await reg.showNotification('TechLog · ' + t('pd_test'), { body: t('pd_t_demo'), tag: 'test:demo', icon: './icons/icon-192.png' }); say('ok', t('pd_t_demo_ok')); }
+    catch(e){ say('bad', errStr(e)); }
+    return;
+  }
+  if (netOff()){ netBlocked(); return; }
+  const nonce = uid().slice(0, 8);
+  PD.test = { st: 'run', text: t('pd_t_wait'), nonce, t0: Date.now() }; pdPaint();
+  try{
+    await pbSyncSub(true);
+    const r = await pbFetch('', { op: 'test', nonce, text: t('pd_t_body') });
+    if (!r.sent){ say('bad', t('pd_t_nosend') + (r.closed ? ' · ' + t('pd_t_nosubs_srv') : '')); await pdRefresh(); return; }
+  }catch(e){ say('bad', t('pd_t_fn') + ': ' + errStr(e)); return; }
+  setTimeout(() => { if (PD.test && PD.test.st === 'run' && PD.test.nonce === nonce){ say('bad', t('pd_t_timeout')); pdRefresh(); } }, 25000);
+}
+/* воркер сообщил о пришедшем пуше — если это наша проверка, фиксируем время доставки */
+function pdOnPush(d){
+  try{
+    const m = /[?&]pushtest=([\w-]+)/.exec((d && d.url) || ''); if (!m) return false;
+    if (PD.test && PD.test.st === 'run' && PD.test.nonce === m[1]){ const sec = ((Date.now() - PD.test.t0) / 1000).toFixed(1); PD.test = { st: 'ok', text: t('pd_t_ok').replace('{S}', sec) }; audit('push_test', 'push', state.user.id, { sec: +sec }); pdRefresh(); }
+    return true;
+  }catch(e){ return false; }
+}
+
 function pbCardHtml(){
   const supported = pbSupported();
   const denied = supported && Notification.permission === 'denied';
   const on = !!PB.sub;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-  const kinds = [['job'],['pickup'],['approve'],['overdue'],['reset'],['order'],['chat']];   // v1.09.13: + порядок задач
+  const kinds = [['job'],['pickup'],['approve'],['edit'],['overdue'],['reset'],['order'],['chat']];   // v1.09.22: + «документ изменён»   // v1.09.13: + порядок задач
   if (bnVisible()) kinds.push(['bn_alert']);
   if (isAdmin() || (state.user && state.user.bn_service === true)) kinds.push(['bn_service']);
   const rows = kinds.map(([k]) => `
@@ -4364,7 +4703,7 @@ function pbCardHtml(){
    уведомлению открывает приложение, как у обычного пуша).
    ===================================================================== */
 function pushTestKinds(){
-  const kinds = ['job', 'pickup', 'approve', 'overdue', 'reset', 'order', 'chat'];
+  const kinds = ['job', 'pickup', 'approve', 'edit', 'overdue', 'reset', 'order', 'chat'];
   if (bnVisible()) kinds.push('bn_alert');
   if (isAdmin() || (state.user && state.user.bn_service === true)) kinds.push('bn_service');
   return kinds.filter(k => pbPref(k));
@@ -4764,7 +5103,8 @@ function featCardHtml(){
     ${chk('tpl_on', org.tpl_on !== false, t('tpl_on_lbl'), 'tpl_tip')}
     ${chk('day_move_on', org.day_move_on === true, t('day_move_lbl'), 'day_move_tip')}
     ${chk('rep_kind_only', org.rep_kind_only === true, t('rep_kind_lbl'), 'rep_kind_tip')}
-    <div class="qty-line" id="chat-keep-row" style="margin-top:8px"><span class="name">${ic('chat')} ${t('chat_keep_lbl')} ${tipQ('chat_keep_hint')}</span>${orgStepperHtml('chat_keep_days', org.chat_keep_days ?? 180, 0, 730, 30)}</div><!-- v1.09.19 -->
+    <label class="chk-line" id="chat-keep-chk" style="margin-top:8px"><input type="checkbox" ${(+org.chat_keep_days || 0) > 0 ? 'checked' : ''} onchange="App.setOrgNum('chat_keep_days', this.checked ? 180 : 0, 0, 730)"> ${t('chat_keep_on')} ${tipQ('chat_keep_hint')}</label>
+    ${(+org.chat_keep_days || 0) > 0 ? `<div class="qty-line" id="chat-keep-row" style="margin-top:6px"><span class="name">${ic('chat')} ${t('chat_keep_lbl')}</span>${orgStepperHtml('chat_keep_days', +org.chat_keep_days, 7, 730, 30)}</div>` : ''}<!-- v1.09.24: по умолчанию — без ограничения -->
     ${chk('code_remind', org.code_remind === true, t('code_remind_lbl'), 'code_tip')}
     <div class="form-row" style="margin:2px 0 6px"><span class="lbl">${t('code_months')}</span>
       ${orgStepperHtml('code_remind_months', codeMonths(), 1, 60, 1)}</div>
@@ -6781,6 +7121,7 @@ async function authOfflineResume(){
       dlog('📶 auth: связь вернулась — сессия обновлена, офлайн-сеанс закрыт');
       if (await mfaGate(session)) return;
       try{ await pendingFlush(); }catch(e){}
+      try{ await chOutboxFlush(); }catch(e){}
       try{ await syncNow(true); }catch(e){}
       try{ if (mediaQ.length) mediaFlush(); }catch(e){}
       render(); return;
@@ -6940,6 +7281,7 @@ async function sbSignIn(login, pass){
   if (await mfaGate(data.session)) return;   // v1.08.33/92: код 2FA — до загрузки данных
   try{ await afterSbLogin(data.session); }catch(e){ dlog('⛔ afterSbLogin:', e); }
   ckInit(true).then(() => { try{ if (state.screen === 'home' || state.screen === 'chat') render(); }catch(e){} });
+  setTimeout(() => pbSyncSub(true), 4000);                                     // v1.09.22
   render(); checkPickupBanner(true);
 }
 async function sbSignUp(login, pass, name, invite){
@@ -7247,6 +7589,7 @@ const IC = {
   download: '<path d="M12 3.8v10.4"/><path d="M7.4 9.8l4.6 4.6 4.6-4.6"/><path d="M4.4 19.6h15.2"/>',
   trash: '<path d="M4.4 6.4h15.2"/><path d="M9 6.4V4.9a1.4 1.4 0 0 1 1.4-1.4h3.2A1.4 1.4 0 0 1 15 4.9v1.5"/><path d="M6.4 6.4l1 13.1a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l1-13.1"/><path d="M10 10.4v6.2"/><path d="M14 10.4v6.2"/>',
   star: '<path d="M12 3.6l2.6 5.2 5.7.8-4.1 4 1 5.7-5.2-2.7-5.2 2.7 1-5.7-4.1-4 5.7-.8z"/>',
+  bell_off: '<path d="M8.6 5.2A5.6 5.6 0 0 1 17.6 9.6c0 2.3.5 4 1.2 5.2"/><path d="M6.5 8.4c-.1.4-.1.8-.1 1.2 0 4.3-1.9 6.6-2.4 7.2h11.6"/><path d="M10 20.4a2.2 2.2 0 0 0 4 0"/><path d="M3.6 3.6l16.8 16.8"/>',
   bell: '<path d="M6.2 18.4h11.6c-1.3-1.6-1.8-3.2-1.8-5.2v-2.6a4 4 0 1 0-8 0v2.6c0 2-.5 3.6-1.8 5.2z"/><path d="M12 3.4v1.8"/><path d="M10 21a2.2 2.2 0 0 0 4 0"/>',
   owl: '<path d="M4.6 6.6C4.6 3.7 7 3.2 7.6 5.3 8.8 4.1 10.3 3.5 12 3.5s3.2.6 4.4 1.8c.6-2.1 3-1.6 3 1.3.6 1.3 1 2.8 1 4.4 0 5-3.7 8.6-8.4 8.6S3.6 16 3.6 11c0-1.6.4-3.1 1-4.4z"/><circle cx="9" cy="10.4" r="2.4"/><circle cx="15" cy="10.4" r="2.4"/><path d="M12 13l-1.2 1.6h2.4z"/>',
   map: '<path d="M3.6 6.4l5.4-2 6 2 5.4-2v13.2l-5.4 2-6-2-5.4 2z"/><path d="M9 4.4v13.2"/><path d="M15 6.4v13.2"/>',
@@ -9192,6 +9535,7 @@ function sectionFaqHtml(key){
   S.chat = H(`
     <h4>${ic('chat')} Сообщения</h4>
     <ul>
+      <li><b>Новое в v1.09.24.</b> <b>Модерация группы</b>: создатель группы назначает админов группы (шестерёнка → «Сделать админом»); создатель и админы группы удаляют любое сообщение в ней, правят название и состав. <b>«Не беспокоить»</b>: колокольчик в шапке переписки выключает её уведомления (сообщения с пометкой «Важно» всё равно приходят); такая переписка не идёт в красный счётчик. <b>Без связи</b>: сообщение остаётся в переписке с пометкой «ждёт сети» и уходит само, когда связь вернулась (снимки без связи не отправляются). <b>Поиск</b>: поле над списком ищет и людей, и сами сообщения — нажатие ведёт к сообщению. <b>«Переслать»</b> — в меню сообщения. <b>Бухгалтер</b> в чате — с правами менеджера. Срок хранения переписки по умолчанию не ограничен (Настройки → Прочие функции).</li>
       <li><b>Группы</b> (v1.09.20): кнопка «+ Группа» над списком — название и участники. Создать группу может любой сотрудник; добавлять людей — любой участник, убирать — создатель и администратор, выйти может каждый (шестерёнка в шапке группы). Новый участник видит всю историю. Сообщения группы видят только участники; документ можно отправить в группу прямо самолётиком из шапки документа.</li>
       <li><b>Объявления</b> — важное от менеджера и администратора: пишут только они, читают все. <b>Общий чат</b> — пишут и читают все сотрудники. Ниже — <b>личная переписка</b> с любым сотрудником: её видят только двое участников, админ чужую переписку не читает.</li>
       <li><b>Документ в сообщении</b>: кнопка с листком слева от поля ввода — выберите задачу, пропозал или ремонт. В чате документ виден карточкой (комплекс, юнит, номер, дата, статус, сумма); нажатие сразу его открывает. Что человек увидит, решают его права: нет доступа — карточка с замком.</li>
@@ -9199,6 +9543,7 @@ function sectionFaqHtml(key){
       <li><b>Нажмите на сообщение</b> (v1.09.19) — откроется меню: реакция 👍 ❤️ 😂 😮 😢 🙏 (одна от человека, повторное нажатие снимает), <b>«Ответить»</b> (цитата над сообщением, нажатие на неё ведёт к исходному), «Копировать», <b>«Изменить»</b> (своё, в течение суток — появится пометка «изменено»), «Удалить».</li>
       <li><b>Фото</b> (v1.09.19): кнопка с камерой — снимок из галереи или с камеры. Он уменьшается на телефоне (до 1600 px, около 350 КБ), в ленте видна миниатюра, нажатие открывает снимок целиком и даёт скачать. Ссылки в тексте нажимаются. Сообщения одного человека подряд собираются «пачкой». На значке приложения — число непрочитанного.</li>
       <li><b>Важно</b> — значок с восклицательным знаком у менеджера и админа: сообщение выделяется красным, push приходит с пометкой ❗.</li>
+      <li><b>Стопка уведомлений</b> (v1.09.22): личные сообщения от одного человека и сообщения одной группы складываются в ОДНО уведомление — «Иван (3)» и последние строки; новое сообщение звучит заново. На Android и ПК у уведомления кнопки «Открыть» и «Закрыть». Число непрочитанного держится на значке приложения, даже когда TechLog закрыт. Если уведомления не приходят — Настройки → Уведомления → «Доставка уведомлений»: проверка всей цепочки и памятка для вашей марки телефона.</li>
       <li><b>Уведомления</b>: каждое сообщение приходит push-уведомлением (Настройки → Уведомления → «Сообщения в чате»), нажатие открывает нужную переписку. В открытом приложении — красный счётчик на пункте меню, плашка «Новые сообщения» на главной и подсказка с кнопкой «Открыть чат».</li>
       <li><b>Защита переписки</b> (v1.09.21): у каждого сотрудника — личный ключ; полная инструкция — ниже, в конце этого раздела.</li>
       <li>На ПК <b>Enter</b> отправляет, Shift+Enter — новая строка; на телефоне Enter — новая строка, отправка кнопкой. Своё сообщение можно удалить крестиком; админ может удалить любое сообщение в «Объявлениях» и «Общем чате».</li>
@@ -9206,6 +9551,7 @@ function sectionFaqHtml(key){
   `, `
     <h4>${ic('chat')} Messages</h4>
     <ul>
+      <li><b>New in v1.09.24.</b> <b>Group moderation</b>: the group creator appoints group admins (gear → "Make admin"); the creator and group admins delete any message in it, edit the name and members. <b>Do not disturb</b>: the bell in the conversation header turns its notifications off (messages marked Important still arrive); such a conversation does not feed the red counter. <b>Offline</b>: a message stays in the conversation marked "waiting for network" and goes out by itself once the connection is back (pictures are not sent offline). <b>Search</b>: the box above the list finds both people and messages — a tap jumps to the message. <b>Forward</b> is in the message menu. <b>The accountant</b> has manager rights in the chat. Chat history is kept without a limit by default (Settings → Other functions).</li>
       <li><b>Groups</b> (v1.09.20): the "+ Group" button above the list — a name and members. Any employee can create a group; any member can add people, the creator and the admin can remove them, anyone can leave (the gear in the group header). A new member sees the whole history. Group messages are visible to members only; a document can be sent to a group with the paper plane in the document header.</li>
       <li><b>Announcements</b> — important notes from the manager and the admin: only they post, everyone reads. <b>Team chat</b> — every employee writes and reads. Below — <b>direct conversations</b> with any employee: only the two participants see them, the admin does not read other people's conversations.</li>
       <li><b>Document in a message</b>: the sheet button left of the input — pick a job, proposal or repair. In the chat the document is a card (complex, unit, number, date, status, amount); one tap opens it. What a person sees depends on their rights: no access — a locked card.</li>
@@ -9213,6 +9559,7 @@ function sectionFaqHtml(key){
       <li><b>Tap a message</b> (v1.09.19) for its menu: a reaction 👍 ❤️ 😂 😮 😢 🙏 (one per person, tapping again removes it), <b>Reply</b> (a quote above the message, tapping it jumps to the original), Copy, <b>Edit</b> (your own, within 24 hours — it gets an "edited" mark), Delete.</li>
       <li><b>Photos</b> (v1.09.19): the camera button — a picture from the gallery or the camera. It is downsized on the phone (to 1600 px, about 350 KB), the feed shows a thumbnail, a tap opens the full picture and lets you download it. Links in text are clickable. Consecutive messages from one person are grouped. The app icon shows the unread count.</li>
       <li><b>Important</b> — the exclamation button for the manager and the admin: the message is highlighted in red, the push comes with ❗.</li>
+      <li><b>Notification stack</b> (v1.09.22): direct messages from one person and messages of one group fold into ONE notification — "Ivan (3)" and the latest lines; a new message alerts again. On Android and desktop the notification has Open and Close buttons. The unread count stays on the app icon even while TechLog is closed. If notifications do not arrive — Settings → Notifications → "Notification delivery": a check of the whole chain and a guide for your phone brand.</li>
       <li><b>Notifications</b>: every message arrives as a push (Settings → Notifications → "Chat messages"), a tap opens the right conversation. In the open app — a red counter on the menu item, a "New messages" banner on Home and a hint with an "Open chat" button.</li>
       <li><b>Chat protection</b> (v1.09.21): every employee has a personal key; the full guide is below, at the end of this section.</li>
       <li>On a PC <b>Enter</b> sends and Shift+Enter makes a new line; on a phone Enter is a new line and the button sends. You can delete your own message with the cross; the admin can delete any message in Announcements and Team chat.</li>
@@ -12242,7 +12589,7 @@ function viewSettings(){
 
   ${fold('docs', t('docs_set_card'), 'clipboard', docsCardHtml())}
   ${fold('ck', t('ck_title'), 'key', ckCardHtml())}
-  ${fold('push', t('push_pop_card'), 'bell', pbCardHtml() + popCardHtml())}
+  ${fold('push', t('push_pop_card'), 'bell', pbCardHtml() + pdCardHtml() + popCardHtml())}
   ${fold('cam', t('cam_card'), 'camera', camCardHtml())}
   ${isAcc() ? '' : fold('study', t('st_card'), 'grad', studyCardHtml())}
   ${fold('dgs', t('dgs_card'), 'steth', dgsCardHtml())}
@@ -12301,7 +12648,7 @@ function setIdxBuild(){
   };
   const prof = document.getElementById('set-profile');
   if (prof) scan(prof, 'profile', t('set_nav_profile'));
-  const secs = { docs: docsCardHtml, ck: ckCardHtml, push: () => pbCardHtml() + popCardHtml(), cam: camCardHtml, study: studyCardHtml, dgs: dgsCardHtml, intg: intgCardHtml, tvc: tvModeHtml, misc: miscCardHtml };
+  const secs = { docs: docsCardHtml, ck: ckCardHtml, push: () => pbCardHtml() + pdCardHtml() + popCardHtml(), cam: camCardHtml, study: studyCardHtml, dgs: dgsCardHtml, intg: intgCardHtml, tvc: tvModeHtml, misc: miscCardHtml };
   _foldForce = true;
   try{
     settingsNavItems().forEach(([k, lbl]) => {
@@ -12742,7 +13089,8 @@ function initSW(){
     location.reload();
   });
   navigator.serviceWorker.addEventListener('message', (e) => {
-    if (e.data?.type === 'PUSH'){ try{ pushInAppPop(e.data); }catch(_e){} return; }          // v1.09.13
+    if (e.data?.type === 'PUSH'){ try{ if (!pdOnPush(e.data)) pushInAppPop(e.data); }catch(_e){} return; }          // v1.09.13; v1.09.22: проверочный пуш — в экран доставки
+    if (e.data?.type === 'PUSH_RESUB'){ pbSyncSub(true); return; }                              // v1.09.22: браузер сменил адрес подписки
     if (e.data?.type === 'OPEN_URL'){ try{ deepLinkApply(e.data.url); }catch(_e){} return; }   // v1.09.13
     if (e.data?.type !== 'SW_ACTIVATED') return;
     if (e.data.version === APP_VERSION) return;
@@ -13844,10 +14192,10 @@ const App = {
     autosaveDraft(); render();
   },
   fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} fontSavePref(); render(); },
-  chGroupNew, chgPick, chGroupCreate, chGroupInfo, chGroupRename, chGroupAdd, chGroupKick, chGroupDelete,
+  chGroupNew, chgPick, chGroupCreate, chGroupInfo, chGroupRename, chGroupAdd, chGroupKick, chGroupDelete, chGroupRoleSet, chMuteToggle, chGoMsg, chForward, chForwardGo,
   chMenu, chReply, chEdit, chCtxOff, chCopy, chReact, chJump, chMore, chImgPick, chImgOff, chImgOpen,
   chOpen, chBack, chQ, chInput, chKey, chImp, chAttach, chDocOpen, chPick, chPickList(q){ return chPickListHtml(q); }, chSend, chDel,
-  clEdAdd, clEdDel, clEdMove, clEdCopy, apAdd, apDel, apCsv, apGoDoc, ckPwModal, ckPwGo, ckModeModal, ckModeGo, ckHelp, docShare, dsPick, dsCopy, dsSys, dsSend, boardOrderSave, boardOrderCancel, staffKindSet, orientSet, densSet, densToggle, canvasSet, mqLogDownload, mqLogCopy, netHideSet, trkLabel, trkLabelSave, setSearch, setSearchClear, setSearchGo,                                          // v1.09.05: плотность интерфейса, холст ПК-режима
+  clEdAdd, clEdDel, clEdMove, clEdCopy, apAdd, apDel, apCsv, apGoDoc, pdTest, pdRefresh, ckPwModal, ckPwGo, ckModeModal, ckModeGo, ckHelp, docShare, dsPick, dsCopy, dsSys, dsSend, boardOrderSave, boardOrderCancel, staffKindSet, orientSet, densSet, densToggle, canvasSet, mqLogDownload, mqLogCopy, netHideSet, trkLabel, trkLabelSave, setSearch, setSearchClear, setSearchGo,                                          // v1.09.05: плотность интерфейса, холст ПК-режима
   navStack(){ return NAV.stack.map(x => x.s); }, back(){ return backPressed(); },   // v1.09.06: история экранов; то же, что системная «назад» (без выхода)
   menuLabels(v){ menuLabelsSet(v); }, menuRowsStep,                                  // v1.09.02
   __test_menu(){ return { labels: menuLabels(), rows: menuRows(), key: menuLabKey(), bottom: tabbarIsBottom() }; }, __test_tabbarCols: tabbarCols,
@@ -14523,8 +14871,9 @@ function canonUrl(loc){
        и при медленной сети документ ещё не был известен) */
     if (state.user) setTimeout(() => { pickRestore().catch(e => dlog('⛔ pickRestore:', e)); }, 400);
     try{ if (state.user) setTimeout(() => ckInit(false).then(() => { if (CK.st === 'need_pw' && (state.screen === 'home' || state.screen === 'chat')) render(); }), 2500); }catch(e){}   // v1.09.21
+    try{ if (state.user) setTimeout(() => pbSyncSub(false), 6000); }catch(e){}   // v1.09.22: подписка устройства сверяется с сервером
     try{ orientApply(true); }catch(e){}                                        // v1.09.13: поворот экрана — настройка устройства
-    if (state.user && (deepLinkDay(location.href) || deepLinkDoc(location.href) || deepLinkChat(location.href))) setTimeout(() => { try{ deepLinkApply(location.href); }catch(e){} }, 500);   // v1.09.13: ссылка из уведомления
+    if (state.user && (deepLinkDay(location.href) || deepLinkDoc(location.href) || deepLinkChat(location.href) || /[?&]pushtest=/.test(location.href))) setTimeout(() => { try{ deepLinkApply(location.href); }catch(e){} }, 500);   // v1.09.13: ссылка из уведомления
     initLaunchQueue();                                                // v1.08.79
     try{ w2Init(); }catch(e){}                                        // v1.08.80: журнал Способа 2 (перезапуск во время камеры)
     setTimeout(() => { try{ ct2Resume(); }catch(e){ dlog('⛔ ct2Resume:', e); } }, 900);   // v1.08.80: продолжить тест Способа 2

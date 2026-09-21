@@ -3270,7 +3270,8 @@ html.tl-desktop .modal.cl-modal{max-width:min(760px,94vw);width:min(760px,94vw)}
 /* ===== v1.09.20: чат — группы ===== */
 .ch-top{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .ch-top .ch-q{flex:1 1 auto;min-width:0;margin-bottom:0}
-.ch-newg{flex:0 0 auto;height:44px;min-height:44px;padding:0 12px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+/* v1.09.24: width:auto обязателен — у .btn ширина 100%, и на ПК кнопка «+ Группа» занимала всю строку, сжимая поле поиска до нуля (дефект с 1.09.20) */
+.ch-newg{flex:0 0 auto;width:auto;height:44px;min-height:44px;padding:0 12px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
 .ch-wrap.narrow .ch-newg{width:48px;padding:0;justify-content:center}
 .ch-wrap.narrow .ch-newg span{display:none}
 .ch-sec{font-size:.68rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);margin:8px 4px 0}
@@ -3291,3 +3292,30 @@ html.tl-desktop .modal.cl-modal{max-width:min(760px,94vw);width:min(760px,94vw)}
 .ck-help h4{margin:14px 0 6px}
 .ck-help p,.ck-help li{line-height:1.5}
 .ck-help ul{margin:0 0 4px 18px;padding:0}
+
+/* ===== v1.09.22: экран «Доставка уведомлений» ===== */
+.pd-row{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-top:1px dashed var(--line,#31434C);line-height:1.35}
+.pd-row:first-child{border-top:0}
+.pd-row .grow{min-width:0;overflow-wrap:anywhere}
+.pd-ic{flex:0 0 22px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:.8rem;margin-top:1px;border:2px solid currentColor}
+.pd-ok .pd-ic{color:var(--green)} .pd-bad .pd-ic{color:var(--red)} .pd-warn .pd-ic{color:var(--orange)} .pd-wait .pd-ic{color:var(--dim)}
+.pd-bad > .grow > div:first-child{color:var(--red);font-weight:800}
+.pd-test{margin-top:8px;padding:8px 10px;border-radius:10px;border:2px solid var(--line,#31434C);line-height:1.4}
+.pd-test.pd-ok{border-color:var(--green);color:var(--green);font-weight:800}
+.pd-test.pd-bad{border-color:var(--red)}
+.pd-memo{margin-top:12px;padding:10px;border-radius:12px;background:var(--panel-2,#1b2a32)}
+.pd-memo .ic{width:16px;height:16px;vertical-align:-3px}
+
+/* ===== v1.09.23: собеседник заблокирован — переписка остаётся, строка приглушена ===== */
+.ch-th.off{opacity:.62}
+.ch-th.off .ch-ava{border-style:dashed}
+
+/* ===== v1.09.24: «не беспокоить», очередь неотправленного, поиск по сообщениям, роли в группе ===== */
+.ch-muted{display:inline-flex;color:var(--dim)} .ch-muted .ic{width:14px;height:14px}
+.ch-n.mut{background:var(--dim);color:var(--bg,#0f171b)}
+.ch-ib.on-mute{color:var(--orange);border-color:var(--orange)}
+.ch-msg.pending .ch-bub{opacity:.7;border-style:dashed}
+.ch-wait{color:var(--orange);font-weight:800}
+.ch-hit{min-height:48px}
+.ch-hit mark{background:rgba(255,200,0,.35);color:inherit;border-radius:3px;padding:0 1px}
+.chg-m .chg-role{white-space:nowrap}

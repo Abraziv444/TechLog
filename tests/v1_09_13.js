@@ -29,12 +29,12 @@ async function boot(br, o, who){
   t('манифест: orientation = any (установленное приложение поворачивается)', man.orientation === 'any');
   const push = fs.readFileSync(path.join(ROOT, 'supabase/functions-dashboard/push/index.ts'), 'utf8');
   t('Edge Function push: утренняя сводка раз в сутки, ссылка на день, версия 1.09.13',
-    push.includes('async function enqueueMorning') && push.includes('push_morning_day') && push.includes('"./?day=" + today') && push.includes('PUSH_VER = "1.09.13"') && push.includes('searchParams.get("morning")'));
+    push.includes('async function enqueueMorning') && push.includes('push_morning_day') && push.includes('"./?day=" + today') && /PUSH_VER = "1\.09\.(1[3-9]|[2-9]\d)"/.test(push) && push.includes('searchParams.get("morning")'));
   const sql = fs.readFileSync(path.join(ROOT, 'supabase/update-to-1_09_13.sql'), 'utf8');
   t('SQL: staff_kind, rep_kind_only, board_order_notify только для админа и менеджера; включает 1.09.12',
     sql.includes('add column if not exists staff_kind text') && sql.includes('add column if not exists rep_kind_only boolean not null default false')
     && sql.includes("not in ('admin','manager') then raise exception 'FORBIDDEN'") && sql.includes("perform public.push_enqueue(p_user, 'order'") && sql.includes('bn_device_label'));
-  t('файл расписания cron-push-morning.sql на месте', fs.existsSync(path.join(ROOT, 'supabase/cron-push-morning.sql')));
+  t('файл расписания push-setup.sql на месте', fs.existsSync(path.join(ROOT, 'supabase/push-setup.sql')));
 
   const br = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox'] });
   { console.log('— доска (ПК, админ) —');

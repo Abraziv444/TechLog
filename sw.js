@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.09.21';
+const VERSION = '1.09.24';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -190,28 +190,85 @@ self.addEventListener('fetch', (e) => {
   }
 });
 
-/* v1.08.33: Web Push. Данные приходят JSON'ом {title, body, url}. */
+/* v1.08.33: Web Push. v1.09.22: данные {title, body, url, kind, tag, lines[], n, ts}.
+   · СТОПКА: всё с одинаковым tag (личная переписка с одним человеком, одна группа, общий чат) складывается в ОДНО
+     уведомление — «Иван (3)» и последние строки, как в привычных мессенджерах; новое сообщение звучит заново (renotify).
+   · ЗНАЧОК: счётчик непрочитанных пушей чата живёт в IndexedDB воркера и ставится на значок приложения даже при
+     закрытом TechLog; приложение при открытии ставит точное число само.
+   · ЖУРНАЛ: время и вид последнего полученного пуша — для экрана «Доставка уведомлений».
+   · КНОПКИ: «Открыть» и «Закрыть» (Android, ПК; на iPhone кнопок в веб-уведомлениях нет). */
+function tlIdb(){ return new Promise((res, rej) => { const r = indexedDB.open('techlog-push', 1); r.onupgradeneeded = () => { r.result.createObjectStore('kv'); }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function tlKvGet(k){ try{ const db = await tlIdb(); return await new Promise((res) => { const q = db.transaction('kv', 'readonly').objectStore('kv').get(k); q.onsuccess = () => { db.close(); res(q.result); }; q.onerror = () => { db.close(); res(undefined); }; }); }catch(e){ return undefined; } }
+async function tlKvSet(k, v){ try{ const db = await tlIdb(); await new Promise((res) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); tx.oncomplete = res; tx.onerror = res; }); db.close(); }catch(e){} }
+async function tlBadge(delta, abs){
+  let n = abs != null ? abs : ((+(await tlKvGet('badge')) || 0) + delta); if (!(n > 0)) n = 0;
+  await tlKvSet('badge', n);
+  try{ if (self.navigator && self.navigator.setAppBadge){ if (n) await self.navigator.setAppBadge(n); else await self.navigator.clearAppBadge(); } }catch(e){}
+  return n;
+}
+/* чистая функция стопки — её же проверяет автотест: прежние строки + новые, не больше шести, счётчик суммируется */
+function tlStack(prevData, d){
+  let lines = Array.isArray(d.lines) && d.lines.length ? d.lines.map(String) : [String(d.body || '')], count = +d.n || lines.length;
+  if (prevData){ lines = (Array.isArray(prevData.lines) ? prevData.lines : []).concat(lines).slice(-6); count += (+prevData.count || 0); }
+  const base = String(d.title || 'TechLog').replace(/\s\(\d+\)$/, '');
+  return { lines, count, title: count > 1 ? base + ' (' + count + ')' : base, body: lines.slice(-5).join('\n') };
+}
+async function tlShowPush(d){
+  const tag = String(d.tag || ('techlog-' + (d.title || ''))), chat = d.kind === 'chat';
+  let prevData = null;
+  if (chat){ try{ const prev = await self.registration.getNotifications({ tag }); if (prev && prev.length){ prevData = prev[0].data || {}; prev.forEach(n => n.close()); } }catch(e){} }
+  const st = chat ? tlStack(prevData, d) : { lines: [String(d.body || '')], count: 1, title: String(d.title || 'TechLog'), body: String(d.body || '') };
+  const opts = { body: st.body, icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag, renotify: true,
+    timestamp: +d.ts || Date.now(), data: { url: d.url || './', kind: d.kind || '', lines: st.lines, count: st.count, tag },
+    actions: [{ action: 'open', title: 'Открыть' }, { action: 'close', title: 'Закрыть' }] };
+  try{ await self.registration.showNotification(st.title, opts); }
+  catch(e){ delete opts.actions; await self.registration.showNotification(st.title, opts); }        // платформа без кнопок
+}
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_e) { d = { title: 'TechLog', body: e.data && e.data.text() }; }
-  /* v1.09.13: открытому приложению пуш показываем и внутри (подсказка + «Открыть день») */
-  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-    list.forEach((c) => { try { c.postMessage({ type: 'PUSH', title: d.title || '', body: d.body || '', url: d.url || './' }); } catch (_e) {} });
-  }).catch(() => {}));
-  e.waitUntil(self.registration.showNotification(d.title || 'TechLog', {
-    body: d.body || '',
-    icon: './icons/icon-192.png',
-    badge: './icons/icon-192.png',
-    data: { url: d.url || './' },
-    tag: 'techlog-' + (d.title || ''),
-  }));
+  e.waitUntil((async () => {
+    await tlKvSet('last', { at: Date.now(), kind: d.kind || '', title: String(d.title || '').slice(0, 80), url: d.url || '' });
+    let list = []; try{ list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true }); }catch(_e){}
+    /* v1.09.13: открытому приложению пуш показываем и внутри (подсказка + «Открыть день / документ / чат») */
+    list.forEach((c) => { try { c.postMessage({ type: 'PUSH', title: d.title || '', body: d.body || '', url: d.url || './', kind: d.kind || '' }); } catch (_e) {} });
+    if (d.kind === 'chat' && !list.some(c => c.visibilityState === 'visible')) await tlBadge(+d.n || 1);
+    /* v1.09.23 (ревью): TechLog открыт и в фокусе — сообщение чата уже показано подсказкой внутри приложения, системное
+       уведомление поверх него — лишний шум (так же ведут себя мессенджеры). Остальные виды уведомлений и любые пуши на
+       iPhone показываются ВСЕГДА: iOS отзывает подписку у «тихих» пушей, а Chrome требует уведомление, когда окно не в фокусе. */
+    const ios = /iPhone|iPad|iPod/.test((self.navigator && self.navigator.userAgent) || '');
+    if (d.kind === 'chat' && !ios && list.some(c => c.focused && c.visibilityState === 'visible')) return;
+    await tlShowPush(d);
+  })());
 });
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
+  if (e.action === 'close') return;
   const url = (e.notification.data && e.notification.data.url) || './';
   e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-    /* v1.09.13: у живого окна страница не перезагружается — ссылку (?day=…) отдаём ему сообщением */
+    /* v1.09.13: у живого окна страница не перезагружается — ссылку (?day=… / ?doc=… / ?chat=…) отдаём ему сообщением */
     for (const c of list) { if ('focus' in c) { try { c.postMessage({ type: 'OPEN_URL', url }); } catch (_e) {} return c.focus(); } }
     return clients.openWindow(url);
   }));
+});
+/* v1.09.22: браузер сам сменил адрес подписки (бывает после обновлений и чисток) — раньше пуши молча умирали навсегда.
+   Подписываемся заново тем же ключом и помечаем «нужно передать серверу»: у воркера нет входа пользователя, поэтому
+   новый адрес отправит приложение при ближайшем запуске (pbSyncSub). Открытым окнам сообщаем сразу. */
+self.addEventListener('pushsubscriptionchange', (e) => {
+  e.waitUntil((async () => {
+    try{
+      const key = (e.oldSubscription && e.oldSubscription.options && e.oldSubscription.options.applicationServerKey) || (await tlKvGet('vapid'));
+      if (key) await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+      await tlKvSet('resub', { at: Date.now(), old: e.oldSubscription ? e.oldSubscription.endpoint : '' });
+      const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      list.forEach((c) => { try { c.postMessage({ type: 'PUSH_RESUB' }); } catch (_e) {} });
+    }catch(_e){}
+  })());
+});
+/* приложение сообщает воркеру точное число непрочитанного и ключ подписки; отдаёт журнал последнего пуша */
+self.addEventListener('message', (e) => {
+  const m = e.data || {};
+  if (m.type === 'BADGE') e.waitUntil(tlBadge(0, +m.n || 0));
+  if (m.type === 'VAPID' && m.key) e.waitUntil(tlKvSet('vapid', m.key));
+  if (m.type === 'PUSH_LAST' && e.ports && e.ports[0]) e.waitUntil((async () => { e.ports[0].postMessage({ last: await tlKvGet('last'), resub: await tlKvGet('resub'), badge: await tlKvGet('badge') }); })());
 });

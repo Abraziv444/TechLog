@@ -25,7 +25,7 @@ import webpush from "npm:web-push@3.6.7";
    пингует ?send=1 раз в ~2 минуты и сразу после действий-триггеров.
    ===================================================================== */
 
-const PUSH_VER = "1.09.13";
+const PUSH_VER = "1.09.23";
 type Sb = ReturnType<typeof svc>;
 
 async function vapid(s: Sb): Promise<{ pub: string; priv: string }> {
@@ -76,16 +76,14 @@ async function enqueueOverdue(s: Sb) {
   const ids = Object.keys(byTech);
   const { data: profs } = await s.from("profiles")
     .select("id, blocked, push_prefs").in("id", ids);
+  const rows: any[] = [];
   for (const pr of profs ?? []) {
     if (pr.blocked) continue;
     if ((pr.push_prefs?.overdue ?? true) === false) continue;
-    await s.from("push_queue").insert({
-      user_id: pr.id, kind: "overdue",
-      title: "Просроченные пикапы",
-      body: byTech[pr.id] + " шт. ждут забора — откройте главный экран",
-      url: "./",
-    });
+    rows.push({ user_id: pr.id, kind: "overdue", title: "Просроченные пикапы",
+      body: byTech[pr.id] + " шт. ждут забора — откройте главный экран", url: "./" });
   }
+  if (rows.length) await s.from("push_queue").insert(rows);      // v1.09.23: одной вставкой — один толчок от базы
 }
 
 /* v1.09.13: УТРЕННЯЯ СВОДКА (?send=1&morning=1, зовёт cron): каждому сотруднику — сколько пикапов
@@ -113,6 +111,7 @@ async function enqueueMorning(s: Sb): Promise<number> {
   if (!allDue && !allOver) return 0;
   const { data: profs } = await s.from("profiles").select("id, role, blocked, push_prefs");
   let n = 0;
+  const batch: any[] = [];
   for (const pr of profs ?? []) {
     if (pr.blocked || pr.role === "accountant") continue;
     if ((pr.push_prefs?.overdue ?? true) === false) continue;
@@ -121,12 +120,13 @@ async function enqueueMorning(s: Sb): Promise<number> {
     if (!boss && !d && !o) continue;
     const mine = (d || o) ? `у вас — сегодня: ${d} · просрочено: ${o}` : "";
     const firm = boss ? `по фирме — сегодня: ${allDue} · просрочено: ${allOver}` : "";
-    await s.from("push_queue").insert({
-      user_id: pr.id, kind: "overdue", title: "Пикапы на сегодня",
-      body: [mine, firm].filter(Boolean).join(" · "), url: "./?day=" + today,
-    });
+    batch.push({ user_id: pr.id, kind: "overdue", title: "Пикапы на сегодня",
+      body: [mine, firm].filter(Boolean).join(" · "), url: "./?day=" + today });
     n++;
   }
+  /* v1.09.23 (ревью): одной вставкой. По строке на человека — это N отдельных транзакций и N толчков от базы,
+     то есть N одновременных запусков этой же функции ради одной сводки. */
+  if (batch.length) await s.from("push_queue").insert(batch);
   /* обычная сводка просроченных не должна тут же продублировать утреннюю */
   const { data: org } = await s.from("org_settings").select("id").limit(1).maybeSingle();
   if (org) await s.from("org_settings").update({ push_overdue_at: new Date().toISOString() }).eq("id", org.id);
@@ -137,8 +137,16 @@ async function enqueueMorning(s: Sb): Promise<number> {
 async function deliver(s: Sb): Promise<{ sent: number; dropped: number; closed: number }> {
   const keys = await vapid(s);
   const det = { subject: "mailto:push@techlog.app", publicKey: keys.pub, privateKey: keys.priv };
-  const { data: q } = await s.from("push_queue").select("*")
-    .is("sent_at", null).lt("tries", 5).order("created_at").limit(200);
+  /* v1.09.22: строки очереди «захватываются» функцией push_claim (for update skip locked + claimed_at) — расписание,
+     толчок от базы и пинг клиента могут сработать одновременно и раньше отправляли одно уведомление дважды.
+     База ещё без 1.09.22 — работаем по-старому. */
+  let q: any[] | null = null;
+  const cl = await s.rpc("push_claim", { p_limit: 200 });
+  if (!cl.error) q = cl.data as any[];
+  else {
+    const old = await s.from("push_queue").select("*").is("sent_at", null).lt("tries", 5).order("created_at").limit(200);
+    q = old.data as any[];
+  }
   if (!q?.length) return { sent: 0, dropped: 0, closed: 0 };
 
   const uids = [...new Set(q.map((r) => r.user_id))];
@@ -148,16 +156,25 @@ async function deliver(s: Sb): Promise<{ sent: number; dropped: number; closed: 
   for (const sub of subs ?? []) (byUser[sub.user_id] = byUser[sub.user_id] ?? []).push(sub);
 
   /* пикапы одному человеку — одной нотификацией (аренда создаёт по строке на тип) */
-  const items: { rows: any[]; title: string; body: string; url: string; user: string }[] = [];
+  const items: { rows: any[]; title: string; body: string; url: string; user: string; kind?: string; lines?: string[] }[] = [];
   const grouped: Record<string, any[]> = {};
+  /* v1.09.22: сообщения чата — ОДНИМ уведомлением на переписку: личные от одного человека или из одной группы.
+     Ключ переписки — url строки (./?chat=<кто> | ./?chat=g:<группа> | ./?chat=all). */
+  const chats: Record<string, any[]> = {};
   for (const r of q) {
     if (r.kind === "pickup") (grouped[r.user_id] = grouped[r.user_id] ?? []).push(r);
-    else items.push({ rows: [r], title: r.title, body: r.body, url: r.url, user: r.user_id });
+    else if (r.kind === "chat") (chats[r.user_id + "|" + r.url] = chats[r.user_id + "|" + r.url] ?? []).push(r);
+    else items.push({ rows: [r], title: r.title, body: r.body, url: r.url, user: r.user_id, kind: r.kind });
+  }
+  for (const rows of Object.values(chats)) {
+    const last = rows[rows.length - 1];
+    items.push({ rows, title: last.title, body: rows.map((r) => r.body).slice(-4).join("\n"), url: last.url, user: last.user_id,
+                 kind: "chat", lines: rows.map((r) => String(r.body ?? "")).slice(-6) });
   }
   for (const [user, rows] of Object.entries(grouped)) {
     items.push(rows.length === 1
-      ? { rows, title: rows[0].title, body: rows[0].body, url: rows[0].url, user }
-      : { rows, title: "Новые пикапы: " + rows.length,
+      ? { rows, title: rows[0].title, body: rows[0].body, url: rows[0].url, user, kind: "pickup" }
+      : { rows, kind: "pickup", title: "Новые пикапы: " + rows.length,
           body: rows.map((r) => r.body).slice(0, 4).join("; ") + (rows.length > 4 ? "…" : ""),
           url: "./", user });
   }
@@ -172,13 +189,21 @@ async function deliver(s: Sb): Promise<{ sent: number; dropped: number; closed: 
       closed += it.rows.length;
       continue;
     }
-    const payload = JSON.stringify({ title: it.title, body: it.body, url: it.url });
+    /* tag — ключ стопки на телефоне: сервис-воркер складывает в одно уведомление всё с одинаковым tag */
+    const kind = it.kind ?? "info";
+    const tag = kind === "chat" ? "chat:" + it.url.replace(/^.*[?&]chat=/, "") : kind + ":" + it.url;
+    const payload = JSON.stringify({ title: it.title, body: it.body, url: it.url, kind, tag, lines: it.lines ?? [it.body], n: it.rows.length, ts: Date.now() });
+    /* срочность high — спящий Android (Doze) обычные пуши откладывает на десятки минут; срок жизни сутки вместо часа
+       (сводка пикапов — 8 часов: вечером она уже не нужна); topic — пока телефон вне сети, в службе доставки
+       лежит только последнее уведомление переписки, а не десять */
+    const ttl = kind === "overdue" ? 8 * 3600 : 24 * 3600;
+    let topic = ""; try { topic = btoa(unescape(encodeURIComponent(tag))).replace(/[^A-Za-z0-9_-]/g, "").slice(-32); } catch (_e) { topic = ""; }
     let ok = false, err = "";
     for (const sub of list) {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload, { vapidDetails: det, TTL: 3600 });
+          payload, { vapidDetails: det, TTL: ttl, urgency: "high", ...(topic ? { topic } : {}) });
         ok = true;
       } catch (e: any) {
         const code = e?.statusCode ?? 0;
@@ -212,6 +237,9 @@ Deno.serve(async (req) => {
         allowed = !!u?.user;
       }
       if (!allowed) return jres({ error: "FORBIDDEN" }, 403);
+      /* v1.09.22: отметка «кто разбудил» — для экрана «Доставка уведомлений»: расписание, толчок от базы, приложение */
+      const by = req.headers.get("x-cron-key") ? (url.searchParams.get("kick") ? "push_last_kick" : "push_last_cron") : "push_last_ping";
+      try { await s.from("app_secrets").upsert([{ key: by, value: new Date().toISOString() }], { onConflict: "key" }); } catch (_e) { /* не критично */ }
       let morning = 0;
       if (url.searchParams.get("morning")) morning = await enqueueMorning(s);   // v1.09.13
       await enqueueOverdue(s);
@@ -238,6 +266,23 @@ Deno.serve(async (req) => {
           ua: String(b.ua ?? "").slice(0, 200),
         }], { onConflict: "endpoint" });
         return jres({ ok: true });
+      }
+      /* v1.09.22: экран «Доставка уведомлений» */
+      if (b.op === "check") {
+        const { data: subs } = await s.from("push_subs").select("endpoint, ua, created_at").eq("user_id", uid);
+        const { data: marks } = await s.from("app_secrets").select("key, value").in("key", ["push_last_cron", "push_last_kick", "push_last_ping"]);
+        const { data: qq } = await s.from("push_queue").select("sent_at, last_err, created_at, kind").eq("user_id", uid).order("created_at", { ascending: false }).limit(15);
+        const m: Record<string, string> = {}; for (const r of marks ?? []) m[r.key] = r.value;
+        return jres({ ok: true, ver: PUSH_VER, known: !!b.endpoint && (subs ?? []).some((x) => x.endpoint === b.endpoint), devices: (subs ?? []).length,
+          last_cron: m.push_last_cron ?? null, last_kick: m.push_last_kick ?? null, last_ping: m.push_last_ping ?? null,
+          unsent: (qq ?? []).filter((r) => !r.sent_at).length, last_sent: (qq ?? []).find((r) => r.sent_at && !r.last_err)?.sent_at ?? null,
+          last_err: (qq ?? []).find((r) => r.last_err)?.last_err ?? null });
+      }
+      if (b.op === "test") {
+        /* проверочное уведомление самому себе: кладём в очередь и сразу отправляем — путь тот же, что у настоящих */
+        await s.from("push_queue").insert({ user_id: uid, kind: "test", title: "TechLog · проверка доставки", body: String(b.text ?? "Уведомления работают").slice(0, 120), url: "./?pushtest=" + String(b.nonce ?? "").slice(0, 40) });
+        const r = await deliver(s);
+        return jres({ ok: true, ...r });
       }
       if (b.op === "unsub" && b.endpoint) {
         await s.from("push_subs").delete().eq("endpoint", b.endpoint).eq("user_id", uid);

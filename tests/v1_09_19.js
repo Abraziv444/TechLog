@@ -101,7 +101,8 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
     await p.evaluate(() => { localStorage.clear(); localStorage.setItem('techlog_session_v1', 'demo-admin'); localStorage.setItem('techlog_view_mode', 'desktop'); });
     await p.reload(); await p.waitForFunction(() => window.App && document.querySelector('#app').children.length); await p.waitForTimeout(1400);
     await p.evaluate(() => { App.go('settings'); foldSet('misc', true); render(); }); await p.waitForTimeout(500);
-    t('настройка «Хранить переписку, дней» — в «Функциях», по умолчанию 180', await p.evaluate(() => { const r = document.getElementById('chat-keep-row'); return !!r && r.querySelector('input').value === '180'; }));
+    /* v1.09.24: по решению владельца срок хранения по умолчанию НЕ ограничен — в «Функциях» галочка, число дней появляется после неё */
+    t('настройка срока хранения — в «Функциях»; по умолчанию без ограничения (галочка снята)', await p.evaluate(() => { const c = document.querySelector('#chat-keep-chk input'); return !!c && !c.checked && !document.getElementById('chat-keep-row'); }));
     await ctx.close(); }
   await br.close();
   console.log(`\nИтого: пройдено ${ok}, провалено ${bad}`); process.exit(bad ? 1 : 0);

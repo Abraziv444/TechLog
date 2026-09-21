@@ -1698,7 +1698,7 @@ console.log('\n— v1.08.51: учёба —');
     && src.includes("if (!HAS_SB || !isAdmin() || !foldOpen('tvc')) return;") && !src.includes("foldOpen('tvs')")
     && src.includes("Настройки → «Режим телевизора» → «ТВ-экраны»") && src.includes("Settings → “TV mode” → “TV screens”"));
   t('v1.09.00: «Push уведомления и подсказки» одним разделом; «Прочие функции» (Функции, Код приглашения, PWA) — последний раздел перед «Выйти»',
-    src.includes("${fold('push', t('push_pop_card'), 'bell', pbCardHtml() + popCardHtml())}") && !src.includes("fold('pop'")
+    /\$\{fold\('push', t\('push_pop_card'\), 'bell', pbCardHtml\(\) \+ (pdCardHtml\(\) \+ )?popCardHtml\(\)\)\}/.test(src) && !src.includes("fold('pop'")   /* v1.09.22: между ними — «Доставка уведомлений» */
     && !src.includes("fold('feat'") && /\$\{fold\('misc', t\('misc_card'\), 'gear', miscCardHtml\(\)\)\}\n\n  <button class="btn btn-red"(?: id="set-logout")? onclick="App\.logout\(\)">/.test(src)   /* v1.09.09: у кнопки появился id */
     && src.includes("return (isAdmin() ? featCardHtml() + inviteCardHtml() : '') + pwaCardHtml();")
     && (src.match(/onclick="App\.inviteSave\(\)"/g) || []).length === 1 && (src.match(/onclick="App\.updCheck\(\)"/g) || []).length === 1
@@ -2355,6 +2355,36 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
     src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(12000, s.length * 40)))") && src.includes('function toast(msg, kind, ms){')   /* v1.09.12: не дольше 12 с, крестик, нажатие мимо */
     && src.includes("el.classList.add('tap'); el.onclick = () => el.remove();") && src.includes("x.className = 't-x'") && css.includes('.toast.tap{cursor:pointer}'));
 
+  /* ---------- v1.09.24 ---------- */
+  console.log('\n— v1.09.24: модерация групп, «не беспокоить», очередь без связи, поиск, пересылка —');
+  t('v1.09.24: версии (app = sw = version.json, не ниже 1.09.24), SQL-комплект и тест на месте',
+    T.APP_VERSION >= '1.09.24' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_24.sql'
+    && ['update-to-1_09_24.sql', 'full-install-1_09_24.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_24.js'));
+  t('v1.09.24: нет связи — сообщение в очередь, а не отказ; снимки в очередь не берутся; очередь досылается после успешного обмена',
+    src.includes('if (netOff()) return chOutboxPut(k, body, doc, imp, reply, img);') && src.includes("if (img){ toast('⚠ ' + t('ch_out_noimg'), 'err'); return false; }") && src.includes('chOutboxFlush();                                           // v1.09.24'));
+  t('v1.09.24: кнопка «+ Группа» не растягивается на всю строку (иначе поле поиска на ПК сжималось до нуля)',
+    /\.ch-newg\{flex:0 0 auto;width:auto;/.test(fs.readFileSync(ROOT + '/styles.css', 'utf8')));
+
+  /* ---------- v1.09.23 ---------- */
+  console.log('\n— v1.09.23: исправления по ревью чата и пушей —');
+  t('v1.09.23: версии (app = sw = version.json, не ниже 1.09.23), SQL-комплект и тест на месте',
+    T.APP_VERSION >= '1.09.23' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_23.sql'
+    && ['update-to-1_09_23.sql', 'full-install-1_09_23.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_23.js'));
+  t('v1.09.23: проверка ключей всегда ставит отметку времени (иначе карточка настроек зацикливалась); меню сообщения — один слушатель без once',
+    src.includes("finally{ CK.busy = false; CK.pw = ''; CK.at = Date.now(); try{ ckPaint(); }catch(e){} }") && src.includes('function chMenuArm(){') && !/addEventListener\('click', \(e2\)[^\n]*once: true/.test(src));
+
+  /* ---------- v1.09.22 ---------- */
+  console.log('\n— v1.09.22: надёжные push-уведомления —');
+  t('v1.09.22: версии (app = sw = version.json, не ниже 1.09.22), SQL-комплект, push-setup.sql и тест на месте',
+    T.APP_VERSION >= '1.09.22' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_22.sql'
+    && ['update-to-1_09_22.sql', 'full-install-1_09_22.sql', 'push-setup.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_22.js'));
+  t('v1.09.22: подписка сверяется с сервером при запуске и после входа; воркеру передаются точное число для значка и ключ подписки; проверочный пуш не всплывает обычной подсказкой',
+    src.includes('setTimeout(() => pbSyncSub(false), 6000);') && src.includes('setTimeout(() => pbSyncSub(true), 4000);') && src.includes("postMessage({ type: 'BADGE', n })")
+    && src.includes("postMessage({ type: 'VAPID', key: opt })") && src.includes('if (!pdOnPush(e.data)) pushInAppPop(e.data);') && src.includes("if (e.data?.type === 'PUSH_RESUB'){ pbSyncSub(true); return; }"));
+
   /* ---------- v1.09.21 ---------- */
   console.log('\n— v1.09.21: ключи защиты переписки (без шифрования) —');
   t('v1.09.21: версии (app = sw = version.json, не ниже 1.09.21), SQL-комплект и тест на месте',
@@ -2376,7 +2406,7 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
     && ['update-to-1_09_20.sql', 'full-install-1_09_20.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_20.js') && fs.existsSync(ROOT + '/TZ-chat-encryption.md'));
   t('v1.09.20: группы меняются только функциями; сообщения чужой группы отсекаются и на клиенте; до обновления базы чат без групп шлёт старой подписью',
     ['chat_group_create', 'chat_group_rename', 'chat_group_add', 'chat_group_remove', 'chat_group_delete'].every(f => src.includes("'" + f + "'"))
-    && !src.includes("from('chat_groups').insert") && !src.includes("from('chat_members').insert") && src.includes('m.group_id ? chInGroup(m.group_id) :')
+    && !src.includes("from('chat_groups').insert") && !src.includes("from('chat_members').insert") && /m\.group_id \? (chInGroup\(m\.group_id\)|mine\.has\(m\.group_id\)) :/.test(src)   /* v1.09.23: то же условие, с запоминанием */
     && src.includes('const a12 = Object.assign({}, args); delete a12.p_group;'));
 
   /* ---------- v1.09.19 ---------- */
@@ -2457,7 +2487,7 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   t('v1.09.13: версии (app = sw = version.json, не ниже 1.09.13), SQL-комплект, расписание и тест на месте',
     T.APP_VERSION >= '1.09.13' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
     && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_13.sql'
-    && ['update-to-1_09_13.sql', 'full-install-1_09_13.sql', 'cron-push-morning.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_13.js'));
+    && ['update-to-1_09_13.sql', 'full-install-1_09_13.sql', 'push-setup.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_13.js'));
   t('v1.09.13: доска — режим правки (BRD), сохранение разом, RPC board_order_notify, стрелки у пикапов',
     src.includes("const BRD = { on: false, date: '', order: {} };") && src.includes("state.sb.rpc('board_order_notify', { p_user: techId, p_date: iso })")
     && src.includes("App.boardMove('${jobId}',-1,'pk')") && src.includes('function brdEditBarHtml(){'));
