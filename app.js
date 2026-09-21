@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.11';
-const DB_SQL_FILE = 'full-install-1_09_10.sql';
+const APP_VERSION = '1.09.21';
+const DB_SQL_FILE = 'full-install-1_09_21.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -417,7 +417,7 @@ const I18N = {
     blocked_msg: 'Доступ заблокирован администратором',
     registered: 'в приложении с', cant_self: 'Нельзя выполнить для самого себя',
     set_pass: 'Сменить пароль', new_pass: 'Новый пароль (мин. 6 символов)',
-    pass_short: 'Пароль — минимум 6 символов', pass_changed: 'Пароль изменён. Старые сессии сотрудника завершены',
+    pass_short: 'Пароль — минимум 10 символов (им заперт ключ переписки)', pass_changed: 'Пароль изменён. Старые сессии сотрудника завершены',
     rpc_missing: `Обновите БД: выполните supabase/${DB_SQL_FILE} в SQL-редакторе Supabase`,
     demo_only_sb: 'В демо-режиме пароли не используются — доступно только с Supabase',
     price_std_tab: 'Стандартные', price_ind_tab: 'Индивидуальные',
@@ -498,6 +498,10 @@ const I18N = {
     trk_car_inactive: 'Трекер этой машины неактивен (удалён из Bouncie) — выберите другой в карточке машины',
     trk_no_dev: 'Трекера нет в справочнике — сначала «Синхронизировать с Bouncie»',
     trk_inactive_pick: 'Этот трекер неактивен — выберите активный',
+    trk_inact_t: 'Трекер неактивен', trk_inact_q: 'Трекер «{N}» сейчас неактивен: Bouncie его не отдаёт, машины на карте не будет, пока трекер снова не появится в аккаунте Bouncie. Привязать всё равно?', trk_inact_yes: 'Привязать',
+    trk_inact_db: 'База ещё не обновлена: привязка неактивного трекера появится после supabase/update-to-1_09_12.sql',
+    trk_label_t: 'Своё название трекера', trk_label_l: 'Название в TechLog', trk_label_hint: 'Показывается первым в справочнике, в карточке машины и в списках. Пусто — берётся название из Bouncie. Привязка идёт по IMEI — он уникален и не меняется.',
+    trk_label_db: 'База ещё не обновлена — выполните supabase/update-to-1_09_12.sql',
     trk_taken: 'Этот трекер уже стоит на другой машине',
     trk_bad_list: 'Bouncie вернул не список машин',
     veh_tracker: 'Трекер Bouncie', veh_no_tracker: '— без трекера —', veh_no_tracker_l: 'без трекера',
@@ -556,7 +560,7 @@ const I18N = {
     bn_connected: 'Подключено', bn_not_conn: 'Не подключено',
     bn_saved: 'Ключи сохранены', bn_need_cid: 'Сначала введите Client ID',
     bn_ok: 'Связь с Bouncie есть', bn_veh_n: 'машин в аккаунте', bn_conn_done: 'Bouncie подключён',
-    act_veh_save: 'изменён автомобиль', act_veh_del: 'удалён автомобиль',
+    act_trk_label: 'трекеру задано своё название', act_veh_save: 'изменён автомобиль', act_veh_del: 'удалён автомобиль',
     translate_en: 'Перевести на EN', translating: 'Перевожу…', translate_err: 'Перевод не удался (сеть или дневной лимит)',
     /* v1.07.83: двуязычные заметки — русская живёт в приложении, английская печатается в PDF */
     tr_pdf_card: 'Перевод для PDF (EN)',
@@ -749,9 +753,21 @@ const I18N = {
     stock_field: 'у клиентов', stock_avail: 'на складе',
     stock_vis_chk: 'Сотрудники видят остатки склада',
     stock_hint: 'Всего − сломано − в ремонте − у клиентов = на складе. «У клиентов» считается автоматически по невывезенным пикапам.',
-    cl_title: 'Чек-лист перед выездом', cl_edit_hint: 'Каждый пункт — с новой строки. Для английского интерфейса — через вертикальную черту: «Шланги и насадки | Hoses and nozzles» (годится и «русский / English»).',
+    cl_title: 'Чек-лист', cl_short: 'Чек-лист', cl_dir_t: 'Чек-лист вида задачи', cl_items: 'Пунктов',
+    cl_ed_hint: 'Список, который сотрудник видит и отмечает в документе этого вида задачи. Пункты можно добавлять, удалять и переставлять в любой момент — отметки в уже заполненных документах не съезжают: они привязаны к самому пункту, а не к его номеру.',
+    cl_ed_ro: 'Список, который сотрудник видит и отмечает в документе этого вида задачи. Менять его может администратор.',
+    cl_ed_tip: 'Русский текст обязателен, английский — по желанию: он показывается в английском интерфейсе. «Обязательный» — если пункт не отмечен, при сохранении документа как выполненного приложение предупредит (сохранить всё равно даст). Удалённый пункт пропадает из всех документов этого вида; переименованный — остаётся тем же пунктом, отметки сохраняются. До 60 пунктов.',
+    cl_ph_ru: 'Пункт по-русски', cl_ph_en: 'In English (необязательно)', cl_req: 'обяз.', cl_req_t: 'Обязательный пункт: без отметки приложение предупредит при сохранении выполненной задачи',
+    cl_add: 'Пункт', cl_copy: 'Скопировать из вида', cl_copied: 'Добавлено пунктов: {N}', cl_copied_0: 'Все эти пункты уже есть в списке', cl_empty: 'Пунктов пока нет — нажмите «+ Пункт»', cl_max: 'Не больше 60 пунктов',
+    cl_req_warn: 'Не отмечены обязательные пункты чек-листа ({N})', cl_after_save: 'Чек-лист вида задачи настраивается после первого сохранения — кнопкой «Чек-лист» в списке видов задач.',
+    cl_moved: 'отметки в документах сохранены: {N}', act_wt_checklist: 'изменён чек-лист вида задачи',
     proposal_chk: 'PROPOSAL — задачи согласованы заранее',
     pdf_preview: 'Просмотр PDF', pdf_print: 'Печать',
+    pr_dl: 'Скачать PDF', pr_dl_hint: 'Файл сразу уходит в «Загрузки» — как раньше по этой кнопке.',
+    pr_view: 'Предпросмотр и печать', pr_view_hint: 'Бланк откроется в этом окне: проверьте и отправьте на принтер.',
+    pr_view_hint_m: 'На телефоне бланк открывается системным просмотрщиком; печать — через системное меню.',
+    pr_mobile: 'Браузер телефона не показывает PDF внутри страницы. «Открыть PDF» — посмотреть бланк в просмотрщике телефона; «Печать» — передать файл в системное меню, в нём выберите «Печать» или нужный принтер.',
+    pr_open: 'Открыть PDF', pr_share_hint: 'В системном меню выберите «Печать»',
     print_hint: 'Откроется системная печать; если нет — PDF откроется в новой вкладке (меню браузера → Печать).',
     tab_proposals: 'Пропозалы', prop_only: 'Пропозалы доступны менеджеру и администратору.',
     tab_repairs: 'Ремонт', rep_doc: 'Ремонтные работы', rep_new: 'Новый документ ремонта',
@@ -874,6 +890,92 @@ const I18N = {
     mq_empty: 'Всё отправлено', mq_later: 'Позже', mq_doc: 'Документ',
     mq_net_on: 'сеть: онлайн', mq_net_off: 'сеть: офлайн', mq_sb_fail: 'сервер недоступен',
     mq_log: 'Журнал отправки', mq_l_wait: 'ожидание действий…',
+    auth_off_in: 'Нет связи — вход по сохранённой сессии. Работайте: всё сохранится на устройстве и уйдёт на сервер, когда появится сеть', auth_off_expired: 'Сессия устарела — войдите заново. Несохранённые записи и файлы остались на устройстве и уйдут после входа',
+    inv_po_tip: 'Номер заказа клиента (PO) — печатается в шапке бланка. Пусто — берётся PO Number привязанного пропозала. Галочка Proposal ставится сама, когда к задаче привязан пропозал; Emergency call / No water / Second call — отметки бумажного бланка, на сумму не влияют.',
+    brd_edit_t: 'Порядок изменён', brd_edit_n: 'сотрудников: {N}', brd_edit_hint: 'Переставляйте дальше — задачи и пикапы у любых сотрудников. Сотрудники увидят новый порядок только после «Сохранить».',
+    brd_saved: 'Порядок сохранён · сотрудников: {N}', brd_pushed: 'уведомлений: {N}', brd_cancelled: 'Перестановки отменены',
+    brd_other_day: 'Есть несохранённый порядок на {D} — сохраните или отмените его', brd_no_rpc: 'Уведомления о порядке появятся после supabase/update-to-1_09_13.sql',
+    push_k_order: 'Изменён порядок задач', push_open_day: 'Открыть день', act_board_order: 'изменён порядок задач сотрудника',
+    sk_title: 'Профиль сотрудника', sk_tech: 'Техник', sk_repair: 'Ремонтник', sk_helper: 'Помощник',
+    sk_tip: 'Профиль настраивает интерфейс, а не права: доступ к документам у всех сотрудников одинаковый. Сейчас от профиля зависит вкладка «Ремонт» — с галочкой «Раздел „Ремонт“ — только ремонтникам» (Настройки → Прочие функции → Функции) её видят только ремонтники, менеджеры и админ.',
+    rep_kind_lbl: 'Раздел «Ремонт» — только ремонтникам', rep_kind_tip: 'У сотрудников с профилем «Техник» и «Помощник» вкладка «Ремонт» скрыта; менеджер, админ и сотрудники с профилем «Ремонтник» видят её как раньше. Профиль задаётся в Справочники → Сотрудники → ⚙. Права в базе не меняются — это настройка интерфейса.',
+    ori_title: 'Поворот экрана', ori_d: 'настройка этого устройства', ori_any: 'Авто', ori_portrait: 'Книжная', ori_landscape: 'Альбомная',
+    ori_tip: '«Авто» — экран поворачивается вместе с телефоном (если в самом телефоне включён автоповорот). «Книжная» и «Альбомная» закрепляют ориентацию в установленном приложении; во вкладке браузера закрепить нельзя — там поворотом управляет телефон. Раньше установленное приложение было жёстко книжным. После обновления Chrome перечитывает ярлык в течение суток; быстрее — переустановить ярлык с techlog.pro.',
+    ori_nolock: 'Браузер не дал закрепить ориентацию — это работает в установленном приложении (ярлык на экране)',
+    ds_share: 'Поделиться документом', ds_link_t: 'Ссылка на документ', ds_copy: 'Копировать ссылку', ds_sys: 'Поделиться…', ds_copy_fail: 'Не удалось скопировать — выделите ссылку и скопируйте вручную',
+    ds_link_tip: 'Ссылка открывает этот документ в TechLog. Увидит его только тот, у кого есть вход в TechLog и доступ к документу (исполнитель, помощники, те, с кем поделились, менеджер, админ) — посторонний по ссылке ничего не получит.',
+    ds_send_t: 'Отправить в чат TechLog', ds_send: 'Отправить', ds_note_ph: 'Записка к документу (необязательно)', ds_nobody: 'Отправлять некому',
+    ds_send_tip: 'Документ уйдёт сообщением в чат: каждому отмеченному — в личную переписку, «Общий чат» — всем сразу. По умолчанию отмечены менеджеры и админы. В чате документ виден карточкой, нажатие сразу его открывает; придёт и push. Доступ к документу пересылка не выдаёт — сотрудник без доступа увидит карточку с замком.',
+    ds_pick_one: 'Отметьте хотя бы одного получателя', ds_sent: 'Отправлено · получателей: {N}', ds_journal: 'Документы: мне / от меня', ds_tab_in: 'Мне', ds_tab_out: 'От меня',
+    ds_from: 'от', ds_to: 'кому', ds_read: 'прочитано', ds_unread: 'не открыто', ds_empty: 'Пока ничего нет', ds_banner: 'Вам отправили документы', ds_open_doc: 'Открыть документ',
+    ds_k_job: 'Задача', ds_k_prop: 'Пропозал', ds_k_rep: 'Ремонт', ds_save_first: 'Сначала сохраните документ', ds_busy: 'Открыт другой документ с несохранёнными правками — сохраните его',
+    ds_no_access: 'Документ не найден: он удалён или у вас нет к нему доступа', ds_need_sql: 'Пересылка документов появится после supabase/update-to-1_09_14.sql',
+    push_k_share: 'Мне отправили документ', act_doc_share: 'документ отправлен сотрудникам',
+    ap_tab: 'Оплаты и долги', ap_title: 'Оплаты', ap_paid: 'оплачено', ap_due: 'остаток', ap_due_on: 'срок', ap_over: 'просрочено', ap_days: 'дн.', ap_docs: 'док.',
+    ap_paid_full: 'Оплачен полностью', ap_paid_part: 'Оплачен частично', ap_none: 'Оплат пока нет', ap_add: 'Добавить оплату', ap_added: 'Оплата записана', ap_list: 'Оплаты',
+    ap_f_date: 'Дата оплаты', ap_f_amount: 'Сумма', ap_f_method: 'Способ', ap_f_ref: '№ чека / транзакции', ap_f_note: 'Заметка',
+    ap_m_check: 'Чек', ap_m_ach: 'ACH / перевод', ap_m_card: 'Карта', ap_m_cash: 'Наличные', ap_m_other: 'Другое',
+    ap_bad_amount: 'Сумма оплаты должна быть больше нуля', ap_bad_date: 'Проверьте дату оплаты — она не может быть в будущем', ap_del_t: 'Удалить оплату?', ap_del_q: 'Оплата {S} от {D} будет удалена, остаток по документу пересчитается.',
+    ap_k_due: 'Нам должны', ap_k_over: 'Из них просрочено', ap_k_got: 'Поступило за период', ap_terms_l: 'условия', ap_by_cp: 'Долг по контрагентам и срокам', ap_open_docs: 'Неоплаченные документы',
+    ap_cur: 'срок не наступил', ap_b30: '1–30 дн.', ap_b60: '31–60', ap_b90: '61–90', ap_b90p: '90+', ap_no_debt: 'Долгов нет', ap_csv: 'CSV: долги и оплаты',
+    ap_tip: 'Считаются все выставленные документы (не черновики и не архив) за всё время, а не только за выбранный период. Срок оплаты = дата документа + Net N дней (N задаётся на вкладке «Проценты», по умолчанию 30). «Поступило за период» — оплаты с датой внутри периода, выбранного в «Реестре». Оплаты видят только админ и бухгалтер.',
+    ap_need_sql: 'Учёт оплат появится после supabase/update-to-1_09_15.sql', ap_terms_lbl: 'Срок оплаты, дней (Net)', ap_terms_hint: 'От даты документа. 0 — оплата сразу. По умолчанию 30 — как в приписке «NET DUE 30 DAYS» на бланке.',
+    act_acc_pay_add: 'записана оплата', act_acc_pay_del: 'удалена оплата',
+    tab_chat: 'Сообщения', ch_ann: 'Объявления', ch_all: 'Общий чат', ch_ann_sub: 'важное от менеджера и админа — читают все', ch_all_sub: 'пишут и читают все сотрудники',
+    ch_ann_ro: 'В «Объявления» пишут менеджер и администратор', ch_ph: 'Сообщение…', ch_q_ph: 'Найти сотрудника', ch_pick: 'Выберите переписку слева', ch_you: 'Вы',
+    chm_empty: 'Сообщений пока нет — напишите первым', ch_empty_ann: 'Объявлений пока нет', ch_new: 'новые сообщения', ch_important: 'Важно', ch_imp_t: 'Пометить сообщение важным',
+    ch_attach: 'Приложить документ', ch_pick_ph: 'Юнит, комплекс или номер документа', ch_pick_none: 'Ничего не найдено', ch_doc_locked: 'нет доступа или документ удалён',
+    ch_del_t: 'Удалить сообщение?', ch_del_q: 'Сообщение исчезнет у всех участников переписки.', ch_banner: 'Новые сообщения', ch_open: 'Открыть чат', ch_open_later: 'Пришло сообщение — откройте «Сообщения», когда сохраните документ',
+    ch_reply: 'Ответить', ch_copy: 'Копировать', ch_edited: 'изменено', ch_editing: 'Изменение:', ch_edit_empty: 'Сообщение не может стать пустым — удалите его, если оно не нужно',
+    ch_photo: 'Фото', ch_photo_add: 'Приложить фото', ch_img_bad: 'Не удалось обработать снимок — выберите файл JPG, PNG или HEIC', ch_img_loading: 'загружаю снимок целиком…', ch_img_fail: 'Снимок не загрузился — показана миниатюра',
+    ch_img_offline: 'Нет связи — показана миниатюра', ch_img_demo: 'В демо полный снимок живёт до перезагрузки страницы — показана миниатюра', ch_quote_gone: 'сообщение удалено', ch_quote_far: 'Это сообщение выше по переписке — нажмите «Показать более ранние»',
+    ch_more: 'Показать более ранние', ch_need_sql2: 'Ответы, правка, реакции и фото появятся после supabase/update-to-1_09_19.sql', chat_keep_lbl: 'Хранить переписку, дней', chat_keep_hint: '0 — бессрочно. Старше срока сообщения и снимки удаляются из базы сами. По умолчанию 180 дней: чем меньше лежит на сервере, тем меньше может утечь.',
+    chg_sec: 'Группы', ch_sec_dm: 'Сотрудники', chg_new: 'Новая группа', chg_new_s: 'Группа', chg_name: 'Название', chg_name_ph: 'Например: Бригада Magnolia', chg_members: 'Участники', chg_create: 'Создать группу',
+    chg_tip: 'Группу может создать любой сотрудник. Добавлять людей может любой участник, убирать — создатель группы и администратор; выйти может каждый. Новый участник видит всю историю группы. Сообщения группы видят только её участники; администратор видит, какие группы есть и кто в них, но не читает их, если сам не участник.',
+    chg_need_name: 'Дайте группе название', chg_need_members: 'Отметьте хотя бы одного человека', chg_n: 'участников: {N}', chg_info: 'Группа: состав и название', chg_owner: 'создатель', chg_kick: 'Убрать', chg_rename: 'Сохранить название',
+    chg_add: 'Добавить в группу', chg_add_btn: 'Добавить отмеченных', chg_all_in: 'Все сотрудники уже в группе', chg_leave: 'Выйти из группы', chg_leave_q: 'Вы перестанете видеть группу «{G}» и её историю.', chg_kick_q: '{N} перестанет видеть группу «{G}».',
+    chg_delete: 'Удалить группу', chg_delete_q: 'Группа «{G}» и вся её переписка будут удалены у всех участников.', chg_gone: 'группа удалена', chg_need_sql: 'Группы появятся после supabase/update-to-1_09_20.sql',
+    act_chat_group: 'создана группа в чате', act_chat_group_del: 'удалена группа в чате',
+    ck_title: 'Защита переписки', ck_stage_note: 'Этот выпуск заводит и проверяет ключи. Сообщения пока НЕ шифруются — шифрование включится следующим выпуском, когда ключи будут готовы у всех.',
+    ck_st_ready: 'ключ готов', ck_st_need: 'нужен пароль', ck_st_off: 'недоступно на этом устройстве', ck_st_nodb: 'нужен supabase/update-to-1_09_21.sql', ck_fp: 'номер ключа', ck_unsupported: 'Браузер не даёт защищённого хранилища (нужен https и современный браузер)',
+    ck_btn_create: 'Включить защиту переписки', ck_btn_open: 'Открыть ключ на этом устройстве', ck_ban_create: 'Включите защиту переписки — один раз введите пароль', ck_ban_open: 'Откройте ключ переписки на этом устройстве — введите пароль',
+    ck_pw_create_d: 'Приложение создаст ваш личный ключ и запрёт его копию паролем от аккаунта. Введите пароль один раз — он проверяется настоящим входом, опечатка не сможет запереть ключ. Пароль на сервер в открытом виде не уходит и нигде не сохраняется.',
+    ck_pw_open_d: 'Ключ уже есть — он лежит в «сейфе» на сервере, запертом вашим паролем. Введите пароль от аккаунта, чтобы открыть ключ на этом устройстве.',
+    ck_pw_lbl: 'Пароль от аккаунта', ck_pw_lbl_demo: 'Пароль для сейфа (демо: любой от 10 символов)', ck_pw_go: 'Готово', ck_pw_empty: 'Введите пароль', ck_pw_short: 'Минимум 10 символов', ck_bad_pw: 'Пароль неверный', ck_failed: 'Не получилось — попробуйте ещё раз',
+    ck_safe_old: 'Пароль верный, но сейф заперт прежним паролем. Войдите на устройстве, где вы уже в аккаунте, — оно перезапрёт сейф; либо попросите админа задать пароль ещё раз.',
+    ck_opened: 'Ключ переписки открыт на этом устройстве', ck_ready_toast: 'Защита переписки включена — ключ готов',
+    ck_mode: 'Режим хранения ключа', ck_mode_tip: '«С восстановлением»: если вы забудете пароль и потеряете все устройства, доступ вернёт админ; технически админ может открыть ваш ключ. «Полное»: не откроет никто, кроме вас, — потеряли пароль и все устройства, ключ пропал навсегда. Полная инструкция — по кнопке ниже.',
+    ck_m_recover: 'С восстановлением', ck_m_total: 'Полное', ck_m_recover_d: 'Второй замок стоит: если забудете пароль, доступ вернёт администратор.', ck_m_recover_wait: 'Второй замок появится, как только у фирмы будет ключ восстановления (его создаёт администратор, просто войдя в приложение).',
+    ck_m_total_d: 'Второго замка нет: ключ откроете только вы. Потеряете пароль и все устройства — ключ пропадёт навсегда.', ck_full_help: 'Полная инструкция по ключам',
+    ck_total_t: 'Включить полное шифрование?', ck_total_w0: 'Прочитайте до конца — это нельзя будет исправить задним числом.', ck_total_w1: 'Если вы забудете пароль и у вас не останется ни одного устройства, где вы вошли, ваш ключ пропадёт навсегда.',
+    ck_total_w2: 'Вернуть его не сможет никто: ни администратор, ни разработчик. Сброс пароля админом ключ не вернёт.', ck_total_w3: 'Режим защищает ваш ключ. Переписку с человеком в режиме «с восстановлением» технически можно открыть через его ключ.',
+    ck_total_go: 'Понимаю, включить', ck_pw_again: 'Введите пароль ещё раз', ck_total_on: 'Полное шифрование включено: второго замка больше нет',
+    ck_recover_t: 'Вернуть режим «с восстановлением»?', ck_recover_w: 'У сейфа снова появится второй замок — ключ восстановления фирмы. Если забудете пароль и потеряете устройства, доступ вернёт администратор. Технически администратор сможет открыть ваш ключ.', ck_recover_go: 'Вернуть', ck_recover_on: 'Режим «с восстановлением» включён', ck_no_org: 'У фирмы ещё нет ключа восстановления — его создаст администратор, войдя в приложение',
+    ck_staff: 'У кого ключ готов', ck_staff_tip: 'Ключ появляется у сотрудника после входа по паролю в этой версии приложения. Включать шифрование переписки стоит, когда готовы все: у кого ключа нет, тот зашифрованное не прочтёт. Номер ключа можно сверить с сотрудником голосом — он должен совпадать с номером в его настройках.',
+    ck_org: 'Ключ восстановления фирмы', ck_org_mine: 'он у вас есть', ck_org_notmine: 'у вас его пока нет — получите автоматически, когда приложение откроет админ с ключом', ck_org_none: 'ещё не создан', ck_nokey: 'ключа нет',
+    ck_reset_total_t: 'У сотрудника полное шифрование', ck_reset_total_q: 'Его ключ заперт только паролем. Если у него не осталось устройства, где он вошёл, после сброса пароля ключ будет потерян навсегда. Сбросить пароль всё равно?', ck_reset_anyway: 'Сбросить',
+    ck_adm_ok: 'Сейф ключа сотрудника перезаперт новым паролем — доступ к переписке сохранится', ck_adm_total: 'У сотрудника полное шифрование: сейф перезапрёт только его собственное вошедшее устройство', ck_adm_noorg: 'У вас нет ключа фирмы — сейф сотрудника остался под старым паролем. Пусть пароль сбросит админ с ключом фирмы',
+    ck_adm_noescrow: 'У сотрудника ещё нет второго замка — сейф остался под старым паролем; помочь может только его вошедшее устройство', ck_adm_fail: 'Сейф сотрудника перезапереть не удалось — подробности в журнале',
+    act_chat_key_new: 'создан ключ переписки', act_chat_key_rewrap: 'сейф ключа перезаперт', act_chat_key_mode: 'изменён режим хранения ключа', act_chat_org_key: 'создан ключ восстановления фирмы',
+    ch_read: 'прочитано', ch_sent: 'отправлено',
+    ch_need_sql: 'Сообщения появятся после supabase/update-to-1_09_17.sql', push_k_chat: 'Сообщения в чате', act_chat_del: 'админ удалил чужое сообщение',
+    set_q_ph: 'Поиск по настройкам: слово из названия или описания', set_q_none: 'Ничего не найдено — попробуйте другое слово',
+    mq_ctl: 'Контроль отправки файлов / фото / видео', mq_l_noauth: 'вход ещё не подтверждён сервером — отправка повторится сама', mq_l_offsess: 'офлайн-сеанс — файлы уйдут, когда появится связь',
+    day_move_lbl: 'Кнопка «Перенести день» на главной', day_move_tip: 'Пока выключено — кнопки «Перенести день» нет ни у кого. Включите, когда понадобится двигать все черновики и несобранные пикапы дня разом (дождь, форс-мажор). Кнопка стоит в строке дня, рядом с «Картой этого дня», и видна только администратору.',
+    push_dismissed: 'окно разрешения закрыто без ответа', push_fail_t: 'Уведомления не включились', push_fail_b: 'На этом устройстве уведомления сейчас НЕ включены.',
+    push_fail_again: 'Нажмите «Включить на устройстве» ещё раз и в окне браузера выберите «Разрешить». Первое нажатие часто только спрашивает разрешение, а подписка создаётся вторым. На iPhone уведомления работают только из ярлыка на экране «Домой».',
+    push_fail_denied: 'Уведомления для techlog.pro запрещены в браузере — повторное нажатие не поможет. Откройте значок замка слева от адреса (или Настройки сайта) → Уведомления → «Разрешить», затем нажмите кнопку снова.',
+    push_again: 'Включить ещё раз',
+    net_hide_chk: 'Скрыть статистику связи в шапке', net_hide_tip: 'Личная настройка аккаунта. Пока связь в порядке, бейджа с пингом в шапке нет. При «офлайн», «нет сервера» и «нестабильно» бейдж появляется сам — проблему со связью он не спрячет. Проверка связи остаётся в Настройки → Диагностика.',
+    mq_log_dl: 'Скачать лог', mq_log_copy: 'Копировать', mq_try: 'попытка', mq_fail_pop: 'Отправка не удалась',
+    mq_l_docwait: 'документ ещё не сохранён на сервере — файл ждёт, ничего не потеряно',
+    mq_l_noacc: 'сервер не дал доступ к документу, файл остался в очереди',
+    mq_why_nodoc: 'документа больше нет ни на устройстве, ни на сервере — файл убран из очереди',
+    mq_why_werr: 'сам документ не сохранился на сервере — сначала исправьте ошибку записи документа',
+    mq_why_foreign: 'документ чужой и с вами им не делились — попросите исполнителя поделиться или админа назначить вас',
+    mq_why_unknown: 'сервер не видит этот документ под вашим входом: он ещё не дошёл до сервера, удалён другим сотрудником или сессия устарела — откройте документ и нажмите «Сохранить», затем «Повторить отправку»',
+    mq_e_big: 'файл больше лимита сервера', mq_e_limit: 'лимит файлов на документ исчерпан', mq_e_locked: 'документ апрувлен — файлы под замком',
+    mq_e_auth: 'вход устарел — войдите заново', mq_e_kind: 'сервер не знает такой вид файла', mq_e_net: 'нет связи с сервером или Google',
     mq_l_start: 'старт отправки', mq_l_files: 'файл(ов) в очереди',
     mq_l_sent: 'отправлено', mq_l_left: 'осталось в очереди',
     mq_l_busy: 'отправка уже идёт — подождите', mq_l_none: 'ничего не отправлено',
@@ -919,7 +1021,7 @@ const I18N = {
     cv_hint: 'У телефона и планшета экран уже 980 точек, а раскладка компьютера (меню слева, доска во всю ширину, «минимум сотрудников на экране») включается только от этой ширины — поэтому в режиме «ПК» телефон показывал обычную телефонную вёрстку. Теперь страница рисуется на холсте выбранной ширины и уменьшается под экран — так же, как «Версия для ПК» в браузере; увеличить нужное место можно щипком. «Авто» — холст 1100 точек. Чем шире холст, тем больше помещается и тем мельче буквы; масштаб мельче 45% не ставится — такая ширина просто недоступна, а телефон в книжной ориентации остаётся с телефонной раскладкой. Настройка хранится на устройстве, а не в профиле: у каждого экрана она своя. Лучше всего работает вместе с компактной плотностью.',
     ml_title: 'Названия пунктов меню', ml_auto: 'Авто', ml_on: 'Показать', ml_off: 'Скрыть',
     ml_hint: 'Личная настройка аккаунта, своя для режима «Телефон» и режима «ПК»; хранится в профиле и подхватывается на другом устройстве. «Авто» — как раньше: на узком экране (до 430 px) остаются одни значки, на широком подписи видны. «Показать» — подписи видны всегда, даже на маленьком экране; если в одном ряду они обрезаются, добавьте ряды меню. «Скрыть» — только значки; название пункта видно во всплывающей подсказке при наведении.',
-    mr_title: 'Рядов меню на телефоне', mr_d: 'Нижнее меню в режиме «Телефон»: от 1 до 5 рядов',
+    mr_title: 'Рядов меню на телефоне', mr_d: 'Нижнее меню в режиме «Телефон»: от 1 до 5 рядов. Пока не выбирали — тесное меню само встаёт в 2 ряда',
     mr_hint: 'Личная настройка аккаунта. Пункты нижнего меню делятся поровну на выбранное число рядов — в каждом ряду становится меньше кнопок, и подписи помещаются целиком. Число рядов считается из расчёта четыре пункта на ряд, поэтому короткое меню на пять рядов не дробится — рядов получится меньше, чем выбрано. Содержимое экрана, кнопка «+» и подсказки снизу сами поднимаются над меню. В режиме «ПК» меню стоит колонкой слева, настройка на него не влияет.',
     font_reset: 'Обычный', font_demo: 'Так будет выглядеть текст',
     mq_all_ok: 'Все фото и видео отправлены', mq_sending: 'Идёт отправка фото и видео',
@@ -1316,7 +1418,7 @@ const I18N = {
     stat_7d: '7д', stat_30d: '30д', stat_90d: '90д',
     price_size_note: 'если включён размер', gd_own_folder: '(своя папка)', gd_arch_inv: 'архив / Invoices',
     bn_no_resp: 'нет ответа функции',
-    err_sbjs: 'supabase-js не загрузился (CDN). Проверьте интернет и обновите страницу.',
+    err_sbjs: 'supabase-js не загрузился (vendor/supabase.umd.js). Обновите страницу; не помогло — «Сбросить кеш и перезагрузить».',
     err_sync_all: 'sync: все таблицы недоступны — ', m_no_worker: 'нет воркера', m_timeout: 'таймаут',
     bk_log_export: '# TechLog — выгрузка бэкапа —', bk_log_import: '# TechLog — загрузка из бэкапа —',
     bk_no_table: 'таблицы нет — пропущена',
@@ -1650,7 +1752,7 @@ const I18N = {
     blocked_msg: 'Access blocked by the administrator',
     registered: 'joined', cant_self: 'You can’t do this to yourself',
     set_pass: 'Change password', new_pass: 'New password (min 6 chars)',
-    pass_short: 'Password must be at least 6 characters', pass_changed: 'Password changed. Old sessions were revoked',
+    pass_short: 'Password must be at least 10 characters (it locks the chat key)', pass_changed: 'Password changed. Old sessions were revoked',
     rpc_missing: `Update the DB: run supabase/${DB_SQL_FILE} in the Supabase SQL editor`,
     demo_only_sb: 'Demo mode has no passwords — available with Supabase only',
     price_std_tab: 'Standard', price_ind_tab: 'Individual',
@@ -1731,6 +1833,10 @@ const I18N = {
     trk_car_inactive: 'The tracker of this vehicle is inactive (removed from Bouncie) — pick another one in the vehicle card',
     trk_no_dev: 'The tracker is not in the directory — "Sync with Bouncie" first',
     trk_inactive_pick: 'This tracker is inactive — pick an active one',
+    trk_inact_t: 'Inactive tracker', trk_inact_q: 'Tracker "{N}" is inactive now: Bouncie does not report it, the car will not be on the map until the tracker is back in the Bouncie account. Link it anyway?', trk_inact_yes: 'Link',
+    trk_inact_db: 'The database is not updated yet: linking an inactive tracker needs supabase/update-to-1_09_12.sql',
+    trk_label_t: 'Own tracker name', trk_label_l: 'Name in TechLog', trk_label_hint: 'Shown first in the directory, in the vehicle card and in lists. Empty — the Bouncie name is used. Linking goes by IMEI — it is unique and never changes.',
+    trk_label_db: 'The database is not updated yet — run supabase/update-to-1_09_12.sql',
     trk_taken: 'This tracker is already on another vehicle',
     trk_bad_list: 'Bouncie did not return a vehicle list',
     veh_tracker: 'Bouncie tracker', veh_no_tracker: '— no tracker —', veh_no_tracker_l: 'no tracker',
@@ -1789,7 +1895,7 @@ const I18N = {
     bn_connected: 'Connected', bn_not_conn: 'Not connected',
     bn_saved: 'Keys saved', bn_need_cid: 'Enter the Client ID first',
     bn_ok: 'Bouncie connection OK', bn_veh_n: 'vehicles in the account', bn_conn_done: 'Bouncie connected',
-    act_veh_save: 'vehicle changed', act_veh_del: 'vehicle deleted',
+    act_trk_label: 'tracker got an own name', act_veh_save: 'vehicle changed', act_veh_del: 'vehicle deleted',
     translate_en: 'Translate to EN', translating: 'Translating…', translate_err: 'Translation failed (network or daily limit)',
     tr_pdf_card: 'Translation for PDF (EN)',
     tr_pdf_hint: 'Only English is printed in the PDF. The Russian text stays in the app.',
@@ -1975,9 +2081,21 @@ const I18N = {
     stock_field: 'on site', stock_avail: 'available',
     stock_vis_chk: 'Staff can see warehouse stock',
     stock_hint: 'Total − broken − in repair − on site = available. “On site” is computed from pending pickups.',
-    cl_title: 'Pre-trip checklist', cl_edit_hint: 'One item per line. To show English in the English interface, split the line with a vertical bar: “<Russian text> | <English text>” (“Russian / English” works too).',
+    cl_title: 'Checklist', cl_short: 'Checklist', cl_dir_t: 'Work type checklist', cl_items: 'Items',
+    cl_ed_hint: 'The list an employee sees and ticks in a document of this work type. Items can be added, removed and reordered at any time — ticks in documents already filled in do not shift: they are tied to the item itself, not to its number.',
+    cl_ed_ro: 'The list an employee sees and ticks in a document of this work type. Only the admin can change it.',
+    cl_ed_tip: 'Russian text is required, English is optional and is shown in the English interface. "Required" — if the item is not ticked, the app warns when the document is saved as done (it still lets you save). A deleted item disappears from all documents of this type; a renamed one stays the same item and keeps its ticks. Up to 60 items.',
+    cl_ph_ru: 'Item in Russian', cl_ph_en: 'In English (optional)', cl_req: 'req.', cl_req_t: 'Required item: without a tick the app warns when a done job is saved',
+    cl_add: 'Item', cl_copy: 'Copy from type', cl_copied: 'Items added: {N}', cl_copied_0: 'All those items are already in the list', cl_empty: 'No items yet — press "+ Item"', cl_max: 'No more than 60 items',
+    cl_req_warn: 'Required checklist items are not ticked ({N})', cl_after_save: 'The work type checklist is set up after the first save — with the Checklist button in the work type list.',
+    cl_moved: 'ticks kept in documents: {N}', act_wt_checklist: 'work type checklist changed',
     proposal_chk: 'PROPOSAL — approved earlier',
     pdf_preview: 'Preview PDF', pdf_print: 'Print',
+    pr_dl: 'Download PDF', pr_dl_hint: 'The file goes straight to Downloads — what this button used to do.',
+    pr_view: 'Preview and print', pr_view_hint: 'The form opens in this window: check it and send it to the printer.',
+    pr_view_hint_m: 'On a phone the form opens in the system viewer; printing goes through the system menu.',
+    pr_mobile: 'A phone browser cannot show a PDF inside the page. "Open PDF" shows the form in the phone viewer; "Print" hands the file to the system menu — pick Print or your printer there.',
+    pr_open: 'Open PDF', pr_share_hint: 'Pick "Print" in the system menu',
     print_hint: 'System print will open; otherwise the PDF opens in a new tab (browser menu → Print).',
     tab_proposals: 'Proposals', prop_only: 'Proposals are for managers and admins.',
     tab_repairs: 'Repair', rep_doc: 'Repair works', rep_new: 'New repair document',
@@ -2100,6 +2218,92 @@ const I18N = {
     mq_empty: 'Everything uploaded', mq_later: 'Later', mq_doc: 'Document',
     mq_net_on: 'network: online', mq_net_off: 'network: offline', mq_sb_fail: 'server unreachable',
     mq_log: 'Upload log', mq_l_wait: 'waiting for actions…',
+    auth_off_in: 'No connection — signed in with the saved session. Keep working: everything is stored on the device and goes to the server once the network is back', auth_off_expired: 'The session is stale — sign in again. Unsaved records and files stay on the device and will be sent after sign-in',
+    inv_po_tip: 'Customer purchase order number — printed in the form header. Empty — the PO Number of the linked proposal is used. The Proposal box ticks itself when a proposal is linked; Emergency call / No water / Second call are marks of the paper form and do not change the total.',
+    brd_edit_t: 'Order changed', brd_edit_n: 'employees: {N}', brd_edit_hint: 'Keep rearranging — jobs and pickups of any employee. Employees see the new order only after Save.',
+    brd_saved: 'Order saved · employees: {N}', brd_pushed: 'notifications: {N}', brd_cancelled: 'Changes discarded',
+    brd_other_day: 'There is an unsaved order for {D} — save or discard it first', brd_no_rpc: 'Order notifications need supabase/update-to-1_09_13.sql',
+    push_k_order: 'Job order changed', push_open_day: 'Open day', act_board_order: 'employee job order changed',
+    sk_title: 'Employee profile', sk_tech: 'Technician', sk_repair: 'Repairman', sk_helper: 'Helper',
+    sk_tip: 'The profile tunes the interface, not the permissions: every employee has the same access to documents. Right now it drives the Repairs tab — with "Repairs section — repairmen only" (Settings → Other functions → Functions) only repairmen, managers and the admin see it.',
+    rep_kind_lbl: 'Repairs section — repairmen only', rep_kind_tip: 'Employees with the Technician or Helper profile do not see the Repairs tab; the manager, the admin and Repairman-profile employees see it as before. The profile is set in Directories → Employees → ⚙. Database permissions do not change — this is an interface setting.',
+    ori_title: 'Screen rotation', ori_d: 'a setting of this device', ori_any: 'Auto', ori_portrait: 'Portrait', ori_landscape: 'Landscape',
+    ori_tip: '"Auto" — the screen rotates with the phone (if auto-rotate is on in the phone itself). "Portrait" and "Landscape" lock the orientation in the installed app; a browser tab cannot be locked — the phone decides there. The installed app used to be hard-locked to portrait. After the update Chrome re-reads the shortcut within a day; faster — reinstall the shortcut from techlog.pro.',
+    ori_nolock: 'The browser refused to lock the orientation — it works in the installed app (home-screen shortcut)',
+    ds_share: 'Share document', ds_link_t: 'Link to the document', ds_copy: 'Copy link', ds_sys: 'Share…', ds_copy_fail: 'Could not copy — select the link and copy it manually',
+    ds_link_tip: 'The link opens this document in TechLog. Only someone who can sign in to TechLog and has access to the document (assignee, helpers, people it is shared with, manager, admin) will see it — an outsider gets nothing from the link.',
+    ds_send_t: 'Send to TechLog chat', ds_send: 'Send', ds_note_ph: 'A note to go with the document (optional)', ds_nobody: 'Nobody to send to',
+    ds_send_tip: 'The document goes as a chat message: to each ticked person privately, or to everyone via Team chat. Managers and admins are ticked by default. In the chat the document is a card — one tap opens it; a push arrives too. Sending does not grant access — an employee without access sees a locked card.',
+    ds_pick_one: 'Tick at least one recipient', ds_sent: 'Sent · recipients: {N}', ds_journal: 'Documents: to me / from me', ds_tab_in: 'To me', ds_tab_out: 'From me',
+    ds_from: 'from', ds_to: 'to', ds_read: 'read', ds_unread: 'not opened', ds_empty: 'Nothing here yet', ds_banner: 'Documents sent to you', ds_open_doc: 'Open document',
+    ds_k_job: 'Job', ds_k_prop: 'Proposal', ds_k_rep: 'Repair', ds_save_first: 'Save the document first', ds_busy: 'Another document with unsaved changes is open — save it first',
+    ds_no_access: 'Document not found: it was deleted or you have no access to it', ds_need_sql: 'Document sending needs supabase/update-to-1_09_14.sql',
+    push_k_share: 'A document was sent to me', act_doc_share: 'document sent to employees',
+    ap_tab: 'Payments & A/R', ap_title: 'Payments', ap_paid: 'paid', ap_due: 'balance', ap_due_on: 'due', ap_over: 'overdue', ap_days: 'd', ap_docs: 'docs',
+    ap_paid_full: 'Paid in full', ap_paid_part: 'Partially paid', ap_none: 'No payments yet', ap_add: 'Add payment', ap_added: 'Payment recorded', ap_list: 'Payments',
+    ap_f_date: 'Payment date', ap_f_amount: 'Amount', ap_f_method: 'Method', ap_f_ref: 'Check / transaction #', ap_f_note: 'Note',
+    ap_m_check: 'Check', ap_m_ach: 'ACH / wire', ap_m_card: 'Card', ap_m_cash: 'Cash', ap_m_other: 'Other',
+    ap_bad_amount: 'The payment amount must be greater than zero', ap_bad_date: 'Check the payment date — it cannot be in the future', ap_del_t: 'Delete the payment?', ap_del_q: 'Payment {S} of {D} will be deleted and the document balance recalculated.',
+    ap_k_due: 'Receivable', ap_k_over: 'Of which overdue', ap_k_got: 'Received in the period', ap_terms_l: 'terms', ap_by_cp: 'A/R by customer and age', ap_open_docs: 'Unpaid documents',
+    ap_cur: 'not due yet', ap_b30: '1–30 d', ap_b60: '31–60', ap_b90: '61–90', ap_b90p: '90+', ap_no_debt: 'Nothing is owed', ap_csv: 'CSV: A/R and payments',
+    ap_tip: 'All issued documents count (no drafts, no archive), for all time — not only the selected period. Due date = document date + Net N days (N is set on the Rates tab, 30 by default). "Received in the period" — payments dated inside the period chosen in the Register. Payments are visible to the admin and the accountant only.',
+    ap_need_sql: 'Payment tracking needs supabase/update-to-1_09_15.sql', ap_terms_lbl: 'Payment terms, days (Net)', ap_terms_hint: 'From the document date. 0 — due on receipt. Default 30 — as in the "NET DUE 30 DAYS" line of the form.',
+    act_acc_pay_add: 'payment recorded', act_acc_pay_del: 'payment deleted',
+    tab_chat: 'Messages', ch_ann: 'Announcements', ch_all: 'Team chat', ch_ann_sub: 'important notes from the manager and admin — everyone reads', ch_all_sub: 'all employees write and read',
+    ch_ann_ro: 'Only the manager and the admin post to Announcements', ch_ph: 'Message…', ch_q_ph: 'Find an employee', ch_pick: 'Pick a conversation on the left', ch_you: 'You',
+    chm_empty: 'No messages yet — be the first to write', ch_empty_ann: 'No announcements yet', ch_new: 'new messages', ch_important: 'Important', ch_imp_t: 'Mark the message as important',
+    ch_attach: 'Attach a document', ch_pick_ph: 'Unit, complex or document number', ch_pick_none: 'Nothing found', ch_doc_locked: 'no access or the document was deleted',
+    ch_del_t: 'Delete the message?', ch_del_q: 'The message disappears for everyone in the conversation.', ch_banner: 'New messages', ch_open: 'Open chat', ch_open_later: 'A message arrived — open Messages once you save the document',
+    ch_reply: 'Reply', ch_copy: 'Copy', ch_edited: 'edited', ch_editing: 'Editing:', ch_edit_empty: 'A message cannot become empty — delete it if you do not need it',
+    ch_photo: 'Photo', ch_photo_add: 'Attach a photo', ch_img_bad: 'Could not process the picture — pick a JPG, PNG or HEIC file', ch_img_loading: 'loading the full picture…', ch_img_fail: 'The picture did not load — the thumbnail is shown',
+    ch_img_offline: 'No connection — the thumbnail is shown', ch_img_demo: 'In demo the full picture lives until the page reloads — the thumbnail is shown', ch_quote_gone: 'message deleted', ch_quote_far: 'That message is further up — press "Show earlier"',
+    ch_more: 'Show earlier', ch_need_sql2: 'Replies, editing, reactions and photos need supabase/update-to-1_09_19.sql', chat_keep_lbl: 'Keep chat history, days', chat_keep_hint: '0 — forever. Messages and pictures older than this are deleted from the database automatically. Default 180 days: the less sits on the server, the less can leak.',
+    chg_sec: 'Groups', ch_sec_dm: 'Employees', chg_new: 'New group', chg_new_s: 'Group', chg_name: 'Name', chg_name_ph: 'For example: Magnolia crew', chg_members: 'Members', chg_create: 'Create group',
+    chg_tip: 'Any employee can create a group. Any member can add people, the group creator and the admin can remove them; anyone can leave. A new member sees the whole group history. Group messages are visible to its members only; the admin sees which groups exist and who is in them but does not read them unless a member.',
+    chg_need_name: 'Give the group a name', chg_need_members: 'Tick at least one person', chg_n: 'members: {N}', chg_info: 'Group: members and name', chg_owner: 'creator', chg_kick: 'Remove', chg_rename: 'Save name',
+    chg_add: 'Add to the group', chg_add_btn: 'Add the ticked', chg_all_in: 'Everyone is already in the group', chg_leave: 'Leave the group', chg_leave_q: 'You will no longer see the group "{G}" and its history.', chg_kick_q: '{N} will no longer see the group "{G}".',
+    chg_delete: 'Delete the group', chg_delete_q: 'The group "{G}" and all its messages will be deleted for every member.', chg_gone: 'group deleted', chg_need_sql: 'Groups need supabase/update-to-1_09_20.sql',
+    act_chat_group: 'chat group created', act_chat_group_del: 'chat group deleted',
+    ck_title: 'Chat protection', ck_stage_note: 'This release sets up and checks the keys. Messages are NOT encrypted yet — encryption comes with the next release, once everyone has a ready key.',
+    ck_st_ready: 'key ready', ck_st_need: 'password needed', ck_st_off: 'not available on this device', ck_st_nodb: 'needs supabase/update-to-1_09_21.sql', ck_fp: 'key number', ck_unsupported: 'The browser offers no protected storage (https and a modern browser are required)',
+    ck_btn_create: 'Turn on chat protection', ck_btn_open: 'Open the key on this device', ck_ban_create: 'Turn on chat protection — enter your password once', ck_ban_open: 'Open the chat key on this device — enter your password',
+    ck_pw_create_d: 'The app creates your personal key and locks a copy of it with your account password. Enter the password once — it is verified by a real sign-in, so a typo cannot lock the key. The password never goes to the server in the clear and is not stored anywhere.',
+    ck_pw_open_d: 'The key already exists — it sits in a "safe" on the server locked with your password. Enter your account password to open the key on this device.',
+    ck_pw_lbl: 'Account password', ck_pw_lbl_demo: 'Safe password (demo: any, 10+ characters)', ck_pw_go: 'Done', ck_pw_empty: 'Enter the password', ck_pw_short: 'At least 10 characters', ck_bad_pw: 'Wrong password', ck_failed: 'It did not work — try again',
+    ck_safe_old: 'The password is right, but the safe is locked with the previous one. Sign in on a device where you are already signed in — it will re-lock the safe; or ask the admin to set the password once more.',
+    ck_opened: 'The chat key is open on this device', ck_ready_toast: 'Chat protection is on — the key is ready',
+    ck_mode: 'Key storage mode', ck_mode_tip: '"With recovery": if you forget the password and lose every device, the admin restores access; technically the admin could open your key. "Full": nobody but you — lose the password and all devices and the key is gone for good. The full guide is behind the button below.',
+    ck_m_recover: 'With recovery', ck_m_total: 'Full', ck_m_recover_d: 'The second lock is in place: if you forget the password, the administrator restores access.', ck_m_recover_wait: 'The second lock appears as soon as the company has a recovery key (an administrator creates it simply by signing in).',
+    ck_m_total_d: 'No second lock: only you can open the key. Lose the password and all devices and the key is gone for good.', ck_full_help: 'Full guide to the keys',
+    ck_total_t: 'Turn on full encryption?', ck_total_w0: 'Read to the end — this cannot be fixed afterwards.', ck_total_w1: 'If you forget the password and no device stays signed in, your key is lost for good.',
+    ck_total_w2: 'Nobody can bring it back: not the administrator, not the developer. An admin password reset does not restore the key.', ck_total_w3: 'The mode protects your key. A conversation with a person in "with recovery" mode can technically be opened through their key.',
+    ck_total_go: 'I understand, turn on', ck_pw_again: 'Enter the password again', ck_total_on: 'Full encryption is on: the second lock is gone',
+    ck_recover_t: 'Return to "with recovery" mode?', ck_recover_w: 'The safe gets its second lock back — the company recovery key. If you forget the password and lose your devices, the administrator restores access. Technically the administrator could open your key.', ck_recover_go: 'Return', ck_recover_on: '"With recovery" mode is on', ck_no_org: 'The company has no recovery key yet — an administrator creates it by signing in',
+    ck_staff: 'Who has a ready key', ck_staff_tip: 'An employee gets a key after signing in with the password in this app version. Turn chat encryption on when everyone is ready: whoever has no key cannot read encrypted messages. You can check a key number with the employee by voice — it must match the number in their settings.',
+    ck_org: 'Company recovery key', ck_org_mine: 'you hold it', ck_org_notmine: 'you do not hold it yet — you get it automatically when an admin with the key opens the app', ck_org_none: 'not created yet', ck_nokey: 'no key',
+    ck_reset_total_t: 'This employee uses full encryption', ck_reset_total_q: 'Their key is locked by the password only. If they have no signed-in device left, the key is lost for good after the reset. Reset the password anyway?', ck_reset_anyway: 'Reset',
+    ck_adm_ok: 'The employee key safe was re-locked with the new password — chat access is kept', ck_adm_total: 'The employee uses full encryption: only their own signed-in device can re-lock the safe', ck_adm_noorg: 'You do not hold the company key — the employee safe stays under the old password. Let an admin with the company key reset the password',
+    ck_adm_noescrow: 'The employee has no second lock yet — the safe stays under the old password; only their signed-in device can help', ck_adm_fail: 'Could not re-lock the employee safe — see the event log',
+    act_chat_key_new: 'chat key created', act_chat_key_rewrap: 'key safe re-locked', act_chat_key_mode: 'key storage mode changed', act_chat_org_key: 'company recovery key created',
+    ch_read: 'read', ch_sent: 'sent',
+    ch_need_sql: 'Messages need supabase/update-to-1_09_17.sql', push_k_chat: 'Chat messages', act_chat_del: 'admin deleted someone else\'s message',
+    set_q_ph: 'Search settings: a word from the name or description', set_q_none: 'Nothing found — try another word',
+    mq_ctl: 'Upload control: files / photos / videos', mq_l_noauth: 'the sign-in is not confirmed by the server yet — the upload will retry by itself', mq_l_offsess: 'offline session — files go out once the connection is back',
+    day_move_lbl: '"Move day" button on Home', day_move_tip: 'While off, nobody has the "Move day" button. Turn it on when you need to move all drafts and uncollected pickups of a day at once (rain, force majeure). The button sits in the day row next to "Map of this day" and is visible to the admin only.',
+    push_dismissed: 'the permission prompt was closed without an answer', push_fail_t: 'Notifications did not turn on', push_fail_b: 'Notifications are NOT enabled on this device right now.',
+    push_fail_again: 'Press "Enable on this device" once more and choose "Allow" in the browser prompt. The first press often only asks for the permission, the subscription is created by the second one. On iPhone notifications work only from the Home Screen shortcut.',
+    push_fail_denied: 'Notifications for techlog.pro are blocked in the browser — pressing again will not help. Open the lock icon left of the address (or Site settings) → Notifications → "Allow", then press the button again.',
+    push_again: 'Enable again',
+    net_hide_chk: 'Hide the connection stats in the header', net_hide_tip: 'Personal account setting. While the connection is fine the ping badge is not shown. On "offline", "no server" and "unstable" the badge comes back by itself — it never hides a connection problem. The connection check stays in Settings → Diagnostics.',
+    mq_log_dl: 'Download log', mq_log_copy: 'Copy', mq_try: 'attempt', mq_fail_pop: 'Upload failed',
+    mq_l_docwait: 'the document is not on the server yet — the file waits, nothing is lost',
+    mq_l_noacc: 'the server denied access to the document, the file stays in the queue',
+    mq_why_nodoc: 'the document no longer exists on the device or the server — the file was removed from the queue',
+    mq_why_werr: 'the document itself failed to save on the server — fix the document write error first',
+    mq_why_foreign: 'the document belongs to someone else and is not shared with you — ask the owner to share it or the admin to assign you',
+    mq_why_unknown: 'the server does not see this document under your sign-in: it has not reached the server yet, was deleted by someone else, or the session is stale — open the document, press Save, then Retry upload',
+    mq_e_big: 'the file exceeds the server limit', mq_e_limit: 'the per-document file limit is reached', mq_e_locked: 'the document is approved — files are locked',
+    mq_e_auth: 'the sign-in is stale — sign in again', mq_e_kind: 'the server does not know this file kind', mq_e_net: 'no connection to the server or Google',
     mq_l_start: 'upload started', mq_l_files: 'file(s) queued',
     mq_l_sent: 'uploaded', mq_l_left: 'still queued',
     mq_l_busy: 'upload already running — please wait', mq_l_none: 'nothing uploaded',
@@ -2145,7 +2349,7 @@ const I18N = {
     cv_hint: 'A phone or tablet screen is narrower than 980 points, while the computer layout (menu on the left, full-width board, «minimum staff on screen») only turns on from that width — so in «PC» mode a phone used to show the regular phone layout. Now the page is drawn on a canvas of the chosen width and scaled down to the screen — the same way «Desktop site» works in a browser; pinch to zoom into any spot. «Auto» is a 1100-point canvas. The wider the canvas, the more fits and the smaller the letters; a scale below 45% is never used — such a width is simply unavailable, and a phone held upright keeps the phone layout. The setting is stored on the device, not in the profile: every screen has its own. Works best together with compact density.',
     ml_title: 'Menu item labels', ml_auto: 'Auto', ml_on: 'Show', ml_off: 'Hide',
     ml_hint: 'Personal account setting, separate for «Phone» mode and «PC» mode; it lives in your profile and follows you to another device. «Auto» — as before: on a narrow screen (up to 430 px) only icons remain, on a wide one the labels are visible. «Show» — labels are always visible, even on a small screen; if they get cut off in a single row, add menu rows. «Hide» — icons only; the item name appears in the hover tooltip.',
-    mr_title: 'Menu rows on the phone', mr_d: 'Bottom menu in «Phone» mode: 1 to 5 rows',
+    mr_title: 'Menu rows on the phone', mr_d: 'Bottom menu in «Phone» mode: 1 to 5 rows. Until you choose, a cramped menu switches to 2 rows by itself',
     mr_hint: 'Personal account setting. The bottom menu items are split evenly into the chosen number of rows — fewer buttons per row, so the labels fit in full. The number of rows is worked out at four items per row, so a short menu is not split into five rows — you get fewer rows than chosen. The screen content, the «+» button and bottom pop-ups move up above the menu by themselves. In «PC» mode the menu is a column on the left and this setting does not affect it.',
     font_reset: 'Normal', font_demo: 'This is how text will look',
     mq_all_ok: 'All photos and videos uploaded', mq_sending: 'Uploading photos and videos',
@@ -2540,7 +2744,7 @@ const I18N = {
     stat_7d: '7d', stat_30d: '30d', stat_90d: '90d',
     price_size_note: 'when size is enabled', gd_own_folder: '(own folder)', gd_arch_inv: 'archive / Invoices',
     bn_no_resp: 'no response from the function',
-    err_sbjs: 'supabase-js did not load (CDN). Check the connection and reload the page.',
+    err_sbjs: 'supabase-js did not load (vendor/supabase.umd.js). Reload the page; if it persists — "Clear cache and reload".',
     err_sync_all: 'sync: all tables unavailable — ', m_no_worker: 'no worker', m_timeout: 'timeout',
     bk_log_export: '# TechLog — backup export —', bk_log_import: '# TechLog — restore from backup —',
     bk_no_table: 'table missing — skipped',
@@ -2775,6 +2979,11 @@ function canvasSet(v){
   render();
 }
 
+/* v1.09.12: PO и «Proposal» нового бланка. Свои значения документа — главнее; пусто —
+   подставляются из привязанного пропозала (его PO Number, галочка Proposal = есть привязка). */
+function invPoAuto(j){ const pr = j && j.proposal_id ? propById(j.proposal_id) : null; return pr ? String(pr.po_number || '').trim() : ''; }
+function invPo(j, fd){ return String((fd && fd.po) || '').trim() || invPoAuto(j); }
+function invIsProposal(j, fd){ return !!((fd && fd.f_proposal) || (j && j.proposal_id && propById(j.proposal_id))); }
 function techNamesFor(j){
   const ids = [j.technician_id, ...(j.helper_ids||[])].filter(Boolean);
   const names = ids.map(id => {
@@ -2917,7 +3126,9 @@ function noHelpHtml(){
    заголовки, раскрывает пользователь — выбор помнится на устройстве.
    ===================================================================== */
 const LS_FOLD = 'techlog_fold';
+let _foldForce = false;                       // v1.09.12: сборка индекса поиска по настройкам видит все спойлеры раскрытыми
 function foldOpen(k){
+  if (_foldForce) return true;
   try{ return (JSON.parse(localStorage.getItem(LS_FOLD)) || {})[k] === 1; }catch(e){ return false; }
 }
 function foldSet(k, v){
@@ -2976,13 +3187,26 @@ async function pbCurrentSub(){
   }catch(_e){ PB.sub = null; }
   return PB.sub;
 }
+function pbFailPop(){
+  const denied = (typeof Notification !== 'undefined') && Notification.permission === 'denied';
+  openModal(`${modalHead(t('push_fail_t'), 'bell')}
+    <div class="card" id="push-fail" style="padding:12px;line-height:1.45">
+      <b>${t('push_fail_b')}</b>
+      ${PB.lastErr ? `<div class="tiny" style="margin-top:6px;color:var(--orange)">${esc(PB.lastErr)}</div>` : ''}
+      <div class="tiny" style="margin-top:8px">${t(denied ? 'push_fail_denied' : 'push_fail_again')}</div>
+    </div>
+    <div class="btn-rowpp" style="margin-top:10px">
+      <button type="button" class="btn btn-ghost" onclick="App.closeModal()">${t('close')}</button>
+      ${denied ? '' : `<button type="button" class="btn btn-green" id="push-again" onclick="App.closeModal();App.pbSub()">${ic('bell')} ${t('push_again')}</button>`}
+    </div>`);
+}
 async function pbSubscribe(){
   if (!HAS_SB){ toast(t('demo_sb_only'), 'inf'); return; }
   if (!pbSupported()){ toast('⚠ ' + t('push_unsupported'), 'err'); return; }
   if (PB.busy) return; PB.busy = true;
   try{
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted'){ toast('⚠ ' + t('push_denied'), 'err'); return; }
+    if (perm !== 'granted'){ PB.lastErr = t(perm === 'denied' ? 'push_denied' : 'push_dismissed'); return; }
     const pub = await pbGetPub();
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: pbB64ToU8(pub) });
@@ -2992,8 +3216,16 @@ async function pbSubscribe(){
     toast('✓ ' + t('push_state_on'));
   }catch(e){
     dlog('⛔ pbSubscribe:', e);
-    toast('⚠ ' + (/404|Failed to fetch/.test(String(e)) ? t('push_need_deploy') : errStr(e)), 'err');
-  }finally{ PB.busy = false; render(); }
+    PB.lastErr = /404|Failed to fetch/.test(String(e)) ? t('push_need_deploy') : errStr(e);
+  }finally{
+    PB.busy = false;
+    /* v1.09.12: проверяем результат, а не надеемся: подписки на устройстве нет —
+       объясняем, что уведомления НЕ включились и что кнопку надо нажать ещё раз */
+    let okSub = null; try{ okSub = await pbCurrentSub(); }catch(_e){}
+    render();
+    if (!okSub) pbFailPop();
+    PB.lastErr = '';
+  }
 }
 async function pbUnsubscribe(){
   try{
@@ -3007,6 +3239,1085 @@ async function pbUnsubscribe(){
     toast('✓ ' + t('push_state_off'));
   }catch(e){ dlog('⛔ pbUnsubscribe:', e); }
   render();
+}
+/* v1.09.13: пуш пришёл при открытом приложении — показываем его и внутри: подсказка в общей
+   стопке, у ссылки на день — кнопка «Открыть день». Ссылка из уведомления (?day=ГГГГ-ММ-ДД)
+   открывает главную на этом дне — и при холодном старте, и в уже открытом окне. */
+function deepLinkDay(url){
+  try{ const d = new URL(url, location.href).searchParams.get('day'); return /^\d{4}-\d\d-\d\d$/.test(d || '') ? d : ''; }catch(e){ return ''; }
+}
+function deepLinkDoc(url){
+  try{ const m = /^(job|prop|rep):([0-9a-f-]{8,40})$/i.exec(new URL(url, location.href).searchParams.get('doc') || ''); return m ? { kind: m[1].toLowerCase(), id: m[2] } : null; }catch(e){ return null; }
+}
+function deepLinkChat(url){
+  try{ const v = new URL(url, location.href).searchParams.get('chat') || ''; return (v === 'ann' || v === 'all' || /^(g:)?[A-Za-z0-9_-]{3,40}$/.test(v)) ? v : ''; }catch(e){ return ''; }
+}
+function deepLinkApply(url){
+  const dc = deepLinkChat(url);
+  if (dc && state.user){
+    if (state.screen === 'job' && jobDraft && jobDirty()){ toast('ℹ ' + t('ch_open_later'), 'inf'); return false; }
+    closeModal(); try{ history.replaceState(history.state, '', location.pathname); }catch(e){}
+    chLoad(true).then(() => { if (state.screen === 'chat' && CH.thread === dc) chPaint(); });
+    chOpen(dc); return true;
+  }
+  const dd = deepLinkDoc(url);
+  if (dd && state.user){ dsOpenDoc(dd.kind, dd.id, true); try{ history.replaceState(history.state, '', location.pathname); }catch(e){} return true; }
+  const d = deepLinkDay(url); if (!d || !state.user) return false;
+  if (state.screen === 'job' && jobDraft) return false;                     // документ открыт — не выдёргиваем человека из него
+  closeModal();
+  state.selDate = d; state.weekStart = mondayOf(d); state.screen = isAcc() ? state.screen : 'home';
+  render(); try{ pageScrollTo(0, false); }catch(e){}
+  try{ history.replaceState(history.state, '', location.pathname); }catch(e){}
+  return true;
+}
+function pushInAppPop(d){
+  if (!state.user || !d || !(d.title || d.body)) return;
+  const day = deepLinkDay(d.url || ''), ddoc = deepLinkDoc(d.url || ''), dchat = deepLinkChat(d.url || '');
+  if (dchat){
+    chLoad(true).catch(() => {});
+    if (state.screen === 'chat' && CH.thread === dchat && !document.hidden) return;      // переписка и так на экране — просто обновится
+  }
+  const old = document.getElementById('push-pop'); if (old) old.remove();
+  const el = document.createElement('div');
+  el.id = 'push-pop'; el.className = 'mq-pop';
+  el.innerHTML = `<div class="mq-pop-t">${ic('bell', 'color:var(--blue)')} <span></span></div><div class="tiny"></div>
+    <div class="btn-rowpp" style="margin-top:8px">
+      <button type="button" class="btn btn-ghost sm" data-a="x">${t('close')}</button>
+      ${day ? `<button type="button" class="btn btn-blue sm" data-a="go">${t('push_open_day')} ${fmtDM(day)}</button>` : ''}
+      ${ddoc ? `<button type="button" class="btn btn-blue sm" data-a="go">${t('ds_open_doc')}</button>` : ''}
+      ${dchat ? `<button type="button" class="btn btn-blue sm" data-a="go">${t('ch_open')}</button>` : ''}
+    </div>`;
+  el.querySelector('.mq-pop-t span').textContent = d.title || 'TechLog';
+  el.querySelector('.tiny').textContent = d.body || '';
+  el.addEventListener('click', ev => { const b = ev.target.closest && ev.target.closest('button'); if (!b) return;
+    el.remove(); if (b.dataset.a === 'go') deepLinkApply(d.url); });
+  popHost(el);
+  setTimeout(() => { if (el.isConnected) el.remove(); }, 20000);
+  try{ syncNow(true); }catch(e){}                                            // сам порядок/документ подтянется сразу
+}
+/* =====================================================================
+   v1.09.21 · КЛЮЧИ ЗАЩИТЫ ПЕРЕПИСКИ — шаг «ключи без шифрования».
+   Сообщения пока НЕ шифруются: этот выпуск заводит и проверяет ключи, чтобы ошибка в них была видна на
+   экране, пока вся переписка ещё открыта (TZ-chat-encryption.md, §5). Что появляется:
+   · личный ключ сотрудника (ECDH P-256) — создаётся на устройстве;
+   · «сейф» на сервере: личный ключ, запертый ключом из пароля (PBKDF2-SHA-256, 600 000 итераций, AES-GCM).
+     Вход на новом устройстве по паролю открывает сейф; смена пароля перезапирает только сейф;
+   · копия на устройстве (IndexedDB): неизвлекаемый ключ + копия, запертая ключом устройства, — ею сейф
+     перезапирается, когда пароль сменили или сбросили («восстановление, если есть хотя бы одно устройство»);
+   · ключ фирмы (у администраторов) и второй замок сейфа — режим «с восстановлением» (по умолчанию):
+     админ сбрасывает пароль, и его приложение перезапирает сейф сотрудника новым паролем;
+   · режим «полное шифрование»: второго замка нет; включается через предупреждение и повторный ввод пароля.
+   Пароль и закрытые ключи на сервер в открытом виде не попадают. Только встроенная криптография браузера.
+   ===================================================================== */
+const CK = { st: 'off', pw: '', pwAt: 0, row: null, pubs: [], org: null, orgMine: null, dev: null, busy: false, err: '', at: 0, noDb: false };
+const CK_ITER = 600000, CK_MINPW = 10;
+const ckSub = () => (window.crypto && window.crypto.subtle) || null;
+const ckB64 = buf => { const a = new Uint8Array(buf); let s = ''; for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s); };
+const ckBytes = b64 => { const s = atob(b64), a = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; };
+const ckRand = n => crypto.getRandomValues(new Uint8Array(n));
+function ckSupported(){ return !!(ckSub() && window.indexedDB && window.isSecureContext !== false); }
+/* пароль живёт в памяти не дольше двух минут — ровно чтобы открыть или перезапереть сейф сразу после входа */
+function ckPwSet(pw){ CK.pw = String(pw || ''); CK.pwAt = Date.now(); setTimeout(() => { if (Date.now() - CK.pwAt >= 119000) CK.pw = ''; }, 120000); }
+function ckPwTake(){ const p = (Date.now() - CK.pwAt < 120000) ? CK.pw : ''; return p; }
+
+/* ---------- устройство: IndexedDB ---------- */
+function ckIdb(){ return new Promise((res, rej) => { const r = indexedDB.open('techlog-keys', 1); r.onupgradeneeded = () => { r.result.createObjectStore('k', { keyPath: 'uid' }); }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function ckDevGet(uid_){ const db = await ckIdb(); return new Promise((res, rej) => { const q = db.transaction('k', 'readonly').objectStore('k').get(uid_); q.onsuccess = () => { db.close(); res(q.result || null); }; q.onerror = () => { db.close(); rej(q.error); }; }); }
+async function ckDevPut(rec){ const db = await ckIdb(); return new Promise((res, rej) => { const tx = db.transaction('k', 'readwrite'); tx.objectStore('k').put(rec); tx.oncomplete = () => { db.close(); res(true); }; tx.onerror = () => { db.close(); rej(tx.error); }; }); }
+async function ckDevDel(uid_){ try{ const db = await ckIdb(); await new Promise((res) => { const tx = db.transaction('k', 'readwrite'); tx.objectStore('k').delete(uid_); tx.oncomplete = res; tx.onerror = res; }); db.close(); }catch(e){} }
+
+/* ---------- криптография ---------- */
+async function ckPwKey(pw, saltB64, iter){
+  const base = await ckSub().importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return ckSub().deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: ckBytes(saltB64), iterations: iter || CK_ITER }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function ckSeal(key, bytes){ const iv = ckRand(12); const ct = await ckSub().encrypt({ name: 'AES-GCM', iv }, key, bytes); return { iv: ckB64(iv), ct: ckB64(ct) }; }
+async function ckOpen(key, box){ return new Uint8Array(await ckSub().decrypt({ name: 'AES-GCM', iv: ckBytes(box.iv) }, key, ckBytes(box.ct))); }
+async function ckSafeMake(pw, pkcs8){ const salt = ckB64(ckRand(16)); const k = await ckPwKey(pw, salt, CK_ITER); return Object.assign({ v: 1, kdf: 'PBKDF2-SHA256', iter: CK_ITER, salt }, await ckSeal(k, pkcs8)); }
+async function ckSafeOpen(pw, safe){ const k = await ckPwKey(pw, safe.salt, safe.iter); return ckOpen(k, safe); }          // неверный пароль → исключение
+/* запереть байты на чужой открытый ключ: разовый ключ + ECDH → AES-GCM */
+async function ckSealTo(pubJwk, bytes){
+  const pub = await ckSub().importKey('jwk', pubJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const eph = await ckSub().generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
+  const k = await ckSub().deriveKey({ name: 'ECDH', public: pub }, eph.privateKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+  return Object.assign({ v: 1, epk: await ckSub().exportKey('jwk', eph.publicKey) }, await ckSeal(k, bytes));
+}
+async function ckOpenWith(privKey, box){
+  const epk = await ckSub().importKey('jwk', box.epk, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const k = await ckSub().deriveKey({ name: 'ECDH', public: epk }, privKey, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  return ckOpen(k, box);
+}
+async function ckImportPriv(pkcs8, extractable){ return ckSub().importKey('pkcs8', pkcs8, { name: 'ECDH', namedCurve: 'P-256' }, !!extractable, ['deriveKey', 'deriveBits']); }
+async function ckKeyId(pubJwk){ const h = await ckSub().digest('SHA-256', new TextEncoder().encode(pubJwk.x + '.' + pubJwk.y)); return [...new Uint8Array(h)].slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join(''); }
+function ckFp(id){ return String(id || '').toUpperCase().replace(/(.{4})(?=.)/g, '$1 '); }
+
+/* ---------- сервер (или демо-хранилище) ---------- */
+function ckDemo(){ const d = state.data; d.chat_keys = d.chat_keys || []; d.chat_pubkeys = d.chat_pubkeys || []; d.chat_org_key = d.chat_org_key || null; d.chat_org_holders = d.chat_org_holders || []; return d; }
+async function ckFetch(){
+  const me = state.user.id;
+  if (!HAS_SB){ const d = ckDemo(); CK.row = d.chat_keys.find(r => r.user_id === me) || null; CK.pubs = d.chat_pubkeys.slice(); CK.org = d.chat_org_key; CK.orgMine = (d.chat_org_holders.find(h => h.admin_id === me) || {}).blob || null; return true; }
+  const a = await state.sb.from('chat_keys').select('*').eq('user_id', me).maybeSingle();
+  if (a.error){ CK.noDb = /chat_keys|PGRST205|does not exist|schema cache/i.test(errStr(a.error)); if (!CK.noDb) dlog('⚠ chat_keys:', a.error); return false; }
+  const b = await state.sb.from('chat_pubkeys').select('*'), c = await state.sb.from('chat_org_key').select('*').maybeSingle();
+  CK.row = a.data || null; CK.pubs = b.data || []; CK.org = c.data || null; CK.noDb = false;
+  if (isAdmin()){ const h = await state.sb.from('chat_org_holders').select('blob').eq('admin_id', me).maybeSingle(); CK.orgMine = (h.data && h.data.blob) || null; } else CK.orgMine = null;
+  return true;
+}
+async function ckRpc(fn, args, demo){
+  if (!HAS_SB){ demo(ckDemo()); saveLocal(); return true; }
+  const { error } = await state.sb.rpc(fn, args);
+  if (error){ dlog('⛔ ' + fn + ':', error); CK.err = rpcFail(error, fn); return false; }
+  return true;
+}
+/* ---------- состояние ---------- */
+/* 'off' нет поддержки/базы · 'need_pw' нужен пароль (создать или открыть сейф) · 'ready' ключ на устройстве и сейф на месте */
+async function ckInit(force){
+  if (!state.user || CK.busy) return CK.st;
+  if (!ckSupported()){ CK.st = 'off'; CK.err = t('ck_unsupported'); return CK.st; }
+  if (!force && CK.st === 'ready' && Date.now() - CK.at < 300000) return CK.st;
+  CK.busy = true; CK.err = '';
+  try{
+    if (HAS_SB && netOff()){ return CK.st; }
+    if (!(await ckFetch())){ CK.st = 'off'; return CK.st; }
+    const me = state.user.id, pw = ckPwTake();
+    CK.dev = await ckDevGet(me).catch(() => null);
+    if (CK.row && CK.dev && CK.dev.key_id === CK.row.key_id){
+      CK.st = 'ready';
+      /* пароль только что сменили или сбросили, а сейф заперт старым — перезапираем с устройства */
+      if (pw){ let okPw = true; try{ await ckSafeOpen(pw, CK.row.safe); }catch(e){ okPw = false; } if (!okPw) await ckRewrapFromDevice(pw, 'вход с новым паролем'); }
+    } else if (CK.row){
+      if (pw){ if (!(await ckUnlock(pw, true))) CK.st = 'need_pw'; } else CK.st = 'need_pw';
+    } else if (CK.dev){
+      /* сервер ключа не знает, а устройство знает (базу восстановили из бэкапа) — публикуем заново, нужен пароль для сейфа */
+      if (pw) await ckPublishFromDevice(pw); else CK.st = 'need_pw';
+    } else {
+      if (pw) await ckCreate(pw); else CK.st = 'need_pw';
+    }
+    if (CK.st === 'ready') await ckOrgCare();
+    CK.at = Date.now();
+    return CK.st;
+  }catch(e){ dlog('⛔ ключи переписки:', e); CK.err = errStr(e); return CK.st; }
+  finally{ CK.busy = false; CK.pw = ''; try{ ckPaint(); }catch(e){} }
+}
+async function ckStoreDevice(pkcs8, pubJwk, keyId, mode){
+  const priv = await ckImportPriv(pkcs8, false);                               // рабочий ключ — неизвлекаемый
+  const devKey = await ckSub().generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  const rec = { uid: state.user.id, key_id: keyId, pub: pubJwk, priv, devKey, copy: await ckSeal(devKey, pkcs8), mode: mode || 'recover', at: new Date().toISOString() };
+  await ckDevPut(rec); CK.dev = rec;
+}
+async function ckEscrowFor(pkcs8){ return CK.org && CK.org.pub ? ckSealTo(CK.org.pub, pkcs8) : null; }
+async function ckCreate(pw){
+  const kp = await ckSub().generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey', 'deriveBits']);
+  const pkcs8 = new Uint8Array(await ckSub().exportKey('pkcs8', kp.privateKey)), pub = await ckSub().exportKey('jwk', kp.publicKey);
+  const keyId = await ckKeyId(pub), safe = await ckSafeMake(pw, pkcs8), escrow = await ckEscrowFor(pkcs8), me = state.user.id, now = new Date().toISOString();
+  const okk = await ckRpc('chat_key_put', { p_pub: pub, p_safe: safe, p_escrow: escrow, p_mode: 'recover', p_key_id: keyId, p_replace: false }, d => {
+    d.chat_keys = d.chat_keys.filter(r => r.user_id !== me).concat([{ user_id: me, safe, escrow, mode: 'recover', key_id: keyId, updated_at: now }]);
+    d.chat_pubkeys = d.chat_pubkeys.filter(r => r.user_id !== me).concat([{ user_id: me, pub, mode: 'recover', key_id: keyId, updated_at: now }]); });
+  if (!okk){ CK.st = 'need_pw'; return false; }
+  await ckStoreDevice(pkcs8, pub, keyId, 'recover');
+  await ckFetch(); CK.st = 'ready';
+  audit('chat_key_new', 'profile', me, { key: ckFp(keyId) });
+  dlog('ключ переписки создан: ' + ckFp(keyId) + (escrow ? ' · второй замок (ключ фирмы) поставлен' : ' · ключа фирмы ещё нет — второй замок появится позже'));
+  return true;
+}
+async function ckUnlock(pw, quiet){
+  let pkcs8; try{ pkcs8 = await ckSafeOpen(pw, CK.row.safe); }catch(e){ if (!quiet) CK.err = t('ck_bad_pw'); return false; }
+  const pub = (CK.pubs.find(r => r.user_id === state.user.id) || {}).pub; if (!pub){ CK.err = 'NO_PUB'; return false; }
+  await ckStoreDevice(pkcs8, pub, CK.row.key_id, CK.row.mode); CK.st = 'ready';
+  dlog('ключ переписки открыт паролем на этом устройстве: ' + ckFp(CK.row.key_id));
+  return true;
+}
+async function ckDevPkcs8(){ if (!CK.dev) throw new Error('NO_DEVICE_KEY'); return ckOpen(CK.dev.devKey, CK.dev.copy); }
+async function ckRewrapFromDevice(pw, why){
+  const safe = await ckSafeMake(pw, await ckDevPkcs8()), me = state.user.id;
+  const okk = await ckRpc('chat_key_safe_set', { p_safe: safe }, d => { const r = d.chat_keys.find(x => x.user_id === me); if (r){ r.safe = safe; r.updated_at = new Date().toISOString(); } });
+  if (okk){ if (CK.row) CK.row.safe = safe; dlog('сейф ключа перезаперт с этого устройства (' + why + ')'); audit('chat_key_rewrap', 'profile', me, { why }); }
+  return okk;
+}
+async function ckPublishFromDevice(pw){
+  const pkcs8 = await ckDevPkcs8(), safe = await ckSafeMake(pw, pkcs8), escrow = CK.dev.mode === 'total' ? null : await ckEscrowFor(pkcs8), me = state.user.id, now = new Date().toISOString();
+  const okk = await ckRpc('chat_key_put', { p_pub: CK.dev.pub, p_safe: safe, p_escrow: escrow, p_mode: CK.dev.mode || 'recover', p_key_id: CK.dev.key_id, p_replace: false }, d => {
+    d.chat_keys = d.chat_keys.filter(r => r.user_id !== me).concat([{ user_id: me, safe, escrow, mode: CK.dev.mode || 'recover', key_id: CK.dev.key_id, updated_at: now }]);
+    d.chat_pubkeys = d.chat_pubkeys.filter(r => r.user_id !== me).concat([{ user_id: me, pub: CK.dev.pub, mode: CK.dev.mode || 'recover', key_id: CK.dev.key_id, updated_at: now }]); });
+  if (okk){ await ckFetch(); CK.st = 'ready'; } else CK.st = 'need_pw';
+  return okk;
+}
+/* ---------- ключ фирмы: создать (первый админ), раздать остальным админам, поставить недостающие вторые замки ---------- */
+async function ckOrgPriv(){ if (!CK.orgMine || !CK.dev) return null; return ckImportPriv(await ckOpenWith(CK.dev.priv, CK.orgMine), false); }
+async function ckOrgCare(){
+  const me = state.user.id;
+  if (isAdmin() && !CK.org){
+    const kp = await ckSub().generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey', 'deriveBits']);
+    const pkcs8 = new Uint8Array(await ckSub().exportKey('pkcs8', kp.privateKey)), pub = await ckSub().exportKey('jwk', kp.publicKey), keyId = await ckKeyId(pub);
+    const blob = await ckSealTo(CK.dev.pub, pkcs8);
+    if (await ckRpc('chat_org_key_init', { p_pub: pub, p_key_id: keyId, p_blob: blob }, d => { if (!d.chat_org_key){ d.chat_org_key = { id: 1, pub, key_id: keyId, created_by: me, created_at: new Date().toISOString() }; d.chat_org_holders.push({ admin_id: me, blob }); } })){
+      await ckFetch(); dlog('ключ восстановления фирмы создан: ' + ckFp(keyId)); audit('chat_org_key', 'org', 'key', { key: ckFp(keyId) }); }
+  }
+  /* свой второй замок: ключа фирмы не было, когда создавался мой ключ */
+  if (CK.org && CK.row && CK.row.mode !== 'total' && !CK.row.escrow){
+    const esc = await ckSealTo(CK.org.pub, await ckDevPkcs8());
+    if (await ckRpc('chat_key_mode_set', { p_mode: 'recover', p_escrow: esc }, d => { const r = d.chat_keys.find(x => x.user_id === me); if (r){ r.escrow = esc; r.mode = 'recover'; } })) CK.row.escrow = esc;
+  }
+  /* админ с ключом фирмы выдаёт его другим админам, у которых ключа ещё нет */
+  if (isAdmin() && CK.orgMine){
+    const holders = HAS_SB ? ((await state.sb.rpc('chat_org_holders_list')).data || []) : ckDemo().chat_org_holders.map(h => h.admin_id);
+    const need = (state.data.profiles || []).filter(p => p.role === 'admin' && !p.blocked && p.id !== me && !holders.includes(p.id) && CK.pubs.some(k => k.user_id === p.id));
+    if (need.length){
+      const orgPkcs8 = await ckOpenWith(CK.dev.priv, CK.orgMine);
+      for (const p of need){ const blob = await ckSealTo(CK.pubs.find(k => k.user_id === p.id).pub, orgPkcs8);
+        if (await ckRpc('chat_org_key_grant', { p_admin: p.id, p_blob: blob }, d => { d.chat_org_holders.push({ admin_id: p.id, blob }); })) dlog('ключ фирмы выдан администратору ' + p.display_name); }
+    }
+  }
+}
+/* ---------- режимы ---------- */
+async function ckModeSet(mode, pw){
+  if (CK.st !== 'ready' || !CK.row) return false;
+  try{ await ckSafeOpen(pw, CK.row.safe); }catch(e){ CK.err = t('ck_bad_pw'); return false; }        // повторный ввод пароля — и проверка, и осознанность
+  const me = state.user.id; let esc = null;
+  if (mode === 'recover'){ if (!CK.org){ CK.err = t('ck_no_org'); return false; } esc = await ckSealTo(CK.org.pub, await ckDevPkcs8()); }
+  if (!(await ckRpc('chat_key_mode_set', { p_mode: mode, p_escrow: esc }, d => { const r = d.chat_keys.find(x => x.user_id === me), q = d.chat_pubkeys.find(x => x.user_id === me); if (r){ r.mode = mode; r.escrow = esc; } if (q) q.mode = mode; }))) return false;
+  CK.row.mode = mode; CK.row.escrow = esc; CK.dev.mode = mode; await ckDevPut(CK.dev); await ckFetch();
+  audit('chat_key_mode', 'profile', me, { mode });
+  return true;
+}
+/* ---------- админ сбросил пароль сотруднику: перезапереть его сейф новым паролем (режим «с восстановлением») ---------- */
+async function ckAdminRewrap(uid_, newPw){
+  try{
+    if (!isAdmin() || CK.st !== 'ready') return 'skip';
+    const pubRow = CK.pubs.find(k => k.user_id === uid_); if (!pubRow) return 'nokey';
+    if (pubRow.mode === 'total') return 'total';
+    const org = await ckOrgPriv(); if (!org) return 'noorg';
+    let escrow;
+    if (HAS_SB){ const { data, error } = await state.sb.rpc('chat_key_escrow_get', { p_user: uid_ }); if (error || !data) return 'noescrow'; escrow = data; }
+    else escrow = (ckDemo().chat_keys.find(r => r.user_id === uid_) || {}).escrow;
+    if (!escrow) return 'noescrow';
+    const safe = await ckSafeMake(newPw, await ckOpenWith(org, escrow));
+    const okk = await ckRpc('chat_key_admin_rewrap', { p_user: uid_, p_safe: safe }, d => { const r = d.chat_keys.find(x => x.user_id === uid_); if (r) r.safe = safe; });
+    return okk ? 'ok' : 'fail';
+  }catch(e){ dlog('⛔ перезапирание сейфа сотрудника:', e); return 'fail'; }
+}
+/* ---------- интерфейс: карточка в настройках, запрос пароля, режим, список «у кого ключи готовы» ---------- */
+function ckStateHtml(){
+  const st = CK.st, row = CK.row;
+  const chip = st === 'ready' ? `<span class="chip ok">${ic('check')} ${t('ck_st_ready')}</span>` : st === 'need_pw' ? `<span class="chip warn">${ic('key')} ${t('ck_st_need')}</span>` : `<span class="chip">${t(CK.noDb ? 'ck_st_nodb' : 'ck_st_off')}</span>`;
+  return `<div id="ck-state">${chip}${row && st === 'ready' ? ` <span class="tiny">${t('ck_fp')}: <b class="ck-fp">${ckFp(row.key_id)}</b></span>` : ''}
+    ${CK.err ? `<div class="tiny" style="color:var(--orange);margin-top:4px">${esc(CK.err)}</div>` : ''}</div>`;
+}
+function ckCardHtml(){
+  const st = CK.st, mode = (CK.row && CK.row.mode) || 'recover';
+  setTimeout(() => { if (state.user && state.screen === 'settings' && Date.now() - CK.at > 15000) ckInit(false); }, 0);
+  const others = (state.data.profiles || []).filter(p => !p.blocked);
+  const ready = others.filter(p => CK.pubs.some(k => k.user_id === p.id));
+  return `<div class="card" id="ck-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('key')} ${t('ck_title')} <button type="button" class="tipq" id="ck-help-btn" aria-label="?" onclick="event.stopPropagation();App.ckHelp()">?</button></div>
+    <div class="tiny" style="margin-bottom:8px">${t('ck_stage_note')}</div>
+    ${ckStateHtml()}
+    ${st === 'need_pw' ? `<button type="button" class="btn btn-green" id="ck-unlock" style="margin-top:10px" onclick="App.ckPwModal()">${ic('key')} ${t(CK.row ? 'ck_btn_open' : 'ck_btn_create')}</button>` : ''}
+    ${st === 'ready' ? `<div style="font-weight:800;margin:12px 0 6px">${t('ck_mode')} ${tipQ('ck_mode_tip')}</div>
+      <div class="lang-seg cam-seg" id="ck-mode"><button type="button" class="${mode === 'recover' ? 'on' : ''}" onclick="App.ckModeModal('recover')">${t('ck_m_recover')}</button><button type="button" class="${mode === 'total' ? 'on' : ''}" onclick="App.ckModeModal('total')">${t('ck_m_total')}</button></div>
+      <div class="tiny" style="margin-top:6px">${t(mode === 'total' ? 'ck_m_total_d' : (CK.row && CK.row.escrow ? 'ck_m_recover_d' : 'ck_m_recover_wait'))}</div>` : ''}
+    <button type="button" class="btn btn-ghost sm" style="margin-top:10px" id="ck-help-link" onclick="App.ckHelp()">${ic('book')} ${t('ck_full_help')}</button>
+    ${isAdmin() ? `<div style="font-weight:800;margin:14px 0 6px">${t('ck_staff')} · ${ready.length} / ${others.length} ${tipQ('ck_staff_tip')}</div>
+      <div class="tiny" style="margin-bottom:6px">${t('ck_org')}: ${CK.org ? `<b class="ck-fp">${ckFp(CK.org.key_id)}</b> · ${CK.orgMine ? t('ck_org_mine') : t('ck_org_notmine')}` : t('ck_org_none')}</div>
+      <div id="ck-staff">${others.sort((a, b) => a.display_name.localeCompare(b.display_name)).map(p => { const k = CK.pubs.find(x => x.user_id === p.id);
+        return `<div class="rowline ck-row"><div class="grow"><b>${esc(shortName(p.display_name))}</b> <span class="tiny">${esc(t('role_' + p.role))}</span></div>
+          ${k ? `<span class="chip ${k.mode === 'total' ? 'warn' : 'ok'}">${k.mode === 'total' ? t('ck_m_total') : t('ck_m_recover')}</span><span class="tiny ck-fp">${ckFp(k.key_id)}</span>` : `<span class="chip">${t('ck_nokey')}</span>`}</div>`; }).join('')}</div>` : ''}
+  </div>`;
+}
+function ckPaint(){ const c = document.getElementById('ck-card'); if (c && state.screen === 'settings'){ const tmp = document.createElement('div'); tmp.innerHTML = ckCardHtml(); c.replaceWith(tmp.firstElementChild); } const b = document.getElementById('ck-banner'); if (b && CK.st !== 'need_pw') b.remove(); }
+function ckBannerHtml(){
+  if (!state.user || CK.st !== 'need_pw') return '';
+  return `<div class="banner b-ds clicky" id="ck-banner" role="button" tabindex="0" onclick="App.ckPwModal()" onkeydown="App.bannerKey(event)">${ic('key')}<div class="grow">${t(CK.row ? 'ck_ban_open' : 'ck_ban_create')}</div>${ic('chev_r')}</div>`;
+}
+function ckPwModal(){
+  const create = !CK.row;
+  openModal(`${modalHead(t(create ? 'ck_btn_create' : 'ck_btn_open'), 'key')}
+    <div class="tiny" style="margin-bottom:10px;line-height:1.45">${t(create ? 'ck_pw_create_d' : 'ck_pw_open_d')}</div>
+    <div class="form-row pass-row"><span class="lbl">${t(HAS_SB ? 'ck_pw_lbl' : 'ck_pw_lbl_demo')}</span><input id="ck-pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();App.ckPwGo()}">${passEyeBtn('ck-pw')}</div>
+    <div class="tiny" id="ck-pw-err" style="color:var(--red);min-height:1.2em"></div>
+    <button type="button" class="btn btn-green" id="ck-pw-go" style="width:100%" onclick="App.ckPwGo()">${ic('key')} ${t('ck_pw_go')}</button>`);
+  setTimeout(() => { const i = $('#ck-pw'); if (i) i.focus(); }, 60);
+}
+/* пароль из окна нужно проверить НАСТОЯЩИМ входом: сейф, запертый опечаткой, потом не откроется верным паролем.
+   Проверяем отдельным клиентом без сохранения сессии — текущий вход (и 2FA) не затрагивается. */
+async function ckPwVerify(pw){
+  if (!HAS_SB) return pw.length >= CK_MINPW ? true : 'short';
+  try{
+    const tmp = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'tl-ck-verify' } });
+    const { data, error } = await tmp.auth.signInWithPassword({ email: loginToEmail(state.user.login), password: pw });
+    if (error) return /invalid|credentials/i.test(error.message || '') ? false : ('err:' + error.message);
+    return !!(data && data.session);
+  }catch(e){ return 'err:' + errStr(e); }
+}
+async function ckPwGo(){
+  const pw = String(($('#ck-pw') || {}).value || ''), errEl = $('#ck-pw-err'), btn = $('#ck-pw-go');
+  const say = m => { if (errEl) errEl.textContent = m; };
+  if (!pw){ say(t('ck_pw_empty')); return; }
+  if (btn) btn.disabled = true; say('');
+  try{
+    if (CK.row && !CK.dev){ CK.err = ''; if (await ckUnlock(pw, false)){ await ckOrgCare(); closeModal(); toast('✓ ' + t('ck_opened')); render(); return; }
+      /* сейф не открылся: пароль неверный ИЛИ его сбросили, а сейф остался под старым */
+      const v0 = HAS_SB ? await ckPwVerify(pw) : false;          // в демо настоящего пароля нет — истина одна: открылся сейф или нет
+      say(v0 === true ? t('ck_safe_old') : t('ck_bad_pw')); return; }
+    const v = await ckPwVerify(pw);
+    if (v === 'short'){ say(t('ck_pw_short')); return; }
+    if (v === false){ say(t('ck_bad_pw')); return; }
+    if (v !== true){ say(String(v).replace(/^err:/, '')); return; }
+    ckPwSet(pw); await ckInit(true);
+    if (CK.st === 'ready'){ closeModal(); toast('✓ ' + t(CK.row ? 'ck_ready_toast' : 'ck_opened')); render(); } else say(CK.err || t('ck_failed'));
+  } finally { if (btn) btn.disabled = false; }
+}
+function ckModeModal(mode){
+  if (CK.st !== 'ready' || !CK.row || CK.row.mode === mode) return;
+  const total = mode === 'total';
+  openModal(`${modalHead(t(total ? 'ck_total_t' : 'ck_recover_t'), total ? 'warn' : 'key')}
+    <div class="card ck-warn ${total ? 'danger' : ''}" id="ck-warn">${total ? `<b>${t('ck_total_w0')}</b><ul><li>${t('ck_total_w1')}</li><li>${t('ck_total_w2')}</li><li>${t('ck_total_w3')}</li></ul>` : t('ck_recover_w')}</div>
+    <div class="form-row pass-row" style="margin-top:10px"><span class="lbl">${t('ck_pw_again')}</span><input id="ck-mpw" type="password" autocomplete="current-password" oninput="document.getElementById('ck-mode-go').disabled = !this.value">${passEyeBtn('ck-mpw')}</div>
+    <div class="tiny" id="ck-mode-err" style="color:var(--red);min-height:1.2em"></div>
+    <div class="btn-rowpp"><button type="button" class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
+      <button type="button" class="btn ${total ? 'btn-red' : 'btn-green'}" id="ck-mode-go" disabled onclick="App.ckModeGo('${mode}')">${t(total ? 'ck_total_go' : 'ck_recover_go')}</button></div>`);
+  setTimeout(() => { const i = $('#ck-mpw'); if (i) i.focus(); }, 60);
+}
+async function ckModeGo(mode){
+  const pw = String(($('#ck-mpw') || {}).value || ''), btn = $('#ck-mode-go'), errEl = $('#ck-mode-err');
+  if (btn) btn.disabled = true; CK.err = '';
+  const okk = await ckModeSet(mode, pw);
+  if (okk){ closeModal(); toast('✓ ' + t(mode === 'total' ? 'ck_total_on' : 'ck_recover_on')); render(); }
+  else { if (errEl) errEl.textContent = CK.err || t('ck_failed'); if (btn) btn.disabled = false; }
+}
+
+/* полная инструкция по ключам — одна на два места: «?» карточки в настройках и раздел «Сообщения» в справке */
+function ckHelpHtml(){
+  return (state.lang || 'ru') === 'en' ? `
+    <h4>${ic('key')} Chat protection keys — full guide</h4>
+    <p><b>What this is.</b> Every employee gets a personal key. Later it will lock the chat so that the database holds unreadable text only. <b>In this release messages are NOT encrypted yet</b> — first we make sure everyone's keys work. Nothing in the chat changes for you.</p>
+    <h4>1 · How the key appears</h4>
+    <ul><li>Sign in with your login and password — the key is created on the phone by itself. Nothing to press.</li>
+      <li>If you were already signed in when the update arrived, a blue banner "Turn on chat protection" appears on Home, in Messages and in Settings. Tap it and enter your <b>account password</b> once. The app checks that it is the real password — a typo cannot lock your key.</li>
+      <li>Done means a green "key ready" chip and a key number like <span class="ck-fp">A1B2 C3D4 E5F6 0718</span> in Settings → Chat protection.</li></ul>
+    <h4>2 · Where the key lives</h4>
+    <ul><li><b>On this device</b> — in the browser's protected storage. The app can use it, scripts cannot read it. Signing out erases it from the device.</li>
+      <li><b>In a "safe" on the server</b> — the same key locked with a key made from your password. The server keeps neither the password nor the open key.</li>
+      <li><b>Second lock (default mode)</b> — a copy locked with the company recovery key that admins hold.</li></ul>
+    <h4>3 · Everyday situations</h4>
+    <ul><li><b>New phone or computer:</b> sign in with login and password — the safe opens, the key is here. Nothing else to do.</li>
+      <li><b>You changed your password:</b> the app re-locks the safe with the new password by itself. Messages are not touched.</li>
+      <li><b>You forgot the password, but a signed-in device remains:</b> the admin sets a new password; on that device sign out is NOT needed — open Settings → Chat protection and sign in again with the new password when asked; the device re-locks the safe.</li>
+      <li><b>You forgot the password and have no signed-in device:</b> in the default mode the admin resets the password and his app re-locks your safe — access returns. In full-encryption mode the key is lost for good.</li>
+      <li><b>You cleared the browser data or reinstalled the shortcut:</b> same as a new device — sign in with the password.</li></ul>
+    <h4>4 · Two modes — you choose</h4>
+    <ul><li><b>With recovery</b> (default): the safe has a second lock. If you forget the password and lose every device, the admin restores access. The price: technically an admin could open your key. The app has no button for that, and each use of the company key is written to the event log.</li>
+      <li><b>Full encryption</b>: no second lock. Nobody but you can open the key — not the admin, not the developer. Lose the password <i>and</i> all devices — the key is gone and nobody can help. It is turned on in Settings → Chat protection → "Full": read the warning and re-enter the password.</li>
+      <li>You can switch back at any time — again with the password. The mode protects <b>your key</b>: if the other person is in "with recovery" mode, your shared conversation can technically be opened through their key.</li></ul>
+    <h4>5 · For the administrator</h4>
+    <ul><li>The first admin whose key is ready creates the <b>company recovery key</b> automatically. Other admins receive it automatically the next time an admin who already holds it opens the app.</li>
+      <li><b>Keep at least two admins with ready keys.</b> One admin who forgets the password and loses all devices loses the company key too — then the second locks of all employees become useless.</li>
+      <li>Settings → Chat protection shows who has a ready key and in which mode. Turn encryption on (a later release) only when everyone is ready.</li>
+      <li>When you set a new password for an employee, the app re-locks their safe itself and tells you the result. For an employee in full-encryption mode it warns you first.</li>
+      <li>New passwords must be at least 10 characters: if the database leaks, the key is only as strong as the password.</li></ul>
+    <h4>6 · What this does not protect from</h4>
+    <ul><li>A weak password; an unlocked phone in someone else's hands; whoever controls the hosting and can replace the app's code. Who wrote to whom and when stays visible to the server.</li></ul>` : `
+    <h4>${ic('key')} Ключи защиты переписки — полная инструкция</h4>
+    <p><b>Что это.</b> У каждого сотрудника появляется личный ключ. Позже им будет запираться переписка — так, что в базе останется нечитаемый текст. <b>В этом выпуске сообщения ещё НЕ шифруются</b>: сначала убеждаемся, что ключи у всех работают. В самом чате для вас ничего не меняется.</p>
+    <h4>1 · Как появляется ключ</h4>
+    <ul><li>Войдите по логину и паролю — ключ создаётся на телефоне сам. Нажимать ничего не нужно.</li>
+      <li>Если обновление пришло, когда вы уже были в приложении, на главной, в «Сообщениях» и в настройках появится синяя плашка «Включите защиту переписки». Нажмите её и один раз введите <b>пароль от аккаунта</b>. Приложение проверит, что это настоящий пароль: опечатка не сможет запереть ваш ключ.</li>
+      <li>Готово — это зелёная отметка «ключ готов» и номер ключа вида <span class="ck-fp">A1B2 C3D4 E5F6 0718</span> в Настройки → Защита переписки.</li></ul>
+    <h4>2 · Где лежит ключ</h4>
+    <ul><li><b>На этом устройстве</b> — в защищённом хранилище браузера. Приложение им пользуется, прочитать его скриптом нельзя. Выход из аккаунта стирает ключ с устройства.</li>
+      <li><b>В «сейфе» на сервере</b> — тот же ключ, запертый ключом из вашего пароля. Ни пароля, ни открытого ключа сервер не хранит.</li>
+      <li><b>Второй замок (режим по умолчанию)</b> — копия, запертая ключом восстановления фирмы; он есть у администраторов.</li></ul>
+    <h4>3 · Обычные ситуации</h4>
+    <ul><li><b>Новый телефон или компьютер:</b> войдите по логину и паролю — сейф откроется, ключ на месте. Больше ничего делать не надо.</li>
+      <li><b>Сменили пароль:</b> приложение само перезапирает сейф новым паролем. Сообщения не трогаются.</li>
+      <li><b>Забыли пароль, но осталось устройство, где вы вошли:</b> админ задаёт новый пароль; на этом устройстве из аккаунта НЕ выходите — когда приложение попросит, войдите с новым паролем, и устройство перезапрёт сейф.</li>
+      <li><b>Забыли пароль, и вошедших устройств нет:</b> в режиме по умолчанию админ сбрасывает пароль, его приложение перезапирает ваш сейф — доступ возвращается. В режиме полного шифрования ключ потерян навсегда.</li>
+      <li><b>Очистили данные браузера или переустановили ярлык:</b> то же, что новое устройство, — войдите с паролем.</li></ul>
+    <h4>4 · Два режима — выбираете вы</h4>
+    <ul><li><b>С восстановлением</b> (по умолчанию): у сейфа есть второй замок. Забыли пароль и потеряли все устройства — доступ вернёт админ. Цена: технически админ может открыть ваш ключ. Кнопки для этого в приложении нет, а каждое обращение к ключу фирмы пишется в журнал событий.</li>
+      <li><b>Полное шифрование</b>: второго замка нет. Открыть ключ не сможет никто, кроме вас, — ни админ, ни разработчик. Потеряли пароль <i>и</i> все устройства — ключ пропал, помочь не сможет никто. Включается в Настройки → Защита переписки → «Полное»: прочитайте предупреждение и введите пароль ещё раз.</li>
+      <li>Вернуться обратно можно в любой момент — тоже через пароль. Режим защищает <b>ваш ключ</b>: если собеседник в режиме «с восстановлением», вашу общую переписку технически можно открыть через его ключ.</li></ul>
+    <h4>5 · Администратору</h4>
+    <ul><li>Первый админ с готовым ключом автоматически создаёт <b>ключ восстановления фирмы</b>. Остальные админы получают его сами — как только приложение откроет админ, у которого ключ фирмы уже есть.</li>
+      <li><b>Держите минимум двух админов с готовыми ключами.</b> Единственный админ, забывший пароль и потерявший все устройства, теряет и ключ фирмы — вторые замки всех сотрудников станут бесполезны.</li>
+      <li>Настройки → Защита переписки показывает, у кого ключ готов и в каком режиме. Включать шифрование (следующий выпуск) стоит, когда готовы все.</li>
+      <li>Когда вы задаёте сотруднику новый пароль, приложение само перезапирает его сейф и сообщает результат. Про сотрудника в режиме полного шифрования оно предупредит заранее.</li>
+      <li>Новые пароли — не короче 10 символов: при утечке базы ключ защищён ровно настолько, насколько стоек пароль.</li></ul>
+    <h4>6 · От чего это не защищает</h4>
+    <ul><li>От слабого пароля; от разблокированного телефона в чужих руках; от того, кто управляет хостингом и может подменить код приложения. Кто кому и когда писал — серверу видно по-прежнему.</li></ul>`;
+}
+function ckHelp(){ openModal(`${modalHead(t('ck_title'), 'key')}<div class="faq-body ck-help" id="ck-help">${ckHelpHtml()}</div>`); const m = document.querySelector('#overlay .modal'); if (m) m.classList.add('cl-modal'); }
+
+/* =====================================================================
+   v1.09.17 · СООБЩЕНИЯ — внутренний чат TechLog.
+   Пункт меню «Сообщения»: «Объявления» (пишут менеджер и админ, читают все),
+   «Общий чат» (пишут все) и личная переписка с любым сотрудником. К сообщению
+   можно приложить документ — задачу, пропозал или ремонт: в чате он виден
+   карточкой, нажатие сразу открывает документ, а что человек в нём увидит,
+   решает база (нет доступа — карточка с замком). Кнопка-самолётик в шапке
+   документа (v1.09.14) теперь отправляет документ прямо в чат: выбранным людям
+   или в общий чат. Менеджер и админ могут пометить сообщение «Важно».
+   Каждое сообщение приходит и push-уведомлением (личная галочка «Сообщения в
+   чате»); нажатие на него открывает нужную переписку. Пока приложение открыто,
+   новые сообщения подтягиваются раз в 8 секунд на экране чата и раз в минуту
+   на остальных; пуш обновляет чат сразу.
+   Таблицы chat_msgs / chat_reads грузятся отдельно от общего обмена: пока SQL не
+   выполнен, синхронизация не ругается, а экран пишет, чего не хватает.
+   Журнал пересылок 1.09.14 (doc_shares) заменён чатом — два места для одного и
+   того же только путали бы.
+   ===================================================================== */
+const CH = { rows: [], groups: [], members: [], reads: {}, peer: {}, files: {}, more: {}, menu: null, reply: null, edit: null, img: null, noUpd: false, rt: null, rtOk: false, at: 0, fullAt: 0, noDb: false, busy: false, thread: null, attach: null, imp: false, draft: {}, q: '', timer: 0, sel: null };
+function dsLink(kind, id){ return location.origin + location.pathname.replace(/index\.html$/, '') + '?doc=' + kind + ':' + id; }
+function dsDoc(kind, id){
+  const arr = kind === 'job' ? state.data.jobs : kind === 'prop' ? state.data.proposals : state.data.repairs;
+  return (arr || []).find(x => x.id === id) || null;
+}
+function dsTitle(kind, id){
+  const d = dsDoc(kind, id); if (!d) return '';
+  const cx = cxById(d.complex_id) || {};
+  const no = docNo(kind === 'prop' ? 'prop' : kind === 'rep' ? 'rep' : 'job', d);
+  return [no, (cx.abbr || cx.name || ''), d.unit_number ? 'Unit ' + d.unit_number : '', d.date ? fmtDMY(d.date) : ''].filter(Boolean).join(' · ');
+}
+function dsOpenDoc(kind, id, viaLink){
+  const d = dsDoc(kind, id);
+  if (!d){
+    if (viaLink && HAS_SB && !netOff() && !dsOpenDoc._retry){ dsOpenDoc._retry = true; syncNow(true).then(() => { dsOpenDoc(kind, id, true); dsOpenDoc._retry = false; }); return; }
+    dsOpenDoc._retry = false; toast('⚠ ' + t('ds_no_access'), 'err'); return;
+  }
+  if (state.screen === 'job' && jobDraft && jobDraft.id !== id && jobDirty()){ toast('⚠ ' + t('ds_busy'), 'err'); return; }
+  closeModal();
+  if (kind === 'job') App.openJob(id); else if (kind === 'prop') openProposal(id); else openRepair(id);
+}
+/* ---------- данные ---------- */
+function chMe(){ return state.user ? state.user.id : ''; }
+/* только то, что видно мне: каналы и личное, где я автор или получатель (в базе это делает RLS; в демо общий
+   localStorage хранит переписку всех «пользователей» — без фильтра чужое личное попадало бы в мои счётчики) */
+/* v1.09.20: группы. Ключ переписки: 'ann' | 'all' | 'g:<id группы>' | <id собеседника> */
+function chGroups(){ return HAS_SB ? CH.groups : ((state.data && state.data.chat_groups) || []); }
+function chMembersAll(){ return HAS_SB ? CH.members : ((state.data && state.data.chat_members) || []); }
+function chIsG(k){ return typeof k === 'string' && k.indexOf('g:') === 0; }
+function chGid(k){ return chIsG(k) ? k.slice(2) : ''; }
+function chGroup(k){ const id = chIsG(k) ? chGid(k) : k; return chGroups().find(g => g.id === id) || null; }
+function chGroupMembers(gid){ return chMembersAll().filter(x => x.group_id === gid).map(x => x.user_id); }
+function chInGroup(gid){ return chGroupMembers(gid).includes(chMe()); }
+function chIsCh(k){ return k === 'ann' || k === 'all'; }
+function chRows(){ const me = chMe(); return (HAS_SB ? CH.rows : ((state.data && state.data.chat_msgs) || [])).filter(m => m.group_id ? chInGroup(m.group_id) : (m.channel || m.from_user === me || m.to_user === me)); }
+function chReadAt(k){ if (HAS_SB) return CH.reads[k] || ''; const m = (state.data && state.data.chat_reads) || {}; return m[chMe() + '|' + k] || ''; }
+function chThreadOf(m){ return m.group_id ? 'g:' + m.group_id : (m.channel || (m.from_user === chMe() ? m.to_user : m.from_user)); }
+function chMsgsOf(k){ return chRows().filter(m => chThreadOf(m) === k).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))); }
+function chUnread(k){
+  const me = chMe(); if (!me) return 0;
+  const cnt = key => { const ra = chReadAt(key); return chRows().filter(m => chThreadOf(m) === key && m.from_user !== me && String(m.created_at) > ra).length; };
+  if (k) return cnt(k);
+  const keys = new Set(chRows().map(chThreadOf)); let n = 0; keys.forEach(key => { n += cnt(key); }); return n;
+}
+/* собеседник прочитал мои сообщения до этого момента (только личная переписка) */
+function chPeerReadAt(k){ if (chIsCh(k) || chIsG(k)) return ''; if (HAS_SB) return CH.peer[k] || ''; const m = (state.data && state.data.chat_reads) || {}; return m[k + '|' + chMe()] || ''; }
+/* v1.09.18: мгновенная доставка — подписка Supabase Realtime на chat_msgs (RLS действует и здесь: приходит только
+   видимое мне). Это ускоритель, а не основа: если Realtime выключен или не подключился, остаётся опрос раз в 8 с. */
+function chRtStart(){
+  if (CH.rt || !HAS_SB || !state.sb || !state.sb.channel || CH.noDb) return;
+  try{
+    CH.rt = state.sb.channel('tl-chat')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_msgs' }, (pl) => { try{
+        const m = pl && pl.new; if (!m || !m.id || CH.rows.some(x => x.id === m.id)) return;
+        CH.rows = CH.rows.concat([m]); chChanged(); }catch(e){} })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_msgs' }, (pl) => { try{
+        const m = pl && pl.new; if (!m || !m.id || !CH.rows.some(x => x.id === m.id)) return;
+        CH.rows = CH.rows.map(x => x.id === m.id ? Object.assign({}, x, m) : x); chChanged(); }catch(e){} })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_msgs' }, (pl) => { try{
+        const id = pl && pl.old && pl.old.id; if (!id || !CH.rows.some(x => x.id === id)) return;
+        CH.rows = CH.rows.filter(x => x.id !== id); chChanged(); }catch(e){} })
+      .subscribe((status) => { const ok = status === 'SUBSCRIBED'; if (ok !== CH.rtOk){ CH.rtOk = ok; dlog('чат: realtime ' + (ok ? 'подключён — сообщения приходят сразу' : 'не подключён (' + status + ') — работает опрос раз в 8 с')); } });
+  }catch(e){ dlog('⚠ чат: realtime не запустился —', e); CH.rt = null; }
+}
+function chRtStop(){ try{ if (CH.rt && state.sb) state.sb.removeChannel(CH.rt); }catch(e){} CH.rt = null; CH.rtOk = false; }
+function chCanPost(k){ if (chIsG(k)) return chInGroup(chGid(k)); return k !== 'ann' || isAdmin() || isManager(); }
+function chName(k){ if (chIsG(k)){ const g = chGroup(k); return g ? g.name : t('chg_gone'); } return k === 'ann' ? t('ch_ann') : k === 'all' ? t('ch_all') : profName(k); }
+function chNarrow(){ try{ return !document.documentElement.classList.contains('tl-desktop') || innerWidth < 900; }catch(e){ return true; } }
+function chThreads(){
+  const me = chMe(), last = {};
+  chRows().forEach(m => { const k = chThreadOf(m); if (!last[k] || String(m.created_at) > String(last[k].created_at)) last[k] = m; });
+  const people = (state.data.profiles || []).filter(p => !p.blocked && p.id !== me)
+    .map(p => ({ key: p.id, name: p.display_name, role: p.role, last: last[p.id] || null }))
+    .sort((a, b) => (b.last ? String(b.last.created_at) : '').localeCompare(a.last ? String(a.last.created_at) : '') || a.name.localeCompare(b.name));
+  const groups = chGroups().filter(g => chInGroup(g.id)).map(g => ({ key: 'g:' + g.id, name: g.name, grp: true, n: chGroupMembers(g.id).length, last: last['g:' + g.id] || null }))
+    .sort((a, b) => (b.last ? String(b.last.created_at) : '').localeCompare(a.last ? String(a.last.created_at) : '') || a.name.localeCompare(b.name));
+  return [{ key: 'all', name: t('ch_all'), ch: true, last: last.all || null }, { key: 'ann', name: t('ch_ann'), ch: true, last: last.ann || null }].concat(groups, people);
+}
+async function chLoad(force){
+  if (!state.user) return;
+  if (!HAS_SB){ CH.at = Date.now(); return; }
+  if (CH.busy || netOff()) return;
+  if (!force && Date.now() - CH.at < 60000) return;
+  CH.busy = true;
+  try{
+    const full = !CH.rows.length || Date.now() - CH.fullAt > 300000;
+    let q = state.sb.from('chat_msgs').select('*').order('created_at', { ascending: false }).limit(full ? 600 : 200);
+    if (!full){ const lastTs = CH.rows.reduce((a, m) => chTs(m) > a ? chTs(m) : a, '');
+      if (lastTs) q = CH.noUpd ? q.gt('created_at', lastTs) : q.or('created_at.gt.' + lastTs + ',updated_at.gt.' + lastTs); }
+    let { data, error } = await q;
+    if (error && !full && !CH.noUpd && /updated_at/i.test(errStr(error))){ CH.noUpd = true; CH.busy = false; return chLoad(true); }   // база ещё без 1.09.19 — работаем по-старому
+    if (error){ CH.noDb = /chat_msgs|PGRST205|does not exist|schema cache/i.test(errStr(error)); if (!CH.noDb) dlog('⚠ chat_msgs:', error); return; }
+    const before = chUnread(), n0 = CH.rows.length; let upd = false;
+    if (full){ CH.rows = data || []; CH.fullAt = Date.now(); }
+    /* v1.09.20: группы и их состав (RLS отдаёт только мои группы; админу — все, для управления) */
+    if ((full || state.screen === 'chat') && !CH.noGrp){
+      const g1 = await state.sb.from('chat_groups').select('*'), g2 = await state.sb.from('chat_members').select('group_id, user_id');
+      if (g1.error || g2.error){ if (/chat_groups|chat_members|PGRST205|does not exist|schema cache/i.test(errStr(g1.error || g2.error))) CH.noGrp = true; else dlog('⚠ chat_groups:', g1.error || g2.error); }
+      else { const sig = JSON.stringify([g1.data, g2.data]); if (sig !== CH._gsig){ CH._gsig = sig; CH.groups = g1.data || []; CH.members = g2.data || []; upd = true; } }
+    }
+    /* отметки прочтения: свои (счётчики) и собеседника по переписке со мной («прочитано» у моих сообщений, v1.09.18).
+       RLS отдаёт ровно эти строки: user_id = я или thread = мой id. */
+    let peerChanged = false;
+    if (full || state.screen === 'chat'){
+      const rr = await state.sb.from('chat_reads').select('user_id, thread, read_at');
+      if (!rr.error){
+        const me = chMe(), m = {}, pr = {};
+        (rr.data || []).forEach(r => { if (r.user_id === me) m[r.thread] = r.read_at; else if (r.thread === me) pr[r.user_id] = r.read_at; });
+        Object.keys(CH.reads).forEach(k => { if (!m[k] || String(CH.reads[k]) > String(m[k])) m[k] = CH.reads[k]; });
+        peerChanged = JSON.stringify(pr) !== JSON.stringify(CH.peer);
+        CH.reads = m; CH.peer = pr;
+      }
+    }
+    if (!full && (data || []).length){                       /* новое дописываем, изменённое (правка, реакции) заменяем */
+      const inc = {}; data.forEach(m => { inc[m.id] = m; });
+      CH.rows = CH.rows.map(m => inc[m.id] ? Object.assign({}, m, inc[m.id]) : m);
+      const have = new Set(CH.rows.map(m => m.id)); CH.rows = CH.rows.concat(data.filter(m => !have.has(m.id))); upd = true;
+    }
+    CH.noDb = false; CH.at = Date.now();
+    if (CH.rows.length !== n0 || chUnread() !== before || peerChanged || upd) chChanged();
+    chRtStart();
+  }catch(e){ dlog('⚠ chat_msgs:', e); }
+  finally{ CH.busy = false; }
+}
+function chChanged(){
+  chBadgePaint();
+  if (state.screen === 'chat'){ chPaint(); if (CH.thread && !document.hidden) chMarkRead(CH.thread); }
+  else if (state.screen === 'home'){ const b = document.getElementById('b-chat'), n = chUnread(); if ((!!b) !== (n > 0) || (b && !b.textContent.includes(': ' + n))) render(); }
+}
+function chBadgePaint(){
+  const n = state.user ? chUnread() : 0;
+  try{ if (navigator.setAppBadge){ if (n) navigator.setAppBadge(n); else navigator.clearAppBadge(); } }catch(e){}   // v1.09.19: счётчик на значке приложения
+  document.querySelectorAll('.tab-badge[data-b="chat"]').forEach(el => { el.textContent = n > 99 ? '99+' : String(n); el.hidden = !n; });
+}
+function chTickStart(){
+  if (CH.timer) return;
+  window.addEventListener('resize', () => { if (state.screen === 'chat') chLayout(false); }, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && state.user){ chLoad(true); if (state.screen === 'chat' && CH.thread) chMarkRead(CH.thread); } });
+  CH.timer = setInterval(() => { try{
+    if (!state.user || document.hidden) return;
+    if (state.screen === 'chat'){ if (!CH.rtOk || Date.now() - CH.at > 30000) chLoad(true); } else chLoad(false);   // realtime подключён — опрос раз в 30 с «на всякий случай»
+  }catch(e){} }, 8000);
+}
+let _chReadT = 0;
+function chMarkRead(k){
+  if (!k || !state.user) return;
+  const msgs = chMsgsOf(k); if (!msgs.length) return;
+  const ts = msgs[msgs.length - 1].created_at;
+  if (String(chReadAt(k)) >= String(ts)) return;
+  if (HAS_SB){
+    CH.reads[k] = ts;
+    clearTimeout(_chReadT); _chReadT = setTimeout(() => { if (netOff()) return;
+      state.sb.rpc('chat_mark_read', { p_thread: k, p_at: ts }).then(({ error }) => { if (error) dlog('⚠ chat_mark_read:', error); }); }, 600);
+  } else { const m = state.data.chat_reads = state.data.chat_reads || {}; m[chMe() + '|' + k] = ts; saveLocal(); }
+  chBadgePaint();
+}
+/* ---------- экран ---------- */
+function chBannerHtml(){
+  const n = state.user ? chUnread() : 0; if (!n) return '';
+  return `<div class="banner b-ds b-chat clicky" id="b-chat" role="button" tabindex="0" onclick="App.go('chat')" onkeydown="App.bannerKey(event)">${ic('chat')}
+    <div class="grow">${t('ch_banner')}: <b>${n}</b></div>${ic('chev_r')}</div>`;
+}
+function chTimeShort(ts){ const d = new Date(ts); const p = x => String(x).padStart(2, '0'); return p(d.getHours()) + ':' + p(d.getMinutes()); }
+function chDayOf(ts){ const d = new Date(ts); const p = x => String(x).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+function chDocCardHtml(m){
+  if (!m.doc_id || !m.doc_kind) return '';
+  const d = dsDoc(m.doc_kind, m.doc_id);
+  const kl = t('ds_k_' + m.doc_kind), icn = m.doc_kind === 'job' ? 'report' : m.doc_kind === 'prop' ? 'clipboard' : 'toolbox';
+  if (!d) return `<button type="button" class="ch-doc locked" onclick="App.chDocOpen('${m.doc_kind}','${m.doc_id}')">${ic('lock')}
+      <span class="grow"><b>${esc(m.doc_title || kl)}</b><span class="tiny">${esc(kl)} · ${t('ch_doc_locked')}</span></span></button>`;
+  const cx = cxById(d.complex_id) || {};
+  const st = m.doc_kind === 'job' ? `<span class="badge-status st-${d.status}">${esc(t('status_' + d.status))}</span>` : `<span class="chip pst pst-${d.status}">${esc(t('pst_' + d.status))}</span>`;
+  const total = +((m.doc_kind === 'job' ? (d.approved_total ?? d.total) : d.total) || 0);
+  return `<button type="button" class="ch-doc" onclick="App.chDocOpen('${m.doc_kind}','${m.doc_id}')">${ic(icn)}
+      <span class="grow"><b>${esc((cx.abbr || cx.name || '—') + (d.unit_number ? ' · Unit ' + d.unit_number : ''))}</b>
+        <span class="tiny">${esc(kl)} · ${esc(docNo(m.doc_kind === 'prop' ? 'prop' : m.doc_kind === 'rep' ? 'rep' : 'job', d) || '')}${d.date ? ' · ' + fmtDMY(d.date) : ''}</span>
+        <span class="ch-doc-b">${st}${total > 0.005 ? ` <b class="money">${money(total)}</b>` : ''}</span></span>${ic('chev_r')}</button>`;
+}
+const CH_EMOJI = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+const CH_EDIT_H = 24;                                        // своё сообщение можно править сутки
+function chTs(m){ const a = String(m.created_at || ''), b = String(m.updated_at || ''); return b > a ? b : a; }
+function chSnippet(m){ if (!m) return ''; return m.body ? m.body.replace(/\s+/g, ' ').slice(0, 90) : m.img_thumb ? '📷 ' + t('ch_photo') : m.doc_id ? '📄 ' + (m.doc_title || t('ds_k_' + (m.doc_kind || 'job'))) : ''; }
+/* текст сообщения: сначала экранирование, потом ссылки — чужой HTML в ленту не попадёт */
+function chTextHtml(body){
+  return esc(body).replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)\]}'"])/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
+}
+function chCanEdit(m){ return m && m.from_user === chMe() && !!m.body && (Date.now() - new Date(m.created_at).getTime()) < CH_EDIT_H * 3600000; }
+function chReactHtml(m){
+  const r = m.reactions || {}, me = chMe();
+  const chips = Object.keys(r).filter(e => Array.isArray(r[e]) && r[e].length).map(e =>
+    `<button type="button" class="ch-rc ${r[e].includes(me) ? 'mine' : ''}" title="${esc(r[e].map(id => shortName(profName(id))).join(', '))}" onclick="App.chReact('${m.id}','${e}')">${e}<b>${r[e].length}</b></button>`).join('');
+  return chips ? `<div class="ch-rcs">${chips}</div>` : '';
+}
+function chMenuHtml(m){
+  const mine = m.from_user === chMe();
+  return `<div class="ch-menu" id="ch-menu" onclick="event.stopPropagation()">
+    <div class="ch-menu-e">${CH_EMOJI.map(e => `<button type="button" aria-label="${e}" onclick="App.chReact('${m.id}','${e}')">${e}</button>`).join('')}</div>
+    <div class="ch-menu-a">
+      ${chCanPost(CH.thread) ? `<button type="button" onclick="App.chReply('${m.id}')">${ic('send')} ${t('ch_reply')}</button>` : ''}
+      ${m.body ? `<button type="button" onclick="App.chCopy('${m.id}')">${ic('copy')} ${t('ch_copy')}</button>` : ''}
+      ${chCanEdit(m) ? `<button type="button" onclick="App.chEdit('${m.id}')">${ic('pencil')} ${t('edit')}</button>` : ''}
+      ${(mine || (isAdmin() && m.channel)) ? `<button type="button" class="dng" onclick="App.chDel('${m.id}')">${ic('trash')} ${t('delete')}</button>` : ''}
+    </div></div>`;
+}
+function chMsgsHtml(k){
+  const me = chMe(), msgs = chMsgsOf(k), ra0 = CH._openReadAt || '', peerAt = chPeerReadAt(k), dm = !chIsCh(k) && !chIsG(k);
+  if (!msgs.length) return `<div class="list-empty ch-empty">${t(k === 'ann' ? 'ch_empty_ann' : 'chm_empty')}</div>`;
+  const byId = {}; msgs.forEach(m => { byId[m.id] = m; });
+  let day = '', out = '', cut = false, prev = null;
+  if (msgs.length >= 60 && CH.more[k] !== false) out += `<div class="ch-more"><button type="button" class="btn btn-ghost sm" id="ch-more" onclick="App.chMore()">${t('ch_more')}</button></div>`;
+  msgs.forEach(m => {
+    const dd = chDayOf(m.created_at);
+    if (dd !== day){ day = dd; prev = null; out += `<div class="ch-day"><span>${dd === todayISO() ? t('today') : fmtDMY(dd)}</span></div>`; }
+    if (!cut && ra0 && ra0 !== '-' && m.from_user !== me && String(m.created_at) > ra0){ cut = true; prev = null; out += `<div class="ch-new"><span>${t('ch_new')}</span></div>`; }
+    const mine = m.from_user === me;
+    const cont = prev && prev.from_user === m.from_user && !m.important && (new Date(m.created_at) - new Date(prev.created_at)) < 300000;   // подряд от одного человека — одной «пачкой»
+    const rp = m.reply_to ? byId[m.reply_to] || chRows().find(x => x.id === m.reply_to) : null;
+    out += `<div class="ch-msg ${mine ? 'mine' : ''} ${m.important ? 'imp' : ''} ${cont ? 'cont' : ''} ${CH.menu === m.id ? 'menu-on' : ''}" data-id="${m.id}">
+      <div class="ch-bub" onclick="App.chMenu('${m.id}', event)">${!mine && !dm && !cont ? `<div class="ch-who">${esc(shortName(profName(m.from_user)))}</div>` : ''}
+        ${m.important ? `<div class="ch-imp">${ic('warn')} ${t('ch_important')}</div>` : ''}
+        ${m.reply_to ? `<button type="button" class="ch-quote" onclick="event.stopPropagation();App.chJump('${m.reply_to}')"><b>${esc(rp ? shortName(profName(rp.from_user)) : '')}</b><span>${esc(rp ? chSnippet(rp) : t('ch_quote_gone'))}</span></button>` : ''}
+        ${m.img_thumb ? `<button type="button" class="ch-img" aria-label="${t('ch_photo')}" onclick="event.stopPropagation();App.chImgOpen('${m.id}')"><img alt="" src="${esc(m.img_thumb)}" ${m.img_w && m.img_h ? `style="aspect-ratio:${+m.img_w}/${+m.img_h}"` : ''}></button>` : ''}
+        ${m.body ? `<div class="ch-text">${chTextHtml(m.body)}</div>` : ''}${chDocCardHtml(m)}
+        <div class="ch-meta">${m.edited_at ? `<span class="ch-edited">${t('ch_edited')}</span>` : ''}${chTimeShort(m.created_at)}${mine && dm ? (String(m.created_at) <= String(peerAt) && peerAt ? `<span class="ch-tick read" title="${t('ch_read')}">✓✓</span>` : `<span class="ch-tick" title="${t('ch_sent')}">✓</span>`) : ''}</div>
+      </div>${chReactHtml(m)}${CH.menu === m.id ? chMenuHtml(m) : ''}</div>`;
+    prev = m;
+  });
+  return out;
+}
+function chListHtml(){
+  const q = String(CH.q || '').trim().toLowerCase();
+  let sec = '';
+  return chThreads().filter(x => !q || x.ch || String(x.name).toLowerCase().includes(q)).map(x => {
+    const n = chUnread(x.key), l = x.last;
+    const who = l && (x.ch || x.grp) && l.from_user !== chMe() ? shortName(profName(l.from_user)).split(' ')[0] + ': ' : '';
+    const prev = l ? ((l.from_user === chMe() ? t('ch_you') + ': ' : who) + chSnippet(l).slice(0, 60)) : (x.ch ? t(x.key === 'ann' ? 'ch_ann_sub' : 'ch_all_sub') : x.grp ? t('chg_n').replace('{N}', x.n) : t('role_' + x.role));
+    const kind = x.ch ? 'ch' : x.grp ? 'grp' : 'dm', cap = kind !== sec && kind !== 'ch' ? `<div class="ch-sec">${t(kind === 'grp' ? 'chg_sec' : 'ch_sec_dm')}</div>` : ''; sec = kind;
+    return `${cap}<button type="button" class="ch-th ${CH.thread === x.key ? 'on' : ''} ${n ? 'unread' : ''}" data-k="${x.key}" onclick="App.chOpen('${x.key}')">
+      <span class="ch-ava ${x.ch ? 'ch' : x.grp ? 'grp' : 'role-' + x.role}">${x.ch ? ic(x.key === 'ann' ? 'bell' : 'crew') : x.grp ? ic('crew') : esc(initials(x.name))}</span>
+      <span class="grow"><b>${esc(x.ch || x.grp ? x.name : shortName(x.name))}</b><span class="tiny">${esc(prev || '')}</span></span>
+      <span class="ch-th-r">${l ? `<span class="tiny">${chDayOf(l.created_at) === todayISO() ? chTimeShort(l.created_at) : fmtDM(chDayOf(l.created_at))}</span>` : ''}${n ? `<i class="ch-n">${n > 99 ? '99+' : n}</i>` : ''}</span></button>`;
+  }).join('');
+}
+function chComposeHtml(k){
+  if (!chCanPost(k)) return `<div class="ch-ro tiny">${ic('lock')} ${t('ch_ann_ro')}</div>`;
+  const boss = isAdmin() || isManager(), a = CH.attach, rp = CH.reply ? chRows().find(x => x.id === CH.reply) : null, ed = CH.edit ? chRows().find(x => x.id === CH.edit) : null;
+  return `<div class="ch-compose" id="ch-compose">
+    ${ed ? `<div class="ch-att ch-ctx" id="ch-editing">${ic('pencil')} <span class="grow"><b>${t('ch_editing')}</b> ${esc(chSnippet(ed))}</span><button type="button" class="ch-att-x" aria-label="${t('cancel')}" onclick="App.chCtxOff()">×</button></div>` : ''}
+    ${rp && !ed ? `<div class="ch-att ch-ctx" id="ch-replying">${ic('send')} <span class="grow"><b>${esc(shortName(profName(rp.from_user)))}</b> ${esc(chSnippet(rp))}</span><button type="button" class="ch-att-x" aria-label="${t('cancel')}" onclick="App.chCtxOff()">×</button></div>` : ''}
+    ${a ? `<div class="ch-att" id="ch-att">${ic('report')} <span class="grow">${esc(dsTitle(a.kind, a.id) || t('ds_k_' + a.kind))}</span><button type="button" class="ch-att-x" aria-label="${t('delete')}" onclick="App.chAttach(null)">×</button></div>` : ''}
+    ${CH.img ? `<div class="ch-att ch-att-img" id="ch-att-img"><img alt="" src="${esc(CH.img.thumb)}"><span class="grow">${t('ch_photo')} · ${Math.round(CH.img.bytes / 1024)} КБ</span><button type="button" class="ch-att-x" aria-label="${t('delete')}" onclick="App.chImgOff()">×</button></div>` : ''}
+    <div class="ch-row">
+      ${ed ? '' : `<button type="button" class="btn btn-ghost ch-ib" id="ch-img-btn" title="${t('ch_photo_add')}" aria-label="${t('ch_photo_add')}" onclick="document.getElementById('ch-file').click()">${ic('camera')}</button>
+      <input type="file" id="ch-file" accept="image/*" hidden onchange="App.chImgPick(this)">
+      <button type="button" class="btn btn-ghost ch-ib" id="ch-doc-btn" title="${t('ch_attach')}" aria-label="${t('ch_attach')}" onclick="App.chPick()">${ic('report')}</button>`}
+      ${boss && !ed ? `<button type="button" class="btn btn-ghost ch-ib ${CH.imp ? 'on' : ''}" id="ch-imp-btn" title="${t('ch_imp_t')}" aria-label="${t('ch_imp_t')}" aria-pressed="${CH.imp ? 'true' : 'false'}" onclick="App.chImp()">${ic('warn')}</button>` : ''}
+      <textarea id="ch-in" rows="1" maxlength="2000" placeholder="${esc(t('ch_ph'))}" oninput="App.chInput(this)" onkeydown="App.chKey(event)">${esc(CH.draft[k] || '')}</textarea>
+      <button type="button" class="btn btn-green ch-send" id="ch-send" aria-label="${t('ds_send')}" onclick="App.chSend()">${ic(ed ? 'check' : 'send')}</button>
+    </div></div>`;
+}
+function viewChat(){
+  chTickStart(); try{ chLoad(Date.now() - CH.at > 8000); }catch(e){}
+  const k = CH.thread, narrow = chNarrow();
+  const list = `<aside class="ch-list" id="ch-list">
+      <div class="ch-top"><div class="search-box ch-q">${ic('search')}<input id="ch-q" type="search" autocomplete="off" placeholder="${esc(t('ch_q_ph'))}" value="${esc(CH.q || '')}" oninput="App.chQ(this.value)"></div>
+        <button type="button" class="btn btn-blue ch-newg" id="ch-newg" title="${t('chg_new')}" aria-label="${t('chg_new')}" onclick="App.chGroupNew()">${ic('plus')}<span> ${t('chg_new_s')}</span></button></div>
+      <div id="ch-ths">${chListHtml()}</div></aside>`;
+  const pane = k ? `<section class="ch-pane" id="ch-pane">
+      <div class="ch-head"><button type="button" class="back-x ch-back" aria-label="${t('back')}" onclick="App.chBack()">${ic('arr_l')}</button>
+        <div class="grow"><b>${esc(chIsCh(k) || chIsG(k) ? chName(k) : profName(k))}</b><div class="tiny">${esc(k === 'ann' ? t('ch_ann_sub') : k === 'all' ? t('ch_all_sub') : chIsG(k) ? chGroupMembers(chGid(k)).map(id => shortName(profName(id)).split(' ')[0]).join(', ') : t('role_' + ((state.data.profiles.find(p => p.id === k) || {}).role || 'tech')))}</div></div>
+        ${chIsG(k) ? `<button type="button" class="btn btn-ghost ch-ib" id="ch-ginfo" title="${t('chg_info')}" aria-label="${t('chg_info')}" onclick="App.chGroupInfo('${chGid(k)}')">${ic('gear')}</button>` : ''}</div>
+      <div class="ch-msgs" id="ch-msgs" tabindex="0">${chMsgsHtml(k)}</div>
+      ${chComposeHtml(k)}</section>`
+    : `<section class="ch-pane ch-none" id="ch-pane"><div class="list-empty">${ic('chat')}<div>${t('ch_pick')}</div></div></section>`;
+  setTimeout(() => { chLayout(true); if (k && !document.hidden) chMarkRead(k); }, 0);
+  return `<div class="section-title">${ic('chat')} ${t('tab_chat')}${helpBtn('chat')}</div>
+    ${CH.noDb ? `<div class="banner b-yellow">${ic('warn')} ${t('ch_need_sql')}</div>` : ''}${ckBannerHtml()}
+    <div class="ch-wrap ${k ? 'has-thread' : ''} ${narrow ? 'narrow' : ''}" id="ch-wrap">${list}${pane}</div>`;
+}
+/* высота ленты сообщений — от её верха до низа экрана (минус поле ввода и нижнее меню) */
+function chLayout(toEnd){
+  const box = document.getElementById('ch-msgs'); if (!box) return;
+  const comp = document.getElementById('ch-compose') || document.querySelector('.ch-ro');
+  let navH = 0; try{ const tb = document.querySelector('.tabbar'); if (tb && getComputedStyle(tb).position === 'fixed'){ const r = tb.getBoundingClientRect(); if (r.top > innerHeight / 2) navH = innerHeight - r.top; } }catch(e){}
+  const avail = innerHeight - box.getBoundingClientRect().top - (comp ? comp.offsetHeight : 0) - navH - 14;
+  box.style.height = Math.max(200, Math.round(avail)) + 'px';
+  const lst = document.getElementById('ch-ths');
+  if (lst && !chNarrow()) lst.style.maxHeight = Math.max(240, innerHeight - lst.getBoundingClientRect().top - 16) + 'px'; else if (lst) lst.style.maxHeight = '';
+  if (toEnd){ const nw = box.querySelector('.ch-new'); if (nw) box.scrollTop = Math.max(0, nw.offsetTop - 40); else box.scrollTop = box.scrollHeight; }
+}
+function chPaint(){
+  const ths = document.getElementById('ch-ths'); if (ths) ths.innerHTML = chListHtml();
+  const box = document.getElementById('ch-msgs');
+  if (box && CH.thread){ const atEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 80; box.innerHTML = chMsgsHtml(CH.thread); if (atEnd) box.scrollTop = box.scrollHeight; }
+}
+function chOpen(k){
+  if (!k) return;
+  CH._openReadAt = chReadAt(k) || '0';                       // '0' — переписку ещё не открывали: непрочитано всё
+  CH.thread = k; CH.attach = null; CH.imp = false; CH.reply = null; CH.edit = null; CH.img = null; CH.menu = null;
+  if (state.screen !== 'chat'){ state.screen = 'chat'; }
+  render();
+  if (!chNarrow()) setTimeout(() => { const i = $('#ch-in'); if (i) i.focus(); }, 60);
+}
+function chBack(){ CH.thread = null; CH.attach = null; CH.reply = null; CH.edit = null; CH.img = null; CH.menu = null; render(); }
+function chQ(v){ CH.q = v; const ths = document.getElementById('ch-ths'); if (ths) ths.innerHTML = chListHtml(); }
+function chInput(el){ if (CH.thread) CH.draft[CH.thread] = el.value; el.style.height = 'auto'; el.style.height = Math.min(140, el.scrollHeight) + 'px'; chLayout(false); }
+function chKey(e){ if (e.key === 'Escape' && (CH.edit || CH.reply)){ e.preventDefault(); chCtxOff(); return; }
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !chNarrow()){ e.preventDefault(); chSend(); } }
+function chImp(){ CH.imp = !CH.imp; const b = $('#ch-imp-btn'); if (b){ b.classList.toggle('on', CH.imp); b.setAttribute('aria-pressed', CH.imp ? 'true' : 'false'); } }
+function chAttach(a){
+  const keep = ($('#ch-in') || {}).value; if (CH.thread && keep != null) CH.draft[CH.thread] = keep;
+  CH.attach = a; closeModal();
+  if (state.screen === 'chat'){ render(); setTimeout(() => { const i = $('#ch-in'); if (i && !chNarrow()) i.focus(); }, 60); }
+}
+function chDocOpen(kind, id){ dsOpenDoc(kind, id, false); }
+/* выбор документа для вложения: свои видимые документы, свежие сверху, поиск по юниту / комплексу / номеру */
+function chPickRows(q){
+  q = String(q || '').trim().toLowerCase();
+  const rows = [];
+  const add = (kind, d) => { if (isArch(d)) return; const cx = cxById(d.complex_id) || {}; const title = dsTitle(kind, d.id);
+    const hay = (title + ' ' + (cx.name || '') + ' ' + (d.unit_number || '')).toLowerCase(); if (q && !q.split(/\s+/).every(w => hay.includes(w))) return;
+    rows.push({ kind, id: d.id, date: d.date || '', title, cx: cx.abbr || cx.name || '—', unit: d.unit_number || '' }); };
+  (state.data.jobs || []).forEach(d => add('job', d)); (state.data.proposals || []).forEach(d => add('prop', d)); (state.data.repairs || []).forEach(d => add('rep', d));
+  return rows.sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 40);
+}
+function chPickListHtml(q){
+  const rows = chPickRows(q);
+  return rows.map(r => `<button type="button" class="ds-row" onclick="App.chAttach({kind:'${r.kind}',id:'${r.id}'})"><span class="grow"><b>${esc(r.cx)}${r.unit ? ' · Unit ' + esc(r.unit) : ''}</b>
+      <span class="tiny">${esc(t('ds_k_' + r.kind))} · ${esc(r.title)}</span></span>${ic('chev_r')}</button>`).join('') || `<div class="list-empty">${t('ch_pick_none')}</div>`;
+}
+function chPick(){
+  const keep = ($('#ch-in') || {}).value; if (CH.thread && keep != null) CH.draft[CH.thread] = keep;
+  openModal(`${modalHead(t('ch_attach'), 'report')}
+    <div class="search-box" style="margin-bottom:8px">${ic('search')}<input id="ch-pick-q" type="search" autocomplete="off" placeholder="${esc(t('ch_pick_ph'))}" oninput="document.getElementById('ch-pick-list').innerHTML = App.chPickList(this.value)"></div>
+    <div id="ch-pick-list" style="max-height:56vh;overflow-y:auto">${chPickListHtml('')}</div>`);
+  setTimeout(() => { const i = $('#ch-pick-q'); if (i && !chNarrow()) i.focus(); }, 60);
+}
+/* фото: уменьшаем на устройстве (до 1600 px и ~350 КБ) + миниатюра 240 px прямо в сообщении — лента рисуется сразу,
+   полный снимок подгружается по нажатию */
+function chCanvasOf(src, w, h, max){
+  const k = Math.min(1, max / Math.max(w, h)), cw = Math.max(1, Math.round(w * k)), chh = Math.max(1, Math.round(h * k));
+  const c = document.createElement('canvas'); c.width = cw; c.height = chh; c.getContext('2d').drawImage(src, 0, 0, cw, chh); return c;
+}
+async function chImgPrep(file){
+  let src, w, h;
+  try{ src = await createImageBitmap(file, { imageOrientation: 'from-image' }); w = src.width; h = src.height; }
+  catch(e){ src = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('IMG')); im.src = URL.createObjectURL(file); }); w = src.naturalWidth; h = src.naturalHeight; }
+  if (!(w > 0 && h > 0)) throw new Error('IMG');
+  const big = chCanvasOf(src, w, h, 1600); let q = 0.82, full = big.toDataURL('image/jpeg', q);
+  while (full.length > 480000 && q > 0.42){ q -= 0.1; full = big.toDataURL('image/jpeg', q); }
+  if (full.length > 700000){ full = chCanvasOf(src, w, h, 1100).toDataURL('image/jpeg', 0.6); }
+  const thumb = chCanvasOf(src, w, h, 240).toDataURL('image/jpeg', 0.6);
+  try{ src.close && src.close(); }catch(e){}
+  return { full, thumb, w: big.width, h: big.height, bytes: Math.round(full.length * 0.75) };
+}
+async function chImgPick(inp){
+  const f = inp && inp.files && inp.files[0]; if (inp) inp.value = '';
+  if (!f) return;
+  if (!/^image\//.test(f.type || '')){ toast('⚠ ' + t('ch_img_bad'), 'err'); return; }
+  const keep = ($('#ch-in') || {}).value; if (CH.thread && keep != null) CH.draft[CH.thread] = keep;
+  try{ CH.img = await chImgPrep(f); }catch(e){ dlog('⚠ чат: фото не обработалось —', e); toast('⚠ ' + t('ch_img_bad'), 'err'); return; }
+  if (state.screen === 'chat') render();
+}
+function chImgOff(){ const keep = ($('#ch-in') || {}).value; if (CH.thread && keep != null) CH.draft[CH.thread] = keep; CH.img = null; if (state.screen === 'chat') render(); }
+async function chImgOpen(id){
+  const m = chRows().find(x => x.id === id); if (!m || !m.img_thumb) return;
+  openModal(`${modalHead(t('ch_photo'), 'camera')}
+    <div class="ch-view"><img id="ch-view-img" alt="" src="${esc(CH.files[id] || m.img_thumb)}"></div>
+    <div class="tiny" id="ch-view-note" style="margin-top:6px">${CH.files[id] ? '' : t('ch_img_loading')}</div>
+    <div class="btn-rowpp" style="margin-top:8px"><a class="btn btn-ghost" id="ch-view-dl" download="techlog-chat-${esc(String(m.created_at).slice(0, 10))}.jpg" href="${esc(CH.files[id] || m.img_thumb)}">${ic('download')} ${t('pr_dl').replace('PDF', '').trim() || 'Download'}</a></div>`);
+  const mm = document.querySelector('#overlay .modal'); if (mm) mm.classList.add('pr-modal');
+  if (CH.files[id] || !m.img_id) { const n0 = $('#ch-view-note'); if (n0 && !CH.files[id]) n0.textContent = t('ch_img_demo'); return; }
+  if (!HAS_SB || netOff()){ const n1 = $('#ch-view-note'); if (n1) n1.textContent = t(HAS_SB ? 'ch_img_offline' : 'ch_img_demo'); return; }
+  try{
+    const { data, error } = await state.sb.from('chat_files').select('data').eq('id', m.img_id).maybeSingle();
+    if (error || !data || !data.data) throw (error || new Error('NO_FILE'));
+    CH.files[id] = data.data;
+    const im = $('#ch-view-img'), dl = $('#ch-view-dl'), nt = $('#ch-view-note');
+    if (im){ im.src = data.data; } if (dl) dl.href = data.data; if (nt) nt.textContent = '';
+  }catch(e){ dlog('⚠ чат: фото не загрузилось —', e); const nt = $('#ch-view-note'); if (nt) nt.textContent = t('ch_img_fail'); }
+}
+/* отправка: одно место для чата и для «Поделиться документом» */
+async function chSendTo(k, body, doc, important, extra){
+  body = String(body || '').trim().slice(0, 2000); extra = extra || {};
+  const img = extra.img || null, reply = extra.reply || null;
+  if (!body && !doc && !img) return false;
+  if (!chCanPost(k)){ toast('⚠ ' + t('ch_ann_ro'), 'err'); return false; }
+  const title = doc ? dsTitle(doc.kind, doc.id) : '';
+  const imp = !!important && (isAdmin() || isManager()), ch = chIsCh(k), gid = chGid(k);
+  if (!HAS_SB){
+    const id = uid(), now = new Date().toISOString();
+    const row = { id, from_user: chMe(), to_user: (ch || gid) ? null : k, channel: ch ? k : null, group_id: gid || null, body, important: imp,
+      doc_kind: doc ? doc.kind : null, doc_id: doc ? doc.id : null, doc_title: title, created_at: now, updated_at: now,
+      reply_to: reply, edited_at: null, reactions: {}, img_thumb: img ? img.thumb : null, img_id: null, img_w: img ? img.w : null, img_h: img ? img.h : null };
+    if (img) CH.files[id] = img.full;
+    state.data.chat_msgs = (state.data.chat_msgs || []).concat([row]); saveLocal(); return true;
+  }
+  if (netOff()){ netBlocked(); return false; }
+  const args = { p_to: (ch || gid) ? null : k, p_channel: ch ? k : null, p_group: gid || null, p_body: body, p_important: imp,
+    p_doc_kind: doc ? doc.kind : null, p_doc: doc ? doc.id : null, p_doc_title: title,
+    p_reply: reply, p_thumb: img ? img.thumb : null, p_img: img ? img.full : null, p_w: img ? img.w : null, p_h: img ? img.h : null };
+  let { data, error } = await state.sb.rpc('chat_send', args);
+  const noFn = e => /p_group|p_reply|p_thumb|PGRST202|Could not find the function/i.test(errStr(e));
+  if (error && noFn(error) && !gid){
+    /* база ещё 1.09.19: подпись без групп — всё, кроме групп, работает как раньше */
+    const a12 = Object.assign({}, args); delete a12.p_group;
+    const r1 = await state.sb.rpc('chat_send', a12); data = r1.data; error = r1.error;
+  }
+  if (error && noFn(error) && !img && !reply && !gid){
+    /* база ещё 1.09.17–1.09.18: старая подпись функции — простой текст и документы работают как раньше */
+    const r2 = await state.sb.rpc('chat_send', { p_to: args.p_to, p_channel: args.p_channel, p_body: body, p_important: imp, p_doc_kind: args.p_doc_kind, p_doc: args.p_doc, p_doc_title: title });
+    data = r2.data; error = r2.error;
+  }
+  if (error){ toast('⛔ ' + (/chat_send|PGRST202|does not exist|Could not find/i.test(errStr(error)) ? t('ch_need_sql2') : rpcFail(error, 'chat_send')), 'err'); return false; }
+  if (data && data.id){ if (img) CH.files[data.id] = img.full; if (!CH.rows.some(m => m.id === data.id)) CH.rows = CH.rows.concat([data]); }
+  pbPing(true);
+  return true;
+}
+async function chSend(){
+  const k = CH.thread, inp = $('#ch-in'); if (!k || chSend._busy) return;
+  const body = String(inp ? inp.value : '').trim(), doc = CH.attach, img = CH.img;
+  if (CH.edit){ return chEditSave(body); }
+  if (!body && !doc && !img) return;
+  chSend._busy = true; const btn = $('#ch-send'); if (btn) btn.disabled = true;
+  try{
+    if (!(await chSendTo(k, body, doc, CH.imp, { img, reply: CH.reply }))) return;
+    CH.draft[k] = ''; CH.imp = false; const hadCtx = !!(CH.attach || CH.img || CH.reply); CH.attach = null; CH.img = null; CH.reply = null;
+    if (inp){ inp.value = ''; inp.style.height = 'auto'; }
+    chMarkRead(k); CH._openReadAt = '-';                        // ответил — отметка «новые сообщения» больше не нужна
+    if (hadCtx) render(); else { chPaint(); const b = $('#ch-imp-btn'); if (b){ b.classList.remove('on'); b.setAttribute('aria-pressed', 'false'); } }
+    const box = $('#ch-msgs'); if (box) box.scrollTop = box.scrollHeight;
+    chLayout(false);
+  } finally { chSend._busy = false; const b2 = $('#ch-send'); if (b2) b2.disabled = false; }
+}
+/* ---------- меню сообщения: реакции, ответ, правка, копия, удаление ---------- */
+function chMenu(id, ev){
+  if (ev && ev.target && ev.target.closest && ev.target.closest('a, .ch-doc, .ch-img, .ch-quote')) return;
+  CH.menu = CH.menu === id ? null : id; chPaint();
+  if (CH.menu){ const el = document.getElementById('ch-menu'); if (el){ try{ el.scrollIntoView({ block: 'nearest' }); }catch(e){} }
+    setTimeout(() => { const off = () => { document.removeEventListener('click', off, true); if (CH.menu){ CH.menu = null; chPaint(); } };
+      document.addEventListener('click', (e2) => { if (e2.target.closest && e2.target.closest('#ch-menu, .ch-bub')) return; off(); }, { capture: true, once: true }); }, 0); }
+}
+function chCtxOff(){ const was = !!CH.edit; CH.reply = null; if (was){ CH.edit = null; if (CH.thread) CH.draft[CH.thread] = ''; } else { const keep = ($('#ch-in') || {}).value; if (CH.thread && keep != null) CH.draft[CH.thread] = keep; } render(); }
+function chReply(id){ const keep = ($('#ch-in') || {}).value; if (CH.thread && keep != null) CH.draft[CH.thread] = keep; CH.menu = null; CH.edit = null; CH.reply = id; render(); setTimeout(() => { const i = $('#ch-in'); if (i) i.focus(); }, 60); }
+function chEdit(id){ const m = chRows().find(x => x.id === id); if (!chCanEdit(m)) return; CH.menu = null; CH.reply = null; CH.attach = null; CH.img = null; CH.edit = id; CH.draft[CH.thread] = m.body; render();
+  setTimeout(() => { const i = $('#ch-in'); if (i){ i.focus(); i.selectionStart = i.selectionEnd = i.value.length; App.chInput(i); } }, 60); }
+async function chEditSave(body){
+  const m = chRows().find(x => x.id === CH.edit); if (!m){ chCtxOff(); return; }
+  body = String(body || '').trim().slice(0, 2000);
+  if (!body){ toast('⚠ ' + t('ch_edit_empty'), 'err'); return; }
+  if (body !== m.body){
+    const now = new Date().toISOString();
+    if (HAS_SB){
+      if (netOff()){ netBlocked(); return; }
+      const { error } = await state.sb.rpc('chat_edit', { p_id: m.id, p_body: body });
+      if (error){ toast('⛔ ' + (/chat_edit|PGRST202|Could not find/i.test(errStr(error)) ? t('ch_need_sql2') : rpcFail(error, 'chat_edit')), 'err'); return; }
+    }
+    m.body = body; m.edited_at = now; m.updated_at = now; if (!HAS_SB) saveLocal();
+  }
+  CH.edit = null; CH.draft[CH.thread] = ''; render();
+}
+async function chCopy(id){ const m = chRows().find(x => x.id === id); CH.menu = null; chPaint(); if (!m) return;
+  try{ await navigator.clipboard.writeText(m.body || ''); toast('✓ ' + t('copied')); }catch(e){ toast('⚠ ' + t('ds_copy_fail'), 'err'); } }
+async function chReact(id, emoji){
+  const m = chRows().find(x => x.id === id); if (!m || !CH_EMOJI.includes(emoji)) return;
+  const me = chMe(), r = JSON.parse(JSON.stringify(m.reactions || {})), had = Array.isArray(r[emoji]) && r[emoji].includes(me);
+  Object.keys(r).forEach(e => { r[e] = (r[e] || []).filter(x => x !== me); if (!r[e].length) delete r[e]; });   // одна реакция от человека, как в привычных мессенджерах
+  if (!had) r[emoji] = (r[emoji] || []).concat([me]);
+  const old = m.reactions; m.reactions = r; CH.menu = null; chPaint();
+  if (!HAS_SB){ saveLocal(); return; }
+  if (netOff()){ m.reactions = old; chPaint(); netBlocked(); return; }
+  const { error } = await state.sb.rpc('chat_react', { p_id: id, p_emoji: emoji });
+  if (error){ m.reactions = old; chPaint(); toast('⛔ ' + (/chat_react|PGRST202|Could not find/i.test(errStr(error)) ? t('ch_need_sql2') : rpcFail(error, 'chat_react')), 'err'); }
+}
+function chJump(id){
+  const el = document.querySelector(`#ch-msgs .ch-msg[data-id="${id}"]`); if (!el){ toast('ℹ ' + t('ch_quote_far'), 'inf'); return; }
+  try{ el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }catch(e){ el.scrollIntoView(); }
+  el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1800);
+}
+/* более ранние сообщения этой переписки (в памяти — последние 600 по всем перепискам) */
+async function chMore(){
+  const k = CH.thread; if (!k || !HAS_SB || netOff()){ CH.more[k] = false; chPaint(); return; }
+  const msgs = chMsgsOf(k), oldest = msgs.length ? msgs[0].created_at : new Date().toISOString(), me = chMe();
+  let q = state.sb.from('chat_msgs').select('*').lt('created_at', oldest).order('created_at', { ascending: false }).limit(200);
+  q = chIsCh(k) ? q.eq('channel', k) : chIsG(k) ? q.eq('group_id', chGid(k)) : q.or(`and(from_user.eq.${me},to_user.eq.${k}),and(from_user.eq.${k},to_user.eq.${me})`);
+  const { data, error } = await q;
+  if (error){ toast('⛔ ' + errStr(error), 'err'); return; }
+  const have = new Set(CH.rows.map(m => m.id)), add = (data || []).filter(m => !have.has(m.id));
+  if (add.length < 200) CH.more[k] = false;
+  if (add.length){ const box = $('#ch-msgs'), h0 = box ? box.scrollHeight : 0; CH.rows = CH.rows.concat(add); CH.fullAt = Date.now(); chPaint(); if (box) box.scrollTop = box.scrollHeight - h0; }
+  else chPaint();
+}
+async function chDel(id){
+  const m = chRows().find(x => x.id === id); if (!m || !(m.from_user === chMe() || isAdmin())) return;
+  CH.menu = null;
+  if (!(await askModal({ title: t('ch_del_t'), text: t('ch_del_q'), ok: t('delete'), okIcon: 'trash', danger: true }))) return;
+  if (HAS_SB){
+    if (netOff()){ netBlocked(); return; }
+    const { error } = await state.sb.from('chat_msgs').delete().eq('id', id);
+    if (error){ toast('⛔ ' + errStr(error), 'err'); return; }
+    CH.rows = CH.rows.filter(x => x.id !== id);
+  } else { state.data.chat_msgs = (state.data.chat_msgs || []).filter(x => x.id !== id); saveLocal(); }
+  if (m.from_user !== chMe()) audit('chat_del', 'chat', id, { from: profName(m.from_user), text: String(m.body || '').slice(0, 80) });
+  if (state.screen === 'chat') render();
+}
+/* ---------- v1.09.20: группы — создать, состав, название, выйти, удалить ---------- */
+function chStaffPickHtml(selected, lockIds){
+  const me = chMe();
+  return (state.data.profiles || []).filter(p => !p.blocked && p.id !== me).sort((a, b) => a.display_name.localeCompare(b.display_name)).map(p => {
+    const on = selected.has(p.id), lock = lockIds && lockIds.has(p.id);
+    return `<button type="button" class="chip ds-chip ${on ? 'ok' : ''}" data-u="${p.id}" ${lock ? 'disabled' : ''} onclick="App.chgPick('${p.id}')">${esc(shortName(p.display_name))}</button>`; }).join('') || `<span class="tiny">${t('ds_nobody')}</span>`;
+}
+function chGroupNew(){
+  CH.gsel = new Set();
+  openModal(`${modalHead(t('chg_new'), 'crew')}
+    <div class="form-row"><span class="lbl">${t('chg_name')}</span><input id="chg-name" maxlength="60" placeholder="${esc(t('chg_name_ph'))}"></div>
+    <div style="font-weight:800;margin:8px 0 6px">${t('chg_members')} ${tipQ('chg_tip')}</div>
+    <div class="ds-chips" id="chg-chips">${chStaffPickHtml(CH.gsel)}</div>
+    <button type="button" class="btn btn-green" id="chg-create" style="margin-top:12px;width:100%" onclick="App.chGroupCreate()">${ic('plus')} ${t('chg_create')}</button>`);
+  setTimeout(() => { const i = $('#chg-name'); if (i && !chNarrow()) i.focus(); }, 60);
+}
+function chgPick(uid_){
+  if (!CH.gsel) CH.gsel = new Set();
+  if (CH.gsel.has(uid_)) CH.gsel.delete(uid_); else CH.gsel.add(uid_);
+  const b = document.querySelector(`#chg-chips [data-u="${uid_}"]`); if (b) b.classList.toggle('ok', CH.gsel.has(uid_));
+}
+async function chGroupCreate(){
+  const name = String(($('#chg-name') || {}).value || '').trim().slice(0, 60), ids = [...(CH.gsel || [])];
+  if (!name){ toast('⚠ ' + t('chg_need_name'), 'err'); return; }
+  if (!ids.length){ toast('⚠ ' + t('chg_need_members'), 'err'); return; }
+  let gid = null;
+  if (HAS_SB){
+    if (netOff()){ netBlocked(); return; }
+    const { data, error } = await state.sb.rpc('chat_group_create', { p_name: name, p_members: ids });
+    if (error){ toast('⛔ ' + (/chat_group_create|PGRST202|Could not find/i.test(errStr(error)) ? t('chg_need_sql') : rpcFail(error, 'chat_group_create')), 'err'); return; }
+    gid = data; CH._gsig = ''; await chLoad(true); pbPing(true);
+  } else {
+    gid = uid(); const now = new Date().toISOString();
+    state.data.chat_groups = (state.data.chat_groups || []).concat([{ id: gid, name, created_by: chMe(), created_at: now }]);
+    state.data.chat_members = (state.data.chat_members || []).concat([chMe()].concat(ids).map(u => ({ group_id: gid, user_id: u })));
+    saveLocal();
+  }
+  audit('chat_group', 'chat', gid, { name, members: ids.map(profName).join(', ') });
+  closeModal(); chOpen('g:' + gid);
+}
+function chGroupInfo(gid){
+  const g = chGroup(gid); if (!g) return;
+  const mem = chGroupMembers(gid), boss = g.created_by === chMe() || isAdmin();
+  CH.gsel = new Set();
+  const rows = mem.map(id => `<div class="rowline chg-m" data-u="${id}"><span class="ch-ava role-${(state.data.profiles.find(p => p.id === id) || {}).role || 'tech'}">${esc(initials(profName(id)))}</span>
+      <div class="grow"><b>${esc(shortName(profName(id)))}</b>${id === g.created_by ? ` <span class="chip">${t('chg_owner')}</span>` : ''}${id === chMe() ? ` <span class="tiny">${t('ch_you')}</span>` : ''}</div>
+      ${boss && id !== chMe() ? `<button type="button" class="btn btn-ghost sm" onclick="App.chGroupKick('${gid}','${id}')">${t('chg_kick')}</button>` : ''}</div>`).join('');
+  const lock = new Set(mem);
+  openModal(`${modalHead(t('chg_info'), 'crew')}
+    <div class="form-row"><span class="lbl">${t('chg_name')}</span><input id="chg-name" maxlength="60" value="${esc(g.name)}" ${boss ? '' : 'readonly'}></div>
+    ${boss ? `<button type="button" class="btn btn-ghost sm" onclick="App.chGroupRename('${gid}')">${ic('save')} ${t('chg_rename')}</button>` : ''}
+    <div style="font-weight:800;margin:12px 0 6px">${t('chg_members')} · ${mem.length}</div>
+    <div class="card" style="padding:4px 10px">${rows}</div>
+    <div style="font-weight:800;margin:12px 0 6px">${t('chg_add')} ${tipQ('chg_tip')}</div>
+    <div class="ds-chips" id="chg-chips">${(state.data.profiles || []).filter(p => !p.blocked && !lock.has(p.id)).sort((a, b) => a.display_name.localeCompare(b.display_name)).map(p => `<button type="button" class="chip ds-chip" data-u="${p.id}" onclick="App.chgPick('${p.id}')">${esc(shortName(p.display_name))}</button>`).join('') || `<span class="tiny">${t('chg_all_in')}</span>`}</div>
+    <button type="button" class="btn btn-blue sm" style="margin-top:8px" onclick="App.chGroupAdd('${gid}')">${ic('plus')} ${t('chg_add_btn')}</button>
+    <div class="btn-rowpp" style="margin-top:16px">
+      <button type="button" class="btn btn-ghost" id="chg-leave" onclick="App.chGroupKick('${gid}','${chMe()}')">${t('chg_leave')}</button>
+      ${boss ? `<button type="button" class="btn btn-red" id="chg-del" onclick="App.chGroupDelete('${gid}')">${ic('trash')} ${t('chg_delete')}</button>` : ''}
+    </div>`);
+}
+async function chGroupRpc(fn, args, demo){
+  if (HAS_SB){
+    if (netOff()){ netBlocked(); return false; }
+    const { error } = await state.sb.rpc(fn, args);
+    if (error){ toast('⛔ ' + (/PGRST202|Could not find/i.test(errStr(error)) ? t('chg_need_sql') : rpcFail(error, fn)), 'err'); return false; }
+    CH._gsig = ''; await chLoad(true);
+  } else { demo(); saveLocal(); }
+  return true;
+}
+async function chGroupRename(gid){
+  const name = String(($('#chg-name') || {}).value || '').trim().slice(0, 60); if (!name){ toast('⚠ ' + t('chg_need_name'), 'err'); return; }
+  if (await chGroupRpc('chat_group_rename', { p_group: gid, p_name: name }, () => { const g = chGroup(gid); if (g) g.name = name; })){ toast('✓ ' + t('saved')); closeModal(); render(); }
+}
+async function chGroupAdd(gid){
+  const ids = [...(CH.gsel || [])]; if (!ids.length){ toast('⚠ ' + t('chg_need_members'), 'err'); return; }
+  if (await chGroupRpc('chat_group_add', { p_group: gid, p_users: ids }, () => { state.data.chat_members = (state.data.chat_members || []).concat(ids.filter(u => !chGroupMembers(gid).includes(u)).map(u => ({ group_id: gid, user_id: u }))); })){
+    if (HAS_SB) pbPing(true); closeModal(); render(); chGroupInfo(gid); }
+}
+async function chGroupKick(gid, uid_){
+  const me = uid_ === chMe(), g = chGroup(gid); if (!g) return;
+  if (!(await askModal({ title: t(me ? 'chg_leave' : 'chg_kick'), text: (me ? t('chg_leave_q') : t('chg_kick_q').replace('{N}', shortName(profName(uid_)))).replace('{G}', g.name), ok: t(me ? 'chg_leave' : 'chg_kick'), danger: true }))) return;
+  const okk = await chGroupRpc('chat_group_remove', { p_group: gid, p_user: uid_ }, () => {
+    state.data.chat_members = (state.data.chat_members || []).filter(x => !(x.group_id === gid && x.user_id === uid_));
+    const left = chGroupMembers(gid);
+    if (!left.length){ state.data.chat_groups = (state.data.chat_groups || []).filter(x => x.id !== gid); state.data.chat_msgs = (state.data.chat_msgs || []).filter(m => m.group_id !== gid); }
+    else if (g.created_by === uid_) g.created_by = left[0]; });
+  if (!okk) return;
+  if (me){ CH.thread = null; render(); } else { render(); chGroupInfo(gid); }
+}
+async function chGroupDelete(gid){
+  const g = chGroup(gid); if (!g) return;
+  if (!(await askModal({ title: t('chg_delete'), text: t('chg_delete_q').replace('{G}', g.name), ok: t('delete'), okIcon: 'trash', danger: true }))) return;
+  if (await chGroupRpc('chat_group_delete', { p_group: gid }, () => {
+    state.data.chat_groups = (state.data.chat_groups || []).filter(x => x.id !== gid); state.data.chat_members = (state.data.chat_members || []).filter(x => x.group_id !== gid);
+    state.data.chat_msgs = (state.data.chat_msgs || []).filter(m => m.group_id !== gid); })){
+    audit('chat_group_del', 'chat', gid, { name: g.name }); CH.thread = null; render(); }
+}
+/* ---------- «Поделиться документом» (кнопка-самолётик в шапке документа) ---------- */
+function docShare(kind, id){
+  const d = dsDoc(kind, id); if (!d){ toast('⚠ ' + t('ds_save_first'), 'err'); return; }
+  const link = dsLink(kind, id);
+  const staff = (state.data.profiles || []).filter(p => !p.blocked && p.id !== state.user.id)
+    .sort((a, b) => ((b.role === 'admin' || b.role === 'manager') - (a.role === 'admin' || a.role === 'manager')) || a.display_name.localeCompare(b.display_name));
+  CH.sel = new Set(staff.filter(p => p.role === 'admin' || p.role === 'manager').map(p => p.id));
+  openModal(`${modalHead(t('ds_share'), 'send')}
+    <div class="tiny" style="margin-bottom:8px"><b>${esc(dsTitle(kind, id))}</b></div>
+    <div class="card" style="padding:10px">
+      <div style="font-weight:900;margin-bottom:6px">${ic('chat')} ${t('ds_send_t')} ${tipQ('ds_send_tip')}</div>
+      <div class="ds-chips" id="ds-chips"><button type="button" class="chip ds-chip" data-u="all" onclick="App.dsPick('all')">${ic('crew')} ${t('ch_all')}</button>${chGroups().filter(g => chInGroup(g.id)).map(g => `<button type="button" class="chip ds-chip" data-u="g:${g.id}" onclick="App.dsPick('g:${g.id}')">${ic('crew')} ${esc(g.name)}</button>`).join('')}${staff.map(p => `<button type="button" class="chip ds-chip ${CH.sel.has(p.id) ? 'ok' : ''}" data-u="${p.id}" onclick="App.dsPick('${p.id}')">${esc(shortName(p.display_name))}${p.role !== 'tech' ? ' · ' + esc(t('role_' + p.role) || p.role) : ''}</button>`).join('')}</div>
+      <textarea id="ds-note" class="note-ta" rows="2" maxlength="600" placeholder="${esc(t('ds_note_ph'))}" style="margin-top:8px;width:100%"></textarea>
+      <button type="button" class="btn btn-green" id="ds-send" style="margin-top:8px;width:100%" onclick="App.dsSend('${kind}','${id}')">${ic('send')} ${t('ds_send')}</button>
+    </div>
+    <div class="card" style="padding:10px;margin-top:8px">
+      <div style="font-weight:900;margin-bottom:6px">${ic('link')} ${t('ds_link_t')} ${tipQ('ds_link_tip')}</div>
+      <input id="ds-link" readonly value="${esc(link)}" onfocus="this.select()">
+      <div class="btn-rowpp" style="margin-top:8px">
+        <button type="button" class="btn btn-ghost" id="ds-copy" onclick="App.dsCopy()">${ic('copy')} ${t('ds_copy')}</button>
+        ${navigator.share ? `<button type="button" class="btn btn-blue" id="ds-sys" onclick="App.dsSys('${kind}','${id}')">${ic('send')} ${t('ds_sys')}</button>` : ''}
+      </div>
+    </div>`);
+}
+function dsPick(uid_){
+  if (!CH.sel) CH.sel = new Set();
+  if (CH.sel.has(uid_)) CH.sel.delete(uid_); else CH.sel.add(uid_);
+  const b = document.querySelector(`#ds-chips [data-u="${uid_}"]`); if (b) b.classList.toggle('ok', CH.sel.has(uid_));
+}
+async function dsCopy(){
+  const v = ($('#ds-link') || {}).value || '';
+  try{ await navigator.clipboard.writeText(v); toast('✓ ' + t('copied')); }
+  catch(e){ const i = $('#ds-link'); if (i){ i.focus(); i.select(); try{ document.execCommand('copy'); toast('✓ ' + t('copied')); }catch(_e){ toast('⚠ ' + t('ds_copy_fail'), 'err'); } } }
+}
+function dsSys(kind, id){
+  try{ navigator.share({ title: 'TechLog · ' + dsTitle(kind, id), text: dsTitle(kind, id), url: dsLink(kind, id) }).catch(() => {}); }catch(e){ dsCopy(); }
+}
+async function dsSend(kind, id){
+  const to = [...(CH.sel || [])]; if (!to.length){ toast('⚠ ' + t('ds_pick_one'), 'err'); return; }
+  const note = String(($('#ds-note') || {}).value || '').trim();
+  const btn = $('#ds-send'); if (btn) btn.disabled = true;
+  let okN = 0;
+  try{
+    for (const k of to){ if (await chSendTo(k, note, { kind, id }, false)) okN++; else break; }
+    if (!okN) return;
+    audit('doc_share', kind === 'job' ? 'job' : kind === 'prop' ? 'proposal' : 'repair', id, { to: to.map(chName).join(', '), title: dsTitle(kind, id) });
+    closeModal(); chBadgePaint(); toast('✓ ' + t('ds_sent').replace('{N}', okN));
+  } finally { if (btn) btn.disabled = false; }
 }
 /* разгрести очередь на сервере: не чаще раза в 90 секунд, плюс форс после действий */
 function pbPing(force){
@@ -3022,7 +4333,7 @@ function pbCardHtml(){
   const on = !!PB.sub;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-  const kinds = [['job'],['pickup'],['approve'],['overdue'],['reset']];
+  const kinds = [['job'],['pickup'],['approve'],['overdue'],['reset'],['order'],['chat']];   // v1.09.13: + порядок задач
   if (bnVisible()) kinds.push(['bn_alert']);
   if (isAdmin() || (state.user && state.user.bn_service === true)) kinds.push(['bn_service']);
   const rows = kinds.map(([k]) => `
@@ -3053,7 +4364,7 @@ function pbCardHtml(){
    уведомлению открывает приложение, как у обычного пуша).
    ===================================================================== */
 function pushTestKinds(){
-  const kinds = ['job', 'pickup', 'approve', 'overdue', 'reset'];
+  const kinds = ['job', 'pickup', 'approve', 'overdue', 'reset', 'order', 'chat'];
   if (bnVisible()) kinds.push('bn_alert');
   if (isAdmin() || (state.user && state.user.bn_service === true)) kinds.push('bn_service');
   return kinds.filter(k => pbPref(k));
@@ -3451,6 +4762,9 @@ function featCardHtml(){
   return `<div class="card" id="feat-card">
     <div style="font-weight:900;margin-bottom:6px">${ic('gear')} ${t('feat_card')}</div>
     ${chk('tpl_on', org.tpl_on !== false, t('tpl_on_lbl'), 'tpl_tip')}
+    ${chk('day_move_on', org.day_move_on === true, t('day_move_lbl'), 'day_move_tip')}
+    ${chk('rep_kind_only', org.rep_kind_only === true, t('rep_kind_lbl'), 'rep_kind_tip')}
+    <div class="qty-line" id="chat-keep-row" style="margin-top:8px"><span class="name">${ic('chat')} ${t('chat_keep_lbl')} ${tipQ('chat_keep_hint')}</span>${orgStepperHtml('chat_keep_days', org.chat_keep_days ?? 180, 0, 730, 30)}</div><!-- v1.09.19 -->
     ${chk('code_remind', org.code_remind === true, t('code_remind_lbl'), 'code_tip')}
     <div class="form-row" style="margin:2px 0 6px"><span class="lbl">${t('code_months')}</span>
       ${orgStepperHtml('code_remind_months', codeMonths(), 1, 60, 1)}</div>
@@ -3689,7 +5003,8 @@ function lockRowHtml(org){
 function docsCardHtml(){
   return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml()
     + fold('num', t('no_card'), 'receipt', numberingCardHtml(), true)      // v1.08.97: подраздел (админ)
-    + fold('org', t('org'), 'building', orgCardHtml(), true);               // v1.08.97: подраздел (админ + бухгалтер)
+    + fold('org', t('org'), 'building', orgCardHtml(), true)                // v1.08.97: подраздел (админ + бухгалтер)
+    + fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml(), true);    // v1.09.12: переводы — подраздел «Настроек документов»
 }
 /* v1.08.98 · раздел «Интеграции» (админ): подразделы «Настройка Google Drive»
    (бывшая «Фото и видео → Google Drive») и «GPS-трекинг Bouncie». Ключи
@@ -4039,7 +5354,17 @@ function toast(msg, kind, ms){
   const p = splitMark(msg);
   if (p.icon){ el.innerHTML = p.icon + '<span class="t-txt"></span>'; el.querySelector('.t-txt').textContent = p.text; }
   else el.textContent = msg;
-  if (ms > 3800){ el.classList.add('tap'); el.onclick = () => el.remove(); }   // v1.09.03: длинную подсказку можно закрыть нажатием
+  if (ms > 3800){                                           // v1.09.03: длинную подсказку можно закрыть нажатием
+    el.classList.add('tap'); el.onclick = () => el.remove();
+    /* v1.09.12: подсказка «не пропадала» — висела до 20 с и закрывалась только нажатием ПО НЕЙ.
+       Теперь у неё виден крестик, а любое нажатие мимо, прокрутка или Esc тоже её убирают. */
+    const x = document.createElement('span'); x.className = 't-x'; x.setAttribute('aria-hidden', 'true'); x.textContent = '×'; el.appendChild(x);
+    const bye = (e) => { if (e && e.type === 'pointerdown' && el.contains(e.target)) return; off(); el.remove(); };
+    const off = () => { document.removeEventListener('pointerdown', bye, true); document.removeEventListener('keydown', bye, true); window.removeEventListener('wheel', bye, true); window.removeEventListener('touchmove', bye, true); };
+    setTimeout(() => { if (!el.isConnected) return; document.addEventListener('pointerdown', bye, true); document.addEventListener('keydown', bye, true);
+      window.addEventListener('wheel', bye, { capture: true, passive: true }); window.addEventListener('touchmove', bye, { capture: true, passive: true }); }, 450);
+    setTimeout(off, ms + 50);
+  }
   $('#toasts').appendChild(el); setTimeout(()=>el.remove(), ms > 0 ? ms : 3800);
 }
 const PALETTE = ['#58CC02','#1CB0F6','#FF4B4B','#FF9600','#FFC800','#CE82FF','#2EC4B6','#111827','#8B9AA3'];
@@ -4050,12 +5375,14 @@ const PALETTE = ['#58CC02','#1CB0F6','#FF4B4B','#FF9600','#FFC800','#CE82FF','#2
 const STD_PRICES = [
   ['steam_deep_scrub','Steam Clean — Deep Scrub','per room',35],
   ['steam_rotovac','Steam Clean — Rotovac','per room',45],
+  ['steam_portable','Steam Clean — Portable','per room',0],     // v1.09.12: новый бланк; цену задаёт админ
   ['rem_red_stain','Removal — Red Stain','flat',25],
   ['rem_wax','Removal — Wax','flat',25],
   ['rem_rust','Removal — Rust','flat',25],
   ['rem_ink','Removal — Ink','flat',25],
   ['rem_gum','Removal — Gum','flat',15],
   ['rem_paint','Removal — Paint','flat',25],
+  ['rem_imprint','Removal — Imprint','flat',0],
   ['rep_threshold','Repair — Threshold','flat',20],
   ['rep_stretch','Repair — Stretch','flat',45],
   ['rep_seam','Repair — Seam','flat',35],
@@ -4063,6 +5390,7 @@ const STD_PRICES = [
   ['dye_spot','Dye — Spot Dye','flat',45],
   ['dye_full','Dye — Full Dye','flat',150],
   ['oth_trash_out','Other — Trash Out','flat',50],
+  ['oth_crb','Other — Crb Machine','flat',0],
   ['oth_pad_removal_room','Other — Pad Removal (room)','per room',30],
   ['oth_pad_removal_all','Other — Pad Removal (all unit)','flat',120],
   ['fog_pet','Fog/GOC — Pet','flat',45],
@@ -4523,6 +5851,7 @@ function netChanged(off){
    правки); затем — очередь фото/видео. */
 async function netBack(){
   if (!HAS_SB || !state.sb || !state.user) return;
+  if (state.offlineAuth){ await authOfflineResume(); return; }        // v1.09.12
   let sent = 0;
   try{ sent = await pendingFlush(); }catch(e){ dlog('⛔ netBack flush:', e); }
   if (sent || (NET.offAt && Date.now() - NET.offAt > 60000)){
@@ -4614,14 +5943,51 @@ function netPillText(){
    модалку «Проверка связи» (netModal). Внутри других кнопок (карточка
    синхронизации в настройках) остаётся пассивный span — кнопка в кнопке
    разваливает разметку (урок «?» из 1.08.41). */
+/* v1.09.12: личная настройка «Скрыть статистику связи»: пока связь в порядке, бейджа в шапке
+   нет; при «офлайн» / «нет сервера» / «нестабильно» он появляется сам — проблему не спрятать */
+/* v1.09.13: ПОВОРОТ ЭКРАНА. В манифесте стояло orientation: portrait — установленное приложение
+   не поворачивалось вовсе (в том числе ПК-режим на телефоне, которому нужна альбомная).
+   Теперь манифест — «any», а выбор «Авто · Книжная · Альбомная» — настройка устройства:
+   в установленном приложении держится через screen.orientation.lock, во вкладке браузера
+   поворотом управляет сам телефон. */
+function orientPref(){ try{ const v = localStorage.getItem('techlog_orient'); return v === 'portrait' || v === 'landscape' ? v : 'any'; }catch(e){ return 'any'; } }
+async function orientApply(quiet){
+  const v = orientPref();
+  try{
+    const so = screen.orientation; if (!so) return false;
+    if (v === 'any'){ if (so.unlock) so.unlock(); return true; }
+    if (!so.lock) return false;
+    await so.lock(v); return true;
+  }catch(e){ if (!quiet) dlog('ℹ поворот экрана: браузер не дал закрепить (' + (e && e.name || e) + ') — работает в установленном приложении'); return false; }
+}
+async function orientSet(v){
+  try{ localStorage.setItem('techlog_orient', v); }catch(e){}
+  const ok = await orientApply(false);
+  render();
+  if (!ok && v !== 'any') toast('ℹ ' + t('ori_nolock'), 'inf');
+}
+function netHideOn(){ try{ const pv = state.user && state.user.push_prefs && state.user.push_prefs.net_hide; return pv === true || (pv == null && localStorage.getItem('techlog_net_hide') === '1'); }catch(e){ return false; } }
+async function netHideSet(v){
+  v = !!v; try{ localStorage.setItem('techlog_net_hide', v ? '1' : '0'); }catch(e){}
+  try{
+    const me = (state.data.profiles || []).find(p => p.id === state.user.id);
+    const prefs = { ...((me && me.push_prefs) || {}), ...(state.user.push_prefs || {}), net_hide: v };
+    state.user.push_prefs = prefs;
+    if (me){ me.push_prefs = prefs; if (HAS_SB) await dbUpsert('profiles', { ...me, push_prefs: prefs }); else saveLocalNow(); }
+  }catch(e){ dlog('⚠ net_hide:', e); }
+  render();
+}
+function netPillHidden(){ return netHideOn() && netState() === 'on'; }
 function netPillHtml(click){
   const tt = t('net_pill_t');
+  if (click && netPillHidden()) return `<button type="button" class="net-pill on net-hid" hidden title="${tt}" aria-label="${tt}" onclick="App.netModal()">${netPillText()}</button>`;
   if (click) return `<button type="button" class="net-pill ${netState()}" title="${tt}" aria-label="${tt}" onclick="App.netModal()">${netPillText()}</button>`;
   return `<span class="net-pill ${netState()}" title="${tt}" aria-label="${tt}" role="status">${netPillText()}</span>`;
 }
 function netPillDraw(){
   const cls = 'net-pill ' + netState(), txt = netPillText();
   document.querySelectorAll('.net-pill').forEach(el => {
+    if (el.tagName === 'BUTTON'){ const hid = netPillHidden(); if (el.hidden !== hid) el.hidden = hid; }   // v1.09.12
     if (el.className !== cls) el.className = cls;
     if (el.textContent !== txt) el.textContent = txt;
   });
@@ -4836,6 +6202,10 @@ const DB_NEED_COLS = [
   ['profiles',      'push_prefs'],    // v1.08.33
   ['vehicles',      'service_due_mi'],// v1.08.33
   ['org_settings',  'tpl_on'],        // v1.08.33
+  ['org_settings',  'day_move_on'],   // v1.09.12
+  ['org_settings',  'rep_kind_only'], // v1.09.13
+  ['org_settings',  'chat_keep_days'], // v1.09.19
+  ['profiles',      'staff_kind'],    // v1.09.13
   ['vehicles',      'imei'],          // v1.08.32
   ['org_settings',  'bn_account'],    // v1.08.32
   ['jobs',          'proposal_id'],
@@ -5060,6 +6430,10 @@ async function dbUpsert(table, row){
         dlog('🐢 upsert', table, 'медленно: ' + (Date.now()-ts) + ' мс');
       }
       if (!error){ pendingDone('upsert', table, row.id); netSet(true); }   // v1.07.21: доставлено — из очереди долой
+      /* v1.09.12: документ дошёл — файлы, ждавшие его (DOC_PENDING), отправляем сразу */
+      if (!error && (table === 'jobs' || table === 'repairs')){
+        try{ if (typeof mediaQ !== 'undefined' && mediaQ.some(x => mOwnId(x) === row.id && x.error === 'DOC_PENDING')) setTimeout(() => mediaFlush(), 300); }catch(e){}
+      }
     } catch(e){
       if (isNetErr(e)){ netSet(false); netSavedOffline(table); return; }   // v1.08.38
       noteWriteError('upsert', table, row.id, e);
@@ -5186,11 +6560,11 @@ function sharedAccessBoxHtml(j){
    Other services, доп. работы по шаблону, фото и видео не меняются никогда.
    ===================================================================== */
 const WT_BOXES = [
-  ['steam',      'Steam Clean', [['deep_scrub','Deep Scrub'], ['rotovac','Rotovac']]],
-  ['removals',   'Removals',    [['red_stain','Red Stain'], ['wax','Wax'], ['rust','Rust'], ['ink','Ink'], ['gum','Gum'], ['paint','Paint Removal']]],
+  ['steam',      'Steam Clean', [['deep_scrub','Deep Scrub'], ['rotovac','Rotovac'], ['portable','Portable']]],
+  ['removals',   'Removals',    [['red_stain','Red Stain'], ['wax','Wax'], ['rust','Rust'], ['ink','Ink'], ['gum','Gum'], ['paint','Paint Removal'], ['imprint','Imprint Removal']]],
   ['repairs',    'Repairs',     [['threshold','Threshold'], ['stretch','Stretch'], ['seam','Seam'], ['patch','Patch']]],
   ['dye',        'Dye',         [['spot','Spot Dye'], ['full','Full Dye']]],
-  ['other',      'Other',       [['trash_out','Trash Out'], ['pad_removal','Pad Removal'], ['all_unit','All Unit']]],
+  ['other',      'Other',       [['trash_out','Trash Out'], ['crb','Crb Machine'], ['pad_removal','Pad Removal'], ['all_unit','All Unit']]],
   ['fog',        'Fog / GOC',   [['fog','Fog'], ['goc','GOC'], ['pet','Pet'], ['smoke','Smoke'], ['deodorizer','Deodorizer']]],
   ['treatments', 'Treatments',  [['sealant','Sealant'], ['mold','Mold & Mildew'], ['degreaser','Degreaser']]],
   ['wetvac',     'Wet Vac / Flood', [['wet_vac','Wet Vac'], ['flood','Flood'], ['sewer','Sewer'], ['fresh','Fresh Water']]],
@@ -5225,11 +6599,13 @@ function fdBoxesStd(fd, wt){
 function emptyFormData(){
   return {
     vacant: false, occupied: false,
-    steam: { on:false, deep_scrub:false, rotovac:false, rooms:1 },
-    removals: { on:false, red_stain:false, wax:false, rust:false, ink:false, gum:false, paint:false },
+    /* v1.09.12: шапка нового бумажного бланка — Proposal · PO · Emergency call · No water · Second call */
+    f_proposal: false, emergency: false, no_water: false, second_call: false, po: '',
+    steam: { on:false, deep_scrub:false, rotovac:false, portable:false, rooms:1 },
+    removals: { on:false, red_stain:false, wax:false, rust:false, ink:false, gum:false, paint:false, imprint:false },
     repairs: { on:false, threshold:false, stretch:false, seam:false, patch:false },
     dye: { on:false, spot:false, full:false },
-    other: { on:false, trash_out:false, pad_removal:false, rooms:1, all_unit:false },
+    other: { on:false, trash_out:false, crb:false, pad_removal:false, rooms:1, all_unit:false },
     fog: { fog:false, goc:false, pet:false, smoke:false, deodorizer:false },
     treatments: { on:false, sealant:false, mold:false, degreaser:false },
     wetvac: { wet_vac:false, flood:false, sewer:false, fresh:false,
@@ -5275,13 +6651,14 @@ function calcSections(fd, p, data){
   const s = {};
   const n1 = (v) => Math.max(1, +v || 1);
   s.steam = (fd.steam.deep_scrub ? p('steam_deep_scrub') * n1(fd.steam.rooms) : 0)
-          + (fd.steam.rotovac ? p('steam_rotovac') * n1(fd.steam.rooms) : 0);
-  s.removals = ['red_stain','wax','rust','ink','gum','paint']
+          + (fd.steam.rotovac ? p('steam_rotovac') * n1(fd.steam.rooms) : 0)
+          + (fd.steam.portable ? p('steam_portable') * n1(fd.steam.rooms) : 0);
+  s.removals = ['red_stain','wax','rust','ink','gum','paint','imprint']
     .reduce((a,k)=>a + (fd.removals[k] ? p('rem_' + k) : 0), 0);
   s.repairs = ['threshold','stretch','seam','patch']
     .reduce((a,k)=>a + (fd.repairs[k] ? p('rep_' + k) : 0), 0);
   s.dye = (fd.dye.spot ? p('dye_spot') : 0) + (fd.dye.full ? p('dye_full') : 0);
-  s.other = (fd.other.trash_out ? p('oth_trash_out') : 0)
+  s.other = (fd.other.trash_out ? p('oth_trash_out') : 0) + (fd.other.crb ? p('oth_crb') : 0)
           + (fd.other.pad_removal ? (fd.other.all_unit ? p('oth_pad_removal_all') : p('oth_pad_removal_room') * n1(fd.other.rooms)) : 0);
   s.fog = (fd.fog.pet ? p('fog_pet') : 0) + (fd.fog.smoke ? p('fog_smoke') : 0) + (fd.fog.deodorizer ? p('fog_deodorizer') : 0);
   s.treatments = (fd.treatments.sealant ? p('tr_sealant') : 0) + (fd.treatments.mold ? p('tr_mold') : 0) + (fd.treatments.degreaser ? p('tr_degreaser') : 0);
@@ -5325,10 +6702,19 @@ async function initAuth(){
     return;
   }
   state.sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { global: { fetch: sbFetch } });   // v1.08.85
-  const { data: { session } } = await state.sb.auth.getSession();
-  if (session && !(await mfaGate(session))){ try{ await afterSbLogin(session); }catch(e){ dlog('⛔ afterSbLogin(init):', e); } }
+  /* v1.09.12: без сети supabase-js не может обновить истёкший токен и отдаёт «сессии нет» —
+     приложение показывало форму входа, а войти офлайн нельзя. Сохранённая сессия при этом
+     цела. Входим в ОФЛАЙН-СЕАНС по ней и по кэшу устройства; появится связь — сессия
+     обновится сама (authOfflineResume), очередь записей и файлов досылается как обычно. */
+  let session = null, sessErr = null;
+  try{ const r = await state.sb.auth.getSession(); session = r.data && r.data.session; sessErr = r.error; }
+  catch(e){ sessErr = e; }
+  if (!session && authOfflineEnter(sessErr)){ /* офлайн-сеанс открыт */ }
+  else if (session && !(await mfaGate(session))){ try{ await afterSbLogin(session); }catch(e){ dlog('⛔ afterSbLogin(init):', e); } }
   state.sb.auth.onAuthStateChange((ev, s) => {
     dlog('auth: событие', ev);
+    if (s && state.offlineAuth){ authOfflineResume().catch(e => dlog('⛔ authOfflineResume:', e)); return; }   // v1.09.12
+    if (!s && state.user && state.offlineAuth) return;   // v1.09.12: офлайн-сеанс — сессии и так нет, выходить не из чего
     if (!s && state.user){
       authSignedOutLog();                          // v1.08.85: причина и контекст — в журнал
       if (!AUTHX.byUser && !AUTHX.byApp) authKeepDraft();
@@ -5355,6 +6741,62 @@ async function initAuth(){
    видимость вкладки, черновик, инициатор). Черновик открытого документа
    при чужом разлогине сохраняется на устройстве и открывается после входа.
    ===================================================================== */
+/* ---------- v1.09.12: офлайн-сеанс ---------- */
+function sbStoredSession(){
+  try{
+    const ref = (String(CFG.SUPABASE_URL || '').match(/^https?:\/\/([^.\/]+)\./) || [])[1];
+    const raw = ref && localStorage.getItem('sb-' + ref + '-auth-token');
+    if (!raw) return null;
+    const j = JSON.parse(raw), ss = (j && j.currentSession) || j;
+    return ss && ss.user && ss.user.id && ss.refresh_token ? ss : null;
+  }catch(e){ return null; }
+}
+function authCachedProfile(uid){
+  try{ const d = loadLocal(); return d && (d.profiles || []).find(p => p.id === uid) || null; }catch(e){ return null; }
+}
+function authOfflineEnter(err){
+  try{
+    const ss = sbStoredSession(); if (!ss) return false;
+    if (navigator.onLine && !(err && isNetErr(err))) return false;      // сеть есть и сервер ответил «сессии нет» — это настоящий выход
+    const prof = authCachedProfile(ss.user.id);
+    if (!prof || prof.blocked) return false;
+    state.user = prof; state.data = loadLocal() || emptyData(); state.screen = 'home';
+    state.offlineAuth = true;
+    if (!state.selDate){ state.selDate = todayISO(); state.weekStart = mondayOf(state.selDate); }
+    NET.srv = false; NET.fails = 2; try{ netApply(); }catch(e){}
+    dlog('📴 auth: офлайн-сеанс по сохранённой сессии (' + (prof.login || '') + ') — данные с устройства, записи копятся в очереди');
+    setTimeout(() => toast('📴 ' + t('auth_off_in'), 'inf'), 600);
+    return true;
+  }catch(e){ dlog('⛔ authOfflineEnter:', e); return false; }
+}
+let _authResumeBusy = false;
+async function authOfflineResume(){
+  if (!state.offlineAuth || _authResumeBusy || !state.sb) return;
+  _authResumeBusy = true;
+  try{
+    let session = null, err = null;
+    try{ const r = await state.sb.auth.getSession(); session = r.data && r.data.session; err = r.error; }catch(e){ err = e; }
+    if (session){
+      state.offlineAuth = false;
+      dlog('📶 auth: связь вернулась — сессия обновлена, офлайн-сеанс закрыт');
+      if (await mfaGate(session)) return;
+      try{ await pendingFlush(); }catch(e){}
+      try{ await syncNow(true); }catch(e){}
+      try{ if (mediaQ.length) mediaFlush(); }catch(e){}
+      render(); return;
+    }
+    if (err && isNetErr(err)) return;                                   // связи всё ещё нет — ждём дальше
+    if (!sbStoredSession()){
+      /* сервер сессию не принял (удалена «Выйти везде», смена пароля…) — нужен вход.
+         Очередь записей и файлов остаётся на устройстве и уйдёт после входа. */
+      state.offlineAuth = false;
+      try{ authKeepDraft(); }catch(e){}
+      dlog('⛔ auth: сохранённая сессия сервером не принята — нужен вход; очередь записей цела (' + pendingLoad().length + ')');
+      state.user = null; state.screen = 'login'; render();
+      toast('⚠ ' + t('auth_off_expired'), 'err');
+    }
+  } finally { _authResumeBusy = false; }
+}
 const AUTHX = { byUser: false, byApp: '', lastFail: null, lastRefreshOk: 0, kicked: null };
 const AUTH_WHY = {
   refresh_token_not_found: 'сессия удалена на сервере — «Выйти везде» в Штате, смена пароля/2FA или настройки Supabase (single session, time-box, inactivity)',
@@ -5446,6 +6888,10 @@ async function afterSbLogin(session){
       return;
     }
     const md = session.user.user_metadata || {};
+    /* v1.09.12: профиль не пришёл (нет связи) — берём его из кэша устройства; раньше админ
+       без сети превращался в «сотрудника» с ролью tech до следующего синка */
+    if (!prof){ prof = authCachedProfile(session.user.id); if (prof) dlog('auth: профиль из кэша устройства (сервер не ответил)'); }
+    if (prof && prof.blocked){ state.user = null; state.screen = 'login'; toast('⛔ ' + t('blocked_msg'), 'err'); return; }
     state.user = prof || {
       id: session.user.id,
       login: md.login || String(session.user.email||'').split('@')[0],
@@ -5490,8 +6936,10 @@ async function sbSignIn(login, pass){
     return;
   }
   dlog('auth: вход ок, uid', data.session?.user?.id);
+  ckPwSet(pass);                              // v1.09.21: пароль — на две минуты в памяти, чтобы открыть или перезапереть сейф ключа
   if (await mfaGate(data.session)) return;   // v1.08.33/92: код 2FA — до загрузки данных
   try{ await afterSbLogin(data.session); }catch(e){ dlog('⛔ afterSbLogin:', e); }
+  ckInit(true).then(() => { try{ if (state.screen === 'home' || state.screen === 'chat') render(); }catch(e){} });
   render(); checkPickupBanner(true);
 }
 async function sbSignUp(login, pass, name, invite){
@@ -5554,6 +7002,8 @@ async function sbSignUp(login, pass, name, invite){
 }
 function logout(){
   dictStop();
+  try{ if (state.user) ckDevDel(state.user.id); CK.st = 'off'; CK.row = null; CK.dev = null; CK.pubs = []; CK.org = null; CK.orgMine = null; CK.pw = ''; CK.at = 0; }catch(e){}   // v1.09.21: ключ с устройства стирается при выходе
+  try{ chRtStop(); CH.rows = []; CH.groups = []; CH.members = []; CH._gsig = ''; CH.reads = {}; CH.peer = {}; CH.files = {}; CH.more = {}; CH.reply = null; CH.edit = null; CH.img = null; CH.menu = null; CH.thread = null; CH.draft = {}; CH.at = 0; CH.fullAt = 0; AP.rows = []; AP.at = 0; }catch(e){}   // v1.09.18: чужая переписка и оплаты не остаются следующему вошедшему
   AUTHX.byUser = true;                                     // v1.08.85: чтобы журнал не списал выход на сервер
   if (HAS_SB && state.sb) state.sb.auth.signOut();
   localStorage.removeItem(LS_SESSION);
@@ -5673,7 +7123,7 @@ function mediaLimits(){
   const o = (state.data && state.data.org_settings) || {};
   const p = parseInt(o.media_max_photo, 10), v = parseInt(o.media_max_video, 10),
         f = parseInt(o.media_max_file, 10);
-  return { photo: p >= 1 ? p : 10, video: v >= 0 ? v : 2, file: f >= 1 ? f : M_FILE_MAX };
+  return { photo: p >= 1 ? p : 30, video: v >= 0 ? v : 5, file: f >= 1 ? f : M_FILE_MAX };
 }
 function editLockDays(){ const v = +((state.data && state.data.org_settings || {}).edit_lock_days); return v >= 1 ? v : 0; }
 function editLocked(j){ const n = editLockDays(); if (!n || isManager()) return false; return j.date < addDaysISO(todayISO(), -n); }
@@ -5812,6 +7262,7 @@ const IC = {
   hand: '<path d="M7.6 12.4V7a1.35 1.35 0 0 1 2.7 0v4M10.3 11V5.4a1.35 1.35 0 0 1 2.7 0V11M13 11V6.2a1.35 1.35 0 0 1 2.7 0v5.6"/><path d="M15.7 11.8l1.5-2.2a1.3 1.3 0 0 1 2.2 1.4l-2.5 5a5.9 5.9 0 0 1-5.3 3.4c-3.2 0-4.5-1.7-6.1-4.9l-1.4-2.7a1.35 1.35 0 0 1 2.3-1.4l1.2 1.9"/>',
   mail: '<rect x="3.4" y="5.4" width="17.2" height="13.2" rx="2"/><path d="M4.4 7l7.6 6 7.6-6"/>',
   send: '<path d="M20.6 3.4L3.4 10.3l7.1 2.4 2.4 7.1z"/><path d="M20.6 3.4L10.5 12.7"/>',
+  chat: '<path d="M5 4.8h14a2 2 0 0 1 2 2v8.6a2 2 0 0 1-2 2h-8.4L6 21v-3.6H5a2 2 0 0 1-2-2V6.8a2 2 0 0 1 2-2z"/><path d="M7.8 9.4h8.4"/><path d="M7.8 12.8h5.2"/>',
   inbox: '<path d="M3.4 13.4h4.7l1.7 2.6h4.4l1.7-2.6h4.7"/><path d="M5.6 5.4h12.8l2.2 8v5.2a1.5 1.5 0 0 1-1.5 1.5H4.9a1.5 1.5 0 0 1-1.5-1.5v-5.2z"/>',
   archive: '<rect x="3.4" y="4.4" width="17.2" height="5" rx="1.2"/><path d="M5 9.4v8.7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.4"/><path d="M10 13.4h4"/>',
   chk_on: '<rect x="4" y="4" width="16" height="16" rx="3.6"/><path d="M8.2 12.4l2.6 2.6 5-5.4"/>',
@@ -6554,6 +8005,7 @@ function render(){
   else if (state.screen === 'repairs') body = viewRepairs();     // v1.08.23
   else if (state.screen === 'stock') body = viewStock();         // v1.08.27
   else if (state.screen === 'acc') body = viewAcc();             // v1.08.39
+  else if (state.screen === 'chat') body = viewChat();           // v1.09.17
   else if (state.screen === 'approvals') body = viewApprovals(); // v1.08.46
   else if (state.screen === 'study') body = viewStudy();         // v1.08.51
   /* v1.08.46: перерисовка ТОГО ЖЕ экрана (фото легло в очередь, тумблер,
@@ -6696,6 +8148,10 @@ function menuLabels(){
     return lv === 'on' || lv === 'off' ? lv : 'auto';
   }catch(e){ return 'auto'; }
 }
+function menuRowsSet(){
+  try{ const v = +(state.user && state.user.push_prefs && state.user.push_prefs.menu_rows); if (v >= 1 && v <= 5) return true;
+    const l = +localStorage.getItem('techlog_menu_rows'); return l >= 1 && l <= 5; }catch(e){ return false; }
+}
 function menuRows(){
   try{
     let v = +(state.user && state.user.push_prefs && state.user.push_prefs.menu_rows);
@@ -6770,6 +8226,7 @@ function viewTabbar(){
   const items = isAcc() ? [
     ['acc', ic('receipt'), t('tab_acc')],
     ...srchItem,
+    ['chat', ic('chat'), t('tab_chat')],                                     // v1.09.17: сообщения
     ['reports', ICONS.pdf, t('tab_reports')],
     ['stats', ICONS.stats, t('tab_stats')],
     ['dirs', ICONS.dirs, t('tab_dirs')],
@@ -6778,9 +8235,10 @@ function viewTabbar(){
   ] : [
     ['home', ICONS.home, t('tab_home')],
     ...srchItem,
+    ['chat', ic('chat'), t('tab_chat')],                                     // v1.09.17: сообщения
     ...((isManager() || vmCur() === 'desktop') ? [['board', ICONS.board, t('tab_board')]] : []),   // v1.07.49: воркеру — недельная доска в ПК-режиме
     ...(isManager() ? [['proposals', ICONS.prop, t('tab_proposals')]] : []),  // v1.07.27
-    ['repairs', ic('toolbox'), t('tab_repairs')],                            // v1.08.23
+    ...(repTabOn() ? [['repairs', ic('toolbox'), t('tab_repairs')]] : []),    // v1.08.23; v1.09.13: можно оставить только ремонтникам
     ['stock', ic('box'), t('tab_stock')],                                    // v1.08.27
     ['map', ICONS.map, t('tab_map')],
     ['reports', ICONS.pdf, t('tab_reports')],
@@ -6798,22 +8256,26 @@ function viewTabbar(){
      подпись обрезается и не выходит за свою кнопку. */
   /* v1.09.02: личные настройки — подписи (авто/показать/скрыть) и число рядов
      нижнего меню. «Тесная» раскладка теперь считается по пунктам В РЯДУ. */
-  const cols = tabbarIsBottom() ? tabbarCols(items.length, menuRows()) : items.length;
+  /* v1.09.17: с «Сообщениями» у админа 17 пунктов — в один ряд на телефоне кнопка выходила 23 px (меньше пальца).
+     Пока человек сам не выбирал число рядов, тесное меню встаёт в 2 ряда само; явный выбор (в т. ч. «1») главнее. */
+  let rowsN = menuRows();
+  if (rowsN === 1 && !menuRowsSet() && tabbarIsBottom() && items.length > 12 && ((window.innerWidth || 400) / items.length) < 27) rowsN = 2;
+  const cols = tabbarIsBottom() ? tabbarCols(items.length, rowsN) : items.length;
   const multi = cols < items.length;
   const lab = menuLabels();
   _tbBottom = tabbarIsBottom();
-  const cls = 'tabbar' + (cols > 11 ? ' tb-tight' : '') + (multi ? ' tb-multi' : '') + (lab !== 'auto' ? ' tb-lab-' + lab : '');
+  const cls = 'tabbar' + (cols > 11 ? ' tb-tight' : '') + (multi ? ' tb-multi' : '') + (lab !== 'auto' ? ' tb-lab-' + lab : '') + (multi && cols >= 5 ? ' tb-c5' : '');   // v1.09.17: 17 пунктов — в 4 ряда выходит по 5 в ряду
   return `<nav class="${cls}"${multi ? ` style="--tb-cols:${cols}"` : ''}>` + items.map(([id, ic, label]) => id === 'srch'
     ? `<button class="tab hdr-srch" title="${esc(label)}" onclick="App.searchOpen()">${ic}<span>${label}</span></button>`
     : id === 'faq'
     ? `<button class="tab" title="${esc(label)}" onclick="App.faq()">${ic}<span>${label}</span></button>`
-    : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" title="${esc(label)}" onclick="App.go('${id}')">
-      ${ic}<span>${label}</span>
+    : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" title="${esc(label)}" ${id === 'chat' ? 'data-tab="chat" ' : ''}onclick="App.go('${id}')">
+      ${ic}<span>${label}</span>${id === 'chat' ? (() => { const n = chUnread(); return `<i class="tab-badge" data-b="chat" ${n ? '' : 'hidden'}>${n > 99 ? '99+' : n}</i>`; })() : ''}
     </button>`).join('') + `</nav>`;
 }
 
 /* ---------------- Неделя ПН–ПТ ---------------- */
-function viewWeek(){
+function viewWeek(bare){   // v1.09.12: bare — главная: кнопки «сегодня» и «перенести день» стоят в строке дня
   const days = [];
   const today = todayISO();
   for (let i=0;i<7;i++){
@@ -6839,8 +8301,17 @@ function viewWeek(){
     <div class="week-days" id="week-days">${days.join('')}</div>
     <button class="wk-arrow" onclick="App.shiftWeek(1)" aria-label="next week">${ic('chev_r')}</button>
   </div>
-  ${state.selDate!==today ? `<button class="today-jump" onclick="App.jumpToday()">⌂ ${t('back_today')}</button>` : ''}
-  ${isAdmin() && tplOn() ? `<button class="today-jump tpl-move" onclick="App.tplMove()">${ic('compass')} ${t('tpl_move_day')}</button>` : ''}`;
+  ${!bare && state.selDate!==today ? `<button class="today-jump" onclick="App.jumpToday()">⌂ ${t('back_today')}</button>` : ''}
+  ${!bare && isAdmin() && tplOn() && dayMoveOn() ? `<button class="today-jump tpl-move" onclick="App.tplMove()">${ic('compass')} ${t('tpl_move_day')}</button>` : ''}`;
+}
+/* v1.09.12: «⌂ сегодня» и «Перенести день» переехали в строку дня (dayBar) — под лентой
+   недели теперь ОДНА строка: дата · [сегодня] [карта] [перенос] [?] */
+function dayMoveOn(){ return (state.data.org_settings || {}).day_move_on === true; }
+function dayBarToolsHtml(){
+  const today = todayISO();
+  return (state.selDate !== today ? `<button type="button" class="mini-nav today-jump" onclick="App.jumpToday()" title="${t('back_today')}">⌂<span class="mn-t"> ${t('back_today')}</span></button>` : '')
+    + `<button type="button" class="mini-nav" id="day-map-btn" onclick="App.openDayMap()" title="${t('map_of_day')}">${ic('map')}<span class="mn-t"> ${t('map_of_day')}</span></button>`
+    + (isAdmin() && tplOn() && dayMoveOn() ? `<button type="button" class="mini-nav tpl-move" onclick="App.tplMove()" title="${t('tpl_move_day')}">${ic('compass')}<span class="mn-t"> ${t('tpl_move_day')}</span></button>` : '');
 }
 
 /* =====================================================================
@@ -7078,12 +8549,14 @@ function viewHome(){
     ? `<div class="list-empty"><div class="big">${ic('owl')}</div>${t('no_items')}<br><span class="tiny">${t('tap_add')}</span></div>` : '';
 
   const dayBar = `
-    <div class="day-bar">
+    <div class="day-bar" id="day-bar">
       <b>${fmtDMY(iso)}</b>
-      <button class="mini-nav" onclick="App.openDayMap()">${ic('map')} ${t('map_of_day')}</button>
-      ${helpBtn('home')}
+      <span class="day-bar-tools">${dayBarToolsHtml()}${helpBtn('home')}</span>
     </div>`;
-  return a2hs + gdSpaceBannerHtml() + apvBanner + banner + viewWeek() + dayBar
+  /* v1.09.12: «Ждут апрува» и «Пикап сегодня» — в одну строку, когда видны обе */
+  try{ chTickStart(); chLoad(false); }catch(e){}                   // v1.09.17: сообщения (не чаще раза в минуту вне экрана чата)
+  const bannersRow = (apvBanner && banner) ? `<div class="banner-row" id="banner-row">${apvBanner}${banner}</div>` : (apvBanner + banner);
+  return a2hs + gdSpaceBannerHtml() + ckBannerHtml() + chBannerHtml() + bannersRow + viewWeek(true) + dayBar
     + `<div id="day-top" style="${q?'display:none':''}">` + homeStatsHtml() + `</div>`
     + filter
     + `<div id="search-area" style="${q?'':'display:none'}">${q ? searchAreaHtml() : ''}</div>`
@@ -7354,6 +8827,7 @@ function sectionFaqHtml(key){
   S.home = H(`
     <h4>${ic('home')} Главная — день и его задачи</h4>
     <ul>
+      <li><b>Строка дня</b> (v1.09.12): под лентой недели одна строка — дата, «⌂ сегодня» (когда выбран другой день), «Карта этого дня» и «?»; на телефоне и в компактной плотности — значками. «Перенести день» скрыт, пока админ не включит его в Настройки → Прочие функции. Плашки «Ждут апрува» и «Пикап сегодня» стоят в одну строку. Кнопка принтера на карточке открывает выбор: «Скачать PDF» или «Предпросмотр и печать»; та же кнопка есть в шапке открытого документа.</li>
       <li><b>Лента недели</b> сверху: точки под датой — есть задачи/пикапы; клик — выбрать день, стрелки ‹ › — листать недели, «Сегодня» — вернуться.</li>
       <li><b>Счётчики дня</b>: «N ЗАДАЧ» и «N ПИКАПОВ» с разбивкой по типам; «Карта этого дня» строит маршрут по точкам дня.</li>
       <li><b>Мои / Все</b> — фильтр задач; <b>Поиск</b> ищет по юниту, комплексу и адресу.</li>
@@ -7383,6 +8857,7 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('home')} Home — the day and its tasks</h4>
     <ul>
+      <li><b>Day row</b> (v1.09.12): one row under the week ribbon — date, "⌂ today" (when another day is selected), "Map of this day" and "?"; icons only on phones and in compact density. "Move day" stays hidden until the admin enables it in Settings → Other functions. The "Awaiting approval" and "Pickups today" banners share one row. The printer button on a card offers "Download PDF" or "Preview and print"; the same button sits in the header of an open document.</li>
       <li><b>Week strip</b> on top: dots under a date — there are jobs/pickups; click to pick a day, the ‹ › arrows flip weeks, "${t('today')}" brings you back.</li>
       <li><b>Day counters</b>: "N JOBS" and "N PICKUPS" with a breakdown by type; "${t('map_of_day')}" builds a route across the day's points.</li>
       <li><b>${t('mine')} / ${t('all')}</b> — task filter; <b>${t('srch_btn')}</b> looks through unit, complex and address.</li>
@@ -7567,7 +9042,7 @@ function sectionFaqHtml(key){
       <li>${ic('book')} у комплекса — история кодов доступа; ${ic('pencil')} — редактирование (менеджер+).</li>
       <li>Оборудование: ${faqEqLegend()} — эти же коды и цвета на бейджах пикапов.</li>
       <li>Запросы кода от воркеров появляются входящими сверху — подтвердите или обновите код.</li>
-      <li>${ic('clipboard')} у вида задачи — <b>пред-выездной чек-лист</b>: что взять и проверить перед выездом; сотрудник видит его в задаче этого вида.</li>
+      <li><b>Чек-лист вида задачи</b> (v1.09.16) — кнопка «Чек-лист · N» у вида задачи: настраиваемый список пунктов, который сотрудник видит и отмечает в документе этого вида. Админ добавляет, удаляет и переставляет пункты (▲▼), задаёт русский и английский текст, помечает пункт обязательным (без отметки приложение предупредит при сохранении выполненной задачи) и может скопировать список из другого вида. Отметки в уже заполненных документах при правке списка не съезжают — они привязаны к пункту, а не к его номеру.</li>
       <li><b>Склад</b> переехал в отдельную вкладку внизу: наличие по типам и «Моя машина», кнопки «Взять» / «Сдать» / «В ремонт», у админа — «Поступление» и «Списание». Аренда, «забрал» и «вернул на склад» двигают оборудование сами.</li>
       <li><b>Штат</b> (v1.08.33): ${ic('gear')} у сотрудника — «был(а) в сети», доступы Bouncie (трекер / пуши ТО / трек дня — включение доступа само включает человеку пуши), журнал времени (свой; чей ещё видит: нет / всех / список) и активные <b>сессии</b> с кнопкой «${t('st_kill')}» (сессии видит админ; менеджер — если включено в «Функциях»: тогда у него появляется вкладка «Сотрудники» только для чтения — «был(а) в сети» и шестерёнка с сессиями, без номера машины, роли, пароля и блокировки). Номер машины у админа — степпер «− №  +»: «+» с пустого ставит первый свободный номер, «−» с единицы очищает.</li>
       <li><b>Автомобили</b> (v1.08.33): чипы ⚠ Check Engine и 🔻 топлива, поле «${t('veh_service')}» — за 500 mi до порога уходит пуш; кнопка ${ic('map')} — трек дня на карте. Жёлтая метка «🟡 код N мес» у комплексов — включается в «Функциях».</li>
@@ -7583,7 +9058,7 @@ function sectionFaqHtml(key){
       <li>${ic('book')} on a complex — the access-code history; ${ic('pencil')} — editing (manager+).</li>
       <li>Equipment: ${faqEqLegend()} — the same codes and colors as on the pickup badges.</li>
       <li>Code requests from workers appear as incoming items on top — confirm or update the code.</li>
-      <li>${ic('clipboard')} on a work type — the <b>pre-departure checklist</b>: what to take and check before leaving; the employee sees it in a job of that type.</li>
+      <li><b>Work type checklist</b> (v1.09.16) — the "Checklist · N" button on a work type: a configurable list the employee sees and ticks in a document of that type. The admin adds, removes and reorders items (▲▼), sets Russian and English text, marks an item required (without a tick the app warns when a done job is saved) and can copy the list from another type. Ticks in documents already filled in do not shift when the list changes — they are tied to the item, not to its number.</li>
       <li><b>${t('tab_stock')}</b> moved to its own bottom tab: totals by type and "My car", the "Take" / "Hand in" / "To repair" buttons, for the admin — "Intake" and "Write-off". Rentals, "picked up" and "returned to stock" move the equipment by themselves.</li>
       <li><b>Staff</b> (v1.08.33): ${ic('gear')} on an employee — "last seen", Bouncie access (tracker / service pushes / day track — granting access also turns on that person's pushes), the time log (own; who else sees it: no one / everyone / list) and active <b>sessions</b> with the "${t('st_kill')}" button (the admin sees sessions; a manager — if enabled under "Features": a read-only Staff tab then appears for them — "last seen" and the gear with sessions, without car number, role, password or blocking). The admin's car number is a "− №  +" stepper: "+" from empty sets the first free number, "−" from one clears it.</li>
       <li><b>${t('d_vehicles')}</b> (v1.08.33): the ⚠ Check Engine and 🔻 fuel chips, the "${t('veh_service')}" field — a push goes out 500 mi before the threshold; the ${ic('map')} button — the day track on the map. The yellow "🟡 code N mo" chip on complexes is enabled under "Features".</li>
@@ -7656,6 +9131,9 @@ function sectionFaqHtml(key){
   S.settings = H(`
     <h4>${ic('gear')} Настройки</h4>
     <ul>
+      <li><b>Поиск по настройкам</b> (v1.09.12): поле над разделами ищет по названию пункта, его описанию и тексту подсказки «?»; нажатие на результат раскрывает раздел и подраздел и подсвечивает пункт. Лента разделов едет за прокруткой и подсвечивает раздел, который сейчас на экране. «Переводы заметок для PDF» — подраздел «Настроек документов».</li>
+      <li><b>${t('mq_ctl')}</b> (v1.09.12): по умолчанию полоска появляется, только когда что-то не отправлено; до входа не показывается. Файл ждёт, пока его документ сохранится на сервере, и не выбрасывается при отказе сервера — причина пишется словами. В окне — «Копировать» и «Скачать лог». <b>${t('net_hide_chk')}</b> — личная галочка в карточке профиля: при проблемах со связью бейдж появляется сам.</li>
+      <li><b>Без сети</b> (v1.09.12): приложение запускается из кэша (библиотеки лежат в самой сборке); если токен истёк — вход по сохранённой сессии, данные с устройства, записи и файлы уходят в очередь и досылаются, когда появится связь.</li>
       <li><b>Меню разделов</b> (v1.09.09): на ПК — столбец слева, на телефоне — лента под шапкой; нажатие прокручивает к разделу и раскрывает его. <b>${t('tv_test_btn')}</b> — в «Режиме телевизора»: настоящий ТВ-экран на ваших данных без кода, сверху полоска проверки (плотность, «На весь экран», «${t('tv_test_stop')}»). «${t('tv_dens_t')}» — общая для всех телевизоров.</li>
       <li><b>${t('push_pop_card')}</b> (v1.09.00) — один раздел: Push-уведомления этого устройства и всплывающие подсказки (где показывать, полоска отправки).</li>
       <li><b>${t('push_card')}</b> (v1.08.33): кнопка подписывает ЭТО устройство (нажмите на каждом телефоне/ПК); галочки — что присылать: задача, пикап, апрув, просрочка, снятие апрува, плюс ошибки машин и ТО при доступе. iPhone: сначала «На экран Домой» (iOS 16.4+). Доставка идёт, пока кто-то из фирмы онлайн; после действий уходит сразу.</li>
@@ -7683,6 +9161,9 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('gear')} Settings</h4>
     <ul>
+      <li><b>Settings search</b> (v1.09.12): the box above the sections searches item names, descriptions and "?" hint texts; a result opens its section and sub-section and highlights the item. The section ribbon follows the scroll and highlights the section on screen. "PDF note translations" is now a sub-section of "Document settings".</li>
+      <li><b>${t('mq_ctl')}</b> (v1.09.12): by default the bar shows only when something is unsent; never before sign-in. A file waits until its document is saved on the server and is not dropped when the server refuses — the reason is spelled out. The window has "Copy" and "Download log". <b>${t('net_hide_chk')}</b> — a personal checkbox in the profile card: the badge returns by itself on connection problems.</li>
+      <li><b>Offline</b> (v1.09.12): the app starts from cache (libraries ship with the build); if the token has expired it signs in with the saved session, shows device data, queues records and files and sends them once the connection is back.</li>
       <li><b>Section menu</b> (v1.09.09): a column on the left on a PC, a strip under the header on a phone; a tap scrolls to the section and opens it. <b>${t('tv_test_btn')}</b> — under "TV mode": the real TV screen on your data without a code, with a test bar on top (density, "Full screen", "${t('tv_test_stop')}"). "${t('tv_dens_t')}" is shared by all TVs.</li>
       <li><b>${t('push_pop_card')}</b> (v1.09.00) — one section: this device's push notifications and the pop-up messages (where to show them, the upload bar).</li>
       <li><b>${t('push_card')}</b> (v1.08.33): the button subscribes THIS device (press it on every phone/PC); the checkboxes pick what to send: task, pickup, approval, overdue, approval reset, plus vehicle alerts and service when you have access. iPhone: "Add to Home Screen" first (iOS 16.4+). Delivery runs while someone from the company is online; after an action it goes out at once.</li>
@@ -7708,9 +9189,40 @@ function sectionFaqHtml(key){
       <li><b>${ic('upload')} Unsent photos and video</b>: a summary by document, a five-line send log and the "Retry sending" / "Connection check" buttons — while one runs, the other is disabled.</li>
     </ul>`);
 
+  S.chat = H(`
+    <h4>${ic('chat')} Сообщения</h4>
+    <ul>
+      <li><b>Группы</b> (v1.09.20): кнопка «+ Группа» над списком — название и участники. Создать группу может любой сотрудник; добавлять людей — любой участник, убирать — создатель и администратор, выйти может каждый (шестерёнка в шапке группы). Новый участник видит всю историю. Сообщения группы видят только участники; документ можно отправить в группу прямо самолётиком из шапки документа.</li>
+      <li><b>Объявления</b> — важное от менеджера и администратора: пишут только они, читают все. <b>Общий чат</b> — пишут и читают все сотрудники. Ниже — <b>личная переписка</b> с любым сотрудником: её видят только двое участников, админ чужую переписку не читает.</li>
+      <li><b>Документ в сообщении</b>: кнопка с листком слева от поля ввода — выберите задачу, пропозал или ремонт. В чате документ виден карточкой (комплекс, юнит, номер, дата, статус, сумма); нажатие сразу его открывает. Что человек увидит, решают его права: нет доступа — карточка с замком.</li>
+      <li><b>Из самого документа</b>: самолётик в шапке задачи, пропозала или ремонта — отметьте получателей (менеджеры и админы отмечены заранее) или «Общий чат», добавьте записку и отправьте. Там же — ссылка на документ для мессенджера или почты.</li>
+      <li><b>Нажмите на сообщение</b> (v1.09.19) — откроется меню: реакция 👍 ❤️ 😂 😮 😢 🙏 (одна от человека, повторное нажатие снимает), <b>«Ответить»</b> (цитата над сообщением, нажатие на неё ведёт к исходному), «Копировать», <b>«Изменить»</b> (своё, в течение суток — появится пометка «изменено»), «Удалить».</li>
+      <li><b>Фото</b> (v1.09.19): кнопка с камерой — снимок из галереи или с камеры. Он уменьшается на телефоне (до 1600 px, около 350 КБ), в ленте видна миниатюра, нажатие открывает снимок целиком и даёт скачать. Ссылки в тексте нажимаются. Сообщения одного человека подряд собираются «пачкой». На значке приложения — число непрочитанного.</li>
+      <li><b>Важно</b> — значок с восклицательным знаком у менеджера и админа: сообщение выделяется красным, push приходит с пометкой ❗.</li>
+      <li><b>Уведомления</b>: каждое сообщение приходит push-уведомлением (Настройки → Уведомления → «Сообщения в чате»), нажатие открывает нужную переписку. В открытом приложении — красный счётчик на пункте меню, плашка «Новые сообщения» на главной и подсказка с кнопкой «Открыть чат».</li>
+      <li><b>Защита переписки</b> (v1.09.21): у каждого сотрудника — личный ключ; полная инструкция — ниже, в конце этого раздела.</li>
+      <li>На ПК <b>Enter</b> отправляет, Shift+Enter — новая строка; на телефоне Enter — новая строка, отправка кнопкой. Своё сообщение можно удалить крестиком; админ может удалить любое сообщение в «Объявлениях» и «Общем чате».</li>
+    </ul>
+  `, `
+    <h4>${ic('chat')} Messages</h4>
+    <ul>
+      <li><b>Groups</b> (v1.09.20): the "+ Group" button above the list — a name and members. Any employee can create a group; any member can add people, the creator and the admin can remove them, anyone can leave (the gear in the group header). A new member sees the whole history. Group messages are visible to members only; a document can be sent to a group with the paper plane in the document header.</li>
+      <li><b>Announcements</b> — important notes from the manager and the admin: only they post, everyone reads. <b>Team chat</b> — every employee writes and reads. Below — <b>direct conversations</b> with any employee: only the two participants see them, the admin does not read other people's conversations.</li>
+      <li><b>Document in a message</b>: the sheet button left of the input — pick a job, proposal or repair. In the chat the document is a card (complex, unit, number, date, status, amount); one tap opens it. What a person sees depends on their rights: no access — a locked card.</li>
+      <li><b>From the document itself</b>: the paper plane in the header of a job, proposal or repair — tick recipients (managers and admins are pre-ticked) or Team chat, add a note and send. The link for a messenger or e-mail is there too.</li>
+      <li><b>Tap a message</b> (v1.09.19) for its menu: a reaction 👍 ❤️ 😂 😮 😢 🙏 (one per person, tapping again removes it), <b>Reply</b> (a quote above the message, tapping it jumps to the original), Copy, <b>Edit</b> (your own, within 24 hours — it gets an "edited" mark), Delete.</li>
+      <li><b>Photos</b> (v1.09.19): the camera button — a picture from the gallery or the camera. It is downsized on the phone (to 1600 px, about 350 KB), the feed shows a thumbnail, a tap opens the full picture and lets you download it. Links in text are clickable. Consecutive messages from one person are grouped. The app icon shows the unread count.</li>
+      <li><b>Important</b> — the exclamation button for the manager and the admin: the message is highlighted in red, the push comes with ❗.</li>
+      <li><b>Notifications</b>: every message arrives as a push (Settings → Notifications → "Chat messages"), a tap opens the right conversation. In the open app — a red counter on the menu item, a "New messages" banner on Home and a hint with an "Open chat" button.</li>
+      <li><b>Chat protection</b> (v1.09.21): every employee has a personal key; the full guide is below, at the end of this section.</li>
+      <li>On a PC <b>Enter</b> sends and Shift+Enter makes a new line; on a phone Enter is a new line and the button sends. You can delete your own message with the cross; the admin can delete any message in Announcements and Team chat.</li>
+    </ul>
+  `);
+  S.chat += ckHelpHtml();                                                    // v1.09.21: полная инструкция по ключам — в конце раздела «Сообщения»
   S.study = H(`
     <h4>${ic('grad')} Учёба</h4>
     <ul>
+      <li><b>Читать вслух</b> (v1.09.14): в шапке учебника — значок наушников. Панель внизу: «Читать / Пауза», страницы назад-вперёд, скорость ×0.6–1.8, выбор голоса. Книга читается по предложениям и сама перелистывает страницы; колонтитулы пропускаются, колонки читаются по порядку. Голос — системный синтез речи телефона: если голос языка установлен на устройстве, чтение работает без сети (Настройки телефона → Синтез речи → язык → скачать голосовые данные). Время чтения считается как обычно.</li>
       <li><b>Чипы разделов</b> сверху — восемь разделов учебника; нажатие выбирает раздел, выбор запоминается на устройстве. Ниже — карточка выбранного раздела с двумя кнопками: <b>Тест</b> и <b>Книга</b>. Кнопка блёклая — файла для раздела пока нет (тесты лежат в dictionary/tests, книги — в dictionary/books).</li>
       <li><b>Язык</b> вопросов, вариантов и объяснений — тот же, что у интерфейса: меняется в Настройках (RU / EN), отдельного переключателя в тесте нет.</li>
       <li><b>Перед тестом</b> выбирается режим: <b>Обучение</b> — разбор сразу после каждого ответа; <b>Экзамен</b> — только ответы, разбор в итогах. Число вопросов (все или часть) и перемешивание.</li>
@@ -7724,6 +9236,7 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('grad')} Study</h4>
     <ul>
+      <li><b>Read aloud</b> (v1.09.14): the headphones icon in the book header. Bottom panel: Read / Pause, page back and forward, speed ×0.6–1.8, voice choice. The book is read sentence by sentence and turns pages by itself; running headers are skipped, columns are read in order. The voice is the phone's own speech synthesis: with the language voice installed on the device it works offline (phone Settings → Text-to-speech → language → download voice data). Reading time is counted as usual.</li>
       <li><b>Section chips</b> on top — eight textbook sections; a tap selects the section and the choice is remembered on the device. Below is the selected section's card with two buttons: <b>Test</b> and <b>Book</b>. A dimmed button means there is no file for that section yet (tests live in dictionary/tests, books in dictionary/books).</li>
       <li><b>Language</b> of questions, options and explanations is the interface language, set in Settings (RU / EN); there is no separate switch inside the test.</li>
       <li><b>Before a test</b> pick the mode: <b>Learning</b> — the explanation right after each answer; <b>Exam</b> — answers only, explanations in the results. Number of questions (all or a part) and shuffling.</li>
@@ -8614,6 +10127,26 @@ let jobDraft = null; // рабочая копия
 
 /* v1.08.33: шаблоны — включаемая функция (Настройки → «Функции») */
 function tplOn(){ return (state.data.org_settings || {}).tpl_on !== false; }
+/* v1.09.13: ПРОФИЛЬ СОТРУДНИКА — техник · ремонтник · помощник. Это настройка интерфейса,
+   а не прав: база пускает сотрудника к тем же документам, что и раньше. С галочкой
+   «Раздел „Ремонт“ — только ремонтникам» вкладка «Ремонт» у обычных сотрудников скрыта. */
+const STAFF_KINDS = ['tech', 'repair', 'helper'];
+function staffKind(u){ const k = u && u.staff_kind; return STAFF_KINDS.includes(k) ? k : 'tech'; }
+function repTabOn(){
+  const u = state.user; if (!u) return false;
+  if (u.role !== 'tech') return true;
+  if ((state.data.org_settings || {}).rep_kind_only !== true) return true;
+  return staffKind(u) === 'repair';
+}
+async function staffKindSet(uid_, v){
+  if (!isAdmin() || !STAFF_KINDS.includes(v)) return;
+  const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
+  await dbUpsert('profiles', { ...u, staff_kind: v });
+  if (state.user && state.user.id === uid_) state.user.staff_kind = v;
+  audit('staff_flag', 'profile', uid_, { name: u.display_name, key: 'staff_kind', v });
+  document.querySelectorAll('#st-kind button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  render();
+}
 function jobClone(srcId){
   const j = state.data.jobs.find(x => x.id === srcId); if (!j) return;
   const date = addDaysISO(todayISO(), 1);
@@ -8720,11 +10253,11 @@ function invSecFilled(id, fd, sec, note){
   if (sec && +sec[id === 'note' ? 'extra' : id] > 0) return true;
   const any = (o, keys) => !!o && keys.some(k => !!o[k]);
   switch (id){
-    case 'steam':      return any(fd.steam, ['deep_scrub', 'rotovac']);
-    case 'removals':   return any(fd.removals, ['red_stain', 'wax', 'rust', 'ink', 'gum', 'paint']);
+    case 'steam':      return any(fd.steam, ['deep_scrub', 'rotovac', 'portable']);
+    case 'removals':   return any(fd.removals, ['red_stain', 'wax', 'rust', 'ink', 'gum', 'paint', 'imprint']);
     case 'repairs':    return any(fd.repairs, ['threshold', 'stretch', 'seam', 'patch']);
     case 'dye':        return any(fd.dye, ['spot', 'full']);
-    case 'other':      return any(fd.other, ['trash_out', 'pad_removal', 'all_unit']);
+    case 'other':      return any(fd.other, ['trash_out', 'crb', 'pad_removal', 'all_unit']);
     case 'fog':        return any(fd.fog, ['fog', 'goc', 'pet', 'smoke', 'deodorizer']);
     case 'treatments': return any(fd.treatments, ['sealant', 'mold', 'degreaser']);
     case 'wetvac':     return any(fd.wetvac, ['wet_vac', 'flood', 'sewer', 'fresh'])
@@ -8861,7 +10394,7 @@ function viewJob(){
   }).join('');
 
   return `
-  ${docBarHtml({ chain: `App.chain('job','${j.id}')`,
+  ${docBarHtml({ chain: `App.chain('job','${j.id}')`, print: 'App.printMenu()', share: state.data.jobs.some(x => x.id === j.id) ? `App.docShare('job','${j.id}')` : '',
                  title: `${docNo('job', j) ? esc(docNo('job', j)) + ' · ' : ''}${esc(cx.abbr || cx.name || '')} · Unit ${esc(j.unit_number || '—')}`,
                  save: 'App.saveJob(false)', close: 'App.jobClose()', dirty: jobDirty() })}
   <div class="card" style="border-left:6px solid ${wt.color}">
@@ -8888,6 +10421,14 @@ function viewJob(){
           ${chk('root','vacant','Vacant')}
           ${chk('root','occupied','Occupied')}
         </div></div>
+    </div>
+    <div class="inv-flags" id="inv-flags"><!-- v1.09.12: шапка нового бланка -->
+      <div class="opt-grid">
+        ${chk('root','emergency','Emergency call')} ${chk('root','no_water','No water')} ${chk('root','second_call','Second call')}
+        ${chk('root','f_proposal','Proposal')}
+      </div>
+      <div class="form-row inv-po"><span class="lbl">PO ${tipQ('inv_po_tip')}</span>
+        <input id="jb-po" maxlength="24" autocomplete="off" placeholder="${esc(invPoAuto(j) || 'PO #')}" value="${esc(fd.po || '')}"></div>
     </div>
     <div class="crew-box">
       <div class="tiny" style="font-weight:900;margin-bottom:6px">${(j.technician_id||(j.helper_ids||[]).length)?'':warnIcon()}${ic('crew')} ${t('crew')}</div>
@@ -8918,7 +10459,7 @@ function viewJob(){
 
   <div class="inv-sec${invSecCls('steam', sec)}" data-sec="steam"><div class="inv-head" ${invSecHead('steam', sec)}${ic('steam')} Steam Clean ${helpBtn('steam')} ${amtWrap('steam',sec.steam)}</div>
     <div class="inv-body"><div class="opt-grid">
-      ${chk('steam','deep_scrub','Deep Scrub')} ${chk('steam','rotovac','Rotovac')}
+      ${chk('steam','deep_scrub','Deep Scrub')} ${chk('steam','rotovac','Rotovac')} ${chk('steam','portable','Portable')}
       <span class="qty-line"><span class="tiny">Rooms</span>${stepperHtml('steam-rooms', fd.steam.rooms||1)}</span>
     </div></div></div>
 
@@ -8926,6 +10467,7 @@ function viewJob(){
     <div class="inv-body"><div class="opt-grid">
       ${chk('removals','red_stain','Red Stain')} ${chk('removals','wax','Wax')} ${chk('removals','rust','Rust')}
       ${chk('removals','ink','Ink')} ${chk('removals','gum','Gum')} ${chk('removals','paint','Paint Removal')}
+      ${chk('removals','imprint','Imprint Removal')}
     </div></div></div>
 
   <div class="inv-sec${invSecCls('repairs', sec)}" data-sec="repairs"><div class="inv-head" ${invSecHead('repairs', sec)}${ic('wrench')} Repairs ${helpBtn('repairs')} ${amtWrap('repairs',sec.repairs)}</div>
@@ -8941,7 +10483,7 @@ function viewJob(){
 
   <div class="inv-sec${invSecCls('other', sec)}" data-sec="other"><div class="inv-head" ${invSecHead('other', sec)}${ic('box')} Other ${helpBtn('other')} ${amtWrap('other',sec.other)}</div>
     <div class="inv-body">
-      <div class="opt-grid">${chk('other','trash_out','Trash Out')} ${chk('other','pad_removal','Pad Removal')} ${chk('other','all_unit','All Unit')}</div>
+      <div class="opt-grid">${chk('other','trash_out','Trash Out')} ${chk('other','crb','Crb Machine')} ${chk('other','pad_removal','Pad Removal')} ${chk('other','all_unit','All Unit')}</div>
       <div class="qty-line"><span class="tiny">Rooms</span>${stepperHtml('other-rooms', fd.other.rooms||1)}</div>
     </div></div>
 
@@ -9186,6 +10728,10 @@ function docBarHtml(o){
     <span class="db-t">${o.dirty ? '<span class="dirty-dot" title="' + t('doc_unsaved_t') + '"></span> ' : ''}${o.title || ''}</span>
     ${o.chain ? `<button type="button" class="db-chain" title="${t('ch_title')}" aria-label="${t('ch_title')}"
       onclick="${o.chain}">${ic('link')}</button>` : ''}
+    ${o.share ? `<button type="button" class="db-chain db-share" id="db-share" title="${t('ds_share')}" aria-label="${t('ds_share')}"
+      onclick="${o.share}">${ic('send')}</button>` : ''}
+    ${o.print ? `<button type="button" class="db-chain db-print" id="db-print" title="${t('print_inv')}" aria-label="${t('print_inv')}"
+      onclick="${o.print}">${ic('printer')}</button>` : ''}
     <button type="button" class="db-save" onclick="${o.save}">${ic('save')}<span>${t('save')}</span></button>
     <button type="button" class="db-x" title="${t('doc_close')}" aria-label="${t('doc_close')}" onclick="${o.close}">${ic('close')}</button>
   </div>`;
@@ -9310,6 +10856,7 @@ function bindJobForm(){
     } else if (el.id === 'jb-date'){ jobDraft.date = el.value; }
     else if (el.id === 'jb-unit'){ jobDraft.unit_number = el.value.trim(); }
     else if (el.id === 'jb-adnote'){ fd().airduct.note = el.value; }
+    else if (el.id === 'jb-po'){ fd().po = String(el.value || '').trim().slice(0, 24); }   // v1.09.12
     else if (el.id === 'jb-note'){ jobDraft.note = el.value; }
     else if (el.id === 'jb-shared'){ jobDraft.shared_with_helpers = el.checked; el.closest('.opt')?.classList.toggle('on', el.checked); }
     else if (el.matches('[data-oth-d]')){ const o = fd().others[+el.dataset.othD]; if (o){ o.desc = el.value; othRefresh(false); } }   // v1.09.08: строку могли удалить
@@ -9432,6 +10979,9 @@ async function saveJob(goHome){
   const p = priceResolver(j.counterparty_id);
   j.total = calcTotal(j.form_data, p);
   const doneChk = $('#jb-done');
+  if (doneChk && doneChk.checked){                          // v1.09.16: обязательные пункты чек-листа — предупреждение, не запрет
+    try{ const miss = clMissingReq(j); if (miss.length) toast('⚠ ' + t('cl_req_warn').replace('{N}', miss.length) + ': ' + miss.slice(0, 3).join(' · ') + (miss.length > 3 ? ' …' : ''), 'err', 7000); }catch(e){}
+  }
   if (doneChk){
     if (orig.status === 'approved'){
       // апрув снимается при изменении итоговой стоимости не-админом
@@ -10134,40 +11684,139 @@ function dirWorkTypes(){
       <span class="icon-circle" style="background:${w.color};color:${textColorFor(w.color)}">●</span>
       <div class="grow"><b style="color:${w.color}">${esc(biText(w.name))}</b>
         ${w.needs_aux?`<div class="tiny">${ic('toolbox')} ${(w.aux_ids||[]).map(id=>esc((state.data.aux_equipment.find(a=>a.id===id)||{}).name||'')).join(' · ')}</div>`:''}</div>
-      <button class="btn btn-ghost sm" title="${t('cl_title')}" onclick="App.wtChecklistModal('${w.id}')">${ic('clipboard')}${(w.checklist&&w.checklist.length)?' '+w.checklist.length:''}</button>
+      <button class="btn btn-ghost sm wt-cl-btn" title="${t('cl_dir_t')}" onclick="App.wtChecklistModal('${w.id}')">${ic('clipboard')} <span class="wt-cl-l">${t('cl_short')}</span> · ${clItems(w).length}</button>
       <button class="btn btn-ghost sm" onclick="App.editWtModal('${w.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
     <button class="btn btn-green" onclick="App.editWtModal()">${ic('plus')} ${t('add')}</button>`;
 }
-/* v1.07.26: чек-лист вида задач — редактор (админ) */
+/* =====================================================================
+   v1.09.16 · ЧЕК-ЛИСТ ВИДА ЗАДАЧИ — НАСТРАИВАЕМЫЙ СПИСОК.
+   Был (v1.07.26) текстовым полем за значком-планшетом: пункты — строки текста, а отметки
+   в документе привязывались к НОМЕРУ строки — стоило админу вставить или удалить пункт,
+   и галочки в уже заполненных документах «съезжали» на соседние пункты.
+   Теперь это список: у пункта свой постоянный id, русский и английский текст, признак
+   «обязательный»; пункты добавляются, удаляются, переставляются ▲▼, список можно
+   скопировать из другого вида задачи. Отметки в документе хранятся по id пункта
+   (form_data.cl = { <id>: true }); старые отметки по номеру читаются как раньше и
+   переводятся на id при первой же правке. База не менялась: work_types.checklist — jsonb,
+   прежние строки читаются без миграции (id строки — отпечаток её текста).
+   ===================================================================== */
+function clHash(str){ let h = 2166136261; str = String(str); for (let k = 0; k < str.length; k++){ h ^= str.charCodeAt(k); h = Math.imul(h, 16777619); } return 'h' + (h >>> 0).toString(36); }
+function clItems(wt){
+  const raw = (wt && Array.isArray(wt.checklist)) ? wt.checklist : [], seen = {}, out = [];
+  raw.forEach(x => {
+    const o = (x && typeof x === 'object') ? x : { t: x };
+    const txt = String(o.t == null ? '' : o.t).trim(); if (!txt) return;
+    let id = String(o.id || clHash(txt)); while (seen[id]) id += '_'; seen[id] = 1;
+    out.push({ id, t: txt, req: !!o.req });
+  });
+  return out;
+}
+function clSplit(txt){ const k = String(txt).indexOf('|'); return k < 0 ? [String(txt).trim(), ''] : [txt.slice(0, k).trim(), txt.slice(k + 1).trim()]; }
+function clJoin(ru, en){ ru = String(ru || '').trim(); en = String(en || '').trim(); return en ? (ru || en) + ' | ' + en : ru; }
+/* отметки документа → набор id (старые, по номеру строки, читаются по текущему списку) */
+function clDoneSet(fd, items){
+  const out = new Set(), m = (fd && fd.cl) || {};
+  Object.keys(m).forEach(k => { if (!m[k]) return; if (/^\d+$/.test(k)){ const it = items[+k]; if (it) out.add(it.id); } else out.add(k); });
+  return out;
+}
+const CLED = { wt: null, items: [] };
+function clEdPull(){
+  document.querySelectorAll('#cl-ed .cl-row').forEach((row, n) => { const it = CLED.items[n]; if (!it) return;
+    it.ru = row.querySelector('.cl-ru').value; it.en = row.querySelector('.cl-en').value; it.req = row.querySelector('.cl-req').checked; });
+}
+function clEdRowsHtml(){
+  const ro = !isAdmin();
+  return CLED.items.map((it, n) => `<div class="cl-row" data-n="${n}">
+      <span class="cl-n">${n + 1}</span>
+      <div class="cl-txt"><input class="cl-ru" maxlength="140" placeholder="${esc(t('cl_ph_ru'))}" value="${esc(it.ru || '')}" ${ro ? 'readonly' : ''}>
+        <input class="cl-en" maxlength="140" placeholder="${esc(t('cl_ph_en'))}" value="${esc(it.en || '')}" ${ro ? 'readonly' : ''}></div>
+      <label class="cl-reql" title="${esc(t('cl_req_t'))}"><input type="checkbox" class="cl-req" ${it.req ? 'checked' : ''} ${ro ? 'disabled' : ''}> ${t('cl_req')}</label>
+      ${ro ? '' : `<span class="cl-acts"><button type="button" class="btn btn-ghost sm" aria-label="${t('move_up')}" title="${t('move_up')}" ${n === 0 ? 'disabled' : ''} onclick="App.clEdMove(${n},-1)">${ic('chev_u')}</button>
+        <button type="button" class="btn btn-ghost sm" aria-label="${t('move_down')}" title="${t('move_down')}" ${n === CLED.items.length - 1 ? 'disabled' : ''} onclick="App.clEdMove(${n},1)">${ic('chev_d')}</button>
+        <button type="button" class="btn btn-ghost sm cl-del" aria-label="${t('delete')}" title="${t('delete')}" onclick="App.clEdDel(${n})">${ic('trash')}</button></span>`}
+    </div>`).join('') || `<div class="list-empty" style="padding:14px 0">${t('cl_empty')}</div>`;
+}
+function clEdPaint(){ const box = $('#cl-ed'); if (box) box.innerHTML = clEdRowsHtml(); const c = $('#cl-ed-n'); if (c) c.textContent = CLED.items.length; }
 function wtChecklistModal(wtId){
   const w = wtById(wtId); if (!w) return;
+  CLED.wt = w.id;
+  CLED.items = clItems(w).map(it => { const [ru, en] = clSplit(it.t); return { id: it.id, ru, en, req: it.req }; });
+  const others = [...state.data.work_types].filter(x => x.id !== w.id && clItems(x).length).sort((a, b) => (a.sort || 0) - (b.sort || 0));
   openModal(`
-    ${modalHead(t('cl_title') + ' — ' + esc(biText(w.name)), 'toolbox')}
-    <div class="tiny" style="margin-bottom:6px">${t('cl_edit_hint')}</div>
-    <textarea id="wt-cl" rows="10" style="width:100%" ${isAdmin()?'':'readonly'}>${esc((w.checklist||[]).join('\n'))}</textarea>
-    ${isAdmin() ? `<button class="btn btn-green" style="margin-top:8px" onclick="App.wtChecklistSave('${w.id}')">${t('save')}</button>` : ''}
-  `);
+    ${modalHead(t('cl_dir_t') + ' — ' + biText(w.name), 'clipboard')}
+    <div class="tiny" style="margin-bottom:8px">${t(isAdmin() ? 'cl_ed_hint' : 'cl_ed_ro')}</div>
+    <div style="font-weight:800;margin-bottom:6px">${t('cl_items')}: <span id="cl-ed-n">${CLED.items.length}</span> ${tipQ('cl_ed_tip')}</div>
+    <div id="cl-ed" class="cl-ed">${clEdRowsHtml()}</div>
+    ${isAdmin() ? `<div class="cl-tools">
+      <button type="button" class="btn btn-blue sm" id="cl-add" onclick="App.clEdAdd()">${ic('plus')} ${t('cl_add')}</button>
+      ${others.length ? `<select id="cl-copy" aria-label="${t('cl_copy')}" onchange="App.clEdCopy(this.value); this.value=''"><option value="">${t('cl_copy')}…</option>${others.map(x => `<option value="${x.id}">${esc(biText(x.name))} · ${clItems(x).length}</option>`).join('')}</select>` : ''}
+    </div>
+    <button type="button" class="btn btn-green" id="cl-save" style="margin-top:10px;width:100%" onclick="App.wtChecklistSave('${w.id}')">${ic('save')} ${t('save')}</button>` : ''}`);
+  const m = document.querySelector('#overlay .modal'); if (m) m.classList.add('cl-modal');
+}
+function clEdAdd(){
+  if (!isAdmin()) return; clEdPull();
+  if (CLED.items.length >= 60){ toast('⚠ ' + t('cl_max'), 'err'); return; }
+  CLED.items.push({ id: 'c' + uid().replace(/-/g, '').slice(0, 10), ru: '', en: '', req: false });
+  clEdPaint();
+  const rows = document.querySelectorAll('#cl-ed .cl-ru'); const last = rows[rows.length - 1]; if (last){ last.focus(); try{ last.scrollIntoView({ block: 'nearest' }); }catch(e){} }
+}
+function clEdDel(n){ if (!isAdmin()) return; clEdPull(); CLED.items.splice(n, 1); clEdPaint(); }
+function clEdMove(n, d){
+  if (!isAdmin()) return; clEdPull(); const k = n + d; if (k < 0 || k >= CLED.items.length) return;
+  [CLED.items[n], CLED.items[k]] = [CLED.items[k], CLED.items[n]]; clEdPaint();
+}
+function clEdCopy(fromId){
+  if (!isAdmin() || !fromId) return; clEdPull();
+  const have = new Set(CLED.items.map(it => clJoin(it.ru, it.en).toLowerCase()));
+  let add = 0;
+  clItems(wtById(fromId)).forEach(it => { if (have.has(it.t.toLowerCase()) || CLED.items.length >= 60) return; const [ru, en] = clSplit(it.t);
+    CLED.items.push({ id: 'c' + uid().replace(/-/g, '').slice(0, 10), ru, en, req: it.req }); add++; });
+  clEdPaint(); toast(add ? '✓ ' + t('cl_copied').replace('{N}', add) : 'ℹ ' + t('cl_copied_0'), add ? undefined : 'inf');
 }
 async function wtChecklistSave(wtId){
   const w = wtById(wtId); if (!w || !isAdmin()) return;
-  const lines = String($('#wt-cl').value || '').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 40);
-  await dbUpsert('work_types', { ...w, checklist: lines });
-  toast('✓ ' + t('saved')); closeModal(); render();
+  clEdPull();
+  const before = clItems(w);
+  const list = CLED.items.map(it => ({ id: it.id, t: clJoin(it.ru, it.en), req: !!it.req })).filter(it => it.t).slice(0, 60);
+  /* Документы, заполненные до 1.09.16, хранят отметки по НОМЕРУ строки. Пока известен прежний список, переводим
+     их на id — иначе после вставки или удаления пункта старые отметки показались бы у соседних пунктов.
+     Делается, только если правка реально сдвигает номера (пункты лишь дописаны в конец — ничего не трогаем). */
+  let moved = 0;
+  const shifts = !before.every((b, n) => list[n] && list[n].id === b.id);
+  if (shifts){
+    const legacy = (state.data.jobs || []).filter(j => j.work_type_id === w.id && j.form_data && j.form_data.cl
+      && Object.keys(j.form_data.cl).some(k => /^\d+$/.test(k) && j.form_data.cl[k])).slice(0, 400);
+    for (const j of legacy){
+      const m = {}; clDoneSet(j.form_data, before).forEach(k => { m[k] = true; });
+      try{ await dbUpsert('jobs', { ...j, form_data: { ...j.form_data, cl: m } }); moved++; }catch(e){ dlog('⚠ чек-лист: перевод отметок документа', j.id, e); }
+    }
+    if (moved) dlog('чек-лист «' + biText(w.name) + '»: отметки переведены с номеров строк на id в документах: ' + moved);
+  }
+  await dbUpsert('work_types', { ...w, checklist: list });
+  audit('wt_checklist', 'work_type', w.id, { name: biText(w.name), was: before.length, now: list.length,
+    added: list.filter(a => !before.some(b => b.id === a.id)).map(a => a.t).slice(0, 8), removed: before.filter(b => !list.some(a => a.id === b.id)).map(b => b.t).slice(0, 8) });
+  toast('✓ ' + t('saved') + (moved ? ' · ' + t('cl_moved').replace('{N}', moved) : '')); closeModal(); render();
 }
-/* карточка чек-листа в форме задачи; отметки живут в form_data.cl */
+/* карточка чек-листа в форме задачи; отметки — form_data.cl по id пункта */
 function checklistCardHtml(j){
-  const wt = wtById(j.work_type_id);
-  const cl = (wt && wt.checklist) || [];
-  if (!cl.length) return '';
-  const done = j.form_data.cl || {};
-  const n = cl.filter((_, i) => done[i]).length;
+  const items = clItems(wtById(j.work_type_id));
+  if (!items.length) return '';
+  const done = clDoneSet(j.form_data, items);
+  const n = items.filter(it => done.has(it.id)).length;
   return `<div class="card" id="cl-card">
-    <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('cl_title')}
-      <span class="chip ${n===cl.length?'ok':'warn'}">${n}/${cl.length}</span></div>
-    ${cl.map((s, i) => `<label class="opt ${done[i]?'on':''}" style="margin:3px 0">
-      <input type="checkbox" ${done[i]?'checked':''} onchange="App.clToggle(${i}, this.checked)"> ${esc(biText(s))}</label>`).join('')}
+    <div style="font-weight:900;margin-bottom:6px">${ic('clipboard')} ${t('cl_title')}
+      <span class="chip ${n===items.length?'ok':'warn'}">${n}/${items.length}</span></div>
+    ${items.map(it => `<label class="opt ${done.has(it.id)?'on':''}${it.req ? ' cl-is-req' : ''}" style="margin:3px 0">
+      <input type="checkbox" data-cl="${esc(it.id)}" ${done.has(it.id)?'checked':''} onchange="App.clToggle('${esc(it.id)}', this.checked)"> ${esc(biText(it.t))}${it.req ? ` <span class="cl-star" title="${esc(t('cl_req_t'))}">*</span>` : ''}</label>`).join('')}
   </div>`;
+}
+/* обязательные пункты, которые не отмечены (для предупреждения при «Выполнено») */
+function clMissingReq(j){
+  const items = clItems(wtById(j.work_type_id)); if (!items.length) return [];
+  const done = clDoneSet(j.form_data, items);
+  return items.filter(it => it.req && !done.has(it.id)).map(it => biText(it.t));
 }
 
 function dirEquipment(){
@@ -10413,6 +12062,7 @@ function editWtModal(id){
       <div class="opt-grid">${state.data.aux_equipment.map(a=>`
         <label class="opt ${(w.aux_ids||[]).includes(a.id)?'on':''}"><input type="checkbox" data-wtaux="${a.id}" ${(w.aux_ids||[]).includes(a.id)?'checked':''}> ${esc(a.name)}</label>`).join('')}
       </div></div>
+    ${id ? `<button type="button" class="btn btn-ghost" id="wt-cl-open" style="margin:4px 0 8px;width:100%" onclick="App.wtChecklistModal('${w.id}')">${ic('clipboard')} ${t('cl_dir_t')} · ${clItems(w).length}</button>` : `<div class="tiny" style="margin:4px 0 8px">${t('cl_after_save')}</div>`}
     <div style="font-weight:800;margin:8px 0 2px">${ic('clipboard')} ${t('wt_preset_t')} ${tipQ('wt_tip')}</div>
     <div class="tiny" style="margin-bottom:6px">${t('wt_preset_h')}</div>
     ${(() => { const cur = wtPreset(w); return WT_BOXES.map(([sec, title, ks]) => `
@@ -10507,6 +12157,7 @@ function viewSettings(){
   <div class="set-wrap">
   ${settingsNavHtml()}
   <div class="set-main">
+  ${setSearchHtml()}
   ${mediaQueueCardHtml()}
   ${bcolsCard}
 
@@ -10565,6 +12216,12 @@ function viewSettings(){
     <div class="fs-demo">${t('font_demo')}: <b>Unit 916 · Riverstone · ${money(1240)}</b></div>
     ${densRowHtml()}
     ${canvasRowHtml()}
+    <div class="settings-row" id="orient-row"><!-- v1.09.13: поворот экрана -->
+      <div class="grow" style="flex:1"><b>${ic('refresh')} ${t('ori_title')} ${tipQ('ori_tip')}</b>
+        <div class="d">${t('ori_d')}</div></div>
+      <div class="lang-seg">${['any', 'portrait', 'landscape'].map(v => `<button type="button" class="${orientPref() === v ? 'on' : ''}" onclick="App.orientSet('${v}')">${t('ori_' + v)}</button>`).join('')}</div>
+    </div>
+    <label class="chk-line" id="net-hide-row" style="margin-top:10px"><input type="checkbox" id="net-hide-chk" ${netHideOn() ? 'checked' : ''} onchange="App.netHideSet(this.checked)"> ${t('net_hide_chk')} ${tipQ('net_hide_tip')}</label>
     <div class="settings-row" id="ml-row"><!-- v1.09.02: подписи пунктов меню -->
       <div class="grow" style="flex:1"><b>${ic('eye')} ${t('ml_title')} ${tipQ('ml_hint')}</b>
         <div class="d">${vmCur() === 'desktop' ? t('font_mode_pc') : t('font_mode_ph')}</div></div>
@@ -10584,7 +12241,7 @@ function viewSettings(){
   </div>
 
   ${fold('docs', t('docs_set_card'), 'clipboard', docsCardHtml())}
-  ${fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml())}
+  ${fold('ck', t('ck_title'), 'key', ckCardHtml())}
   ${fold('push', t('push_pop_card'), 'bell', pbCardHtml() + popCardHtml())}
   ${fold('cam', t('cam_card'), 'camera', camCardHtml())}
   ${isAcc() ? '' : fold('study', t('st_card'), 'grad', studyCardHtml())}
@@ -10605,10 +12262,127 @@ function viewSettings(){
    (липкий, как основное меню), на телефоне — лента-карусель под заголовком. Пункт
    раскрывает свой спойлер и подводит к нему страницу. Состав — ровно те разделы,
    что видит эта роль. */
+/* =====================================================================
+   v1.09.12 · ПОИСК ПО НАСТРОЙКАМ И ЛЕНТА, КОТОРАЯ ЕДЕТ ЗА ПРОКРУТКОЙ.
+   Поиск: индекс строится из тех же функций, что рисуют разделы (все спойлеры
+   на время сборки считаются раскрытыми): название пункта + текст его «?» и
+   описания. Нажатие на результат раскрывает раздел и подраздел, подводит
+   страницу к пункту и подсвечивает его.
+   Лента: пока страница прокручивается, в ленте (телефон) и в столбце (ПК)
+   подсвечивается раздел, который сейчас у верха экрана, и лента сама
+   доезжает до него. Слушатель пассивный, работа — раз в кадр.
+   ===================================================================== */
+let _setIdx = null, _setIdxAt = 0, _setHits = [];
+const SET_Q_SEL = '.settings-row, label, .qty-line, .fold-sub > .fold-h, .card > div:first-child, .form-row, .btn';
+/* название пункта: сначала жирный заголовок строки, потом имя/подпись, и только потом весь текст */
+function setLabelOf(el){
+  const lab = el.querySelector('b') || el.querySelector('.name') || el.querySelector('.lbl') || el.querySelector('.grow') || el;
+  const c = lab.cloneNode(true); c.querySelectorAll('.tipq, .chip, .badge-status, svg').forEach(x => x.remove());
+  return String(c.textContent || '').replace(/\s+/g, ' ').trim();
+}
+function setIdxBuild(){
+  if (_setIdx && Date.now() - _setIdxAt < 20000) return _setIdx;
+  const out = [], tmp = document.createElement('div');
+  const txt = el => String(el.textContent || '').replace(/\s+/g, ' ').trim();
+  const tipOf = el => { const m = /toastInfo\('([a-z0-9_]+)'\)/i.exec(el.innerHTML || ''); return m ? String(t(m[1]) || '') : ''; };
+  const scan = (root, sec, secLbl) => {
+    root.querySelectorAll(SET_Q_SEL).forEach(el => {
+      if (el.closest('.set-nav') || el.id === 'set-logout') return;
+      const isBtn = el.classList.contains('btn');
+      let label = setLabelOf(el);
+      if (!label || label.length < 3 || label.length > 140) return;
+      if (isBtn && el.closest('.settings-row, .qty-line, .stepper, .lang-seg')) return;
+      const subEl = el.closest('.fold-sub'); const sub = subEl ? String(subEl.id || '').replace(/^fold-/, '') : '';
+      const hint = [tipOf(el), txt(el.querySelector('.d') || { textContent: '' }),
+        (el.nextElementSibling && el.nextElementSibling.classList && el.nextElementSibling.classList.contains('tiny')) ? txt(el.nextElementSibling) : ''].join(' ');
+      if (out.some(o => o.sec === sec && o.label === label)) return;
+      out.push({ sec, secLbl, sub, label, hay: (label + ' ' + hint + ' ' + secLbl).toLowerCase() });
+    });
+  };
+  const prof = document.getElementById('set-profile');
+  if (prof) scan(prof, 'profile', t('set_nav_profile'));
+  const secs = { docs: docsCardHtml, ck: ckCardHtml, push: () => pbCardHtml() + popCardHtml(), cam: camCardHtml, study: studyCardHtml, dgs: dgsCardHtml, intg: intgCardHtml, tvc: tvModeHtml, misc: miscCardHtml };
+  _foldForce = true;
+  try{
+    settingsNavItems().forEach(([k, lbl]) => {
+      if (!secs[k]) return;
+      try{ tmp.innerHTML = secs[k]() || ''; scan(tmp, k, lbl); }catch(e){ dlog('⚠ поиск по настройкам: раздел ' + k + ':', e); }
+    });
+  } finally { _foldForce = false; tmp.innerHTML = ''; }
+  _setIdx = out; _setIdxAt = Date.now();
+  return out;
+}
+function setSearchHtml(){
+  return `<div class="set-search" id="set-search"><div class="search-box">${ic('search')}
+      <input id="set-q" type="search" autocomplete="off" enterkeyhint="search" placeholder="${esc(t('set_q_ph'))}" oninput="App.setSearch(this.value)">
+      <button type="button" class="x" id="set-q-x" style="display:none" aria-label="clear" onclick="App.setSearchClear()">${ic('close')}</button></div>
+    <div class="set-res" id="set-res" hidden></div></div>`;
+}
+function setSearch(v){
+  const box = $('#set-res'), x = $('#set-q-x'); if (!box) return;
+  const q = String(v || '').trim().toLowerCase();
+  if (x) x.style.display = q ? '' : 'none';
+  if (q.length < 2){ box.hidden = true; box.innerHTML = ''; _setHits = []; return; }
+  const words = q.split(/\s+/).filter(Boolean);
+  const idx = setIdxBuild();
+  _setHits = idx.filter(o => words.every(w => o.hay.includes(w)))
+    .sort((a, b) => (words.every(w => b.label.toLowerCase().includes(w)) ? 1 : 0) - (words.every(w => a.label.toLowerCase().includes(w)) ? 1 : 0)).slice(0, 14);
+  box.hidden = false;
+  box.innerHTML = _setHits.length
+    ? _setHits.map((o, i) => `<button type="button" class="set-hit" onclick="App.setSearchGo(${i})"><b>${esc(o.label)}</b><span class="tiny">${esc(o.secLbl)}</span></button>`).join('')
+    : `<div class="tiny" style="padding:8px 4px">${t('set_q_none')}</div>`;
+}
+function setSearchClear(){ const i = $('#set-q'); if (i){ i.value = ''; } setSearch(''); }
+function setSearchGo(i){
+  const o = _setHits[i]; if (!o) return;
+  if (o.sec !== 'profile') foldSet(o.sec, true);
+  if (o.sub) foldSet(o.sub, true);
+  _setNavCur = o.sec; _spyHoldTill = Date.now() + 1500;
+  render();
+  setTimeout(() => {
+    const root = document.getElementById(o.sec === 'profile' ? 'set-profile' : 'fold-' + o.sec); if (!root) return;
+    const cand = [...root.querySelectorAll(SET_Q_SEL)].find(el => setLabelOf(el) === o.label) || root;
+    const desk = document.documentElement.classList.contains('tl-desktop'), hdr = document.querySelector('.topbar'), nv = document.getElementById('set-nav');
+    const off = desk ? (hdr ? Math.max(0, hdr.getBoundingClientRect().bottom) : 80) + 60 : (nv ? nv.offsetHeight : 44) + 70;
+    pageScrollTo(Math.max(0, pageScrollY() + cand.getBoundingClientRect().top - off), true);
+    cand.classList.add('set-flash'); setTimeout(() => cand.classList.remove('set-flash'), 2600);
+  }, 90);
+}
+/* лента за прокруткой */
+let _spyRaf = 0, _spyHoldTill = 0, _spyBound = null;
+function setSpyTick(){
+  _spyRaf = 0;
+  if (state.screen !== 'settings' || Date.now() < _spyHoldTill) return;
+  const nav = document.getElementById('set-nav'); if (!nav) return;
+  const desk = document.documentElement.classList.contains('tl-desktop'), hdr = document.querySelector('.topbar');
+  const line = (desk ? (hdr ? Math.max(0, hdr.getBoundingClientRect().bottom) : 80) : nav.getBoundingClientRect().bottom) + 24;
+  let cur = 'profile';
+  for (const [k] of settingsNavItems()){
+    const el = document.getElementById(k === 'profile' ? 'set-profile' : 'fold-' + k); if (!el) continue;
+    if (el.getBoundingClientRect().top <= line) cur = k; else break;
+  }
+  if (cur === _setNavCur && nav.querySelector('.set-nav-b.on')) return;
+  _setNavCur = cur;
+  let onB = null;
+  nav.querySelectorAll('.set-nav-b').forEach(b => { const on = b.dataset.k === cur; if (b.classList.contains('on') !== on) b.classList.toggle('on', on); if (on) onB = b; });
+  if (onB && nav.scrollWidth > nav.clientWidth){
+    const to = Math.max(0, onB.offsetLeft - (nav.clientWidth - onB.offsetWidth) / 2);
+    try{ nav.scrollTo({ left: to, behavior: 'smooth' }); }catch(e){ nav.scrollLeft = to; }
+  }
+}
+function setSpyBind(){
+  const h = scrollHost() || window;
+  if (_spyBound === h) return;
+  try{ if (_spyBound) _spyBound.removeEventListener('scroll', setSpyOnScroll); }catch(e){}
+  _spyBound = h;
+  h.addEventListener('scroll', setSpyOnScroll, { passive: true });
+  if (h !== window) window.addEventListener('scroll', setSpyOnScroll, { passive: true });
+}
+function setSpyOnScroll(){ if (state.screen === 'settings' && !_spyRaf) _spyRaf = requestAnimationFrame(setSpyTick); }
 let _setNavCur = 'profile';
 function settingsNavItems(){
   const it = [['profile', t('set_nav_profile'), 'crew']];
-  it.push(['docs', t('docs_set_card'), 'clipboard'], ['tr', t('tr_set_card'), 'globe'], ['push', t('push_pop_card'), 'bell'], ['cam', t('cam_card'), 'camera']);
+  it.push(['docs', t('docs_set_card'), 'clipboard'], ['ck', t('ck_title'), 'key'], ['push', t('push_pop_card'), 'bell'], ['cam', t('cam_card'), 'camera']);
   if (!isAcc()) it.push(['study', t('st_card'), 'grad']);
   it.push(['dgs', t('dgs_card'), 'steth']);
   if (isAdmin()) it.push(['intg', t('intg_card'), 'link'], ['tvc', t('tvc_card'), 'tv']);
@@ -10616,11 +12390,12 @@ function settingsNavItems(){
   return it;
 }
 function settingsNavHtml(){
+  setTimeout(setSpyBind, 0);                                  // v1.09.12: лента едет за прокруткой
   return `<nav class="set-nav" id="set-nav" aria-label="${t('settings')}">` + settingsNavItems().map(([k, lbl, icn]) =>
     `<button type="button" class="set-nav-b${k === _setNavCur ? ' on' : ''}" data-k="${k}" onclick="App.setNavGo('${k}')">${ic(icn)}<span>${esc(lbl)}</span></button>`).join('') + `</nav>`;
 }
 function setNavGo(k){
-  _setNavCur = k;
+  _setNavCur = k; _spyHoldTill = Date.now() + 1200;      // v1.09.12: пока страница едет к разделу, лента не дёргается
   if (k !== 'profile' && !foldOpen(k)){ foldSet(k, true); render(); }
   else document.querySelectorAll('#set-nav .set-nav-b').forEach(b => b.classList.toggle('on', b.dataset.k === k));
   setTimeout(() => {
@@ -10672,6 +12447,11 @@ function buildInvoicePdfDoc(quiet, jobArg){
    Вызывается синхронно из onclick — это сохраняет «жест пользователя»,
    без которого Safari блокирует и share, и window.open.
    ===================================================================== */
+/* v1.09.12: имя файла инвойса — перед номером юнита буква U, чтобы было видно, что это юнит */
+function invFileName(j){
+  const cx = cxById(j.complex_id) || {};
+  return 'Invoice_' + (noPart(cx.abbr || cx.name, 8) || 'CX') + '_U' + (noPart(j.unit_number, 10) || 'x') + '_' + j.date + '.pdf';
+}
 function savePdfCompat(doc, fname){
   if (!IS_IOS){ doc.save(fname); return; }
   let blob = null;
@@ -10705,7 +12485,7 @@ function makePdf(){
     if (!doc) return;
     const j = jobDraft || state.data.jobs.find(x=>x.id===state.jobId);
     const cx = cxById(j.complex_id) || {name:'', address:''};
-    const fname = 'Invoice_' + (cx.abbr||'UNIT') + '_' + (j.unit_number||'x') + '_' + j.date + '.pdf';
+    const fname = invFileName(j);
     savePdfCompat(doc, fname);   // v1.07.21
   });
 }
@@ -10718,12 +12498,73 @@ function jobPrintBtnHtml(j, cls){
   return `<button class="btn btn-ghost ${cls || 'sm'}" title="${t('print_inv')}" aria-label="${t('print_inv')}"
     onclick="event.stopPropagation();App.jobPrint('${j.id}')">${ic('printer')}</button>`;
 }
+/* =====================================================================
+   v1.09.12 · КНОПКА ПЕЧАТИ → МИНИ-ОКНО: «Скачать PDF» (как раньше по кнопке)
+   или «Предпросмотр и печать». Одно окно и для карточки, и для кнопки
+   внутри документа (там берётся черновик со всеми несохранёнными правками).
+   ПК: PDF показан прямо в окне, «Печать» печатает его. Телефон: встроенного
+   просмотра PDF у Chrome Android и iOS нет — «Открыть PDF» поднимает
+   системный просмотрщик, «Печать» отдаёт файл в системное меню (там «Печать»).
+   ===================================================================== */
+let _prJobId = null, _prUrl = '', _prBlob = null;
+function prJob(){ return _prJobId ? state.data.jobs.find(x => x.id === _prJobId) : (jobDraft || state.data.jobs.find(x => x.id === state.jobId)); }
+function prInline(){ try{ return navigator.pdfViewerEnabled !== false && !IS_IOS && !/Android/i.test(navigator.userAgent); }catch(e){ return false; } }
+function printMenu(id){
+  _prJobId = id || null;
+  const j = prJob(); if (!j) return;
+  openModal(`${modalHead(t('print_inv'), 'printer')}
+    <div class="pr-menu" id="pr-menu">
+      <button type="button" class="btn btn-blue" id="pr-dl" onclick="App.printDo('dl')">${ic('download')} ${t('pr_dl')}</button>
+      <div class="tiny">${t('pr_dl_hint')}</div>
+      <button type="button" class="btn btn-ghost" id="pr-view" onclick="App.printDo('view')">${ic('printer')} ${t('pr_view')}</button>
+      <div class="tiny">${t(prInline() ? 'pr_view_hint' : 'pr_view_hint_m')}</div>
+    </div>`);
+}
+function printDo(mode){
+  const j = prJob(); if (!j) return;
+  trPdfGuard('job', j, () => {
+    const doc = buildInvoicePdfDoc(false, j); if (!doc){ return; }
+    if (mode === 'dl'){ closeModal(); savePdfCompat(doc, invFileName(j)); return; }
+    try{ if (_prUrl) URL.revokeObjectURL(_prUrl); }catch(e){}
+    _prBlob = doc.output('blob'); _prUrl = URL.createObjectURL(_prBlob);
+    const inl = prInline();
+    openModal(`${modalHead(t('pr_view'), 'printer')}
+      ${inl ? `<iframe class="pr-frame" id="pr-frame" title="PDF" src="${_prUrl}#toolbar=0&navpanes=0&view=FitH"></iframe>`
+            : `<div class="card pr-nofr" id="pr-nofr">${ic('printer')} ${t('pr_mobile')}</div>`}
+      <div class="pr-acts">
+        <button type="button" class="btn btn-green" id="pr-go" onclick="App.printGo()">${ic('printer')} ${t('pdf_print')}</button>
+        ${inl ? '' : `<button type="button" class="btn btn-ghost" id="pr-open" onclick="App.printOpen()">${ic('search')} ${t('pr_open')}</button>`}
+        <button type="button" class="btn btn-blue" onclick="App.printDo('dl')">${ic('download')} ${t('pr_dl')}</button>
+      </div>`);
+    const m = document.querySelector('#overlay .modal'); if (m) m.classList.add('pr-modal');
+  });
+}
+function printOpen(){
+  if (!_prUrl) return;
+  const w = window.open(_prUrl, '_blank', 'noopener'); if (!w) location.href = _prUrl;
+}
+function printGo(){
+  const fr = document.getElementById('pr-frame');
+  if (fr){
+    try{ fr.contentWindow.focus(); fr.contentWindow.print(); return; }catch(e){ dlog('⚠ print frame:', e); }
+  }
+  /* телефон: файл → системное меню («Печать» есть в нём на Android и iOS) */
+  const j = prJob();
+  try{
+    const file = new File([_prBlob], j ? invFileName(j) : 'invoice.pdf', { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      navigator.share({ files: [file], title: file.name }).catch(err => { if (!err || err.name !== 'AbortError'){ dlog('⚠ print share:', err); printOpen(); } });
+      toast('ℹ ' + t('pr_share_hint'), 'inf'); return;
+    }
+  }catch(e){ dlog('⚠ print share:', e); }
+  printOpen(); toast('ℹ ' + t('print_hint'), 'inf');
+}
 function jobPrintQuick(id){
   const j = state.data.jobs.find(x => x.id === id); if (!j) return;
   trPdfGuard('job', j, () => {
     const doc = buildInvoicePdfDoc(false, j); if (!doc) return;
     const cx = cxById(j.complex_id) || { name: '', address: '' };
-    savePdfCompat(doc, 'Invoice_' + (cx.abbr || 'UNIT') + '_' + (j.unit_number || 'x') + '_' + j.date + '.pdf');
+    savePdfCompat(doc, invFileName(j));
   });
 }
 /* публичная ручка для ПК-режима: Blob с актуальным бланком или null */
@@ -10901,6 +12742,8 @@ function initSW(){
     location.reload();
   });
   navigator.serviceWorker.addEventListener('message', (e) => {
+    if (e.data?.type === 'PUSH'){ try{ pushInAppPop(e.data); }catch(_e){} return; }          // v1.09.13
+    if (e.data?.type === 'OPEN_URL'){ try{ deepLinkApply(e.data.url); }catch(_e){} return; }   // v1.09.13
     if (e.data?.type !== 'SW_ACTIVATED') return;
     if (e.data.version === APP_VERSION) return;
     if (editingBusy()){ state.pendingUpdate = e.data.version; toast('⬆ ' + t('update_after_form'), 'inf'); }
@@ -11877,7 +13720,7 @@ const App = {
   camMode(v){ camSet('mode', v); dlog('камера: режим ' + v); render(); },
   vidMode(v){ mVidModeSet(v); dlog('видео: ' + v); },              // v1.08.47
   srchTab(v){ srchTabSet(v); },                                    // v1.08.49
-  printBtn(v){ printBtnSet(v); }, jobPrint(id){ jobPrintQuick(id); }, gdFullTest,   // v1.08.71
+  printBtn(v){ printBtnSet(v); }, jobPrint(id){ printMenu(id); }, jobPrintQuick, printMenu, printDo, printGo, printOpen, gdFullTest,   // v1.08.71
   regress(){ regressRun(); },                                                          // v1.08.72
   camTest(){ camTestRun(); }, camTestCopy(){ ctCopy(); }, camTestSave(){ ctSave(); }, camTestState(){ return CT; },   // v1.08.74
   camTest2(){ camTest2Run(false); }, camTest2Abort(){ camTest2Abort(); }, camTest2State(){ return CT2; }, w2All: () => w2All(),   // v1.08.80
@@ -12001,7 +13844,10 @@ const App = {
     autosaveDraft(); render();
   },
   fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} fontSavePref(); render(); },
-  densSet, densToggle, canvasSet,                                          // v1.09.05: плотность интерфейса, холст ПК-режима
+  chGroupNew, chgPick, chGroupCreate, chGroupInfo, chGroupRename, chGroupAdd, chGroupKick, chGroupDelete,
+  chMenu, chReply, chEdit, chCtxOff, chCopy, chReact, chJump, chMore, chImgPick, chImgOff, chImgOpen,
+  chOpen, chBack, chQ, chInput, chKey, chImp, chAttach, chDocOpen, chPick, chPickList(q){ return chPickListHtml(q); }, chSend, chDel,
+  clEdAdd, clEdDel, clEdMove, clEdCopy, apAdd, apDel, apCsv, apGoDoc, ckPwModal, ckPwGo, ckModeModal, ckModeGo, ckHelp, docShare, dsPick, dsCopy, dsSys, dsSend, boardOrderSave, boardOrderCancel, staffKindSet, orientSet, densSet, densToggle, canvasSet, mqLogDownload, mqLogCopy, netHideSet, trkLabel, trkLabelSave, setSearch, setSearchClear, setSearchGo,                                          // v1.09.05: плотность интерфейса, холст ПК-режима
   navStack(){ return NAV.stack.map(x => x.s); }, back(){ return backPressed(); },   // v1.09.06: история экранов; то же, что системная «назад» (без выхода)
   menuLabels(v){ menuLabelsSet(v); }, menuRowsStep,                                  // v1.09.02
   __test_menu(){ return { labels: menuLabels(), rows: menuRows(), key: menuLabKey(), bottom: tabbarIsBottom() }; }, __test_tabbarCols: tabbarCols,
@@ -12226,7 +14072,7 @@ const App = {
        defRentDays()/maxExtendDays()/editLockDays() — иначе первый клик
        по «＋» на нетронутой настройке прыгал бы от min, а не от видимого */
     const DEF = { default_rent_days: 3, max_extend_days: 3, edit_lock_days: 0,
-                  media_max_photo: 10, media_max_video: 2, media_max_file: 20,
+                  media_max_photo: 30, media_max_video: 5, media_max_file: 20,
                   tr_interval_min: 60, code_remind_months: 12 };   // v1.08.33
     const cur = +((state.data.org_settings || {})[key] ?? (DEF[key] ?? 0));
     App.setOrgNum(key, cur + d * (+step || 1), min, max);
@@ -12313,17 +14159,24 @@ const App = {
   abkList(){ abkListLoad(); },
   /* v1.09.03: длинная подсказка «?» висит дольше (≈55 мс на знак, 3,8…20 с) и
      закрывается нажатием — 3,8 с на абзац текста не хватало */
-  toastInfo(k){ const s = t(k); toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(20000, s.length * 55))); },
-  clToggle(i, v){
+  toastInfo(k){ const s = t(k); toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(12000, s.length * 40))); },   // v1.09.12: не дольше 12 с
+  clToggle(id, v){
     if (!jobDraft) return;
-    (jobDraft.form_data.cl = jobDraft.form_data.cl || {})[i] = !!v;
+    /* v1.09.16: отметки — по id пункта; старые (по номеру строки) при первой правке переводятся на id */
+    const items = clItems(wtById(jobDraft.work_type_id));
+    const set = clDoneSet(jobDraft.form_data, items);
+    if (v) set.add(String(id)); else set.delete(String(id));
+    const m = {}; set.forEach(k => { m[k] = true; });
+    jobDraft.form_data.cl = m;
+    if (!set.size){ const o = state.data.jobs.find(x => x.id === jobDraft.id);          // поставил и снял — документ не «изменён»
+      if (!o || !o.form_data || !o.form_data.cl) delete jobDraft.form_data.cl; }
     autosaveDraft();
     const card = $('#cl-card');
     if (card){
-      const wt = wtById(jobDraft.work_type_id); const cl = (wt && wt.checklist) || [];
-      const done = jobDraft.form_data.cl; const n = cl.filter((_, k) => done[k]).length;
+      const n = items.filter(it => set.has(it.id)).length;
       const chip = card.querySelector('.chip');
-      if (chip){ chip.textContent = n + '/' + cl.length; chip.className = 'chip ' + (n === cl.length ? 'ok' : 'warn'); }
+      if (chip){ chip.textContent = n + '/' + items.length; chip.className = 'chip ' + (n === items.length ? 'ok' : 'warn'); }
+      const lab = card.querySelector(`input[data-cl="${String(id).replace(/"/g, '')}"]`); if (lab && lab.closest('.opt')) lab.closest('.opt').classList.toggle('on', !!v);
     }
   },
   demoLogin, logout,
@@ -12570,6 +14423,7 @@ async function backPressed(){
     }
     return 'job→' + navBack();
   }
+  if (state.screen === 'chat' && CH.thread && chNarrow()){ chBack(); return 'chat-thread'; }   // v1.09.17
   if (state.screen === 'proposals' && propDraft){ propClose(); return 'proposal'; }
   if (state.screen === 'repairs' && repDraft){ repClose(); return 'repair'; }
   if (state.screen === 'study'){
@@ -12668,6 +14522,9 @@ function canonUrl(loc){
        когда данные уже загружены (раньше запускалось через 900 мс от старта,
        и при медленной сети документ ещё не был известен) */
     if (state.user) setTimeout(() => { pickRestore().catch(e => dlog('⛔ pickRestore:', e)); }, 400);
+    try{ if (state.user) setTimeout(() => ckInit(false).then(() => { if (CK.st === 'need_pw' && (state.screen === 'home' || state.screen === 'chat')) render(); }), 2500); }catch(e){}   // v1.09.21
+    try{ orientApply(true); }catch(e){}                                        // v1.09.13: поворот экрана — настройка устройства
+    if (state.user && (deepLinkDay(location.href) || deepLinkDoc(location.href) || deepLinkChat(location.href))) setTimeout(() => { try{ deepLinkApply(location.href); }catch(e){} }, 500);   // v1.09.13: ссылка из уведомления
     initLaunchQueue();                                                // v1.08.79
     try{ w2Init(); }catch(e){}                                        // v1.08.80: журнал Способа 2 (перезапуск во время камеры)
     setTimeout(() => { try{ ct2Resume(); }catch(e){ dlog('⛔ ct2Resume:', e); } }, 900);   // v1.08.80: продолжить тест Способа 2
@@ -14340,7 +16197,7 @@ function bnDevices(){ return (state.data && state.data.bn_devices) || []; }
 function bnDevByImei(imei){ imei = String(imei || ''); return bnDevices().find(d => String(d.imei) === imei) || null; }
 function bnDevActive(d){ return !!d && d.status !== 'inactive'; }
 function bnDevCarName(d){ return [d.make, d.model, d.year].filter(Boolean).join(' '); }
-function bnDevLabel(d){ if (!d) return ''; return d.nickname || bnDevCarName(d) || ('IMEI ' + d.imei); }
+function bnDevLabel(d){ if (!d) return ''; return d.label || d.nickname || bnDevCarName(d) || ('IMEI ' + d.imei); }   // v1.09.12: своё название — главнее присланного Bouncie
 function bnDevCar(d){ return bnVehicles().find(v => v.imei && String(v.imei) === String(d.imei)) || null; }
 /* когда сверять самим: состав активных в справочнике ≠ список Bouncie
    или с последней сверки прошло 15 минут */
@@ -14496,6 +16353,7 @@ function dirTrackers(){
         <div class="tiny">${on ? `${t('trk_seen')}: ${trkWhen(d.reported_at)}` : `${t('trk_gone')}: ${trkWhen(d.inactive_at)}`}${
           d.odometer != null ? ` · ${Math.round(+d.odometer)} ${t('bn_mi')}` : ''}</div>
       </div>
+      <button class="btn btn-ghost sm trk-name" title="${t('trk_label_t')}" aria-label="${t('trk_label_t')}" onclick="App.trkLabel('${esc(String(d.imei))}')">${ic('pencil')}</button>
       ${car ? `<button class="btn btn-ghost sm" onclick="App.vehModal('${car.id}')">${t('edit')}</button>` : ''}
     </div>`;
   }).join('');
@@ -14504,6 +16362,34 @@ function dirTrackers(){
     <div class="card" id="trk-list">${rows || `<div class="list-empty">${all.length ? t('trk_none_f') : t('trk_none')}</div>`}</div>
     <button id="trk-sync" class="btn btn-blue" onclick="App.trkSync()" ${TRK.busy ? 'disabled' : ''}>${TRK.busy ? t('trk_syncing') : ic('refresh') + ' ' + t('trk_sync')}</button>
     <div class="tiny" style="margin-top:6px;color:var(--dim)">${t('trk_checked')}: ${lastChk ? trkWhen(lastChk) : t('trk_never')}</div>`;
+}
+/* v1.09.12: своё название («легенда») трекера. Ключ — IMEI, он уникален; название Bouncie
+   (nickname) и марка остаются как пришли, своё название показывается первым. */
+function trkLabel(imei){
+  const d = bnDevByImei(imei); if (!d || !isAdmin()) return;
+  openModal(`${modalHead(t('trk_label_t'), 'pencil')}
+    <div class="tiny" style="margin-bottom:8px">IMEI ${esc(String(d.imei))}${d.nickname ? ' · Bouncie: ' + esc(d.nickname) : ''}${bnDevCarName(d) ? ' · ' + esc(bnDevCarName(d)) : ''}</div>
+    <div class="form-row"><span class="lbl">${t('trk_label_l')}</span>
+      <input id="trk-label-in" maxlength="40" value="${esc(d.label || '')}" placeholder="${esc(d.nickname || bnDevCarName(d) || '')}"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();App.trkLabelSave('${esc(String(d.imei))}')}"></div>
+    <div class="tiny">${t('trk_label_hint')}</div>
+    <div class="btn-rowpp" style="margin-top:10px">
+      <button type="button" class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
+      <button type="button" class="btn btn-green" id="trk-label-save" onclick="App.trkLabelSave('${esc(String(d.imei))}')">${ic('save')} ${t('save')}</button>
+    </div>`);
+  setTimeout(() => { const i = $('#trk-label-in'); if (i) i.focus(); }, 60);
+}
+async function trkLabelSave(imei){
+  const d = bnDevByImei(imei); if (!d) return;
+  const v = String(($('#trk-label-in') || {}).value || '').trim().slice(0, 40);
+  if (HAS_SB){
+    const { error } = await state.sb.rpc('bn_device_label', { p_imei: String(imei), p_label: v });
+    if (error){ toast('⛔ ' + (/bn_device_label|PGRST202|does not exist/i.test(errStr(error)) ? t('trk_label_db') : rpcFail(error, 'bn_device_label')), 'err'); return; }
+  }
+  const arr = (state.data.bn_devices || []).map(x => String(x.imei) === String(imei) ? { ...x, label: v || null } : x);
+  state.data.bn_devices = arr; saveLocal();
+  audit('trk_label', 'bn_devices', String(imei), { label: v });
+  closeModal(); toast('✓ ' + t('saved')); render();
 }
 /* v1.09.01: трекер машины — строка в списке и выпадающий список в карточке */
 function vehTrackerLine(v){
@@ -14515,7 +16401,7 @@ function vehTrackerLine(v){
 function vehTrackerSelHtml(v){
   const cur = String(v.imei || '');
   const devs = bnDevices().slice().sort((a, b) => (bnDevActive(b) - bnDevActive(a)) || bnDevLabel(a).localeCompare(bnDevLabel(b)));
-  let opts = devs.filter(d => bnDevActive(d) || String(d.imei) === cur).map(d => {
+  let opts = devs.map(d => {                                     // v1.09.12: неактивный трекер тоже можно выбрать — с предупреждением
     const imei = String(d.imei), car = bnDevCar(d), mine = imei === cur;
     const taken = !!(car && car.id !== v.id);
     const lbl = bnDevLabel(d) + ' · ' + imei + (bnDevActive(d) ? '' : ' · ' + t('trk_st_inactive'))
@@ -14625,7 +16511,9 @@ async function vehSave(id){
   if (imei){
     const d = bnDevByImei(imei), same = !!(prev && String(prev.imei) === imei);
     if (!d && !same){ toast('⚠ ' + t('trk_no_dev'), 'err'); return; }
-    if (d && !bnDevActive(d) && !same){ toast('⚠ ' + t('trk_inactive_pick'), 'err'); return; }
+    if (d && !bnDevActive(d) && !same){                       // v1.09.12: не запрет, а предупреждение
+      if (!(await askModal({ title: t('trk_inact_t'), text: t('trk_inact_q').replace('{N}', bnDevLabel(d)), ok: t('trk_inact_yes') }))) return;
+    }
     if (bnVehicles().some(v => v.id !== id && String(v.imei) === imei)){ toast('⚠ ' + t('trk_taken'), 'err'); return; }
   }
   let vid = id || uid();
@@ -14637,7 +16525,7 @@ async function vehSave(id){
       const nice = /CAR_NO_TAKEN/.test(s) ? t('veh_no_taken')
                  : /BAD_CAR_NO/.test(s) ? t('veh_bad_no')
                  : /NO_DEVICE|vehicles_imei_fk/.test(s) ? t('trk_no_dev')      // v1.09.01
-                 : /DEVICE_INACTIVE/.test(s) ? t('trk_inactive_pick')
+                 : /DEVICE_INACTIVE/.test(s) ? t('trk_inact_db')
                  : /DEVICE_TAKEN|vehicles_imei_ux/.test(s) ? t('trk_taken') : rpcFail(error, 'vehicle_save');
       toast('⛔ ' + nice, 'err'); return;
     }
@@ -15359,6 +17247,23 @@ function drawInvoiceVert(doc, j, left, top, cont){
   txt(org.addr1||'', R-1, y+12.2, {align:'right'}); txt(org.addr2||'', R-1, y+15, {align:'right'}); txt(org.addr3||'', R-1, y+17.8, {align:'right'});
   y += 20;
 
+  /* ---- v1.09.12: строка отметок нового бумажного бланка ----
+     слева Proposal и PO, справа Emergency call · No water · Second call */
+  y += 1.4;
+  { const fl = (x0, on, label) => { box(x0, y-2.5, !!on, 2.6); F('bold',6.6); txt(label, x0+3.5, y); return x0 + 3.5 + doc.getTextWidth(label) + 3.2; };
+    let fx = fl(L, invIsProposal(j, fd), 'Proposal');
+    F('bold',6.8); txt('PO:', fx+1, y);
+    const po = invPo(j, fd);
+    if (po){ F('bold',7.2); txt(po.slice(0,18), fx+7, y); }
+    doc.setLineWidth(.15); line(fx+6.5, y+0.8, fx+34, y+0.8); doc.setLineWidth(.2);
+    F('bold',6.6);
+    const labs = [['emergency','Emergency call'],['no_water','No water'],['second_call','Second call']];
+    let wAll = 0; labs.forEach(([,l]) => { wAll += 3.5 + doc.getTextWidth(l) + 3.2; });
+    fx = R - wAll + 3.2 - 1.5;
+    labs.forEach(([k,l]) => { fx = fl(fx, fd[k], l); });
+  }
+  y += 5;
+
   /* ---- реквизиты ---- */
   F('bold',7.2);
   txt('Date:', L, y); F('bold',7.6); txt(fmtUS(j.date), L+9, y);
@@ -15367,7 +17272,11 @@ function drawInvoiceVert(doc, j, left, top, cont){
   box(L+96, y-2.5, !!fd.occupied, 2.6); txt('Occupied', L+99.6, y);
   y += 4.8;
   F('bold',6.8); txt('Technician:', L, y);
-  F('bold',7.2); txt(techNamesFor(j).slice(0,44), L+16, y);
+  /* v1.09.12: имя — ровно и полностью как в поле профиля «Имя в документах и задачах»;
+     длинный состав бригады ужимается кеглем, а не обрезается до инициалов */
+  { const nm = techFullNamesFor(j); let fs = 7.2; F('bold',fs);
+    while (fs > 5 && doc.getTextWidth(nm) > W - 17){ fs -= .3; F('bold',fs); }
+    txt(doc.getTextWidth(nm) > W - 17 ? doc.splitTextToSize(nm, W - 17)[0] : nm, L+16, y); }
   y += 4.6;
   F('bold',6.8); txt('Property/Customer:', L, y);
   F('bold',7); txt((cp.name + ' — ' + cx.name).slice(0,52), L+27, y);
@@ -15391,18 +17300,22 @@ function drawInvoiceVert(doc, j, left, top, cont){
   const opt = (x, yy, on, label, fs=6)=>{ box(x, yy+0.9, on, 2.6); F('bold',fs); txt(label, x+3.4, yy+3.1); return x + 3.4 + doc.getTextWidth(label) + 2.8; };
 
   ry = row(5);
-  svc('Steam Clean', ry, fd.steam.deep_scrub||fd.steam.rotovac);
+  svc('Steam Clean', ry, fd.steam.deep_scrub||fd.steam.rotovac||fd.steam.portable);
   let x = opt(C1+2, ry, fd.steam.deep_scrub, 'Deep Scrub');
   x = opt(x, ry, fd.steam.rotovac, 'Rotovac');
-  if ((fd.steam.deep_scrub||fd.steam.rotovac) && fd.steam.rooms>1){ F('bold',6); txt('Rooms: '+fd.steam.rooms, x, ry+3.1); }
+  x = opt(x, ry, fd.steam.portable, 'Portable');                 /* v1.09.12 */
+  if ((fd.steam.deep_scrub||fd.steam.rotovac||fd.steam.portable) && fd.steam.rooms>1){ F('bold',6); txt('Rooms: '+fd.steam.rooms, x, ry+3.1); }
   amt(sec.steam, ry+3.3);
 
   ry = row(8.6);                              /* Removals — 6 опций в две строки */
-  svc('Removals', ry, ['red_stain','wax','rust','ink','gum','paint'].some(k=>fd.removals[k]));
+  svc('Removals', ry, ['red_stain','wax','rust','ink','gum','paint','imprint'].some(k=>fd.removals[k]));
+  /* v1.09.12: как на новом бланке — Paint Removal · Wax · Rust / Ink · Gum · Imprint Removal;
+     Red Stain на бумаге больше нет — печатается, только если отмечен (старые документы) */
   x = C1+2;
-  [['red_stain','Red Stain'],['wax','Wax'],['rust','Rust']].forEach(([k,l])=>{ x = opt(x, ry, fd.removals[k], l, 5.8); });
+  [['paint','Paint Removal'],['wax','Wax'],['rust','Rust']].forEach(([k,l])=>{ x = opt(x, ry, fd.removals[k], l, 5.8); });
   x = C1+2;
-  [['ink','Ink'],['gum','Gum'],['paint','Paint']].forEach(([k,l])=>{ x = opt(x, ry+3.9, fd.removals[k], l, 5.8); });
+  [['ink','Ink'],['gum','Gum'],['imprint','Imprint Removal']].concat(fd.removals.red_stain ? [['red_stain','Red Stain']] : [])
+    .forEach(([k,l])=>{ x = opt(x, ry+3.9, fd.removals[k], l, 5.8); });
   amt(sec.removals, ry+3.3);
 
   ry = row(5);
@@ -15411,19 +17324,20 @@ function drawInvoiceVert(doc, j, left, top, cont){
   [['threshold','Threshold'],['stretch','Stretch'],['seam','Seam'],['patch','Patch']].forEach(([k,l])=>{ x = opt(x, ry, fd.repairs[k], l, 5.8); });
   amt(sec.repairs, ry+3.3);
 
-  ry = row(5);
-  svc('Dye', ry, fd.dye.spot||fd.dye.full);
-  x = opt(C1+2, ry, fd.dye.spot, 'Spot Dye'); opt(x, ry, fd.dye.full, 'Full Dye');
-  amt(sec.dye, ry+3.3);
+  if (fd.dye.spot || fd.dye.full || sec.dye > 0){   /* v1.09.12: строки Dye на новом бланке нет — печатается, только если заполнена */
+    ry = row(5);
+    svc('Dye', ry, fd.dye.spot||fd.dye.full);
+    x = opt(C1+2, ry, fd.dye.spot, 'Spot Dye'); opt(x, ry, fd.dye.full, 'Full Dye');
+    amt(sec.dye, ry+3.3);
+  }
 
-  ry = row(8.6);                              /* Other — две строки */
-  svc('Other', ry, fd.other.trash_out||fd.other.pad_removal);
+  /* v1.09.12: Other — Trash Out · Crb Machine; Pad Removal стал своей строкой внизу бланка */
+  const padRemAmt = fd.other.pad_removal ? (fd.other.all_unit ? p('oth_pad_removal_all') : p('oth_pad_removal_room') * Math.max(1, +fd.other.rooms || 1)) : 0;
+  ry = row(5);
+  svc('Other', ry, fd.other.trash_out||fd.other.crb);
   x = opt(C1+2, ry, fd.other.trash_out, 'Trash Out');
-  opt(x, ry, fd.other.pad_removal, 'Pad Removal');
-  x = C1+2;
-  if (fd.other.pad_removal && !fd.other.all_unit){ F('bold',6); txt('Rooms: '+(fd.other.rooms||1), x, ry+7); x += 15; }
-  opt(x, ry+3.9, fd.other.all_unit, 'All Unit');
-  amt(sec.other, ry+3.3);
+  opt(Math.max(x + 8, C1 + 44), ry, fd.other.crb, 'Crb Machine');
+  amt(Math.max(0, sec.other - padRemAmt), ry+3.3);
 
   ry = row(5);
   x = opt(L+1.3, ry, fd.fog.fog, 'Fog', 6.4); opt(x, ry, fd.fog.goc, 'GOC', 6.4);
@@ -15461,8 +17375,8 @@ function drawInvoiceVert(doc, j, left, top, cont){
   const eqList = [...state.data.equipment_types].sort((a,b)=>(a.sort||0)-(b.sort||0)).slice(0,5);
   eqList.forEach((et, i)=>{
     ry = row(4.7);
-    if (i===0) svc('Equipment', ry, Object.values(fd.equipment).some(e=>+e.qty>0));
-    if (i===1){ F('bold',6.4); txt('Rental', L+4.8, ry+3.1); }
+    if (i===0) svc('Equipment Rental', ry, Object.values(fd.equipment).some(e=>+e.qty>0));
+    else { F('bold',6.2); txt('Unit #', (L+C1)/2, ry+3.2, {align:'center'}); }      /* v1.09.12: как на бумаге */
     const e = fd.equipment[et.id] || {qty:0, days:0};
     /* v1.07.84: «Осушитель / Dehumidifier» → в бланк уходит Dehumidifier;
        если английской части нет, а название русское — печатаем аббревиатуру */
@@ -15476,6 +17390,15 @@ function drawInvoiceVert(doc, j, left, top, cont){
     amt((+e.qty||0)*Math.max(1,+e.days||1)*eqDayPrice(et,p), ry+3.3);
   });
 
+  ry = row(5);                                /* v1.09.12: Pad Removal — своя строка нового бланка */
+  svc('Pad Removal', ry, !!fd.other.pad_removal);
+  if (fd.other.pad_removal){
+    if (fd.other.all_unit) opt(C1+2, ry, true, 'All Unit');
+    else { F('bold',6); txt('Rooms: ' + (fd.other.rooms||1), C1+2, ry+3.1); }
+  }
+  amt(padRemAmt, ry+3.3);
+
+  if (fd.pad.size || fd.pad.all_unit || fd.pad.rooms>0 || sec.pad>0){   /* Pad Installation на новом бланке нет — только если заполнена */
   ry = row(8.6);                              /* Pad Installation — две строки */
   svc('Pad', ry, !!fd.pad.size || fd.pad.all_unit || fd.pad.rooms>0);
   F('bold',6.4); txt('Installation', L+4.8, ry+6.6);
@@ -15488,6 +17411,7 @@ function drawInvoiceVert(doc, j, left, top, cont){
   doc.rect(x+9.5, ry+4.6, 5, 3.3); if (fd.pad.rooms>0){ F('bold',6.4); txt(String(fd.pad.rooms), x+12, ry+7.2, {align:'center'}); }
   radio(x+19, ry+6.3, fd.pad.all_unit); txt('All Unit', x+21, ry+7.2);
   amt(sec.pad, ry+3.4);
+  }
 
   /* OTHER SERVICES: строки переносим, ширина узкая.
      v1.08.84: если cont говорит, что часть не помещается, в бланке остаётся
@@ -15854,6 +17778,9 @@ async function staffCfgModal(uid_){
     ${modalHead(esc(u.display_name), 'crew')}
     <div class="tiny" style="margin-bottom:8px">@${esc(u.login)} · ${t('st_last_seen')}: <b>${fmtSeen(LS_SEEN.map[uid_])}</b></div>
     ${nameHtml}
+    ${(isAdmin() && u.role === 'tech') ? `<div style="font-weight:800;margin:4px 0">${ic('crew')} ${t('sk_title')} ${tipQ('sk_tip')}</div>
+    <div class="lang-seg cam-seg" id="st-kind" style="margin-bottom:10px">${STAFF_KINDS.map(k =>
+      `<button type="button" data-v="${k}" class="${staffKind(u) === k ? 'on' : ''}" onclick="App.staffKindSet('${uid_}','${k}')">${t('sk_' + k)}</button>`).join('')}</div>` : ''}
     <div style="font-weight:800;margin:4px 0">${ic('car')} Bouncie ${tipQ('st_flags_tip')}</div>
     ${chk('bn_access', effBn, t('st_bn_access'))}
     ${chk('bn_service', u.bn_service ?? (u.role === 'admin'), t('st_bn_service'))}
@@ -16040,11 +17967,16 @@ function staffPassModal(uid_){
 async function staffSetPass(uid_){
   if (!isAdmin() || !HAS_SB) return;
   const v = String($('#sp-pass').value || '');
-  if (v.length < 6){ toast('⛔ ' + t('pass_short'), 'err'); return; }
+  if (v.length < CK_MINPW){ toast('⛔ ' + t('pass_short'), 'err'); return; }
+  /* v1.09.21: у сотрудника полное шифрование — сброс пароля без его вошедшего устройства лишит его ключа */
+  const kRow = CK.pubs.find(k => k.user_id === uid_);
+  if (kRow && kRow.mode === 'total' && !(await askModal({ title: t('ck_reset_total_t'), text: t('ck_reset_total_q'), ok: t('ck_reset_anyway'), danger: true }))) return;
   const { error } = await state.sb.rpc('admin_set_password', { target: uid_, new_password: v });
   if (error){ dlog('⛔ admin_set_password:', error); toast('⛔ ' + rpcFail(error, 'admin_set_password'), 'err'); return; }
   audit('password_reset', 'profile', uid_, { name: (state.data.profiles.find(p=>p.id===uid_)||{}).display_name || '' });   // v1.07.18
+  const kr = await ckAdminRewrap(uid_, v);                                     // v1.09.21: сейф сотрудника — под новый пароль
   closeModal(); toast('✓ ' + t('pass_changed'));
+  if (kr !== 'skip' && kr !== 'nokey') setTimeout(() => toast((kr === 'ok' ? '✓ ' : '⚠ ') + t('ck_adm_' + kr), kr === 'ok' ? undefined : 'err', 9000), 700);
 }
 /* ---------- v1.07.07: админ создаёт сотрудника (логин, пароль, имя, роль) ---------- */
 function staffAddModal(){
@@ -16072,7 +18004,7 @@ async function staffCreate(){
   if (!LOGIN_RE.test(login)){ toast('⛔ ' + t('login_hint'), 'err'); return; }
   if (state.data.profiles.some(p => String(p.login).toLowerCase() === login)){ toast('⛔ ' + t('login_taken'), 'err'); return; }
   if (HAS_SB){
-    if (pass.length < 6){ toast('⛔ ' + t('pass_short'), 'err'); return; }
+    if (pass.length < CK_MINPW){ toast('⛔ ' + t('pass_short'), 'err'); return; }
     const { data, error } = await state.sb.rpc('admin_create_user', {
       p_login: login, p_email: loginToEmail(login), p_password: pass,
       p_display_name: name || login, p_role: role
@@ -16129,11 +18061,12 @@ function ownPassModal(){
 async function ownPassSave(){
   if (!HAS_SB) return;
   const v1 = String($('#op-pass').value || ''), v2 = String($('#op-pass2').value || '');
-  if (v1.length < 6){ toast('⛔ ' + t('pass_short'), 'err'); return; }
+  if (v1.length < CK_MINPW){ toast('⛔ ' + t('pass_short'), 'err'); return; }
   if (v1 !== v2){ toast('⛔ ' + t('pass_mismatch'), 'err'); return; }
   const { error } = await state.sb.auth.updateUser({ password: v1 });
   if (error){ dlog('⛔ auth.updateUser:', error); toast('⛔ ' + errStr(error), 'err'); return; }
   audit('password_change', 'profile', state.user.id, {});   // v1.07.18
+  try{ if (CK.dev){ ckPwSet(v1); await ckInit(true); } }catch(e){ dlog('⚠ ключ после смены пароля:', e); }   // v1.09.21: сейф — под новый пароль
   closeModal(); toast('✓ ' + t('own_pass_changed'));
 }
 function staffVis(managerId){
@@ -16264,7 +18197,7 @@ async function runDiagnostics(onLine){
     put(`${mark(true)} version.json на сервере: ${v.version}${v.version !== APP_VERSION ? ' (⚠ клиент ' + APP_VERSION + ' — обновите страницу)' : ''}`);
   }catch(e){ put(`${mark(false)} version.json недоступен: ${errStr(e)}`); }
 
-  put(`${mark(!!window.supabase)} supabase-js ${window.supabase ? 'загружен' : 'НЕ загружен (CDN)'}`);
+  put(`${mark(!!window.supabase)} supabase-js ${window.supabase ? 'загружен' : 'НЕ загружен (vendor/supabase.umd.js)'}`);
   put(`${mark(!!window.jspdf)} jsPDF ${window.jspdf ? 'загружен' : 'не загружен'}`);
   put(`${mark(!!window.L)} Leaflet ${window.L ? 'загружен' : 'не загружен'}`);
 
@@ -17452,13 +19385,19 @@ function viewBoard(){
     .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name));
   const canOrd = boardCanReorder();
   const cols = staff.map(p => {
-    const js  = dayJobs.filter(j => j.technician_id === p.id).sort(jobSortCmp);
+    let js  = dayJobs.filter(j => j.technician_id === p.id).sort(jobSortCmp);
     const pls = dayPk.filter(x => x.technician_id === p.id);
     const byJob = {};
     pls.forEach(x => { (byJob[x.job_id] = byJob[x.job_id] || []).push(x); });
+    /* v1.09.13: порядок — из режима правки, пока он не сохранён; пикапы — по порядку их задач */
+    const jSeq = brdSeq(p.id, 'job', iso), pSeq = brdSeq(p.id, 'pk', iso);
+    const at = (seq, id) => { const n = seq.indexOf(id); return n < 0 ? 9999 : n; };
+    js = js.slice().sort((a, b) => at(jSeq, a.id) - at(jSeq, b.id));
+    const pkE = Object.entries(byJob).sort((a, b) => at(pSeq, a[0]) - at(pSeq, b[0]));
+    const edited = BRD.on && BRD.date === iso && !!BRD.order[p.id];
     const cards = js.map((j, i) => boardJobCard(j, i, canOrd)).join('')
-                + Object.entries(byJob).map(([jid, arr]) => boardPkCard(jid, arr, iso)).join('');
-    return `<div class="bcol">
+                + pkE.map(([jid, arr]) => boardPkCard(jid, arr, iso, canOrd && pkE.length > 1)).join('');
+    return `<div class="bcol${edited ? ' bcol-edit' : ''}" data-tech="${p.id}">
       <div class="bcol-h">
         <span class="avatar role-${p.role}">${esc(initials(p.display_name))}</span>
         <div class="grow"><b>${esc(shortName(p.display_name))}</b>${p.car_no != null ? ` <span class="car-no" title="${t('car_no')}">${p.car_no}</span>` : ''}
@@ -17474,7 +19413,7 @@ function viewBoard(){
       title="${hideEmpty ? t('b_free_off') : t('b_free_on')}"
       onclick="App.boardHideEmpty(${hideEmpty ? 'false' : 'true'})">${ic(hideEmpty ? 'eye_off' : 'eye')}
       <span>${hideEmpty ? t('b_free_off') : t('b_free_on')}</span></button>${densBtnHtml()}${helpBtn('board')}</div>`;
-  return viewWeek() + extReqStripHtml() + propStripHtml() + repStripHtml() + freeJobsStripHtml() + tools
+  return viewWeek() + brdEditBarHtml() + extReqStripHtml() + propStripHtml() + repStripHtml() + freeJobsStripHtml() + tools
        + `<div class="board"${boardColsStyle(staff.length)}>${cols}</div>`;
 }
 
@@ -17555,7 +19494,7 @@ function boardJobCard(j, idx, canOrd){
     <span class="bst st-${j.status}" title="${t('status_' + j.status)}"></span>
   </div>`;
 }
-function boardPkCard(jobId, arr, iso){
+function boardPkCard(jobId, arr, iso, canOrd){
   const today = todayISO();
   const over = arr.some(p => p.due_date < today);
   const ext  = arr.some(p => p.ext_of);
@@ -17563,29 +19502,111 @@ function boardPkCard(jobId, arr, iso){
   const agg = {};
   arr.forEach(p => { const e = etById(p.equipment_type_id); const k = e ? e.abbr : '?'; agg[k] = (agg[k] || 0) + (+p.qty || 1); });
   const eq = Object.entries(agg).map(([k, q]) => `${k}×${q}`).join(' ');
-  return `<div class="bpk clicky ${over ? 'over' : ''}" onclick="App.pickupModal('${jobId}','${iso}',event)">
+  const rail = canOrd ? `<div class="rail brail" onclick="event.stopPropagation()">
+      <button class="mv" title="${t('move_up')}" onclick="App.boardMove('${jobId}',-1,'pk')">${ic('chev_u')}</button>
+      <button class="mv" title="${t('move_down')}" onclick="App.boardMove('${jobId}',1,'pk')">${ic('chev_d')}</button>
+    </div>` : '';
+  return `<div class="bpk clicky ${over ? 'over' : ''}${rail ? ' has-brail' : ''}" data-pk="${jobId}" onclick="App.pickupModal('${jobId}','${iso}',event)">
+    ${rail}
     ${bnDotHtml('pk:' + jobId)}
     <b>PU</b> ${esc(eq)}${ext ? ` <span class="bext" title="${t('b_ext')}">⟳</span>` : ''}
     <span class="tiny">${over ? `<span class="ov">${t('b_over')} · </span>` : ''}${fmtDMYyr(due)}</span>
   </div>`;
 }
-async function boardMove(id, dir){
+/* =====================================================================
+   v1.09.13 · ДОСКА: РЕЖИМ ПРАВКИ ПОРЯДКА. Первая же стрелка ▲▼ (у задачи или
+   у пикапа) включает режим правки: порядок меняется только на экране, сверху
+   появляется полоса «Порядок изменён · Отменить · Сохранить». Можно сделать
+   сколько угодно перестановок у разных сотрудников и сохранить их разом.
+   После сохранения каждому затронутому сотруднику уходит push «Порядок задач
+   изменён» со ссылкой на этот день (RPC board_order_notify) — и подсказка в
+   самом приложении, если оно открыто.
+   ===================================================================== */
+const BRD = { on: false, date: '', order: {} };        // order[techId] = { job: [jobId…], pk: [jobId пикапа…] }
+function brdJobIds(techId, iso){
+  return state.data.jobs.filter(x => x.date === iso && x.technician_id === techId && !isArch(x)).sort(jobSortCmp).map(x => x.id);
+}
+function brdPkIds(techId, iso){
+  const ids = [];
+  state.data.placements.filter(p => pkPending(p) && p.due_date <= iso && p.technician_id === techId)
+    .forEach(p => { if (!ids.includes(p.job_id)) ids.push(p.job_id); });
+  const so = id => { const j = state.data.jobs.find(x => x.id === id); return j && j.sort_order != null ? +j.sort_order : 999; };
+  return ids.sort((a, b) => so(a) - so(b));
+}
+function brdSeq(techId, kind, iso){
+  const live = kind === 'pk' ? brdPkIds(techId, iso) : brdJobIds(techId, iso);
+  const ed = BRD.on && BRD.date === iso && BRD.order[techId] && BRD.order[techId][kind];
+  if (!ed) return live;
+  return ed.filter(id => live.includes(id)).concat(live.filter(id => !ed.includes(id)));   // новое за время правки — в конец
+}
+function boardMove(id, dir, kind){
   if (!boardCanReorder()) return;
-  const j = state.data.jobs.find(x => x.id === id); if (!j) return;
-  const list = state.data.jobs
-    .filter(x => x.date === state.selDate && x.technician_id === j.technician_id)
-    .sort(jobSortCmp);
-  const i = list.findIndex(x => x.id === id), k = i + dir;
-  if (i < 0 || k < 0 || k >= list.length) return;
-  [list[i], list[k]] = [list[k], list[i]];
-  for (let n = 0; n < list.length; n++){
-    if ((list[n].sort_order || 0) !== n){
-      try { await saveJobPatch(list[n], { sort_order: n }); }
-      catch(e){ toast('⛔ ' + rpcFail(e, 'board_job_flags'), 'err'); return; }
-    }
+  kind = kind === 'pk' ? 'pk' : 'job';
+  const iso = state.selDate;
+  if (BRD.on && BRD.date !== iso){ toast('⚠ ' + t('brd_other_day').replace('{D}', fmtDMY(BRD.date)), 'err'); return; }
+  let techId = null;
+  if (kind === 'job'){ const j = state.data.jobs.find(x => x.id === id); techId = j && j.technician_id; }
+  else { const p0 = state.data.placements.find(x => x.job_id === id && pkPending(x)); techId = p0 && p0.technician_id; }
+  if (!techId) return;
+  const seq = brdSeq(techId, kind, iso).slice();
+  const i = seq.indexOf(id), k = i + dir;
+  if (i < 0 || k < 0 || k >= seq.length){ toast('ℹ ' + t('mv_edge'), 'inf'); return; }
+  if (kind === 'job'){
+    const a = state.data.jobs.find(x => x.id === seq[i]), b = state.data.jobs.find(x => x.id === seq[k]);
+    if (a && b && prioHard(a) !== prioHard(b)){ toast('⚠ ' + t('mv_prio').replace('{W}', prioHard(a) ? t('mv_prio_a') : t('mv_prio_b')), 'err'); return; }
   }
+  [seq[i], seq[k]] = [seq[k], seq[i]];
+  if (!BRD.on){ BRD.on = true; BRD.date = iso; BRD.order = {}; }
+  BRD.order[techId] = { job: brdSeq(techId, 'job', iso), pk: brdSeq(techId, 'pk', iso), ...(BRD.order[techId] || {}), [kind]: seq };
   navigator.vibrate?.(15);
-  render();
+  renderKeep();
+}
+function boardOrderCancel(){ BRD.on = false; BRD.order = {}; BRD.date = ''; render(); toast('ℹ ' + t('brd_cancelled'), 'inf'); }
+let _brdSaving = false;
+async function boardOrderSave(){
+  if (!BRD.on || _brdSaving) return;
+  _brdSaving = true;
+  const iso = BRD.date, touched = [];
+  try{
+    for (const techId of Object.keys(BRD.order)){
+      /* общий порядок сотрудника на день: сначала задачи, затем пикапы — как на доске */
+      const seq = brdSeq(techId, 'job', iso).concat(brdSeq(techId, 'pk', iso));
+      let changed = false;
+      for (let n = 0; n < seq.length; n++){
+        const j = state.data.jobs.find(x => x.id === seq[n]); if (!j) continue;
+        if ((+j.sort_order || 0) !== n || j.sort_order == null){
+          try{ await saveJobPatch(j, { sort_order: n }); changed = true; }
+          catch(e){ toast('⛔ ' + rpcFail(e, 'board_job_flags'), 'err'); return; }
+        }
+      }
+      if (changed) touched.push(techId);
+    }
+    BRD.on = false; BRD.order = {}; BRD.date = '';
+    let sent = 0, noRpc = false;
+    for (const techId of touched){
+      if (techId === state.user.id) continue;
+      audit('board_order', 'profile', techId, { date: iso, name: profName(techId) });
+      if (!HAS_SB || netOff()) continue;
+      try{
+        const { error } = await state.sb.rpc('board_order_notify', { p_user: techId, p_date: iso });
+        if (error){ if (/board_order_notify|PGRST202|does not exist/i.test(errStr(error))) noRpc = true; else dlog('⚠ board_order_notify:', error); }
+        else sent++;
+      }catch(e){ dlog('⚠ board_order_notify:', e); }
+    }
+    if (sent) pbPing(true);
+    toast('✓ ' + t('brd_saved').replace('{N}', touched.length) + (sent ? ' · ' + t('brd_pushed').replace('{N}', sent) : ''));
+    if (noRpc) toast('ℹ ' + t('brd_no_rpc'), 'inf');
+  } finally { _brdSaving = false; render(); }
+}
+function brdEditBarHtml(){
+  if (!BRD.on) return '';
+  const n = Object.keys(BRD.order).length;
+  return `<div class="brd-edit" id="brd-edit" role="status">${ic('pencil')}
+    <div class="grow"><b>${t('brd_edit_t')}</b> <span class="tiny">${fmtDMY(BRD.date)} · ${t('brd_edit_n').replace('{N}', n)}</span>
+      <div class="tiny">${t('brd_edit_hint')}</div></div>
+    <button type="button" class="btn btn-ghost sm" id="brd-cancel" onclick="App.boardOrderCancel()">${t('cancel')}</button>
+    <button type="button" class="btn btn-green sm" id="brd-save" onclick="App.boardOrderSave()">${ic('save')} ${t('save')}</button>
+  </div>`;
 }
 
 /* =====================================================================
@@ -18066,7 +20087,7 @@ function viewProposalForm(){
   const stSeg = ['draft','sent','approved','declined'].map(s =>
     `<button class="${p.status===s?'on':''}" onclick="App.setPropStatus('${s}')">${t('pst_'+s)}</button>`).join('');
   return `<div class="prop-wrap">
-  ${docBarHtml({ chain: `App.chain('prop','${p.id}')`,
+  ${docBarHtml({ chain: `App.chain('prop','${p.id}')`, share: (state.data.proposals || []).some(x => x.id === p.id) ? `App.docShare('prop','${p.id}')` : '',
                  title: `${docNo('prop', p) || t('tab_proposals') + ' · P-' + (p.no ?? '…')}`,
                  save: 'App.saveProposal()', close: 'App.propClose()', dirty: propDirty() })}
   <div class="card" style="margin:0 12px">
@@ -19230,7 +21251,7 @@ function viewRepairForm(){
             : t('rep_src_self');
   const hide = repMoneyHidden();
   return `<div class="prop-wrap">
-  ${docBarHtml({ chain: `App.chain('rep','${r.id}')`,
+  ${docBarHtml({ chain: `App.chain('rep','${r.id}')`, share: (state.data.repairs || []).some(x => x.id === r.id) ? `App.docShare('rep','${r.id}')` : '',
                  title: `${docNo('rep', r) || t('tab_repairs') + ' · R-' + (r.no ?? '…')}`,
                  save: 'App.saveRepair()', close: 'App.repClose()', dirty: repDirty() })}
   <div class="card" style="margin:0 12px">
@@ -22730,6 +24751,67 @@ async function mBeginUpload(it, token){
   await mQPut(it);
   return j;
 }
+/* v1.09.12: документ-владелец ещё не подтверждён сервером? */
+function mqOwnerPending(it){
+  try{
+    const tb = it.doc === 'rep' ? 'repairs' : 'jobs', id = mOwnId(it);
+    return pendingLoad().some(x => x.op === 'upsert' && x.table === tb && x.id === id);
+  }catch(e){ return false; }
+}
+/* почему сервер сказал «нет доступа» — человеческими словами */
+function mqNoAccessWhy(it){
+  const rep = it.doc === 'rep', id = mOwnId(it);
+  const d = ((rep ? state.data.repairs : state.data.jobs) || []).find(x => x.id === id);
+  if (!d) return { keep: false, text: t('mq_why_nodoc') };
+  const werr = WRITE_ERRORS.slice().reverse().find(w => w && w.table === (rep ? 'repairs' : 'jobs') && w.id === String(id || '').slice(0, 8));
+  if (werr) return { keep: true, text: t('mq_why_werr') + (werr.err ? ' (' + String(werr.err).slice(0, 80) + ')' : '') };
+  const mine = rep ? d.created_by === state.user.id
+                   : (d.technician_id === state.user.id || (d.helper_ids || []).includes(state.user.id));
+  if (!mine && !isAdmin() && !isManager()) return { keep: true, text: t('mq_why_foreign') };
+  return { keep: true, text: t('mq_why_unknown') };
+}
+function mqErrHuman(m){
+  m = String(m || '');
+  const map = { TOO_BIG: 'mq_e_big', LIMIT: 'mq_e_limit', LIMIT_REACHED: 'mq_e_limit', LOCKED_APPROVED: 'mq_e_locked',
+                UNAUTHORIZED: 'mq_e_auth', DRIVE_NOT_CONFIGURED: 'mq_l_drive', BAD_KIND: 'mq_e_kind' };
+  for (const k in map) if (m.indexOf(k) >= 0) return t(map[k]) + ' [' + k + ']';
+  if (isNetErr(m)) return t('mq_e_net');
+  return m.slice(0, 140);
+}
+/* подсказка о сорвавшейся попытке: что за файл и почему (не чаще раза в 4 с) */
+let _mqFailPopAt = 0;
+function mqFailPop(tag, why){
+  try{
+    dlog('⛔ отправка: ' + String(tag).replace(/<[^>]+>/g, '') + ' — ' + why);
+    if (!state.user || Date.now() - _mqFailPopAt < 4000) return;
+    _mqFailPopAt = Date.now();
+    toast('⛔ ' + t('mq_fail_pop') + ': ' + String(tag).replace(/<[^>]+>/g, '') + ' — ' + why, 'err');
+  }catch(e){}
+}
+/* журнал отправки — файлом: пишется при каждой отправке, скачать можно всегда */
+function mqLogText(){
+  const head = 'TechLog v' + APP_VERSION + ' · ' + t('mq_log') + ' · ' + new Date().toLocaleString() + '\n'
+    + location.href + '\n' + t('mq_title') + ': ' + mediaQ.length + '\n';
+  const q = mediaQ.map(x => '  · ' + mqLabel(x).replace(/<[^>]+>/g, '') + ' · ' + Math.round((x.blob && x.blob.size || 0) / 1024) + ' КБ · '
+    + t('mq_try') + ' ' + (x.attempts || 0) + (x.error ? ' · ' + x.error : '')).join('\n');
+  const lines = mqLogLines.map(l => l.time + ' ' + String(l.text).replace(/<[^>]+>/g, '')).join('\n');
+  return head + (q ? q + '\n' : '') + '\n' + (lines || t('mq_l_wait')) + '\n';
+}
+function mqLogDownload(){
+  try{
+    const d = new Date(), p = x => String(x).padStart(2, '0');
+    const name = `techlog-upload-log-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.txt`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([mqLogText()], { type: 'text/plain;charset=utf-8' }));
+    a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 1500);
+    toast('✓ ' + name);
+  }catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+}
+async function mqLogCopy(){
+  try{ await navigator.clipboard.writeText(mqLogText()); toast('✓ ' + t('copied')); }
+  catch(e){ toast('⛔ ' + (e.message || e), 'err'); }
+}
 /* v1.07.63: verbose=true — ход отправки построчно уходит в журнал модалки
    «Неотправленные фото и видео»; возвращается сводка для итоговой строки. */
 async function mediaFlush(verbose){
@@ -22738,7 +24820,8 @@ async function mediaFlush(verbose){
   const lg = (txt, cls, id) => mqLog(txt, cls, id);
   const res = { photo: 0, video: 0, fail: 0, stopped: false };
   if (_mediaBusy){ lg('⏳ ' + t('mq_l_busy'), 'warn'); mediaBadge(); return res; }
-  if (!HAS_SB || !state.user){ lg('⛔ ' + t('mq_l_nosb'), 'err'); mediaBadge(); return res; }
+  /* v1.09.12: нет входа — это не «нет подключения к серверу»: молчим, очередь дождётся входа */
+  if (!HAS_SB || !state.user){ mediaBadge(); return res; }
   if (netOff()){ lg('🔴 ' + t('mq_l_off'), 'err'); mediaBadge(); return res; }   // v1.08.38: и «нет сервера» тоже
   _mediaBusy = true; _mqMiniMute = false;
   try{
@@ -22756,7 +24839,7 @@ async function mediaFlush(verbose){
       const lid = lg(`⬆ ${tag} …`, 'dim');
       let stage = 'mq_st_begin';                 // v1.07.69: этап видно в ошибке
       try{
-        const token = await mediaJwt(); if (!token){ lg('⛔ ' + t('mq_l_nosb'), 'err', lid); res.stopped = true; break; }
+        const token = await mediaJwt(); if (!token){ lg('⏳ ' + t(state.offlineAuth ? 'mq_l_offsess' : 'mq_l_noauth'), 'warn', lid); res.stopped = true; break; }
         /* v1.08.47: видео пережимается один раз перед отправкой; итог
            (сжато / оригинал / «и так компактный») запоминается в записи
            очереди, чтобы не жевать ролик заново на каждом проходе. */
@@ -22788,10 +24871,35 @@ async function mediaFlush(verbose){
             lg(`⚠ ${tag} — ${t('mq_l_shr_no')}${sr && sr.err ? ' (' + esc(String(sr.err).slice(0, 60)) + ')' : ''}`, 'warn', lid);
           }
         }
+        /* v1.09.12: документ ещё не дошёл до сервера (запись в очереди или upsert
+           в полёте — фоновая отправка стартует с первого кадра) — media-begin
+           ответил бы NO_ACCESS. Файл не трогаем: ждём документ. */
+        if (!it.upload_url && mqOwnerPending(it)){
+          it.error = 'DOC_PENDING'; await mQPut(it);
+          lg(`⏳ ${tag} — ${t('mq_l_docwait')}`, 'warn', lid);
+          res.wait = (res.wait || 0) + 1; continue;
+        }
         if (!it.upload_url){
           try{ await mBeginUpload(it, token); }
           catch (e){
             const st = e.status;
+            if (st === 403 || String(e.message || '') === 'NO_ACCESS'){
+              /* v1.09.12: «нет доступа» = сервер не отдал документ этому входу.
+                 Раньше файл молча выбрасывался из очереди — снимок терялся.
+                 Теперь: документ есть на устройстве → файл остаётся, причина — в
+                 журнале и подсказке; документа уже нет нигде → убираем. */
+              const why = mqNoAccessWhy(it);
+              if (why.keep){
+                it.error = 'NO_ACCESS'; it.attempts = (it.attempts || 0) + 1; await mQPut(it);
+                lg(`⛔ ${tag} — ${t('mq_l_noacc')}: ${esc(why.text)}`, 'err', lid);
+                mqFailPop(tag, why.text);
+                res.fail++; continue;
+              }
+              await mediaQDel(it.qid);
+              lg(`⛔ ${tag} — ${t('mq_l_drop')} (${esc(why.text)})`, 'err', lid);
+              mqFailPop(tag, why.text);
+              res.fail++; continue;
+            }
             if (st === 413 && it.kind === 'video' && it.shr !== 1 && mVidCan()){
               /* v1.08.47: сервер не принял размер — ролик НЕ выбрасываем:
                  помечаем «сжать принудительно», на следующем проходе он
@@ -22808,9 +24916,11 @@ async function mediaFlush(verbose){
               it.forceShr = 1; it.shr = 0; it.error = 'TOO_BIG'; await mQPut(it);
               res.fail++; continue;
             }
-            if (st === 409 || st === 403 || st === 413){
-              await mediaQDel(it.qid); toast('⛔ ' + (e.message || st), 'err');
-              lg(`⛔ ${tag} — ${t('mq_l_drop')} (${esc(String(e.message || st))})`, 'err', lid);
+            if (st === 409 || st === 413){
+              const whyTxt = mqErrHuman(e.message || st);
+              await mediaQDel(it.qid);
+              lg(`⛔ ${tag} — ${t('mq_l_drop')} (${esc(whyTxt)})`, 'err', lid);
+              mqFailPop(tag, whyTxt);
               res.fail++; continue;
             }
             if (String(e.message || '').includes('DRIVE_NOT_CONFIGURED')){
@@ -22894,6 +25004,7 @@ async function mediaFlush(verbose){
         await mQPut(it); mediaStripRefresh(mOwnId(it));
         dlog('media stuck', it.qid, e);
         lg(`⛔ ${tag} — ${t(stage)}: ${esc(String(e && e.message || e))}`, 'err', lid);
+        mqFailPop(tag, t(stage) + ': ' + mqErrHuman(e && e.message || e) + ' · ' + t('mq_try') + ' ' + it.attempts);
         res.fail++; res.stopped = true;
         break;                              // сеть шалит — дождёмся online/интервала
       }
@@ -23272,6 +25383,7 @@ function mediaBadge(){
     el.onclick = () => mediaQueueModal();
     document.body.appendChild(el);
   }
+  if (!state.user){ el.style.display = 'none'; _mqBadgePrev = null; return; }   // v1.09.12: не авторизован — молчим
   const n = mediaQ.length, off = !navigator.onLine;
   /* v1.07.78: пустая очередь — не молчание, а явное «всё отправлено»
      (короткой зелёной табличкой, если только что что-то отправляли) */
@@ -23346,8 +25458,9 @@ function mqQuiet(){
   try{
     const pv = state.user && state.user.push_prefs && state.user.push_prefs.mq_quiet;
     if (pv === true || pv === false) return pv;
-    return localStorage.getItem('techlog_mq_quiet') === '1';
-  }catch(e){ return false; }
+    const ls = localStorage.getItem('techlog_mq_quiet');
+    return ls == null ? true : ls === '1';          // v1.09.12: по умолчанию — «только когда что-то не отправлено»
+  }catch(e){ return true; }
 }
 async function mqQuietSet(v){
   v = !!v;
@@ -23374,9 +25487,12 @@ function mqQuietSyncPref(){
 }
 function mqLastBad(){
   const last = mqLogLines.slice(-3);
-  return last.some(l => /err|warn/.test(l.cls || '')) || mediaQ.some(x => (+x.attempts || 0) > 0);
+  return last.some(l => /err|warn/.test(l.cls || '')) || mediaQ.some(x => (+x.attempts || 0) > 0)
+    || (!_mediaBusy && mediaQ.length > 0);          // v1.09.12: отправка закончилась, а в очереди что-то осталось
 }
 function mqMini(show){
+  /* v1.09.12: до входа в систему контроль отправки не показывается вовсе */
+  if (show && !state.user){ const e0 = $('#mq-mini'); if (e0) e0.remove(); return; }
   /* тихий режим: показываем только когда есть что чинить */
   if (show && mqQuiet() && !mqLastBad()) return;
   if (show && _mqMiniMute && !mqLastBad()) return;        // закрыта крестиком — молчим до следующей отправки
@@ -23400,7 +25516,7 @@ function mqMini(show){
     return `<div class="mq-l ${l.cls}"><span class="m">${p.icon}${p.icon ? ' ' : ''}${p.text}</span></div>`;
   }).join('');
   const st = mqState();
-  el.innerHTML = `<div class="mq-mini-h">${ic(st.icon, 'color:' + st.color)}<span class="mq-mini-t">${esc(st.text)}</span>
+  el.innerHTML = `<div class="mq-mini-k">${esc(t('mq_ctl'))}</div><div class="mq-mini-h">${ic(st.icon, 'color:' + st.color)}<span class="mq-mini-t">${esc(st.text)}</span>
       <button type="button" class="mq-mini-x">${t('mq_mini_open')}</button>
       <button type="button" class="mq-mini-c" aria-label="${t('close')}" title="${t('close')}">${ic('close')}</button></div>
     <div class="mq-mini-b">${tail || `<div class="mq-l dim">${t('mq_l_wait')}</div>`}</div>`;
@@ -23479,6 +25595,7 @@ function mediaQueueCardHtml(){
   const st = mqState();
   const nV = mediaQ.filter(x => x.kind === 'video').length, nP = mediaQ.length - nV;
   return `<div class="card"${st.key === 'ok' ? '' : ' style="border-color:var(--orange)"'}>
+    <div class="tiny" style="font-weight:900;color:var(--dim);margin-bottom:2px">${t('mq_ctl')}</div>
     <div style="font-weight:900;margin-bottom:6px">${mqStateHtml()}</div>
     ${st.key === 'ok'
       ? `<div class="tiny" style="margin-bottom:8px">${t('mq_empty')}</div>`
@@ -23513,8 +25630,9 @@ function mediaQueueModal(){
     </div>`;
   }).join('');
   openModal(`
-    ${modalHead(mqState().text, mqState().key === 'ok' ? 'check' : 'sync')}
+    ${modalHead(t('mq_ctl'), mqState().key === 'ok' ? 'check' : 'sync')}
     <div class="card" style="padding:8px 10px;margin-bottom:8px">
+      <div id="mq-state-line" style="font-weight:900;margin-bottom:4px">${mqStateHtml()}</div>
       <b>${mediaQ.length ? `${ids.length} ${t('mq_docs')} · ${nP} ${t('mq_photo')} · ${nV} ${t('mq_video')}`
                          : t('mq_all_ok')}</b>
       <div class="tiny" id="mq-conn" style="margin-top:4px">${ic('wifi',
@@ -23527,7 +25645,9 @@ function mediaQueueModal(){
     </div>
     ${mqStuck().length ? `<button class="btn btn-ghost sm" style="margin-top:6px"
       onclick="App.mqClean()">${ic('trash')} ${t('mq_clean')} · ${mqStuck().length}</button>` : ''}
-    <div class="tiny" style="margin:10px 0 4px;color:var(--dim)">${t('mq_log')}</div>
+    <div class="mq-log-h"><span class="tiny" style="color:var(--dim)">${t('mq_log')}</span>
+      <span class="mq-log-b"><button type="button" class="btn btn-ghost sm" id="mq-log-copy" onclick="App.mqLogCopy()">${ic('copy')} ${t('mq_log_copy')}</button>
+      <button type="button" class="btn btn-ghost sm" id="mq-log-dl" onclick="App.mqLogDownload()">${ic('download')} ${t('mq_log_dl')}</button></span></div>
     <div class="mq-log" id="mq-log"></div>`);
   mqLogPaint();
   mqSetBusy(_mqBusy);
@@ -23603,9 +25723,9 @@ function mediaLimitsCardHtml(){
   return `<div class="card">
     <div style="font-weight:900;margin-bottom:6px">${ic('camera')} ${t('media_lim_card')}</div>
     <div class="qty-line"><span class="name">${t('media_lim_photo')}</span>
-      ${orgStepperHtml('media_max_photo', o.media_max_photo ?? 10, 1, 50)}</div>
+      ${orgStepperHtml('media_max_photo', o.media_max_photo ?? 30, 1, 50)}</div>
     <div class="qty-line"><span class="name">${t('media_lim_video')}</span>
-      ${orgStepperHtml('media_max_video', o.media_max_video ?? 2, 0, 10)}</div>
+      ${orgStepperHtml('media_max_video', o.media_max_video ?? 5, 0, 10)}</div>
     <div class="qty-line"><span class="name">${t('media_lim_file')}</span>
       ${orgStepperHtml('media_max_file', o.media_max_file ?? 20, 1, 50)}</div>
     <div class="tiny">${t('media_lim_hint')}</div>
@@ -24784,7 +26904,7 @@ const BK_TABLES = ['profiles','counterparties','complexes','aux_equipment','work
   'equipment_types','size_types','extra_works','product_types','price_list',
   'counterparty_prices','equipment_stock','org_settings','hidden_staff',
   'code_requests','complex_code_history','proposals','repairs','jobs','placements',
-  'ext_requests','media','equip_moves','acc_settings','study_sessions'];   // v1.08.51: + учёба; v1.08.27: журнал после placements — при восстановлении FK уже на месте; v1.08.39: + acc_settings
+  'ext_requests','media','equip_moves','acc_settings','study_sessions','acc_payments','note_templates'];   // v1.09.18: + оплаты и шаблоны заметок   // v1.08.51: + учёба; v1.08.27: журнал после placements — при восстановлении FK уже на месте; v1.08.39: + acc_settings
 const BK_EXPORT_ONLY = ['audit_log','tech_log'];
 const BK_PAGE = 1000, BK_CHUNK = 300;
 let bkLogLines = null;
@@ -25423,7 +27543,7 @@ function docNoVals(kind, o){
   return {
     TYPE: DOC_TYPE_TAG[kind] || '', DATE: date.replace(/-/g, ''), YEAR: date.slice(0, 4),
     CP: noPart(cp.abbr || cp.name, 4), CX: noPart(cx.abbr || cx.name, 4),
-    UNIT: noPart(o.unit_number, 6), TECH: techTag(o.technician_id || o.created_by),
+    UNIT: (noPart(o.unit_number, 6) ? 'U' + noPart(o.unit_number, 6) : ''), TECH: techTag(o.technician_id || o.created_by),
     WT: noPart(enName(wt.name), 6),
     SEQ: o.no == null ? '' : String(o.no).padStart(docPad(), '0')
   };
@@ -26024,7 +28144,7 @@ function accDocRow(kind, d){
            cx: cxById(d.complex_id) || null, unit: d.unit_number || '', crew: accCrewOf(kind, d),
            status: d.status, note: d.note || '', note_en: d.note_en || '',
            acc_status: d.acc_status || '', acc_note: d.acc_note || '', acc_at: d.acc_at || null, acc_by: d.acc_by || null,
-           sp, total: sp.total, pay: accPay(sp), arch: !!d.archived_at };
+           sp, total: sp.total, pay: accPay(sp), arch: !!d.archived_at, ...apFacts(kind, d, sp.total) };
 }
 function accDocs(){
   const f = accF();
@@ -26091,13 +28211,184 @@ function accByStaff(rows){
 /* ---------- экран ---------- */
 function viewAcc(){
   const f = accF();
-  const tabs = [['reg', t('acc_reg')], ['rates', t('acc_rates')], ['staff', t('acc_staff')]];
+  const tabs = [['reg', t('acc_reg')], ['ar', t('ap_tab')], ['rates', t('acc_rates')], ['staff', t('acc_staff')]];   // v1.09.15: + «Оплаты и долги»
+  try{ apLoad(false); }catch(e){}
   if (!tabs.find(x => x[0] === f.tab)) f.tab = 'reg';
   const nav = `<div class="tabs acc-nav">` + tabs.map(([id, l]) =>
     `<button class="tabbtn ${f.tab === id ? 'active' : ''}" onclick="App.accTab('${id}')">${l}</button>`).join('') + `</div>`;
   const head = `<div class="section-title">${ic('receipt')} ${t('tab_acc')}${helpBtn('acc')}</div>`;
-  const body = f.tab === 'rates' ? viewAccRates() : f.tab === 'staff' ? viewAccStaff() : viewAccReg();
+  const body = f.tab === 'rates' ? viewAccRates() : f.tab === 'staff' ? viewAccStaff() : f.tab === 'ar' ? viewAccAr() : viewAccReg();
   return `<div class="acc-wrap">${head}${nav}${body}</div>`;
+}
+/* =====================================================================
+   v1.09.15 · ОПЛАТЫ ПО ИНВОЙСАМ И ДОЛГИ ПО СРОКАМ (A/R aging).
+   До сих пор у документа была только отметка «оплачен» — без даты, суммы и способа.
+   Теперь у инвойса и ремонта есть список оплат (дата, сумма, способ: чек / ACH / карта /
+   наличные / другое, номер чека, заметка); частичные оплаты суммируются, остаток и срок
+   оплаты считаются сами (условия — Net N дней от даты документа, настройка «Проценты»),
+   полная оплата ставит отметку «оплачен». Вкладка «Оплаты и долги»: долг по контрагентам
+   в корзинах «не наступил · 1–30 · 31–60 · 61–90 · 90+», открытые документы по давности,
+   поступления за период, CSV. Таблица acc_payments грузится отдельно от общего обмена
+   (админ и бухгалтер; пока SQL не выполнен — вкладка пишет, чего не хватает).
+   ===================================================================== */
+const AP = { rows: [], at: 0, noDb: false, busy: false };
+const AP_METHODS = ['check', 'ach', 'card', 'cash', 'other'];
+function apRows(){ return HAS_SB ? AP.rows : ((state.data && state.data.acc_payments) || []); }
+function apTerms(){ const n = parseInt(accVal('opt:terms', '30'), 10); return n >= 0 && n <= 120 ? n : 30; }
+function apFor(kind, id){ return apRows().filter(x => x.doc_id === id && x.kind === kind).sort((a, b) => String(a.paid_on).localeCompare(String(b.paid_on))); }
+function apFacts(kind, d, total){
+  const list = apFor(kind, d.id);
+  const paid = Math.round(list.reduce((a, x) => a + (+x.amount || 0), 0) * 100) / 100;
+  const billable = kind === 'job' ? d.status !== 'draft' : !['draft', 'declined'].includes(d.status);
+  const due = billable ? Math.max(0, Math.round(((+total || 0) - paid) * 100) / 100) : 0;
+  const dueDate = d.date ? addDaysISO(d.date, apTerms()) : '';
+  const today = todayISO();
+  const age = (due > 0.005 && dueDate && dueDate < today) ? Math.round((parseISO(today) - parseISO(dueDate)) / 86400000) : 0;
+  return { paid, due, dueDate, age, payN: list.length, lastPaid: list.length ? list[list.length - 1].paid_on : '' };
+}
+function apBucket(age, due){ return due <= 0.005 ? '' : age <= 0 ? 'cur' : age <= 30 ? 'b30' : age <= 60 ? 'b60' : age <= 90 ? 'b90' : 'b90p'; }
+function apChipHtml(r){
+  if (!(r.total > 0.005)) return '';
+  if (r.paid > 0.005 && r.due <= 0.005) return `<span class="chip ok ap-chip" title="${t('ap_paid_full')}">${ic('check')} ${money(r.paid)}</span>`;
+  if (r.paid > 0.005) return `<span class="chip warn ap-chip" title="${t('ap_paid_part')}">${money(r.paid)} / ${money(r.total)}</span>`;
+  if (r.age > 0) return `<span class="chip bad ap-chip" title="${t('ap_due_on')} ${fmtDMY(r.dueDate)}">${t('ap_over')} ${r.age} ${t('ap_days')}</span>`;
+  return '';
+}
+async function apLoad(force){
+  if (!state.user || !(isAdmin() || isAcc())) return;
+  if (!HAS_SB){ AP.at = Date.now(); return; }
+  if (AP.busy || netOff() || (!force && Date.now() - AP.at < 60000)) return;
+  AP.busy = true;
+  try{
+    let all = [], from = 0;
+    for (;;){
+      const { data, error } = await state.sb.from('acc_payments').select('*').order('paid_on', { ascending: true }).range(from, from + 999);
+      if (error){ AP.noDb = /acc_payments|PGRST205|does not exist|schema cache/i.test(errStr(error)); if (!AP.noDb) dlog('⚠ acc_payments:', error); return; }
+      all = all.concat(data || []); if (!data || data.length < 1000) break; from += 1000;
+    }
+    const changed = all.length !== AP.rows.length || AP.noDb;
+    AP.rows = all; AP.noDb = false; AP.at = Date.now();
+    if (changed && state.screen === 'acc') render();
+  }catch(e){ dlog('⚠ acc_payments:', e); }
+  finally{ AP.busy = false; }
+}
+function apBlockHtml(r){
+  if (!(isAdmin() || isAcc())) return '';
+  const list = apFor(r.kind, r.id);
+  const rows = list.map(x => `<div class="ap-line" data-ap="${x.id}"><b class="money">${money(+x.amount || 0)}</b>
+      <span>${fmtDMY(x.paid_on)}</span><span class="chip">${esc(t('ap_m_' + (AP_METHODS.includes(x.method) ? x.method : 'other')))}</span>
+      ${x.ref ? `<span class="tiny">№ ${esc(x.ref)}</span>` : ''}${x.note ? `<span class="tiny ap-note">${esc(x.note)}</span>` : ''}
+      <button type="button" class="btn btn-ghost sm ap-del" title="${t('delete')}" aria-label="${t('delete')}" onclick="App.apDel('${x.id}')">${ic('trash')}</button></div>`).join('');
+  const id = 'ap-' + r.id;
+  return `<div class="ap-box" id="${id}">
+    <div class="ap-head"><b>${ic('receipt')} ${t('ap_title')}</b>
+      <span class="tiny">${t('acc_total')}: <b>${money(r.total)}</b> · ${t('ap_paid')}: <b>${money(r.paid)}</b> · ${t('ap_due')}: <b class="${r.due > 0.005 ? (r.age > 0 ? 'ap-bad' : '') : 'ap-ok'}">${money(r.due)}</b>${r.due > 0.005 && r.dueDate ? ` · ${t('ap_due_on')} ${fmtDMY(r.dueDate)}${r.age > 0 ? ` (${t('ap_over')} ${r.age} ${t('ap_days')})` : ''}` : ''}</span></div>
+    ${AP.noDb ? `<div class="banner b-yellow" style="margin:6px 0">${ic('warn')} ${t('ap_need_sql')}</div>` : ''}
+    ${rows || `<div class="tiny" style="margin:4px 0">${t('ap_none')}</div>`}
+    <div class="ap-form">
+      <input type="date" id="${id}-d" value="${todayISO()}" aria-label="${t('ap_f_date')}">
+      <input id="${id}-a" inputmode="decimal" placeholder="$" value="${r.due > 0.005 ? r.due.toFixed(2) : ''}" aria-label="${t('ap_f_amount')}">
+      <select id="${id}-m" aria-label="${t('ap_f_method')}">${AP_METHODS.map(m => `<option value="${m}">${esc(t('ap_m_' + m))}</option>`).join('')}</select>
+      <input id="${id}-r" maxlength="40" placeholder="${esc(t('ap_f_ref'))}" aria-label="${t('ap_f_ref')}">
+      <input id="${id}-n" maxlength="200" placeholder="${esc(t('ap_f_note'))}" aria-label="${t('ap_f_note')}">
+      <button type="button" class="btn btn-green sm" onclick="App.apAdd('${r.kind}','${r.id}')">${ic('plus')} ${t('ap_add')}</button>
+    </div>
+  </div>`;
+}
+async function apAdd(kind, docId){
+  if (!(isAdmin() || isAcc())) return;
+  const id = 'ap-' + docId, g = k => String(($('#' + id + '-' + k) || {}).value || '').trim();
+  const amount = Math.round(parseFloat(g('a').replace(/[$,\s]/g, '').replace(',', '.')) * 100) / 100, paid_on = g('d');
+  if (!(amount > 0) || amount > 1e7){ toast('⚠ ' + t('ap_bad_amount'), 'err'); return; }
+  if (!/^\d{4}-\d\d-\d\d$/.test(paid_on) || paid_on > addDaysISO(todayISO(), 1)){ toast('⚠ ' + t('ap_bad_date'), 'err'); return; }
+  const row = { id: uid(), kind, doc_id: docId, paid_on, amount, method: AP_METHODS.includes(g('m')) ? g('m') : 'other', ref: g('r').slice(0, 40), note: g('n').slice(0, 200),
+                created_by: state.user.id, created_at: new Date().toISOString() };
+  if (HAS_SB){
+    if (netOff()){ netBlocked(); return; }
+    const { error } = await state.sb.from('acc_payments').insert(row);
+    if (error){ toast('⛔ ' + (/acc_payments|PGRST205|does not exist|schema cache/i.test(errStr(error)) ? t('ap_need_sql') : errStr(error)), 'err'); return; }
+    AP.rows = AP.rows.concat([row]);
+  } else { state.data.acc_payments = (state.data.acc_payments || []).concat([row]); saveLocal(); }
+  audit('acc_pay_add', kind === 'job' ? 'job' : 'repair', docId, { amount, paid_on, method: row.method, ref: row.ref });
+  /* оплачено полностью — отметка учёта «оплачен» ставится сама */
+  try{
+    const d = kind === 'job' ? state.data.jobs.find(x => x.id === docId) : (state.data.repairs || []).find(x => x.id === docId);
+    if (d){ const r = accDocRow(kind, d); if (r.due <= 0.005 && r.total > 0.005 && (d.acc_status || '') !== 'paid') await accMarkOne(kind, docId, 'paid', d.acc_note || ''); }
+  }catch(e){ dlog('⚠ ap auto-paid:', e); }
+  toast('✓ ' + t('ap_added')); render();
+}
+async function apDel(payId){
+  if (!(isAdmin() || isAcc())) return;
+  const x = apRows().find(r => r.id === payId); if (!x) return;
+  if (!(await askModal({ title: t('ap_del_t'), text: t('ap_del_q').replace('{S}', money(+x.amount || 0)).replace('{D}', fmtDMY(x.paid_on)), ok: t('delete'), okIcon: 'trash', danger: true }))) return;
+  if (HAS_SB){
+    if (netOff()){ netBlocked(); return; }
+    const { error } = await state.sb.from('acc_payments').delete().eq('id', payId);
+    if (error){ toast('⛔ ' + errStr(error), 'err'); return; }
+    AP.rows = AP.rows.filter(r => r.id !== payId);
+  } else { state.data.acc_payments = (state.data.acc_payments || []).filter(r => r.id !== payId); saveLocal(); }
+  audit('acc_pay_del', x.kind === 'job' ? 'job' : 'repair', x.doc_id, { amount: +x.amount || 0, paid_on: x.paid_on });
+  toast('🗑 ' + t('deleted')); render();
+}
+/* все выставленные документы (не черновики, не архив) — для долгов период не ограничиваем */
+function apOpenDocs(){
+  const out = [];
+  (state.data.jobs || []).forEach(j => { if (!isArch(j) && j.status !== 'draft') out.push(accDocRow('job', j)); });
+  (state.data.repairs || []).forEach(r => { if (!isArch(r) && !['draft', 'declined'].includes(r.status)) out.push(accDocRow('rep', r)); });
+  return out;
+}
+function viewAccAr(){
+  const f = accF();
+  const docs = apOpenDocs().filter(r => r.total > 0.005);
+  const open = docs.filter(r => r.due > 0.005).sort((a, b) => b.age - a.age || String(a.date).localeCompare(String(b.date)));
+  const B = ['cur', 'b30', 'b60', 'b90', 'b90p'];
+  const byCp = {};
+  open.forEach(r => { const id = r.doc.counterparty_id || '-'; const o = byCp[id] = byCp[id] || { id, n: 0, sum: 0, cur: 0, b30: 0, b60: 0, b90: 0, b90p: 0 };
+    o.n++; o.sum += r.due; o[apBucket(r.age, r.due)] += r.due; });
+  const cps = Object.values(byCp).sort((a, b) => b.sum - a.sum);
+  const tot = cps.reduce((a, o) => { B.concat(['sum']).forEach(k => a[k] = (a[k] || 0) + o[k]); a.n += o.n; return a; }, { n: 0 });
+  const inP = x => (!f.from || x.paid_on >= f.from) && (!f.to || x.paid_on <= f.to);
+  const got = apRows().filter(inP);
+  const gotSum = got.reduce((a, x) => a + (+x.amount || 0), 0);
+  const byM = {}; got.forEach(x => { const m = AP_METHODS.includes(x.method) ? x.method : 'other'; byM[m] = (byM[m] || 0) + (+x.amount || 0); });
+  const cell = v => v > 0.005 ? money(v) : '<span class="acc-zero">—</span>';
+  const cpRows = cps.map(o => `<tr><td><b>${esc((cpById(o.id) || {}).name || '—')}</b><div class="tiny">${o.n} ${t('ap_docs')}</div></td>${B.map(k => `<td class="num ${k === 'b90p' || k === 'b90' ? 'ap-bad' : ''}">${cell(o[k])}</td>`).join('')}<td class="num"><b>${money(o.sum)}</b></td></tr>`).join('');
+  const docRows = open.slice(0, 200).map(r => `<button type="button" class="ap-doc" onclick="App.apGoDoc('${r.id}','${r.date}')">
+      <span class="grow"><b>${esc(r.cx ? (r.cx.abbr || r.cx.name) : '—')} · Unit ${esc(r.unit || '—')}</b>
+        <span class="tiny">${fmtDMY(r.date)} · ${esc(r.no)} · ${esc((cpById(r.doc.counterparty_id) || {}).name || '')}${r.paid > 0.005 ? ' · ' + t('ap_paid') + ' ' + money(r.paid) : ''}</span></span>
+      <span class="ap-doc-r"><b class="money">${money(r.due)}</b><span class="tiny ${r.age > 0 ? 'ap-bad' : ''}">${r.age > 0 ? t('ap_over') + ' ' + r.age + ' ' + t('ap_days') : t('ap_due_on') + ' ' + fmtDMY(r.dueDate)}</span></span></button>`).join('');
+  return `${AP.noDb ? `<div class="banner b-yellow">${ic('warn')} ${t('ap_need_sql')}</div>` : ''}
+    <div class="card acc-sum"><div class="acc-sum-grid">
+      <div class="acc-kpi c-yellow"><div class="n" id="ap-k-due">${money(tot.sum || 0)}</div><div class="l">${t('ap_k_due')}</div><div class="s">${tot.n} ${t('ap_docs')} · ${t('ap_terms_l')}: Net ${apTerms()}</div></div>
+      <div class="acc-kpi c-red"><div class="n">${money((tot.b30 || 0) + (tot.b60 || 0) + (tot.b90 || 0) + (tot.b90p || 0))}</div><div class="l">${t('ap_k_over')}</div><div class="s">90+: ${money(tot.b90p || 0)}</div></div>
+      <div class="acc-kpi c-green"><div class="n" id="ap-k-got">${money(gotSum)}</div><div class="l">${t('ap_k_got')}</div>
+        <div class="s">${f.from ? fmtDMY(f.from) : '…'} – ${f.to ? fmtDMY(f.to) : '…'}${Object.keys(byM).length ? ' · ' + Object.entries(byM).map(([m, v]) => esc(t('ap_m_' + m)) + ' ' + money(v)).join(' · ') : ''}</div></div>
+    </div></div>
+    <div class="card"><div style="font-weight:900;margin-bottom:6px">${t('ap_by_cp')} ${tipQ('ap_tip')}</div>
+      <div class="ap-tbl-wrap"><table class="ap-tbl" id="ap-tbl"><thead><tr><th>${t('counterparty')}</th>${B.map(k => `<th class="num">${t('ap_' + k)}</th>`).join('')}<th class="num">${t('acc_total')}</th></tr></thead>
+      <tbody>${cpRows || `<tr><td colspan="7" class="tiny">${t('ap_no_debt')}</td></tr>`}</tbody>
+      ${cps.length > 1 ? `<tfoot><tr><td><b>${t('acc_total')}</b></td>${B.map(k => `<td class="num"><b>${cell(tot[k] || 0)}</b></td>`).join('')}<td class="num"><b>${money(tot.sum)}</b></td></tr></tfoot>` : ''}</table></div>
+      <div class="btn-rowpp" style="margin-top:8px"><button class="btn btn-ghost sm" onclick="App.apCsv()">${ic('download')} ${t('ap_csv')}</button></div></div>
+    <div class="card"><div style="font-weight:900;margin-bottom:6px">${t('ap_open_docs')} · ${open.length}</div>
+      <div id="ap-docs">${docRows || `<div class="list-empty">${t('ap_no_debt')}</div>`}</div></div>`;
+}
+function apGoDoc(id, date){
+  const f = accF(); f.tab = 'reg'; f.open = { [id]: true }; f.ast = 'all'; f.q = ''; f.cp = ''; f.tech = ''; f.st = 'all'; f.kind = 'all'; f.notes = false;
+  if (date && (!f.from || date < f.from)) f.from = date.slice(0, 8) + '01';
+  if (date && (!f.to || date > f.to)) f.to = date;
+  render();
+  setTimeout(() => { const el = document.querySelector(`.acc-row[data-id="${id}"]`); if (el){ try{ pageScrollTo(Math.max(0, pageScrollY() + el.getBoundingClientRect().top - 140), true); }catch(e){} } }, 120);
+}
+function apCsv(){
+  const q = v => { const s = String(v == null ? '' : v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const n = v => (Math.round((+v || 0) * 100) / 100).toFixed(2);
+  const docs = apOpenDocs().filter(r => r.total > 0.005).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const head = [t('date'), '№', t('counterparty'), t('d_complexes'), 'Unit', t('acc_total'), t('ap_paid'), t('ap_due'), t('ap_due_on'), t('ap_over') + ' (' + t('ap_days') + ')', t('ap_f_date') + ' (last)', t('ap_list')];
+  const lines = docs.map(r => [fmtDMY(r.date), r.no, (cpById(r.doc.counterparty_id) || {}).name || '', r.cx ? r.cx.name : '', r.unit, n(r.total), n(r.paid), n(r.due), r.dueDate ? fmtDMY(r.dueDate) : '', r.age,
+    r.lastPaid ? fmtDMY(r.lastPaid) : '', apFor(r.kind, r.id).map(x => fmtDMY(x.paid_on) + ' ' + n(x.amount) + ' ' + x.method + (x.ref ? ' #' + x.ref : '')).join(' | ')].map(q).join(','));
+  const blob = new Blob(['\ufeff' + [head.map(q).join(',')].concat(lines).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'techlog-ar-aging-' + todayISO() + '.csv';
+  document.body.appendChild(a); a.click(); setTimeout(() => { try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 1500);
 }
 function accStBadge(st){ return `<span class="acc-st acc-st-${st || 'none'}">${esc(accStName(st))}</span>`; }
 function accMoneyCell(v){ return v > 0.005 ? `<span class="money">${money(v)}</span>` : `<span class="acc-dash">—</span>`; }
@@ -26147,12 +28438,13 @@ function accRowHtml(r, f){
       <div class="acc-c acc-c-num" data-l="${accCatName('mat')}">${accMoneyCell(r.sp.mat)}</div>
       <div class="acc-c acc-c-num acc-c-tot" data-l="${t('acc_total')}"><b class="money">${money(r.total)}</b></div>
       <div class="acc-c acc-c-num acc-c-pay" data-l="${esc(accLabel())}"><b>${money(r.pay)}</b></div>
-      <div class="acc-c acc-c-st">${statusHtml}${accStBadge(r.acc_status)}</div>
+      <div class="acc-c acc-c-st">${statusHtml}${accStBadge(r.acc_status)}${apChipHtml(r)}</div>
       <div class="acc-c acc-c-note">${noteOn ? `<span class="acc-note-ic" title="${esc(notePrev)}">${ic('note')}</span>` : ''}<span class="sec-chev">${ic('chev_d')}</span></div>
     </div>
     ${noteOn && !open ? `<div class="acc-prev tiny" onclick="App.accOpen('${r.id}')">${ic('note')} ${esc(notePrev.slice(0, 140))}${notePrev.length > 140 ? '…' : ''}</div>` : ''}
     ${open ? `<div class="acc-body">
       ${accNotesHtml(r)}
+      ${apBlockHtml(r)}
       ${accCtlHtml(r, 'acn')}
       <div class="acc-actions">
         <button class="btn btn-ghost sm" onclick="App.accDoc('${r.kind}','${r.id}')">${ic('search')} ${t('acc_open')}</button>
@@ -26297,6 +28589,8 @@ function viewAccRates(){
       <div class="form-row"><span class="lbl">${t('acc_split_lbl')}</span>
         <select id="acc-split"><option value="equal" ${accSplitMode() === 'equal' ? 'selected' : ''}>${t('acc_split_equal')}</option>
           <option value="main" ${accSplitMode() === 'main' ? 'selected' : ''}>${t('acc_split_main')}</option></select></div>
+      <div class="form-row"><span class="lbl">${t('ap_terms_lbl')} ${tipQ('ap_terms_hint')}</span>
+        <input id="acc-terms" inputmode="numeric" maxlength="3" value="${apTerms()}"></div><!-- v1.09.15 -->
     </div>
     <button class="btn btn-green" onclick="App.accSaveRates()">${ic('save')} ${t('acc_save')}</button>
     <div style="margin-top:8px">${accStampHtml()}</div>
@@ -26362,6 +28656,7 @@ async function accSaveRates(){
   if (bad){ toast('⚠ ' + t('acc_bad_pct'), 'err'); return; }
   await put('opt:label', null, label && label !== t('acc_payout') ? label : '');
   await put('opt:split', null, split === 'main' ? 'main' : '');
+  { const tn = parseInt(String(($('#acc-terms') || {}).value || '30'), 10); await put('opt:terms', null, (tn >= 0 && tn <= 120 && tn !== 30) ? String(tn) : ''); }   // v1.09.15: Net N
   if (changed) audit('acc_rates', 'acc', 'rates', { n: changed, clean: accPct('clean'), rep: accPct('rep'), rent: accPct('rent'), mat: accPct('mat') });
   toast('✓ ' + t('acc_saved'));
   render();

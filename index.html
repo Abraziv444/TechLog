@@ -14,7 +14,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<!-- v1.09.12: библиотеки лежат в vendor/ и кэшируются service worker'ом — приложение запускается без сети.
+     Раньше supabase-js, jsPDF и Leaflet шли с CDN и офлайн не поднимались («Не удалось запустить»). -->
+<link rel="stylesheet" href="./vendor/leaflet.css">
 <link rel="stylesheet" href="./styles.css">
 <!-- ПК-режим: правила действуют ТОЛЬКО при классе tl-desktop на <html>.
      Без него файл инертен — мобильная версия его не видит. -->
@@ -38,9 +40,9 @@
 <!-- Колонка сотрудников для ПК-режима. Тоже автономная надстройка:
      пользуется только публичными ручками App.* и кэшем localStorage. -->
 <script src="./desktop.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<script src="./vendor/supabase.umd.js" defer></script>
+<script src="./vendor/jspdf.umd.min.js" defer></script>
+<script src="./vendor/leaflet.js" defer></script>
 <script src="./app.js" defer></script>
 <!-- Подсказки «?» к полям документов. Автономный модуль: вешается на текст
      подписей, при любой ошибке молча выключается. -->
@@ -62,9 +64,9 @@
   try{ EN = localStorage.getItem('techlog_lang') === 'en'; }catch(e){}
   if (EN){ var sp = document.querySelector('.boot-splash .tiny'); if (sp) sp.textContent = 'loading…'; }
   var W = EN
-    ? { ok: 'ok', cfg: 'NOT loaded (syntax?)', sb: 'NOT loaded (CDN/internet)', na: 'unavailable', srv: 'version on the server: ',
+    ? { ok: 'ok', cfg: 'NOT loaded (syntax?)', sb: 'NOT loaded (vendor/supabase.umd.js)', na: 'unavailable', srv: 'version on the server: ',
         title: 'Could not start', reset: 'Clear cache and reload', reload: 'Just reload' }
-    : { ok: 'ок', cfg: 'НЕ загружен (синтаксис?)', sb: 'НЕ загружен (CDN/интернет)', na: 'недоступен', srv: 'на сервере версия: ',
+    : { ok: 'ок', cfg: 'НЕ загружен (синтаксис?)', sb: 'НЕ загружен (vendor/supabase.umd.js)', na: 'недоступен', srv: 'на сервере версия: ',
         title: 'Не удалось запустить', reset: 'Сбросить кеш и перезагрузить', reload: 'Просто обновить' };
   window.__tlErr = null;
   addEventListener('error', function(e){

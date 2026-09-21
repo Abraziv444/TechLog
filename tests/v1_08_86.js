@@ -65,7 +65,7 @@ const pair = (p) => p.evaluate(async () => {
     });
     t('галочка — в блоке «Всплывающие подсказки», после «Показать пример»', where.chk && where.inPop && where.afterDemo, JSON.stringify(where));
     t('в карточке «Все фото и видео отправлены» галочки больше нет', !where.qCardHas, JSON.stringify(where));
-    t('по умолчанию снята', where.checked === false);
+    t('по умолчанию стоит (v1.09.12: полоска только когда что-то не отправлено)', where.checked === true);
     await p.evaluate(() => window.App.mqQuiet(true)); await p.waitForTimeout(1900);
     const a = await prefOf(p);
     t('поставили: ушла в профиль (push_prefs.mq_quiet = true) и в кэш устройства', a.pref === true && a.ls === '1', JSON.stringify(a));
@@ -102,7 +102,7 @@ const pair = (p) => p.evaluate(async () => {
   ];
   for (const [name, vp, mode] of cases){
     for (const pos of ['top', 'bottom', 'side']){
-      const p = await boot(br, vp, mode, pos);
+      const p = await boot(br, vp, mode, pos, { techlog_mq_quiet: '0' });   // v1.09.12: по умолчанию полоска тихая — для проверки геометрии включаем её явно
       const g = await pair(p);
       const lbl = `${name}, «${pos === 'top' ? 'сверху' : pos === 'bottom' ? 'снизу' : 'сбоку'}»`;
       t(`${lbl}: полоска лежит в #toasts первой, без своего позиционирования`, !g.miss && g.inBox && g.first && g.pos === 'static', JSON.stringify(g));
@@ -116,7 +116,7 @@ const pair = (p) => p.evaluate(async () => {
 
   console.log('— стопка, модалка, крестик —');
   {
-    const p = await boot(br, { width: 1440, height: 900 }, 'desktop', 'top');
+    const p = await boot(br, { width: 1440, height: 900 }, 'desktop', 'top', { techlog_mq_quiet: '0' });
     const st = await p.evaluate(async () => {
       window.App.mqMini(true);
       await new Promise(r => setTimeout(r, 100));

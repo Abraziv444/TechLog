@@ -4,8 +4,8 @@ import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_V
 /* v1.07.64: max — это дефолт; действующий лимит на документ админ задаёт
    в настройках (org_settings.media_max_photo / media_max_video). Проверка
    именно здесь: клиент лимит только показывает, обойти его нельзя. */
-const LIMITS = { photo: { max: 10, bytes: 8_000_000 },
-                 video: { max: 2,  bytes: 120_000_000 },
+const LIMITS = { photo: { max: 30, bytes: 8_000_000 },
+                 video: { max: 5,  bytes: 120_000_000 },
                  /* v1.07.81: вложение «скрепкой» — документ. Его лимит админ
                     тоже задаёт в настройках (org_settings.media_max_file);
                     значение ниже — только запасное. */
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
       DATE: date, YEAR: date.slice(0, 4),
       CP: clean(cp?.abbr || cp?.name || "", 4),
       CX: clean(cx?.abbr || cx?.name || "CX"),
-      UNIT: clean(job.unit_number || "0", 10),
+      UNIT: "U" + clean(job.unit_number || "0", 10),   // v1.09.12: буква U перед номером юнита
       TECH: tech, WT: clean(wt?.name || "", 12),
       NAME: tail, KIND: kind.toUpperCase(),
       SEQ: String(seq).padStart(2, "0"),

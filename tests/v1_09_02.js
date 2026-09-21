@@ -51,7 +51,9 @@ const toSettings = async (p) => { await p.evaluate(() => window.App.go('settings
   const p = await boot(br, 'demo-admin', 'mobile', 390, 844);
   await toSettings(p);
   const b0 = await bar(p);
-  t('по умолчанию: один ряд, подписи спрятаны (авто, ≤430 px), классов настроек нет, --tbx = 0', b0.rows.length === 1 && b0.labs === 0 && !/tb-multi|tb-lab-/.test(b0.cls) && (b0.tbx === '0px' || b0.tbx === ''), JSON.stringify(b0));
+  /* v1.09.17: у админа с «Сообщениями» 17 пунктов — в один ряд на 390 px кнопка была бы 23 px. Пока число рядов
+     не выбрано, тесное меню само встаёт в 2 ряда; подписи по-прежнему спрятаны, меню не наезжает и не вылезает. */
+  t('по умолчанию (17 пунктов, 390 px): тесное меню само в 2 ряда, подписи спрятаны (авто, ≤430 px), своих классов подписей нет', b0.rows.length === 2 && b0.labs === 0 && /tb-multi/.test(b0.cls) && !/tb-lab-/.test(b0.cls) && b0.overlap === 0 && b0.out === 0, JSON.stringify(b0));
   t('у каждой кнопки меню есть title с названием', b0.titles === b0.n && b0.n >= 14, b0.titles + '/' + b0.n);
 
   console.log('— экран настроек: 2FA под сменой пароля, строки меню в карточке профиля —');
@@ -71,6 +73,8 @@ const toSettings = async (p) => { await p.evaluate(() => window.App.go('settings
     st.ml > st.font && st.mr === st.ml + 1 && JSON.stringify(st.seg) === '["Авто*","Показать","Скрыть"]' && st.val === '1' && st.minusOff, JSON.stringify(st));
 
   console.log('— «Показать» на маленьком экране —');
+  /* v1.09.17: без явного выбора тесное меню само встаёт в 2 ряда — для проверки одного ряда выбираем «1» явно */
+  await p.evaluate(() => { localStorage.setItem('techlog_menu_rows', '1'); render(); }); await p.waitForTimeout(250);
   await p.click('#ml-row .lang-seg button:nth-child(2)'); await p.waitForTimeout(400);
   const b1 = await bar(p);
   t('подписи видны у всех пунктов на 390 px, кнопки не наезжают и не вылезают', b1.labs === b1.n && /tb-lab-on/.test(b1.cls) && b1.overlap === 0 && b1.out === 0, JSON.stringify(b1));

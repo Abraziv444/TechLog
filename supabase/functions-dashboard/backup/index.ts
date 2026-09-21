@@ -48,7 +48,7 @@ import { svc, userClient, CORS, jres, driveToken, driveConfig, monthFolder } fro
    значении — папка Files внутри корневой gd_folder_id). Права: админ.
    ===================================================================== */
 
-const BK_VER = "1.09.03";
+const BK_VER = "1.09.19";
 type Sb = ReturnType<typeof svc>;
 
 const TABLES = [
@@ -60,6 +60,13 @@ const TABLES = [
   "hidden_staff", "media", "stock_daily", "equip_moves",
   "bn_devices",                                     /* v1.09.01: справочник трекеров — до vehicles (FK vehicles.imei) */
   "vehicles", "site_visits", "push_subs", "tech_log", "audit_log",
+  /* v1.09.18: раньше в бэкап НЕ попадали прайс, остатки склада, настройки и оплаты бухгалтерии, шаблоны заметок,
+     учёба и чат — восстановление из SQL-бэкапа оставило бы базу без цен. Таблицы без FK на документы — в конце.
+     Намеренно НЕ входят: app_secrets (секреты не должны лежать на Диске), push_queue, rpc_throttle, tv_sessions,
+     drive_dirs, bn_trips / bn_trip_days (кэш, перекачивается из Bouncie), doc_shares (заменён чатом). */
+  "price_list", "equipment_stock", "acc_settings", "acc_payments", "note_templates", "study_sessions",
+  /* v1.09.19: чат в бэкап на Диск НЕ входит намеренно — личная переписка не должна лежать читаемым файлом;
+     у переписки есть срок хранения (org_settings.chat_keep_days), восстанавливать её из бэкапа не нужно */
 ];
 
 /* единственная массивная колонка схемы — profiles.tt_list (uuid[]) */

@@ -1560,7 +1560,7 @@ console.log('\n— v1.08.51: учёба —');
     && !/html\.tl-desktop \.mq-mini\{[^}]*(left|right|top|bottom):/.test(dcss)
     && css.includes('body:has(> .overlay) #toasts > .mq-mini')
     && src.includes('class="mq-mini-c"') && src.includes("e.target.closest('.mq-mini-c')") && src.includes("e.key === 'Escape' && $('#mq-mini')")
-    && src.includes('popHost(el, true);') && (src.match(/popHost\(el\);/g) || []).length === 3);
+    && src.includes('popHost(el, true);') && (src.match(/popHost\(el\);/g) || []).length === 4);   /* v1.09.13: + подсказка о пуше внутри приложения */
   t('v1.08.86: «только при ошибке» — настройка аккаунта (push_prefs.mq_quiet), тесты в неё не пишут, галочка в «Всплывающих подсказках»',
     src.includes('state.user.push_prefs.mq_quiet') && src.includes('function mqQuietSyncPref')
     && (src.match(/localStorage\.setItem\('techlog_mq_quiet'/g) || []).length === 2
@@ -1673,7 +1673,7 @@ console.log('\n— v1.08.51: учёба —');
     && ['dgs_card', 'dg_net_title', 'dg_ui'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
   t('v1.08.97: «Нумерация» и «Организация (для PDF)» — подразделы «Настроек документов»; организация — админ и бухгалтер; SQL-комплект 1.08.97',
     src.includes("+ fold('num', t('no_card'), 'receipt', numberingCardHtml(), true)")
-    && src.includes("+ fold('org', t('org'), 'building', orgCardHtml(), true);")
+    && src.includes("+ fold('org', t('org'), 'building', orgCardHtml(), true)")   /* v1.09.12: следом подраздел переводов */
     && !src.includes("${fold('num', t('no_card'), 'receipt', numberingCardHtml())}")
     && (src.match(/id="org-name"/g) || []).length === 1 && /function orgCardHtml\(\)\{\s*if \(!isAdmin\(\) && !isAcc\(\)\) return '';/.test(src)
     && src.includes("if ((!isAdmin() && !isAcc()) || !$('#org-name')) return;   // v1.08.97: админ и бухгалтер, форма на экране")
@@ -2150,7 +2150,7 @@ console.log('\n— v1.09.01: справочник «Трекеры Bouncie» —
     && src.includes("if (norm.length) for (let i = 0; i < arr.length; i++){") && src.includes("if (auto && BN.off) return null;"));
   t('v1.09.01: импорт машин сначала сверяет справочник; vehicle_save — понятные ошибки NO_DEVICE / DEVICE_INACTIVE / DEVICE_TAKEN',
     src.includes("const res = await bnDevSync(false);\n  if (!res || res.empty) return;\n  let added = 0, upd = 0;\n  for (const d of bnDevices().filter(bnDevActive)){")
-    && src.includes(": /NO_DEVICE|vehicles_imei_fk/.test(s) ? t('trk_no_dev')") && src.includes(": /DEVICE_INACTIVE/.test(s) ? t('trk_inactive_pick')")
+    && src.includes(": /NO_DEVICE|vehicles_imei_fk/.test(s) ? t('trk_no_dev')") && src.includes(": /DEVICE_INACTIVE/.test(s) ? t('trk_inact_db')")   /* v1.09.12: неактивный трекер привязывается с предупреждением */
     && src.includes(": /DEVICE_TAKEN|vehicles_imei_ux/.test(s) ? t('trk_taken')"));
   t('v1.09.01: SQL — bn_devices с RLS (select только админ), FK vehicles_imei_fk, bn_dev_norm, bn_devices_sync, перенос IMEI, проверки vehicle_save, самопроверка; backup дампит bn_devices до vehicles',
     [upd, full].every(x => x.includes('create table if not exists public.bn_devices (') && x.includes("constraint bn_devices_status_ck check (status in ('active','inactive'))")
@@ -2213,8 +2213,8 @@ console.log('\n— v1.09.01: справочник «Трекеры Bouncie» —
   const selNew = T.vehTrackerSelHtml({ id: null, imei: '' });
   const selV1 = T.vehTrackerSelHtml({ id: 'v1', imei: '359999000000001' });
   const selV2 = T.vehTrackerSelHtml({ id: 'v2', imei: '359999000000077' });
-  t('v1.09.01: список трекеров новой машины — без неактивного Van 2, занятый Van 1 disabled с №1, Van 3 доступен',
-    !/Van 2/.test(selNew) && /<option value="359999000000001" disabled>Van 1 · 359999000000001 · №1<\/option>/.test(selNew)
+  t('v1.09.01: список трекеров новой машины — неактивный Van 2 помечен (v1.09.12: его можно выбрать), занятый Van 1 disabled с №1, Van 3 доступен',
+    /Van 2[^<]*(неактив|inactive)/i.test(selNew) && /<option value="359999000000001" disabled>Van 1 · 359999000000001 · №1<\/option>/.test(selNew)
     && /<option value="359999000000003">Van 3 · 359999000000003<\/option>/.test(selNew) && /<option value="">/.test(selNew) && !/disabled>\s*<option value=""/.test(selNew));
   t('v1.09.01: у машины свой трекер выбран и не disabled; IMEI вне справочника остаётся выбранным с пометкой «?»',
     /<option value="359999000000001" selected>Van 1/.test(selV1) && /<option value="359999000000077" selected>IMEI 359999000000077 · \?<\/option>/.test(selV2));
@@ -2261,7 +2261,7 @@ console.log('\n— v1.09.02: личные настройки меню (подп�
   T.state.user.push_prefs = { ...T.state.user.push_prefs, menu_rows: 2, menu_labels: 'on' };
   const bar2 = T.viewTabbar(), nTabs = (bar2.match(/<button class="tab/g) || []).length;
   t('v1.09.02: 2 ряда + «Показать» — tb-multi, --tb-cols = половина пунктов, tb-lab-on, «тесная» раскладка снята',
-    /class="tabbar tb-multi tb-lab-on" style="--tb-cols:(\d+)"/.test(bar2) && +bar2.match(/--tb-cols:(\d+)/)[1] === Math.ceil(nTabs / 2) && !/tb-tight/.test(bar2), bar2.slice(0, 90));
+    /class="tabbar tb-multi tb-lab-on(?: tb-c5)?" style="--tb-cols:(\d+)"/.test(bar2)   /* v1.09.17: tb-c5 — от 5 пунктов в ряду подписи ужимаются */ && +bar2.match(/--tb-cols:(\d+)/)[1] === Math.ceil(nTabs / 2) && !/tb-tight/.test(bar2), bar2.slice(0, 90));
   T.state.user.push_prefs = { ...T.state.user.push_prefs, menu_labels: 'off', menu_rows: 9 };
   t('v1.09.02: «Скрыть» — tb-lab-off; мусор в menu_rows → 1 ряд', /class="tabbar tb-tight tb-lab-off"/.test(T.viewTabbar()) && T.menuRows() === 1);
   /* своё значение для режима ПК; ряды на ПК-колонку не действуют */
@@ -2309,8 +2309,8 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   t('v1.09.03: версии (app = sw = version.json = 1.09.03), SQL не менялся, BK_VER = 1.09.03, тесты на месте',
     /^1\.(09\.(0[3-9]|[1-9]\d)|[1-9]\d\.\d\d)$/.test(T.APP_VERSION) && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")   /* v1.09.04: версия двинулась дальше */
     && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /^full-install-1_09_(0[1-9]|[1-9]\d)\.sql$/.test(T.DB_SQL_FILE)
-    && fs.readFileSync(ROOT + '/supabase/functions/backup/index.ts', 'utf8').includes('const BK_VER = "1.09.03";')
-    && fs.readFileSync(ROOT + '/supabase/functions-dashboard/backup/index.ts', 'utf8').includes('const BK_VER = "1.09.03";')
+    && fs.readFileSync(ROOT + '/supabase/functions/backup/index.ts', 'utf8').match(/const BK_VER = "1\.09\.(0[3-9]|[1-9]\d)";/)   /* v1.09.18: версия бэкапа двинулась дальше */
+    && fs.readFileSync(ROOT + '/supabase/functions-dashboard/backup/index.ts', 'utf8').match(/const BK_VER = "1\.09\.(0[3-9]|[1-9]\d)";/)   /* v1.09.18: версия бэкапа двинулась дальше */
     && fs.existsSync(ROOT + '/tests/v1_09_03.js') && fs.existsSync(ROOT + '/tests/backup-rotation.js'));
   t('v1.09.03: ключи RU/EN — замок и полки бэкапа',
     ['lock_chk', 'lock_state_off', 'lock_state_on', 'lock_tip', 'lock_days_lbl', 'abk_tip', 'abk_auto_lbl', 'abk_r_admin', 'abk_r_weekly', 'abk_r_daily',
@@ -2352,8 +2352,152 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   t('v1.09.03: карточка «Аренда оборудования и права» содержит строку замка; orgStepperHtml без 6-го аргумента — как раньше',
     T.docsEquipCardHtml().includes('id="lock-row"') && !/disabled|is-off/.test(T.orgStepperHtml('default_rent_days', 3, 1, 30)));
   t('v1.09.03: длинная подсказка «?» висит дольше и закрывается нажатием',
-    src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(20000, s.length * 55)))") && src.includes('function toast(msg, kind, ms){')
-    && src.includes("if (ms > 3800){ el.classList.add('tap'); el.onclick = () => el.remove(); }") && css.includes('.toast.tap{cursor:pointer}'));
+    src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(12000, s.length * 40)))") && src.includes('function toast(msg, kind, ms){')   /* v1.09.12: не дольше 12 с, крестик, нажатие мимо */
+    && src.includes("el.classList.add('tap'); el.onclick = () => el.remove();") && src.includes("x.className = 't-x'") && css.includes('.toast.tap{cursor:pointer}'));
+
+  /* ---------- v1.09.21 ---------- */
+  console.log('\n— v1.09.21: ключи защиты переписки (без шифрования) —');
+  t('v1.09.21: версии (app = sw = version.json, не ниже 1.09.21), SQL-комплект и тест на месте',
+    T.APP_VERSION >= '1.09.21' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_21.sql'
+    && ['update-to-1_09_21.sql', 'full-install-1_09_21.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_21.js'));
+  t('v1.09.21: ключи меняются только функциями; рабочий ключ на устройстве неизвлекаемый; пароль проверяется отдельным клиентом без сохранения сессии; сообщения этим выпуском не шифруются',
+    ['chat_key_put', 'chat_key_safe_set', 'chat_key_mode_set', 'chat_key_escrow_get', 'chat_key_admin_rewrap', 'chat_org_key_init', 'chat_org_key_grant'].every(f => src.includes("'" + f + "'"))
+    && !src.includes("from('chat_keys').insert") && !src.includes("from('chat_keys').update") && src.includes('const priv = await ckImportPriv(pkcs8, false);')
+    && src.includes("storageKey: 'tl-ck-verify'") && !/p_cipher|chat_encrypt/.test(src));
+  t('v1.09.21: минимальная длина нового пароля — 10 во всех трёх местах (свой, сброс админом, новый сотрудник)',
+    (src.match(/\.length < CK_MINPW\)\{ toast\('⛔ ' \+ t\('pass_short'\)/g) || []).length === 3 && src.includes('const CK_ITER = 600000, CK_MINPW = 10;'));
+
+  /* ---------- v1.09.20 ---------- */
+  console.log('\n— v1.09.20: группы в чате —');
+  t('v1.09.20: версии (app = sw = version.json, не ниже 1.09.20), SQL-комплект, схема шифрования и тест на месте',
+    T.APP_VERSION >= '1.09.20' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_20.sql'
+    && ['update-to-1_09_20.sql', 'full-install-1_09_20.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_20.js') && fs.existsSync(ROOT + '/TZ-chat-encryption.md'));
+  t('v1.09.20: группы меняются только функциями; сообщения чужой группы отсекаются и на клиенте; до обновления базы чат без групп шлёт старой подписью',
+    ['chat_group_create', 'chat_group_rename', 'chat_group_add', 'chat_group_remove', 'chat_group_delete'].every(f => src.includes("'" + f + "'"))
+    && !src.includes("from('chat_groups').insert") && !src.includes("from('chat_members').insert") && src.includes('m.group_id ? chInGroup(m.group_id) :')
+    && src.includes('const a12 = Object.assign({}, args); delete a12.p_group;'));
+
+  /* ---------- v1.09.19 ---------- */
+  console.log('\n— v1.09.19: чат «как привычно» —');
+  t('v1.09.19: версии (app = sw = version.json, не ниже 1.09.19), SQL-комплект и тест на месте',
+    T.APP_VERSION >= '1.09.19' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_19.sql'
+    && ['update-to-1_09_19.sql', 'full-install-1_09_19.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_19.js'));
+  t('v1.09.19: правка, реакции и фото идут только через RPC; до обновления базы простой текст уходит старой подписью chat_send',
+    src.includes("state.sb.rpc('chat_edit'") && src.includes("state.sb.rpc('chat_react'") && !src.includes("from('chat_files').insert") && !src.includes("from('chat_msgs').update")
+    && src.includes("&& !img && !reply && !gid){") && src.includes("q.or('created_at.gt.' + lastTs + ',updated_at.gt.' + lastTs)"));   /* v1.09.20: и не группа */
+  t('v1.09.19: в последнем определении chat_send нет неоднозначности — одна функция с 12 параметрами, старая удалена',
+    (() => { const q = fs.readFileSync(ROOT + '/supabase/' + T.DB_SQL_FILE, 'utf8'); const last = q.lastIndexOf('create or replace function public.chat_send(');
+      return q.lastIndexOf('drop function if exists public.chat_send(uuid, text, text, boolean, text, uuid, text);') < last && q.slice(last, last + 400).includes('p_reply uuid, p_thumb text, p_img text, p_w int, p_h int'); })());   /* в 1.09.20 к ним добавился p_group */
+
+  /* ---------- v1.09.18 ---------- */
+  console.log('\n— v1.09.18: полный бэкап; чат — «прочитано» и realtime —');
+  t('v1.09.18: версии (app = sw = version.json, не ниже 1.09.18), SQL-комплект и тест на месте',
+    T.APP_VERSION >= '1.09.18' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_18.sql'
+    && ['update-to-1_09_18.sql', 'full-install-1_09_18.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_18.js'));
+  t('v1.09.18: каждая таблица JSON-бэкапа разрешена к восстановлению в admin_restore_rows (последнее определение в full-install)',
+    (() => { const q = fs.readFileSync(ROOT + '/supabase/' + T.DB_SQL_FILE, 'utf8'); const fn = q.slice(q.lastIndexOf('create or replace function public.admin_restore_rows')).slice(0, 1200);
+      const bk = (/const BK_TABLES = \[([\s\S]*?)\];/.exec(src) || [])[1] || ''; const names = (bk.match(/'([a-z_]+)'/g) || []).map(x => x.replace(/'/g, ''));
+      return names.length > 20 && names.every(n => fn.includes("'" + n + "'")); })());
+
+  /* ---------- v1.09.17 ---------- */
+  console.log('\n— v1.09.17: сообщения (чат) —');
+  t('v1.09.17: версии (app = sw = version.json, не ниже 1.09.17), SQL-комплект и тест на месте',
+    T.APP_VERSION >= '1.09.17' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_17.sql'
+    && ['update-to-1_09_17.sql', 'full-install-1_09_17.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_17.js'));
+  t('v1.09.17: чат вне общего обмена; запись только RPC chat_send; текст сообщения выводится экранированным; слушатели пассивные',
+    !/const TABLES = \[[^\]]*'chat_msgs'/.test(src) && src.includes("state.sb.rpc('chat_send'") && !src.includes("from('chat_msgs').insert") && src.includes('<div class="ch-text">${chTextHtml(m.body)}</div>') && src.includes('return esc(body).replace(')   /* v1.09.19: сначала экранирование, потом ссылки */
+    && src.includes("window.addEventListener('resize', () => { if (state.screen === 'chat') chLayout(false); }, { passive: true });"));
+  t('v1.09.17: SQL — личную переписку видят только участники, админ удаляет только в каналах, вложение проверяется по правам отправителя',
+    ['update-to-1_09_17.sql', 'full-install-1_09_17.sql'].every(f => { const q = fs.readFileSync(ROOT + '/supabase/' + f, 'utf8');
+      return q.includes('using (channel is not null or from_user = auth.uid() or to_user = auth.uid())') && q.includes("using (from_user = auth.uid() or (channel is not null and public.my_role() = 'admin'))")
+        && q.includes("if not coalesce(v_ok, false) then raise exception 'NO_ACCESS'; end if;") && q.includes('chat_msgs_target_chk'); }));
+
+  /* ---------- v1.09.16 ---------- */
+  console.log('\n— v1.09.16: чек-лист вида задачи — настраиваемый список —');
+  t('v1.09.16: версии (app = sw = version.json, не ниже 1.09.16), база не менялась, тест на месте',
+    T.APP_VERSION >= '1.09.16' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && fs.existsSync(ROOT + '/tests/v1_09_16.js'));
+  t('v1.09.16: отметки чек-листа — по id пункта; старые по номеру читаются; текстового поля-редактора больше нет',
+    src.includes('function clItems(wt){') && src.includes('function clDoneSet(fd, items){') && src.includes("if (/^\\d+$/.test(k)){ const it = items[+k]; if (it) out.add(it.id); } else out.add(k);")
+    && !src.includes('id="wt-cl" rows="10"') && src.includes("onchange=\"App.clToggle('${esc(it.id)}', this.checked)\""));
+
+  /* ---------- v1.09.15 ---------- */
+  console.log('\n— v1.09.15: оплаты по документам, долги по срокам —');
+  t('v1.09.15: версии (app = sw = version.json, не ниже 1.09.15), SQL-комплект, разбор и тест на месте',
+    T.APP_VERSION >= '1.09.15' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_15.sql'
+    && ['update-to-1_09_15.sql', 'full-install-1_09_15.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_15.js') && fs.existsSync(ROOT + '/TZ-accounting.md'));
+  t('v1.09.15: acc_payments вне общего обмена; запись и удаление — только админ и бухгалтер; askModal зовётся своими ключами (ok / danger)',
+    !/const TABLES = \[[^\]]*'acc_payments'/.test(src) && (src.match(/if \(!\(isAdmin\(\) \|\| isAcc\(\)\)\) return/g) || []).length >= 3
+    && !/askModal\(\{[^}]*\byes:/.test(src));
+
+  /* ---------- v1.09.14 ---------- */
+  console.log('\n— v1.09.14: поделиться документом —');
+  t('v1.09.14: версии (app = sw = version.json, не ниже 1.09.14), SQL-комплект и тест на месте',
+    T.APP_VERSION >= '1.09.14' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_14.sql'
+    && ['update-to-1_09_14.sql', 'full-install-1_09_14.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_14.js'));
+  t('v1.09.14 → 1.09.17: журнал пересылок doc_shares заменён чатом — клиент к doc_shares больше не обращается',
+    !src.includes("from('doc_shares')") && !src.includes("rpc('doc_share_send'") && /async function chSendTo\(k, body, doc, important(, extra)?\)\{/.test(src));
+  t('v1.09.14: ссылка на документ разбирается строго (kind:uuid), кнопка «Поделиться» — у задачи, пропозала и ремонта',
+    src.includes("/^(job|prop|rep):([0-9a-f-]{8,40})$/i") && ['job', 'prop', 'rep'].every(k => src.includes("App.docShare('" + k + "','")));
+
+  t('v1.09.14: режим чтения вслух встроен во все учебники и в шаблон, модуль и встраиватель на месте',
+    (() => { const dir = ROOT + '/dictionary/books/'; const books = fs.readdirSync(dir).filter(f => /^section-[1-7]-(ru|en)\.html$/.test(f));
+      return books.length === 14 && books.every(f => { const h = fs.readFileSync(dir + f, 'utf8'); return (h.match(/<!-- tl-audio:start -->/g) || []).length === 1 && h.includes('window.__tlAudio'); })
+        && fs.readFileSync(dir + 'tools/viewer.html', 'utf8').includes('<!-- tl-audio:start -->') && fs.existsSync(dir + 'tools/audio-mode.js') && fs.existsSync(dir + 'tools/inject-audio.py') && fs.existsSync(ROOT + '/tests/book-audio.js'); })());
+
+  /* ---------- v1.09.13 ---------- */
+  console.log('\n— v1.09.13: порядок на доске с «Сохранить» и push, утренние пуши, поворот, профиль сотрудника —');
+  t('v1.09.13: версии (app = sw = version.json, не ниже 1.09.13), SQL-комплект, расписание и тест на месте',
+    T.APP_VERSION >= '1.09.13' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_13.sql'
+    && ['update-to-1_09_13.sql', 'full-install-1_09_13.sql', 'cron-push-morning.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.existsSync(ROOT + '/tests/v1_09_13.js'));
+  t('v1.09.13: доска — режим правки (BRD), сохранение разом, RPC board_order_notify, стрелки у пикапов',
+    src.includes("const BRD = { on: false, date: '', order: {} };") && src.includes("state.sb.rpc('board_order_notify', { p_user: techId, p_date: iso })")
+    && src.includes("App.boardMove('${jobId}',-1,'pk')") && src.includes('function brdEditBarHtml(){'));
+  t('v1.09.13: service worker отдаёт пуш открытому окну и ссылку из уведомления — сообщением',
+    (() => { const sw = fs.readFileSync(ROOT + '/sw.js', 'utf8'); return sw.includes("type: 'PUSH'") && sw.includes("type: 'OPEN_URL'"); })()
+    && src.includes("if (e.data?.type === 'PUSH')") && src.includes('function deepLinkApply(url){'));
+  t('v1.09.13: манифест без жёсткой книжной ориентации; настройка «Поворот экрана» — устройства',
+    JSON.parse(fs.readFileSync(ROOT + '/manifest.webmanifest', 'utf8')).orientation === 'any' && src.includes("localStorage.getItem('techlog_orient')"));
+  t('v1.09.13: профиль сотрудника и «Ремонт» только ремонтникам — интерфейс, не права',
+    src.includes("const STAFF_KINDS = ['tech', 'repair', 'helper'];") && src.includes("...(repTabOn() ? [['repairs', ic('toolbox'), t('tab_repairs')]] : [])")
+    && src.includes("['profiles',      'staff_kind'],"));
+
+  /* ---------- v1.09.12 ---------- */
+  console.log('\n— v1.09.12: NO_ACCESS, офлайн-запуск, новый бланк, печать, настройки —');
+  t('v1.09.12: версии (app = sw = version.json, не ниже 1.09.12), SQL-комплект и тест на месте',
+    T.APP_VERSION >= '1.09.12' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && T.DB_SQL_FILE >= 'full-install-1_09_12.sql' && fs.existsSync(ROOT + '/supabase/update-to-1_09_12.sql') && fs.existsSync(ROOT + '/supabase/full-install-1_09_12.sql')
+    && fs.existsSync(ROOT + '/tests/v1_09_12.js'));
+  t('v1.09.12: 403 от media-begin больше не удаляет файл из очереди; файл ждёт документ из очереди записей',
+    src.includes('if (!it.upload_url && mqOwnerPending(it)){') && src.includes("it.error = 'NO_ACCESS'; it.attempts = (it.attempts || 0) + 1; await mQPut(it);")
+    && src.includes('if (st === 409 || st === 413){') && !src.includes('if (st === 409 || st === 403 || st === 413){'));
+  t('v1.09.12: библиотеки свои (vendor/) и в прекэше; CDN-скриптов в index.html нет; непрозрачные ответы CDN кэшируются',
+    (() => { const ih = fs.readFileSync(ROOT + '/index.html', 'utf8'), sw = fs.readFileSync(ROOT + '/sw.js', 'utf8');
+      return !/<script[^>]+src="https?:/.test(ih) && ih.includes('./vendor/supabase.umd.js') && ih.includes('./vendor/jspdf.umd.min.js') && ih.includes('./vendor/leaflet.js')
+        && ['supabase.umd.js', 'jspdf.umd.min.js', 'leaflet.js', 'leaflet.css'].every(f => sw.includes("'./vendor/" + f + "'") && fs.existsSync(ROOT + '/vendor/' + f))
+        && sw.includes("res.ok || res.type === 'opaque'"); })());
+  t('v1.09.12: новый бланк — поля формы, цены и расчёт', (() => {
+    const fd = T.emptyFormData ? T.emptyFormData() : null; if (!fd) return src.includes("f_proposal: false, emergency: false, no_water: false, second_call: false, po: ''");
+    return fd.emergency === false && fd.no_water === false && fd.second_call === false && fd.f_proposal === false && fd.po === ''
+      && fd.steam.portable === false && fd.removals.imprint === false && fd.other.crb === false; })()
+    && src.includes("['steam_portable','Steam Clean — Portable','per room',0]") && src.includes("(fd.other.crb ? p('oth_crb') : 0)"));
+  t('v1.09.12: буква U перед юнитом — в номере документа, имени файла и в media-begin',
+    src.includes("UNIT: (noPart(o.unit_number, 6) ? 'U' + noPart(o.unit_number, 6) : '')") && src.includes("+ '_U' + (noPart(j.unit_number, 10) || 'x')")
+    && fs.readFileSync(ROOT + '/supabase/functions-dashboard/media-begin/index.ts', 'utf8').includes('UNIT: "U" + clean(job.unit_number'));
+  t('v1.09.12: SQL — прайс нового бланка, day_move_on, лимиты 30/5, bn_devices.label, vehicle_save без запрета неактивного',
+    ['update-to-1_09_12.sql', 'full-install-1_09_12.sql'].every(f => { const q = fs.readFileSync(ROOT + '/supabase/' + f, 'utf8');
+      const vs = q.slice(q.lastIndexOf('create or replace function public.vehicle_save'));
+      return q.includes("('oth_crb','Other — Crb Machine','flat',0,103)") && q.includes('add column if not exists day_move_on boolean not null default false')
+        && q.includes('alter column media_max_photo set default 30') && q.includes('add column if not exists label text')
+        && q.includes('function public.bn_device_label(p_imei text, p_label text)') && !vs.slice(0, 3000).includes("raise exception 'DEVICE_INACTIVE'"); }));
 
   /* бэкапы */
   t('v1.09.03: кнопка → kind=admin, автозапуск → kind=auto; skipped не пишет ни журнал, ни «последний»',
@@ -2832,9 +2976,9 @@ console.log('\n— v1.09.10: история треков, папка забло�
 console.log('\n— v1.09.11: «Несохранённые изменения» без правок —');
 {
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
-  t('v1.09.11: версии (app = sw = version.json = 1.09.11), SQL не менялся, тест на месте',
-    T.APP_VERSION === '1.09.11' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '1.09.11'")
-    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === '1.09.11' && T.DB_SQL_FILE === 'full-install-1_09_10.sql'
+  t('v1.09.11: версии (app = sw = version.json, не ниже 1.09.11), тест на месте',
+    T.APP_VERSION >= '1.09.11' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && T.DB_SQL_FILE >= 'full-install-1_09_10.sql'
     && fs.existsSync(ROOT + '/tests/v1_09_11.js'));
   t('v1.09.11: jobKey сравнивает form_data в каноническом виде, а не строкой «как есть»',
     src.includes('function canonVal(v){') && src.includes('function jobFdCanon(fd){ return canonVal(Object.assign(emptyFormData(), fd || {})); }')

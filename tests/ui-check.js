@@ -28,7 +28,7 @@ const EXE = process.env.PW_CHROME || '/opt/pw-browsers/chromium-1194/chrome-linu
 const STRICT = process.env.UI_STRICT === '1';
 const DENS = process.env.UI_DENS === 'compact' ? 'compact' : '';   // v1.09.05
 
-const SCREENS = ['home', 'board', 'proposals', 'repairs', 'map', 'reports', 'stats', 'study', 'dirs', 'journal', 'settings'];   // v1.08.51: + учёба
+const SCREENS = ['home', 'chat', 'board', 'proposals', 'repairs', 'map', 'reports', 'stats', 'study', 'dirs', 'journal', 'settings'];   // v1.08.51: + учёба
 const MODES = [
   { name: 'телефон', vp: { width: 414, height: 896 }, mode: 'mobile' },
   { name: 'ПК',      vp: { width: 1440, height: 900 }, mode: 'desktop' },
@@ -48,6 +48,10 @@ const SOFT = ['contrast', 'hit', 'clip'];
     for (const p of ['**://*.jsdelivr.net/**', '**://*.cloudflare.com/**', '**://*.unpkg.com/**',
                      '**://*.googleapis.com/**', '**://*.gstatic.com/**', '**://*.supabase.co/**'])
       await page.route(p, r => r.abort());
+    /* v1.09.12: Leaflet теперь свой (vendor/) и карта в песочнице рисуется — плитки OSM отдаём
+       прозрачной заглушкой 1×1, иначе «картинка не загрузилась» была бы дефектом окружения, а не вёрстки */
+    await page.route('**://*.openstreetmap.org/**', r => r.fulfill({ status: 200, contentType: 'image/png',
+      body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64') }));
 
     await page.addInitScript(([mode, dens]) => {
       localStorage.setItem('techlog_session_v1', 'demo-admin');

@@ -25,7 +25,7 @@ import webpush from "npm:web-push@3.6.7";
    пингует ?send=1 раз в ~2 минуты и сразу после действий-триггеров.
    ===================================================================== */
 
-const PUSH_VER = "1.08.33";
+const PUSH_VER = "1.09.13";
 type Sb = ReturnType<typeof svc>;
 
 async function vapid(s: Sb): Promise<{ pub: string; priv: string }> {
@@ -86,6 +86,51 @@ async function enqueueOverdue(s: Sb) {
       url: "./",
     });
   }
+}
+
+/* v1.09.13: УТРЕННЯЯ СВОДКА (?send=1&morning=1, зовёт cron): каждому сотруднику — сколько пикапов
+   на сегодня и сколько просрочено; менеджерам и админам — то же по всей фирме. Раз в сутки
+   (день по Нью-Йорку; отметка в app_secrets.push_morning_day — схема базы не меняется).
+   Личная галочка та же, что у «Пикап просрочен» (push_prefs.overdue). */
+async function enqueueMorning(s: Sb): Promise<number> {
+  const today = todayNY();
+  const { data: mk } = await s.from("app_secrets").select("value").eq("key", "push_morning_day").maybeSingle();
+  if (mk?.value === today) return 0;
+  await s.from("app_secrets").upsert([{ key: "push_morning_day", value: today }], { onConflict: "key" });
+
+  const { data: pls } = await s.from("placements")
+    .select("technician_id, due_date")
+    .eq("picked_up", false).eq("superseded", false).lte("due_date", today);
+  const due: Record<string, number> = {}, over: Record<string, number> = {};
+  let allDue = 0, allOver = 0;
+  for (const p of pls ?? []) {
+    const isOver = String(p.due_date) < today;
+    if (isOver) allOver++; else allDue++;
+    if (!p.technician_id) continue;
+    if (isOver) over[p.technician_id] = (over[p.technician_id] ?? 0) + 1;
+    else due[p.technician_id] = (due[p.technician_id] ?? 0) + 1;
+  }
+  if (!allDue && !allOver) return 0;
+  const { data: profs } = await s.from("profiles").select("id, role, blocked, push_prefs");
+  let n = 0;
+  for (const pr of profs ?? []) {
+    if (pr.blocked || pr.role === "accountant") continue;
+    if ((pr.push_prefs?.overdue ?? true) === false) continue;
+    const boss = pr.role === "admin" || pr.role === "manager";
+    const d = due[pr.id] ?? 0, o = over[pr.id] ?? 0;
+    if (!boss && !d && !o) continue;
+    const mine = (d || o) ? `у вас — сегодня: ${d} · просрочено: ${o}` : "";
+    const firm = boss ? `по фирме — сегодня: ${allDue} · просрочено: ${allOver}` : "";
+    await s.from("push_queue").insert({
+      user_id: pr.id, kind: "overdue", title: "Пикапы на сегодня",
+      body: [mine, firm].filter(Boolean).join(" · "), url: "./?day=" + today,
+    });
+    n++;
+  }
+  /* обычная сводка просроченных не должна тут же продублировать утреннюю */
+  const { data: org } = await s.from("org_settings").select("id").limit(1).maybeSingle();
+  if (org) await s.from("org_settings").update({ push_overdue_at: new Date().toISOString() }).eq("id", org.id);
+  return n;
 }
 
 /* разбор очереди: подписки юзера, группировка пикапов, отправка */
@@ -167,9 +212,11 @@ Deno.serve(async (req) => {
         allowed = !!u?.user;
       }
       if (!allowed) return jres({ error: "FORBIDDEN" }, 403);
+      let morning = 0;
+      if (url.searchParams.get("morning")) morning = await enqueueMorning(s);   // v1.09.13
       await enqueueOverdue(s);
       const r = await deliver(s);
-      return jres({ ok: true, ...r });
+      return jres({ ok: true, morning, ...r });
     }
 
     /* всё остальное — только вошедшим */

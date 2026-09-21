@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.09.11';
+const VERSION = '1.09.21';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -20,6 +20,13 @@ const ASSETS = [
   './proposal-tips.js',
   './vendor/mp4box.all.min.js',
   './vendor/mp4-muxer.js',
+  './vendor/supabase.umd.js',      // v1.09.12: офлайн-запуск — библиотеки свои, не с CDN
+  './vendor/jspdf.umd.min.js',
+  './vendor/leaflet.js',
+  './vendor/leaflet.css',
+  './vendor/images/marker-icon.png',
+  './vendor/images/marker-icon-2x.png',
+  './vendor/images/marker-shadow.png',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -175,7 +182,9 @@ self.addEventListener('fetch', (e) => {
     e.respondWith((async () => {
       const cache = await caches.open(CDN_CACHE);
       const hit = await cache.match(req);
-      const net = fetch(req).then((res) => { if (res.ok) cache.put(req, res.clone()); return res; }).catch(() => null);
+      /* v1.09.12: <link>/<script> без crossorigin дают «непрозрачный» ответ (status 0, ok=false) —
+         раньше он в кэш не попадал вовсе, и шрифт с CDN офлайн не поднимался */
+      const net = fetch(req).then((res) => { if (res.ok || res.type === 'opaque') cache.put(req, res.clone()).catch(() => {}); return res; }).catch(() => null);
       return hit || (await net) || Response.error();
     })());
   }
@@ -185,6 +194,10 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_e) { d = { title: 'TechLog', body: e.data && e.data.text() }; }
+  /* v1.09.13: открытому приложению пуш показываем и внутри (подсказка + «Открыть день») */
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    list.forEach((c) => { try { c.postMessage({ type: 'PUSH', title: d.title || '', body: d.body || '', url: d.url || './' }); } catch (_e) {} });
+  }).catch(() => {}));
   e.waitUntil(self.registration.showNotification(d.title || 'TechLog', {
     body: d.body || '',
     icon: './icons/icon-192.png',
@@ -197,7 +210,8 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const url = (e.notification.data && e.notification.data.url) || './';
   e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-    for (const c of list) { if ('focus' in c) return c.focus(); }
+    /* v1.09.13: у живого окна страница не перезагружается — ссылку (?day=…) отдаём ему сообщением */
+    for (const c of list) { if ('focus' in c) { try { c.postMessage({ type: 'OPEN_URL', url }); } catch (_e) {} return c.focus(); } }
     return clients.openWindow(url);
   }));
 });
