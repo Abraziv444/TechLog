@@ -3406,3 +3406,8 @@ html.tl-desktop .dft-panel { bottom: 14px; }
 .dft-l.ui { color: #c5e1a5; }
 /* привязка пропозала — функция менеджера и админа и в запертом документе */
 #app.job-ro .prop-box, #app.job-ro .prop-box * { pointer-events: auto; }
+
+/* v1.09.36 · функции сервера */
+.fn-row { padding: 2px 0; overflow-wrap: anywhere; }
+.fn-row svg { width: 13px; height: 13px; vertical-align: -2px; }
+.fn-row.bad b { color: var(--red); }

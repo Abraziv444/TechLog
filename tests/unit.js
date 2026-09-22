@@ -83,7 +83,11 @@ const expose = `;window.__T = {
   /* v1.09.27 */
   DFT, dftOn, dftStripTest, dftDemoExec, dftFullForm, dftNorm, dftCut, DFT_NET_RE, calcTotal, priceResolver,
   /* v1.09.31 */
-  propStatuses, propSendOn, toast
+  propStatuses, propSendOn, toast,
+  /* v1.09.35 */
+  dftIssue, dftSevFor, dftIssuesText,
+  /* v1.09.36 */
+  SRV_FNS, fnProbe, fnStText, fnVerOk
 };`;
 
 try {
@@ -2366,6 +2370,54 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
     src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(12000, s.length * 40)))") && src.includes('function toast(msg, kind, ms){')   /* v1.09.12: не дольше 12 с, крестик, нажатие мимо */
     && src.includes("el.classList.add('tap'); el.onclick = () => el.remove();") && src.includes("x.className = 't-x'") && css.includes('.toast.tap{cursor:pointer}'));
 
+  /* ---------- v1.09.36 ---------- */
+  console.log('\n— v1.09.36: функции сервера — есть ли, запускаются ли, какой версии —');
+  t('v1.09.36: версии (app = sw = version.json, не ниже 1.09.36); в списке проверки все 11 функций', T.APP_VERSION >= '1.09.36' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
+    && fs.readdirSync(ROOT + '/supabase/functions').filter(d => d !== '_shared').sort().join() === T.SRV_FNS.map(f => f.name).sort().join());
+  await (async () => {
+    const f0 = w.fetch, resp = (status, body) => ({ status, ok: status < 400, json: async () => body });
+    const probe = async (impl, name) => { w.fetch = impl; try{ return await T.fnProbe(name); } finally { w.fetch = f0; } };
+    const a = await probe(async () => resp(200, { fn: 'push', ver: '1.09.23' }), 'push');
+    const b = await probe(async () => resp(200, { fn: 'push', ver: '1.09.10' }), 'push');
+    const c = await probe(async () => resp(404, {}), 'bouncie');
+    const d = await probe(async (u, o) => { if (o && o.mode === 'no-cors') return { type: 'opaque', status: 0 }; throw new TypeError('Failed to fetch'); }, 'bouncie');
+    const e = await probe(async () => { throw new TypeError('Failed to fetch'); }, 'bouncie');
+    const f = await probe(async () => resp(200, { fn: 'media-view', ver: '1.09.10' }), 'media-begin');
+    t('v1.09.36: проверка функции — свежая, старая версия, не задеплоена (404), нет ответа без CORS, нет связи, перепутан код', a.ok && a.st === 'ok' && !b.ok && b.st === 'stale' && c.st === 'missing'
+      && d.st === 'nocors' && /без заголовков CORS/.test(T.fnStText(d)) && /Logs/.test(T.fnStText(d)) && e.st === 'net' && f.st === 'wrong' && /media-view/.test(T.fnStText(f)), { a, b, c, d, e, f });
+  })();
+  t('v1.09.36: карточка «Функции сервера» в Диагностике (админ и менеджер), строка трекера в проверке связи и пауза трекера объясняют причину; шаг подготовки в тесте документооборота',
+    src.includes("(isManager() ? fold('fnc', t('fn_card'), 'flask', fnCardHtml(), true) : '')") && src.includes("const r = await fnProbe('bouncie');   // v1.09.36") && src.includes("fnProbe('bouncie').then(r => dlog('⛔ bouncie: ' + fnStText(r)")
+    && src.includes("await step('·', t('dft_s_fns'), async () => {"));
+
+  /* ---------- v1.09.35 ---------- */
+  console.log('\n— v1.09.35: проблемы прогона по важности; ошибки из четвёртого живого отчёта —');
+  t('v1.09.35: версии (app = sw = version.json, не ниже 1.09.35)', T.APP_VERSION >= '1.09.35' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION);
+  t('v1.09.35: классификатор — провал шага критический, отказ в негативном шаге ожидаемый, в позитивном — ошибка; одинаковые склеиваются (×N)', (() => {
+    const s0 = { r: T.DFT.running, i: T.DFT.issues, c: T.DFT.cur };
+    try{ T.DFT.running = true; T.DFT.issues = [];
+      T.DFT.cur = { name: 'негативный', kind: '−' }; T.dftIssue(T.dftSevFor('err'), 'HTTP 400 · POST /rest/v1/rpc/x · FORBIDDEN');
+      T.DFT.cur = { name: 'позитивный', kind: '+' }; T.dftIssue(T.dftSevFor('err'), 'HTTP 400 · POST /rest/v1/rpc/x · FORBIDDEN');
+      T.dftIssue('err', 'запрос без ответа (сеть) · GET /functions/v1/bouncie #5'); T.dftIssue('err', 'запрос без ответа (сеть) · GET /functions/v1/bouncie #43');
+      T.dftIssue('crit', 'шаг провалился: + X — boom'); T.DFT.cur = null; T.dftIssue('warn', 'шаг пропущен: – Y');
+      const is = T.DFT.issues, by = k => is.filter(i => i.sev === k);
+      const txt = T.dftIssuesText({ ver: '1.09.35', title: 'T', started: new Date().toISOString(), user: 'u', role: 'admin', issues: is }, ['err']);
+      return by('exp').length === 1 && by('err').length === 2 && by('err').find(i => /bouncie/.test(i.text)).n === 2 && by('crit').length === 1 && by('warn').length === 1
+        && /✗ ОШИБКИ \(2\)/.test(txt) && !/КРИТИЧЕСКИЕ/.test(txt) && /×2/.test(txt); }
+    finally { T.DFT.running = s0.r; T.DFT.issues = s0.i; T.DFT.cur = s0.c; } })());
+  t('v1.09.35: выгрузка по важности — кнопки «Критические», «Ошибки», «Предупреждения», «Все проблемы» в панели теста и в Диагностике; раздел проблем в полном отчёте',
+    src.includes("onclick=\"App.dftIssuesSave('crit')\"") && src.includes("onclick=\"App.dftIssuesSave('warn')\"") && src.includes("onclick=\"App.dftIssuesSave('all')\"") && src.includes("c && c.kind === 'docflow' ? dftIssuesBtnsHtml(c) : ''")
+    && src.includes("if (c.issues){ L.push('', `--- ${t('dfi_title')} ---`);"));
+  t('v1.09.35: вопрос про апрувленную сумму — подставлены ВСЕ {OLD} и {NEW} (в отчёте висели «{NEW}» и «{OLD}»)', (() => {
+    const q = T.DICT.ru.df_sum_q.split('{OLD}').join('$1').split('{NEW}').join('$2'); return !/\{(OLD|NEW)\}/.test(q) && src.includes("t('df_sum_q').split('{OLD}').join(") && !src.includes("t('df_sum_q').replace('{OLD}'"); })());
+  t('v1.09.35: досылка очереди пропускает запись, которая ещё летит на сервер (было: #556 и дубль #557)',
+    src.includes('const PEND_FLY = new Set();') && src.includes("PEND_FLY.add(_fk);") && src.includes("finally { PEND_FLY.delete(_fk); }") && src.includes("if (it.op !== 'delete' && it.payload && PEND_FLY.has(it.table + ':' + it.payload.id)) continue;"));
+  t('v1.09.35: повторный запуск отправки фото во время идущей не теряется — ещё один проход сразу после (было: видео ждало таймер 26 с)',
+    src.includes("if (_mediaBusy){ _mediaAgain = true; mediaBadge(); return res; }") && src.includes("if (_mediaAgain){ _mediaAgain = false; if (mediaQ.length && !res.stopped) setTimeout(() => mediaFlush(verbose), 150); }"));
+  t('v1.09.35: PDF в журнале отправки и метриках — не «фото»; трекер, который не отвечает, не опрашивается бесконечно',
+    src.includes("it.kind === 'invoice' ? 'PDF' : it.kind === 'file' ? t('mq_file')") && src.includes("else res.file = (res.file || 0) + 1;") && src.includes("if (BN.pauseUntil && Date.now() < BN.pauseUntil) return null;") && src.includes("BN.pauseUntil = Date.now() + 10 * 60000;"));
+
   /* ---------- v1.09.34 ---------- */
   console.log('\n— v1.09.34: по итогам третьего живого прогона —');
   t('v1.09.34: версии (app = sw = version.json, не ниже 1.09.34) и SQL-комплект на месте; сервер записывает автора решения по ремонту',
@@ -2440,9 +2492,9 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
     T.APP_VERSION >= '1.09.29' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
     && ['update-to-1_09_29.sql', 'full-install-1_09_29.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)));
   t('v1.09.29: журнал теста — все запросы кроме шума, заголовки и номер запроса Supabase, время запроса, тело до 6000 знаков в отчёте',
-    src.includes('const DFT_NET_SKIP = ') && src.includes("['sb-request-id', 'x-request-id', 'content-range'") && src.includes("dftCut(tx, 6000)") && src.includes("' ms' + hr"));
+    src.includes('const DFT_NET_SKIP = ') && src.includes("['sb-request-id', 'x-request-id', 'content-range'") && src.includes("dftCut(tx, 6000)") && (src.includes("' ms' + hr") || src.includes("' ms' + late + hr")));
   t('v1.09.29: в отчёт идут подсказки, окна, вопросы приложения, ошибки JavaScript, снимок документа после шага и контекст провала',
-    src.includes("if (DFT.running){ dftLog('   💬 '") && src.includes("dftLog('   ▣ '") && src.includes("window.addEventListener('unhandledrejection', onErr);") && src.includes("dftLog('   ∑ '") && src.includes("dftLog('   ✗ ' + ctx(), 'err');")
+    src.includes("if (DFT.running){ dftLog('   💬 '") && src.includes("dftLog('   ▣ '") && src.includes("window.addEventListener('unhandledrejection', onErr);") && src.includes("dftLog('   ∑ '") && src.includes("cx = ctx(); dftLog('   ✗ ' + cx, 'err');")
     && src.includes("DFT.asked.push(String(q));"));
   t('v1.09.29: отчёт, не поместившийся в память браузера, не пропадает молча — укороченная копия и предупреждение', src.includes('c.big = true;') && src.includes("t('dft_big')"));
   t('v1.09.29: «апрув не совпадает с расчётом» — по ревизии на момент апрува, а не по часам', (() => { const d0 = T.state.data.jobs, u0 = T.state.user; try{ T.state.user = { id: 'adm', role: 'admin' };

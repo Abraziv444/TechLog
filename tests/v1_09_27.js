@@ -64,7 +64,8 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
     const res = await p.evaluate(() => { const c = tlogGet(), txt = tlogText(c); return { ok: c.ok, total: c.total, steps: c.steps.map(s => ({ n: s.name, ok: s.ok, x: s.extra })), txt,
       left: state.data.jobs.filter(j => j.is_test).length + state.data.placements.filter(x => x.is_test).length + state.data.proposals.filter(x => x.is_test).length,
       jobs: state.data.jobs.length, pl: state.data.placements.length, pr: state.data.proposals.length, scr: state.screen, sum: document.getElementById('dft-sum').textContent,
-      btns: document.querySelectorAll('#dft-bar .btn').length, notices: dfNotices().filter(n => /DFTEST|doc=job/.test(n.body + n.url)).length }; });
+      btns: document.querySelectorAll('#dft-bar .btn').length, dfi: !!document.getElementById('dfi-crit') && !!document.getElementById('dfi-all'), issues: (c.issues || []).map(i => ({ sev: i.sev, text: i.text, n: i.n })),
+      critTxt: dftIssuesText(c, ['crit']), allTxt: dftIssuesText(c), notices: dfNotices().filter(n => /DFTEST|doc=job/.test(n.body + n.url)).length }; });
     res.before = before; return res;
   };
   const check = (label, r, minSteps, mustRun) => {
@@ -72,6 +73,11 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
     t(`${label}: сценарий прошёл без провалов (${r.ok} / ${r.total}, пропущено ${skipped.length})`, failed.length === 0 && r.ok === r.total && r.total >= minSteps, { failed: failed.slice(0, 4), sum: r.sum });
     t(`${label}: обязательные для роли шаги выполнены, а не пропущены`, mustRun.every(k => r.steps.some(s => s.n.includes(k) && s.ok === true)), mustRun.filter(k => !r.steps.some(s => s.n.includes(k) && s.ok === true)));
     t(`${label}: после теста ничего тестового не осталось, рабочие данные те же, экран прежний`, r.left === 0 && r.jobs === r.before.jobs && r.pl === r.before.pl && r.pr === r.before.pr && r.scr === 'settings', { left: r.left, jobs: [r.before.jobs, r.jobs], pl: [r.before.pl, r.pl] });
+    { const by = k => r.issues.filter(i => i.sev === k), skipped = r.steps.filter(s => s.ok === null).length;
+      t(`${label} (1.09.35): проблемы прогона по важности — критических нет, пропуски шагов в предупреждениях, отказы негативных шагов — ожидаемые; кнопки выгрузки в панели`,
+        r.dfi && by('crit').length === 0 && by('warn').filter(i => /шаг пропущен/.test(i.text)).reduce((a, i) => a + i.n, 0) === skipped && by('exp').length >= 5
+        && /⛔ КРИТИЧЕСКИЕ — нет/.test(r.critTxt) && /○ ОЖИДАЕМЫЕ ОТКАЗЫ/.test(r.allTxt) && /--- Проблемы прогона ---/.test(r.txt),
+        { crit: by('crit').map(i => i.text).slice(0, 3), err: by('err').map(i => i.text).slice(0, 4), warnSkips: by('warn').filter(i => /пропущ/.test(i.text)).length, skipped, exp: by('exp').length }); }
     t(`${label}: отчёт — группы шагов, «запрос ⇒ / ответ ⇐», итог; в окне — кнопки копировать / скачать`, /=== A · /.test(r.txt) && /=== I · /.test(r.txt) && (r.txt.match(/⇒ /g) || []).length > 40 && (r.txt.match(/⇐ /g) || []).length > 40 && /ИТОГ: ✓/.test(r.txt) && r.btns >= 3, { btns: r.btns });
   };
   const rt = await runAs('demo-tech', 'demo-tech2');

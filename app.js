@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.34';
+const APP_VERSION = '1.09.36';
 const DB_SQL_FILE = 'full-install-1_09_34.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -98,6 +98,9 @@ function dlog(){
   DIAG.push(line);
   if (DIAG.length > 300) DIAG.shift();
   try{ if (typeof TLOG !== 'undefined' && TLOG.active) tlogLine('dlog: ' + parts.join(' '), 'dim'); }catch(e){}   // v1.08.76
+  try{ if (typeof DFT !== 'undefined' && DFT.running){ const m = parts.join(' ');   // v1.09.35: журнал приложения — тоже в проблемы прогона
+    if (/⛔/.test(m)) dftIssue(dftSevFor('err'), t('dfi_app') + ': ' + m); else if (/⚠|CHANNEL_ERROR|не подключён|🐢/.test(m)) dftIssue(dftSevFor('warn'), t('dfi_app') + ': ' + m);
+    else if (/досылаю недоставленные/.test(m)) dftIssue('warn', t('dfi_app') + ': ' + m); } }catch(e){}
   try {
     PLOG.push(line);
     if (PLOG.length > 2000) PLOG.splice(0, PLOG.length - 2000);   // v1.07.18: максимум 2000 строк
@@ -837,6 +840,8 @@ const I18N = {
     /* v1.08.46 */
     sel_clear: 'Очистить поле',
     /* v1.09.27: тест документооборота */
+    fn_card: 'Функции сервера', fn_hint: 'Есть ли каждая Edge Function в проекте, запускается ли и какой она версии. «Нет ответа без CORS» — функции нет в проекте или она падает при старте: Supabase → Edge Functions → функция → Logs.', fn_run: 'Проверить функции', fn_bad: 'Функций с проблемами: {N}', fn_all_ok: 'Все функции на месте и свежие', fn_st_ok: 'v{V} · {MS} мс', fn_st_stale: 'старая версия v{V} — нужна {E}: передеплойте', fn_st_missing: 'не задеплоена (404)', fn_st_wrong: 'под этим именем другой код ({X}) — перепутан при деплое', fn_st_old: 'отвечает без имени и версии (HTTP {S}) — старый код, передеплойте', fn_st_nocors: 'нет ответа для браузера: сервер отвечает, но без заголовков CORS — функции «{N}» нет в проекте или она не запускается (Supabase → Edge Functions → {N} → Logs)', fn_st_net: 'нет связи с сервером', dft_s_fns: 'Функции сервера на месте и отвечают',
+    dfi_title: 'Проблемы прогона', dfi_crit: 'Критические', dfi_err: 'Ошибки', dfi_warn: 'Предупреждения', dfi_exp: 'Ожидаемые отказы', dfi_all: 'Все проблемы', dfi_none: 'нет', dfi_step: 'шаг', dfi_of_step: 'ответ к шагу', dfi_toast: 'подсказка', dfi_app: 'журнал приложения', dfi_mq: 'журнал отправки фото и видео', dfi_net: 'запрос без ответа (сеть)', dfi_net_h: 'Браузер не получил ответа: сервер или функция недоступны, падают при старте либо отвечают без CORS. Смотрите Supabase → Logs в это время.', dfi_as: 'от имени', dfi_dft_down: 'функция тестирования dft недоступна', dfi_skip: 'шаг пропущен', dfi_fail: 'шаг провалился', dfi_push_err: 'пуш не доставлен', dfi_push_q: 'пуш не отправлен (в очереди)', dfi_wide: 'Включено «Уведомления и пуши — всем участникам»: пуши тестовых документов получают и настоящие сотрудники', dfi_notech: 'В шаблоне номера ({F}) нет {TECH} — сокращение сотрудника в номере не проверяется', dfi_no_report: 'Нет отчёта теста документооборота с проблемами — запустите тест', mq_file: 'файл',
     dft_e_req_ok: 'Новая заявка на продление — согласующий одобряет: продление создано', dft_ext_none: 'после одобрения заявки продления не появились', dft_ext_src: 'исходная строка после продления не закрыта и не уменьшена', dft_mgr_needed: 'нужен менеджер или админ',
     pend_dropped: 'Сервер окончательно отказал в записи ({T}) — она убрана из очереди досыла. Откройте документ и сохраните его заново', dft_g_s: 'S · Я — помощник в чужом документе', dft_s1: 'Менеджер создаёт задачу ДРУГОМУ работнику, а меня ставит помощником', dft_s2: 'Без «Общего доступа» помощник документ основного только видит', dft_s3: 'Основной включил «Общий доступ» — помощник кнопками правит и СОХРАНЯЕТ документ основного', dft_s3_note: 'сохранено приложением — настоящие политики доступа', dft_s4: 'Помощник не меняет бригаду, «Общий доступ» и не удаляет документ', dft_roles_miss: 'Для полного прогона не хватает сотрудников: {R}. Шаги этих ролей будут пропущены', dft_role_APR: 'менеджер С правом апрува', dft_role_MGR: 'менеджер БЕЗ права апрува', dft_role_W2: 'второй работник',
     prop_send_chk: 'Статус «Отправлен» у пропозала (отправка клиенту)', prop_send_off: 'Пропозал клиенту не отправляется: статус «Отправлен» выключен. Включить его может администратор — Настройки → Пропозалы', dft_wide: 'Уведомления и пуши — всем участникам, а не только мне', dft_media_chk: 'Фото, видео и PDF на Google Диск (съёмка способом 1)', dft_hdr_push: 'Уведомления', dft_g_m: 'M · Фото, видео и PDF на Google Диск', dft_m0: 'Google Диск подключён', dft_m0_na: 'состояние Диска видит только админ — проверится отправкой', dft_m1: 'Фото способом 1 (камера в приложении, без участия человека)', dft_m2: 'Видео способом 1 — ролик 3 с', dft_m3: 'Документ сохранён — фото и видео отправлены на Google Диск', dft_m4: 'Миниатюры с сервера и просмотр файлов с Диска', dft_m5: 'PDF ЧЕРНОВИКА на Диск не уходит', dft_m6: 'PDF отправленного документа ушёл на Google Диск', dft_m_prev: 'превью камеры не запустилось', dft_m_shot: 'кадр', dft_m_rec: 'запись ролика', dft_m_queue: 'файлы не встали в очередь', dft_m_limit: 'лимит видео в документе исчерпан', dft_m_nobtn: 'кнопки отправки PDF на Диск в документе нет', dft_p1: 'Работник отмечает «Нужен пропозал» — менеджер видит запрос «P?»', dft_p2: 'Статуса «Отправлен» у пропозала нет (клиенту пропозал не отправляется)', dft_p3: 'Согласующий отвязывает пропозал и привязывает снова', dft_p4: 'Работник видит привязанный пропозал, а привязать или отвязать не может', dft_i_push: 'Пуши за прогон: что ушло в очередь и отправлено', dft_push_none: 'в очереди пушей нет ни одной строки по тестовым документам', dft_push_bad: 'пуши не отправляются', dft_push_q: 'в очереди', dft_push_s: 'отправлено', dft_push_e: 'с ошибкой', dft_i_media: 'Файлы тестовых документов — в корзину Google Диска',
@@ -2295,6 +2300,8 @@ const I18N = {
     /* v1.08.46 */
     sel_clear: 'Clear field',
     /* v1.09.27: workflow test */
+    fn_card: 'Server functions', fn_hint: 'Whether each Edge Function exists in the project, starts and which version it is. "No answer without CORS" — the function is missing or crashes on start: Supabase → Edge Functions → function → Logs.', fn_run: 'Check functions', fn_bad: 'Functions with problems: {N}', fn_all_ok: 'All functions are in place and up to date', fn_st_ok: 'v{V} · {MS} ms', fn_st_stale: 'old version v{V} — {E} needed: redeploy', fn_st_missing: 'not deployed (404)', fn_st_wrong: 'another code under this name ({X}) — mixed up on deploy', fn_st_old: 'answers without name and version (HTTP {S}) — old code, redeploy', fn_st_nocors: 'no answer for the browser: the server answers without CORS headers — function "{N}" is missing in the project or does not start (Supabase → Edge Functions → {N} → Logs)', fn_st_net: 'no connection to the server', dft_s_fns: 'Server functions are in place and answer',
+    dfi_title: 'Run problems', dfi_crit: 'Critical', dfi_err: 'Errors', dfi_warn: 'Warnings', dfi_exp: 'Expected refusals', dfi_all: 'All problems', dfi_none: 'none', dfi_step: 'step', dfi_of_step: 'answer of step', dfi_toast: 'hint', dfi_app: 'app journal', dfi_mq: 'photo/video upload journal', dfi_net: 'request without an answer (network)', dfi_net_h: 'The browser got no answer: the server or function is unavailable, crashes on start or answers without CORS. Check Supabase → Logs at that time.', dfi_as: 'as', dfi_dft_down: 'the dft test function is unreachable', dfi_skip: 'step skipped', dfi_fail: 'step failed', dfi_push_err: 'push not delivered', dfi_push_q: 'push not sent (queued)', dfi_wide: '"Notifications and pushes — to all participants" is on: real employees get pushes of test documents too', dfi_notech: 'The number template ({F}) has no {TECH} — the employee tag in the number is not checked', dfi_no_report: 'No workflow test report with problems — run the test', mq_file: 'file',
     dft_e_req_ok: 'A new extension request — the approver approves: the extension is created', dft_ext_none: 'no extension rows appeared after the approval', dft_ext_src: 'the source row is neither closed nor reduced after the extension', dft_mgr_needed: 'a manager or the admin is needed',
     pend_dropped: 'The server refused the write for good ({T}) — it was removed from the resend queue. Open the document and save it again', dft_g_s: 'S · I am a helper in someone else\'s document', dft_s1: 'A manager creates a job for ANOTHER worker and makes me a helper', dft_s2: 'Without Shared access a helper only views the lead\'s document', dft_s3: 'The lead turned Shared access on — the helper edits and SAVES the lead\'s document with the app controls', dft_s3_note: 'saved by the app — real access policies', dft_s4: 'The helper cannot change the crew or Shared access and cannot delete the document', dft_roles_miss: 'Employees missing for a full run: {R}. Steps of these roles will be skipped', dft_role_APR: 'a manager WITH the approve right', dft_role_MGR: 'a manager WITHOUT the approve right', dft_role_W2: 'a second worker',
     prop_send_chk: 'The "Sent" proposal status (sending to the client)', prop_send_off: 'Proposals are not sent to the client: the "Sent" status is off. The admin can turn it on — Settings → Proposals', dft_wide: 'Notifications and pushes — to all participants, not only me', dft_media_chk: 'Photo, video and PDF to Google Drive (capture method 1)', dft_hdr_push: 'Notifications', dft_g_m: 'M · Photo, video and PDF to Google Drive', dft_m0: 'Google Drive is connected', dft_m0_na: 'only the admin sees the Drive state — the upload will tell', dft_m1: 'Photos with method 1 (in-app camera, no human involved)', dft_m2: 'Video with method 1 — a 3 s clip', dft_m3: 'The document is saved — photos and video are uploaded to Google Drive', dft_m4: 'Server thumbnails and viewing files from Drive', dft_m5: 'A DRAFT PDF does not go to Drive', dft_m6: 'The PDF of the submitted document went to Google Drive', dft_m_prev: 'the camera preview did not start', dft_m_shot: 'shot', dft_m_rec: 'recording a clip', dft_m_queue: 'files did not reach the queue', dft_m_limit: 'the document video limit is used up', dft_m_nobtn: 'the document has no Send PDF to Drive button', dft_p1: 'The worker ticks "Proposal needed" — a manager sees the "P?" request', dft_p2: 'A proposal has no "Sent" status (proposals are not sent to the client)', dft_p3: 'An approver unlinks the proposal and links it again', dft_p4: 'The worker sees the linked proposal but cannot link or unlink', dft_i_push: 'Pushes of the run: queued and sent', dft_push_none: 'the push queue has no rows for the test documents', dft_push_bad: 'pushes are not being sent', dft_push_q: 'queued', dft_push_s: 'sent', dft_push_e: 'failed', dft_i_media: 'Files of the test documents — to the Google Drive trash',
@@ -5898,7 +5905,8 @@ function toastGo(msg, kind, ms, fn){
   try{ const box = document.getElementById('toasts'), el = box && box.lastElementChild; if (el && typeof fn === 'function'){ el.classList.add('go'); el.onclick = () => { try{ el.remove(); }catch(e){} fn(); }; } }catch(e){}
 }
 function toast(msg, kind, ms){
-  try{ if (DFT.running){ dftLog('   💬 ' + (kind === 'err' ? '⛔ ' : '') + String(msg), kind === 'err' ? 'neterr' : 'ui'); (DFT.toasts = DFT.toasts || []).push(String(msg)); } }catch(e){}   // v1.09.29: подсказки — в отчёт теста; v1.09.33: и в память теста (касание экрана убирает подсказку с экрана раньше проверки)
+  try{ if (DFT.running){ dftLog('   💬 ' + (kind === 'err' ? '⛔ ' : '') + String(msg), kind === 'err' ? 'neterr' : 'ui'); (DFT.toasts = DFT.toasts || []).push(String(msg));
+    if (!DFT.selfToast){ const m = String(msg).trim(); if (/^⚠/.test(m)) dftIssue(dftSevFor('warn'), t('dfi_toast') + ': ' + m); else if (kind === 'err') dftIssue(dftSevFor('err'), t('dfi_toast') + ': ' + m); } } }catch(e){}   // v1.09.29: подсказки — в отчёт теста; v1.09.33: и в память теста (касание экрана убирает подсказку с экрана раньше проверки)
   const now = Date.now();                                  // v1.07.26: не спамим одинаковыми
   if (toast._m === msg && now - (toast._t || 0) < 1800) return;
   toast._m = msg; toast._t = now;
@@ -6217,6 +6225,9 @@ const LS_PENDING = 'techlog_pending';
    синхронизации: отсюда рывок прокрутки на «Настройках». Держим разобранную
    очередь в памяти, из хранилища читаем один раз. */
 let _pendCache = null;
+/* v1.09.35: записи, которые прямо сейчас летят на сервер. Досылка очереди их пропускает — иначе та же запись уходила дважды
+   (живой прогон 22.09 02:14:33: #556 ещё в пути — #557 дослал её же, и пользователь видел «Отложенные записи доставлены»). */
+const PEND_FLY = new Set();
 function pendingLoad(){
   if (_pendCache) return _pendCache;
   try{ _pendCache = JSON.parse(localStorage.getItem(LS_PENDING)) || []; }
@@ -6261,6 +6272,7 @@ async function pendingFlush(){
     for (const it of q){
       if (netFail) break;                                   // v1.08.38: сети нет — остальное не дёргаем
       /* v1.09.32: строка тестового документа из очереди вне прогона теста не досылается — тест её уже убрал на сервере */
+      if (it.op !== 'delete' && it.payload && PEND_FLY.has(it.table + ':' + it.payload.id)) continue;   // v1.09.35: ещё в пути — не дублируем
       if (!DFT.running && it.op !== 'delete' && it.payload && it.payload.is_test === true){ pendingDone(it.op, it.table, it.payload.id); dlog('sync: строка тестового документа убрана из очереди ·', it.table); continue; }
       try{
         const r = it.op === 'upsert' ? await state.sb.from(it.table).upsert(it.payload)
@@ -6676,9 +6688,8 @@ async function netRunChecks(){
     if (isManager()){
       if (HAS_SB) await netLine(t('net_l_bn'), async sig => {
         const token = await mediaJwt();
-        const r = await fetch(mediaFN() + '/bouncie?ping=1',
-          { cache: 'no-store', signal: sig, headers: { Authorization: 'Bearer ' + token } });
-        if (r.status === 404) throw new Error('deploy');
+        void token; void sig; const r = await fnProbe('bouncie');   // v1.09.36: вместо «Failed to fetch» — что именно с функцией
+        if (!r.ok && r.st !== 'stale') throw new Error(fnStText(r));
       });
       else netLog('— ' + t('net_l_bn') + ' · ' + t('diag_skip'), 'dim');
       await netLine(t('net_l_gh'), sig =>
@@ -6995,7 +7006,7 @@ async function dbUpsert(table, row, opt){
     if (table === 'jobs' && +((state.data.org_settings || {}).docflow_v) >= 2) row.updated_dev = dfDev();   // v1.09.26: метка устройства (колонка есть с 1.09.26); row уже лежит в данных — правим его же, не копию
     pendingAdd('upsert', table, row);              // v1.07.21: в очередь до подтверждения сервера
     if (netOff()){ netSavedOffline(table); return; }   // v1.08.38: без сети сервер не дёргаем — очередь дошлёт
-    const ts = Date.now();
+    const ts = Date.now(), _fk = table + ':' + row.id; PEND_FLY.add(_fk);
     try {
       let _q = state.sb.from(table).upsert(row);
       const _back = table === 'jobs' && dfReady() && _q && typeof _q.select === 'function';   // v1.09.25: ревизию и номер читаем тем же запросом
@@ -7039,7 +7050,7 @@ async function dbUpsert(table, row, opt){
       noteWriteError('upsert', table, row.id, e);
       dlog('⛔ upsert exception', table + ':', e);
       toast(t('write_err') + ' (' + table + ')', 'err');
-    }
+    } finally { PEND_FLY.delete(_fk); }
     if (table === 'placements') refreshMovesSoon();   // v1.08.27: движения пишет сервер — перечитываем журнал
   }
 }
@@ -12322,7 +12333,7 @@ async function saveJob(goHome){
       /* v1.09.26: согласующий поправил уже заапрувленный документ, и расчётная сумма изменилась — апрувленная молча прежней не остаётся */
       if (orig && orig.status === 'approved' && doneChk.checked && Math.round(+j.total * 100) !== Math.round(+orig.total * 100)
           && Math.round(+(orig.approved_total ?? orig.total) * 100) !== Math.round(+j.total * 100)){
-        if (confirm(t('df_sum_q').replace('{OLD}', money(orig.approved_total ?? orig.total)).replace('{NEW}', money(j.total)))){
+        if (confirm(t('df_sum_q').split('{OLD}').join(money(orig.approved_total ?? orig.total)).split('{NEW}').join(money(j.total)))){   // v1.09.35: в тексте по два {OLD} и {NEW} — заменяем все
           j.approved_total = j.total; j.approved_by = state.user.id; j.approved_at = new Date().toISOString();
           audit('approve_resum', 'job', j.id, { unit: j.unit_number, old: +(orig.approved_total ?? orig.total), new: +j.total });
         }
@@ -15225,6 +15236,8 @@ const App = {
   fontStep(d){ try{ if (window.TLUI) TLUI.fontStep(d); }catch(e){} fontSavePref(); render(); },
   trNeedGo, eqRoWhy, dfProblemOpen, dfProblemRetry, dfProblemDiscard,   // v1.09.26
   dftRun, dftNext, dftStop, dftSetMode, dftCleanup, dftAdminWarn,       // v1.09.27
+  dftIssuesSave,                                                        // v1.09.35
+  fnCheckRun, fnCheckText,                                              // v1.09.36
   jobWithdraw, jobReturnModal, jobReturnGo, jobEditReqModal, jobEditReqGo, dfReqDecide, dfConflictFresh, dfConflictMine, jlAsk, crewMain, dfTagSet, dfRightSet, dfAnnounceSet, ntfOpen,   // v1.09.25
   chGroupNew, chgPick, chGroupCreate, chGroupInfo, chGroupRename, chGroupAdd, chGroupKick, chGroupDelete, chGroupRoleSet, chMuteToggle, chGoMsg, chForward, chForwardGo,
   chMenu, chReply, chEdit, chCtxOff, chCopy, chReact, chJump, chMore, chImgPick, chImgOff, chImgOpen,
@@ -16962,6 +16975,7 @@ function bnFocusCar(imei){
 }
 async function bnFetch(qs, opts){
   if (!HAS_SB) return null;
+  if (BN.pauseUntil && Date.now() < BN.pauseUntil) return null;   // v1.09.35
   try{
     const token = await mediaJwt(); if (!token) return null;
     const r = await fetch(mediaFN() + '/bouncie' + qs, Object.assign(
@@ -16974,9 +16988,17 @@ async function bnFetch(qs, opts){
       else dlog('⛔ bouncie ' + qs.slice(0, 20) + ':', BN.err);
       return null;
     }
-    BN.err = '';
+    BN.err = ''; BN.netFails = 0; BN.pauseUntil = 0; BN.pauseSaid = false;
     return j;
-  }catch(e){ dlog('⛔ bouncie fetch:', e); return null; }
+  }catch(e){
+    /* v1.09.35: «Failed to fetch» — браузер не получил ответа вовсе (функция не задеплоена, падает при старте или отвечает без CORS).
+       Раньше приложение спрашивало её каждые ~20 с и при каждом переходе между экранами — 46 ошибок за ночь.
+       Теперь после 3 срывов подряд пауза 10 минут и одна строка в журнале. */
+    BN.netFails = (BN.netFails || 0) + 1;
+    if (BN.netFails >= 3){ BN.pauseUntil = Date.now() + 10 * 60000; if (!BN.pauseSaid){ BN.pauseSaid = true; fnProbe('bouncie').then(r => dlog('⛔ bouncie: ' + fnStText(r) + ' — пауза опроса 10 мин')).catch(() => dlog('⛔ bouncie: функция не отвечает — пауза 10 мин')); } }
+    else dlog('⛔ bouncie fetch:', e);
+    return null;
+  }
 }
 function bnDayWindow(){
   const d = new Date();
@@ -25120,6 +25142,7 @@ function tlogText(c){
   L.push(c.ua || navigator.userAgent);
   L.push('', `--- ${t('tl_sec_log')} ---`);
   c.lines.forEach(l => L.push(`${l.time}  ${l.text}`));
+  if (c.issues){ L.push('', `--- ${t('dfi_title')} ---`); L.push(dftIssuesText(c, ['crit', 'err', 'warn']).split('\n').slice(3).join('\n').trim() || t('dfi_none')); }   // v1.09.35
   if (c.steps.length){
     L.push('', `--- ${t('tl_sec_steps')} ---`);
     c.steps.forEach(s => L.push(`${s.ok === null ? '…' : s.ok ? '✓' : '✗'} ${s.name} — ${s.ms} ms${s.extra ? ' · ' + s.extra : ''}`));
@@ -25186,7 +25209,7 @@ function tlogBtnsHtml(style){
     ${tlogCanShare() ? `<button class="btn btn-blue sm" onclick="App.tlogShare()">${ic('share')} ${t('tl_share')}</button>` : ''}
     <button class="btn btn-ghost sm" onclick="App.tlogCopy()">${ic('copy')} ${t('tl_copy')}</button>
     <button class="btn btn-ghost sm" onclick="App.tlogShow()">${ic('receipt')} ${t('tl_show')}</button>
-  </div>`;
+  </div>${(() => { const c = tlogGet(); return c && c.kind === 'docflow' ? dftIssuesBtnsHtml(c) : ''; })()}`;
 }
 /* блок «последний тест» для карточек настроек */
 function tlogCardHtml(){
@@ -26254,12 +26277,13 @@ async function mqLogCopy(){
 }
 /* v1.07.63: verbose=true — ход отправки построчно уходит в журнал модалки
    «Неотправленные фото и видео»; возвращается сводка для итоговой строки. */
+let _mediaAgain = false;   // v1.09.35: пока шла отправка, её попросили ещё раз
 async function mediaFlush(verbose){
   /* v1.07.72: журнал пишем всегда — при фоновой отправке он виден в
      мини-области над панелью вкладок, а в модалке это тот же журнал. */
   const lg = (txt, cls, id) => mqLog(txt, cls, id);
   const res = { photo: 0, video: 0, fail: 0, stopped: false };
-  if (_mediaBusy){ lg('⏳ ' + t('mq_l_busy'), 'warn'); mediaBadge(); return res; }
+  if (_mediaBusy){ _mediaAgain = true; mediaBadge(); return res; }   // v1.09.35: не «подождите», а ещё один проход сразу после текущего (живой прогон: видео ждало 26 с таймера)
   /* v1.09.12: нет входа — это не «нет подключения к серверу»: молчим, очередь дождётся входа */
   if (!HAS_SB || !state.user){ mediaBadge(); return res; }
   if (netOff()){ lg('🔴 ' + t('mq_l_off'), 'err'); mediaBadge(); return res; }   // v1.08.38: и «нет сервера» тоже
@@ -26433,7 +26457,7 @@ async function mediaFlush(verbose){
           mediaThumbCache.set(it.thumb_path, mqThumbUrl(it));
         mqThumbUrls.delete(it.qid);          // ссылка ушла в кеш миниатюр
         if (it.relay_used && it.kind === 'photo') mRelayBump();   // v1.08.47: 10/день
-        if (it.kind === 'video') res.video++; else res.photo++;
+        if (it.kind === 'video') res.video++; else if (it.kind === 'photo') res.photo++; else res.file = (res.file || 0) + 1;   // v1.09.35: PDF и вложения — не «фото»
         lg(`✓ ${tag}`, 'ok', lid);
         mediaMarkDone(it.media_id, mOwnId(it));   // v1.07.75: зелёная галочка на плитке
         mediaStripRefresh(mOwnId(it));        // полоса обновляется и в модалке
@@ -26449,11 +26473,12 @@ async function mediaFlush(verbose){
         break;                              // сеть шалит — дождёмся online/интервала
       }
     }
-  } finally { _mediaBusy = false; if (res && (res.photo || res.video)) _mqSentOnce = true;
-    mediaBadge(); if (!$('#mq-log')) mqMini(true); }
+  } finally { _mediaBusy = false; if (res && (res.photo || res.video || res.file)) _mqSentOnce = true;
+    mediaBadge(); if (!$('#mq-log')) mqMini(true);
+    if (_mediaAgain){ _mediaAgain = false; if (mediaQ.length && !res.stopped) setTimeout(() => mediaFlush(verbose), 150); } }
   /* v1.08.09: метрика отправки — сколько ушло, сколько сорвалось */
   try{
-    dlog('метрики·отправка: фото ' + res.photo + ' · видео ' + res.video +
+    dlog('метрики·отправка: фото ' + res.photo + ' · видео ' + res.video + (res.file ? ' · PDF/файлы ' + res.file : '') +
          ' · сорвалось ' + res.fail + ' · осталось в очереди ' + mediaQ.length +
          (res.stopped ? ' · остановлено (нет связи)' : ''));
     if (res.fail){ netErr('upload'); healthBump('upload_fail', res.fail); }
@@ -26855,6 +26880,7 @@ function mqStamp(){ const d = new Date(), p = x => String(x).padStart(2, '0');
   return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }
 function mqLog(text, cls, id){
   const line = { id: id || uid(), text, cls: cls || '', time: mqStamp() };
+  try{ if (typeof DFT !== 'undefined' && DFT.running && (cls === 'err' || cls === 'warn')) dftIssue(cls === 'err' ? dftSevFor('err') : 'warn', t('dfi_mq') + ': ' + String(text).replace(/<[^>]+>/g, '')); }catch(e){}   // v1.09.35
   const i = id ? mqLogLines.findIndex(x => x.id === id) : -1;
   if (i >= 0) mqLogLines[i] = line;
   else {
@@ -26984,7 +27010,7 @@ function mqLabel(it){
   const cx = d ? (cxById(d.complex_id) || {}) : {};
   const who = d ? `${it.doc === 'rep' ? 'REP·' : ''}${cx.abbr || cx.name || '—'}·${d.unit_number || '—'}`
                 : String(mOwnId(it) || '').slice(0, 6);
-  return `${who} ${it.kind === 'video' ? t('mq_video') : t('mq_photo')}`;
+  return `${who} ${it.kind === 'video' ? t('mq_video') : it.kind === 'invoice' ? 'PDF' : it.kind === 'file' ? t('mq_file') : t('mq_photo')}`;   // v1.09.35: PDF и вложения подписываются как есть
 }
 function mqSetBusy(mode){
   _mqBusy = mode || '';
@@ -27649,6 +27675,64 @@ function mFnVerOk(ver, name){
   }
   return true;
 }
+/* =====================================================================
+   v1.09.36 · ФУНКЦИИ СЕРВЕРА — есть ли, запускаются ли, какой версии
+   Четвёртый живой отчёт: функция bouncie 58 раз ответила «Failed to fetch» — браузер не получил ответа вовсе. По одному
+   такому сообщению не понять, что случилось. Проверка отвечает точнее:
+   · обычный запрос ?ping=1 с входом — функция называет себя и версию (✓, «старая версия», «под этим именем другой код»);
+   · если браузер не получил ответа, второй запрос в режиме no-cors показывает, ответил ли сервер ВООБЩЕ:
+     ответил — значит, ответ пришёл без заголовков CORS: функции нет в проекте (404 шлюза) или она не запускается
+     (ошибка при старте); не ответил — нет связи с сервером.
+   ===================================================================== */
+const SRV_FNS = [
+  { name: 'media-health', group: 'media' }, { name: 'media-begin', group: 'media' }, { name: 'media-put', group: 'media' }, { name: 'media-commit', group: 'media' },
+  { name: 'media-view', group: 'media' }, { name: 'media-delete', group: 'media' }, { name: 'media-oauth', group: 'media' },
+  { name: 'push', min: '1.09.23', group: 'push' }, { name: 'backup', min: '1.09.19', group: 'backup' },
+  { name: 'bouncie', min: '1.09.10', group: 'bouncie' }, { name: 'dft', min: '1.09.33', group: 'dft' }
+];
+function fnVerOk(ver, min){ const need = String(min || '0').split('.').map(Number), got = String(ver || '0').split('.').map(Number);
+  for (let i = 0; i < 3; i++){ if ((got[i] || 0) > (need[i] || 0)) return true; if ((got[i] || 0) < (need[i] || 0)) return false; } return true; }
+async function fnProbe(name){
+  const url = `${mediaFN()}/${name}?ping=1`, t0 = performance.now(), def = SRV_FNS.find(f => f.name === name) || {}, ms = () => Math.round(performance.now() - t0);
+  let token = ''; try{ token = await mediaJwt(); }catch(e){}
+  try{
+    const r = await fetch(url, { cache: 'no-store', headers: token ? { Authorization: 'Bearer ' + token } : {} });
+    if (r.status === 404) return { name, ok: false, st: 'missing', http: 404, ms: ms() };
+    const j = await r.json().catch(() => null);
+    if (!j || !j.fn) return { name, ok: false, st: 'old', http: r.status, ms: ms() };
+    if (j.fn !== name) return { name, ok: false, st: 'wrong', got: String(j.fn), ms: ms() };
+    const min = def.group === 'media' ? (MEDIA_FN_MIN[name] || MEDIA_FN_MIN_DEF) : def.min, fresh = !min || fnVerOk(j.ver, min);
+    return { name, ok: fresh, st: fresh ? 'ok' : 'stale', ver: j.ver || '', min: min || '', ms: ms() };
+  }catch(e){
+    let answered = false;
+    try{ await fetch(url, { mode: 'no-cors', cache: 'no-store', credentials: 'omit' }); answered = true; }catch(e2){}
+    return { name, ok: false, st: answered ? 'nocors' : 'net', err: errStr(e), ms: ms() };
+  }
+}
+function fnStText(r){
+  const k = { ok: 'fn_st_ok', stale: 'fn_st_stale', missing: 'fn_st_missing', wrong: 'fn_st_wrong', old: 'fn_st_old', nocors: 'fn_st_nocors', net: 'fn_st_net' }[r.st] || 'fn_st_net';
+  return t(k).replace('{V}', r.ver || '?').replace('{E}', r.min || '').replace('{X}', r.got || '').replace('{S}', r.http || '').replace('{N}', r.name).replace('{MS}', r.ms);
+}
+async function fnProbeAll(){ return Promise.all(SRV_FNS.map(f => fnProbe(f.name))); }
+const FNC = { busy: false, rows: [] };
+async function fnCheckRun(){
+  if (FNC.busy || !HAS_SB) return; FNC.busy = true; FNC.rows = []; render();
+  try{ FNC.rows = await fnProbeAll(); }catch(e){ toast('⛔ ' + errStr(e), 'err'); }
+  FNC.busy = false; FNC.at = new Date().toISOString(); render();
+  const bad = FNC.rows.filter(r => !r.ok).length; toast(bad ? '⚠ ' + t('fn_bad').replace('{N}', bad) : '✓ ' + t('fn_all_ok'), bad ? 'err' : '');
+}
+function fnCheckText(){ return 'TechLog ' + APP_VERSION + ' · ' + t('fn_card') + ' · ' + new Date(FNC.at || Date.now()).toLocaleString() + '\n'
+  + FNC.rows.map(r => (r.ok ? '✓ ' : r.st === 'stale' ? '⚠ ' : '✗ ') + r.name + ' — ' + fnStText(r) + (r.err ? ' · ' + r.err : '')).join('\n'); }
+function fnCardHtml(){
+  if (!HAS_SB) return `<div class="card"><div class="tiny">${t('diag_skip')}</div></div>`;
+  return `<div class="card" id="fn-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('flask')} ${t('fn_card')}</div>
+    <div class="tiny" style="margin-bottom:8px">${t('fn_hint')}</div>
+    <button class="btn btn-blue sm" id="fn-run" ${FNC.busy ? 'disabled' : ''} onclick="App.fnCheckRun()">${ic('play')} ${FNC.busy ? t('rg_running') : t('fn_run')}</button>
+    ${FNC.rows.length ? `<div id="fn-out" style="margin-top:8px">${FNC.rows.map(r => `<div class="tiny fn-row ${r.ok ? '' : r.st === 'stale' ? 'warn' : 'bad'}" data-fn="${r.name}">${r.ok ? ic('check', 'color:var(--green)') : ic('warn', r.st === 'stale' ? 'color:var(--orange)' : 'color:var(--red)')} <b>${esc(r.name)}</b> — ${esc(fnStText(r))}</div>`).join('')}</div>
+      <button class="btn btn-ghost sm" style="margin-top:6px" onclick="App.copyText(App.fnCheckText())">${ic('copy')} ${t('tl_copy')}</button>` : ''}
+  </div>`;
+}
 async function gdFnCheck(row){
   const token = await mediaJwt();
   let bad = 0;
@@ -28005,6 +28089,7 @@ function dgsNetCardHtml(){
 function dgsCardHtml(){
   const adm = isAdmin();
   return dgsNetCardHtml()
+    + (isManager() ? fold('fnc', t('fn_card'), 'flask', fnCardHtml(), true) : '')   // v1.09.36: функции сервера
     + fold('uid', t('dg_ui'), 'layers', uiDiagCardHtml(), true)
     + ((adm || dftOn()) ? fold('dft', t('dft_card'), 'flask', dftCardHtml(), true) : '')   // v1.09.27: тест документооборота
     + (adm ? fold('diag', t('diag_card'), 'flask', diagCardHtml(), true)
@@ -28051,6 +28136,58 @@ const DFT = { running: false, stop: false, stepMode: false, next: null, status: 
 /* v1.09.29: в отчёт идут ВСЕ запросы приложения к базе и функциям во время теста, кроме шума (переписка, пуш-подписки, сессии).
    DFT_NET_RE оставлен для совместимости проверок: «основные» адреса документооборота. */
 const DFT_NET_RE = /\/rest\/v1\/(jobs|placements|proposals|doc_requests|doc_locks|rpc\/(approve_job|doc_request_edit|doc_request_decide|doc_lock|doc_unlock|job_fix_no|link_job_proposal|notices_mark_read))|\/functions\/v1\/dft/;
+/* v1.09.35: ПРОБЛЕМЫ ПРОГОНА ПО ВАЖНОСТИ. Всё, что во время теста похоже на ошибку, раскладывается по четырём корзинам:
+   crit — критическая: шаг провалился, ошибка JavaScript, сервер ответил 5xx или функция тестирования недоступна;
+   err  — ошибка, не сорвавшая шаг: запрос без ответа (сеть), отказ сервера или красная подсказка в шаге, который должен был пройти,
+          ошибка записи или журнала отправки фото;
+   warn — предупреждение: шаг пропущен, повторная досылка очереди, подсказка «⚠», пуш не отправлен, настройка, которая сужает проверку;
+   exp  — ожидаемый отказ: ошибка, которую негативный шаг («−») и должен был получить. Это не проблема — список для сверки.
+   Одинаковые записи склеиваются (×N, первое и последнее время). Выгрузка — отдельными файлами по важности. */
+const DFT_SEV = { crit: '⛔', err: '✗', warn: '⚠', exp: '○' };
+function dftNorm1(x){ return String(x || '').replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '…').replace(/#\d+/g, '#').replace(/\d{2,}/g, 'N').replace(/\s+/g, ' ').trim().slice(0, 200); }
+function dftIssue(sev, text, more, at){
+  try{
+    if (!DFT.running && !DFT.finishing) return;
+    const c = (at !== undefined ? at : DFT.cur) || {}, key = sev + '|' + dftNorm1(text), now = tlogStamp(), list = DFT.issues || (DFT.issues = []);
+    const x = list.find(i => i.key === key);
+    if (x){ x.n++; x.last = now; if (c.name && x.steps.indexOf(c.name) < 0 && x.steps.length < 6) x.steps.push(c.name); return; }
+    list.push({ key, sev, text: String(text).slice(0, 600), more: more ? String(more).slice(0, 1500) : '', n: 1, first: now, last: now, steps: c.name ? [c.name] : [] });
+  }catch(e){}
+}
+/* ошибка в негативном шаге — ожидаемая; в остальных — настоящая */
+function dftSevFor(sev, at){ const c = at !== undefined ? at : DFT.cur; return (c && c.kind === '−') ? 'exp' : sev; }
+function dftIssuesText(c, sevs){
+  c = c || tlogGet(); const all = (c && c.issues) || [], L = [], want = sevs || ['crit', 'err', 'warn', 'exp'];
+  const title = { crit: t('dfi_crit'), err: t('dfi_err'), warn: t('dfi_warn'), exp: t('dfi_exp') };
+  L.push(`TechLog ${c.ver || APP_VERSION} — ${c.title || c.kind} · ${t('dfi_title')}`);
+  L.push(`${t('tl_started')} ${new Date(c.started).toLocaleString()} · ${c.user || '—'} (${c.role || '—'})${c.finished ? ' · ' + (c.ok === c.total ? '✓ ' : '⚠ ') + c.ok + ' / ' + c.total : ''}`);
+  L.push(want.map(k => title[k] + ': ' + all.filter(i => i.sev === k).length).join(' · '), '');
+  want.forEach(k => {
+    const xs = all.filter(i => i.sev === k); if (!xs.length && sevs && sevs.length === 1){ L.push(DFT_SEV[k] + ' ' + title[k].toUpperCase() + ' — ' + t('dfi_none')); return; }
+    if (!xs.length) return;
+    L.push(`${DFT_SEV[k]} ${title[k].toUpperCase()} (${xs.length})`);
+    xs.forEach((i, n) => { L.push(`${n + 1}. ${i.text}${i.n > 1 ? `  ×${i.n}` : ''}`);
+      L.push(`   ${i.first}${i.n > 1 ? ' … ' + i.last : ''}${i.steps.length ? ' · ' + t('dfi_step') + ': ' + i.steps.join(' | ') : ''}`);
+      if (i.more) L.push('   ' + i.more.replace(/\n/g, '\n   ')); });
+    L.push('');
+  });
+  return L.join('\n');
+}
+function dftIssuesSave(kind){
+  const c = tlogGet(); if (!c || !c.issues){ toast('⚠ ' + t('dfi_no_report'), 'err'); return; }
+  const sevs = kind === 'all' ? ['crit', 'err', 'warn', 'exp'] : [kind], name = tlogFileName(c).replace(/\.txt$/, '') + '-' + ({ crit: 'critical', err: 'errors', warn: 'warnings', all: 'problems' }[kind] || kind) + '.txt';
+  dlTextFile(name, dftIssuesText(c, sevs)); toast('✓ ' + name);
+}
+function dftIssuesBtnsHtml(c){
+  c = c || tlogGet(); if (!c || !c.issues) return '';
+  const n = k => c.issues.filter(i => i.sev === k).length;
+  return `<div class="tl-acts dfi-acts" id="dfi-acts">
+    <button class="btn ${n('crit') ? 'btn-red' : 'btn-ghost'} sm" id="dfi-crit" onclick="App.dftIssuesSave('crit')">${DFT_SEV.crit} ${t('dfi_crit')} (${n('crit')})</button>
+    <button class="btn ${n('err') ? 'btn-blue' : 'btn-ghost'} sm" id="dfi-err" onclick="App.dftIssuesSave('err')">${DFT_SEV.err} ${t('dfi_err')} (${n('err')})</button>
+    <button class="btn btn-ghost sm" id="dfi-warn" onclick="App.dftIssuesSave('warn')">${DFT_SEV.warn} ${t('dfi_warn')} (${n('warn')})</button>
+    <button class="btn btn-ghost sm" id="dfi-all" onclick="App.dftIssuesSave('all')">${ic('download')} ${t('dfi_all')}</button>
+  </div>`;
+}
 const DFT_NET_SKIP = /\/rest\/v1\/(chat_|push_sub|user_sessions|rpc\/(chat_|push_|session_|seen_))|\/realtime\/|\/auth\/v1\//
 
 function dftOn(){ const o = (state.data && state.data.org_settings) || {}; return o.dft_on === true && (!o.dft_until || Date.parse(o.dft_until) > Date.now()); }
@@ -28066,11 +28203,15 @@ function dftNetLog(url, init, p){
     const path = url.replace(/^https?:\/\/[^/]+/, ''), m = (init && init.method) || 'GET', n = ++DFT.net, t0 = performance.now(), body = init && init.body ? (typeof init.body === 'string' ? init.body : '[binary]') : '';
     const hq = dftHdr(init && init.headers, ['Prefer', 'Range', 'Accept-Profile', 'Content-Profile']);
     dftLog('   → #' + n + ' ' + m + ' ' + dftCut(path, 300) + (body ? ' · ' + dftCut(body, 600) : ''), 'net', '   → #' + n + ' ' + m + ' ' + dftCut(path, 1200) + hq + (body ? ' · ' + dftCut(body, 6000) : ''));
+    const pth = m + ' ' + dftCut(path.replace(/\?.*$/, ''), 120), at = DFT.cur ? { ...DFT.cur } : null;   // шаг — на момент запроса: ответ часто дочитывается уже в следующем шаге
     p.then(r => { const ms = Math.round(performance.now() - t0), hr = dftHdr(r.headers, ['sb-request-id', 'x-request-id', 'content-range', 'x-envoy-upstream-service-time']);
+      const late = at && (!DFT.cur || DFT.cur.name !== at.name) ? ' · ' + t('dfi_of_step') + ' «' + at.name + '»' : '';
+      if (r.status >= 500) dftIssue('crit', 'HTTP ' + r.status + ' · ' + pth, '#' + n + hr, at);
+      else if (r.status >= 400){ r.clone().text().then(tx => { let why = ''; try{ const j = JSON.parse(tx); why = j.message || j.error || j.code || ''; }catch(e){ why = dftCut(tx, 120); } dftIssue(dftSevFor('err', at), 'HTTP ' + r.status + ' · ' + pth + (why ? ' · ' + why : ''), '#' + n + hr, at); }).catch(() => {}); }
       let ct = ''; try{ ct = r.headers.get('content-type') || ''; }catch(e){}
       if (ct && !/json|text|javascript/i.test(ct)){ dftLog('   ← #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms · [' + ct.split(';')[0] + (r.headers.get('content-length') ? ' · ' + dftCut(r.headers.get('content-length'), 20) + ' B' : '') + ']', r.ok ? 'net' : 'neterr'); return; }
-      try{ r.clone().text().then(tx => dftLog('   ← #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms' + (tx ? ' · ' + dftCut(tx, 600) : ''), r.ok ? 'net' : 'neterr', '   ← #' + n + ' HTTP ' + r.status + ' ' + (r.statusText || '') + ' · ' + ms + ' ms' + hr + (tx ? ' · ' + dftCut(tx, 6000) : ''))).catch(() => {}); }catch(e){} },
-      e => dftLog('   ← #' + n + ' сеть: ' + errStr(e), 'neterr'));
+      try{ r.clone().text().then(tx => dftLog('   ← #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms' + late + (tx ? ' · ' + dftCut(tx, 600) : ''), r.ok ? 'net' : 'neterr', '   ← #' + n + ' HTTP ' + r.status + ' ' + (r.statusText || '') + ' · ' + ms + ' ms' + late + hr + (tx ? ' · ' + dftCut(tx, 6000) : ''))).catch(() => {}); }catch(e){} },
+      e => { dftLog('   ← #' + n + ' сеть: ' + errStr(e), 'neterr'); dftIssue('err', t('dfi_net') + ' · ' + pth + ' · ' + errStr(e), t('dfi_net_h'), at); });
   }catch(e){}
 }
 async function dftCall(action, body){
@@ -28080,11 +28221,12 @@ async function dftCall(action, body){
     const token = await mediaJwt();
     const r = await fetch(mediaFN() + '/dft', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const js = await r.json().catch(() => ({ ok: false, error: { message: 'BAD_JSON' } })), ms = Math.round(performance.now() - t0);
+    if (r.status >= 500) dftIssue('crit', 'dft HTTP ' + r.status + ' · ' + action + ' · ' + dftErrOf(js)); else if (js && js.ok === false) dftIssue(dftSevFor('err'), 'dft · ' + action + (body && body.op ? ' ' + body.op : '') + (body && body.args && body.args.fn ? ' ' + body.args.fn : '') + ' → ' + dftErrOf(js) + (js.actor ? ' · ' + t('dfi_as') + ' ' + js.actor.name : ''));
     dftLog('   ⇐ #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms · ' + dftCut(js, 600), (r.ok && js.ok !== false) ? 'net' : 'neterr',
            '   ⇐ #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms' + dftHdr(r.headers, ['sb-request-id', 'x-request-id', 'x-served-by']) + ' · ' + dftCut(js, 6000));
     if (!r.ok && js.ok === undefined) return { ok: false, error: { message: js.error || ('HTTP ' + r.status) } };
     return js;
-  }catch(e){ dftLog('   ⇐ функция dft недоступна: ' + errStr(e), 'neterr'); return { ok: false, error: { message: 'DFT_UNREACHABLE', details: errStr(e) } }; }
+  }catch(e){ dftLog('   ⇐ функция dft недоступна: ' + errStr(e), 'neterr'); dftIssue('crit', t('dfi_dft_down') + ': ' + errStr(e)); return { ok: false, error: { message: 'DFT_UNREACHABLE', details: errStr(e) } }; }
 }
 function dftErrOf(r){ const e = (r && r.error) || {}; return String(e.message || e.code || 'нет ошибки') + (e.details ? ' (' + e.details + ')' : ''); }
 function dftNorm(res){   // ответ supabase-js → общий вид; «0 строк» при update — это отказ политики доступа
@@ -28370,8 +28512,8 @@ async function dftExec(who, op, args){
   const a = dftWho(who); if (!a) return { ok: false, skip: true, error: { message: 'NO_ACTOR_' + who } };
   const A = { run: DFT.run, wide: !!DFT.wide, ...(args || {}) };
   let r;
-  if (!HAS_SB){ dftLog('   ⇒ ' + who + ' (' + a.name + ') · ' + op + ' · ' + dftCut(args, 500), 'net'); r = dftDemoExec(a.id, op, A); dftLog('   ⇐ ' + dftCut(r.ok ? { ok: true, status: r.data && (r.data.status || (r.data.job && r.data.job.status)), rev: r.data && r.data.rev } : r, 400), r.ok ? 'net' : 'neterr'); }
-  else if (a.me && op === 'job_update') r = dftNorm(await state.sb.from('jobs').update(A.patch).eq('id', A.id).select());
+  if (!HAS_SB){ dftLog('   ⇒ ' + who + ' (' + a.name + ') · ' + op + ' · ' + dftCut(args, 500), 'net'); r = dftDemoExec(a.id, op, A); if (!r.ok) dftIssue(dftSevFor('err'), 'demo · ' + op + (A.fn ? ' ' + A.fn : '') + ' → ' + dftErrOf(r) + ' · ' + t('dfi_as') + ' ' + a.name); dftLog('   ⇐ ' + dftCut(r.ok ? { ok: true, status: r.data && (r.data.status || (r.data.job && r.data.job.status)), rev: r.data && r.data.rev } : r, 400), r.ok ? 'net' : 'neterr'); }
+  else if (a.me && op === 'job_update') r = dftNorm(await state.sb.from('jobs').update(A.patch).eq('id', A.id).select());   // (отказы видны через перехват запросов)
   else if (a.me && op === 'job_get') r = dftNorm(await state.sb.from('jobs').select('*').eq('id', A.id));
   else if (a.me && op === 'pl_upsert' && (state.data.placements || []).some(p => p.id === (A.row || {}).id)) r = dftNorm(await state.sb.from('placements').update(A.row).eq('id', A.row.id).select());   // новую строку пикапа создаёт функция: только так номер берётся из тестового диапазона
   else if (a.me && op === 'rep_update') r = dftNorm(await state.sb.from('repairs').update(A.patch).eq('id', A.id).select());
@@ -28451,13 +28593,13 @@ async function dftRun(){
   if (!dftOn()){ toast('🔒 ' + t('dft_mode_off'), 'err'); return; }
   const w = document.getElementById('dft-worker'); if (w) DFT.worker = w.value;
   DFT.jh = null; DFT.rep = null;
-  Object.assign(DFT, { running: true, stop: false, next: null, rows: [], run: 'dft-' + Date.now().toString(36), owner: state.user.id, locks: {}, seq: 0, net: 0, asked: [], marks: [], jsErr: 0, toasts: [] });
+  Object.assign(DFT, { running: true, stop: false, next: null, rows: [], run: 'dft-' + Date.now().toString(36), owner: state.user.id, locks: {}, seq: 0, net: 0, asked: [], marks: [], jsErr: 0, toasts: [], issues: [], cur: null, finishing: false });
   tlogStart('docflow', t('dft_card'));
   const scr0 = state.screen, confirm0 = window.confirm, prompt0 = window.prompt; let promptAns = '';
   /* v1.09.29: вопросы приложения, на которые тест отвечает сам, — в отчёт; ошибки кода во время теста — тоже */
   window.confirm = q => { DFT.asked.push(String(q)); dftLog('   ? ' + dftCut(q, 200) + ' → ' + t('dft_yes'), 'ui'); return true; };
   window.prompt = (q, d) => { DFT.asked.push(String(q)); dftLog('   ? ' + dftCut(q, 200) + ' → «' + promptAns + '»', 'ui'); return promptAns; };
-  const onErr = e => { DFT.jsErr++; dftLog('⛔ JS: ' + dftCut((e && (e.message || (e.reason && (e.reason.stack || e.reason.message || e.reason)))) || e, 600) + (e && e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : ''), 'err'); };
+  const onErr = e => { DFT.jsErr++; dftIssue('crit', 'JS: ' + dftCut((e && (e.message || (e.reason && (e.reason.stack || e.reason.message || e.reason)))) || e, 300) + (e && e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : '')); dftLog('⛔ JS: ' + dftCut((e && (e.message || (e.reason && (e.reason.stack || e.reason.message || e.reason)))) || e, 600) + (e && e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : ''), 'err'); };
   window.addEventListener('error', onErr); window.addEventListener('unhandledrejection', onErr);
   /* v1.09.33: вызовы Edge Functions (media-begin / put / commit / view, push) идут мимо обёртки supabase — перехватываем fetch на время теста */
   const fetch0 = window.fetch; window.fetch = function(input, init){ const pr = fetch0.apply(this, arguments); try{ const u = typeof input === 'string' ? input : ((input && input.url) || ''); if (/\/functions\/v1\/(?!dft(\?|$))/.test(u)) dftNetLog(u, init, pr); }catch(e){} return pr; };
@@ -28485,9 +28627,12 @@ async function dftRun(){
   const step = async (kind, name, fn) => {   // '+' обязан пройти · '−' обязан получить отказ / быть недоступным · '·' служебный
     if (DFT.stop) throw new Error(t('dft_stopped'));
     const i = out.push({ name: kind + ' ' + name, ok: null, ms: 0, extra: '' }) - 1, row = DFT.rows.push(`<div>… ${esc(kind + ' ' + name)}</div>`) - 1, a = performance.now();
+    DFT.cur = { name, kind };
     dftLog((kind === '−' ? '▽ ' : kind === '+' ? '△ ' : '• ') + name, 'st'); dftPaint();
     try{ const r = await fn(); out[i].ok = true; out[i].extra = (r && r.note) || (typeof r === 'string' ? r : ''); }
-    catch(e){ if (e && e.skip){ out[i].ok = null; out[i].extra = t('dft_skipped') + ': ' + e.message; } else { out[i].ok = false; out[i].extra = errStr(e); try{ dftLog('   ✗ ' + ctx(), 'err'); }catch(e2){} } }
+    catch(e){ if (e && e.skip){ out[i].ok = null; out[i].extra = t('dft_skipped') + ': ' + e.message; dftIssue('warn', t('dfi_skip') + ': ' + kind + ' ' + name + ' — ' + e.message); }
+      else { out[i].ok = false; out[i].extra = errStr(e); let cx = ''; try{ cx = ctx(); dftLog('   ✗ ' + cx, 'err'); }catch(e2){} dftIssue('crit', t('dfi_fail') + ': ' + kind + ' ' + name + ' — ' + errStr(e), cx + (function(){ try{ return '\n' + snap(); }catch(e3){ return ''; } })()); } }
+    DFT.cur = null;
     out[i].ms = Math.round(performance.now() - a);
     try{ const sn = snap(); if (sn) dftLog('   ∑ ' + dftCut(sn, 300), 'dim', '   ∑ ' + sn); }catch(e){}
     const icn = out[i].ok === true ? ic('check', 'color:var(--green)') : out[i].ok === false ? ic('warn', 'color:var(--red)') : ic('minus', 'color:var(--dim)');
@@ -28554,8 +28699,15 @@ async function dftRun(){
     await step('·', t('dft_s_status'), async () => { const st = await dftStatusLoad(true); if (!st || st.ok === false) throw new Error(t('dft_no_fn') + ': ' + dftErrOf(st)); if (!st.on) throw new Error('DFT_OFF');
       W = dftWho('W'); if (!W) throw new Error(t('dft_no_worker')); if (!cx.id || !wt.id || !cp.id) throw new Error(t('dft_no_dirs'));
       dftLog(t('dft_hdr_fn') + ': ' + (st.demo ? 'demo' : ('dft ' + (st.ver || '?'))) + ' · ' + t('dft_hdr_left') + '=' + (st.mine || 0), 'grp');
-      { const miss = ['APR', 'MGR', 'W2'].filter(k => !dftWho(k)); if (miss.length){ dftLog('⚠ ' + t('dft_roles_miss').replace('{R}', miss.map(k => t('dft_role_' + k)).join('; ')), 'err'); toast('⚠ ' + t('dft_roles_miss').replace('{R}', miss.map(k => t('dft_role_' + k)).join('; ')), 'err', 12000); } }
+      { const miss = ['APR', 'MGR', 'W2'].filter(k => !dftWho(k)); if (miss.length){ const mt = t('dft_roles_miss').replace('{R}', miss.map(k => t('dft_role_' + k)).join('; ')); dftLog('⚠ ' + mt, 'err'); dftIssue('warn', mt); DFT.selfToast = true; toast('⚠ ' + mt, 'err', 12000); DFT.selfToast = false; } }
+      if (DFT.wide) dftIssue('warn', t('dfi_wide')); if (!/\{TECH\}/.test(docFmt())) dftIssue('warn', t('dfi_notech').replace('{F}', docFmt()));
       return { note: ['ADM', 'APR', 'MGR', 'W', 'W2'].map(k => k + '=' + ((dftWho(k) || {}).name || '—') + ((dftWho(k) || {}).me ? '(' + t('dft_me') + ')' : '')).join(' · ') }; });
+    if (HAS_SB) await step('·', t('dft_s_fns'), async () => { const rs = await fnProbeAll(); let bad = 0;
+      rs.forEach(r => { const g = (SRV_FNS.find(f => f.name === r.name) || {}).group; dftLog('   ' + (r.ok ? '✓ ' : r.st === 'stale' ? '⚠ ' : '✗ ') + r.name + ' — ' + fnStText(r) + (r.err ? ' · ' + r.err : ''), r.ok ? 'net' : 'neterr');
+        if (r.ok) return; bad++;
+        const need = g === 'dft' || g === 'push' || (g === 'media' && !DFT.noMedia);   // без них тест документооборота не пройдёт целиком
+        dftIssue(r.st === 'stale' ? 'warn' : need ? 'err' : 'warn', t('fn_card') + ': ' + r.name + ' — ' + fnStText(r), r.err || ''); });
+      return { note: (rs.length - bad) + ' / ' + rs.length + (bad ? ' · ' + rs.filter(r => !r.ok).map(r => r.name).join(', ') : '') }; });
     await step('·', t('dft_s_clean0'), async () => { if (HAS_SB){ const r = await dftCall('cleanup', {}); okR(r); dftPurgeLocal(); return { note: String(r.deleted || 0) }; } const mine = state.data.jobs.filter(j => j.is_test && j.test_owner === state.user.id); dftPurgeLocal(mine.map(j => j.id)); return { note: String(mine.length) }; });
     await step('·', t('dft_s_begin'), async () => { if (HAS_SB) okR(await dftCall('begin', { run: DFT.run })); else audit('dft_run', 'org', 'org', { run: DFT.run, role: state.user.role }); });
 
@@ -28675,7 +28827,8 @@ async function dftRun(){
     G(t('dft_g_c'));
     await step('−', t('dft_c0'), async () => { need('MGR'); return errR(await upd('MGR', J, { status: 'approved' }), 'FORBIDDEN_APPROVE', isMe('MGR') ? t('dft_raw') : ''); });
     await step('+', t('dft_c1'), async () => { const who = mineOf('APR', 'ADM');
-      if (isMe(who)){ await ui.openDoc(J); present('#jb-approved', t('approve')); await U.click('#df-return', t('df_return')); U.clearToasts(); await U.click('#df-ret-go', t('df_return') + ' (' + t('dft_u_empty') + ')'); must(U.has('#df-ret-note') && (await dftPull(J)).status === 'done', t('dft_ui_noreason'));
+      if (isMe(who)){ await ui.openDoc(J); present('#jb-approved', t('approve')); await U.click('#df-return', t('df_return')); U.clearToasts(); { const c0 = DFT.cur; DFT.cur = { ...c0, kind: '−' }; try{ await U.click('#df-ret-go', t('df_return') + ' (' + t('dft_u_empty') + ')'); } finally { DFT.cur = c0; } }   /* проверка «пустая причина не принимается» — отказ ожидаемый */
+        must(U.has('#df-ret-note') && (await dftPull(J)).status === 'done', t('dft_ui_noreason'));
         await U.type('#df-ret-note', 'нет фото счётчика — тест', t('df_return_ph')); await U.click('#df-ret-go', t('df_return')); await U.wait(() => state.screen !== 'job', 8000, 'return'); }
       else okR(await upd(who, J, { status: 'draft', return_note: 'нет фото счётчика — тест' }));
       const d = await dftPull(J); must(d.status === 'draft' && d.returned_by && /нет фото/.test(d.return_note || ''), dftCut({ s: d.status, n: d.return_note }, 120)); return { note: who }; });
@@ -28925,20 +29078,26 @@ async function dftRun(){
       const hist = {}; au.forEach(a => { hist[a.action] = (hist[a.action] || 0) + 1; }); dftLog(t('dft_end_audit') + ': ' + au.length + (au.length ? ' — ' + Object.entries(hist).map(([k, v]) => k + '×' + v).join(', ') : ''), 'grp');
       dftLog(t('dft_end_asked') + ': ' + DFT.asked.length + ' · ' + t('dft_end_net') + ': ' + DFT.net + ' · JS: ' + DFT.jsErr, 'grp'); }catch(e){ dftLog('⚠ ' + errStr(e), 'err'); }
     if (HAS_SB) await step('+', t('dft_i_push'), async () => { let rows = []; for (let i = 0; i < 8; i++){ const r = await dftCall('pushes', { run: DFT.run }); rows = (r && r.rows) || []; if (rows.length && rows.every(x => x.sent_at || x.err)) break; await sleep(3000); }
-        rows.forEach(x => dftLog('   ✉ ' + x.title + ' → ' + (x.to || '—') + ' · ' + (x.sent_at ? 'отправлен' : x.err ? 'ОШИБКА: ' + x.err : 'в очереди'), x.err ? 'neterr' : 'net')); const sent = rows.filter(x => x.sent_at).length, bad = rows.filter(x => x.err && !x.sent_at).length;
+        rows.forEach(x => { dftLog('   ✉ ' + x.title + ' → ' + (x.to || '—') + ' · ' + (x.sent_at ? 'отправлен' : x.err ? 'ОШИБКА: ' + x.err : 'в очереди'), x.err ? 'neterr' : 'net');
+          if (x.err && !x.sent_at) dftIssue('err', t('dfi_push_err') + ': «' + x.title + '» → ' + (x.to || '—') + ' · ' + x.err); else if (!x.sent_at) dftIssue('warn', t('dfi_push_q') + ': «' + x.title + '» → ' + (x.to || '—')); }); const sent = rows.filter(x => x.sent_at).length, bad = rows.filter(x => x.err && !x.sent_at).length;
         must(rows.length > 0, t('dft_push_none')); must(sent > 0 || !bad, t('dft_push_bad') + ': ' + dftCut(rows.filter(x => x.err).map(x => x.err).slice(0, 2), 200)); return { note: t('dft_push_q') + ' ' + rows.length + ' · ' + t('dft_push_s') + ' ' + sent + (bad ? ' · ' + t('dft_push_e') + ' ' + bad : '') }; }).catch(() => {});
     if (!DFT.noMedia) await step('·', t('dft_i_media'), async () => { let n = 0; for (const id of [J, J2, JA, J3].filter(Boolean)){ const has = (state.data.media || []).some(m => m.job_id === id) || ctQOf(id).length; if (has){ await mediaDropJob(id); n++; } } return { note: String(n) }; }).catch(() => {});
     try{ await step('·', t('dft_i1'), async () => { let n = 0; if (HAS_SB){ const r = await dftCall('cleanup', { run: DFT.run }); okR(r); n = r.deleted || 0; const st = await dftStatusLoad(true); if (st && st.mine) throw new Error(t('dft_left') + ' ' + st.mine); }
       else { const ids = state.data.jobs.filter(j => j.is_test && j.test_run === DFT.run).map(j => j.id); n = ids.length; dftPurgeLocal(ids); state.data.proposals = state.data.proposals.filter(p => !p.is_test); }
       dftPurgeLocal(); if (state.data.jobs.some(j => j.is_test)) throw new Error(t('dft_left')); return { note: t('dft_deleted') + ' ' + n }; }); }catch(e){}
+    DFT.finishing = true; await sleep(300);   // ответы на последние запросы успевают попасть в проблемы
     window.removeEventListener('error', onErr); window.removeEventListener('unhandledrejection', onErr); window.fetch = fetch0;
     DFT.stepMode = sm; window.confirm = confirm0; window.prompt = prompt0; DFT.running = false; DFT.next = null;
     const okN = out.filter(x => x.ok === true).length, badN = out.filter(x => x.ok === false).length + (DFT.jsErr ? 1 : 0), skipN = out.filter(x => x.ok === null).length;
     if (DFT.jsErr) tlogStep({ name: '· ' + t('dft_js_err'), ok: false, ms: 0, extra: String(DFT.jsErr) });
     dftLog('', ''); dftLog(`${t('dft_total')}: ✓ ${okN} · ✗ ${badN} · – ${skipN} · ${Math.round((performance.now() - T0) / 1000)} s`, badN ? 'err' : '');
+    { const is = DFT.issues || [], k = x => is.filter(i => i.sev === x).length;
+      dftLog(t('dfi_title') + ': ' + DFT_SEV.crit + ' ' + t('dfi_crit') + ' ' + k('crit') + ' · ' + DFT_SEV.err + ' ' + t('dfi_err') + ' ' + k('err') + ' · ' + DFT_SEV.warn + ' ' + t('dfi_warn') + ' ' + k('warn') + ' · ' + DFT_SEV.exp + ' ' + t('dfi_exp') + ' ' + k('exp'), k('crit') ? 'err' : 'grp');
+      if (TLOG.cur) TLOG.cur.issues = is.map(i => ({ ...i })); }
+    DFT.finishing = false;
     tlogEnd(okN, okN + badN);
     const bar = document.getElementById('dft-bar'); if (bar) bar.innerHTML = `<div class="grow"><b id="dft-sum" class="${badN ? 'dft-bad' : ''}">${badN ? '⚠' : '✓'} ${okN} / ${okN + badN}${skipN ? ' · ' + t('dft_skipped') + ' ' + skipN : ''}</b></div>${tlogBtnsHtml('')}
-      <button class="btn btn-ghost sm" id="dft-close" onclick="document.getElementById('dft-panel').remove()">${t('doc_close')}</button>${TLOG.cur && TLOG.cur.big ? `<div class="tiny dft-bad" id="dft-big" style="flex-basis:100%">${t('dft_big')}</div>` : ''}`;
+      ${dftIssuesBtnsHtml(TLOG.cur)}<button class="btn btn-ghost sm" id="dft-close" onclick="document.getElementById('dft-panel').remove()">${t('doc_close')}</button>${TLOG.cur && TLOG.cur.big ? `<div class="tiny dft-bad" id="dft-big" style="flex-basis:100%">${t('dft_big')}</div>` : ''}`;
     if (TLOG.cur && TLOG.cur.big) toast('⚠ ' + t('dft_big'), 'err', 12000);
     const pn = document.getElementById('dft-panel'); if (pn) pn.classList.remove('min');
     state.screen = scr0; render();
