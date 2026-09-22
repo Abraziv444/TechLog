@@ -1,0 +1,10460 @@
+-- TechLog · full-install-1_09_34.sql — полный скрипт схемы (v1.09.34)
+--   = full-install-1_09_09.sql + история треков машин: таблицы bn_trips и bn_trip_days (пишет только Edge Function bouncie).
+--   Безопасен для чистой и уже мигрированной базы; повторный запуск ничего не ломает.
+-- TechLog · full-install-1_09_09.sql — полный скрипт схемы (v1.09.09)
+--   = full-install-1_09_08.sql + org_settings.dir_order (порядок справочников) и org_settings.stock_mode (режим склада).
+--   Безопасен для чистой и уже мигрированной базы; повторный запуск ничего не ломает.
+-- TechLog · full-install-1_09_08.sql — полный скрипт схемы (v1.09.08)
+--   = full-install-1_09_01.sql + work_types.preset (стандартные галочки вида работы) и вид работы OTHER.
+--   Безопасен для чистой и уже мигрированной базы; повторный запуск ничего не ломает.
+-- TechLog · full-install-1_09_01.sql — полный скрипт схемы (v1.09.01)
+--   = full-install-1_08_97.sql + справочник «Трекеры Bouncie»: таблица bn_devices, RPC bn_devices_sync
+--     (пропавшие из Bouncie — «неактивен», не удаляются), vehicles.imei → bn_devices.imei, проверки vehicle_save.
+--   Безопасен для чистой и уже мигрированной базы; повторный запуск ничего не ломает.
+-- TechLog · full-install-1_08_97.sql — полный скрипт схемы (v1.08.97)
+--   = full-install-1_08_71.sql + бухгалтер правит «Организацию (для PDF)»: политики org_settings_acc_ins/_upd
+--     и триггер org_settings_acc_guard (меняются только реквизиты бланков).
+--   Безопасен для чистой и уже мигрированной базы; повторный запуск ничего не ломает.
+-- TechLog · full-install-1_08_71.sql — полный скрипт схемы (v1.08.71)
+--   = full-install-1_08_51.sql + org_settings.study_shuffle (1.08.70) + org_settings.media_lock_approved (1.08.71).
+--   Безопасен для чистой и уже мигрированной базы; повторный запуск ничего не ломает.
+-- =====================================================================
+-- TechLog · ЕДИНЫЙ ПОЛНЫЙ СКРИПТ БАЗЫ · v1.08.51 (база v1.08.48 + update-to-1_08_51: учёба)
+-- =====================================================================
+-- Один файл вместо цепочки update-to-*.sql.
+--
+--  • БЕЗОПАСЕН ДЛЯ ПОВТОРНОГО ЗАПУСКА (идемпотентен): create table if not
+--    exists / create or replace function / drop policy if exists + create /
+--    insert … on conflict do nothing. Существующие данные не трогаются,
+--    изменённый вами код приглашения не сбрасывается.
+--  • Подходит и для НОВОЙ базы, и для ЛЮБОЙ существующей (частично
+--    обновлённой) — добавит только недостающее.
+--  • Как применять: Supabase → SQL Editor → вставить целиком → Run.
+--    Можно выполнять сколько угодно раз.
+--  • Состав: full-install-1_07_35 + update-to-1_07_49 (board_cols)
+--    + update-to-1_07_51 (rpc_throttle и анти-brute-force)
+--    + update-to-1_07_54 (complexes.counterparty_id nullable)
+--    + update-to-1_07_61 (моточасы осушителя в placements)
+--    + update-to-1_07_64 (лимиты фото/видео на документ и показатели
+--      свободного места на Google Диске в org_settings)
+--    + update-to-1_07_76 (вложения без камеры: вид записи 'file')
+--    + update-to-1_07_78 (работы-черновики без назначенного сотрудника)
+--    + update-to-1_07_81 (лимит вложений в настройках организации)
+--    + update-to-1_07_83 (двуязычные заметки: jobs.note_en,
+--      proposals.note_en и настройки автоперевода в org_settings)
+--    + update-to-1_07_85 (PDF-инвойсы на Диск: media.kind='invoice'
+--      и org_settings.gd_inv_folder — своя папка под инвойсы)
+--    + update-to-1_07_86 (нумерация документов: jobs.no, placements.no
+--      и шаблоны номера/имени файла в org_settings)
+--    + update-to-1_07_87 (инвойсы по папкам сотрудников:
+--      org_settings.gd_inv_by_tech)
+--    + update-to-1_07_88 (архив-корзина: archived_at у работ,
+--      пропозалов и файлов)
+--    + update-to-1_07_95 (телефон и факс организации в шапке бланка)
+--    + update-to-1_07_97 (юридическая приписка и способ доставки в бланке)
+--    + update-to-1_07_98 (коды позиций в справочниках, налог и доставка
+--      в пропозале, справочник блоков Note)
+--    + update-to-1_08_12 (три корня на Диске, раскладка по контрагенту
+--      и сотруднику, соответствия drive_dirs)
+--    + update-to-1_08_15 (права на пропозал и скрытие его цен)
+--    + update-to-1_08_17 (красный и жёлтый приоритет: jobs.prio_hard)
+--    + финальная самопроверка комплектности (см. вывод внизу).
+--  • Edge-функции (supabase/functions/*) деплоятся отдельно, как раньше.
+-- =====================================================================
+
+
+-- ▄▄▄▄▄▄▄▄▄▄ БАЗА · full-install-1_07_35 ▄▄▄▄▄▄▄▄▄▄
+
+-- =====================================================================
+-- TechLog · FULL INSTALL · v1.07.35 · собран 2026-09-05
+-- =====================================================================
+-- ОДИН файл вместо двенадцати: полная схема + все обновления в
+-- хронологическом порядке. Полностью ИДЕМПОТЕНТЕН — безопасен и для
+-- чистого проекта Supabase, и для действующей базы (уже применённые
+-- куски пройдут вхолостую: if not exists / or replace / on conflict).
+--
+-- Состав по порядку:
+--   schema.sql, 1_07_07, 1_07_10, 1_07_12, 1_07_18,
+--   security-hotfix-1_07_24, 1_07_25, 1_07_26, [hoist can_view_job],
+--   1_07_27, 1_07_31, 1_07_32, 1_07_33.
+--
+-- Проверен реальным двойным прогоном на чистом PostgreSQL 16
+-- (с заглушками схем auth/storage) — обе итерации без единой ошибки.
+--
+-- ПОСЛЕ выполнения не забудьте (SQL этого не делает):
+--   supabase functions deploy media-begin media-commit media-view \
+--     media-health media-delete media-oauth
+-- =====================================================================
+
+-- ############################ FILE: schema.sql ############################
+
+-- =====================================================================
+-- TechLog v1.07.12 — схема Supabase
+-- Выполните целиком в Supabase → SQL Editor → New query → Run
+-- =====================================================================
+
+-- pgcrypto не обязателен: uuid и sha256 берём из встроенных функций Postgres
+-- (gen_random_uuid и sha256 доступны в PG13+/PG11+ без расширений)
+
+-- ---------------------------------------------------------------------
+-- ПРОФИЛИ (роль: admin | manager | tech)
+-- ---------------------------------------------------------------------
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  login text not null,
+  display_name text not null,
+  role text not null default 'tech' check (role in ('admin','manager','tech')),
+  created_at timestamptz not null default now()
+);
+create unique index if not exists profiles_login_ux on public.profiles (lower(login));
+
+-- ---------------------------------------------------------------------
+-- СЕКРЕТЫ ПРИЛОЖЕНИЯ (код приглашения хранится ТОЛЬКО как sha256-хэш)
+-- RLS включён без политик: читают лишь security definer функции.
+-- ---------------------------------------------------------------------
+create table if not exists public.app_secrets (
+  key text primary key,
+  value text not null
+);
+alter table public.app_secrets enable row level security;
+revoke all on public.app_secrets from anon, authenticated;
+
+-- хэш кода приглашения по умолчанию (сам код в файлах проекта не хранится).
+-- Сменить код: update public.app_secrets
+--   set value = encode(sha256(convert_to('НОВЫЙ_КОД','UTF8')),'hex') where key='invite';
+-- do nothing: повторный запуск схемы НЕ сбрасывает уже изменённый вами код
+insert into public.app_secrets (key, value)
+values ('invite', 'a43915481c3b48d871d73fb0396701d3626c2cc5e5d1a95ec17e067cc8d3d7fe')
+on conflict (key) do nothing;
+
+create or replace function public.is_valid_invite(code text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.app_secrets
+    where key = 'invite'
+      and value = encode(sha256(convert_to(coalesce(code,''), 'UTF8')), 'hex')
+  )
+$$;
+
+-- Публичная предпроверка кода (для дружелюбной ошибки в форме регистрации)
+create or replace function public.check_invite(code text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.is_valid_invite(code)
+$$;
+grant execute on function public.check_invite(text) to anon, authenticated;
+
+-- Живая проверка «логин свободен?» для формы регистрации.
+-- Раскрывает занятость логинов; для внутреннего инструмента с кодом приглашения это приемлемо.
+create or replace function public.login_available(p_login text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select not exists (
+    select 1 from public.profiles where lower(login) = lower(coalesce(p_login,''))
+  )
+$$;
+grant execute on function public.login_available(text) to anon, authenticated;
+
+-- Полная предпроверка регистрации: возвращает точную причину отказа
+-- ('OK' | 'BAD_LOGIN' | 'BAD_INVITE' | 'LOGIN_TAKEN') — те же коды бросает и триггер.
+create or replace function public.signup_precheck(p_login text, p_invite text)
+returns text language plpgsql stable security definer set search_path = public as $$
+declare
+  v text := lower(coalesce(p_login,''));
+begin
+  if v !~ '^[a-z0-9_.-]{3,32}$' then return 'BAD_LOGIN'; end if;
+  if not public.is_valid_invite(p_invite) then return 'BAD_INVITE'; end if;
+  if exists (select 1 from public.profiles where lower(login) = v) then return 'LOGIN_TAKEN'; end if;
+  return 'OK';
+end $$;
+grant execute on function public.signup_precheck(text, text) to anon, authenticated;
+
+-- авто-создание профиля при регистрации + серверная проверка кода приглашения.
+-- Клиент шлёт login и invite в user_metadata; email формируется как login@<AUTH_EMAIL_DOMAIN из config.js>
+-- (по умолчанию login@techlog.example.com — домен зарезервирован IANA, писем на нём не бывает).
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_login text;
+begin
+  if not public.is_valid_invite(new.raw_user_meta_data->>'invite') then
+    raise exception 'BAD_INVITE';
+  end if;
+  v_login := lower(coalesce(new.raw_user_meta_data->>'login', split_part(new.email, '@', 1)));
+  if v_login !~ '^[a-z0-9_.-]{3,32}$' then
+    raise exception 'BAD_LOGIN';
+  end if;
+  if exists (select 1 from public.profiles where lower(login) = v_login) then
+    raise exception 'LOGIN_TAKEN';
+  end if;
+  begin
+    insert into public.profiles (id, login, display_name, role)
+    values (new.id, v_login,
+            coalesce(new.raw_user_meta_data->>'display_name', v_login), 'tech');
+  exception
+    when unique_violation then raise exception 'LOGIN_TAKEN';
+    when others then raise exception 'PROFILE_CREATE_FAILED: %', sqlerrm;
+  end;
+  return new;
+end $$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- роль текущего пользователя
+create or replace function public.my_role()
+returns text language sql stable security definer set search_path = public as $$
+  select role from public.profiles where id = auth.uid()
+$$;
+
+-- ---------------------------------------------------------------------
+-- v1.07.06: БЛОКИРОВКА СОТРУДНИКОВ И СМЕНА ПАРОЛЯ АДМИНОМ
+-- (для существующей базы достаточно выполнить только этот блок)
+-- ---------------------------------------------------------------------
+alter table public.profiles add column if not exists blocked boolean not null default false;
+
+-- Админ блокирует/разблокирует сотрудника:
+-- profiles.blocked (для интерфейса) + banned_until в auth.users (GoTrue не пустит
+-- на уровне сервера) + завершение всех активных сессий заблокированного.
+create or replace function public.admin_set_blocked(target uuid, p_blocked boolean)
+returns void language plpgsql security definer set search_path = public, auth as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if target = auth.uid() then raise exception 'SELF_BLOCK'; end if;
+  update public.profiles set blocked = p_blocked where id = target;
+  update auth.users
+     set banned_until = case when p_blocked then 'infinity'::timestamptz else null end
+   where id = target;
+  if p_blocked then
+    delete from auth.refresh_tokens where user_id = target::text;
+    delete from auth.sessions where user_id = target;
+  end if;
+end $$;
+revoke all on function public.admin_set_blocked(uuid, boolean) from public, anon;
+grant execute on function public.admin_set_blocked(uuid, boolean) to authenticated;
+
+-- Админ задаёт сотруднику новый пароль (если тот его забыл).
+-- Хэш bcrypt — тот же формат, что использует Supabase Auth (GoTrue).
+-- Старые сессии сотрудника завершаются, вход только с новым паролем.
+create extension if not exists pgcrypto with schema extensions;
+create or replace function public.admin_set_password(target uuid, new_password text)
+returns void language plpgsql security definer set search_path = public, auth, extensions as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if length(coalesce(new_password,'')) < 6 then raise exception 'WEAK_PASSWORD'; end if;
+  update auth.users
+     set encrypted_password = extensions.crypt(new_password, extensions.gen_salt('bf')),
+         updated_at = now()
+   where id = target;
+  delete from auth.refresh_tokens where user_id = target::text;
+  delete from auth.sessions where user_id = target;
+end $$;
+revoke all on function public.admin_set_password(uuid, text) from public, anon;
+grant execute on function public.admin_set_password(uuid, text) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- v1.07.07: СОЗДАНИЕ СОТРУДНИКОВ АДМИНОМ + СМЕНА КОДА ПРИГЛАШЕНИЯ
+-- (для существующей базы достаточно выполнить только этот блок)
+-- ---------------------------------------------------------------------
+
+-- Пересоздаём триггер регистрации: если пользователь создаётся функцией
+-- admin_create_user (транзакционный флаг techlog.admin_create — клиент его
+-- подделать не может, в отличие от user_metadata), профиль вставляет она сама.
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_login text;
+begin
+  if current_setting('techlog.admin_create', true) = '1' then
+    return new;                      -- создан админом из приложения
+  end if;
+  if not public.is_valid_invite(new.raw_user_meta_data->>'invite') then
+    raise exception 'BAD_INVITE';
+  end if;
+  v_login := lower(coalesce(new.raw_user_meta_data->>'login', split_part(new.email, '@', 1)));
+  if v_login !~ '^[a-z0-9_.-]{3,32}$' then
+    raise exception 'BAD_LOGIN';
+  end if;
+  if exists (select 1 from public.profiles where lower(login) = v_login) then
+    raise exception 'LOGIN_TAKEN';
+  end if;
+  begin
+    insert into public.profiles (id, login, display_name, role)
+    values (new.id, v_login,
+            coalesce(new.raw_user_meta_data->>'display_name', v_login), 'tech');
+  exception
+    when unique_violation then raise exception 'LOGIN_TAKEN';
+    when others then raise exception 'PROFILE_CREATE_FAILED: %', sqlerrm;
+  end;
+  return new;
+end $$;
+
+-- Админ создаёт сотрудника: логин, пароль, имя, роль.
+-- p_email клиент строит тем же loginToEmail(), что и при обычном входе,
+-- поэтому вход у нового сотрудника гарантированно совпадёт с приложением.
+create or replace function public.admin_create_user(
+  p_login text, p_email text, p_password text, p_display_name text, p_role text default 'tech')
+returns uuid language plpgsql security definer set search_path = public, auth, extensions as $$
+declare
+  new_id uuid := gen_random_uuid();
+  v_login text := lower(trim(coalesce(p_login,'')));
+  v_email text := lower(trim(coalesce(p_email,'')));
+  v_name  text := coalesce(nullif(trim(p_display_name),''), v_login);
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if v_login !~ '^[a-z0-9_.-]{3,32}$' then raise exception 'BAD_LOGIN'; end if;
+  if v_email !~ '^[a-z0-9_.-]+@[a-z0-9.-]+$' or v_email not like v_login || '@%' then
+    raise exception 'BAD_EMAIL';
+  end if;
+  if length(coalesce(p_password,'')) < 6 then raise exception 'WEAK_PASSWORD'; end if;
+  if p_role not in ('admin','manager','tech') then raise exception 'BAD_ROLE'; end if;
+  if exists (select 1 from public.profiles where lower(login) = v_login)
+     or exists (select 1 from auth.users where lower(email) = v_email) then
+    raise exception 'LOGIN_TAKEN';
+  end if;
+
+  perform set_config('techlog.admin_create', '1', true);   -- байпас триггера в этой транзакции
+
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+    confirmation_token, recovery_token, email_change, email_change_token_new,
+    email_change_token_current, phone_change, phone_change_token,
+    reauthentication_token, is_super_admin, is_sso_user)
+  values (
+    new_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    v_email, extensions.crypt(p_password, extensions.gen_salt('bf')), now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    jsonb_build_object('login', v_login, 'display_name', v_name),
+    now(), now(),
+    '', '', '', '', '', '', '', '', false, false);
+
+  insert into auth.identities (
+    id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+  values (
+    gen_random_uuid(), new_id::text, new_id,
+    jsonb_build_object('sub', new_id::text, 'email', v_email,
+                       'email_verified', true, 'phone_verified', false),
+    'email', now(), now(), now());
+
+  insert into public.profiles (id, login, display_name, role, blocked)
+  values (new_id, v_login, v_name, p_role, false);
+
+  return new_id;
+end $$;
+revoke all on function public.admin_create_user(text, text, text, text, text) from public, anon;
+grant execute on function public.admin_create_user(text, text, text, text, text) to authenticated;
+
+-- Админ задаёт новый код приглашения (общий для всех регистраций).
+-- Хранится только sha256-хэш — показать текущий код нельзя, только заменить.
+create or replace function public.admin_set_invite(new_code text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v text := trim(coalesce(new_code,''));
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if length(v) < 2 or length(v) > 64 then raise exception 'BAD_CODE'; end if;
+  insert into public.app_secrets (key, value)
+  values ('invite', encode(sha256(convert_to(v, 'UTF8')), 'hex'))
+  on conflict (key) do update set value = excluded.value;
+end $$;
+revoke all on function public.admin_set_invite(text) from public, anon;
+grant execute on function public.admin_set_invite(text) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- СПРАВОЧНИКИ
+-- ---------------------------------------------------------------------
+create table if not exists public.counterparties (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  abbr text default '',
+  notes text default ''
+);
+
+create table if not exists public.complexes (
+  id uuid primary key default gen_random_uuid(),
+  counterparty_id uuid not null references public.counterparties(id) on delete cascade,
+  name text not null,
+  abbr text default '',
+  address text default '',
+  access_code text default '',
+  callbox_code text default '',
+  callbox_gate boolean not null default false,
+  lat double precision,
+  lng double precision
+);
+
+create table if not exists public.aux_equipment (
+  id uuid primary key default gen_random_uuid(),
+  name text not null
+);
+
+create table if not exists public.work_types (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  color text not null default '#58CC02',
+  needs_aux boolean not null default false,
+  aux_ids jsonb not null default '[]'::jsonb,
+  sort int not null default 0
+);
+
+create table if not exists public.equipment_types (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  abbr text not null,
+  color text not null default '#1CB0F6',
+  price_key text not null,
+  sort int not null default 0
+);
+
+-- виды размеров для доп. работ (длина ft, площадь sq ft, вес lb, штуки)
+create table if not exists public.size_types (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  unit text not null default '',
+  sort int not null default 0
+);
+
+-- доп. виды работ для шаблонов заметки (kind: work | purchase)
+create table if not exists public.extra_works (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  kind text not null default 'work' check (kind in ('work','purchase')),
+  needs_size boolean not null default false,
+  size_type_id uuid references public.size_types(id) on delete set null,
+  price numeric not null default 0,
+  sort int not null default 0
+);
+
+-- виды товара для «покупки товара»
+create table if not exists public.product_types (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  default_price numeric not null default 0,
+  sort int not null default 0
+);
+
+create table if not exists public.price_list (
+  id uuid primary key default gen_random_uuid(),
+  key text not null unique,
+  name text not null,
+  unit_label text default '',
+  price numeric not null default 0,
+  sort int not null default 0
+);
+
+create table if not exists public.counterparty_prices (
+  id uuid primary key default gen_random_uuid(),
+  counterparty_id uuid not null references public.counterparties(id) on delete cascade,
+  key text not null,
+  custom boolean not null default false,
+  price numeric not null default 0,
+  unique (counterparty_id, key)
+);
+
+create table if not exists public.org_settings (
+  id text primary key default 'org',
+  invoice_title text default 'INVOICE #CC',
+  header_city text default 'ATLANTA',
+  assoc_line text default 'atlanta apartment association',
+  addr1 text default 'PO BOX 920482',
+  addr2 text default 'NORCROSS,',
+  addr3 text default 'GA 30010',
+  company_name text default 'APC, LLC',
+  company_short text default 'APC',
+  allow_shared_jobs boolean not null default true  -- v1.07.10: выключатель общего доступа (галочка админа)
+);
+
+-- ---------------------------------------------------------------------
+-- ЗАЯВКИ НА ИЗМЕНЕНИЕ КОДОВ ДОСТУПА (решение принимает админ)
+-- ---------------------------------------------------------------------
+create table if not exists public.code_requests (
+  id uuid primary key default gen_random_uuid(),
+  complex_id uuid not null references public.complexes(id) on delete cascade,
+  access_code text,          -- null = это поле не меняем
+  callbox_code text,
+  callbox_gate boolean,
+  requested_by uuid not null references public.profiles(id) on delete cascade,
+  requested_at timestamptz not null default now(),
+  status text not null default 'pending' check (status in ('pending','approved','rejected')),
+  decided_by uuid references public.profiles(id) on delete set null,
+  decided_at timestamptz
+);
+create index if not exists code_requests_status_idx on public.code_requests(status);
+
+-- ---------------------------------------------------------------------
+-- ИСТОРИЯ ИЗМЕНЕНИЙ КОДОВ (видна всем, пишет админ / апрув заявки)
+-- ---------------------------------------------------------------------
+create table if not exists public.complex_code_history (
+  id uuid primary key default gen_random_uuid(),
+  complex_id uuid not null references public.complexes(id) on delete cascade,
+  field text not null check (field in ('access','callbox')),
+  old_value text default '',
+  new_value text default '',
+  gate boolean,
+  changed_by uuid references public.profiles(id) on delete set null,
+  changed_at timestamptz not null default now(),
+  source text not null default 'direct' check (source in ('direct','request'))
+);
+create index if not exists cch_cx_idx on public.complex_code_history(complex_id, changed_at desc);
+
+-- ---------------------------------------------------------------------
+-- ВИДИМОСТЬ ДЛЯ МЕНЕДЖЕРОВ: запись = сотрудник СКРЫТ от менеджера
+-- ---------------------------------------------------------------------
+create table if not exists public.hidden_staff (
+  id uuid primary key default gen_random_uuid(),
+  manager_id uuid not null references public.profiles(id) on delete cascade,
+  tech_id uuid not null references public.profiles(id) on delete cascade,
+  unique (manager_id, tech_id)
+);
+
+-- ---------------------------------------------------------------------
+-- РАБОТЫ (1 работа = 1 юнит в апарт-комплексе = 1 PDF-инвойс)
+-- ---------------------------------------------------------------------
+create table if not exists public.jobs (
+  id uuid primary key default gen_random_uuid(),
+  date date not null default current_date,
+  counterparty_id uuid references public.counterparties(id) on delete set null,
+  complex_id uuid references public.complexes(id) on delete set null,
+  unit_number text default '',
+  work_type_id uuid references public.work_types(id) on delete set null,
+  technician_id uuid not null references public.profiles(id) on delete cascade,
+  technician_name text default '',
+  helper_ids jsonb not null default '[]'::jsonb,
+  shared_with_helpers boolean not null default false,  -- v1.07.10: общий доступ к документу для коворкеров
+  priority boolean not null default false,
+  sort_order int not null default 0,
+  status text not null default 'draft' check (status in ('draft','done','approved')),
+  note text not null default '',
+  form_data jsonb not null default '{}'::jsonb,
+  total numeric not null default 0,
+  approved_total numeric,
+  approved_by uuid references public.profiles(id) on delete set null,
+  approved_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists jobs_date_idx on public.jobs(date);
+create index if not exists jobs_tech_idx on public.jobs(technician_id);
+
+-- сброс апрува, если НЕ-админ изменил итоговую стоимость
+create or replace function public.jobs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  new.updated_at := now();
+  if old.status = 'approved'
+     and coalesce(public.my_role(),'tech') <> 'admin'
+     and new.total is distinct from old.total then
+    new.status := 'done';
+    new.approved_total := null;
+    new.approved_by := null;
+    new.approved_at := null;
+  end if;
+  return new;
+end $$;
+drop trigger if exists jobs_guard_tg on public.jobs;
+create trigger jobs_guard_tg before update on public.jobs
+  for each row execute function public.jobs_guard();
+
+-- ---------------------------------------------------------------------
+-- РАЗМЕЩЕНИЯ ОБОРУДОВАНИЯ (пикапы: due = дата работы + дни, по умолч. 3 = 72ч)
+-- ---------------------------------------------------------------------
+create table if not exists public.placements (
+  id uuid primary key default gen_random_uuid(),
+  job_id uuid not null references public.jobs(id) on delete cascade,
+  equipment_type_id uuid not null references public.equipment_types(id) on delete cascade,
+  qty int not null default 1,
+  days int not null default 3,
+  placed_date date not null default current_date,
+  due_date date not null,
+  picked_up boolean not null default false,
+  picked_up_at timestamptz,
+  picked_up_by uuid references public.profiles(id) on delete set null,
+  technician_id uuid not null references public.profiles(id) on delete cascade,
+  complex_id uuid references public.complexes(id) on delete set null,
+  counterparty_id uuid references public.counterparties(id) on delete set null,
+  unit_number text default '',
+  ext_of uuid references public.placements(id) on delete set null,  -- v1.07.12: продление аренды («второй пикап»)
+  superseded boolean not null default false,                        -- v1.07.12: исходный пикап закрыт продлением
+  superseded_at timestamptz
+);
+create index if not exists placements_due_idx on public.placements(due_date, picked_up);
+create index if not exists placements_ext_idx on public.placements(ext_of);
+create index if not exists placements_tech_idx on public.placements(technician_id);
+
+-- =====================================================================
+-- МИГРАЦИЯ (если схема уже создавалась раньше) — ВЫПОЛНЯЕТСЯ ДО СИДОВ,
+-- чтобы insert-ы ниже видели новые колонки. Безопасно повторять.
+-- =====================================================================
+-- Смена организации по умолчанию AGR → APC (только если стоят старые значения)
+update public.org_settings
+   set company_name = 'APC, LLC', company_short = 'APC'
+ where id = 'org' and company_short in ('AGR, LLC', 'AGR');
+alter table public.complexes add column if not exists lat double precision;
+alter table public.complexes add column if not exists lng double precision;
+alter table public.jobs      add column if not exists note text not null default '';
+alter table public.jobs      add column if not exists helper_ids jsonb not null default '[]'::jsonb;
+alter table public.jobs      add column if not exists priority boolean not null default false;
+alter table public.jobs      add column if not exists sort_order int not null default 0;
+alter table public.complexes add column if not exists callbox_code text default '';
+alter table public.complexes add column if not exists callbox_gate boolean not null default false;
+alter table public.extra_works add column if not exists price numeric not null default 0;
+-- v1.07.10: общий доступ к документам для коворкеров
+alter table public.jobs         add column if not exists shared_with_helpers boolean not null default false;
+alter table public.org_settings add column if not exists allow_shared_jobs   boolean not null default true;
+-- v1.07.12: продление аренды оборудования
+alter table public.placements add column if not exists ext_of uuid references public.placements(id) on delete set null;
+alter table public.placements add column if not exists superseded boolean not null default false;
+alter table public.placements add column if not exists superseded_at timestamptz;
+
+-- ---------------------------------------------------------------------
+-- v1.07.10: ОБЩИЙ ДОСТУП К ДОКУМЕНТАМ ДЛЯ КОВОРКЕРОВ
+-- Автор ставит в работе галочку «Общий доступ к документу для коворкера» —
+-- сотрудники из helper_ids видят и редактируют эту работу. Админ может
+-- выключить функцию целиком (org_settings.allow_shared_jobs).
+-- ---------------------------------------------------------------------
+create or replace function public.shared_jobs_enabled()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select allow_shared_jobs from public.org_settings where id = 'org'), true)
+$$;
+
+-- Текущий пользователь — коворкер работы с включённым общим доступом?
+-- security definer: читает jobs в обход RLS, чтобы политики placements
+-- не зависели от политик jobs и не было рекурсии.
+create or replace function public.is_shared_job_helper(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.shared_jobs_enabled()
+     and exists (
+       select 1 from public.jobs j
+       where j.id = p_job
+         and j.shared_with_helpers
+         and j.helper_ids ? auth.uid()::text
+     )
+$$;
+
+
+-- ---------------------------------------------------------------------
+-- RLS
+-- ---------------------------------------------------------------------
+alter table public.profiles            enable row level security;
+alter table public.counterparties      enable row level security;
+alter table public.complexes           enable row level security;
+alter table public.aux_equipment       enable row level security;
+alter table public.work_types          enable row level security;
+alter table public.equipment_types     enable row level security;
+alter table public.price_list          enable row level security;
+alter table public.counterparty_prices enable row level security;
+alter table public.org_settings        enable row level security;
+alter table public.code_requests       enable row level security;
+alter table public.complex_code_history enable row level security;
+alter table public.size_types          enable row level security;
+alter table public.extra_works         enable row level security;
+alter table public.product_types       enable row level security;
+alter table public.hidden_staff        enable row level security;
+alter table public.jobs                enable row level security;
+alter table public.placements          enable row level security;
+
+-- профили: читать всем вошедшим, править себя (админ — всех)
+drop policy if exists profiles_sel on public.profiles;
+create policy profiles_sel on public.profiles for select to authenticated using (true);
+drop policy if exists profiles_ins on public.profiles;
+create policy profiles_ins on public.profiles for insert to authenticated with check (id = auth.uid());
+drop policy if exists profiles_upd on public.profiles;
+create policy profiles_upd on public.profiles for update to authenticated
+  using (id = auth.uid() or public.my_role() = 'admin')
+  with check (id = auth.uid() or public.my_role() = 'admin');
+
+-- справочники: читают все, пишет админ
+do $$
+declare tb text;
+begin
+  foreach tb in array array['counterparties','aux_equipment','work_types','equipment_types','price_list','counterparty_prices','org_settings','size_types','extra_works','product_types']
+  loop
+    execute format('drop policy if exists %I_sel on public.%I', tb, tb);
+    execute format('create policy %I_sel on public.%I for select to authenticated using (true)', tb, tb);
+    execute format('drop policy if exists %I_wr on public.%I', tb, tb);
+    execute format('create policy %I_wr on public.%I for all to authenticated using (public.my_role() = ''admin'') with check (public.my_role() = ''admin'')', tb, tb);
+  end loop;
+end $$;
+
+-- заявки на коды: создаёт любой (от своего имени), видит автор и админ, решает админ
+drop policy if exists cr_sel on public.code_requests;
+create policy cr_sel on public.code_requests for select to authenticated
+  using (requested_by = auth.uid() or public.my_role() = 'admin');
+drop policy if exists cr_ins on public.code_requests;
+create policy cr_ins on public.code_requests for insert to authenticated
+  with check (requested_by = auth.uid());
+drop policy if exists cr_upd on public.code_requests;
+create policy cr_upd on public.code_requests for update to authenticated
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
+drop policy if exists cr_del on public.code_requests;
+create policy cr_del on public.code_requests for delete to authenticated
+  using (public.my_role() = 'admin');
+
+-- история кодов: читают все, пишет админ
+drop policy if exists cch_sel on public.complex_code_history;
+create policy cch_sel on public.complex_code_history for select to authenticated using (true);
+drop policy if exists cch_wr on public.complex_code_history;
+create policy cch_wr on public.complex_code_history for all to authenticated
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
+
+-- скрытые сотрудники: менеджер читает свои строки, админ — всё; пишет только админ
+drop policy if exists hs_sel on public.hidden_staff;
+create policy hs_sel on public.hidden_staff for select to authenticated
+  using (manager_id = auth.uid() or public.my_role() = 'admin');
+drop policy if exists hs_wr on public.hidden_staff;
+create policy hs_wr on public.hidden_staff for all to authenticated
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
+
+-- комплексы: читают все, пишут админ и менеджер
+drop policy if exists complexes_sel on public.complexes;
+create policy complexes_sel on public.complexes for select to authenticated using (true);
+drop policy if exists complexes_wr on public.complexes;
+create policy complexes_wr on public.complexes for all to authenticated
+  using (public.my_role() in ('admin','manager'))
+  with check (public.my_role() in ('admin','manager'));
+
+-- работы: сотрудник видит/правит свои и общие (где он коворкер и включён
+-- общий доступ, v1.07.10); менеджер видит все; админ — всё
+drop policy if exists jobs_sel on public.jobs;
+create policy jobs_sel on public.jobs for select to authenticated
+  using (
+    technician_id = auth.uid()
+    or public.my_role() in ('admin','manager')
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  );
+drop policy if exists jobs_ins on public.jobs;
+create policy jobs_ins on public.jobs for insert to authenticated
+  with check (technician_id = auth.uid() or public.my_role() = 'admin');
+drop policy if exists jobs_upd on public.jobs;
+create policy jobs_upd on public.jobs for update to authenticated
+  using (
+    technician_id = auth.uid()
+    or public.my_role() = 'admin'
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  )
+  with check (
+    technician_id = auth.uid()
+    or public.my_role() = 'admin'
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  );
+drop policy if exists jobs_del on public.jobs;
+create policy jobs_del on public.jobs for delete to authenticated
+  using (technician_id = auth.uid() or public.my_role() = 'admin');
+
+-- размещения/пикапы: сотрудник — свои и по общим работам (v1.07.10);
+-- менеджер и админ — все
+drop policy if exists pl_sel on public.placements;
+create policy pl_sel on public.placements for select to authenticated
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+         or public.is_shared_job_helper(job_id));
+drop policy if exists pl_ins on public.placements;
+create policy pl_ins on public.placements for insert to authenticated
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+              or public.is_shared_job_helper(job_id));
+drop policy if exists pl_upd on public.placements;
+create policy pl_upd on public.placements for update to authenticated
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+         or public.is_shared_job_helper(job_id))
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+              or public.is_shared_job_helper(job_id));
+drop policy if exists pl_del on public.placements;
+create policy pl_del on public.placements for delete to authenticated
+  using (technician_id = auth.uid() or public.my_role() = 'admin'
+         or public.is_shared_job_helper(job_id));
+
+-- =====================================================================
+-- СИД-ДАННЫЕ
+-- =====================================================================
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- доп. оборудование
+insert into public.aux_equipment (id, name) values
+ ('a0000000-0000-4000-8000-000000000001','Портативный моющий пылесос / Portable carpet extractor'),
+ ('a0000000-0000-4000-8000-000000000002','Эйрдак-машина / Air duct machine'),
+ ('a0000000-0000-4000-8000-000000000003','Портативная откачка воды / Portable water extraction'),
+ ('a0000000-0000-4000-8000-000000000004','Озон-машина / Ozone machine')
+on conflict (id) do nothing;
+
+-- виды работ (цвета по ТЗ)
+insert into public.work_types (id, name, color, needs_aux, aux_ids, sort) values
+ ('b0000000-0000-4000-8000-000000000001','VETVAG (water extraction)','#58CC02',true,'["a0000000-0000-4000-8000-000000000003"]',1),
+ ('b0000000-0000-4000-8000-000000000002','DAMAGE WATER','#2EC4B6',true,'["a0000000-0000-4000-8000-000000000003"]',2),
+ ('b0000000-0000-4000-8000-000000000003','STEAM CLEAN','#FF9600',true,'["a0000000-0000-4000-8000-000000000001"]',3),
+ ('b0000000-0000-4000-8000-000000000004','AIR DUCT','#FF4B4B',true,'["a0000000-0000-4000-8000-000000000002"]',4),
+ ('b0000000-0000-4000-8000-000000000005','DEMOLITION (walls/cabinets)','#1CB0F6',false,'[]',5),
+ ('b0000000-0000-4000-8000-000000000006','PROPOSAL (approved earlier)','#CE82FF',false,'[]',6)
+on conflict (id) do nothing;
+
+-- типы оборудования для аренды/пикапов (цвета по ТЗ)
+insert into public.equipment_types (id, name, abbr, color, price_key, sort) values
+ ('c0000000-0000-4000-8000-000000000001','Air Scrubber','SCR','#FF4B4B','eq_scr',1),
+ ('c0000000-0000-4000-8000-000000000002','Blower','BLW','#58CC02','eq_blw',2),
+ ('c0000000-0000-4000-8000-000000000003','Dehumidifier','DHM','#1CB0F6','eq_dhm',3),
+ ('c0000000-0000-4000-8000-000000000004','Ozone Machine','OZN','#111827','eq_ozn',4)
+on conflict (id) do nothing;
+
+-- виды размеров
+insert into public.size_types (id, name, unit, sort) values
+ ('c1000000-0000-4000-8000-000000000001','Длина / Length','ft',1),
+ ('c1000000-0000-4000-8000-000000000002','Площадь / Area','sq ft',2),
+ ('c1000000-0000-4000-8000-000000000003','Вес / Weight','lb',3),
+ ('c1000000-0000-4000-8000-000000000004','Количество / Quantity','pcs',4)
+on conflict (id) do nothing;
+
+-- доп. виды работ (шаблоны заметки)
+insert into public.extra_works (id, name, kind, needs_size, size_type_id, price, sort) values
+ ('c2000000-0000-4000-8000-000000000001','Вырезка стен / Wall cutout','work',true,'c1000000-0000-4000-8000-000000000002',3,1),
+ ('c2000000-0000-4000-8000-000000000002','Вырезка потолка / Ceiling cutout','work',true,'c1000000-0000-4000-8000-000000000002',4,2),
+ ('c2000000-0000-4000-8000-000000000003','Покупка товара / Purchase','purchase',false,null,0,3)
+on conflict (id) do nothing;
+
+-- виды товара
+insert into public.product_types (id, name, default_price, sort) values
+ ('c3000000-0000-4000-8000-000000000001','Решётка / Vent grille',25,1),
+ ('c3000000-0000-4000-8000-000000000002','Химия для ковра / Carpet chemicals',45,2)
+on conflict (id) do nothing;
+
+-- стандартный прейскурант (вкладка PRICE)
+insert into public.price_list (key, name, unit_label, price, sort) values
+ ('steam_deep_scrub','Steam Clean — Deep Scrub','per room',35,0),
+ ('steam_rotovac','Steam Clean — Rotovac','per room',45,1),
+ ('rem_red_stain','Removal — Red Stain','flat',25,2),
+ ('rem_wax','Removal — Wax','flat',25,3),
+ ('rem_rust','Removal — Rust','flat',25,4),
+ ('rem_ink','Removal — Ink','flat',25,5),
+ ('rem_gum','Removal — Gum','flat',15,6),
+ ('rem_paint','Removal — Paint','flat',25,7),
+ ('rep_threshold','Repair — Threshold','flat',20,8),
+ ('rep_stretch','Repair — Stretch','flat',45,9),
+ ('rep_seam','Repair — Seam','flat',35,10),
+ ('rep_patch','Repair — Patch','flat',35,11),
+ ('dye_spot','Dye — Spot Dye','flat',45,12),
+ ('dye_full','Dye — Full Dye','flat',150,13),
+ ('oth_trash_out','Other — Trash Out','flat',50,14),
+ ('oth_pad_removal_room','Other — Pad Removal (room)','per room',30,15),
+ ('oth_pad_removal_all','Other — Pad Removal (all unit)','flat',120,16),
+ ('fog_pet','Fog/GOC — Pet','flat',45,17),
+ ('fog_smoke','Fog/GOC — Smoke','flat',45,18),
+ ('fog_deodorizer','Fog/GOC — Deodorizer','flat',25,19),
+ ('tr_sealant','Treatment — Sealant','flat',45,20),
+ ('tr_mold','Treatment — Mold & Mildew','flat',45,21),
+ ('tr_degreaser','Treatment — Degreaser','flat',45,22),
+ ('wv_area','Wet Vac / Flood — per area','per area',40,23),
+ ('wv_all_unit','Wet Vac / Flood — All Unit','flat',180,24),
+ ('wv_sewer_extra','Wet Vac — Sewer surcharge','flat',60,25),
+ ('ad_per_bedroom','Air Duct Cleaning — per bedroom','per bedroom',50,26),
+ ('ad_dryer_vent','Dryer Vent Cleaning','flat',80,27),
+ ('pad_q14','Pad — 1/4 roll','flat',95,28),
+ ('pad_q12','Pad — 1/2 roll','flat',180,29),
+ ('pad_q34','Pad — 3/4 roll','flat',260,30),
+ ('pad_roll','Pad — 1 Roll','flat',340,31),
+ ('pad_install_room','Pad Installation (room)','per room',30,32),
+ ('pad_install_all','Pad Installation (all unit)','flat',120,33),
+ ('eq_blw','Equipment — Blower','per unit/day',30,34),
+ ('eq_dhm','Equipment — Dehumidifier','per unit/day',60,35),
+ ('eq_scr','Equipment — Air Scrubber','per unit/day',75,36),
+ ('eq_ozn','Equipment — Ozone Machine','per unit/day',85,37)
+on conflict (key) do nothing;
+
+-- стартовые контрагенты и комплексы (координаты для карты; правьте под себя)
+insert into public.counterparties (id, name, abbr) values
+ ('d0000000-0000-4000-8000-000000000001','Magnolia Group','MG'),
+ ('d0000000-0000-4000-8000-000000000002','Cascade Living','CL'),
+ ('d0000000-0000-4000-8000-000000000003','Peachtree RE','PT')
+on conflict (id) do nothing;
+
+insert into public.complexes (id, counterparty_id, name, abbr, address, access_code, lat, lng) values
+ ('e1000000-0000-4000-8000-000000000001','d0000000-0000-4000-8000-000000000001','Magnolia Vinings','MGV','3200 Cumberland Blvd SE, Atlanta, GA','#2461',33.8823,-84.4620),
+ ('e1000000-0000-4000-8000-000000000002','d0000000-0000-4000-8000-000000000001','Magnolia Creek','MGC','1180 Franklin Rd, Marietta, GA','#7730',33.9260,-84.5170),
+ ('e1000000-0000-4000-8000-000000000003','d0000000-0000-4000-8000-000000000002','Cascade Falls','CSF','2890 Cascade Rd SW, Atlanta, GA','#1150',33.7223,-84.4790),
+ ('e1000000-0000-4000-8000-000000000004','d0000000-0000-4000-8000-000000000003','Peachtree Corners','PTC','5560 Peachtree Pkwy, Norcross, GA','#9042',33.9700,-84.2210)
+on conflict (id) do nothing;
+
+-- индивидуальные цены для стартовых контрагентов = копия стандартных
+insert into public.counterparty_prices (counterparty_id, key, custom, price)
+select c.id, p.key, false, p.price
+from public.counterparties c cross join public.price_list p
+on conflict (counterparty_id, key) do nothing;
+
+-- =====================================================================
+-- ПОСЛЕ СОЗДАНИЯ ПОЛЬЗОВАТЕЛЕЙ назначьте роли (пример):
+--   update public.profiles set role = 'admin'   where login = 'admin@example.com';
+--   update public.profiles set role = 'manager' where login = 'manager@example.com';
+-- =====================================================================
+
+-- =====================================================================
+-- v1.07.18: ЖУРНАЛ ДЕЙСТВИЙ СОТРУДНИКОВ (audit_log)
+-- (идентично supabase/update-to-1_07_18.sql)
+-- =====================================================================
+
+-- Таблица журнала: кто, когда, что сделал и с чем.
+create table if not exists public.audit_log (
+  id         uuid primary key default gen_random_uuid(),
+  at         timestamptz not null default now(),
+  actor      uuid references public.profiles(id) on delete set null,
+  actor_name text,
+  action     text not null,          -- job_create / pickup_done / user_block / ...
+  entity     text,                   -- job | placement | profile
+  entity_id  text,
+  details    jsonb not null default '{}'::jsonb
+);
+create index if not exists audit_log_at_idx    on public.audit_log (at desc);
+create index if not exists audit_log_actor_idx on public.audit_log (actor);
+create index if not exists audit_log_action_idx on public.audit_log (action);
+
+alter table public.audit_log enable row level security;
+
+-- Писать может каждый авторизованный, но только ОТ СВОЕГО имени.
+drop policy if exists audit_ins on public.audit_log;
+create policy audit_ins on public.audit_log
+  for insert to authenticated
+  with check (actor = auth.uid());
+
+-- Читать журнал может только админ.
+drop policy if exists audit_sel on public.audit_log;
+create policy audit_sel on public.audit_log
+  for select to authenticated
+  using (public.my_role() = 'admin');
+
+-- Политик update/delete нет намеренно: журнал нельзя править и чистить
+-- через API даже админом — только владельцу проекта в SQL-редакторе.
+
+-- Регистрация нового сотрудника пишется в журнал на сервере: в момент
+-- регистрации клиент ещё не авторизован и сам записать её не может.
+create or replace function public.log_new_profile()
+returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (new.id, new.display_name, 'user_register', 'profile', new.id::text,
+          jsonb_build_object('login', new.login, 'role', new.role));
+  return new;
+end $$;
+
+drop trigger if exists trg_log_new_profile on public.profiles;
+create trigger trg_log_new_profile
+  after insert on public.profiles
+  for each row execute function public.log_new_profile();
+
+-- История действий хранится ПОЛНОСТЬЮ — без автоматической обрезки.
+-- Если этот апдейт запускался в ранней редакции (там был триггер-ограничитель
+-- на последние 5000 записей), две строки ниже снимают его; на чистой базе
+-- они ничего не делают. Удалять записи журнала через API по-прежнему
+-- нельзя никому — только владельцу проекта вручную в SQL-редакторе.
+drop trigger if exists trg_trim_audit on public.audit_log;
+drop function if exists public.trim_audit_log();
+
+-- ############################ FILE: update-to-1_07_07.sql ############################
+
+-- =====================================================================
+-- TechLog: ОБНОВЛЕНИЕ существующей базы до v1.07.07
+-- Выполните этот файл целиком в Supabase → SQL Editor.
+-- Скрипт идемпотентен: повторный запуск безопасен и ничего не затирает.
+-- (Новая база с нуля: используйте полный schema.sql — этот файл не нужен.)
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- v1.07.06: БЛОКИРОВКА СОТРУДНИКОВ И СМЕНА ПАРОЛЯ АДМИНОМ
+-- (для существующей базы достаточно выполнить только этот блок)
+-- ---------------------------------------------------------------------
+alter table public.profiles add column if not exists blocked boolean not null default false;
+
+-- Админ блокирует/разблокирует сотрудника:
+-- profiles.blocked (для интерфейса) + banned_until в auth.users (GoTrue не пустит
+-- на уровне сервера) + завершение всех активных сессий заблокированного.
+create or replace function public.admin_set_blocked(target uuid, p_blocked boolean)
+returns void language plpgsql security definer set search_path = public, auth as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if target = auth.uid() then raise exception 'SELF_BLOCK'; end if;
+  update public.profiles set blocked = p_blocked where id = target;
+  update auth.users
+     set banned_until = case when p_blocked then 'infinity'::timestamptz else null end
+   where id = target;
+  if p_blocked then
+    delete from auth.refresh_tokens where user_id = target::text;
+    delete from auth.sessions where user_id = target;
+  end if;
+end $$;
+revoke all on function public.admin_set_blocked(uuid, boolean) from public, anon;
+grant execute on function public.admin_set_blocked(uuid, boolean) to authenticated;
+
+-- Админ задаёт сотруднику новый пароль (если тот его забыл).
+-- Хэш bcrypt — тот же формат, что использует Supabase Auth (GoTrue).
+-- Старые сессии сотрудника завершаются, вход только с новым паролем.
+create extension if not exists pgcrypto with schema extensions;
+create or replace function public.admin_set_password(target uuid, new_password text)
+returns void language plpgsql security definer set search_path = public, auth, extensions as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if length(coalesce(new_password,'')) < 6 then raise exception 'WEAK_PASSWORD'; end if;
+  update auth.users
+     set encrypted_password = extensions.crypt(new_password, extensions.gen_salt('bf')),
+         updated_at = now()
+   where id = target;
+  delete from auth.refresh_tokens where user_id = target::text;
+  delete from auth.sessions where user_id = target;
+end $$;
+revoke all on function public.admin_set_password(uuid, text) from public, anon;
+grant execute on function public.admin_set_password(uuid, text) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- v1.07.07: СОЗДАНИЕ СОТРУДНИКОВ АДМИНОМ + СМЕНА КОДА ПРИГЛАШЕНИЯ
+-- (для существующей базы достаточно выполнить только этот блок)
+-- ---------------------------------------------------------------------
+
+-- Пересоздаём триггер регистрации: если пользователь создаётся функцией
+-- admin_create_user (транзакционный флаг techlog.admin_create — клиент его
+-- подделать не может, в отличие от user_metadata), профиль вставляет она сама.
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_login text;
+begin
+  if current_setting('techlog.admin_create', true) = '1' then
+    return new;                      -- создан админом из приложения
+  end if;
+  if not public.is_valid_invite(new.raw_user_meta_data->>'invite') then
+    raise exception 'BAD_INVITE';
+  end if;
+  v_login := lower(coalesce(new.raw_user_meta_data->>'login', split_part(new.email, '@', 1)));
+  if v_login !~ '^[a-z0-9_.-]{3,32}$' then
+    raise exception 'BAD_LOGIN';
+  end if;
+  if exists (select 1 from public.profiles where lower(login) = v_login) then
+    raise exception 'LOGIN_TAKEN';
+  end if;
+  begin
+    insert into public.profiles (id, login, display_name, role)
+    values (new.id, v_login,
+            coalesce(new.raw_user_meta_data->>'display_name', v_login), 'tech');
+  exception
+    when unique_violation then raise exception 'LOGIN_TAKEN';
+    when others then raise exception 'PROFILE_CREATE_FAILED: %', sqlerrm;
+  end;
+  return new;
+end $$;
+
+-- Админ создаёт сотрудника: логин, пароль, имя, роль.
+-- p_email клиент строит тем же loginToEmail(), что и при обычном входе,
+-- поэтому вход у нового сотрудника гарантированно совпадёт с приложением.
+create or replace function public.admin_create_user(
+  p_login text, p_email text, p_password text, p_display_name text, p_role text default 'tech')
+returns uuid language plpgsql security definer set search_path = public, auth, extensions as $$
+declare
+  new_id uuid := gen_random_uuid();
+  v_login text := lower(trim(coalesce(p_login,'')));
+  v_email text := lower(trim(coalesce(p_email,'')));
+  v_name  text := coalesce(nullif(trim(p_display_name),''), v_login);
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if v_login !~ '^[a-z0-9_.-]{3,32}$' then raise exception 'BAD_LOGIN'; end if;
+  if v_email !~ '^[a-z0-9_.-]+@[a-z0-9.-]+$' or v_email not like v_login || '@%' then
+    raise exception 'BAD_EMAIL';
+  end if;
+  if length(coalesce(p_password,'')) < 6 then raise exception 'WEAK_PASSWORD'; end if;
+  if p_role not in ('admin','manager','tech') then raise exception 'BAD_ROLE'; end if;
+  if exists (select 1 from public.profiles where lower(login) = v_login)
+     or exists (select 1 from auth.users where lower(email) = v_email) then
+    raise exception 'LOGIN_TAKEN';
+  end if;
+
+  perform set_config('techlog.admin_create', '1', true);   -- байпас триггера в этой транзакции
+
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+    confirmation_token, recovery_token, email_change, email_change_token_new,
+    email_change_token_current, phone_change, phone_change_token,
+    reauthentication_token, is_super_admin, is_sso_user)
+  values (
+    new_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    v_email, extensions.crypt(p_password, extensions.gen_salt('bf')), now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    jsonb_build_object('login', v_login, 'display_name', v_name),
+    now(), now(),
+    '', '', '', '', '', '', '', '', false, false);
+
+  insert into auth.identities (
+    id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+  values (
+    gen_random_uuid(), new_id::text, new_id,
+    jsonb_build_object('sub', new_id::text, 'email', v_email,
+                       'email_verified', true, 'phone_verified', false),
+    'email', now(), now(), now());
+
+  insert into public.profiles (id, login, display_name, role, blocked)
+  values (new_id, v_login, v_name, p_role, false);
+
+  return new_id;
+end $$;
+revoke all on function public.admin_create_user(text, text, text, text, text) from public, anon;
+grant execute on function public.admin_create_user(text, text, text, text, text) to authenticated;
+
+-- Админ задаёт новый код приглашения (общий для всех регистраций).
+-- Хранится только sha256-хэш — показать текущий код нельзя, только заменить.
+create or replace function public.admin_set_invite(new_code text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v text := trim(coalesce(new_code,''));
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if length(v) < 2 or length(v) > 64 then raise exception 'BAD_CODE'; end if;
+  insert into public.app_secrets (key, value)
+  values ('invite', encode(sha256(convert_to(v, 'UTF8')), 'hex'))
+  on conflict (key) do update set value = excluded.value;
+end $$;
+revoke all on function public.admin_set_invite(text) from public, anon;
+grant execute on function public.admin_set_invite(text) to authenticated;
+
+-- ############################ FILE: update-to-1_07_10.sql ############################
+
+-- =====================================================================
+-- TechLog: обновление БД до v1.07.10
+-- ОБЩИЙ ДОСТУП К ДОКУМЕНТАМ ДЛЯ КОВОРКЕРОВ
+--
+-- Выполните целиком в Supabase → SQL Editor → New query → Run.
+-- Скрипт идемпотентен: повторный запуск безопасен и ничего не затирает.
+-- Если вы обновляетесь с версии старше 1.07.07 — сначала выполните
+-- supabase/update-to-1_07_07.sql (или полный supabase/schema.sql).
+-- =====================================================================
+
+-- 1) Новые колонки --------------------------------------------------------
+-- Галочка «Общий доступ к документу для коворкера» в самой работе:
+alter table public.jobs
+  add column if not exists shared_with_helpers boolean not null default false;
+-- Глобальный выключатель функции (галочка админа в «Настройках»):
+alter table public.org_settings
+  add column if not exists allow_shared_jobs boolean not null default true;
+
+-- 2) Общий доступ включён на уровне организации? --------------------------
+create or replace function public.shared_jobs_enabled()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select allow_shared_jobs from public.org_settings where id = 'org'), true)
+$$;
+
+-- 3) Текущий пользователь — коворкер работы с включённым общим доступом? --
+--    security definer: читает jobs в обход RLS, чтобы политики placements
+--    не зависели от политик jobs и не было рекурсии.
+create or replace function public.is_shared_job_helper(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.shared_jobs_enabled()
+     and exists (
+       select 1 from public.jobs j
+       where j.id = p_job
+         and j.shared_with_helpers
+         and j.helper_ids ? auth.uid()::text
+     )
+$$;
+
+-- 4) RLS работ: коворкер с общим доступом видит и правит работу -----------
+--    (создание и удаление остаются за автором и админом, как раньше)
+drop policy if exists jobs_sel on public.jobs;
+create policy jobs_sel on public.jobs for select to authenticated
+  using (
+    technician_id = auth.uid()
+    or public.my_role() in ('admin','manager')
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  );
+
+drop policy if exists jobs_upd on public.jobs;
+create policy jobs_upd on public.jobs for update to authenticated
+  using (
+    technician_id = auth.uid()
+    or public.my_role() = 'admin'
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  )
+  with check (
+    technician_id = auth.uid()
+    or public.my_role() = 'admin'
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  );
+
+-- 5) RLS пикапов: коворкер видит и обслуживает размещения по общей работе -
+--    (нужно, чтобы правка секции Equipment Rental коворкером корректно
+--    создавала/обновляла/удаляла пикапы, а кнопка «Забрать» работала)
+drop policy if exists pl_sel on public.placements;
+create policy pl_sel on public.placements for select to authenticated
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+         or public.is_shared_job_helper(job_id));
+
+drop policy if exists pl_ins on public.placements;
+create policy pl_ins on public.placements for insert to authenticated
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+              or public.is_shared_job_helper(job_id));
+
+drop policy if exists pl_upd on public.placements;
+create policy pl_upd on public.placements for update to authenticated
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+         or public.is_shared_job_helper(job_id))
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+              or public.is_shared_job_helper(job_id));
+
+drop policy if exists pl_del on public.placements;
+create policy pl_del on public.placements for delete to authenticated
+  using (technician_id = auth.uid() or public.my_role() = 'admin'
+         or public.is_shared_job_helper(job_id));
+
+-- ############################ FILE: update-to-1_07_12.sql ############################
+
+-- =====================================================================
+-- TechLog: обновление БД до v1.07.12
+-- ПРОДЛЕНИЕ АРЕНДЫ ОБОРУДОВАНИЯ И ИСТОРИЯ РАБОТЫ
+--
+-- Выполните целиком в Supabase → SQL Editor → New query → Run.
+-- Скрипт идемпотентен: повторный запуск безопасен и ничего не затирает.
+-- Если вы обновляетесь с версии старше 1.07.10 — сначала выполните
+-- supabase/update-to-1_07_10.sql (или полный supabase/schema.sql).
+-- =====================================================================
+
+-- Продление = «второй пикап»: новое размещение со ссылкой на исходное (ext_of).
+-- Исходное при полном продлении помечается superseded (закрыто продлением)
+-- и остаётся в истории работы; при частичном — у него уменьшается qty.
+alter table public.placements
+  add column if not exists ext_of uuid references public.placements(id) on delete set null;
+alter table public.placements
+  add column if not exists superseded boolean not null default false;
+alter table public.placements
+  add column if not exists superseded_at timestamptz;
+
+create index if not exists placements_ext_idx on public.placements(ext_of);
+
+-- RLS-политики менять не нужно: политики v1.07.10 (владелец / менеджер / админ /
+-- коворкер с общим доступом через is_shared_job_helper) полностью покрывают
+-- строки-продления, так как это обычные записи placements той же работы.
+
+-- ############################ FILE: update-to-1_07_18.sql ############################
+
+-- =====================================================================
+-- TechLog · update-to-1_07_18.sql — ЖУРНАЛ ДЕЙСТВИЙ СОТРУДНИКОВ
+-- Выполните этот файл в Supabase → SQL Editor, если база создана до
+-- v1.07.18. Скрипт идемпотентен: повторный запуск безопасен.
+-- Новая база с нуля разворачивается полным schema.sql (блок уже включён).
+-- =====================================================================
+
+-- Таблица журнала: кто, когда, что сделал и с чем.
+create table if not exists public.audit_log (
+  id         uuid primary key default gen_random_uuid(),
+  at         timestamptz not null default now(),
+  actor      uuid references public.profiles(id) on delete set null,
+  actor_name text,
+  action     text not null,          -- job_create / pickup_done / user_block / ...
+  entity     text,                   -- job | placement | profile
+  entity_id  text,
+  details    jsonb not null default '{}'::jsonb
+);
+create index if not exists audit_log_at_idx    on public.audit_log (at desc);
+create index if not exists audit_log_actor_idx on public.audit_log (actor);
+create index if not exists audit_log_action_idx on public.audit_log (action);
+
+alter table public.audit_log enable row level security;
+
+-- Писать может каждый авторизованный, но только ОТ СВОЕГО имени.
+drop policy if exists audit_ins on public.audit_log;
+create policy audit_ins on public.audit_log
+  for insert to authenticated
+  with check (actor = auth.uid());
+
+-- Читать журнал может только админ.
+drop policy if exists audit_sel on public.audit_log;
+create policy audit_sel on public.audit_log
+  for select to authenticated
+  using (public.my_role() = 'admin');
+
+-- Политик update/delete нет намеренно: журнал нельзя править и чистить
+-- через API даже админом — только владельцу проекта в SQL-редакторе.
+
+-- Регистрация нового сотрудника пишется в журнал на сервере: в момент
+-- регистрации клиент ещё не авторизован и сам записать её не может.
+create or replace function public.log_new_profile()
+returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (new.id, new.display_name, 'user_register', 'profile', new.id::text,
+          jsonb_build_object('login', new.login, 'role', new.role));
+  return new;
+end $$;
+
+drop trigger if exists trg_log_new_profile on public.profiles;
+create trigger trg_log_new_profile
+  after insert on public.profiles
+  for each row execute function public.log_new_profile();
+
+-- История действий хранится ПОЛНОСТЬЮ — без автоматической обрезки.
+-- Если этот апдейт запускался в ранней редакции (там был триггер-ограничитель
+-- на последние 5000 записей), две строки ниже снимают его; на чистой базе
+-- они ничего не делают. Удалять записи журнала через API по-прежнему
+-- нельзя никому — только владельцу проекта вручную в SQL-редакторе.
+drop trigger if exists trg_trim_audit on public.audit_log;
+drop function if exists public.trim_audit_log();
+
+-- ############################ FILE: security-hotfix-1_07_24.sql ############################
+
+-- =====================================================================
+-- TechLog security-hotfix v1.07.24 — СРОЧНЫЕ исправления безопасности
+-- Выполнить целиком в Supabase → SQL Editor → Run. Повторный запуск безопасен.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. КРИТИЧНО: запрет самостоятельной смены роли (эскалация привилегий)
+--
+-- Сейчас политика profiles_upd разрешает сотруднику UPDATE своей строки
+-- ЦЕЛИКОМ. RLS не умеет ограничивать отдельные колонки, поэтому любой
+-- tech одним REST-запросом (PATCH /rest/v1/profiles?id=eq.<свой id>
+-- c телом {"role":"admin"}) делает себя админом: читает журнал, меняет
+-- цены, апрувит свои инвойсы, блокирует других. Триггер ниже закрывает
+-- дыру: role / blocked / login меняет только админ, id не меняет никто.
+-- ---------------------------------------------------------------------
+create or replace function public.profiles_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.id is distinct from old.id then
+    raise exception 'FORBIDDEN_FIELD_ID';
+  end if;
+  if coalesce(public.my_role(), 'tech') <> 'admin' then
+    if new.role    is distinct from old.role
+       or new.blocked is distinct from old.blocked
+       or new.login   is distinct from old.login then
+      raise exception 'FORBIDDEN_FIELD';
+    end if;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists profiles_guard_tg on public.profiles;
+create trigger profiles_guard_tg before update on public.profiles
+  for each row execute function public.profiles_guard();
+
+-- ---------------------------------------------------------------------
+-- 2. Мошенничество с инвойсами: сейчас jobs_guard сбрасывает апрув только
+-- при изменении total. Состав работ (form_data) можно переписать ПОСЛЕ
+-- апрува, не трогая total, — PDF разойдётся с согласованным. Плюс запрет
+-- переписывать автора работы (technician_id) не-админом.
+-- ---------------------------------------------------------------------
+create or replace function public.jobs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  new.updated_at := now();
+  if new.technician_id is distinct from old.technician_id
+     and coalesce(public.my_role(),'tech') <> 'admin' then
+    raise exception 'FORBIDDEN_FIELD';
+  end if;
+  if old.status = 'approved'
+     and coalesce(public.my_role(),'tech') <> 'admin'
+     and (new.total     is distinct from old.total
+          or new.form_data is distinct from old.form_data) then
+    new.status := 'done';
+    new.approved_total := null;
+    new.approved_by := null;
+    new.approved_at := null;
+  end if;
+  return new;
+end $$;
+-- триггер jobs_guard_tg уже существует и подхватит новую версию функции
+
+-- ---------------------------------------------------------------------
+-- 3. Анти-брутфорс для публичных RPC (check_invite / login_available /
+-- signup_precheck). Они доступны роли anon без ограничений: код
+-- приглашения можно перебирать бесконечно. Вводим лимит по IP.
+-- (Перебор паролей входа ограничивает сам Supabase Auth; дополнительно
+-- включите CAPTCHA: Dashboard → Auth → Attack Protection → Turnstile.)
+-- ---------------------------------------------------------------------
+create table if not exists public.rpc_throttle (
+  key          text primary key,
+  window_start timestamptz not null default now(),
+  cnt          int not null default 1
+);
+alter table public.rpc_throttle enable row level security;
+revoke all on public.rpc_throttle from anon, authenticated;
+
+create or replace function public.client_ip()
+returns text language plpgsql stable as $$
+declare v text;
+begin
+  begin
+    v := split_part(coalesce(
+           current_setting('request.headers', true)::json->>'x-forwarded-for',
+           current_setting('request.headers', true)::json->>'x-real-ip',
+           'anon'), ',', 1);
+  exception when others then v := 'anon';
+  end;
+  return coalesce(nullif(trim(v), ''), 'anon');
+end $$;
+
+create or replace function public.throttle(p_bucket text, p_max int, p_window interval)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_key text := p_bucket || ':' || public.client_ip(); v_cnt int;
+begin
+  insert into public.rpc_throttle as t (key) values (v_key)
+  on conflict (key) do update set
+    cnt          = case when t.window_start < now() - p_window then 1 else t.cnt + 1 end,
+    window_start = case when t.window_start < now() - p_window then now() else t.window_start end
+  returning t.cnt into v_cnt;
+  if random() < 0.01 then
+    delete from public.rpc_throttle where window_start < now() - interval '1 day';
+  end if;
+  if v_cnt > p_max then raise exception 'RATE_LIMITED'; end if;
+end $$;
+
+-- перепроверка кода приглашения: максимум 10 попыток за 15 минут с IP
+create or replace function public.check_invite(code text)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+begin
+  perform public.throttle('invite', 10, interval '15 minutes');
+  return public.is_valid_invite(code);
+end $$;
+
+create or replace function public.login_available(p_login text)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+begin
+  perform public.throttle('login_free', 30, interval '15 minutes');
+  return not exists (
+    select 1 from public.profiles where lower(login) = lower(coalesce(p_login,''))
+  );
+end $$;
+
+create or replace function public.signup_precheck(p_login text, p_invite text)
+returns text language plpgsql stable security definer set search_path = public as $$
+declare v text := lower(coalesce(p_login,''));
+begin
+  perform public.throttle('signup', 15, interval '15 minutes');
+  if v !~ '^[a-z0-9_.-]{3,32}$' then return 'BAD_LOGIN'; end if;
+  if not public.is_valid_invite(p_invite) then return 'BAD_INVITE'; end if;
+  if exists (select 1 from public.profiles where lower(login) = v) then return 'LOGIN_TAKEN'; end if;
+  return 'OK';
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 4. Составные индексы под типовые запросы (списки «мои работы за период»
+-- и «мои невывезенные пикапы»). При сотнях тысяч строк это разница между
+-- миллисекундами и секундами.
+-- ---------------------------------------------------------------------
+create index if not exists jobs_tech_date_idx  on public.jobs(technician_id, date desc);
+create index if not exists pl_tech_open_idx    on public.placements(technician_id, picked_up, due_date);
+
+-- ---------------------------------------------------------------------
+-- 5. Чек-лист в Dashboard (руками, SQL этого не умеет):
+--  • Auth → Providers → Email → Minimum password length: 8–10.
+--  • Auth → Attack Protection → включить CAPTCHA (Cloudflare Turnstile) —
+--    остановит переборы паролей ботами; в app.js добавить captchaToken.
+--  • Auth → Rate Limits — убедиться, что лимиты на /token включены.
+--  • Organization → пароль владельца + 2FA на аккаунте Supabase и на
+--    GitHub (утечка аккаунта владельца = утечка всей базы и секретов).
+--  • Если код приглашения короче 10 символов — смените через админку на
+--    длинную фразу: перебор даже с лимитом должен быть бессмысленным.
+--  • Репозиторий GitHub Pages публичный: убедитесь, что дефолтный
+--    invite-код из schema.sql давно заменён, а в истории коммитов нет
+--    настоящих кодов доступа/домофонов из seed-данных.
+-- =====================================================================
+
+-- ############################ FILE: update-to-1_07_25.sql ############################
+
+-- =====================================================================
+-- TechLog update-to-1_07_25 — «Доска», номер машины, права менеджера
+-- Выполнить целиком в Supabase → SQL Editor → Run. Повторный запуск безопасен.
+-- =====================================================================
+
+-- Галочка админа: менеджеру можно менять очерёдность задач (Доска и ▲▼)
+alter table public.org_settings
+  add column if not exists manager_can_reorder boolean not null default false;
+
+-- Номер машины, закреплённой за сотрудником (бейдж в справочнике и на Доске)
+alter table public.profiles
+  add column if not exists car_no int;
+
+-- ---------------------------------------------------------------------
+-- profiles_guard v2: role / blocked / login / car_no меняет только админ.
+-- (Замещает версию из security-hotfix-1_07_24.sql; если хотфикс ещё не
+-- выполнялся — триггер будет создан здесь. Сам хотфикс всё равно выполните:
+-- в нём анти-брутфорс и защита инвойсов.)
+-- ---------------------------------------------------------------------
+create or replace function public.profiles_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.id is distinct from old.id then
+    raise exception 'FORBIDDEN_FIELD_ID';
+  end if;
+  if coalesce(public.my_role(), 'tech') <> 'admin' then
+    if new.role       is distinct from old.role
+       or new.blocked is distinct from old.blocked
+       or new.login   is distinct from old.login
+       or new.car_no  is distinct from old.car_no then
+      raise exception 'FORBIDDEN_FIELD';
+    end if;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists profiles_guard_tg on public.profiles;
+create trigger profiles_guard_tg before update on public.profiles
+  for each row execute function public.profiles_guard();
+
+-- ---------------------------------------------------------------------
+-- RPC для Доски: менеджеру нельзя писать в jobs напрямую (RLS), а
+-- расширять политику целиком опасно — он смог бы править суммы и составы.
+-- Функция меняет РОВНО два поля: priority и sort_order.
+--  • priority (красный треугольник) — менеджеру можно всегда;
+--  • sort_order (очерёдность)       — только если админ включил галочку
+--    org_settings.manager_can_reorder.
+-- Смена приоритета фиксируется в журнале действий (пишет сервер).
+-- ---------------------------------------------------------------------
+create or replace function public.board_job_flags(
+  p_job uuid, p_priority boolean default null, p_sort int default null)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_role text := coalesce(public.my_role(), 'tech');
+  v_unit text; v_name text;
+begin
+  if v_role not in ('admin','manager') then raise exception 'FORBIDDEN'; end if;
+  if p_priority is null and p_sort is null then return; end if;
+  if p_sort is not null and v_role = 'manager'
+     and not coalesce((select manager_can_reorder
+                       from public.org_settings where id = 'org'), false) then
+    raise exception 'REORDER_OFF';
+  end if;
+
+  update public.jobs
+     set priority   = coalesce(p_priority, priority),
+         sort_order = coalesce(p_sort, sort_order),
+         updated_at = now()
+   where id = p_job
+   returning unit_number into v_unit;
+  if not found then raise exception 'NOT_FOUND'; end if;
+
+  if p_priority is not null then
+    select display_name into v_name from public.profiles where id = auth.uid();
+    insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+    values (auth.uid(), coalesce(v_name, ''), 'priority_set', 'job', p_job::text,
+            jsonb_build_object('on', p_priority, 'unit', coalesce(v_unit, '')));
+  end if;
+end $$;
+revoke all on function public.board_job_flags(uuid, boolean, int) from public, anon;
+grant execute on function public.board_job_flags(uuid, boolean, int) to authenticated;
+
+-- ############################ FILE: update-to-1_07_26.sql ############################
+
+-- =====================================================================
+-- TechLog update-to-1_07_26 — склад, чек-листы, апрувы менеджера,
+-- лимиты аренды/продления, блокировка правки старых документов, PROPOSAL
+-- Выполнить целиком в Supabase → SQL Editor → Run. Повторный запуск безопасен.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- Новые настройки организации
+-- ---------------------------------------------------------------------
+alter table public.org_settings add column if not exists default_rent_days   int     not null default 3;
+alter table public.org_settings add column if not exists max_extend_days     int     not null default 3;
+alter table public.org_settings add column if not exists manager_can_approve boolean not null default false;
+alter table public.org_settings add column if not exists stock_visible_all   boolean not null default true;
+alter table public.org_settings add column if not exists edit_lock_days      int     not null default 0;
+
+-- PROPOSAL — не вид работы, а признак документа (чекбокс после номера юнита)
+alter table public.jobs add column if not exists has_proposal boolean not null default false;
+
+-- Чек-лист перед выездом — хранится у вида работ
+alter table public.work_types add column if not exists checklist jsonb not null default '[]'::jsonb;
+
+-- ---------------------------------------------------------------------
+-- СКЛАД: остатки оборудования. Правит админ, читают все авторизованные
+-- (видимость для сотрудников дополнительно регулируется галочкой
+-- org_settings.stock_visible_all на клиенте).
+-- «У клиентов» не хранится — считается по невывезенным пикапам.
+-- ---------------------------------------------------------------------
+create table if not exists public.equipment_stock (
+  id                uuid primary key default gen_random_uuid(),
+  equipment_type_id uuid not null unique references public.equipment_types(id) on delete cascade,
+  total             int  not null default 0,
+  broken            int  not null default 0,
+  in_repair         int  not null default 0
+);
+alter table public.equipment_stock enable row level security;
+drop policy if exists stock_sel on public.equipment_stock;
+create policy stock_sel on public.equipment_stock for select to authenticated using (true);
+drop policy if exists stock_wr on public.equipment_stock;
+create policy stock_wr on public.equipment_stock for all to authenticated
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
+
+-- ---------------------------------------------------------------------
+-- Апрув менеджером: RLS не даёт менеджеру писать в jobs, а открывать
+-- политику целиком нельзя (он смог бы править составы и суммы).
+-- Функция меняет только поля апрува и пишет запись в журнал на сервере.
+-- ---------------------------------------------------------------------
+create or replace function public.approve_job(p_job uuid, p_total numeric)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_role text := coalesce(public.my_role(), 'tech');
+  v_unit text; v_name text;
+begin
+  if v_role <> 'admin' then
+    if v_role <> 'manager'
+       or not coalesce((select manager_can_approve from public.org_settings where id = 'org'), false) then
+      raise exception 'FORBIDDEN';
+    end if;
+  end if;
+  if p_total is null or p_total < 0 then raise exception 'BAD_TOTAL'; end if;
+
+  update public.jobs
+     set status = 'approved',
+         approved_total = p_total,
+         approved_by = auth.uid(),
+         approved_at = now(),
+         updated_at = now()
+   where id = p_job
+   returning unit_number into v_unit;
+  if not found then raise exception 'NOT_FOUND'; end if;
+
+  select display_name into v_name from public.profiles where id = auth.uid();
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_name, ''), 'job_approve', 'job', p_job::text,
+          jsonb_build_object('unit', coalesce(v_unit, ''), 'total', p_total, 'via', 'rpc'));
+end $$;
+revoke all on function public.approve_job(uuid, numeric) from public, anon;
+grant execute on function public.approve_job(uuid, numeric) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- Блокировка правки старых документов на уровне БД (клиентский замок —
+-- удобство, этот триггер — защита). Техник не может менять и удалять
+-- работы старше org_settings.edit_lock_days; 0 — выключено.
+-- Менеджер и админ — без ограничений.
+-- ---------------------------------------------------------------------
+create or replace function public.jobs_lock_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_n int;
+begin
+  select coalesce(edit_lock_days, 0) into v_n from public.org_settings where id = 'org';
+  if v_n > 0
+     and coalesce(public.my_role(), 'tech') = 'tech'
+     and old.date < current_date - v_n then
+    raise exception 'LOCKED';
+  end if;
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end $$;
+
+drop trigger if exists jobs_lock_tg on public.jobs;
+create trigger jobs_lock_tg before update or delete on public.jobs
+  for each row execute function public.jobs_lock_guard();
+
+-- ---------------------------------------------------------------------
+-- Сиды чек-листов (по вашим спискам). Заполняются ТОЛЬКО там, где
+-- чек-лист ещё пуст — ваши правки повторный запуск не перетрёт.
+-- Дальше редактируются в Справочники → Виды работ → 📋.
+-- ---------------------------------------------------------------------
+update public.work_types set checklist = '[
+  "Эйрдак-машина / Air duct machine",
+  "Шланги и насадки",
+  "Шуруповёрт",
+  "Нож — срезать герметик",
+  "Фогер + тритмант",
+  "Тряпки",
+  "Запросить размеры решёток и их состояние (купить нужные заранее)"
+]'::jsonb
+where name ilike '%air duct%' and (checklist is null or checklist = '[]'::jsonb);
+
+update public.work_types set checklist = '[
+  "Сопоги (сапоги)",
+  "Портативная откачка / portable",
+  "Тритмант",
+  "Нож",
+  "Подкладка под ковёр (pad)",
+  "Бловеры",
+  "Дехью (dehumidifier)",
+  "Скрабер (air scrubber)",
+  "Швабра, тряпки",
+  "Анализатор воды",
+  "Термокамера / тепловизор",
+  "Датчик влажности"
+]'::jsonb
+where (name ilike '%vetvag%' or name ilike '%damage water%')
+  and (checklist is null or checklist = '[]'::jsonb);
+
+update public.work_types set checklist = '[
+  "Портабл или машина (шланги и вант — под каждый свои)",
+  "Ведро, шампунь, пахучки",
+  "Чемодан с химией от пятен",
+  "Химия для предварительного распыления + распылитель",
+  "Нож для вырезания подкладки",
+  "Подкладка (pad)",
+  "Устройство для выпрямления ворсинок"
+]'::jsonb
+where name ilike '%steam%' and (checklist is null or checklist = '[]'::jsonb);
+
+update public.work_types set checklist = '[
+  "Мультитул для вырезки стен + насадки",
+  "Лестница",
+  "Перчатки, тряпки",
+  "Силент (герметик)",
+  "Уровень, карандаш",
+  "Мусорные пакеты",
+  "Респиратор / маска"
+]'::jsonb
+where name ilike '%demolition%' and (checklist is null or checklist = '[]'::jsonb);
+
+-- #####################################################################
+-- HOIST: can_view_job нужен политике prop_sel из 1_07_27, но исторически
+-- определялся только в 1_07_31 — на чистой базе 27-й падал бы. Здесь
+-- функция объявляется заранее; повторное объявление в блоке 1_07_31
+-- безвредно (create or replace).
+-- #####################################################################
+create or replace function public.can_view_job(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.jobs j
+    where j.id = p_job and (
+      j.technician_id = auth.uid()
+      or public.my_role() in ('admin','manager')
+      or (j.shared_with_helpers and j.helper_ids ? auth.uid()::text
+          and public.shared_jobs_enabled())
+    )
+  )
+$$;
+
+-- ############################ FILE: update-to-1_07_27.sql ############################
+
+-- =====================================================================
+-- TechLog update-to-1_07_27 — пропозалы, раздельный журнал,
+-- согласование продлений сверх лимита
+-- Выполнить целиком в Supabase → SQL Editor → Run. Повторный запуск безопасен
+-- (перенос старых записей журнала выполнится один раз).
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. ПРОПОЗАЛЫ (коммерческие предложения)
+-- ---------------------------------------------------------------------
+create table if not exists public.proposals (
+  id              uuid primary key default gen_random_uuid(),
+  no              bigint generated by default as identity,       -- номер P-…
+  date            date not null default current_date,
+  counterparty_id uuid references public.counterparties(id) on delete set null,
+  complex_id      uuid references public.complexes(id) on delete set null,
+  unit_number     text not null default '',
+  note            text not null default '',
+  items           jsonb not null default '[]'::jsonb,            -- [{d:'…', a:123}]
+  total           numeric not null default 0,
+  status          text not null default 'draft'
+                  check (status in ('draft','sent','approved','declined')),
+  created_by      uuid references public.profiles(id) on delete set null,
+  decided_by      uuid references public.profiles(id) on delete set null,
+  decided_at      timestamptz,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+create unique index if not exists proposals_no_idx on public.proposals(no);
+create index if not exists proposals_cx_idx   on public.proposals(complex_id, date desc);
+create index if not exists proposals_date_idx on public.proposals(date desc);
+
+alter table public.jobs
+  add column if not exists proposal_id uuid references public.proposals(id) on delete set null;
+create index if not exists jobs_proposal_idx on public.jobs(proposal_id);
+
+alter table public.org_settings
+  add column if not exists allow_tech_proposal_flag boolean not null default true;
+
+alter table public.proposals enable row level security;
+-- читают менеджер/админ; техник видит только пропозал, связанный с его работой
+drop policy if exists prop_sel on public.proposals;
+create policy prop_sel on public.proposals for select to authenticated
+  using (
+    public.my_role() in ('admin','manager')
+    or exists (select 1 from public.jobs j
+               where j.proposal_id = proposals.id and public.can_view_job(j.id))
+  );
+drop policy if exists prop_ins on public.proposals;
+create policy prop_ins on public.proposals for insert to authenticated
+  with check (public.my_role() in ('admin','manager'));
+drop policy if exists prop_upd on public.proposals;
+create policy prop_upd on public.proposals for update to authenticated
+  using (public.my_role() in ('admin','manager'))
+  with check (public.my_role() in ('admin','manager'));
+drop policy if exists prop_del on public.proposals;
+create policy prop_del on public.proposals for delete to authenticated
+  using (public.my_role() = 'admin');
+
+-- Связь инвойс↔пропозал ставит менеджер/админ. RLS менеджеру писать в jobs
+-- не даёт, а открывать политику целиком опасно — функция меняет ровно
+-- одно поле и фиксирует действие в журнале документов.
+create or replace function public.link_job_proposal(p_job uuid, p_prop uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_unit text; v_no bigint; v_name text;
+begin
+  if public.my_role() not in ('admin','manager') then raise exception 'FORBIDDEN'; end if;
+  if p_prop is not null then
+    select no into v_no from public.proposals where id = p_prop;
+    if v_no is null then raise exception 'NO_PROPOSAL'; end if;
+  end if;
+  update public.jobs
+     set proposal_id  = p_prop,
+         has_proposal = case when p_prop is not null then true else has_proposal end,
+         updated_at   = now()
+   where id = p_job
+   returning unit_number into v_unit;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  select display_name into v_name from public.profiles where id = auth.uid();
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_name,''),
+          case when p_prop is null then 'proposal_unlink' else 'proposal_link' end,
+          'job', p_job::text,
+          jsonb_build_object('unit', coalesce(v_unit,''), 'no', v_no));
+end $$;
+revoke all on function public.link_job_proposal(uuid, uuid) from public, anon;
+grant execute on function public.link_job_proposal(uuid, uuid) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 2. ЖУРНАЛ: отдельная таблица для системных событий (tech_log).
+--    Документные остаются в audit_log. Существующие системные записи
+--    переносятся один раз (атомарно: перенос = удаление + вставка).
+-- ---------------------------------------------------------------------
+create table if not exists public.tech_log (
+  id         uuid primary key default gen_random_uuid(),
+  at         timestamptz not null default now(),
+  actor      uuid,
+  actor_name text not null default '',
+  action     text not null,
+  entity     text,
+  entity_id  text,
+  details    jsonb not null default '{}'::jsonb
+);
+create index if not exists tech_log_at_idx     on public.tech_log(at desc);
+create index if not exists tech_log_action_idx on public.tech_log(action, at desc);
+
+alter table public.tech_log enable row level security;
+drop policy if exists tlog_ins on public.tech_log;
+create policy tlog_ins on public.tech_log for insert to authenticated
+  with check (actor = auth.uid());
+drop policy if exists tlog_sel on public.tech_log;
+create policy tlog_sel on public.tech_log for select to authenticated
+  using (public.my_role() = 'admin');
+-- политик update/delete нет — журнал неизменяем, как и audit_log
+
+with moved as (
+  delete from public.audit_log
+  where action in ('user_register','user_create','user_block','user_unblock','role_change',
+                   'password_change','password_reset','car_no_set','org_toggle','org_set',
+                   'stock_set','backup_export','backup_restore')
+  returning at, actor, actor_name, action, entity, entity_id, details
+)
+insert into public.tech_log (at, actor, actor_name, action, entity, entity_id, details)
+select at, actor, actor_name, action, entity, entity_id, details from moved;
+
+-- регистрация пользователя — системное событие: триггер пишет в tech_log
+create or replace function public.log_new_profile()
+returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if current_setting('techlog.restore', true) = '1' then
+    return new;                                   -- идёт восстановление из бэкапа
+  end if;
+  insert into public.tech_log (actor, actor_name, action, entity, entity_id, details)
+  values (new.id, new.display_name, 'user_register', 'profile', new.id::text,
+          jsonb_build_object('login', new.login, 'role', new.role));
+  return new;
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 3. СОГЛАСОВАНИЕ ПРОДЛЕНИЙ сверх лимита.
+--    Техник создаёт заявку (insert под своим именем), менеджер/админ
+--    решает через RPC; при одобрении продление применяется СЕРВЕРОМ
+--    той же логикой, что и обычное продление (ext_of / superseded).
+-- ---------------------------------------------------------------------
+create table if not exists public.ext_requests (
+  id           uuid primary key default gen_random_uuid(),
+  job_id       uuid not null references public.jobs(id) on delete cascade,
+  requested_by uuid not null references public.profiles(id) on delete cascade,
+  requested_at timestamptz not null default now(),
+  days         int  not null check (days between 1 and 60),
+  qty_total    int  not null default 0,
+  payload      jsonb not null default '[]'::jsonb,   -- [{id: placement_id, qty: n}]
+  unit         text not null default '',
+  cx           text not null default '',
+  eq           text not null default '',
+  status       text not null default 'pending'
+               check (status in ('pending','approved','rejected')),
+  decided_by   uuid references public.profiles(id) on delete set null,
+  decided_at   timestamptz
+);
+create index if not exists extreq_status_idx on public.ext_requests(status, requested_at desc);
+create index if not exists extreq_job_idx    on public.ext_requests(job_id);
+
+alter table public.ext_requests enable row level security;
+drop policy if exists exr_ins on public.ext_requests;
+create policy exr_ins on public.ext_requests for insert to authenticated
+  with check (requested_by = auth.uid());
+drop policy if exists exr_sel on public.ext_requests;
+create policy exr_sel on public.ext_requests for select to authenticated
+  using (requested_by = auth.uid() or public.my_role() in ('admin','manager'));
+drop policy if exists exr_del on public.ext_requests;
+create policy exr_del on public.ext_requests for delete to authenticated
+  using (public.my_role() = 'admin');
+-- update только через RPC ниже
+
+create or replace function public.decide_ext_request(p_id uuid, p_ok boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_req  public.ext_requests%rowtype;
+  v_pl   public.placements%rowtype;
+  v_row  jsonb;
+  v_q    int;
+  v_base date;
+  v_made int := 0;
+  v_name text;
+begin
+  if public.my_role() not in ('admin','manager') then raise exception 'FORBIDDEN'; end if;
+
+  select * into v_req from public.ext_requests
+   where id = p_id and status = 'pending' for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+
+  select display_name into v_name from public.profiles where id = auth.uid();
+
+  if not p_ok then
+    update public.ext_requests
+       set status = 'rejected', decided_by = auth.uid(), decided_at = now()
+     where id = p_id;
+    insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+    values (auth.uid(), coalesce(v_name,''), 'ext_request_rejected', 'job', v_req.job_id::text,
+            jsonb_build_object('unit', v_req.unit, 'days', v_req.days, 'eq', v_req.eq));
+    return;
+  end if;
+
+  for v_row in select * from jsonb_array_elements(v_req.payload) loop
+    select * into v_pl from public.placements
+     where id = (v_row->>'id')::uuid
+       and job_id = v_req.job_id
+       and picked_up = false
+       and coalesce(superseded, false) = false
+     for update;
+    if not found then continue; end if;
+
+    v_q := least(coalesce((v_row->>'qty')::int, 0), coalesce(v_pl.qty, 0));
+    if v_q <= 0 then continue; end if;
+    v_base := greatest(v_pl.due_date, current_date);
+
+    insert into public.placements (
+      id, job_id, equipment_type_id, qty, days, placed_date, due_date,
+      picked_up, picked_up_at, picked_up_by, ext_of, superseded, superseded_at,
+      technician_id, complex_id, counterparty_id, unit_number)
+    values (
+      gen_random_uuid(), v_pl.job_id, v_pl.equipment_type_id, v_q, v_req.days,
+      v_base, v_base + v_req.days,
+      false, null, null, v_pl.id, false, null,
+      v_pl.technician_id, v_pl.complex_id, v_pl.counterparty_id, v_pl.unit_number);
+
+    if v_q >= coalesce(v_pl.qty, 0) then
+      update public.placements
+         set superseded = true, superseded_at = now() where id = v_pl.id;
+    else
+      update public.placements set qty = v_pl.qty - v_q where id = v_pl.id;
+    end if;
+    v_made := v_made + v_q;
+  end loop;
+
+  update public.ext_requests
+     set status = 'approved', decided_by = auth.uid(), decided_at = now()
+   where id = p_id;
+
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_name,''), 'ext_request_approved', 'job', v_req.job_id::text,
+          jsonb_build_object('unit', v_req.unit, 'days', v_req.days, 'qty', v_made, 'eq', v_req.eq));
+  if v_made > 0 then
+    insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+    values (auth.uid(), coalesce(v_name,''), 'extension_create', 'job', v_req.job_id::text,
+            jsonb_build_object('unit', v_req.unit, 'days', v_req.days, 'qty', v_made));
+  end if;
+end $$;
+revoke all on function public.decide_ext_request(uuid, boolean) from public, anon;
+grant execute on function public.decide_ext_request(uuid, boolean) to authenticated;
+
+-- ############################ FILE: update-to-1_07_31.sql ############################
+
+-- =====================================================================
+-- TechLog update-to-1_07_31 — ФОТО И ВИДЕО → Google Drive (интеграция)
+-- Выполнить целиком в Supabase → SQL Editor → Run. Повторный запуск безопасен.
+--
+-- После SQL разверните функции (Supabase CLI, из корня репозитория):
+--   supabase functions deploy media-begin media-commit media-view \
+--     media-health media-delete media-oauth
+-- Файлы функций лежат в supabase/functions/ этого репозитория.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 0. Общая функция «право видеть работу». ВАЖНО: она же используется
+-- политикой prop_sel из update-to-1_07_27 — если тот файл падал с
+-- ошибкой "function can_view_job does not exist", выполните его ПОВТОРНО
+-- после этого файла.
+-- ---------------------------------------------------------------------
+create or replace function public.can_view_job(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.jobs j
+    where j.id = p_job and (
+      j.technician_id = auth.uid()
+      or public.my_role() in ('admin','manager')
+      or (j.shared_with_helpers and j.helper_ids ? auth.uid()::text
+          and public.shared_jobs_enabled())
+    )
+  )
+$$;
+
+-- ---------------------------------------------------------------------
+-- 1. Таблица медиафайлов
+-- ---------------------------------------------------------------------
+create table if not exists public.media (
+  id            uuid primary key default gen_random_uuid(),
+  job_id        uuid not null references public.jobs(id) on delete cascade,
+  owner_id      uuid not null references public.profiles(id) on delete cascade,
+  kind          text not null check (kind in ('photo','video')),
+  seq           int  not null,
+  file_name     text not null,
+  mime          text not null default '',
+  size_bytes    bigint not null default 0,
+  drive_file_id text,
+  thumb_path    text,
+  status        text not null default 'uploading'
+                check (status in ('uploading','ready')),
+  created_at    timestamptz not null default now(),
+  unique (job_id, kind, seq)
+);
+create index if not exists media_job_idx   on public.media(job_id, kind, seq);
+create index if not exists media_owner_idx on public.media(owner_id, created_at desc);
+
+-- ---------------------------------------------------------------------
+-- 2. RLS: клиент только ЧИТАЕТ. Вставку/изменение делает исключительно
+-- Edge Function (service role), удаление — только админ через
+-- media-delete. Сотрудник после отправки удалить или подменить фото
+-- не может — защита от «подчистки» архива.
+-- ---------------------------------------------------------------------
+alter table public.media enable row level security;
+drop policy if exists media_sel on public.media;
+create policy media_sel on public.media for select to authenticated
+  using (owner_id = auth.uid() or public.can_view_job(job_id));
+-- политик insert/update/delete для authenticated НЕТ — это осознанно.
+
+-- ---------------------------------------------------------------------
+-- 3. Bucket миниатюр (полноразмерные файлы живут в Google Drive)
+-- ---------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('media-thumbs','media-thumbs', false)
+on conflict (id) do nothing;
+
+drop policy if exists thumbs_ins on storage.objects;
+create policy thumbs_ins on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'media-thumbs'
+    and exists (select 1 from public.media m
+                where m.thumb_path = name and m.owner_id = auth.uid())
+  );
+drop policy if exists thumbs_sel on storage.objects;
+create policy thumbs_sel on storage.objects for select to authenticated
+  using (
+    bucket_id = 'media-thumbs'
+    and exists (select 1 from public.media m
+                where m.thumb_path = name
+                  and (m.owner_id = auth.uid() or public.can_view_job(m.job_id)))
+  );
+
+-- ---------------------------------------------------------------------
+-- 4. Настройки Drive из админки. Секреты кладутся в app_secrets
+-- (RLS без политик: клиент их НИКОГДА не прочитает; читает только
+-- service role внутри Edge Functions). Пустые параметры не затирают
+-- сохранённые значения. Refresh-token из интерфейса не вводится —
+-- его сохраняет функция media-oauth после кнопки «Подключить Google».
+-- ---------------------------------------------------------------------
+create or replace function public.admin_set_drive_config(
+  p_client_id text, p_client_secret text, p_refresh_token text, p_folder_id text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if nullif(trim(p_client_id),'') is not null then
+    insert into public.app_secrets(key,value) values ('gd_client_id', trim(p_client_id))
+    on conflict (key) do update set value = excluded.value; end if;
+  if nullif(trim(p_client_secret),'') is not null then
+    insert into public.app_secrets(key,value) values ('gd_client_secret', trim(p_client_secret))
+    on conflict (key) do update set value = excluded.value; end if;
+  if nullif(trim(p_refresh_token),'') is not null then
+    insert into public.app_secrets(key,value) values ('gd_refresh_token', trim(p_refresh_token))
+    on conflict (key) do update set value = excluded.value; end if;
+  if nullif(trim(p_folder_id),'') is not null then
+    insert into public.app_secrets(key,value) values ('gd_folder_id', trim(p_folder_id))
+    on conflict (key) do update set value = excluded.value; end if;
+end $$;
+revoke all on function public.admin_set_drive_config(text,text,text,text) from public, anon;
+grant execute on function public.admin_set_drive_config(text,text,text,text) to authenticated;
+
+-- ############################ FILE: update-to-1_07_32.sql ############################
+
+-- =====================================================================
+-- TechLog update-to-1_07_32 — БЭКАП (серверная часть, консолидированная)
+-- ЗАМЕНЯЕТ ранний backup-restore.sql: выполните этот файл, старый больше
+-- не нужен (повторный запуск любого из них безопасен — create or replace).
+-- Белый список восстановления дополнен таблицами последних релизов:
+-- equipment_stock, proposals, ext_requests, media; после загрузки
+-- пропозалов выравнивается счётчик номеров P-№.
+--
+-- Зачем RPC (нельзя ли просто insert с клиента?): нельзя —
+--  • profiles_ins разрешает вставку только СВОЕЙ строки;
+--  • app_secrets и auth.users через API вообще недоступны;
+--  • дубли должен отсекать сам Postgres (ON CONFLICT DO NOTHING ловит
+--    совпадение ЛЮБОГО уникального ключа — id, логин, ключ цены и т.д.).
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Журнал не шумит при восстановлении: user_register пропускается
+--    для строк, вставленных в режиме restore (актуальная версия — tech_log).
+-- ---------------------------------------------------------------------
+create or replace function public.log_new_profile()
+returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if current_setting('techlog.restore', true) = '1' then
+    return new;                                   -- идёт восстановление из бэкапа
+  end if;
+  insert into public.tech_log (actor, actor_name, action, entity, entity_id, details)
+  values (new.id, new.display_name, 'user_register', 'profile', new.id::text,
+          jsonb_build_object('login', new.login, 'role', new.role));
+  return new;
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 2. ЭКСПОРТ учётных записей (auth.users через API не читается).
+--    Отдаёт bcrypt-хэши паролей — как обычный pg_dump. Только админ.
+-- ---------------------------------------------------------------------
+create or replace function public.admin_export_auth_users()
+returns jsonb language sql stable security definer
+set search_path = public, auth as $$
+  select case when public.my_role() = 'admin' then
+    coalesce((select jsonb_agg(jsonb_build_object(
+      'id', u.id, 'email', u.email,
+      'encrypted_password', u.encrypted_password,
+      'created_at', u.created_at,
+      'banned_until', u.banned_until,
+      'raw_user_meta_data', coalesce(u.raw_user_meta_data, '{}'::jsonb)))
+      from auth.users u
+      where u.aud = 'authenticated' and coalesce(u.is_sso_user, false) = false),
+      '[]'::jsonb)
+  else null end
+$$;
+revoke all on function public.admin_export_auth_users() from public, anon;
+grant execute on function public.admin_export_auth_users() to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 3. ВОССТАНОВЛЕНИЕ учётной записи с ТЕМ ЖЕ uuid и тем же хэшем пароля
+--    (сотрудники входят старыми паролями). Существующие не трогает.
+-- ---------------------------------------------------------------------
+create or replace function public.admin_restore_auth_user(p jsonb)
+returns text language plpgsql security definer
+set search_path = public, auth as $$
+declare v_id uuid := (p->>'id')::uuid;
+        v_email text := lower(trim(coalesce(p->>'email','')));
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if v_id is null or v_email = '' or coalesce(p->>'encrypted_password','') = '' then
+    raise exception 'BAD_ROW';
+  end if;
+  if exists (select 1 from auth.users where id = v_id) then return 'exists'; end if;
+  if exists (select 1 from auth.users where lower(email) = v_email) then
+    raise exception 'EMAIL_TAKEN';
+  end if;
+
+  perform set_config('techlog.admin_create', '1', true);   -- байпас триггера регистрации
+
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at, banned_until,
+    confirmation_token, recovery_token, email_change, email_change_token_new,
+    email_change_token_current, phone_change, phone_change_token,
+    reauthentication_token, is_super_admin, is_sso_user)
+  values (
+    v_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    v_email, p->>'encrypted_password', now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    coalesce(p->'raw_user_meta_data', '{}'::jsonb),
+    coalesce(nullif(p->>'created_at','')::timestamptz, now()), now(),
+    nullif(p->>'banned_until','')::timestamptz,
+    '', '', '', '', '', '', '', '', false, false);
+
+  insert into auth.identities (
+    id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+  values (
+    gen_random_uuid(), v_id::text, v_id,
+    jsonb_build_object('sub', v_id::text, 'email', v_email,
+                       'email_verified', true, 'phone_verified', false),
+    'email', now(), now(), now());
+
+  return 'created';
+end $$;
+revoke all on function public.admin_restore_auth_user(jsonb) from public, anon;
+grant execute on function public.admin_restore_auth_user(jsonb) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 4. Универсальное восстановление строк таблицы пачкой.
+--    Возвращает {inserted, skipped, errors:[{row, error}]}.
+--    Дубли (любой уникальный ключ) → skipped; FK и прочее → в errors,
+--    остальные строки пачки продолжают загружаться. Лишние поля бэкапа
+--    игнорируются, для отсутствующих сработают DEFAULT.
+-- ---------------------------------------------------------------------
+create or replace function public.admin_restore_rows(p_table text, p_rows jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_allowed text[] := array[
+    'profiles','counterparties','complexes','aux_equipment','work_types',
+    'equipment_types','size_types','extra_works','product_types','price_list',
+    'counterparty_prices','equipment_stock','org_settings','code_requests',
+    'complex_code_history','hidden_staff','proposals','jobs','placements',
+    'ext_requests','media'];
+  v_cols text[]; v_collist text; v_set text; v_sql text;
+  r jsonb; v_n int := 0; v_rc int;
+  v_ins int := 0; v_skip int := 0; v_errs jsonb := '[]'::jsonb;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if not (p_table = any(v_allowed)) then raise exception 'BAD_TABLE'; end if;
+  if to_regclass('public.' || p_table) is null then raise exception 'NO_TABLE'; end if;
+  if p_rows is null or jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) = 0 then
+    return jsonb_build_object('inserted', 0, 'skipped', 0, 'errors', '[]'::jsonb);
+  end if;
+
+  perform set_config('techlog.restore', '1', true);
+
+  select array_agg(quote_ident(column_name) order by ordinal_position) into v_cols
+  from information_schema.columns
+  where table_schema = 'public' and table_name = p_table
+    and (p_rows->0) ? column_name;
+  if v_cols is null then raise exception 'NO_MATCHING_COLUMNS'; end if;
+  v_collist := array_to_string(v_cols, ',');
+
+  if p_table = 'org_settings' then       -- единственная строка настроек: обновляем
+    select string_agg(format('%s = excluded.%s', c, c), ', ')
+      into v_set from unnest(v_cols) c where c <> 'id';
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict (id) do update set %s', p_table, v_collist, v_collist, p_table, v_set);
+  else
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict do nothing', p_table, v_collist, v_collist, p_table);
+  end if;
+
+  for r in select * from jsonb_array_elements(p_rows) loop
+    v_n := v_n + 1;
+    begin
+      execute v_sql using r;
+      get diagnostics v_rc = row_count;
+      if v_rc > 0 then v_ins := v_ins + 1; else v_skip := v_skip + 1; end if;
+    exception when others then
+      v_errs := v_errs || jsonb_build_object(
+        'row', coalesce(r->>'id', '#' || v_n), 'error', sqlerrm);
+    end;
+  end loop;
+
+  -- пропозалы нумеруются identity-счётчиком: после загрузки со старыми
+  -- номерами двигаем счётчик, иначе новый пропозал получит занятый P-№
+  if p_table = 'proposals' then
+    perform setval(pg_get_serial_sequence('public.proposals','no'),
+                   greatest((select coalesce(max(no), 0) from public.proposals), 1), true);
+  end if;
+
+  return jsonb_build_object('inserted', v_ins, 'skipped', v_skip, 'errors', v_errs);
+end $$;
+revoke all on function public.admin_restore_rows(text, jsonb) from public, anon;
+grant execute on function public.admin_restore_rows(text, jsonb) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 5. Секреты приложения: экспорт/импорт по явной галочке админа.
+--    (В бэкап-файле окажутся токены Google — храните такой файл бережно.)
+-- ---------------------------------------------------------------------
+create or replace function public.admin_export_secrets()
+returns jsonb language sql stable security definer set search_path = public as $$
+  select case when public.my_role() = 'admin' then
+    coalesce((select jsonb_agg(jsonb_build_object('key', key, 'value', value))
+              from public.app_secrets), '[]'::jsonb)
+  else null end
+$$;
+revoke all on function public.admin_export_secrets() from public, anon;
+grant execute on function public.admin_export_secrets() to authenticated;
+
+create or replace function public.admin_restore_secrets(p jsonb)
+returns int language plpgsql security definer set search_path = public as $$
+declare r jsonb; v int := 0;
+        v_keys text[] := array['invite','gd_client_id','gd_client_secret',
+                               'gd_refresh_token','gd_folder_id'];
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  for r in select * from jsonb_array_elements(coalesce(p, '[]'::jsonb)) loop
+    if (r->>'key') = any(v_keys) and coalesce(r->>'value','') <> '' then
+      insert into public.app_secrets (key, value) values (r->>'key', r->>'value')
+      on conflict (key) do update set value = excluded.value;
+      v := v + 1;
+    end if;
+  end loop;
+  return v;
+end $$;
+revoke all on function public.admin_restore_secrets(jsonb) from public, anon;
+grant execute on function public.admin_restore_secrets(jsonb) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 6. Журналы (audit_log, tech_log) в бэкап ВЫГРУЖАЮТСЯ, но кнопкой НЕ
+-- восстанавливаются: «загрузка журнала из файла» была бы способом его
+-- подделать. Перенос в новый проект — только владельцем в SQL-редакторе:
+--
+--   -- вместо [...] вставьте содержимое tables.audit_log из бэкапа:
+--   insert into public.audit_log
+--   select * from jsonb_populate_recordset(null::public.audit_log, '[...]'::jsonb)
+--   on conflict do nothing;
+--
+--   -- и аналогично для tables.tech_log:
+--   insert into public.tech_log
+--   select * from jsonb_populate_recordset(null::public.tech_log, '[...]'::jsonb)
+--   on conflict do nothing;
+-- =====================================================================
+
+-- ############################ FILE: update-to-1_07_33.sql ############################
+
+-- =====================================================================
+-- TechLog update-to-1_07_33 — пропозал по образцу клиента (QuickBooks)
+-- Выполнить целиком. Повторный запуск безопасен.
+-- =====================================================================
+alter table public.proposals add column if not exists po_number  text not null default '';
+alter table public.proposals add column if not exists complete_by date;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_07_49 ▄▄▄▄▄▄▄▄▄▄
+
+-- =====================================================================
+-- TechLog · update-to-1_07_49.sql — личная настройка доски
+-- Идемпотентно: безопасно выполнять повторно.
+-- =====================================================================
+alter table public.profiles add column if not exists board_cols int;
+comment on column public.profiles.board_cols is
+  'Личная настройка: сколько колонок сотрудников умещать на доске (ПК). NULL = авто. Пишется самим пользователем (policy profiles_upd: self).';
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_07_51 ▄▄▄▄▄▄▄▄▄▄
+
+-- =====================================================================
+-- TechLog · update-to-1_07_51.sql — ФИКС РЕГИСТРАЦИИ ПО ИНВАЙТ-КОДУ
+--
+-- Симптом: check_invite / login_available / signup_precheck падают с
+--   25006 · cannot execute INSERT in a read-only transaction
+-- (видно в БД-диагностике; регистрация новых сотрудников не работает).
+--
+-- Причина: security-hotfix-1_07_24 добавил внутрь этих функций вызов
+-- public.throttle() с INSERT в rpc_throttle (анти-брутфорс), но сами
+-- функции остались объявлены STABLE. PostgREST исполняет STABLE-функции
+-- в read-only транзакции даже при POST — INSERT внутри запрещён.
+--
+-- Фикс: те же тела, но VOLATILE (volatility просто не указана — это
+-- значение по умолчанию). Вход в приложение не затронут (он через
+-- GoTrue); ломалась только регистрация по коду приглашения.
+--
+-- Идемпотентно: безопасно выполнять повторно. Самодостаточно: обвязка
+-- (rpc_throttle / client_ip / throttle) создаётся, если её ещё нет.
+-- =====================================================================
+
+create table if not exists public.rpc_throttle (
+  key text primary key,
+  cnt int not null default 1,
+  window_start timestamptz not null default now()
+);
+alter table public.rpc_throttle enable row level security;
+revoke all on public.rpc_throttle from anon, authenticated;
+
+create or replace function public.client_ip()
+returns text language plpgsql stable as $$
+declare v text;
+begin
+  begin
+    v := split_part(coalesce(
+           current_setting('request.headers', true)::json->>'x-forwarded-for',
+           current_setting('request.headers', true)::json->>'x-real-ip',
+           'anon'), ',', 1);
+  exception when others then v := 'anon';
+  end;
+  return coalesce(nullif(trim(v), ''), 'anon');
+end $$;
+
+create or replace function public.throttle(p_bucket text, p_max int, p_window interval)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_key text := p_bucket || ':' || public.client_ip(); v_cnt int;
+begin
+  insert into public.rpc_throttle as t (key) values (v_key)
+  on conflict (key) do update set
+    cnt          = case when t.window_start < now() - p_window then 1 else t.cnt + 1 end,
+    window_start = case when t.window_start < now() - p_window then now() else t.window_start end
+  returning t.cnt into v_cnt;
+  if random() < 0.01 then
+    delete from public.rpc_throttle where window_start < now() - interval '1 day';
+  end if;
+  if v_cnt > p_max then raise exception 'RATE_LIMITED'; end if;
+end $$;
+
+-- ------- те же функции, что в hotfix-1_07_24, но VOLATILE -------
+
+create or replace function public.check_invite(code text)
+returns boolean language plpgsql security definer set search_path = public as $$
+begin
+  perform public.throttle('invite', 10, interval '15 minutes');
+  return public.is_valid_invite(code);
+end $$;
+
+create or replace function public.login_available(p_login text)
+returns boolean language plpgsql security definer set search_path = public as $$
+begin
+  perform public.throttle('login_free', 30, interval '15 minutes');
+  return not exists (
+    select 1 from public.profiles where lower(login) = lower(coalesce(p_login,''))
+  );
+end $$;
+
+create or replace function public.signup_precheck(p_login text, p_invite text)
+returns text language plpgsql security definer set search_path = public as $$
+declare v text := lower(coalesce(p_login,''));
+begin
+  perform public.throttle('signup', 15, interval '15 minutes');
+  if v !~ '^[a-z0-9_.-]{3,32}$' then return 'BAD_LOGIN'; end if;
+  if not public.is_valid_invite(p_invite) then return 'BAD_INVITE'; end if;
+  if exists (select 1 from public.profiles where lower(login) = v) then return 'LOGIN_TAKEN'; end if;
+  return 'OK';
+end $$;
+
+-- регистрация идёт до входа — функции доступны и анонимному клиенту
+grant execute on function public.check_invite(text) to anon, authenticated;
+grant execute on function public.login_available(text) to anon, authenticated;
+grant execute on function public.signup_precheck(text, text) to anon, authenticated;
+
+-- контроль: все три должны стать 'v' (volatile)
+-- select proname, provolatile from pg_proc
+--  where proname in ('check_invite','login_available','signup_precheck');
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_07_54 ▄▄▄▄▄▄▄▄▄▄
+
+-- =====================================================================
+-- TechLog · update-to-1_07_54.sql — комплекс без владельца
+-- Поиск места на карте позволяет добавлять апарт-комплекс без привязки
+-- к контрагенту (или с «временным владельцем»). Такие комплексы
+-- подсвечиваются треугольником в справочнике до назначения владельца.
+-- Идемпотентно: повторный запуск безопасен.
+-- =====================================================================
+alter table public.complexes alter column counterparty_id drop not null;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_07_61 ▄▄▄▄▄▄▄▄▄▄
+
+-- ============================================================
+-- TechLog · update to v1.07.61
+-- Моточасы осушителя (DHM) в размещениях: показание на старте
+-- работы и на момент проверки. Идемпотентно, RLS не меняется.
+-- ============================================================
+alter table public.placements
+  add column if not exists dhm_hours_start numeric,
+  add column if not exists dhm_hours_check numeric;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_07_64 ▄▄▄▄▄▄▄▄▄▄
+
+-- ============================================================
+-- TechLog · update to v1.07.64
+-- 1) Лимиты фото и видео на документ — настраиваются админом
+--    (степперы в «Настройках»), проверяются сервером в media-begin.
+-- 2) Свободное место на Google Диске — снимается при тесте
+--    подключения и при заливке файлов (media-health / media-commit),
+--    хранится здесь, чтобы предупреждение видел и менеджер.
+-- Идемпотентно: повторный запуск безопасен, RLS не меняется.
+-- ============================================================
+alter table public.org_settings
+  add column if not exists media_max_photo int not null default 30,
+  add column if not exists media_max_video int not null default 5,
+  add column if not exists gd_used_gb      numeric,
+  add column if not exists gd_limit_gb     numeric,
+  add column if not exists gd_free_pct     numeric,
+  add column if not exists gd_account      text,
+  add column if not exists gd_checked_at   timestamptz;
+
+-- разумные границы: те же, что у степперов в интерфейсе
+alter table public.org_settings drop constraint if exists org_media_limits_ck;
+alter table public.org_settings add constraint org_media_limits_ck
+  check (media_max_photo between 1 and 50 and media_max_video between 0 and 10);
+
+-- строка настроек существует и на старых базах
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_07_76 ▄▄▄▄▄▄▄▄▄▄
+
+-- ============================================================
+-- TechLog · update to v1.07.76
+-- Вложения без камеры («скрепка»): к работе можно прикрепить не
+-- только фото и видео, но и документ. Для этого в media разрешается
+-- третий вид записи — 'file'. Такие файлы лежат на Диске в отдельной
+-- папке «Files», фото и видео — там же, где и раньше.
+-- Идемпотентно: повторный запуск безопасен, данные не трогаются.
+-- ============================================================
+alter table public.media drop constraint if exists media_kind_check;
+alter table public.media add constraint media_kind_check
+  check (kind in ('photo','video','file'));
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_07_81 ▄▄▄▄▄▄▄▄▄▄
+
+-- ============================================================
+-- TechLog · update to v1.07.81
+-- Лимит вложений «скрепкой» переезжает из кода в настройки:
+-- админ задаёт его степпером рядом с лимитами фото и видео,
+-- проверяет по-прежнему сервер (media-begin читает эту строку).
+-- До этой версии в коде функции стояло жёсткое «20 файлов».
+-- Идемпотентно: повторный запуск безопасен, данные не трогаются.
+-- ============================================================
+alter table public.org_settings
+  add column if not exists media_max_file int not null default 20;
+
+-- границы те же, что у степперов в интерфейсе
+alter table public.org_settings drop constraint if exists org_media_limits_ck;
+alter table public.org_settings add constraint org_media_limits_ck
+  check (media_max_photo between 1 and 50
+     and media_max_video between 0 and 10
+     and media_max_file  between 1 and 50);
+
+-- строка настроек существует и на старых базах
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+
+-- =====================================================================
+-- v1.08.31: РОЛИ СОТРУДНИКОВ И АДМИНСКИЙ UPSERT ПРОФИЛЕЙ
+-- =====================================================================
+-- =====================================================================
+-- TechLog · update-to-1_08_31.sql — роли сотрудников и админский upsert
+-- ---------------------------------------------------------------------
+-- Чинит: администратор не мог изменить роль (и номер машины) сотрудника.
+-- Причина: клиент пишет профиль через UPSERT, а PostgreSQL при
+-- INSERT ... ON CONFLICT проверяет INSERT-политику ещё ДО разрешения
+-- конфликта. Политика profiles_ins разрешала вставку только собственной
+-- строки (id = auth.uid()) — админский upsert чужого профиля падал с
+-- «new row violates row-level security policy for table profiles».
+--
+-- Что делает файл (идемпотентно, можно выполнять повторно):
+--   1) profiles_ins: администратору разрешён и «вставочный» путь upsert;
+--      защита полей остаётся на триггере profiles_guard (role / blocked /
+--      login / car_no меняет только админ) и UPDATE-политике.
+--   2) Новая RPC public.admin_set_role(target, p_role) — явный канал
+--      смены роли, симметричный admin_set_blocked: только админ,
+--      роли admin|manager|tech, самому себе роль не понизить
+--      (SELF_DEMOTE), несуществующий сотрудник — NOT_FOUND.
+-- Выполните файл целиком в Supabase SQL Editor.
+-- =====================================================================
+
+-- 1) INSERT-политика: свой профиль — как раньше; админ — любой (для upsert)
+drop policy if exists profiles_ins on public.profiles;
+create policy profiles_ins on public.profiles for insert to authenticated
+  with check (id = auth.uid() or public.my_role() = 'admin');
+
+-- 2) Смена роли сотрудника — только администратор
+create or replace function public.admin_set_role(target uuid, p_role text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_role not in ('admin','manager','tech') then raise exception 'BAD_ROLE'; end if;
+  if target = auth.uid() and p_role <> 'admin' then raise exception 'SELF_DEMOTE'; end if;
+  update public.profiles set role = p_role where id = target;
+  if not found then raise exception 'NOT_FOUND'; end if;
+end $$;
+revoke all on function public.admin_set_role(uuid, text) from public, anon;
+grant execute on function public.admin_set_role(uuid, text) to authenticated;
+
+
+
+-- =====================================================================
+-- TechLog · v1.08.32 — GPS-трекинг Bouncie и справочник «Автомобили»
+-- (полная копия update-to-1_08_32.sql; идемпотентно)
+-- =====================================================================
+
+-- 1) Справочник автомобилей --------------------------------------------
+create table if not exists public.vehicles (
+  id         uuid primary key default gen_random_uuid(),
+  make       text not null default '',          -- марка/модель, свободный текст
+  vin        text,                              -- VIN (17 знаков, храним как ввели)
+  imei       text,                              -- IMEI трекера Bouncie (15 цифр)
+  car_no     int,                               -- порядковый номер 1–99
+  driver_id  uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  constraint vehicles_car_no_ck check (car_no is null or car_no between 1 and 99)
+);
+create unique index if not exists vehicles_car_no_ux on public.vehicles (car_no) where car_no is not null;
+create unique index if not exists vehicles_driver_ux on public.vehicles (driver_id) where driver_id is not null;
+create unique index if not exists vehicles_imei_ux   on public.vehicles (imei) where coalesce(imei,'') <> '';
+create unique index if not exists vehicles_vin_ux    on public.vehicles (upper(vin)) where coalesce(vin,'') <> '';
+
+alter table public.vehicles enable row level security;
+drop policy if exists vehicles_sel on public.vehicles;
+create policy vehicles_sel on public.vehicles for select to authenticated using (true);
+drop policy if exists vehicles_ins on public.vehicles;
+create policy vehicles_ins on public.vehicles for insert to authenticated
+  with check (public.my_role() = 'admin');
+drop policy if exists vehicles_upd on public.vehicles;
+create policy vehicles_upd on public.vehicles for update to authenticated
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
+drop policy if exists vehicles_del on public.vehicles;
+create policy vehicles_del on public.vehicles for delete to authenticated
+  using (public.my_role() = 'admin');
+
+-- 2) Запись машины + синхронизация номера у водителя --------------------
+-- Ошибки: FORBIDDEN / BAD_CAR_NO / CAR_NO_TAKEN / NOT_FOUND.
+-- Водителя можно «перевесить» с другой машины: там он снимется сам.
+-- Снятие/смена водителя обнуляет car_no у прежнего; назначение ставит
+-- car_no машины её водителю (регистр техники продолжает жить номерами).
+create or replace function public.vehicle_save(
+  p_id uuid, p_make text, p_vin text, p_imei text, p_car_no int, p_driver uuid)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  v_id uuid := coalesce(p_id, gen_random_uuid());
+  v_old_driver uuid;
+  v_exists boolean;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_car_no is not null and (p_car_no < 1 or p_car_no > 99) then raise exception 'BAD_CAR_NO'; end if;
+  if p_car_no is not null and exists (
+       select 1 from public.vehicles where car_no = p_car_no and id <> v_id)
+     then raise exception 'CAR_NO_TAKEN'; end if;
+  if p_driver is not null and not exists (select 1 from public.profiles where id = p_driver)
+     then raise exception 'NOT_FOUND'; end if;
+
+  select exists(select 1 from public.vehicles where id = v_id) into v_exists;
+  if p_id is not null and not v_exists then raise exception 'NOT_FOUND'; end if;
+  select driver_id into v_old_driver from public.vehicles where id = v_id;
+
+  -- водитель уходит с другой машины (уникальность driver_id)
+  if p_driver is not null then
+    update public.vehicles set driver_id = null where driver_id = p_driver and id <> v_id;
+  end if;
+
+  insert into public.vehicles (id, make, vin, imei, car_no, driver_id)
+  values (v_id, coalesce(trim(p_make), ''), nullif(trim(p_vin), ''),
+          nullif(regexp_replace(coalesce(p_imei, ''), '\D', '', 'g'), ''), p_car_no, p_driver)
+  on conflict (id) do update
+    set make = excluded.make, vin = excluded.vin, imei = excluded.imei,
+        car_no = excluded.car_no, driver_id = excluded.driver_id;
+
+  -- профили: у прежнего водителя номер снимаем, новому ставим номер машины
+  if v_old_driver is not null and v_old_driver is distinct from p_driver then
+    update public.profiles set car_no = null where id = v_old_driver;
+  end if;
+  if p_driver is not null then
+    update public.profiles set car_no = null
+      where car_no = p_car_no and id <> p_driver;          -- номер один на всех
+    update public.profiles set car_no = p_car_no where id = p_driver;
+  end if;
+  return v_id;
+end $$;
+revoke all on function public.vehicle_save(uuid,text,text,text,int,uuid) from public, anon;
+grant execute on function public.vehicle_save(uuid,text,text,text,int,uuid) to authenticated;
+
+-- 3) Ключи Bouncie — только в app_secrets, только админом ----------------
+-- Пустая строка = «не менять» (как в admin_set_drive_config).
+create or replace function public.admin_set_bouncie_config(
+  p_client_id text, p_client_secret text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if coalesce(trim(p_client_id), '') <> '' then
+    insert into public.app_secrets(key, value) values ('bn_client_id', trim(p_client_id))
+    on conflict (key) do update set value = excluded.value;
+  end if;
+  if coalesce(trim(p_client_secret), '') <> '' then
+    insert into public.app_secrets(key, value) values ('bn_client_secret', trim(p_client_secret))
+    on conflict (key) do update set value = excluded.value;
+  end if;
+end $$;
+revoke all on function public.admin_set_bouncie_config(text,text) from public, anon;
+grant execute on function public.admin_set_bouncie_config(text,text) to authenticated;
+
+-- 4) Статус подключения (несекретный) в настройках организации -----------
+alter table public.org_settings add column if not exists bn_account text;
+alter table public.org_settings add column if not exists bn_checked_at timestamptz;
+
+-- ▄▄▄▄▄▄▄▄▄▄ САМОПРОВЕРКА КОМПЛЕКТНОСТИ (v1.07.81) ▄▄▄▄▄▄▄▄▄▄
+-- Ничего не меняет: перечисляет недостающее или подтверждает готовность.
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_07_78 (работы без исполнителя) ▄▄▄▄▄▄▄▄▄▄
+
+
+alter table public.jobs       alter column technician_id drop not null;
+alter table public.placements alter column technician_id drop not null;
+
+-- создание работы: менеджер тоже может (в т.ч. ничейную и на другого)
+drop policy if exists jobs_ins on public.jobs;
+create policy jobs_ins on public.jobs for insert to authenticated
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager'));
+
+-- правка работы: у менеджера добавляется только ничейная работа
+-- (чтобы можно было назначить исполнителя); всё остальное как было
+drop policy if exists jobs_upd on public.jobs;
+create policy jobs_upd on public.jobs for update to authenticated
+  using (
+    technician_id = auth.uid()
+    or public.my_role() = 'admin'
+    or (public.my_role() = 'manager' and technician_id is null)
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  )
+  with check (
+    technician_id = auth.uid()
+    or public.my_role() in ('admin','manager')
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  );
+
+-- размещения ничейной работы: та же логика для менеджера
+drop policy if exists pl_upd on public.placements;
+create policy pl_upd on public.placements for update to authenticated
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+         or technician_id is null
+         or public.is_shared_job_helper(job_id))
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+              or public.is_shared_job_helper(job_id));
+
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema='public' and table_name='jobs'
+               and column_name='technician_id' and is_nullable='NO')
+  then raise warning 'TechLog: jobs.technician_id всё ещё NOT NULL — скрипт не применился.';
+  else raise notice 'TechLog: работы без исполнителя разрешены — v1.07.78 применён.';
+  end if;
+end $$;
+
+-- ============================================================
+-- v1.07.83 · двуязычные заметки и настройки автоперевода
+-- ============================================================
+alter table public.jobs
+  add column if not exists note_en text not null default '';
+
+alter table public.proposals
+  add column if not exists note_en text not null default '';
+
+alter table public.org_settings
+  add column if not exists tr_remind       boolean not null default true,
+  add column if not exists tr_auto         boolean not null default false,
+  add column if not exists tr_interval_min int     not null default 60,
+  add column if not exists tr_email        text    not null default '';
+
+-- границы те же, что у степпера в интерфейсе (15…480 минут)
+alter table public.org_settings drop constraint if exists org_tr_interval_ck;
+alter table public.org_settings add constraint org_tr_interval_ck
+  check (tr_interval_min between 15 and 480);
+
+-- строка настроек существует и на старых базах
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.07.85 · PDF-инвойсы на Google Диск
+-- ============================================================
+alter table public.media drop constraint if exists media_kind_check;
+alter table public.media add constraint media_kind_check
+  check (kind in ('photo','video','file','invoice'));
+
+alter table public.org_settings
+  add column if not exists gd_inv_folder text not null default '';
+
+-- строка настроек существует и на старых базах
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.07.86 · нумерация документов и имён файлов
+-- ============================================================
+alter table public.jobs
+  add column if not exists no bigint generated by default as identity;
+create unique index if not exists jobs_no_idx on public.jobs(no);
+
+alter table public.placements
+  add column if not exists no bigint generated by default as identity;
+create unique index if not exists placements_no_idx on public.placements(no);
+
+alter table public.org_settings
+  add column if not exists doc_no_fmt    text not null default '{TYPE}-{DATE}-{CX}-{UNIT}-{SEQ}',
+  add column if not exists file_name_fmt text not null default '{DATE}_{CX}_{UNIT}_{NAME}_{SEQ}',
+  add column if not exists doc_no_pad    int  not null default 5;
+
+alter table public.org_settings drop constraint if exists org_doc_pad_ck;
+alter table public.org_settings add constraint org_doc_pad_ck
+  check (doc_no_pad between 1 and 9);
+
+-- строка настроек существует и на старых базах
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.07.87 · инвойсы по папкам сотрудников
+-- ============================================================
+alter table public.org_settings
+  add column if not exists gd_inv_by_tech boolean not null default false;
+
+-- строка настроек существует и на старых базах
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.07.88 · архив (корзина) документов
+-- ============================================================
+alter table public.jobs
+  add column if not exists archived_at timestamptz,
+  add column if not exists archived_by uuid references public.profiles(id) on delete set null;
+create index if not exists jobs_archived_idx on public.jobs(archived_at);
+
+alter table public.proposals
+  add column if not exists archived_at timestamptz,
+  add column if not exists archived_by uuid references public.profiles(id) on delete set null;
+create index if not exists proposals_archived_idx on public.proposals(archived_at);
+
+alter table public.media
+  add column if not exists archived_at timestamptz;
+
+-- строка настроек существует и на старых базах
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.07.95 · телефон и факс в шапке бланка
+-- ============================================================
+alter table public.org_settings
+  add column if not exists voice_line text not null default '',
+  add column if not exists fax_line   text not null default '';
+
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.07.97 · приписка и способ доставки в бланке
+-- ============================================================
+alter table public.org_settings
+  add column if not exists legal_note  text not null default '',
+  add column if not exists ship_method text not null default 'Airborne';
+
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.07.98 · коды позиций, налог/доставка, блоки Note
+-- ============================================================
+alter table public.work_types  add column if not exists code text not null default '';
+alter table public.extra_works add column if not exists code text not null default '';
+
+alter table public.proposals
+  add column if not exists sales_tax numeric(12,2) not null default 0,
+  add column if not exists freight   numeric(12,2) not null default 0;
+
+create table if not exists public.note_templates (
+  id         text primary key,
+  title      text not null default '',
+  body       text not null default '',
+  sort       int  not null default 0,
+  created_at timestamptz not null default now()
+);
+alter table public.note_templates enable row level security;
+drop policy if exists nt_sel on public.note_templates;
+create policy nt_sel on public.note_templates for select to authenticated using (true);
+drop policy if exists nt_all on public.note_templates;
+-- права как у остальных справочников: читают все, правит админ.
+-- Роль берём тем же способом, что и все политики схемы — public.my_role().
+create policy nt_all on public.note_templates for all to authenticated
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
+
+-- готовые блоки с бланков заказчика
+insert into public.note_templates (id, title, body, sort) values
+ ('nt_out5','Residents out for 5 hours',
+  '- Residents have to be out of the apartment for 5 hours', 1),
+ ('nt_cross','Cross-contamination',
+  '- To prevent cross-contamination, all affected closing must be removed from the apartment before remediation begins and professionally cleaned before being brought back into the unit.', 2),
+ ('nt_stains','Stains may remain',
+  '- Please be advised that there are instances where stains caused by organic growth may not be completely removable from affected surfaces. In cases where stains remain after the remediation process, it is typically recommended to prime and paint the affected areas.', 3),
+ ('nt_visible','Pricing on visible damage',
+  '- Pricing is based on visible damage. Any concealed damage or additional demolition required beyond the initial scope will be quoted separately or billed as a change order.', 4)
+on conflict (id) do nothing;
+
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.08.12 · три корня на Диске и соответствия папок
+-- ============================================================
+alter table public.org_settings
+  add column if not exists gd_photo_folder text not null default '',
+  add column if not exists gd_files_folder text not null default '',
+  add column if not exists gd_inv_helpers  boolean not null default false;
+
+create table if not exists public.drive_dirs (
+  kind       text not null,             -- cp | cx | unit | tech | ym | doc
+  key        text not null,             -- ID сущности (или составной ключ)
+  folder_id  text not null,
+  name       text not null default '',
+  updated_at timestamptz not null default now(),
+  primary key (kind, key)
+);
+alter table public.drive_dirs enable row level security;
+drop policy if exists dd_sel on public.drive_dirs;
+create policy dd_sel on public.drive_dirs for select to authenticated using (true);
+drop policy if exists dd_all on public.drive_dirs;
+create policy dd_all on public.drive_dirs for all to authenticated
+  using (public.my_role() = 'admin') with check (public.my_role() = 'admin');
+
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.08.15 · права на пропозал и скрытие цен
+-- ============================================================
+alter table public.org_settings
+  add column if not exists prop_mgr_create  boolean not null default false,
+  add column if not exists prop_hide_prices boolean not null default true;
+
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ============================================================
+-- v1.08.17 · красный и жёлтый приоритет
+-- ============================================================
+alter table public.jobs
+  add column if not exists prio_hard boolean not null default true;
+
+
+-- ############################ FILE: update-to-1_08_23.sql ############################
+
+-- ============================================================
+-- TechLog · update to v1.08.23
+-- ДОКУМЕНТ РЕМОНТНЫХ РАБОТ (REP) — отделка после демонтажа.
+--   repairs               — сам документ: работы, материалы, апрув, история
+--   jobs.needs_repair     — ручной флаг «требуется восстановление»
+--   extra_works.repair    — позиция справочника относится к ремонту
+--   org_settings.rep_*    — кто создаёт и видно ли суммы работникам
+-- Создавать документ может любая роль; апрув ставит админ (и менеджер,
+-- если ему это разрешено в настройках). Правка одобренного документа
+-- снимает апрув — это делает приложение, здесь только хранение истории.
+-- Идемпотентно: повторный запуск безопасен.
+-- ============================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Документ
+-- ---------------------------------------------------------------------
+create table if not exists public.repairs (
+  id              uuid primary key default gen_random_uuid(),
+  no              bigint generated by default as identity,        -- номер REP-…
+  date            date not null default current_date,
+  counterparty_id uuid references public.counterparties(id) on delete set null,
+  complex_id      uuid references public.complexes(id) on delete set null,
+  unit_number     text not null default '',
+  job_id          uuid references public.jobs(id)      on delete set null,
+  proposal_id     uuid references public.proposals(id) on delete set null,
+  helper_ids      jsonb not null default '[]'::jsonb,             -- бригада, как у jobs
+  items           jsonb not null default '[]'::jsonb,             -- работы  [{q,code,d,d_en,a}]
+  materials       jsonb not null default '[]'::jsonb,             -- материалы, та же форма
+  note            text not null default '',
+  note_en         text not null default '',
+  po_number       text not null default '',
+  complete_by     date,
+  sales_tax       numeric not null default 0,
+  freight         numeric not null default 0,
+  total           numeric not null default 0,                     -- работы + материалы
+  status          text not null default 'draft'
+                  check (status in ('draft','sent','approved','declined')),
+  hist            jsonb not null default '[]'::jsonb,             -- история апрува
+  decline_reason  text not null default '',
+  created_by      uuid references public.profiles(id) on delete set null,
+  decided_by      uuid references public.profiles(id) on delete set null,
+  decided_at      timestamptz,
+  archived_at     timestamptz,
+  archived_by     uuid references public.profiles(id) on delete set null,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+create unique index if not exists repairs_no_idx    on public.repairs(no);
+create index if not exists repairs_job_idx          on public.repairs(job_id);
+create index if not exists repairs_prop_idx         on public.repairs(proposal_id);
+create index if not exists repairs_cx_idx           on public.repairs(complex_id, date desc);
+create index if not exists repairs_date_idx         on public.repairs(date desc);
+create index if not exists repairs_archived_idx     on public.repairs(archived_at);
+
+-- ---------------------------------------------------------------------
+-- 2. Флаг на работе и пометка позиций справочника
+-- ---------------------------------------------------------------------
+alter table public.jobs
+  add column if not exists needs_repair boolean not null default false;
+
+alter table public.extra_works
+  add column if not exists repair boolean not null default false;
+
+alter table public.org_settings
+  add column if not exists rep_hide_prices boolean not null default false,
+  add column if not exists rep_all_create  boolean not null default true;
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------
+-- 3. Права. Создаёт любой сотрудник — но только от своего имени.
+--    Видят: админ и менеджер — всё; работник — свои документы и те,
+--    что привязаны к видимой ему работе. Правят: админ, менеджер, автор.
+--    Удаляет — только админ (у остальных документ уходит в архив).
+-- ---------------------------------------------------------------------
+alter table public.repairs enable row level security;
+
+drop policy if exists rep_sel on public.repairs;
+create policy rep_sel on public.repairs for select to authenticated
+  using (
+    public.my_role() in ('admin','manager')
+    or created_by = auth.uid()
+    or (job_id is not null and public.can_view_job(job_id))
+  );
+
+drop policy if exists rep_ins on public.repairs;
+create policy rep_ins on public.repairs for insert to authenticated
+  with check (created_by = auth.uid());
+
+drop policy if exists rep_upd on public.repairs;
+create policy rep_upd on public.repairs for update to authenticated
+  using      (public.my_role() in ('admin','manager') or created_by = auth.uid())
+  with check (public.my_role() in ('admin','manager') or created_by = auth.uid());
+
+drop policy if exists rep_del on public.repairs;
+create policy rep_del on public.repairs for delete to authenticated
+  using (public.my_role() = 'admin');
+
+-- ---------------------------------------------------------------------
+-- 4. Апрув документа ремонта. Автор правит документ свободно — RLS ему
+--    это разрешает, — поэтому статус стережёт триггер: поставить
+--    «Одобрен»/«Отклонён» может только админ (и менеджер, если ему это
+--    разрешено настройкой manager_can_approve). При восстановлении из
+--    бэкапа проверка не мешает.
+-- ---------------------------------------------------------------------
+create or replace function public.repairs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_can boolean;
+begin
+  if coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  select public.my_role() = 'admin'
+      or (public.my_role() = 'manager'
+          and coalesce((select manager_can_approve from public.org_settings where id = 'org'), false))
+    into v_can;
+  if TG_OP = 'INSERT' then
+    if new.status in ('approved','declined') and not coalesce(v_can, false) then
+      new.status := 'draft';
+    end if;
+    return new;
+  end if;
+  if new.status is distinct from old.status
+     and new.status in ('approved','declined')
+     and not coalesce(v_can, false) then
+    raise exception 'FORBIDDEN_APPROVE';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists repairs_guard_t on public.repairs;
+create trigger repairs_guard_t before insert or update on public.repairs
+  for each row execute function public.repairs_guard();
+
+-- ---------------------------------------------------------------------
+-- 5. Справочник ремонтных работ. Позиции обычные — админ правит их
+--    в «Справочники → Доп. работы», флаг repair поднимает их наверх
+--    в подборе для документа ремонта. Цены ориентировочные: поставьте свои.
+-- ---------------------------------------------------------------------
+insert into public.extra_works (id, name, kind, needs_size, size_type_id, price, sort, code, repair) values
+ ('c2000000-0000-4000-8000-000000000011','Установка гипсокартона / Drywall installation','work',false,null,85,11,'DRY',true),
+ ('c2000000-0000-4000-8000-000000000012','Замена деревянных брусков / Wood studs replacement','work',false,null,45,12,'STD',true),
+ ('c2000000-0000-4000-8000-000000000013','Восстановление ванны / Bathtub restoration','work',false,null,320,13,'TUB',true),
+ ('c2000000-0000-4000-8000-000000000014','Восстановление стеновых панелей / Wall panel restoration','work',true,'c1000000-0000-4000-8000-000000000002',12,14,'PNL',true),
+ ('c2000000-0000-4000-8000-000000000015','Установка дверной коробки / Door frame installation','work',false,null,190,15,'DRF',true),
+ ('c2000000-0000-4000-8000-000000000016','Установка наличников / Door casing installation','work',true,'c1000000-0000-4000-8000-000000000001',6,16,'TRM',true),
+ ('c2000000-0000-4000-8000-000000000017','Покраска после ремонта / Paint after repair','work',true,'c1000000-0000-4000-8000-000000000002',3,17,'PNT',true),
+ ('c2000000-0000-4000-8000-000000000018','Покупка материалов / Materials purchase','purchase',false,null,0,18,'MAT',true)
+on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------
+-- 6. Восстановление из бэкапа: документ ремонта тоже грузится.
+-- ---------------------------------------------------------------------
+create or replace function public.admin_restore_rows(p_table text, p_rows jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_allowed text[] := array[
+    'profiles','counterparties','complexes','aux_equipment','work_types',
+    'equipment_types','size_types','extra_works','product_types','price_list',
+    'counterparty_prices','equipment_stock','org_settings','code_requests',
+    'complex_code_history','hidden_staff','proposals','jobs','placements',
+    'ext_requests','media','repairs'];
+  v_cols text[]; v_collist text; v_set text; v_sql text;
+  r jsonb; v_n int := 0; v_rc int;
+  v_ins int := 0; v_skip int := 0; v_errs jsonb := '[]'::jsonb;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if not (p_table = any(v_allowed)) then raise exception 'BAD_TABLE'; end if;
+  if to_regclass('public.' || p_table) is null then raise exception 'NO_TABLE'; end if;
+  if p_rows is null or jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) = 0 then
+    return jsonb_build_object('inserted', 0, 'skipped', 0, 'errors', '[]'::jsonb);
+  end if;
+
+  perform set_config('techlog.restore', '1', true);
+
+  select array_agg(quote_ident(column_name) order by ordinal_position) into v_cols
+  from information_schema.columns
+  where table_schema = 'public' and table_name = p_table
+    and (p_rows->0) ? column_name;
+  if v_cols is null then raise exception 'NO_MATCHING_COLUMNS'; end if;
+  v_collist := array_to_string(v_cols, ',');
+
+  if p_table = 'org_settings' then
+    select string_agg(format('%s = excluded.%s', c, c), ', ')
+      into v_set from unnest(v_cols) c where c <> 'id';
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict (id) do update set %s', p_table, v_collist, v_collist, p_table, v_set);
+  else
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict do nothing', p_table, v_collist, v_collist, p_table);
+  end if;
+
+  for r in select * from jsonb_array_elements(p_rows) loop
+    v_n := v_n + 1;
+    begin
+      execute v_sql using r;
+      get diagnostics v_rc = row_count;
+      if v_rc > 0 then v_ins := v_ins + 1; else v_skip := v_skip + 1; end if;
+    exception when others then
+      v_errs := v_errs || jsonb_build_object(
+        'row', coalesce(r->>'id', '#' || v_n), 'error', sqlerrm);
+    end;
+  end loop;
+
+  -- identity-счётчики номеров: после загрузки старых номеров двигаем вперёд
+  if p_table in ('proposals','repairs') then
+    execute format(
+      'select setval(pg_get_serial_sequence(''public.%I'',''no''),
+                     greatest((select coalesce(max(no), 0) from public.%I), 1), true)',
+      p_table, p_table);
+  end if;
+
+  return jsonb_build_object('inserted', v_ins, 'skipped', v_skip, 'errors', v_errs);
+end $$;
+revoke all on function public.admin_restore_rows(text, jsonb) from public, anon;
+grant execute on function public.admin_restore_rows(text, jsonb) to authenticated;
+
+
+
+-- ############################ FILE: update-to-1_08_24.sql ############################
+
+-- ============================================================
+-- TechLog · update to v1.08.24
+-- ФОТО «ДО/ПОСЛЕ» В ДОКУМЕНТЕ РЕМОНТА.
+--   repairs.photos — пометки к снимкам инвойса: {"before":[id…],"after":[id…]}
+-- Сами файлы остаются в media у связанной работы и уходят на Диск
+-- обычным маршрутом — Edge-функции не меняются и передеплой не нужен.
+-- Уведомление «апрув слетел» отдельных полей не требует: это черновик,
+-- у которого последней записью в repairs.hist стоит снятие апрува.
+-- Ставится поверх 1.08.23. Идемпотентно.
+-- ============================================================
+
+alter table public.repairs
+  add column if not exists photos jsonb not null default '{"before": [], "after": []}'::jsonb;
+
+-- Старым документам — тот же вид, что и у новых.
+update public.repairs
+   set photos = '{"before": [], "after": []}'::jsonb
+ where photos is null
+    or jsonb_typeof(photos) <> 'object';
+
+
+
+-- ############################ FILE: update-to-1_08_26.sql ############################
+
+-- ============================================================
+-- TechLog · update to v1.08.26
+-- СКЛАД: ВОЗВРАТ ОБОРУДОВАНИЯ И ЕЖЕДНЕВНЫЙ СНИМОК ОСТАТКОВ.
+--   placements.returned_at / returned_by — «вернул на склад» отдельным
+--     шагом после «забрал»: между ними оборудование лежит у сотрудника.
+--   stock_daily — по строке на тип оборудования за день: свободно,
+--     в аренде, ожидают вывоза, у сотрудников, поломано.
+--   stock_snapshot() пишет снимок, stock_snapshot_due() решает, пора ли.
+--   Расписание — pg_cron, ежечасно; функция сама смотрит, наступило ли
+--     10:00 по местному времени и не записан ли день. Так снимок не
+--     съезжает при переходе на летнее время.
+-- Регистра накопления здесь нет: остатки считаются от документов.
+-- Идемпотентно.
+-- ============================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Возврат на склад
+-- ---------------------------------------------------------------------
+alter table public.placements
+  add column if not exists returned_at timestamptz,
+  add column if not exists returned_by uuid references public.profiles(id) on delete set null;
+create index if not exists placements_ret_idx on public.placements(returned_at);
+
+-- ---------------------------------------------------------------------
+-- 2. Когда снимать остатки
+-- ---------------------------------------------------------------------
+alter table public.org_settings
+  add column if not exists snapshot_tz   text not null default 'America/New_York',
+  add column if not exists snapshot_hour int  not null default 10;
+insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------
+-- 3. История остатков. Пишет только функция снимка, читают все свои.
+-- ---------------------------------------------------------------------
+create table if not exists public.stock_daily (
+  date              date not null,
+  equipment_type_id uuid not null references public.equipment_types(id) on delete cascade,
+  total             int  not null default 0,
+  free              int  not null default 0,
+  rented            int  not null default 0,
+  pending           int  not null default 0,
+  with_tech         int  not null default 0,
+  broken            int  not null default 0,
+  in_repair         int  not null default 0,
+  at                timestamptz not null default now(),
+  primary key (date, equipment_type_id)
+);
+create index if not exists stock_daily_date_idx on public.stock_daily(date desc);
+
+alter table public.stock_daily enable row level security;
+drop policy if exists sd_sel on public.stock_daily;
+create policy sd_sel on public.stock_daily for select to authenticated using (true);
+-- политик на запись нет: строки кладёт только stock_snapshot() (security definer)
+
+-- ---------------------------------------------------------------------
+-- 4. Текущие остатки по типам. Считаются от документов:
+--      в аренде       — стоит на объекте, срок ещё не вышел
+--      ожидают вывоза — стоит на объекте, срок вышел или сегодня
+--      у сотрудников  — забрано с объекта, но на склад ещё не сдано
+--      свободно       — всё остальное из общего количества
+-- ---------------------------------------------------------------------
+create or replace function public.stock_counts()
+returns table (equipment_type_id uuid, total int, free int, rented int,
+               pending int, with_tech int, broken int, in_repair int)
+language sql stable security definer set search_path = public as $$
+  with pl as (
+    select p.equipment_type_id as et,
+           sum(case when not p.picked_up and not p.superseded
+                     and p.due_date >  current_date then p.qty else 0 end)::int as rented,
+           sum(case when not p.picked_up and not p.superseded
+                     and p.due_date <= current_date then p.qty else 0 end)::int as pending,
+           sum(case when p.picked_up and not p.superseded
+                     and p.returned_at is null then p.qty else 0 end)::int as with_tech
+      from public.placements p
+     group by p.equipment_type_id)
+  select e.id,
+         coalesce(s.total, 0),
+         coalesce(s.total, 0) - coalesce(pl.rented, 0) - coalesce(pl.pending, 0)
+           - coalesce(pl.with_tech, 0) - coalesce(s.broken, 0) - coalesce(s.in_repair, 0),
+         coalesce(pl.rented, 0), coalesce(pl.pending, 0), coalesce(pl.with_tech, 0),
+         coalesce(s.broken, 0), coalesce(s.in_repair, 0)
+    from public.equipment_types e
+    left join public.equipment_stock s on s.equipment_type_id = e.id
+    left join pl on pl.et = e.id;
+$$;
+revoke all on function public.stock_counts() from public, anon;
+grant execute on function public.stock_counts() to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 5. Снимок за дату. Повторный вызов переписывает строку того же дня,
+--    поэтому и cron, и приложение могут звать её сколько угодно раз.
+-- ---------------------------------------------------------------------
+create or replace function public.stock_snapshot(p_date date default null)
+returns int language plpgsql security definer set search_path = public as $$
+declare v_tz text; v_date date; v_n int;
+begin
+  select coalesce(snapshot_tz, 'America/New_York') into v_tz
+    from public.org_settings where id = 'org';
+  v_date := coalesce(p_date, (now() at time zone coalesce(v_tz, 'America/New_York'))::date);
+
+  insert into public.stock_daily
+    (date, equipment_type_id, total, free, rented, pending, with_tech, broken, in_repair, at)
+  select v_date, c.equipment_type_id, c.total, c.free, c.rented, c.pending,
+         c.with_tech, c.broken, c.in_repair, now()
+    from public.stock_counts() c
+  on conflict (date, equipment_type_id) do update set
+    total = excluded.total, free = excluded.free, rented = excluded.rented,
+    pending = excluded.pending, with_tech = excluded.with_tech,
+    broken = excluded.broken, in_repair = excluded.in_repair, at = now();
+  get diagnostics v_n = row_count;
+
+  delete from public.stock_daily where date < v_date - 400;   -- история за год с хвостом
+  return v_n;
+end $$;
+revoke all on function public.stock_snapshot(date) from public, anon;
+grant execute on function public.stock_snapshot(date) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 6. «Пора ли писать»: местное время дошло до нужного часа, а строки за
+--    сегодня ещё нет. Зовут и cron, и приложение — второй как подстраховка,
+--    если pg_cron в проекте недоступен.
+-- ---------------------------------------------------------------------
+create or replace function public.stock_snapshot_due()
+returns boolean language plpgsql security definer set search_path = public as $$
+declare v_tz text; v_hour int; v_loc timestamp; v_date date;
+begin
+  select coalesce(snapshot_tz, 'America/New_York'), coalesce(snapshot_hour, 10)
+    into v_tz, v_hour from public.org_settings where id = 'org';
+  v_tz := coalesce(v_tz, 'America/New_York'); v_hour := coalesce(v_hour, 10);
+  v_loc := now() at time zone v_tz;
+  v_date := v_loc::date;
+  if extract(hour from v_loc) < v_hour then return false; end if;
+  if exists (select 1 from public.stock_daily where date = v_date) then return false; end if;
+  perform public.stock_snapshot(v_date);
+  return true;
+end $$;
+revoke all on function public.stock_snapshot_due() from public, anon;
+grant execute on function public.stock_snapshot_due() to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 7. Расписание. Если pg_cron в проекте не поднять — не беда: снимок
+--    напишет приложение, когда склад откроют после назначенного часа.
+-- ---------------------------------------------------------------------
+do $$
+begin
+  begin
+    create schema if not exists cron;
+    create extension if not exists pg_cron with schema cron;
+  exception when others then
+    raise notice 'TechLog: pg_cron включить не удалось (%). Снимок будет писать приложение.', sqlerrm;
+  end;
+
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    begin
+      perform cron.unschedule('techlog-stock-daily');
+    exception when others then null;
+    end;
+    begin
+      perform cron.schedule('techlog-stock-daily', '7 * * * *',
+                            'select public.stock_snapshot_due()');
+      raise notice 'TechLog: снимок склада — задание cron поставлено, проверка каждый час.';
+    exception when others then
+      raise notice 'TechLog: задание cron не поставилось (%). Снимок будет писать приложение.', sqlerrm;
+    end;
+  end if;
+end $$;
+
+-- Первый снимок — сразу, чтобы график не пустовал до завтра.
+select public.stock_snapshot();
+
+
+-- ############################ FILE: update-to-1_08_27.sql ############################
+
+-- ============================================================
+-- TechLog · update to v1.08.27
+-- РЕГИСТР ОБОРУДОВАНИЯ: один журнал движений equip_moves.
+--   Места: склад (stock) · машина сотрудника (car) · объект (site)
+--   · ремонт (repair) · внешний мир (ext — поступление и списание).
+--   Остатки склада, машин и ремонта — сумма журнала; «на объектах»
+--   по-прежнему считается из placements (механика аренды не тронута).
+--   Операции: поступление и списание (админ), взять со склада / сдать
+--   на склад (техник, своя машина), в ремонт / из ремонта.
+--   Аренда, «забрал» и «вернул на склад» пишут движения сами — триггером
+--   на placements; для техников в этих сценариях ничего не меняется.
+--   Ручные счётчики equipment_stock приложением больше не редактируются;
+--   текущие остатки разово переносятся в журнал («начальный ввод»).
+--   profiles.car_no: номер машины 1–99, уникальный.
+-- Идемпотентно: безопасно запускать повторно.
+-- ============================================================
+
+-- ---------------------------------------------------------------------
+-- 1) Номер машины: диапазон 1–99 и уникальность. Значения вне диапазона
+--    и дубли (кроме самого раннего сотрудника) обнуляются — админ
+--    расставит заново в «Настройки → Сотрудники».
+-- ---------------------------------------------------------------------
+-- profiles_guard не пускает правку car_no без admin-сессии, а в SQL-редакторе
+-- Supabase её нет. На время чистки глушим строковые триггеры (штатный приём
+-- Supabase для миграций), после — возвращаем как было.
+set session_replication_role = replica;
+
+update public.profiles set car_no = null
+ where car_no is not null and (car_no < 1 or car_no > 99);
+
+with d as (
+  select id, row_number() over (partition by car_no order by created_at, id) as rn
+    from public.profiles where car_no is not null)
+update public.profiles p set car_no = null
+  from d where p.id = d.id and d.rn > 1;
+
+set session_replication_role = origin;
+
+alter table public.profiles drop constraint if exists profiles_car_no_range;
+alter table public.profiles add constraint profiles_car_no_range
+  check (car_no is null or car_no between 1 and 99);
+create unique index if not exists profiles_car_no_ux
+  on public.profiles (car_no) where car_no is not null;
+
+-- ---------------------------------------------------------------------
+-- 2) Журнал движений. Каждая строка — «qty единиц типа X из from_loc в
+--    to_loc». Для машин заполняется tech_id (чья машина), для движений
+--    аренды — placement_id (удаление аренды удаляет и её движения).
+-- ---------------------------------------------------------------------
+create table if not exists public.equip_moves (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in
+    ('init','intake','writeoff','take','return','to_repair','from_repair','place','pickup','undo')),
+  equipment_type_id uuid not null references public.equipment_types(id) on delete cascade,
+  qty int not null check (qty > 0),
+  from_loc text not null check (from_loc in ('ext','stock','car','site','repair')),
+  to_loc   text not null check (to_loc   in ('ext','stock','car','site','repair')),
+  tech_id uuid references public.profiles(id) on delete set null,        -- чья машина
+  placement_id uuid references public.placements(id) on delete cascade,  -- движение аренды
+  actor uuid references public.profiles(id) on delete set null,
+  note text not null default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists equip_moves_et_idx on public.equip_moves(equipment_type_id);
+create index if not exists equip_moves_pl_idx on public.equip_moves(placement_id);
+create index if not exists equip_moves_at_idx on public.equip_moves(created_at desc);
+
+alter table public.equip_moves enable row level security;
+drop policy if exists em_sel on public.equip_moves;
+create policy em_sel on public.equip_moves for select to authenticated using (true);
+-- политик на запись нет: пишут только equip_op() и триггер (security definer)
+
+-- ---------------------------------------------------------------------
+-- 3) Остаток типа в месте (внутренняя, наружу не выдаётся).
+-- ---------------------------------------------------------------------
+create or replace function public.equip_bal(p_type uuid, p_loc text, p_tech uuid default null)
+returns int language sql stable security definer set search_path = public as $$
+  select coalesce(sum(
+    case when m.to_loc   = p_loc and (p_loc <> 'car' or m.tech_id = p_tech) then  m.qty
+         when m.from_loc = p_loc and (p_loc <> 'car' or m.tech_id = p_tech) then -m.qty
+         else 0 end), 0)::int
+    from public.equip_moves m
+   where m.equipment_type_id = p_type;
+$$;
+revoke all on function public.equip_bal(uuid, text, uuid) from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- 4) Документы регистра одной функцией. p_kind:
+--      intake        поступление на склад (только админ)   ext    → stock
+--      writeoff      списание со склада (только админ)     stock  → ext
+--      take          взял со склада в свою машину          stock  → car
+--      return        сдал из своей машины на склад         car    → stock
+--      repair_stock  в ремонт со склада                    stock  → repair
+--      repair_car    в ремонт из своей машины              car    → repair
+--      from_repair   вернулось из ремонта на склад         repair → stock
+--    Остатка должно хватать — иначе NOT_ENOUGH:<доступно>.
+-- ---------------------------------------------------------------------
+create or replace function public.equip_op(p_kind text, p_type uuid, p_qty int, p_note text default '')
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_role text := coalesce(public.my_role(), 'tech');
+  v_me uuid := auth.uid();
+  v_from text; v_to text; v_kind text; v_tech uuid := null;
+  v_have int; v_row public.equip_moves; v_abbr text; v_name text; v_act text;
+begin
+  if v_me is null then raise exception 'FORBIDDEN'; end if;
+  if exists (select 1 from public.profiles where id = v_me and coalesce(blocked, false)) then
+    raise exception 'FORBIDDEN';
+  end if;
+  if p_type is null or not exists (select 1 from public.equipment_types where id = p_type) then
+    raise exception 'BAD_TYPE';
+  end if;
+  if p_qty is null or p_qty < 1 or p_qty > 999 then raise exception 'BAD_QTY'; end if;
+
+  if p_kind = 'intake' then
+    if v_role <> 'admin' then raise exception 'FORBIDDEN'; end if;
+    v_kind := 'intake'; v_from := 'ext'; v_to := 'stock'; v_act := 'equip_intake';
+  elsif p_kind = 'writeoff' then
+    if v_role <> 'admin' then raise exception 'FORBIDDEN'; end if;
+    v_kind := 'writeoff'; v_from := 'stock'; v_to := 'ext'; v_act := 'equip_writeoff';
+  elsif p_kind = 'take' then
+    v_kind := 'take'; v_from := 'stock'; v_to := 'car'; v_tech := v_me; v_act := 'equip_take';
+  elsif p_kind = 'return' then
+    v_kind := 'return'; v_from := 'car'; v_to := 'stock'; v_tech := v_me; v_act := 'equip_return';
+  elsif p_kind = 'repair_stock' then
+    v_kind := 'to_repair'; v_from := 'stock'; v_to := 'repair'; v_act := 'equip_repair';
+  elsif p_kind = 'repair_car' then
+    v_kind := 'to_repair'; v_from := 'car'; v_to := 'repair'; v_tech := v_me; v_act := 'equip_repair';
+  elsif p_kind = 'from_repair' then
+    v_kind := 'from_repair'; v_from := 'repair'; v_to := 'stock'; v_act := 'equip_repair_back';
+  else
+    raise exception 'BAD_KIND';
+  end if;
+
+  if v_from <> 'ext' then
+    v_have := public.equip_bal(p_type, v_from, v_tech);
+    if v_have < p_qty then raise exception 'NOT_ENOUGH:%', v_have; end if;
+  end if;
+
+  insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, actor, note)
+  values (v_kind, p_type, p_qty, v_from, v_to, v_tech, v_me, coalesce(p_note, ''))
+  returning * into v_row;
+
+  select abbr into v_abbr from public.equipment_types where id = p_type;
+  select display_name into v_name from public.profiles where id = v_me;
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (v_me, coalesce(v_name, ''), v_act, 'equip', p_type::text,
+          jsonb_build_object('eq', coalesce(v_abbr, '?'), 'qty', p_qty,
+                             'from', v_from, 'to', v_to, 'note', coalesce(p_note, '')));
+  return to_jsonb(v_row);
+end $$;
+revoke all on function public.equip_op(text, uuid, int, text) from public, anon;
+grant execute on function public.equip_op(text, uuid, int, text) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 5) Аренда пишет движения сама. Создание аренды — «машина → объект»,
+--    недостающее в машине само добирается со склада (техник не обязан
+--    жать «Взять»). «Забрал» — «объект → машина забравшего», «вернул на
+--    склад» — «машина → склад». Отмена удаляет своё движение; если
+--    движения нет (пикап был до появления регистра) — пишется обратное.
+--    Продления (ext_of) — бумажные, физически ничего не едет.
+-- ---------------------------------------------------------------------
+create or replace function public.equip_place(p_type uuid, p_qty int, p_tech uuid, p_pl uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_short int;
+begin
+  if p_qty is null or p_qty < 1 then return; end if;
+  v_short := p_qty - public.equip_bal(p_type, 'car', p_tech);
+  if v_short > 0 then
+    insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor, note)
+    values ('take', p_type, v_short, 'stock', 'car', p_tech, p_pl, p_tech, 'auto');
+  end if;
+  insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+  values ('place', p_type, p_qty, 'car', 'site', p_tech, p_pl, p_tech);
+end $$;
+revoke all on function public.equip_place(uuid, int, uuid, uuid) from public, anon, authenticated;
+
+create or replace function public.equip_pl_sync()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_tech uuid; v_d int; v_n int;
+begin
+  -- восстановление из бэкапа: движения приезжают из самого бэкапа
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+
+  if tg_op = 'INSERT' then
+    if new.ext_of is null then
+      perform public.equip_place(new.equipment_type_id,
+                                 greatest(1, coalesce(new.qty, 1)),
+                                 new.technician_id, new.id);
+    end if;
+    return new;
+  end if;
+
+  -- «забрал» / отмена забора
+  if old.picked_up is distinct from new.picked_up then
+    v_tech := coalesce(new.picked_up_by, old.picked_up_by, new.technician_id);
+    if new.picked_up then
+      insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+      values ('pickup', new.equipment_type_id, greatest(1, coalesce(new.qty, 1)),
+              'site', 'car', v_tech, new.id, coalesce(new.picked_up_by, v_tech));
+    else
+      delete from public.equip_moves where placement_id = new.id and kind = 'pickup';
+      get diagnostics v_n = row_count;
+      if v_n = 0 then
+        insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+        values ('undo', new.equipment_type_id, greatest(1, coalesce(old.qty, 1)),
+                'car', 'site', v_tech, new.id, auth.uid());
+      end if;
+    end if;
+  end if;
+
+  -- «вернул на склад» / отмена возврата
+  if (old.returned_at is null) is distinct from (new.returned_at is null) then
+    v_tech := coalesce(new.picked_up_by, old.picked_up_by, new.technician_id);
+    if new.returned_at is not null then
+      insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+      values ('return', new.equipment_type_id, greatest(1, coalesce(new.qty, 1)),
+              'car', 'stock', v_tech, new.id, coalesce(new.returned_by, v_tech));
+    else
+      delete from public.equip_moves where placement_id = new.id and kind = 'return';
+      get diagnostics v_n = row_count;
+      if v_n = 0 then
+        insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+        values ('undo', new.equipment_type_id, greatest(1, coalesce(old.qty, 1)),
+                'stock', 'car', v_tech, new.id, auth.uid());
+      end if;
+    end if;
+  end if;
+
+  -- правка количества в форме работы. Строки, у которых есть продления,
+  -- форма не трогает (частичное продление меняет qty — это бумажный
+  -- перенос на строку продления, движения не нужны).
+  if old.qty is distinct from new.qty and new.ext_of is null
+     and not exists (select 1 from public.placements x where x.ext_of = new.id) then
+    v_d := coalesce(new.qty, 0) - coalesce(old.qty, 0);
+    if v_d <> 0 then
+      if new.returned_at is not null then                 -- уже сдано на склад
+        insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, placement_id, actor)
+        values ('undo', new.equipment_type_id, abs(v_d),
+                case when v_d > 0 then 'ext' else 'stock' end,
+                case when v_d > 0 then 'stock' else 'ext' end, new.id, auth.uid());
+      elsif new.picked_up then                            -- в машине
+        v_tech := coalesce(new.picked_up_by, new.technician_id);
+        insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+        values ('undo', new.equipment_type_id, abs(v_d),
+                case when v_d > 0 then 'site' else 'car' end,
+                case when v_d > 0 then 'car' else 'site' end, v_tech, new.id, auth.uid());
+      else                                                -- стоит на объекте
+        if v_d > 0 then
+          perform public.equip_place(new.equipment_type_id, v_d, new.technician_id, new.id);
+        else
+          insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+          values ('undo', new.equipment_type_id, -v_d, 'site', 'car', new.technician_id, new.id, auth.uid());
+        end if;
+      end if;
+    end if;
+  end if;
+
+  return new;
+end $$;
+
+drop trigger if exists equip_pl_sync_tg on public.placements;
+create trigger equip_pl_sync_tg
+  after insert or update on public.placements
+  for each row execute function public.equip_pl_sync();
+
+-- ---------------------------------------------------------------------
+-- 6) Начальный ввод: разовый перенос текущих остатков в журнал.
+--    Выполняется только на полностью пустом журнале. «Свободно» из старых
+--    счётчиков ложится на склад, сломано + в ремонте — в ремонт, забранное
+--    и не сданное — в машины забравших. Стоящее на объектах в журнал не
+--    вносится: оно приедет в машину пикапом и ляжет на склад возвратом.
+-- ---------------------------------------------------------------------
+do $$
+declare r record;
+begin
+  if exists (select 1 from public.equip_moves limit 1) then return; end if;
+
+  for r in
+    with pl as (
+      select p.equipment_type_id as et,
+             sum(case when not p.superseded and not p.picked_up
+                      then p.qty else 0 end)::int as on_site,
+             sum(case when not p.superseded and p.picked_up and p.returned_at is null
+                      then p.qty else 0 end)::int as in_car
+        from public.placements p group by p.equipment_type_id)
+    select s.equipment_type_id as et,
+           greatest(0, coalesce(s.total, 0) - coalesce(s.broken, 0) - coalesce(s.in_repair, 0)
+                       - coalesce(pl.on_site, 0) - coalesce(pl.in_car, 0)) as free,
+           coalesce(s.broken, 0) + coalesce(s.in_repair, 0) as rep
+      from public.equipment_stock s
+      left join pl on pl.et = s.equipment_type_id
+  loop
+    if r.free > 0 then
+      insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, note)
+      values ('init', r.et, r.free, 'ext', 'stock', 'начальный ввод');
+    end if;
+    if r.rep > 0 then
+      insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, note)
+      values ('init', r.et, r.rep, 'ext', 'repair', 'начальный ввод');
+    end if;
+  end loop;
+
+  insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, note)
+  select 'init', p.equipment_type_id, sum(p.qty)::int, 'ext', 'car',
+         coalesce(p.picked_up_by, p.technician_id), 'начальный ввод'
+    from public.placements p
+   where p.picked_up and p.returned_at is null and not p.superseded
+   group by p.equipment_type_id, coalesce(p.picked_up_by, p.technician_id)
+  having sum(p.qty) > 0;
+end $$;
+
+-- ---------------------------------------------------------------------
+-- 7) Остатки: склад / машины / ремонт — из журнала; в аренде и «ждут
+--    вывоза» — из placements, как раньше. Сигнатура прежняя, поэтому
+--    ежедневные снимки stock_daily работают без изменений; broken
+--    больше не существует и всегда 0.
+-- ---------------------------------------------------------------------
+create or replace function public.stock_counts()
+returns table (equipment_type_id uuid, total int, free int, rented int,
+               pending int, with_tech int, broken int, in_repair int)
+language sql stable security definer set search_path = public as $$
+  with pl as (
+    select p.equipment_type_id as et,
+           sum(case when not p.picked_up and not p.superseded
+                     and p.due_date >  current_date then p.qty else 0 end)::int as rented,
+           sum(case when not p.picked_up and not p.superseded
+                     and p.due_date <= current_date then p.qty else 0 end)::int as pending
+      from public.placements p
+     group by p.equipment_type_id),
+  em as (
+    select m.equipment_type_id as et,
+           sum(case when m.to_loc = 'stock'  then m.qty when m.from_loc = 'stock'  then -m.qty else 0 end)::int as st,
+           sum(case when m.to_loc = 'car'    then m.qty when m.from_loc = 'car'    then -m.qty else 0 end)::int as car,
+           sum(case when m.to_loc = 'repair' then m.qty when m.from_loc = 'repair' then -m.qty else 0 end)::int as rep
+      from public.equip_moves m
+     group by m.equipment_type_id)
+  select e.id,
+         coalesce(em.st, 0) + coalesce(em.car, 0) + coalesce(em.rep, 0)
+           + coalesce(pl.rented, 0) + coalesce(pl.pending, 0),
+         coalesce(em.st, 0),
+         coalesce(pl.rented, 0),
+         coalesce(pl.pending, 0),
+         coalesce(em.car, 0),
+         0,
+         coalesce(em.rep, 0)
+    from public.equipment_types e
+    left join em on em.et = e.id
+    left join pl on pl.et = e.id;
+$$;
+revoke all on function public.stock_counts() from public, anon;
+grant execute on function public.stock_counts() to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 8) Бэкап: equip_moves входит в выгрузку и восстановление. Тот же
+--    admin_restore_rows, в списке разрешённых таблиц добавился журнал
+--    (set_config('techlog.restore') уже стоит — триггер аренды при
+--    восстановлении молчит, движения приезжают из самого бэкапа).
+-- ---------------------------------------------------------------------
+create or replace function public.admin_restore_rows(p_table text, p_rows jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_allowed text[] := array[
+    'profiles','counterparties','complexes','aux_equipment','work_types',
+    'equipment_types','size_types','extra_works','product_types','price_list',
+    'counterparty_prices','equipment_stock','org_settings','code_requests',
+    'complex_code_history','hidden_staff','proposals','jobs','placements',
+    'ext_requests','media','repairs','equip_moves'];
+  v_cols text[]; v_collist text; v_set text; v_sql text;
+  r jsonb; v_n int := 0; v_rc int;
+  v_ins int := 0; v_skip int := 0; v_errs jsonb := '[]'::jsonb;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if not (p_table = any(v_allowed)) then raise exception 'BAD_TABLE'; end if;
+  if to_regclass('public.' || p_table) is null then raise exception 'NO_TABLE'; end if;
+  if p_rows is null or jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) = 0 then
+    return jsonb_build_object('inserted', 0, 'skipped', 0, 'errors', '[]'::jsonb);
+  end if;
+
+  perform set_config('techlog.restore', '1', true);
+
+  select array_agg(quote_ident(column_name) order by ordinal_position) into v_cols
+  from information_schema.columns
+  where table_schema = 'public' and table_name = p_table
+    and (p_rows->0) ? column_name;
+  if v_cols is null then raise exception 'NO_MATCHING_COLUMNS'; end if;
+  v_collist := array_to_string(v_cols, ',');
+
+  if p_table = 'org_settings' then
+    select string_agg(format('%s = excluded.%s', c, c), ', ')
+      into v_set from unnest(v_cols) c where c <> 'id';
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict (id) do update set %s', p_table, v_collist, v_collist, p_table, v_set);
+  else
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict do nothing', p_table, v_collist, v_collist, p_table);
+  end if;
+
+  for r in select * from jsonb_array_elements(p_rows) loop
+    v_n := v_n + 1;
+    begin
+      execute v_sql using r;
+      get diagnostics v_rc = row_count;
+      if v_rc > 0 then v_ins := v_ins + 1; else v_skip := v_skip + 1; end if;
+    exception when others then
+      v_errs := v_errs || jsonb_build_object(
+        'row', coalesce(r->>'id', '#' || v_n), 'error', sqlerrm);
+    end;
+  end loop;
+
+  -- identity-счётчики номеров: после загрузки старых номеров двигаем вперёд
+  if p_table in ('proposals','repairs') then
+    execute format(
+      'select setval(pg_get_serial_sequence(''public.%I'',''no''),
+                     greatest((select coalesce(max(no), 0) from public.%I), 1), true)',
+      p_table, p_table);
+  end if;
+
+  return jsonb_build_object('inserted', v_ins, 'skipped', v_skip, 'errors', v_errs);
+end $$;
+revoke all on function public.admin_restore_rows(text, jsonb) from public, anon;
+grant execute on function public.admin_restore_rows(text, jsonb) to authenticated;
+
+
+-- =====================================================================
+-- v1.08.33: пуши, журнал времени, сессии, доступы Bouncie, ТО, бэкап
+-- =====================================================================
+-- 1) Подписки Web Push (браузеры/телефоны сотрудников) -------------------
+create table if not exists public.push_subs (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  endpoint   text not null,
+  p256dh     text not null,
+  auth       text not null,
+  ua         text not null default '',
+  created_at timestamptz not null default now()
+);
+create unique index if not exists push_subs_endpoint_ux on public.push_subs(endpoint);
+create index if not exists push_subs_user_ix on public.push_subs(user_id);
+alter table public.push_subs enable row level security;
+drop policy if exists push_subs_sel on public.push_subs;
+create policy push_subs_sel on public.push_subs for select to authenticated
+  using (user_id = auth.uid());
+drop policy if exists push_subs_ins on public.push_subs;
+create policy push_subs_ins on public.push_subs for insert to authenticated
+  with check (user_id = auth.uid());
+drop policy if exists push_subs_upd on public.push_subs;
+create policy push_subs_upd on public.push_subs for update to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists push_subs_del on public.push_subs;
+create policy push_subs_del on public.push_subs for delete to authenticated
+  using (user_id = auth.uid());
+
+-- 2) Очередь уведомлений (пишут триггеры и Edge, читает только сервер) ---
+create table if not exists public.push_queue (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null,
+  kind       text not null,
+  title      text not null,
+  body       text not null default '',
+  url        text not null default './',
+  created_at timestamptz not null default now(),
+  sent_at    timestamptz,
+  tries      int not null default 0,
+  last_err   text not null default ''
+);
+create index if not exists push_queue_unsent_ix on public.push_queue(created_at)
+  where sent_at is null;
+alter table public.push_queue enable row level security;   -- политик нет: только service role
+
+-- служебный ключ для запуска рассылки без пользовательского JWT
+insert into public.app_secrets(key, value)
+  values ('push_cron_key', gen_random_uuid()::text)
+  on conflict (key) do nothing;
+
+-- 3) Профили: галочки пушей и персональные доступы -----------------------
+alter table public.profiles add column if not exists push_prefs jsonb not null default '{}'::jsonb;
+alter table public.profiles add column if not exists bn_access  boolean;  -- инфо с трекера (null = по роли: admin/manager да, tech нет)
+alter table public.profiles add column if not exists bn_service boolean;  -- пуши о ТО (null = только админ)
+alter table public.profiles add column if not exists bn_track   boolean;  -- трек дня (null = только админ)
+alter table public.profiles add column if not exists tt_self    boolean;  -- видит свой журнал времени
+alter table public.profiles add column if not exists tt_others  text
+  check (tt_others is null or tt_others in ('none','all','list'));        -- чей журнал видит ещё
+alter table public.profiles add column if not exists tt_list    uuid[];   -- список при tt_others='list'
+
+-- защита: персональные доступы меняет только админ (push_prefs — сам сотрудник)
+create or replace function public.profiles_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.id is distinct from old.id then
+    raise exception 'FORBIDDEN_FIELD_ID';
+  end if;
+  if coalesce(public.my_role(), 'tech') <> 'admin' then
+    if new.role    is distinct from old.role
+       or new.blocked is distinct from old.blocked
+       or new.login   is distinct from old.login
+       or new.bn_access  is distinct from old.bn_access      -- v1.08.33
+       or new.bn_service is distinct from old.bn_service
+       or new.bn_track   is distinct from old.bn_track
+       or new.tt_self    is distinct from old.tt_self
+       or new.tt_others  is distinct from old.tt_others
+       or new.tt_list    is distinct from old.tt_list then
+      raise exception 'FORBIDDEN_FIELD';
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists profiles_guard_tg on public.profiles;
+create trigger profiles_guard_tg before update on public.profiles
+  for each row execute function public.profiles_guard();
+
+-- эффективный доступ к данным Bouncie
+create or replace function public.bn_eff_access(u uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(p.bn_access, p.role in ('admin','manager'))
+    from public.profiles p where p.id = u
+$$;
+
+-- 4) Постановка пуша в очередь (уважает push_prefs, не шлёт автору) ------
+create or replace function public.push_enqueue(
+  p_user uuid, p_kind text, p_title text, p_body text, p_url text default './')
+returns void language plpgsql security definer set search_path = public as $$
+declare v_prefs jsonb;
+begin
+  if p_user is null or p_user = auth.uid() then return; end if;
+  select push_prefs into v_prefs from public.profiles where id = p_user and not blocked;
+  if v_prefs is null then return; end if;                       -- нет профиля / заблокирован
+  if coalesce((v_prefs->>p_kind)::boolean, true) = false then return; end if;
+  insert into public.push_queue(user_id, kind, title, body, url)
+  values (p_user, p_kind, p_title, coalesce(p_body,''), coalesce(p_url,'./'));
+end $$;
+revoke all on function public.push_enqueue(uuid,text,text,text,text) from public, anon, authenticated;
+grant execute on function public.push_enqueue(uuid,text,text,text,text) to service_role;
+
+-- 5) Триггеры документов → очередь ---------------------------------------
+create or replace function public.jobs_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_body text;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  v_body := 'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · ' || to_char(new.date, 'DD.MM');
+  if tg_op = 'INSERT' then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Новая задача', v_body);
+    end if;
+    return new;
+  end if;
+  if new.technician_id is distinct from old.technician_id and new.technician_id is not null then
+    perform public.push_enqueue(new.technician_id, 'job', 'Задача передана вам', v_body);
+  end if;
+  if old.status is distinct from 'approved' and new.status = 'approved' then
+    perform public.push_enqueue(new.technician_id, 'approve', 'Инвойс апрувлен',
+      v_body || ' · $' || round(coalesce(new.approved_total, new.total, 0)));
+  elsif old.status = 'approved' and new.status is distinct from 'approved' then
+    perform public.push_enqueue(new.technician_id, 'reset', 'Апрув снят с инвойса', v_body);
+  end if;
+  return new;
+end $$;
+drop trigger if exists jobs_push_tg on public.jobs;
+create trigger jobs_push_tg after insert or update on public.jobs
+  for each row execute function public.jobs_push_tg_fn();
+
+create or replace function public.placements_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  if new.ext_of is null and new.technician_id is not null then
+    perform public.push_enqueue(new.technician_id, 'pickup', 'Новый пикап',
+      'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · до ' || to_char(new.due_date, 'DD.MM'));
+  end if;
+  return new;
+end $$;
+drop trigger if exists placements_push_tg on public.placements;
+create trigger placements_push_tg after insert on public.placements
+  for each row execute function public.placements_push_tg_fn();
+
+create or replace function public.repairs_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_t text; v_b text; r record;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  if old.status is distinct from 'approved' and new.status = 'approved' then
+    v_t := 'Ремонт апрувлен';
+  elsif old.status = 'approved' and new.status is distinct from 'approved' then
+    v_t := 'Апрув снят с ремонта';
+  else
+    return new;
+  end if;
+  v_b := 'REP-' || new.no || ' · Unit ' || coalesce(nullif(new.unit_number,''),'—');
+  perform public.push_enqueue(new.created_by, 'approve', v_t, v_b);
+  for r in select distinct value::uuid as uid
+             from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+  loop
+    if r.uid is distinct from new.created_by then
+      perform public.push_enqueue(r.uid, 'approve', v_t, v_b);
+    end if;
+  end loop;
+  return new;
+end $$;
+drop trigger if exists repairs_push_tg on public.repairs;
+create trigger repairs_push_tg after update on public.repairs
+  for each row execute function public.repairs_push_tg_fn();
+
+-- 6) Журнал времени на объектах (пишет только Edge Function bouncie) -----
+create table if not exists public.site_visits (
+  id           uuid primary key default gen_random_uuid(),
+  driver_id    uuid not null references public.profiles(id) on delete cascade,
+  vehicle_imei text not null default '',
+  complex_id   uuid not null references public.complexes(id) on delete cascade,
+  arrived_at   timestamptz not null,
+  left_at      timestamptz,
+  date         date not null,
+  created_at   timestamptz not null default now()
+);
+create unique index if not exists site_visits_ux
+  on public.site_visits(driver_id, complex_id, arrived_at);
+create index if not exists site_visits_date_ix on public.site_visits(date);
+alter table public.site_visits enable row level security;
+
+create or replace function public.tt_can_see(viewer uuid, target uuid)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+declare v record;
+begin
+  if viewer is null then return false; end if;
+  select role, tt_self, tt_others, tt_list into v from public.profiles where id = viewer;
+  if v is null then return false; end if;
+  if v.role = 'admin' then return true; end if;
+  if viewer = target then return coalesce(v.tt_self, false); end if;
+  if v.tt_others = 'all'  then return true; end if;
+  if v.tt_others = 'list' then return target = any(coalesce(v.tt_list, '{}')); end if;
+  return false;
+end $$;
+
+drop policy if exists site_visits_sel on public.site_visits;
+create policy site_visits_sel on public.site_visits for select to authenticated
+  using (public.tt_can_see(auth.uid(), driver_id));
+-- запись/правка/удаление — только service role (политик нет)
+
+-- 7) Автомобили: ошибки, топливо, ТО --------------------------------------
+alter table public.vehicles add column if not exists mil            boolean not null default false;
+alter table public.vehicles add column if not exists fuel_low       boolean not null default false;
+alter table public.vehicles add column if not exists last_odo       numeric;
+alter table public.vehicles add column if not exists service_due_mi int;
+alter table public.vehicles add column if not exists service_notified boolean not null default false;
+
+create or replace function public.vehicle_service_set(p_id uuid, p_mi int)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  update public.vehicles
+     set service_due_mi = nullif(p_mi, 0), service_notified = false
+   where id = p_id;
+  if not found then raise exception 'NOT_FOUND'; end if;
+end $$;
+revoke all on function public.vehicle_service_set(uuid,int) from public, anon;
+grant execute on function public.vehicle_service_set(uuid,int) to authenticated;
+
+-- 8) Настройки организации (нужно ДО функций сессий: sess_rights читает sess_mgr) ------------------------------------------------
+alter table public.org_settings add column if not exists tpl_on             boolean;      -- шаблоны (null = вкл)
+alter table public.org_settings add column if not exists sess_mgr           boolean;      -- сессии видит и менеджер
+alter table public.org_settings add column if not exists code_remind        boolean;      -- напоминание о кодах
+alter table public.org_settings add column if not exists code_remind_months int;          -- порог, мес (по умолчанию 12)
+alter table public.org_settings add column if not exists backup_auto        boolean;      -- автобэкап при входе админа
+alter table public.org_settings add column if not exists backup_last_at     timestamptz;
+alter table public.org_settings add column if not exists backup_note        text;
+alter table public.org_settings add column if not exists push_overdue_at    timestamptz;  -- маркер проверки просрочки
+
+-- 9) Активные сессии -------------------------------------------------------
+create or replace function public.sess_rights()
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.my_role() = 'admin'
+      or (public.my_role() = 'manager'
+          and coalesce((select sess_mgr from public.org_settings limit 1), false))
+$$;
+
+create or replace function public.admin_sessions(target uuid)
+returns table (sid uuid, created_at timestamptz, refreshed_at timestamptz, ua text)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.sess_rights() then raise exception 'FORBIDDEN'; end if;
+  return query
+    select s.id, s.created_at, coalesce(s.refreshed_at, s.updated_at), coalesce(s.user_agent,'')
+      from auth.sessions s
+     where s.user_id = target
+     order by 3 desc nulls last;
+end $$;
+revoke all on function public.admin_sessions(uuid) from public, anon;
+grant execute on function public.admin_sessions(uuid) to authenticated;
+
+create or replace function public.admin_last_seen()
+returns table (uid uuid, at timestamptz)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.sess_rights() then raise exception 'FORBIDDEN'; end if;
+  return query
+    select s.user_id, max(coalesce(s.refreshed_at, s.updated_at))
+      from auth.sessions s group by s.user_id;
+end $$;
+revoke all on function public.admin_last_seen() from public, anon;
+grant execute on function public.admin_last_seen() to authenticated;
+
+create or replace function public.admin_kill_sessions(target uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  delete from auth.refresh_tokens where user_id = target::text;
+  delete from auth.sessions where user_id = target;
+end $$;
+revoke all on function public.admin_kill_sessions(uuid) from public, anon;
+grant execute on function public.admin_kill_sessions(uuid) to authenticated;
+
+-- 10) Дамп auth-части для SQL-бэкапа (вызывает Edge Function backup) -------
+create or replace function public.backup_dump()
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+begin
+  if auth.role() is distinct from 'service_role'
+     and public.my_role() is distinct from 'admin' then
+    raise exception 'FORBIDDEN';
+  end if;
+  return jsonb_build_object(
+    'auth_users', coalesce((select jsonb_agg(jsonb_build_object(
+        'id', u.id, 'email', u.email, 'encrypted_password', u.encrypted_password,
+        'raw_user_meta_data', u.raw_user_meta_data, 'created_at', u.created_at,
+        'banned_until', u.banned_until))
+      from auth.users u), '[]'::jsonb),
+    'secrets', coalesce((select jsonb_agg(jsonb_build_object('key', s.key, 'value', s.value))
+      from public.app_secrets s), '[]'::jsonb));
+end $$;
+revoke all on function public.backup_dump() from public, anon, authenticated;
+grant execute on function public.backup_dump() to service_role;
+
+
+-- ============================================================
+-- Итоговая самопроверка схемы v1.08.27
+-- ============================================================
+
+-- =====================================================================
+-- v1.08.37 · РЕЖИМ ТЕЛЕВИЗОРА (сессии, авторизация, фид, раскладка)
+-- =====================================================================
+-- =====================================================================
+-- TechLog · update-to-1_08_37.sql — РЕЖИМ ТЕЛЕВИЗОРА
+-- ---------------------------------------------------------------------
+-- Что добавляется:
+--   1) Таблица public.tv_sessions — сессии телевизоров. Телевизор при
+--      нажатии «Режим телевизора» создаёт запись (pending) и показывает
+--      4-значный код; админ в Настройках → «ТВ-экраны» сверяет код и
+--      жмёт «Авторизовать ТВ» (approved) либо «Отклонить» / «Отозвать»
+--      (revoked). Прямого доступа к таблице ни у кого нет (RLS включён,
+--      политик нет) — вся работа идёт через RPC ниже.
+--   2) org_settings.tv (text, JSON) — раскладка ТВ-режима из карточки
+--      «Режим телевизора» в админке (чекбоксы, степперы, конструктор).
+--   3) RPC:
+--        tv_request(agent)        — anon: создать pending-сессию, вернуть
+--                                   {key, code}; старые pending чистятся,
+--                                   от спама — потолок 20 ожидающих;
+--        tv_poll(key)             — anon: статус сессии + heartbeat;
+--        tv_feed(key, date)       — anon: весь набор данных для экрана
+--                                   (работы дня, пикапы, комплексы,
+--                                   сотрудники, статистика день/неделя,
+--                                   «на объекте» из site_visits, раскладка);
+--                                   только для approved-сессии;
+--        tv_list()                — админ: список сессий для карточки;
+--        tv_decide(id, approve)   — админ: авторизовать / отозвать.
+-- Скрипт идемпотентен: безопасен для повторного запуска.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Таблица сессий
+-- ---------------------------------------------------------------------
+create table if not exists public.tv_sessions (
+  id           uuid primary key default gen_random_uuid(),
+  code         text not null,
+  device_key   text not null unique,
+  agent        text not null default '',
+  status       text not null default 'pending',
+  created_at   timestamptz not null default now(),
+  approved_by  uuid,
+  approved_at  timestamptz,
+  last_seen_at timestamptz
+);
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'tv_sessions_status_chk') then
+    alter table public.tv_sessions
+      add constraint tv_sessions_status_chk check (status in ('pending','approved','revoked'));
+  end if;
+end $$;
+alter table public.tv_sessions enable row level security;
+-- политик нет намеренно: чтение и запись только через SECURITY DEFINER RPC
+
+-- ---------------------------------------------------------------------
+-- 2. Раскладка ТВ-режима в настройках организации
+-- ---------------------------------------------------------------------
+alter table public.org_settings add column if not exists tv text;
+
+-- ---------------------------------------------------------------------
+-- 3. RPC
+-- ---------------------------------------------------------------------
+-- Телевизор просит сессию. Ключ — 64 hex-символа (без pgcrypto, чтобы не
+-- зависеть от схемы extensions), код — 4 символа без похожих букв.
+create or replace function public.tv_request(p_agent text default '')
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  k text; c text := ''; i int; cnt int;
+  ab constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+begin
+  delete from tv_sessions where status = 'pending' and created_at < now() - interval '20 minutes';
+  select count(*) into cnt from tv_sessions where status = 'pending';
+  if cnt >= 20 then raise exception 'TV_BUSY'; end if;
+  k := md5(random()::text || clock_timestamp()::text) || md5(random()::text || now()::text);
+  for i in 1..4 loop
+    c := c || substr(ab, 1 + floor(random() * length(ab))::int, 1);
+  end loop;
+  insert into tv_sessions (code, device_key, agent)
+  values (c, k, left(coalesce(p_agent, ''), 120));
+  return json_build_object('key', k, 'code', c);
+end $$;
+revoke all on function public.tv_request(text) from public;
+grant execute on function public.tv_request(text) to anon, authenticated;
+
+-- Статус сессии + heartbeat (карточка админа показывает «онлайн»)
+create or replace function public.tv_poll(p_key text)
+returns json language plpgsql security definer set search_path = public as $$
+declare st text;
+begin
+  update tv_sessions set last_seen_at = now()
+    where device_key = p_key returning status into st;
+  if st is null then return json_build_object('status', 'unknown'); end if;
+  return json_build_object('status', st);
+end $$;
+revoke all on function public.tv_poll(text) from public;
+grant execute on function public.tv_poll(text) to anon, authenticated;
+
+-- Данные для экрана. Дату телевизор передаёт свою (часовой пояс ТВ),
+-- неделя = дата-6 … дата. Только для авторизованной сессии.
+create or replace function public.tv_feed(p_key text, p_date date default current_date)
+returns json language plpgsql security definer set search_path = public as $$
+declare sid uuid; wk date := p_date - 6;
+begin
+  select id into sid from tv_sessions where device_key = p_key and status = 'approved';
+  if sid is null then raise exception 'TV_FORBIDDEN'; end if;
+  update tv_sessions set last_seen_at = now() where id = sid;
+  return json_build_object(
+    'date', p_date,
+    'tv',   (select tv from org_settings where id = 'org'),
+    'work_types', (select coalesce(json_agg(json_build_object(
+        'id', id, 'name', name, 'color', color) order by name), '[]'::json) from work_types),
+    'equipment_types', (select coalesce(json_agg(json_build_object(
+        'id', id, 'abbr', abbr, 'name', name, 'color', color) order by abbr), '[]'::json) from equipment_types),
+    'complexes', (select coalesce(json_agg(json_build_object(
+        'id', id, 'name', name, 'abbr', abbr, 'lat', lat, 'lng', lng)), '[]'::json) from complexes),
+    'profiles', (select coalesce(json_agg(json_build_object(
+        'id', id, 'name', display_name, 'car_no', car_no, 'role', role)
+        order by coalesce(car_no, 999), display_name), '[]'::json)
+        from profiles where blocked is not true),
+    'jobs', (select coalesce(json_agg(json_build_object(
+        'id', j.id, 'unit', j.unit_number, 'complex_id', j.complex_id,
+        'work_type_id', j.work_type_id, 'technician_id', j.technician_id,
+        'status', j.status, 'priority', j.priority, 'sort_order', j.sort_order,
+        'done', (j.status in ('done', 'approved'))) order by j.sort_order, j.created_at), '[]'::json)
+        from jobs j where j.date = p_date and j.archived_at is null),
+    'pickups', (select coalesce(json_agg(json_build_object(
+        'job_id', p.job_id, 'complex_id', p.complex_id, 'unit', p.unit_number,
+        'technician_id', p.technician_id, 'equipment_type_id', p.equipment_type_id,
+        'qty', p.qty, 'due_date', p.due_date, 'overdue', (p.due_date < p_date))), '[]'::json)
+        from placements p join jobs j2 on j2.id = p.job_id and j2.archived_at is null
+        where p.picked_up is not true and p.superseded is not true and p.due_date <= p_date),
+    'picked_today', (select coalesce(json_agg(distinct jsonb_build_object(
+        'job_id', p.job_id, 'complex_id', p.complex_id, 'unit', p.unit_number))::json, '[]'::json)
+        from placements p
+        where p.picked_up is true and p.superseded is not true
+          and p.picked_up_at >= p_date::timestamptz
+          and p.picked_up_at <  (p_date + 1)::timestamptz),
+    'site_now', (select coalesce(json_agg(json_build_object(
+        'driver_id', v.driver_id, 'complex_id', v.complex_id)), '[]'::json)
+        from site_visits v where v.date = p_date and v.left_at is null),
+    'stat_day', (select coalesce(json_agg(json_build_object('id', q.id, 'n', q.n)), '[]'::json)
+        from (select technician_id as id, count(*)::int as n from jobs
+              where date = p_date and status in ('done', 'approved') and archived_at is null
+              group by technician_id) q),
+    'stat_week', (select coalesce(json_agg(json_build_object('id', q.id, 'n', q.n)), '[]'::json)
+        from (select technician_id as id, count(*)::int as n from jobs
+              where date between wk and p_date and status in ('done', 'approved') and archived_at is null
+              group by technician_id) q));
+end $$;
+revoke all on function public.tv_feed(text, date) from public;
+grant execute on function public.tv_feed(text, date) to anon, authenticated;
+
+-- Список сессий для карточки «ТВ-экраны» (только админ)
+create or replace function public.tv_list()
+returns json language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  return (select coalesce(json_agg(json_build_object(
+      'id', s.id, 'code', s.code, 'agent', s.agent, 'status', s.status,
+      'created_at', s.created_at, 'approved_at', s.approved_at,
+      'last_seen_at', s.last_seen_at)
+      order by (s.status = 'pending') desc, s.created_at desc), '[]'::json)
+    from (select * from tv_sessions order by (status = 'pending') desc, created_at desc limit 30) s);
+end $$;
+revoke all on function public.tv_list() from public, anon;
+grant execute on function public.tv_list() to authenticated;
+
+-- «Авторизовать ТВ» / «Отклонить» / «Отозвать» (только админ)
+create or replace function public.tv_decide(p_id uuid, p_approve boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_approve then
+    update tv_sessions set status = 'approved', approved_by = auth.uid(), approved_at = now()
+      where id = p_id;
+  else
+    update tv_sessions set status = 'revoked' where id = p_id;
+  end if;
+  if not found then raise exception 'NOT_FOUND'; end if;
+end $$;
+revoke all on function public.tv_decide(uuid, boolean) from public, anon;
+grant execute on function public.tv_decide(uuid, boolean) to authenticated;
+
+-- =====================================================================
+-- v1.08.39 · БУХГАЛТЕРИЯ (роль accountant, учётные поля, проценты, RPC)
+-- =====================================================================
+-- =====================================================================
+-- TechLog · update-to-1_08_39.sql — БУХГАЛТЕРИЯ
+-- ---------------------------------------------------------------------
+-- Что добавляется (идемпотентно, безопасно повторять):
+--   1) Роль accountant («Бухгалтер»): constraint profiles.role,
+--      admin_set_role() и admin_create_user() принимают новую роль.
+--   2) Поля учёта у документов: jobs / repairs → acc_status
+--      ('' | checked | issue | paid), acc_note, acc_at, acc_by.
+--      Их защищает триггер acc_guard: клиентский upsert полной строки
+--      (техник сохранил инвойс со старым снимком) значения НЕ затирает —
+--      менять их может только RPC acc_doc_mark (флаг techlog.acc).
+--   3) RPC acc_doc_mark(kind, id, status, note) — админ и бухгалтер.
+--   4) Таблица acc_settings — проценты по категориям, привязка секций
+--      инвойса к категориям и опции реестра. Читают и пишут только
+--      админ и бухгалтер (RLS). Штамп updated_at/updated_by — триггером.
+--   5) RLS чтения для бухгалтера: jobs, placements, proposals, repairs и
+--      can_view_job() (через неё — медиа).
+--   6) admin_restore_rows(): acc_settings в списке восстанавливаемых.
+-- =====================================================================
+
+-- 1) Роль accountant --------------------------------------------------
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles
+  add constraint profiles_role_check check (role in ('admin','manager','tech','accountant'));
+
+create or replace function public.admin_set_role(target uuid, p_role text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_role not in ('admin','manager','tech','accountant') then raise exception 'BAD_ROLE'; end if;
+  if target = auth.uid() and p_role <> 'admin' then raise exception 'SELF_DEMOTE'; end if;
+  update public.profiles set role = p_role where id = target;
+  if not found then raise exception 'NOT_FOUND'; end if;
+end $$;
+revoke all on function public.admin_set_role(uuid, text) from public, anon;
+grant execute on function public.admin_set_role(uuid, text) to authenticated;
+
+create or replace function public.admin_create_user(
+  p_login text, p_email text, p_password text, p_display_name text, p_role text default 'tech')
+returns uuid language plpgsql security definer set search_path = public, auth, extensions as $$
+declare
+  new_id uuid := gen_random_uuid();
+  v_login text := lower(trim(coalesce(p_login,'')));
+  v_email text := lower(trim(coalesce(p_email,'')));
+  v_name  text := coalesce(nullif(trim(p_display_name),''), v_login);
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if v_login !~ '^[a-z0-9_.-]{3,32}$' then raise exception 'BAD_LOGIN'; end if;
+  if v_email !~ '^[a-z0-9_.-]+@[a-z0-9.-]+$' or v_email not like v_login || '@%' then
+    raise exception 'BAD_EMAIL';
+  end if;
+  if length(coalesce(p_password,'')) < 6 then raise exception 'WEAK_PASSWORD'; end if;
+  if p_role not in ('admin','manager','tech','accountant') then raise exception 'BAD_ROLE'; end if;
+  if exists (select 1 from public.profiles where lower(login) = v_login)
+     or exists (select 1 from auth.users where lower(email) = v_email) then
+    raise exception 'LOGIN_TAKEN';
+  end if;
+
+  perform set_config('techlog.admin_create', '1', true);   -- байпас триггера в этой транзакции
+
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+    confirmation_token, recovery_token, email_change, email_change_token_new,
+    email_change_token_current, phone_change, phone_change_token,
+    reauthentication_token, is_super_admin, is_sso_user)
+  values (
+    new_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    v_email, extensions.crypt(p_password, extensions.gen_salt('bf')), now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    jsonb_build_object('login', v_login, 'display_name', v_name),
+    now(), now(),
+    '', '', '', '', '', '', '', '', false, false);
+
+  insert into auth.identities (
+    id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+  values (
+    gen_random_uuid(), new_id::text, new_id,
+    jsonb_build_object('sub', new_id::text, 'email', v_email,
+                       'email_verified', true, 'phone_verified', false),
+    'email', now(), now(), now());
+
+  insert into public.profiles (id, login, display_name, role, blocked)
+  values (new_id, v_login, v_name, p_role, false);
+
+  return new_id;
+end $$;
+revoke all on function public.admin_create_user(text, text, text, text, text) from public, anon;
+grant execute on function public.admin_create_user(text, text, text, text, text) to authenticated;
+
+-- 2) Поля учёта у документов -------------------------------------------
+alter table public.jobs add column if not exists acc_status text not null default '';
+alter table public.jobs add column if not exists acc_note   text not null default '';
+alter table public.jobs add column if not exists acc_at     timestamptz;
+alter table public.jobs add column if not exists acc_by     uuid references public.profiles(id) on delete set null;
+alter table public.jobs drop constraint if exists jobs_acc_status_ck;
+alter table public.jobs add constraint jobs_acc_status_ck check (acc_status in ('','checked','issue','paid'));
+
+alter table public.repairs add column if not exists acc_status text not null default '';
+alter table public.repairs add column if not exists acc_note   text not null default '';
+alter table public.repairs add column if not exists acc_at     timestamptz;
+alter table public.repairs add column if not exists acc_by     uuid references public.profiles(id) on delete set null;
+alter table public.repairs drop constraint if exists repairs_acc_status_ck;
+alter table public.repairs add constraint repairs_acc_status_ck check (acc_status in ('','checked','issue','paid'));
+
+-- Учётные поля меняет только acc_doc_mark (флаг techlog.acc) и восстановление
+-- из бэкапа (INSERT — триггер на него не вешаем). Любой другой UPDATE
+-- (полная строка из приложения) получает прежние значения.
+create or replace function public.acc_guard()
+returns trigger language plpgsql as $$
+begin
+  if current_setting('techlog.acc', true) is distinct from '1'
+     and current_setting('techlog.restore', true) is distinct from '1' then
+    new.acc_status := old.acc_status;
+    new.acc_note   := old.acc_note;
+    new.acc_at     := old.acc_at;
+    new.acc_by     := old.acc_by;
+  end if;
+  return new;
+end $$;
+drop trigger if exists jobs_acc_guard_tg on public.jobs;
+create trigger jobs_acc_guard_tg before update on public.jobs
+  for each row execute function public.acc_guard();
+drop trigger if exists repairs_acc_guard_tg on public.repairs;
+create trigger repairs_acc_guard_tg before update on public.repairs
+  for each row execute function public.acc_guard();
+
+-- 3) RPC: отметка бухгалтера --------------------------------------------
+create or replace function public.acc_doc_mark(p_kind text, p_id uuid, p_status text, p_note text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_st text := coalesce(p_status, ''); v_note text := coalesce(p_note, '');
+        v_at timestamptz := now(); v_by uuid := auth.uid(); v_rc int := 0;
+begin
+  if coalesce(public.my_role(), 'tech') not in ('admin','accountant') then raise exception 'FORBIDDEN'; end if;
+  if v_st not in ('','checked','issue','paid') then raise exception 'BAD_STATUS'; end if;
+  if length(v_note) > 2000 then raise exception 'NOTE_TOO_LONG'; end if;
+  if p_kind not in ('job','rep') then raise exception 'BAD_KIND'; end if;
+  perform set_config('techlog.acc', '1', true);          -- флаг только на время этого UPDATE
+  if p_kind = 'job' then
+    update public.jobs set acc_status = v_st, acc_note = v_note, acc_at = v_at, acc_by = v_by where id = p_id;
+  else
+    update public.repairs set acc_status = v_st, acc_note = v_note, acc_at = v_at, acc_by = v_by where id = p_id;
+  end if;
+  get diagnostics v_rc = row_count;
+  perform set_config('techlog.acc', '', true);
+  if v_rc = 0 then raise exception 'NOT_FOUND'; end if;
+  return jsonb_build_object('acc_status', v_st, 'acc_note', v_note, 'acc_at', v_at, 'acc_by', v_by);
+end $$;
+revoke all on function public.acc_doc_mark(text, uuid, text, text) from public, anon;
+grant execute on function public.acc_doc_mark(text, uuid, text, text) to authenticated;
+
+-- 4) Настройки бухгалтерии ------------------------------------------------
+--   id:  rate:clean | rate:rep | rate:rent | rate:rent:<equipment_type_id> | rate:mat
+--        map:<секция инвойса>  ·  opt:label  ·  opt:split
+--   pct: процент (0–100) для rate:*;  val: категория для map:* и значение opt:*
+create table if not exists public.acc_settings (
+  id         text primary key,
+  pct        numeric,
+  val        text,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references public.profiles(id) on delete set null,
+  constraint acc_settings_pct_ck check (pct is null or (pct >= 0 and pct <= 100))
+);
+alter table public.acc_settings enable row level security;
+drop policy if exists acc_sel on public.acc_settings;
+create policy acc_sel on public.acc_settings for select to authenticated
+  using (public.my_role() in ('admin','accountant'));
+drop policy if exists acc_wr on public.acc_settings;
+create policy acc_wr on public.acc_settings for all to authenticated
+  using (public.my_role() in ('admin','accountant'))
+  with check (public.my_role() in ('admin','accountant'));
+
+create or replace function public.acc_settings_stamp()
+returns trigger language plpgsql as $$
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  new.updated_at := now();
+  new.updated_by := auth.uid();
+  return new;
+end $$;
+drop trigger if exists acc_settings_stamp_tg on public.acc_settings;
+create trigger acc_settings_stamp_tg before insert or update on public.acc_settings
+  for each row execute function public.acc_settings_stamp();
+
+-- 5) Чтение документов бухгалтером ----------------------------------------
+create or replace function public.can_view_job(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.jobs j
+    where j.id = p_job and (
+      j.technician_id = auth.uid()
+      or public.my_role() in ('admin','manager','accountant')
+      or (j.shared_with_helpers and j.helper_ids ? auth.uid()::text
+          and public.shared_jobs_enabled())
+    )
+  )
+$$;
+
+drop policy if exists jobs_sel on public.jobs;
+create policy jobs_sel on public.jobs for select to authenticated
+  using (
+    technician_id = auth.uid()
+    or public.my_role() in ('admin','manager','accountant')
+    or (shared_with_helpers and helper_ids ? auth.uid()::text and public.shared_jobs_enabled())
+  );
+
+drop policy if exists pl_sel on public.placements;
+create policy pl_sel on public.placements for select to authenticated
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager','accountant')
+         or public.is_shared_job_helper(job_id));
+
+drop policy if exists prop_sel on public.proposals;
+create policy prop_sel on public.proposals for select to authenticated
+  using (
+    public.my_role() in ('admin','manager','accountant')
+    or exists (select 1 from public.jobs j
+               where j.proposal_id = proposals.id and public.can_view_job(j.id))
+  );
+
+drop policy if exists rep_sel on public.repairs;
+create policy rep_sel on public.repairs for select to authenticated
+  using (
+    public.my_role() in ('admin','manager','accountant')
+    or created_by = auth.uid()
+    or (job_id is not null and public.can_view_job(job_id))
+  );
+
+-- 6) Бэкап: acc_settings восстанавливается кнопкой ------------------------
+create or replace function public.admin_restore_rows(p_table text, p_rows jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_allowed text[] := array[
+    'profiles','counterparties','complexes','aux_equipment','work_types',
+    'equipment_types','size_types','extra_works','product_types','price_list',
+    'counterparty_prices','equipment_stock','org_settings','code_requests',
+    'complex_code_history','hidden_staff','proposals','jobs','placements',
+    'ext_requests','media','repairs','equip_moves','acc_settings'];
+  v_cols text[]; v_collist text; v_set text; v_sql text;
+  r jsonb; v_n int := 0; v_rc int;
+  v_ins int := 0; v_skip int := 0; v_errs jsonb := '[]'::jsonb;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if not (p_table = any(v_allowed)) then raise exception 'BAD_TABLE'; end if;
+  if to_regclass('public.' || p_table) is null then raise exception 'NO_TABLE'; end if;
+  if p_rows is null or jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) = 0 then
+    return jsonb_build_object('inserted', 0, 'skipped', 0, 'errors', '[]'::jsonb);
+  end if;
+
+  perform set_config('techlog.restore', '1', true);
+
+  select array_agg(quote_ident(column_name) order by ordinal_position) into v_cols
+  from information_schema.columns
+  where table_schema = 'public' and table_name = p_table
+    and (p_rows->0) ? column_name;
+  if v_cols is null then raise exception 'NO_MATCHING_COLUMNS'; end if;
+  v_collist := array_to_string(v_cols, ',');
+
+  if p_table = 'org_settings' then
+    select string_agg(format('%s = excluded.%s', c, c), ', ')
+      into v_set from unnest(v_cols) c where c <> 'id';
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict (id) do update set %s', p_table, v_collist, v_collist, p_table, v_set);
+  else
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict do nothing', p_table, v_collist, v_collist, p_table);
+  end if;
+
+  for r in select * from jsonb_array_elements(p_rows) loop
+    v_n := v_n + 1;
+    begin
+      execute v_sql using r;
+      get diagnostics v_rc = row_count;
+      if v_rc > 0 then v_ins := v_ins + 1; else v_skip := v_skip + 1; end if;
+    exception when others then
+      v_errs := v_errs || jsonb_build_object(
+        'row', coalesce(r->>'id', '#' || v_n), 'error', sqlerrm);
+    end;
+  end loop;
+
+  -- identity-счётчики номеров: после загрузки старых номеров двигаем вперёд
+  if p_table in ('proposals','repairs') then
+    execute format(
+      'select setval(pg_get_serial_sequence(''public.%I'',''no''),
+                     greatest((select coalesce(max(no), 0) from public.%I), 1), true)',
+      p_table, p_table);
+  end if;
+
+  return jsonb_build_object('inserted', v_ins, 'skipped', v_skip, 'errors', v_errs);
+end $$;
+revoke all on function public.admin_restore_rows(text, jsonb) from public, anon;
+grant execute on function public.admin_restore_rows(text, jsonb) to authenticated;
+
+
+do $$
+declare miss text := '';
+begin
+  if to_regclass('public.proposals')    is null then miss := miss || ' proposals'; end if;
+  if to_regclass('public.rpc_throttle') is null then miss := miss || ' rpc_throttle'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='profiles'
+                   and column_name='board_cols') then miss := miss || ' profiles.board_cols'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='jobs'
+                   and column_name='proposal_id') then miss := miss || ' jobs.proposal_id'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='placements'
+                   and column_name='dhm_hours_start') then miss := miss || ' placements.dhm_hours_start'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='placements'
+                   and column_name='dhm_hours_check') then miss := miss || ' placements.dhm_hours_check'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='media_max_photo') then miss := miss || ' org_settings.media_max_photo'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='gd_free_pct') then miss := miss || ' org_settings.gd_free_pct'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='media_max_file') then miss := miss || ' org_settings.media_max_file'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='jobs'
+                   and column_name='note_en') then miss := miss || ' jobs.note_en'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='proposals'
+                   and column_name='note_en') then miss := miss || ' proposals.note_en'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='tr_auto') then miss := miss || ' org_settings.tr_auto'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='gd_inv_folder') then miss := miss || ' org_settings.gd_inv_folder'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='jobs'
+                   and column_name='no') then miss := miss || ' jobs.no'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='placements'
+                   and column_name='no') then miss := miss || ' placements.no'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='doc_no_fmt') then miss := miss || ' org_settings.doc_no_fmt'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='gd_inv_by_tech') then miss := miss || ' org_settings.gd_inv_by_tech'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='jobs'
+                   and column_name='archived_at') then miss := miss || ' jobs.archived_at'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='media'
+                   and column_name='archived_at') then miss := miss || ' media.archived_at'; end if;
+  if not exists (select 1 from information_schema.check_constraints c
+                 join information_schema.constraint_column_usage u
+                   on u.constraint_name = c.constraint_name
+                 where u.table_name = 'media' and u.column_name = 'kind'
+                   and c.check_clause like '%invoice%') then miss := miss || ' media.kind=invoice'; end if;
+  if not exists (select 1 from information_schema.check_constraints c
+                 join information_schema.constraint_column_usage u
+                   on u.constraint_name = c.constraint_name
+                 where u.table_name = 'media' and u.column_name = 'kind'
+                   and c.check_clause like '%file%') then miss := miss || ' media.kind=file'; end if;
+  if to_regprocedure('public.link_job_proposal(uuid,uuid)') is null
+     then miss := miss || ' link_job_proposal()'; end if;
+  if to_regprocedure('public.signup_precheck(text,text)') is null
+     then miss := miss || ' signup_precheck()'; end if;
+  if to_regprocedure('public.admin_set_drive_config(text,text,text,text)') is null
+     then miss := miss || ' admin_set_drive_config()'; end if;
+  if exists (select 1 from information_schema.columns
+             where table_schema='public' and table_name='jobs'
+               and column_name='technician_id' and is_nullable='NO')
+     then miss := miss || ' jobs.technician_id(nullable)'; end if;
+  if to_regclass('public.repairs') is null then miss := miss || ' repairs'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='jobs'
+                   and column_name='needs_repair') then miss := miss || ' jobs.needs_repair'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='extra_works'
+                   and column_name='repair') then miss := miss || ' extra_works.repair'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='rep_hide_prices') then miss := miss || ' org_settings.rep_hide_prices'; end if;
+  if to_regprocedure('public.repairs_guard()') is null
+     then miss := miss || ' repairs_guard()'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'repairs_guard_t'
+                   and tgrelid = 'public.repairs'::regclass)
+     then miss := miss || ' repairs_guard_t'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'repairs'
+                   and column_name = 'photos') then miss := miss || ' repairs.photos'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='placements'
+                   and column_name='returned_at') then miss := miss || ' placements.returned_at'; end if;
+  if to_regclass('public.stock_daily') is null then miss := miss || ' stock_daily'; end if;
+  if to_regprocedure('public.stock_counts()') is null then miss := miss || ' stock_counts()'; end if;
+  if to_regprocedure('public.stock_snapshot(date)') is null then miss := miss || ' stock_snapshot()'; end if;
+  if to_regprocedure('public.stock_snapshot_due()') is null then miss := miss || ' stock_snapshot_due()'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='snapshot_hour') then miss := miss || ' org_settings.snapshot_hour'; end if;
+  if to_regclass('public.equip_moves') is null then miss := miss || ' equip_moves'; end if;
+  if to_regprocedure('public.admin_set_role(uuid,text)') is null
+     then miss := miss || ' admin_set_role()'; end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public'
+                   and tablename = 'profiles' and policyname = 'profiles_ins'
+                   and coalesce(with_check, '') like '%my_role%')
+     then miss := miss || ' profiles_ins(admin)'; end if;
+  if to_regprocedure('public.equip_op(text,uuid,integer,text)') is null
+     then miss := miss || ' equip_op()'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'equip_pl_sync_tg'
+                   and tgrelid = 'public.placements'::regclass)
+     then miss := miss || ' equip_pl_sync_tg'; end if;
+  if not exists (select 1 from pg_indexes where schemaname = 'public'
+                   and indexname = 'profiles_car_no_ux')
+     then miss := miss || ' profiles_car_no_ux'; end if;
+  if to_regclass('public.vehicles') is null then miss := miss || ' vehicles'; end if;
+  if not exists (select 1 from pg_indexes where schemaname = 'public'
+                   and indexname = 'vehicles_car_no_ux')
+     then miss := miss || ' vehicles_car_no_ux'; end if;
+  if to_regprocedure('public.vehicle_save(uuid,text,text,text,integer,uuid)') is null
+     then miss := miss || ' vehicle_save()'; end if;
+  if to_regprocedure('public.admin_set_bouncie_config(text,text)') is null
+     then miss := miss || ' admin_set_bouncie_config()'; end if;
+  -- v1.08.33
+  if to_regclass('public.push_subs')   is null then miss := miss || ' push_subs'; end if;
+  if to_regclass('public.push_queue')  is null then miss := miss || ' push_queue'; end if;
+  if to_regclass('public.site_visits') is null then miss := miss || ' site_visits'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles'
+                   and column_name='push_prefs') then miss := miss || ' profiles.push_prefs'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='vehicles'
+                   and column_name='service_due_mi') then miss := miss || ' vehicles.service_due_mi'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings'
+                   and column_name='tpl_on') then miss := miss || ' org_settings.tpl_on'; end if;
+  if to_regprocedure('public.push_enqueue(uuid,text,text,text,text)') is null
+     then miss := miss || ' push_enqueue()'; end if;
+  if to_regprocedure('public.tt_can_see(uuid,uuid)') is null then miss := miss || ' tt_can_see()'; end if;
+  if to_regprocedure('public.admin_sessions(uuid)') is null then miss := miss || ' admin_sessions()'; end if;
+  if to_regprocedure('public.admin_kill_sessions(uuid)') is null then miss := miss || ' admin_kill_sessions()'; end if;
+  if to_regprocedure('public.admin_last_seen()') is null then miss := miss || ' admin_last_seen()'; end if;
+  if to_regprocedure('public.vehicle_service_set(uuid,integer)') is null
+     then miss := miss || ' vehicle_service_set()'; end if;
+  if to_regprocedure('public.backup_dump()') is null then miss := miss || ' backup_dump()'; end if;
+  if to_regprocedure('public.bn_eff_access(uuid)') is null then miss := miss || ' bn_eff_access()'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='bn_account') then miss := miss || ' org_settings.bn_account'; end if;
+  -- v1.08.39: режим телевизора
+  if to_regclass('public.tv_sessions') is null then miss := miss || ' tv_sessions'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='org_settings'
+                   and column_name='tv') then miss := miss || ' org_settings.tv'; end if;
+  if to_regprocedure('public.tv_request(text)') is null then miss := miss || ' tv_request()'; end if;
+  if to_regprocedure('public.tv_feed(text,date)') is null then miss := miss || ' tv_feed()'; end if;
+  if to_regprocedure('public.tv_list()') is null then miss := miss || ' tv_list()'; end if;
+  if to_regprocedure('public.tv_decide(uuid,boolean)') is null then miss := miss || ' tv_decide()'; end if;
+  -- v1.08.39: бухгалтерия
+  if not exists (select 1 from pg_constraint where conname = 'profiles_role_check'
+                   and pg_get_constraintdef(oid) like '%accountant%')
+     then miss := miss || ' profiles.role(accountant)'; end if;
+  if to_regclass('public.acc_settings') is null then miss := miss || ' acc_settings'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='jobs'
+                   and column_name='acc_status') then miss := miss || ' jobs.acc_status'; end if;
+  if not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='repairs'
+                   and column_name='acc_status') then miss := miss || ' repairs.acc_status'; end if;
+  if to_regprocedure('public.acc_doc_mark(text,uuid,text,text)') is null then miss := miss || ' acc_doc_mark()'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'jobs_acc_guard_tg'
+                   and tgrelid = 'public.jobs'::regclass) then miss := miss || ' jobs_acc_guard_tg'; end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'jobs'
+                   and policyname = 'jobs_sel' and coalesce(qual, '') like '%accountant%')
+     then miss := miss || ' jobs_sel(accountant)'; end if;
+  if miss <> '' then
+    raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else
+    raise notice 'TechLog: схема соответствует v1.08.39 — всё на месте.';
+  end if;
+end $$;
+
+select 'TechLog v1.08.39 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- =====================================================================
+-- v1.08.48 · МЕДИА У ДОКУМЕНТА РЕМОНТА + УБОРКА ТВ-СЕССИЙ
+-- 1) У ремонта появляются СВОИ фото, видео и вложения: media.repair_id.
+--    Ровно один владелец записи — задача ИЛИ ремонт (check-ограничение).
+--    Права чтения ремонта выделены в can_view_repair и добавлены в
+--    политику media и в политику превью-миниатюр.
+-- 2) tv_cleanup(mode): 'revoked' — стереть отозванные, 'inactive' —
+--    стереть авторизованные, не выходившие в сеть больше суток,
+--    'revoke_all' — завершить (отозвать) все активные. Только админ.
+-- =====================================================================
+
+alter table public.media
+  add column if not exists repair_id uuid references public.repairs(id) on delete cascade;
+alter table public.media alter column job_id drop not null;
+alter table public.media drop constraint if exists media_owner_one;
+alter table public.media
+  add constraint media_owner_one check ((job_id is null) <> (repair_id is null));
+create index if not exists media_repair_idx on public.media(repair_id, kind, seq);
+create unique index if not exists media_rep_seq
+  on public.media(repair_id, kind, seq) where repair_id is not null;
+
+create or replace function public.can_view_repair(p_rep uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (select 1 from repairs r where r.id = p_rep and (
+       public.my_role() in ('admin','manager','accountant')
+    or r.created_by = auth.uid()
+    or (r.job_id is not null and public.can_view_job(r.job_id))
+    or r.helper_ids ? auth.uid()::text
+  ));
+$$;
+revoke all on function public.can_view_repair(uuid) from public, anon;
+grant execute on function public.can_view_repair(uuid) to authenticated;
+
+drop policy if exists media_sel on public.media;
+create policy media_sel on public.media for select to authenticated
+  using (owner_id = auth.uid()
+     or (job_id    is not null and public.can_view_job(job_id))
+     or (repair_id is not null and public.can_view_repair(repair_id)));
+
+drop policy if exists thumbs_sel on storage.objects;
+create policy thumbs_sel on storage.objects for select to authenticated
+  using (
+    bucket_id = 'media-thumbs'
+    and exists (select 1 from public.media m
+                where m.thumb_path = name
+                  and (m.owner_id = auth.uid()
+                    or (m.job_id    is not null and public.can_view_job(m.job_id))
+                    or (m.repair_id is not null and public.can_view_repair(m.repair_id))))
+  );
+
+create or replace function public.tv_cleanup(p_mode text)
+returns int language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_mode = 'revoked' then
+    delete from tv_sessions where status = 'revoked';
+    get diagnostics n = row_count;
+  elsif p_mode = 'inactive' then
+    delete from tv_sessions where status = 'approved'
+      and coalesce(last_seen_at, created_at) < now() - interval '24 hours';
+    get diagnostics n = row_count;
+  elsif p_mode = 'revoke_all' then
+    update tv_sessions set status = 'revoked' where status = 'approved';
+    get diagnostics n = row_count;
+  else
+    raise exception 'BAD_MODE';
+  end if;
+  return n;
+end $$;
+revoke all on function public.tv_cleanup(text) from public, anon;
+grant execute on function public.tv_cleanup(text) to authenticated;
+
+-- Обновление БД до v1.08.51 (после full-install-1_08_48 или новее).
+-- УЧЁБА: сессии тестов и чтения, доступ сотрудников. Выполнять целиком.
+
+-- =====================================================================
+-- v1.08.51 · УЧЁБА — тесты по разделам учебника и учебные материалы
+-- 1) org_settings: study_on (общий выключатель), study_all (всем /
+--    по списку), study_pass (порог зачёта, %).
+-- 2) profiles: study_access (флаг «по списку», ставит только админ —
+--    защищён в profiles_guard), study_off (сотрудник сам прячет кнопку
+--    «Учёба» из меню; своё поле, меняет сам).
+-- 3) Таблица study_sessions — одна строка на пройденный тест (kind=test:
+--    итоги + ответы по каждому вопросу в answers jsonb) или на чтение
+--    учебника (kind=read: только время). RLS: свои строки — читать и
+--    писать; админ читает все (статистика) и может удалять.
+-- 4) admin_restore_rows: study_sessions в списке восстанавливаемых.
+-- Скрипт идемпотентен: безопасен для повторного запуска.
+-- =====================================================================
+
+-- 1) Настройки организации ------------------------------------------
+alter table public.org_settings add column if not exists study_on   boolean not null default true;
+alter table public.org_settings add column if not exists study_all  boolean not null default true;
+alter table public.org_settings add column if not exists study_pass int     not null default 70;
+alter table public.org_settings add column if not exists study_shuffle boolean not null default true;   -- v1.08.70: перемешивать варианты ответов
+alter table public.org_settings add column if not exists media_lock_approved boolean not null default true;   -- v1.08.71: после апрува файлы неприкосновенны
+
+-- 2) Профили ---------------------------------------------------------
+alter table public.profiles add column if not exists study_access boolean;
+alter table public.profiles add column if not exists study_off    boolean not null default false;
+
+-- profiles_guard v3: + study_access меняет только админ
+create or replace function public.profiles_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.id is distinct from old.id then
+    raise exception 'FORBIDDEN_FIELD_ID';
+  end if;
+  if coalesce(public.my_role(), 'tech') <> 'admin' then
+    if new.role         is distinct from old.role
+       or new.blocked   is distinct from old.blocked
+       or new.login     is distinct from old.login
+       or new.car_no    is distinct from old.car_no
+       or new.study_access is distinct from old.study_access then
+      raise exception 'FORBIDDEN_FIELD';
+    end if;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists profiles_guard_tg on public.profiles;
+create trigger profiles_guard_tg before update on public.profiles
+  for each row execute function public.profiles_guard();
+
+-- 3) Сессии учёбы ----------------------------------------------------
+create table if not exists public.study_sessions (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  kind        text not null default 'test' check (kind in ('test','read')),
+  section     int  not null default 0,
+  quiz_id     text,
+  file        text,
+  mode        text,              -- learn | exam
+  lang        text,              -- ru | en
+  started_at  timestamptz not null default now(),
+  finished_at timestamptz,
+  duration_ms bigint not null default 0,
+  total       int not null default 0,
+  answered    int not null default 0,
+  correct     int not null default 0,
+  wrong       int not null default 0,
+  score_pct   int,
+  passed      boolean,
+  answers     jsonb not null default '[]'::jsonb,
+  created_at  timestamptz not null default now()
+);
+create index if not exists study_sessions_user_idx on public.study_sessions(user_id, started_at desc);
+create index if not exists study_sessions_sec_idx  on public.study_sessions(section, kind);
+
+alter table public.study_sessions enable row level security;
+
+drop policy if exists study_sel on public.study_sessions;
+create policy study_sel on public.study_sessions for select to authenticated
+  using (user_id = auth.uid() or public.my_role() = 'admin');
+
+drop policy if exists study_ins on public.study_sessions;
+create policy study_ins on public.study_sessions for insert to authenticated
+  with check (user_id = auth.uid() or public.my_role() = 'admin');
+
+-- update нужен для upsert из очереди (повторная отправка той же строки);
+-- чужие строки не правит никто, кроме админа (восстановление из бэкапа)
+drop policy if exists study_upd on public.study_sessions;
+create policy study_upd on public.study_sessions for update to authenticated
+  using (user_id = auth.uid() or public.my_role() = 'admin')
+  with check (user_id = auth.uid() or public.my_role() = 'admin');
+
+drop policy if exists study_del on public.study_sessions;
+create policy study_del on public.study_sessions for delete to authenticated
+  using (public.my_role() = 'admin');
+
+grant select, insert, update, delete on public.study_sessions to authenticated;
+
+-- 4) Бэкап: study_sessions восстанавливается тем же admin_restore_rows
+create or replace function public.admin_restore_rows(p_table text, p_rows jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_allowed text[] := array[
+    'profiles','counterparties','complexes','aux_equipment','work_types',
+    'equipment_types','size_types','extra_works','product_types','price_list',
+    'counterparty_prices','equipment_stock','org_settings','code_requests',
+    'complex_code_history','hidden_staff','proposals','jobs','placements',
+    'ext_requests','media','repairs','equip_moves','acc_settings','study_sessions'];
+  v_cols text[]; v_collist text; v_set text; v_sql text;
+  r jsonb; v_n int := 0; v_rc int;
+  v_ins int := 0; v_skip int := 0; v_errs jsonb := '[]'::jsonb;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if not (p_table = any(v_allowed)) then raise exception 'BAD_TABLE'; end if;
+  if to_regclass('public.' || p_table) is null then raise exception 'NO_TABLE'; end if;
+  if p_rows is null or jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) = 0 then
+    return jsonb_build_object('inserted', 0, 'skipped', 0, 'errors', '[]'::jsonb);
+  end if;
+
+  perform set_config('techlog.restore', '1', true);
+
+  select array_agg(quote_ident(column_name) order by ordinal_position) into v_cols
+  from information_schema.columns
+  where table_schema = 'public' and table_name = p_table
+    and (p_rows->0) ? column_name;
+  if v_cols is null then raise exception 'NO_MATCHING_COLUMNS'; end if;
+  v_collist := array_to_string(v_cols, ',');
+
+  if p_table = 'org_settings' then
+    select string_agg(format('%s = excluded.%s', c, c), ', ')
+      into v_set from unnest(v_cols) c where c <> 'id';
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict (id) do update set %s', p_table, v_collist, v_collist, p_table, v_set);
+  else
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict do nothing', p_table, v_collist, v_collist, p_table);
+  end if;
+
+  for r in select * from jsonb_array_elements(p_rows) loop
+    v_n := v_n + 1;
+    begin
+      execute v_sql using r;
+      get diagnostics v_rc = row_count;
+      if v_rc > 0 then v_ins := v_ins + 1; else v_skip := v_skip + 1; end if;
+    exception when others then
+      v_errs := v_errs || jsonb_build_object(
+        'row', coalesce(r->>'id', '#' || v_n), 'error', sqlerrm);
+    end;
+  end loop;
+
+  -- identity-счётчики номеров: после загрузки старых номеров двигаем вперёд
+  if p_table in ('proposals','repairs') then
+    execute format(
+      'select setval(pg_get_serial_sequence(''public.%I'',''no''),
+                     greatest((select coalesce(max(no), 0) from public.%I), 1), true)',
+      p_table, p_table);
+  end if;
+
+  return jsonb_build_object('inserted', v_ins, 'skipped', v_skip, 'errors', v_errs);
+end $$;
+revoke all on function public.admin_restore_rows(text, jsonb) from public, anon;
+grant execute on function public.admin_restore_rows(text, jsonb) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- v1.08.97 · бухгалтер правит «Организацию (для PDF)» — только реквизиты бланков
+-- ---------------------------------------------------------------------
+-- Политики: бухгалтер — только строка 'org' (админская org_settings_wr не трогается)
+drop policy if exists org_settings_acc_ins on public.org_settings;
+create policy org_settings_acc_ins on public.org_settings for insert to authenticated
+  with check (public.my_role() = 'accountant' and id = 'org');
+drop policy if exists org_settings_acc_upd on public.org_settings;
+create policy org_settings_acc_upd on public.org_settings for update to authenticated
+  using (public.my_role() = 'accountant' and id = 'org')
+  with check (public.my_role() = 'accountant' and id = 'org');
+
+-- Сторож: у бухгалтера меняются только реквизиты для PDF
+create or replace function public.org_settings_acc_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if coalesce(public.my_role(), '') = 'accountant' then
+    new := jsonb_populate_record(new, to_jsonb(old) - array[
+      'company_name','company_short','assoc_line','addr1','addr2','addr3',
+      'voice_line','fax_line','ship_method','legal_note']);
+  end if;
+  return new;
+end $$;
+revoke all on function public.org_settings_acc_guard() from public, anon;
+drop trigger if exists org_settings_acc_guard_tg on public.org_settings;
+create trigger org_settings_acc_guard_tg before update on public.org_settings
+  for each row execute function public.org_settings_acc_guard();
+
+-- ---------------------------------------------------------------------
+-- v1.09.01 · справочник «Трекеры Bouncie»
+-- ---------------------------------------------------------------------
+-- 1) Справочник трекеров --------------------------------------------------
+create table if not exists public.bn_devices (
+  id            uuid primary key default gen_random_uuid(),
+  imei          text not null,
+  vin           text,
+  nickname      text not null default '',          -- имя прибора в Bouncie
+  make          text not null default '',
+  model         text not null default '',
+  year          int,
+  status        text not null default 'active',     -- active | inactive
+  first_seen_at timestamptz not null default now(),
+  last_seen_at  timestamptz,                         -- последняя сверка, где он был в Bouncie
+  inactive_at   timestamptz,                         -- когда пропал из Bouncie (у активных null)
+  checked_at    timestamptz,                         -- последняя сверка вообще (null — не сверялся)
+  reported_at   timestamptz,                         -- stats.lastUpdated: выход трекера на связь
+  lat           double precision,
+  lng           double precision,
+  address       text,
+  odometer      numeric,
+  constraint bn_devices_imei_uq unique (imei),
+  constraint bn_devices_status_ck check (status in ('active','inactive'))
+);
+
+alter table public.bn_devices enable row level security;
+drop policy if exists bn_devices_sel on public.bn_devices;
+create policy bn_devices_sel on public.bn_devices for select to authenticated
+  using (public.my_role() = 'admin');
+-- insert/update — только через bn_devices_sync (security definer); delete нет вовсе
+
+-- 2) Уже привязанные к машинам IMEI — в справочник (до первой сверки
+--    считаются активными; сверка сама поправит статус)
+update public.vehicles set imei = null where imei is not null and trim(imei) = '';
+insert into public.bn_devices (imei, make, first_seen_at)
+select distinct on (v.imei) v.imei, coalesce(v.make, ''), coalesce(v.created_at, now())
+  from public.vehicles v
+ where coalesce(v.imei, '') <> ''
+ order by v.imei, v.created_at
+on conflict (imei) do nothing;
+
+-- 3) Машина ссылается на трекер из справочника
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'vehicles_imei_fk') then
+    alter table public.vehicles add constraint vehicles_imei_fk
+      foreign key (imei) references public.bn_devices (imei) on update cascade;
+  end if;
+end $$;
+
+-- 4) Разбор ответа Bouncie ------------------------------------------------
+create or replace function public.bn_try_ts(p text)
+returns timestamptz language plpgsql stable set search_path = public as $$
+begin
+  if coalesce(trim(p), '') = '' then return null; end if;
+  return p::timestamptz;
+exception when others then return null;
+end $$;
+
+-- элемент /v1/vehicles → строка справочника; IMEI — только цифры, дубли схлопываются
+create or replace function public.bn_dev_norm(p_list jsonb)
+returns table (imei text, vin text, nickname text, make text, model text, year int,
+               reported_at timestamptz, lat double precision, lng double precision,
+               address text, odometer numeric)
+language sql stable set search_path = public as $$
+  select distinct on (s.imei) s.*
+    from (
+      select regexp_replace(coalesce(x->>'imei', ''), '\D', '', 'g')                  as imei,
+             nullif(left(upper(trim(coalesce(x->>'vin', ''))), 32), '')                as vin,
+             left(trim(coalesce(x->>'nickName', x->>'nickname', '')), 80)               as nickname,
+             left(trim(coalesce(x#>>'{model,make}', '')), 60)                           as make,
+             left(trim(coalesce(x#>>'{model,name}', '')), 60)                           as model,
+             case when coalesce(x#>>'{model,year}', '') ~ '^\d{4}$'
+                  then (x#>>'{model,year}')::int end                                    as year,
+             public.bn_try_ts(x#>>'{stats,lastUpdated}')                                as reported_at,
+             case when jsonb_typeof(x#>'{stats,location,lat}') = 'number'
+                  then (x#>>'{stats,location,lat}')::double precision end               as lat,
+             case when jsonb_typeof(coalesce(x#>'{stats,location,lon}', x#>'{stats,location,lng}')) = 'number'
+                  then coalesce(x#>>'{stats,location,lon}', x#>>'{stats,location,lng}')::double precision end as lng,
+             nullif(left(trim(coalesce(x#>>'{stats,location,address}', '')), 200), '')  as address,
+             case when jsonb_typeof(x#>'{stats,odometer}') = 'number'
+                  then (x#>>'{stats,odometer}')::numeric end                            as odometer
+        from jsonb_array_elements(case when jsonb_typeof(p_list) = 'array' then p_list else '[]'::jsonb end) x
+       where jsonb_typeof(x) = 'object'
+    ) s
+   where length(s.imei) between 8 and 20
+   order by s.imei, s.reported_at desc nulls last;
+$$;
+revoke all on function public.bn_dev_norm(jsonb) from public, anon;
+
+-- 5) Сверка справочника со списком Bouncie --------------------------------
+-- Ответ: total (в списке Bouncie), added (новые), back (вернулись из
+-- неактивных), off (стали неактивными), empty, active, inactive, at.
+create or replace function public.bn_devices_sync(p_list jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_now   timestamptz := now();
+  v_imeis text[];
+  v_total int := 0; v_add int := 0; v_back int := 0; v_off int := 0;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_list is null or jsonb_typeof(p_list) <> 'array' then raise exception 'BAD_LIST'; end if;
+
+  select coalesce(array_agg(n.imei), '{}') into v_imeis from public.bn_dev_norm(p_list) n;
+  v_total := coalesce(array_length(v_imeis, 1), 0);
+
+  select count(*) into v_add from unnest(v_imeis) i
+   where not exists (select 1 from public.bn_devices d where d.imei = i);
+  select count(*) into v_back from public.bn_devices d
+   where d.status = 'inactive' and d.imei = any(v_imeis);
+
+  insert into public.bn_devices as d (imei, vin, nickname, make, model, year, status,
+         first_seen_at, last_seen_at, inactive_at, checked_at, reported_at, lat, lng, address, odometer)
+  select n.imei, n.vin, n.nickname, n.make, n.model, n.year, 'active',
+         v_now, v_now, null, v_now, n.reported_at, n.lat, n.lng, n.address, n.odometer
+    from public.bn_dev_norm(p_list) n
+  on conflict (imei) do update set
+    vin          = coalesce(excluded.vin, d.vin),
+    nickname     = excluded.nickname,
+    make         = coalesce(nullif(excluded.make, ''), d.make),
+    model        = coalesce(nullif(excluded.model, ''), d.model),
+    year         = coalesce(excluded.year, d.year),
+    status       = 'active',
+    inactive_at  = null,
+    last_seen_at = v_now,
+    checked_at   = v_now,
+    reported_at  = coalesce(excluded.reported_at, d.reported_at),
+    lat          = coalesce(excluded.lat, d.lat),
+    lng          = coalesce(excluded.lng, d.lng),
+    address      = coalesce(excluded.address, d.address),
+    odometer     = coalesce(excluded.odometer, d.odometer);
+
+  -- пропавшие из Bouncie: не удаляем, а помечаем «неактивен» с датой
+  if v_total > 0 then
+    update public.bn_devices d set status = 'inactive', inactive_at = v_now, checked_at = v_now
+     where d.status = 'active' and not (d.imei = any(v_imeis));
+    get diagnostics v_off = row_count;
+    update public.bn_devices d set checked_at = v_now where d.checked_at is distinct from v_now;
+  end if;
+
+  return jsonb_build_object(
+    'total', v_total, 'added', v_add, 'back', v_back, 'off', v_off, 'empty', v_total = 0,
+    'active',   (select count(*) from public.bn_devices where status = 'active'),
+    'inactive', (select count(*) from public.bn_devices where status = 'inactive'),
+    'at', v_now);
+end $$;
+revoke all on function public.bn_devices_sync(jsonb) from public, anon;
+grant execute on function public.bn_devices_sync(jsonb) to authenticated;
+
+-- 6) Запись машины: трекер — только из справочника --------------------------
+-- Ошибки: FORBIDDEN / BAD_CAR_NO / CAR_NO_TAKEN / NOT_FOUND / NO_DEVICE /
+-- DEVICE_INACTIVE / DEVICE_TAKEN. Уже стоящий у машины трекер, ставший
+-- неактивным, правку остальных полей не блокирует.
+create or replace function public.vehicle_save(
+  p_id uuid, p_make text, p_vin text, p_imei text, p_car_no int, p_driver uuid)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  v_id uuid := coalesce(p_id, gen_random_uuid());
+  v_imei text := nullif(regexp_replace(coalesce(p_imei, ''), '\D', '', 'g'), '');
+  v_old_driver uuid;
+  v_old_imei text;
+  v_st text;
+  v_exists boolean;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_car_no is not null and (p_car_no < 1 or p_car_no > 99) then raise exception 'BAD_CAR_NO'; end if;
+  if p_car_no is not null and exists (
+       select 1 from public.vehicles where car_no = p_car_no and id <> v_id)
+     then raise exception 'CAR_NO_TAKEN'; end if;
+  if p_driver is not null and not exists (select 1 from public.profiles where id = p_driver)
+     then raise exception 'NOT_FOUND'; end if;
+
+  select exists(select 1 from public.vehicles where id = v_id) into v_exists;
+  if p_id is not null and not v_exists then raise exception 'NOT_FOUND'; end if;
+  select driver_id, imei into v_old_driver, v_old_imei from public.vehicles where id = v_id;
+
+  -- v1.09.01: трекер выбирается из справочника «Трекеры Bouncie»
+  if v_imei is not null then
+    select status into v_st from public.bn_devices where imei = v_imei;
+    if not found then raise exception 'NO_DEVICE'; end if;
+    if v_st = 'inactive' and v_imei is distinct from v_old_imei then raise exception 'DEVICE_INACTIVE'; end if;
+    if exists (select 1 from public.vehicles where imei = v_imei and id <> v_id)
+       then raise exception 'DEVICE_TAKEN'; end if;
+  end if;
+
+  -- водитель уходит с другой машины (уникальность driver_id)
+  if p_driver is not null then
+    update public.vehicles set driver_id = null where driver_id = p_driver and id <> v_id;
+  end if;
+
+  insert into public.vehicles (id, make, vin, imei, car_no, driver_id)
+  values (v_id, coalesce(trim(p_make), ''), nullif(trim(p_vin), ''), v_imei, p_car_no, p_driver)
+  on conflict (id) do update
+    set make = excluded.make, vin = excluded.vin, imei = excluded.imei,
+        car_no = excluded.car_no, driver_id = excluded.driver_id;
+
+  -- профили: у прежнего водителя номер снимаем, новому ставим номер машины
+  if v_old_driver is not null and v_old_driver is distinct from p_driver then
+    update public.profiles set car_no = null where id = v_old_driver;
+  end if;
+  if p_driver is not null then
+    update public.profiles set car_no = null
+      where car_no = p_car_no and id <> p_driver;          -- номер один на всех
+    update public.profiles set car_no = p_car_no where id = p_driver;
+  end if;
+  return v_id;
+end $$;
+revoke all on function public.vehicle_save(uuid,text,text,text,int,uuid) from public, anon;
+grant execute on function public.vehicle_save(uuid,text,text,text,int,uuid) to authenticated;
+
+-- =====================================================================
+-- v1.09.08 · СТАНДАРТНЫЕ ГАЛОЧКИ ВИДА РАБОТЫ + вид работы OTHER
+-- =====================================================================
+-- work_types.preset — массив «раздел.ключ» галочек бланка, которые ставятся
+-- сами при создании документа этого вида (и при смене вида в документе с
+-- нетронутыми галочками). NULL = встроенный набор приложения по названию
+-- вида (VETVAG → Wet Vac, DAMAGE WATER → Flood, STEAM → Deep Scrub,
+-- AIR DUCT → Air Duct Cleaning); админ правит в «Справочники → Виды задач».
+alter table public.work_types add column if not exists preset jsonb;
+
+-- вид работы OTHER: пустой набор галочек; не добавляется, если свой «Other» уже заведён
+insert into public.work_types (id, name, color, needs_aux, aux_ids, sort)
+select 'b0000000-0000-4000-8000-000000000007'::uuid, 'OTHER', '#8AA0AB', false, '[]'::jsonb, 7
+where not exists (select 1 from public.work_types where upper(name) like 'OTHER%')
+on conflict (id) do nothing;
+
+-- =====================================================================
+-- v1.09.09 · ПОРЯДОК СПРАВОЧНИКОВ + РЕЖИМ СКЛАДА
+-- =====================================================================
+-- org_settings.dir_order  — порядок вкладок «Справочников», общий для всех (массив ключей вкладок;
+--                           пусто = порядок по умолчанию). Личная вкладка «по умолчанию» лежит
+--                           в profiles.push_prefs.dir_default — колонка не нужна.
+-- org_settings.stock_mode — 'full' (склад → машина → объект → машина → склад) или 'lite'
+--                           (только аренда/продление вычитают, «Забрал» возвращает; машины не считаются).
+alter table public.org_settings add column if not exists dir_order  jsonb;
+alter table public.org_settings add column if not exists stock_mode text not null default 'full';
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'org_settings_stock_mode_chk') then
+    alter table public.org_settings add constraint org_settings_stock_mode_chk check (stock_mode in ('full','lite'));
+  end if;
+end $$;
+
+-- =====================================================================
+-- v1.09.10 · ИСТОРИЯ ТРЕКОВ МАШИН (Bouncie)
+-- =====================================================================
+-- bn_trips     — поездки машин по дням: одна строка = одна поездка (старт, финиш, мили,
+--                маршрут encoded polyline). День — по времени Нью-Йорка. Пишет ТОЛЬКО Edge
+--                Function bouncie (service role): попутно из ?stats=1 / ?tv=1 и по запросу
+--                ?tracks=1. Читают админ и сотрудники с правом «Трек дня» (profiles.bn_track).
+-- bn_trip_days — какие дни уже догружены из Bouncie и когда; «закрытый» день (сохранён после
+--                конца суток) повторно у Bouncie не запрашивается.
+create table if not exists public.bn_trips (
+  id          uuid primary key default gen_random_uuid(),
+  imei        text not null,
+  day         date not null,
+  started_at  timestamptz not null,
+  ended_at    timestamptz not null,
+  mi          numeric(8,1) not null default 0,
+  gps         text not null default '',
+  tx          text,
+  driver_id   uuid references public.profiles(id) on delete set null,
+  vehicle_id  uuid references public.vehicles(id) on delete set null,
+  created_at  timestamptz not null default now()
+);
+create unique index if not exists bn_trips_imei_start_uq on public.bn_trips (imei, started_at);
+create index if not exists bn_trips_day_idx on public.bn_trips (day, imei);
+
+create table if not exists public.bn_trip_days (
+  day        date primary key,
+  synced_at  timestamptz not null default now()
+);
+
+alter table public.bn_trips     enable row level security;
+alter table public.bn_trip_days enable row level security;
+drop policy if exists bn_trips_sel on public.bn_trips;
+create policy bn_trips_sel on public.bn_trips for select to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and not coalesce(p.blocked, false)
+                 and (p.role = 'admin' or p.bn_track is true)));
+drop policy if exists bn_trip_days_sel on public.bn_trip_days;
+create policy bn_trip_days_sel on public.bn_trip_days for select to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and not coalesce(p.blocked, false)
+                 and (p.role = 'admin' or p.bn_track is true)));
+-- вставка / правка / удаление — только service role (Edge Function), политик для них нет намеренно
+revoke insert, update, delete on public.bn_trips, public.bn_trip_days from authenticated, anon;
+grant select on public.bn_trips, public.bn_trip_days to authenticated;
+
+
+-- =====================================================================
+-- v1.09.12 · НОВЫЙ БЛАНК, ЛИМИТЫ МЕДИА, «ПЕРЕНЕСТИ ДЕНЬ», ТРЕКЕРЫ
+-- =====================================================================
+-- 1) Позиции прайса нового бумажного бланка. Цена 0 — её задаёт админ в «Ценах»;
+--    пока цена 0, галочка печатается в бланке, но на сумму не влияет.
+insert into public.price_list (key, name, unit_label, price, sort) values
+ ('steam_portable','Steam Clean — Portable','per room',0,101),
+ ('rem_imprint','Removal — Imprint','flat',0,102),
+ ('oth_crb','Other — Crb Machine','flat',0,103)
+on conflict (key) do nothing;
+
+-- 2) Кнопка «Перенести день» — по умолчанию скрыта (Настройки → Прочие функции → Функции)
+alter table public.org_settings add column if not exists day_move_on boolean not null default false;
+
+-- 3) Лимиты на документ по умолчанию: 30 фото и 5 видео. Значения, которые админ уже менял
+--    (не 10 и не 2), не трогаются.
+alter table public.org_settings alter column media_max_photo set default 30;
+alter table public.org_settings alter column media_max_video set default 5;
+update public.org_settings set media_max_photo = 30 where media_max_photo = 10;
+update public.org_settings set media_max_video = 5  where media_max_video = 2;
+
+-- 4) Трекеры Bouncie: своё название и привязка НЕАКТИВНОГО трекера (предупреждает приложение)
+alter table public.bn_devices add column if not exists label text;
+
+create or replace function public.bn_device_label(p_imei text, p_label text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  update public.bn_devices set label = nullif(left(trim(coalesce(p_label, '')), 40), '')
+   where imei = nullif(regexp_replace(coalesce(p_imei, ''), '\D', '', 'g'), '');
+  if not found then raise exception 'NO_DEVICE'; end if;
+end $$;
+revoke all on function public.bn_device_label(text, text) from public, anon;
+grant execute on function public.bn_device_label(text, text) to authenticated;
+
+create or replace function public.vehicle_save(
+  p_id uuid, p_make text, p_vin text, p_imei text, p_car_no int, p_driver uuid)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  v_id uuid := coalesce(p_id, gen_random_uuid());
+  v_imei text := nullif(regexp_replace(coalesce(p_imei, ''), '\D', '', 'g'), '');
+  v_old_driver uuid;
+  v_exists boolean;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_car_no is not null and (p_car_no < 1 or p_car_no > 99) then raise exception 'BAD_CAR_NO'; end if;
+  if p_car_no is not null and exists (
+       select 1 from public.vehicles where car_no = p_car_no and id <> v_id)
+     then raise exception 'CAR_NO_TAKEN'; end if;
+  if p_driver is not null and not exists (select 1 from public.profiles where id = p_driver)
+     then raise exception 'NOT_FOUND'; end if;
+
+  select exists(select 1 from public.vehicles where id = v_id) into v_exists;
+  if p_id is not null and not v_exists then raise exception 'NOT_FOUND'; end if;
+  select driver_id into v_old_driver from public.vehicles where id = v_id;
+
+  -- v1.09.01: трекер выбирается из справочника «Трекеры Bouncie».
+  -- v1.09.12: неактивный трекер привязывать можно — о неактивности предупреждает приложение.
+  if v_imei is not null then
+    if not exists (select 1 from public.bn_devices where imei = v_imei) then raise exception 'NO_DEVICE'; end if;
+    if exists (select 1 from public.vehicles where imei = v_imei and id <> v_id)
+       then raise exception 'DEVICE_TAKEN'; end if;
+  end if;
+
+  if p_driver is not null then
+    update public.vehicles set driver_id = null where driver_id = p_driver and id <> v_id;
+  end if;
+
+  insert into public.vehicles (id, make, vin, imei, car_no, driver_id)
+  values (v_id, coalesce(trim(p_make), ''), nullif(trim(p_vin), ''), v_imei, p_car_no, p_driver)
+  on conflict (id) do update
+    set make = excluded.make, vin = excluded.vin, imei = excluded.imei,
+        car_no = excluded.car_no, driver_id = excluded.driver_id;
+
+  if v_old_driver is not null and v_old_driver is distinct from p_driver then
+    update public.profiles set car_no = null where id = v_old_driver;
+  end if;
+  if p_driver is not null then
+    update public.profiles set car_no = null
+      where car_no = p_car_no and id <> p_driver;
+    update public.profiles set car_no = p_car_no where id = p_driver;
+  end if;
+  return v_id;
+end $$;
+
+-- ---------------------------------------------------------------------
+-- Самопроверка v1.09.10 (база 1.09.09 + история треков машин)
+-- ---------------------------------------------------------------------
+do $$
+declare miss text := '';
+begin
+  if to_regclass('public.study_sessions') is null then miss := miss || ' study_sessions'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='study_access')
+     then miss := miss || ' profiles.study_access'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='study_on')
+     then miss := miss || ' org_settings.study_on'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='study_shuffle')
+     then miss := miss || ' org_settings.study_shuffle'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='media_lock_approved')
+     then miss := miss || ' org_settings.media_lock_approved'; end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='study_sessions' and policyname='study_sel')
+     then miss := miss || ' study_sel'; end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='org_settings' and policyname='org_settings_acc_upd')
+     then miss := miss || ' org_settings_acc_upd'; end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='org_settings' and policyname='org_settings_acc_ins')
+     then miss := miss || ' org_settings_acc_ins'; end if;
+  if not exists (select 1 from pg_trigger where tgname='org_settings_acc_guard_tg' and not tgisinternal)
+     then miss := miss || ' org_settings_acc_guard_tg'; end if;
+  if to_regclass('public.bn_devices') is null then miss := miss || ' bn_devices'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='bn_devices' and column_name='checked_at')
+     then miss := miss || ' bn_devices.checked_at'; end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='bn_devices' and policyname='bn_devices_sel')
+     then miss := miss || ' bn_devices_sel'; end if;
+  if not exists (select 1 from pg_constraint where conname = 'vehicles_imei_fk')
+     then miss := miss || ' vehicles_imei_fk'; end if;
+  if to_regprocedure('public.bn_devices_sync(jsonb)') is null then miss := miss || ' bn_devices_sync'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='work_types' and column_name='preset')
+     then miss := miss || ' work_types.preset'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='dir_order')
+     then miss := miss || ' org_settings.dir_order'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='stock_mode')
+     then miss := miss || ' org_settings.stock_mode'; end if;
+  if to_regclass('public.bn_trips') is null then miss := miss || ' bn_trips'; end if;
+  if to_regclass('public.bn_trip_days') is null then miss := miss || ' bn_trip_days'; end if;
+  if not exists (select 1 from pg_indexes where schemaname='public' and indexname='bn_trips_imei_start_uq') then miss := miss || ' bn_trips_imei_start_uq'; end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='bn_trips' and policyname='bn_trips_sel') then miss := miss || ' bn_trips_sel'; end if;
+  if miss <> '' then
+    raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else
+    raise notice 'TechLog: схема соответствует v1.09.10 — всё на месте.';
+  end if;
+end $$;
+
+select 'TechLog v1.09.10 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='day_move_on')
+     then miss := miss || ' org_settings.day_move_on'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='bn_devices' and column_name='label')
+     then miss := miss || ' bn_devices.label'; end if;
+  if not exists (select 1 from public.price_list where key = 'oth_crb') then miss := miss || ' price_list.oth_crb'; end if;
+  if to_regprocedure('public.bn_device_label(text,text)') is null then miss := miss || ' bn_device_label()'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.12 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.12 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.13 · ПОРЯДОК НА ДОСКЕ С УВЕДОМЛЕНИЕМ, ПРОФИЛЬ СОТРУДНИКА, «РЕМОНТ» ТОЛЬКО РЕМОНТНИКАМ
+-- =====================================================================
+-- 1) Профиль сотрудника: техник · ремонтник · помощник. Настройка интерфейса, права не меняет.
+alter table public.profiles add column if not exists staff_kind text;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_staff_kind_chk') then
+    alter table public.profiles add constraint profiles_staff_kind_chk
+      check (staff_kind is null or staff_kind in ('tech','repair','helper'));
+  end if;
+end $$;
+
+-- 2) «Раздел „Ремонт“ — только ремонтникам» (Настройки → Прочие функции → Функции)
+alter table public.org_settings add column if not exists rep_kind_only boolean not null default false;
+
+-- 3) Push сотруднику, которому менеджер или админ сохранил новый порядок на доске.
+--    Ссылка ./?day=ГГГГ-ММ-ДД открывает главную на этом дне. Личная галочка — push_prefs.order.
+create or replace function public.board_order_notify(p_user uuid, p_date date)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if coalesce(public.my_role(), '') not in ('admin','manager') then raise exception 'FORBIDDEN'; end if;
+  if p_user is null or p_date is null then return; end if;
+  perform public.push_enqueue(p_user, 'order', 'Порядок задач изменён',
+    'на ' || to_char(p_date, 'MM/DD') || ' — откройте день: порядок задач и пикапов обновлён',
+    './?day=' || to_char(p_date, 'YYYY-MM-DD'));
+end $$;
+revoke all on function public.board_order_notify(uuid, date) from public, anon;
+grant execute on function public.board_order_notify(uuid, date) to authenticated;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='staff_kind')
+     then miss := miss || ' profiles.staff_kind'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='rep_kind_only')
+     then miss := miss || ' org_settings.rep_kind_only'; end if;
+  if to_regprocedure('public.board_order_notify(uuid,date)') is null then miss := miss || ' board_order_notify()'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.13 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.13 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.14 · ПЕРЕСЫЛКА ДОКУМЕНТОВ ВНУТРИ TECHLOG (журнал «Документы: мне / от меня»)
+-- =====================================================================
+-- Одна строка = один документ одному получателю. Доступ к самому документу пересылка НЕ выдаёт:
+-- получатель откроет его, только если документ и так виден ему по RLS.
+create table if not exists public.doc_shares (
+  id         uuid primary key default gen_random_uuid(),
+  from_user  uuid not null references public.profiles(id) on delete cascade,
+  to_user    uuid not null references public.profiles(id) on delete cascade,
+  kind       text not null check (kind in ('job','prop','rep')),
+  doc_id     uuid not null,
+  title      text not null default '',
+  note       text not null default '',
+  created_at timestamptz not null default now(),
+  read_at    timestamptz
+);
+create index if not exists doc_shares_to_idx   on public.doc_shares (to_user, created_at desc);
+create index if not exists doc_shares_from_idx on public.doc_shares (from_user, created_at desc);
+alter table public.doc_shares enable row level security;
+drop policy if exists doc_shares_sel on public.doc_shares;
+create policy doc_shares_sel on public.doc_shares for select to authenticated
+  using (to_user = auth.uid() or from_user = auth.uid() or public.my_role() = 'admin');
+-- вставка и отметка «прочитано» — только функциями ниже, прямых политик записи нет намеренно
+revoke insert, update, delete on public.doc_shares from authenticated, anon;
+grant select on public.doc_shares to authenticated;
+
+create or replace function public.doc_share_send(p_kind text, p_doc uuid, p_to uuid[], p_title text, p_note text)
+returns int language plpgsql security definer set search_path = public as $$
+declare v_me uuid := auth.uid(); v_to uuid; v_n int := 0; v_ok boolean; v_title text; v_name text;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if p_kind not in ('job','prop','rep') or p_doc is null then raise exception 'BAD_DOC'; end if;
+  -- отправитель сам должен видеть документ
+  if p_kind = 'job' then v_ok := public.can_view_job(p_doc);
+  elsif p_kind = 'rep' then v_ok := public.can_view_repair(p_doc);
+  else v_ok := exists (select 1 from public.proposals where id = p_doc)
+               and coalesce(public.my_role(), 'tech') in ('admin','manager','accountant','tech');
+  end if;
+  if not coalesce(v_ok, false) then raise exception 'NO_ACCESS'; end if;
+  v_title := left(coalesce(nullif(trim(p_title), ''), 'Документ'), 160);
+  select display_name into v_name from public.profiles where id = v_me;
+  foreach v_to in array coalesce(p_to, array[]::uuid[]) loop
+    continue when v_to = v_me;
+    continue when not exists (select 1 from public.profiles where id = v_to and not blocked);
+    insert into public.doc_shares (from_user, to_user, kind, doc_id, title, note)
+    values (v_me, v_to, p_kind, p_doc, v_title, left(coalesce(trim(p_note), ''), 300));
+    perform public.push_enqueue(v_to, 'share', 'Вам отправили документ',
+      coalesce(v_name, '') || ': ' || v_title || case when coalesce(trim(p_note), '') <> '' then ' — ' || left(trim(p_note), 120) else '' end,
+      './?doc=' || p_kind || ':' || p_doc::text);
+    v_n := v_n + 1;
+    exit when v_n >= 40;
+  end loop;
+  return v_n;
+end $$;
+revoke all on function public.doc_share_send(text, uuid, uuid[], text, text) from public, anon;
+grant execute on function public.doc_share_send(text, uuid, uuid[], text, text) to authenticated;
+
+create or replace function public.doc_share_read(p_id uuid)
+returns void language sql security definer set search_path = public as $$
+  update public.doc_shares set read_at = coalesce(read_at, now()) where id = p_id and to_user = auth.uid();
+$$;
+revoke all on function public.doc_share_read(uuid) from public, anon;
+grant execute on function public.doc_share_read(uuid) to authenticated;
+
+do $$
+declare miss text := '';
+begin
+  if to_regclass('public.doc_shares') is null then miss := miss || ' doc_shares'; end if;
+  if to_regprocedure('public.doc_share_send(text,uuid,uuid[],text,text)') is null then miss := miss || ' doc_share_send()'; end if;
+  if to_regprocedure('public.doc_share_read(uuid)') is null then miss := miss || ' doc_share_read()'; end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='doc_shares' and policyname='doc_shares_sel') then miss := miss || ' doc_shares_sel'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.14 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.14 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.15 · ОПЛАТЫ ПО ИНВОЙСАМ И РЕМОНТАМ (бухгалтерия: учёт поступлений и долгов по срокам)
+-- =====================================================================
+create table if not exists public.acc_payments (
+  id         uuid primary key default gen_random_uuid(),
+  kind       text not null check (kind in ('job','rep')),
+  doc_id     uuid not null,
+  paid_on    date not null,
+  amount     numeric(12,2) not null check (amount > 0),
+  method     text not null default 'check' check (method in ('check','ach','card','cash','other')),
+  ref        text not null default '',
+  note       text not null default '',
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists acc_payments_doc_idx  on public.acc_payments (doc_id);
+create index if not exists acc_payments_date_idx on public.acc_payments (paid_on);
+alter table public.acc_payments enable row level security;
+-- деньги видят и ведут только администратор и бухгалтер
+drop policy if exists acc_payments_sel on public.acc_payments;
+create policy acc_payments_sel on public.acc_payments for select to authenticated
+  using (public.my_role() in ('admin','accountant'));
+drop policy if exists acc_payments_ins on public.acc_payments;
+create policy acc_payments_ins on public.acc_payments for insert to authenticated
+  with check (public.my_role() in ('admin','accountant') and created_by = auth.uid());
+drop policy if exists acc_payments_del on public.acc_payments;
+create policy acc_payments_del on public.acc_payments for delete to authenticated
+  using (public.my_role() in ('admin','accountant'));
+-- правки нет намеренно: ошибочная оплата удаляется и вносится заново — след остаётся в журнале событий
+grant select, insert, delete on public.acc_payments to authenticated;
+revoke update on public.acc_payments from authenticated, anon;
+
+do $$
+declare miss text := '';
+begin
+  if to_regclass('public.acc_payments') is null then miss := miss || ' acc_payments'; end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='acc_payments' and policyname='acc_payments_ins') then miss := miss || ' acc_payments_ins'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.15 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.15 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.17 · СООБЩЕНИЯ — внутренний чат («Объявления», «Общий чат», личная переписка, документы карточкой)
+-- =====================================================================
+create table if not exists public.chat_msgs (
+  id         uuid primary key default gen_random_uuid(),
+  from_user  uuid not null references public.profiles(id) on delete cascade,
+  to_user    uuid references public.profiles(id) on delete cascade,          -- личное сообщение
+  channel    text check (channel in ('ann','all')),                          -- либо канал: объявления / общий чат
+  body       text not null default '',
+  important  boolean not null default false,
+  doc_kind   text check (doc_kind in ('job','prop','rep')),
+  doc_id     uuid,
+  doc_title  text not null default '',
+  created_at timestamptz not null default now(),
+  constraint chat_msgs_target_chk check ((to_user is null) <> (channel is null)),
+  constraint chat_msgs_body_chk   check (length(body) <= 2000 and (length(trim(body)) > 0 or doc_id is not null))
+);
+create index if not exists chat_msgs_time_idx on public.chat_msgs (created_at desc);
+create index if not exists chat_msgs_to_idx   on public.chat_msgs (to_user, created_at desc);
+create index if not exists chat_msgs_from_idx on public.chat_msgs (from_user, created_at desc);
+alter table public.chat_msgs enable row level security;
+-- каналы читают все вошедшие; личное — только двое участников (админ чужую переписку НЕ видит)
+drop policy if exists chat_msgs_sel on public.chat_msgs;
+create policy chat_msgs_sel on public.chat_msgs for select to authenticated
+  using (channel is not null or from_user = auth.uid() or to_user = auth.uid());
+-- удалить может автор; админ — только сообщения в каналах (модерация)
+drop policy if exists chat_msgs_del on public.chat_msgs;
+create policy chat_msgs_del on public.chat_msgs for delete to authenticated
+  using (from_user = auth.uid() or (channel is not null and public.my_role() = 'admin'));
+grant select, delete on public.chat_msgs to authenticated;
+revoke insert, update on public.chat_msgs from authenticated, anon;          -- запись только функцией chat_send
+
+create table if not exists public.chat_reads (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  thread  text not null,                                                     -- 'ann' | 'all' | id собеседника
+  read_at timestamptz not null default now(),
+  primary key (user_id, thread)
+);
+alter table public.chat_reads enable row level security;
+drop policy if exists chat_reads_own on public.chat_reads;
+create policy chat_reads_own on public.chat_reads for select to authenticated using (user_id = auth.uid());
+grant select on public.chat_reads to authenticated;
+
+create or replace function public.chat_send(
+  p_to uuid, p_channel text, p_body text, p_important boolean, p_doc_kind text, p_doc uuid, p_doc_title text)
+returns public.chat_msgs language plpgsql security definer set search_path = public as $$
+declare
+  v_me uuid := auth.uid(); v_role text := coalesce(public.my_role(), '');
+  v_body text := left(coalesce(trim(p_body), ''), 2000);
+  v_imp boolean := coalesce(p_important, false) and v_role in ('admin','manager');
+  v_name text; v_row public.chat_msgs; v_title text; v_text text; v_ok boolean; r record; v_n int := 0;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if exists (select 1 from public.profiles where id = v_me and blocked) then raise exception 'BLOCKED'; end if;
+  if (p_to is null) = (p_channel is null) then raise exception 'BAD_TARGET'; end if;
+  if p_channel is not null and p_channel not in ('ann','all') then raise exception 'BAD_TARGET'; end if;
+  if p_channel = 'ann' and v_role not in ('admin','manager') then raise exception 'FORBIDDEN'; end if;
+  if p_to is not null and (p_to = v_me or not exists (select 1 from public.profiles where id = p_to and not blocked)) then raise exception 'NOT_FOUND'; end if;
+  if p_doc is not null then
+    if coalesce(p_doc_kind, '') not in ('job','prop','rep') then raise exception 'BAD_DOC'; end if;
+    -- приложить можно только документ, который отправитель сам видит
+    if p_doc_kind = 'job' then v_ok := public.can_view_job(p_doc);
+    elsif p_doc_kind = 'rep' then v_ok := public.can_view_repair(p_doc);
+    else v_ok := exists (select 1 from public.proposals where id = p_doc);
+    end if;
+    if not coalesce(v_ok, false) then raise exception 'NO_ACCESS'; end if;
+  end if;
+  if v_body = '' and p_doc is null then raise exception 'EMPTY'; end if;
+
+  insert into public.chat_msgs (from_user, to_user, channel, body, important, doc_kind, doc_id, doc_title)
+  values (v_me, p_to, p_channel, v_body, v_imp, case when p_doc is null then null else p_doc_kind end, p_doc,
+          case when p_doc is null then '' else left(coalesce(trim(p_doc_title), ''), 160) end)
+  returning * into v_row;
+
+  select display_name into v_name from public.profiles where id = v_me;
+  v_title := case when v_imp then '❗ ' else '' end
+          || case when p_channel = 'ann' then 'Объявление · ' when p_channel = 'all' then 'Общий чат · ' else '' end || coalesce(v_name, 'TechLog');
+  v_text := case when v_body <> '' then left(v_body, 160) else '' end
+         || case when p_doc is not null then case when v_body <> '' then ' · ' else '' end || '📄 ' || left(coalesce(p_doc_title, 'документ'), 100) else '' end;
+  if p_to is not null then
+    perform public.push_enqueue(p_to, 'chat', v_title, v_text, './?chat=' || v_me::text);
+  else
+    for r in select id from public.profiles where not blocked and id <> v_me limit 300 loop
+      perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=' || p_channel);
+      v_n := v_n + 1;
+    end loop;
+  end if;
+  return v_row;
+end $$;
+revoke all on function public.chat_send(uuid, text, text, boolean, text, uuid, text) from public, anon;
+grant execute on function public.chat_send(uuid, text, text, boolean, text, uuid, text) to authenticated;
+
+create or replace function public.chat_mark_read(p_thread text, p_at timestamptz)
+returns void language sql security definer set search_path = public as $$
+  insert into public.chat_reads (user_id, thread, read_at)
+  values (auth.uid(), left(p_thread, 60), least(coalesce(p_at, now()), now() + interval '1 minute'))
+  on conflict (user_id, thread) do update set read_at = greatest(public.chat_reads.read_at, excluded.read_at);
+$$;
+revoke all on function public.chat_mark_read(text, timestamptz) from public, anon;
+grant execute on function public.chat_mark_read(text, timestamptz) to authenticated;
+
+do $$
+declare miss text := '';
+begin
+  if to_regclass('public.chat_msgs') is null then miss := miss || ' chat_msgs'; end if;
+  if to_regclass('public.chat_reads') is null then miss := miss || ' chat_reads'; end if;
+  if to_regprocedure('public.chat_send(uuid,text,text,boolean,text,uuid,text)') is null then miss := miss || ' chat_send()'; end if;
+  if to_regprocedure('public.chat_mark_read(text,timestamptz)') is null then miss := miss || ' chat_mark_read()'; end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='chat_msgs' and policyname='chat_msgs_sel') then miss := miss || ' chat_msgs_sel'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.17 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.17 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.18 · ЧАТ: «прочитано» и мгновенная доставка; БЭКАП: оплаты и шаблоны заметок восстанавливаются из JSON
+-- =====================================================================
+-- 1) Отметка «прочитано» у моих сообщений: собеседник видит МОЮ отметку чтения переписки с ним, и наоборот.
+--    thread личной переписки = id собеседника, поэтому «thread = мой id» — это отметки тех, кто читал переписку со мной.
+drop policy if exists chat_reads_own on public.chat_reads;
+create policy chat_reads_own on public.chat_reads for select to authenticated
+  using (user_id = auth.uid() or thread = auth.uid()::text);
+
+-- 2) Realtime для чата: новые сообщения приходят открытому приложению сразу (RLS действует и на подписку).
+--    Если публикации нет или таблица уже в ней — молча идём дальше: чат и без неё работает опросом.
+do $$ begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'chat_msgs') then
+    alter publication supabase_realtime add table public.chat_msgs;
+  end if;
+exception when others then raise notice 'TechLog: realtime для chat_msgs не включён (%). Чат работает опросом.', sqlerrm;
+end $$;
+
+-- 3) Ручной JSON-бэкап: восстановление теперь принимает оплаты бухгалтерии и шаблоны заметок
+create or replace function public.admin_restore_rows(p_table text, p_rows jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_allowed text[] := array[
+    'profiles','counterparties','complexes','aux_equipment','work_types',
+    'equipment_types','size_types','extra_works','product_types','price_list',
+    'counterparty_prices','equipment_stock','org_settings','code_requests',
+    'complex_code_history','hidden_staff','proposals','jobs','placements',
+    'ext_requests','media','repairs','equip_moves','acc_settings','study_sessions',
+    'acc_payments','note_templates'];   -- v1.09.18
+  v_cols text[]; v_collist text; v_set text; v_sql text;
+  r jsonb; v_n int := 0; v_rc int;
+  v_ins int := 0; v_skip int := 0; v_errs jsonb := '[]'::jsonb;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if not (p_table = any(v_allowed)) then raise exception 'BAD_TABLE'; end if;
+  if to_regclass('public.' || p_table) is null then raise exception 'NO_TABLE'; end if;
+  if p_rows is null or jsonb_typeof(p_rows) <> 'array' or jsonb_array_length(p_rows) = 0 then
+    return jsonb_build_object('inserted', 0, 'skipped', 0, 'errors', '[]'::jsonb);
+  end if;
+
+  perform set_config('techlog.restore', '1', true);
+
+  select array_agg(quote_ident(column_name) order by ordinal_position) into v_cols
+  from information_schema.columns
+  where table_schema = 'public' and table_name = p_table
+    and (p_rows->0) ? column_name;
+  if v_cols is null then raise exception 'NO_MATCHING_COLUMNS'; end if;
+  v_collist := array_to_string(v_cols, ',');
+
+  if p_table = 'org_settings' then
+    select string_agg(format('%s = excluded.%s', c, c), ', ')
+      into v_set from unnest(v_cols) c where c <> 'id';
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict (id) do update set %s', p_table, v_collist, v_collist, p_table, v_set);
+  else
+    v_sql := format(
+      'insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)
+       on conflict do nothing', p_table, v_collist, v_collist, p_table);
+  end if;
+
+  for r in select * from jsonb_array_elements(p_rows) loop
+    v_n := v_n + 1;
+    begin
+      execute v_sql using r;
+      get diagnostics v_rc = row_count;
+      if v_rc > 0 then v_ins := v_ins + 1; else v_skip := v_skip + 1; end if;
+    exception when others then
+      v_errs := v_errs || jsonb_build_object(
+        'row', coalesce(r->>'id', '#' || v_n), 'error', sqlerrm);
+    end;
+  end loop;
+
+  -- identity-счётчики номеров: после загрузки старых номеров двигаем вперёд
+  if p_table in ('proposals','repairs') then
+    execute format(
+      'select setval(pg_get_serial_sequence(''public.%I'',''no''),
+                     greatest((select coalesce(max(no), 0) from public.%I), 1), true)',
+      p_table, p_table);
+  end if;
+
+  return jsonb_build_object('inserted', v_ins, 'skipped', v_skip, 'errors', v_errs);
+end $$;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='chat_reads' and policyname='chat_reads_own'
+                 and qual like '%thread%') then miss := miss || ' chat_reads_own(thread)'; end if;
+  if position('acc_payments' in pg_get_functiondef('public.admin_restore_rows(text,jsonb)'::regprocedure)) = 0 then miss := miss || ' admin_restore_rows(acc_payments)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.18 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.18 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.19 · ЧАТ «КАК ПРИВЫЧНО»: ответы, правка, реакции, фото, срок хранения переписки
+-- =====================================================================
+alter table public.chat_msgs add column if not exists reply_to   uuid references public.chat_msgs(id) on delete set null;
+alter table public.chat_msgs add column if not exists edited_at  timestamptz;
+alter table public.chat_msgs add column if not exists updated_at timestamptz not null default now();
+alter table public.chat_msgs add column if not exists reactions  jsonb not null default '{}'::jsonb;
+alter table public.chat_msgs add column if not exists img_thumb  text;          -- миниатюра (data URL ~10 КБ) — лента рисуется без догрузок
+alter table public.chat_msgs add column if not exists img_id     uuid;          -- полный снимок лежит в chat_files
+alter table public.chat_msgs add column if not exists img_w      int;
+alter table public.chat_msgs add column if not exists img_h      int;
+create index if not exists chat_msgs_upd_idx on public.chat_msgs (updated_at desc);
+-- сообщение может состоять из одного снимка
+alter table public.chat_msgs drop constraint if exists chat_msgs_body_chk;
+alter table public.chat_msgs add constraint chat_msgs_body_chk
+  check (length(body) <= 2000 and (length(trim(body)) > 0 or doc_id is not null or img_thumb is not null));
+
+create table if not exists public.chat_files (
+  id         uuid primary key default gen_random_uuid(),
+  msg_id     uuid not null references public.chat_msgs(id) on delete cascade,
+  data       text not null,                                                     -- JPEG, data URL (уменьшен на устройстве)
+  bytes      int  not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists chat_files_msg_idx on public.chat_files (msg_id);
+alter table public.chat_files enable row level security;
+-- снимок виден тем же, кому видно сообщение
+drop policy if exists chat_files_sel on public.chat_files;
+create policy chat_files_sel on public.chat_files for select to authenticated
+  using (exists (select 1 from public.chat_msgs m where m.id = msg_id
+                 and (m.channel is not null or m.from_user = auth.uid() or m.to_user = auth.uid())));
+grant select on public.chat_files to authenticated;
+revoke insert, update, delete on public.chat_files from authenticated, anon;
+
+alter table public.org_settings add column if not exists chat_keep_days int not null default 180;
+
+-- уборка: переписка старше срока, текст уже доставленных чат-пушей (в очереди он больше не нужен)
+create or replace function public.chat_cleanup()
+returns int language plpgsql security definer set search_path = public as $$
+declare v_days int; v_n int := 0;
+begin
+  select coalesce(max(chat_keep_days), 180) into v_days from public.org_settings;
+  if v_days > 0 then
+    delete from public.chat_msgs where created_at < now() - make_interval(days => v_days);
+    get diagnostics v_n = row_count;
+  end if;
+  update public.push_queue set body = '' where kind = 'chat' and sent_at is not null and body <> '';
+  delete from public.push_queue where kind = 'chat' and sent_at is not null and sent_at < now() - interval '14 days';
+  return v_n;
+end $$;
+revoke all on function public.chat_cleanup() from public, anon, authenticated;
+
+-- новая подпись chat_send (ответ и фото). Старую убираем, иначе PostgREST не сможет выбрать между двумя.
+drop function if exists public.chat_send(uuid, text, text, boolean, text, uuid, text);
+create or replace function public.chat_send(
+  p_to uuid, p_channel text, p_body text, p_important boolean, p_doc_kind text, p_doc uuid, p_doc_title text,
+  p_reply uuid, p_thumb text, p_img text, p_w int, p_h int)
+returns public.chat_msgs language plpgsql security definer set search_path = public as $$
+declare
+  v_me uuid := auth.uid(); v_role text := coalesce(public.my_role(), '');
+  v_body text := left(coalesce(trim(p_body), ''), 2000);
+  v_imp boolean := coalesce(p_important, false) and v_role in ('admin','manager');
+  v_name text; v_row public.chat_msgs; v_title text; v_text text; v_ok boolean; r record; v_img uuid;
+  v_has_img boolean := p_img is not null and p_thumb is not null;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if exists (select 1 from public.profiles where id = v_me and blocked) then raise exception 'BLOCKED'; end if;
+  if (p_to is null) = (p_channel is null) then raise exception 'BAD_TARGET'; end if;
+  if p_channel is not null and p_channel not in ('ann','all') then raise exception 'BAD_TARGET'; end if;
+  if p_channel = 'ann' and v_role not in ('admin','manager') then raise exception 'FORBIDDEN'; end if;
+  if p_to is not null and (p_to = v_me or not exists (select 1 from public.profiles where id = p_to and not blocked)) then raise exception 'NOT_FOUND'; end if;
+  if p_doc is not null then
+    if coalesce(p_doc_kind, '') not in ('job','prop','rep') then raise exception 'BAD_DOC'; end if;
+    if p_doc_kind = 'job' then v_ok := public.can_view_job(p_doc);
+    elsif p_doc_kind = 'rep' then v_ok := public.can_view_repair(p_doc);
+    else v_ok := exists (select 1 from public.proposals where id = p_doc);
+    end if;
+    if not coalesce(v_ok, false) then raise exception 'NO_ACCESS'; end if;
+  end if;
+  if v_has_img then
+    if left(p_img, 23) <> 'data:image/jpeg;base64,' or left(p_thumb, 23) <> 'data:image/jpeg;base64,' then raise exception 'BAD_IMAGE'; end if;
+    if length(p_img) > 1500000 or length(p_thumb) > 60000 then raise exception 'TOO_BIG'; end if;
+  end if;
+  if v_body = '' and p_doc is null and not v_has_img then raise exception 'EMPTY'; end if;
+  -- отвечать можно только на сообщение, которое сам видишь
+  if p_reply is not null and not exists (select 1 from public.chat_msgs m where m.id = p_reply
+        and (m.channel is not null or m.from_user = v_me or m.to_user = v_me)) then p_reply := null; end if;
+
+  if v_has_img then v_img := gen_random_uuid(); end if;
+  insert into public.chat_msgs (from_user, to_user, channel, body, important, doc_kind, doc_id, doc_title, reply_to, img_thumb, img_id, img_w, img_h)
+  values (v_me, p_to, p_channel, v_body, v_imp, case when p_doc is null then null else p_doc_kind end, p_doc,
+          case when p_doc is null then '' else left(coalesce(trim(p_doc_title), ''), 160) end, p_reply,
+          case when v_has_img then p_thumb end, v_img, case when v_has_img then p_w end, case when v_has_img then p_h end)
+  returning * into v_row;
+  if v_has_img then insert into public.chat_files (id, msg_id, data, bytes) values (v_img, v_row.id, p_img, (length(p_img) * 3) / 4); end if;
+
+  select display_name into v_name from public.profiles where id = v_me;
+  v_title := case when v_imp then '❗ ' else '' end
+          || case when p_channel = 'ann' then 'Объявление · ' when p_channel = 'all' then 'Общий чат · ' else '' end || coalesce(v_name, 'TechLog');
+  v_text := case when v_body <> '' then left(v_body, 160) else '' end
+         || case when v_has_img then case when v_body <> '' then ' · ' else '' end || '📷 Фото' else '' end
+         || case when p_doc is not null then case when v_body <> '' or v_has_img then ' · ' else '' end || '📄 ' || left(coalesce(p_doc_title, 'документ'), 100) else '' end;
+  if p_to is not null then
+    perform public.push_enqueue(p_to, 'chat', v_title, v_text, './?chat=' || v_me::text);
+  else
+    for r in select id from public.profiles where not blocked and id <> v_me limit 300 loop
+      perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=' || p_channel);
+    end loop;
+  end if;
+  if random() < 0.03 then perform public.chat_cleanup(); end if;      -- уборка «между делом»: отдельное расписание не нужно
+  return v_row;
+end $$;
+revoke all on function public.chat_send(uuid, text, text, boolean, text, uuid, text, uuid, text, text, int, int) from public, anon;
+grant execute on function public.chat_send(uuid, text, text, boolean, text, uuid, text, uuid, text, text, int, int) to authenticated;
+
+-- правка своего сообщения — сутки; остаётся пометка «изменено»
+create or replace function public.chat_edit(p_id uuid, p_body text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_body text := left(coalesce(trim(p_body), ''), 2000);
+begin
+  if v_body = '' then raise exception 'EMPTY'; end if;
+  update public.chat_msgs set body = v_body, edited_at = now(), updated_at = now()
+   where id = p_id and from_user = auth.uid() and created_at > now() - interval '24 hours';
+  if not found then raise exception 'FORBIDDEN'; end if;
+end $$;
+revoke all on function public.chat_edit(uuid, text) from public, anon;
+grant execute on function public.chat_edit(uuid, text) to authenticated;
+
+-- реакция: одна от человека; та же ещё раз — снять, другая — заменить
+create or replace function public.chat_react(p_id uuid, p_emoji text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_me text := auth.uid()::text; v_r jsonb; v_had boolean; k text; v_out jsonb := '{}'::jsonb; v_arr jsonb;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if p_emoji not in ('👍','❤️','😂','😮','😢','🙏') then raise exception 'BAD_EMOJI'; end if;
+  select reactions into v_r from public.chat_msgs m where m.id = p_id
+     and (m.channel is not null or m.from_user = auth.uid() or m.to_user = auth.uid()) for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  v_r := coalesce(v_r, '{}'::jsonb);
+  v_had := coalesce(v_r -> p_emoji, '[]'::jsonb) ? v_me;
+  for k in select jsonb_object_keys(v_r) loop
+    select coalesce(jsonb_agg(x), '[]'::jsonb) into v_arr from jsonb_array_elements_text(v_r -> k) x where x <> v_me;
+    if jsonb_array_length(v_arr) > 0 then v_out := v_out || jsonb_build_object(k, v_arr); end if;
+  end loop;
+  if not v_had then v_out := v_out || jsonb_build_object(p_emoji, coalesce(v_out -> p_emoji, '[]'::jsonb) || to_jsonb(v_me)); end if;
+  update public.chat_msgs set reactions = v_out, updated_at = now() where id = p_id;
+  return v_out;
+end $$;
+revoke all on function public.chat_react(uuid, text) from public, anon;
+grant execute on function public.chat_react(uuid, text) to authenticated;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='chat_msgs' and column_name='reactions') then miss := miss || ' chat_msgs.reactions'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='chat_keep_days') then miss := miss || ' org_settings.chat_keep_days'; end if;
+  if to_regclass('public.chat_files') is null then miss := miss || ' chat_files'; end if;
+  if to_regprocedure('public.chat_send(uuid,text,text,boolean,text,uuid,text,uuid,text,text,int,int)') is null then miss := miss || ' chat_send(12)'; end if;
+  if to_regprocedure('public.chat_send(uuid,text,text,boolean,text,uuid,text)') is not null then miss := miss || ' старая chat_send(7) не удалена'; end if;
+  if to_regprocedure('public.chat_edit(uuid,text)') is null then miss := miss || ' chat_edit()'; end if;
+  if to_regprocedure('public.chat_react(uuid,text)') is null then miss := miss || ' chat_react()'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.19 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.19 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.20 · ЧАТ: ГРУППЫ (создаёт любой сотрудник; сообщения видят только участники)
+-- =====================================================================
+create table if not exists public.chat_groups (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null check (length(trim(name)) between 1 and 60),
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create table if not exists public.chat_members (
+  group_id uuid not null references public.chat_groups(id) on delete cascade,
+  user_id  uuid not null references public.profiles(id) on delete cascade,
+  added_by uuid,
+  added_at timestamptz not null default now(),
+  primary key (group_id, user_id)
+);
+create index if not exists chat_members_user_idx on public.chat_members (user_id);
+alter table public.chat_msgs add column if not exists group_id uuid references public.chat_groups(id) on delete cascade;
+create index if not exists chat_msgs_group_idx on public.chat_msgs (group_id, created_at desc);
+alter table public.chat_msgs drop constraint if exists chat_msgs_target_chk;
+alter table public.chat_msgs add constraint chat_msgs_target_chk check (num_nonnulls(to_user, channel, group_id) = 1);
+
+-- членство проверяет функция с правами владельца: политика на chat_members не может читать саму chat_members (рекурсия)
+create or replace function public.chat_is_member(p_group uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.chat_members where group_id = p_group and user_id = auth.uid());
+$$;
+revoke all on function public.chat_is_member(uuid) from public, anon;
+grant execute on function public.chat_is_member(uuid) to authenticated;
+
+create or replace function public.chat_msg_visible(p_id uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.chat_msgs m where m.id = p_id and (m.channel is not null or m.from_user = auth.uid()
+     or m.to_user = auth.uid() or (m.group_id is not null and public.chat_is_member(m.group_id))));
+$$;
+revoke all on function public.chat_msg_visible(uuid) from public, anon;
+grant execute on function public.chat_msg_visible(uuid) to authenticated;
+
+alter table public.chat_groups  enable row level security;
+alter table public.chat_members enable row level security;
+-- группу и её состав видят участники; администратор — для управления (сообщений чужих групп он НЕ видит)
+drop policy if exists chat_groups_sel on public.chat_groups;
+create policy chat_groups_sel on public.chat_groups for select to authenticated
+  using (public.chat_is_member(id) or public.my_role() = 'admin');
+drop policy if exists chat_members_sel on public.chat_members;
+create policy chat_members_sel on public.chat_members for select to authenticated
+  using (public.chat_is_member(group_id) or public.my_role() = 'admin');
+grant select on public.chat_groups, public.chat_members to authenticated;
+revoke insert, update, delete on public.chat_groups, public.chat_members from authenticated, anon;
+
+drop policy if exists chat_msgs_sel on public.chat_msgs;
+create policy chat_msgs_sel on public.chat_msgs for select to authenticated
+  using (channel is not null or from_user = auth.uid() or to_user = auth.uid()
+         or (group_id is not null and public.chat_is_member(group_id)));
+drop policy if exists chat_files_sel on public.chat_files;
+create policy chat_files_sel on public.chat_files for select to authenticated using (public.chat_msg_visible(msg_id));
+
+create or replace function public.chat_group_create(p_name text, p_members uuid[])
+returns uuid language plpgsql security definer set search_path = public as $$
+declare v_me uuid := auth.uid(); v_id uuid; v_name text := left(coalesce(trim(p_name), ''), 60); u uuid; v_who text;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if exists (select 1 from public.profiles where id = v_me and blocked) then raise exception 'BLOCKED'; end if;
+  if v_name = '' then raise exception 'EMPTY'; end if;
+  insert into public.chat_groups (name, created_by) values (v_name, v_me) returning id into v_id;
+  insert into public.chat_members (group_id, user_id, added_by) values (v_id, v_me, v_me);
+  select display_name into v_who from public.profiles where id = v_me;
+  foreach u in array coalesce(p_members, array[]::uuid[]) loop
+    continue when u = v_me or not exists (select 1 from public.profiles where id = u and not blocked);
+    insert into public.chat_members (group_id, user_id, added_by) values (v_id, u, v_me) on conflict do nothing;
+    perform public.push_enqueue(u, 'chat', 'Вас добавили в группу', coalesce(v_who, '') || ': «' || v_name || '»', './?chat=g:' || v_id::text);
+  end loop;
+  return v_id;
+end $$;
+
+create or replace function public.chat_group_rename(p_group uuid, p_name text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_name text := left(coalesce(trim(p_name), ''), 60);
+begin
+  if v_name = '' then raise exception 'EMPTY'; end if;
+  update public.chat_groups set name = v_name where id = p_group and (created_by = auth.uid() or public.my_role() = 'admin');
+  if not found then raise exception 'FORBIDDEN'; end if;
+end $$;
+
+create or replace function public.chat_group_add(p_group uuid, p_users uuid[])
+returns int language plpgsql security definer set search_path = public as $$
+declare u uuid; v_n int := 0; v_name text; v_who text;
+begin
+  if not (public.chat_is_member(p_group) or public.my_role() = 'admin') then raise exception 'FORBIDDEN'; end if;
+  select name into v_name from public.chat_groups where id = p_group; if not found then raise exception 'NOT_FOUND'; end if;
+  select display_name into v_who from public.profiles where id = auth.uid();
+  foreach u in array coalesce(p_users, array[]::uuid[]) loop
+    continue when not exists (select 1 from public.profiles where id = u and not blocked);
+    insert into public.chat_members (group_id, user_id, added_by) values (p_group, u, auth.uid()) on conflict do nothing;
+    if found then v_n := v_n + 1;
+      perform public.push_enqueue(u, 'chat', 'Вас добавили в группу', coalesce(v_who, '') || ': «' || v_name || '»', './?chat=g:' || p_group::text); end if;
+  end loop;
+  return v_n;
+end $$;
+
+-- убрать участника: себя — любой; другого — создатель группы или администратор. Ушёл создатель — группа переходит
+-- самому давнему участнику; не осталось никого — группа удаляется вместе с перепиской.
+create or replace function public.chat_group_remove(p_group uuid, p_user uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_owner uuid; v_next uuid;
+begin
+  select created_by into v_owner from public.chat_groups where id = p_group; if not found then raise exception 'NOT_FOUND'; end if;
+  if not (p_user = auth.uid() or v_owner = auth.uid() or public.my_role() = 'admin') then raise exception 'FORBIDDEN'; end if;
+  delete from public.chat_members where group_id = p_group and user_id = p_user;
+  select user_id into v_next from public.chat_members where group_id = p_group order by added_at limit 1;
+  if v_next is null then delete from public.chat_groups where id = p_group;
+  elsif v_owner is not distinct from p_user then update public.chat_groups set created_by = v_next where id = p_group; end if;
+  delete from public.chat_reads where user_id = p_user and thread = 'g:' || p_group::text;
+end $$;
+
+create or replace function public.chat_group_delete(p_group uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  delete from public.chat_groups where id = p_group and (created_by = auth.uid() or public.my_role() = 'admin');
+  if not found then raise exception 'FORBIDDEN'; end if;
+  delete from public.chat_reads where thread = 'g:' || p_group::text;
+end $$;
+revoke all on function public.chat_group_create(text, uuid[]), public.chat_group_rename(uuid, text), public.chat_group_add(uuid, uuid[]),
+                       public.chat_group_remove(uuid, uuid), public.chat_group_delete(uuid) from public, anon;
+grant execute on function public.chat_group_create(text, uuid[]), public.chat_group_rename(uuid, text), public.chat_group_add(uuid, uuid[]),
+                          public.chat_group_remove(uuid, uuid), public.chat_group_delete(uuid) to authenticated;
+
+-- реакция и правка теперь знают про группы
+create or replace function public.chat_react(p_id uuid, p_emoji text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_me text := auth.uid()::text; v_r jsonb; v_had boolean; k text; v_out jsonb := '{}'::jsonb; v_arr jsonb;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if p_emoji not in ('👍','❤️','😂','😮','😢','🙏') then raise exception 'BAD_EMOJI'; end if;
+  if not public.chat_msg_visible(p_id) then raise exception 'NOT_FOUND'; end if;
+  select reactions into v_r from public.chat_msgs m where m.id = p_id for update;
+  v_r := coalesce(v_r, '{}'::jsonb);
+  v_had := coalesce(v_r -> p_emoji, '[]'::jsonb) ? v_me;
+  for k in select jsonb_object_keys(v_r) loop
+    select coalesce(jsonb_agg(x), '[]'::jsonb) into v_arr from jsonb_array_elements_text(v_r -> k) x where x <> v_me;
+    if jsonb_array_length(v_arr) > 0 then v_out := v_out || jsonb_build_object(k, v_arr); end if;
+  end loop;
+  if not v_had then v_out := v_out || jsonb_build_object(p_emoji, coalesce(v_out -> p_emoji, '[]'::jsonb) || to_jsonb(v_me)); end if;
+  update public.chat_msgs set reactions = v_out, updated_at = now() where id = p_id;
+  return v_out;
+end $$;
+
+-- отправка: + группа. Старую подпись (12 параметров) убираем — иначе PostgREST не выберет между двумя.
+drop function if exists public.chat_send(uuid, text, text, boolean, text, uuid, text, uuid, text, text, int, int);
+create or replace function public.chat_send(
+  p_to uuid, p_channel text, p_group uuid, p_body text, p_important boolean, p_doc_kind text, p_doc uuid, p_doc_title text,
+  p_reply uuid, p_thumb text, p_img text, p_w int, p_h int)
+returns public.chat_msgs language plpgsql security definer set search_path = public as $$
+declare
+  v_me uuid := auth.uid(); v_role text := coalesce(public.my_role(), '');
+  v_body text := left(coalesce(trim(p_body), ''), 2000);
+  v_imp boolean := coalesce(p_important, false) and v_role in ('admin','manager');
+  v_name text; v_row public.chat_msgs; v_title text; v_text text; v_ok boolean; r record; v_img uuid;
+  v_has_img boolean := p_img is not null and p_thumb is not null; v_gname text;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if exists (select 1 from public.profiles where id = v_me and blocked) then raise exception 'BLOCKED'; end if;
+  if num_nonnulls(p_to, p_channel, p_group) <> 1 then raise exception 'BAD_TARGET'; end if;
+  if p_group is not null then
+    if not public.chat_is_member(p_group) then raise exception 'FORBIDDEN'; end if;
+    select name into v_gname from public.chat_groups where id = p_group;
+  end if;
+  if p_channel is not null and p_channel not in ('ann','all') then raise exception 'BAD_TARGET'; end if;
+  if p_channel = 'ann' and v_role not in ('admin','manager') then raise exception 'FORBIDDEN'; end if;
+  if p_to is not null and (p_to = v_me or not exists (select 1 from public.profiles where id = p_to and not blocked)) then raise exception 'NOT_FOUND'; end if;
+  if p_doc is not null then
+    if coalesce(p_doc_kind, '') not in ('job','prop','rep') then raise exception 'BAD_DOC'; end if;
+    if p_doc_kind = 'job' then v_ok := public.can_view_job(p_doc);
+    elsif p_doc_kind = 'rep' then v_ok := public.can_view_repair(p_doc);
+    else v_ok := exists (select 1 from public.proposals where id = p_doc);
+    end if;
+    if not coalesce(v_ok, false) then raise exception 'NO_ACCESS'; end if;
+  end if;
+  if v_has_img then
+    if left(p_img, 23) <> 'data:image/jpeg;base64,' or left(p_thumb, 23) <> 'data:image/jpeg;base64,' then raise exception 'BAD_IMAGE'; end if;
+    if length(p_img) > 1500000 or length(p_thumb) > 60000 then raise exception 'TOO_BIG'; end if;
+  end if;
+  if v_body = '' and p_doc is null and not v_has_img then raise exception 'EMPTY'; end if;
+  -- отвечать можно только на сообщение, которое сам видишь
+  if p_reply is not null and not public.chat_msg_visible(p_reply) then p_reply := null; end if;
+
+  if v_has_img then v_img := gen_random_uuid(); end if;
+  insert into public.chat_msgs (from_user, to_user, channel, group_id, body, important, doc_kind, doc_id, doc_title, reply_to, img_thumb, img_id, img_w, img_h)
+  values (v_me, p_to, p_channel, p_group, v_body, v_imp, case when p_doc is null then null else p_doc_kind end, p_doc,
+          case when p_doc is null then '' else left(coalesce(trim(p_doc_title), ''), 160) end, p_reply,
+          case when v_has_img then p_thumb end, v_img, case when v_has_img then p_w end, case when v_has_img then p_h end)
+  returning * into v_row;
+  if v_has_img then insert into public.chat_files (id, msg_id, data, bytes) values (v_img, v_row.id, p_img, (length(p_img) * 3) / 4); end if;
+
+  select display_name into v_name from public.profiles where id = v_me;
+  v_title := case when v_imp then '❗ ' else '' end
+          || case when p_channel = 'ann' then 'Объявление · ' when p_channel = 'all' then 'Общий чат · ' when p_group is not null then coalesce(v_gname, 'Группа') || ' · ' else '' end || coalesce(v_name, 'TechLog');
+  v_text := case when v_body <> '' then left(v_body, 160) else '' end
+         || case when v_has_img then case when v_body <> '' then ' · ' else '' end || '📷 Фото' else '' end
+         || case when p_doc is not null then case when v_body <> '' or v_has_img then ' · ' else '' end || '📄 ' || left(coalesce(p_doc_title, 'документ'), 100) else '' end;
+  if p_to is not null then
+    perform public.push_enqueue(p_to, 'chat', v_title, v_text, './?chat=' || v_me::text);
+  elsif p_group is not null then
+    for r in select gm.user_id as id from public.chat_members gm join public.profiles pf on pf.id = gm.user_id
+              where gm.group_id = p_group and gm.user_id <> v_me and not pf.blocked limit 300 loop
+      perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=g:' || p_group::text);
+    end loop;
+  else
+    for r in select id from public.profiles where not blocked and id <> v_me limit 300 loop
+      perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=' || p_channel);
+    end loop;
+  end if;
+  if random() < 0.03 then perform public.chat_cleanup(); end if;      -- уборка «между делом»: отдельное расписание не нужно
+  return v_row;
+end $$;
+revoke all on function public.chat_send(uuid, text, uuid, text, boolean, text, uuid, text, uuid, text, text, int, int) from public, anon;
+grant execute on function public.chat_send(uuid, text, uuid, text, boolean, text, uuid, text, uuid, text, text, int, int) to authenticated;
+
+do $$
+declare miss text := '';
+begin
+  if to_regclass('public.chat_groups') is null then miss := miss || ' chat_groups'; end if;
+  if to_regclass('public.chat_members') is null then miss := miss || ' chat_members'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='chat_msgs' and column_name='group_id') then miss := miss || ' chat_msgs.group_id'; end if;
+  if to_regprocedure('public.chat_send(uuid,text,uuid,text,boolean,text,uuid,text,uuid,text,text,int,int)') is null then miss := miss || ' chat_send(13)'; end if;
+  if to_regprocedure('public.chat_send(uuid,text,text,boolean,text,uuid,text,uuid,text,text,int,int)') is not null then miss := miss || ' старая chat_send(12) не удалена'; end if;
+  if to_regprocedure('public.chat_group_create(text,uuid[])') is null then miss := miss || ' chat_group_create()'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.20 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.20 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.21 · КЛЮЧИ ЗАЩИТЫ ПЕРЕПИСКИ (шаг «ключи без шифрования»: сообщения ещё открытые)
+-- =====================================================================
+-- Открытые ключи — видны всем вошедшим: на них позже будут запираться ключи переписок.
+create table if not exists public.chat_pubkeys (
+  user_id    uuid primary key references public.profiles(id) on delete cascade,
+  pub        jsonb not null,
+  mode       text  not null default 'recover' check (mode in ('recover','total')),
+  key_id     text  not null,
+  updated_at timestamptz not null default now()
+);
+-- Сейф (личный ключ, запертый ключом из пароля) и второй замок (запертый ключом фирмы).
+-- Сейф читает ТОЛЬКО владелец: это единственное, что можно перебирать по словарю паролей.
+create table if not exists public.chat_keys (
+  user_id    uuid primary key references public.profiles(id) on delete cascade,
+  safe       jsonb not null,
+  escrow     jsonb,
+  mode       text  not null default 'recover' check (mode in ('recover','total')),
+  key_id     text  not null,
+  updated_at timestamptz not null default now(),
+  constraint chat_keys_total_chk check (mode <> 'total' or escrow is null)      -- полное шифрование = второго замка нет
+);
+create table if not exists public.chat_org_key (
+  id         int primary key default 1 check (id = 1),
+  pub        jsonb not null,
+  key_id     text  not null,
+  created_by uuid,
+  created_at timestamptz not null default now()
+);
+create table if not exists public.chat_org_holders (
+  admin_id   uuid primary key references public.profiles(id) on delete cascade,
+  blob       jsonb not null,                                                     -- закрытый ключ фирмы, запертый на открытый ключ этого админа
+  by_user    uuid,
+  updated_at timestamptz not null default now()
+);
+alter table public.chat_pubkeys     enable row level security;
+alter table public.chat_keys        enable row level security;
+alter table public.chat_org_key     enable row level security;
+alter table public.chat_org_holders enable row level security;
+drop policy if exists chat_pubkeys_sel on public.chat_pubkeys;
+create policy chat_pubkeys_sel on public.chat_pubkeys for select to authenticated using (true);
+drop policy if exists chat_keys_own on public.chat_keys;
+create policy chat_keys_own on public.chat_keys for select to authenticated using (user_id = auth.uid());
+drop policy if exists chat_org_key_sel on public.chat_org_key;
+create policy chat_org_key_sel on public.chat_org_key for select to authenticated using (true);
+drop policy if exists chat_org_holders_own on public.chat_org_holders;
+create policy chat_org_holders_own on public.chat_org_holders for select to authenticated using (admin_id = auth.uid());
+grant select on public.chat_pubkeys, public.chat_keys, public.chat_org_key, public.chat_org_holders to authenticated;
+revoke insert, update, delete on public.chat_pubkeys, public.chat_keys, public.chat_org_key, public.chat_org_holders from authenticated, anon;
+
+-- свой ключ: создать (или заменить — только с явным p_replace: замена ключа лишает доступа к зашифрованному старым)
+create or replace function public.chat_key_put(p_pub jsonb, p_safe jsonb, p_escrow jsonb, p_mode text, p_key_id text, p_replace boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_me uuid := auth.uid(); v_old text; v_mode text := coalesce(p_mode, 'recover');
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if p_pub is null or p_safe is null or coalesce(p_key_id, '') = '' or v_mode not in ('recover','total') then raise exception 'BAD_KEY'; end if;
+  if (p_pub ->> 'kty') is distinct from 'EC' or (p_pub ->> 'crv') is distinct from 'P-256' or p_pub ? 'd' then raise exception 'BAD_KEY'; end if;   -- закрытая часть на сервер не принимается
+  select key_id into v_old from public.chat_keys where user_id = v_me;
+  if v_old is not null and v_old <> p_key_id and not coalesce(p_replace, false) then raise exception 'KEY_EXISTS'; end if;
+  insert into public.chat_keys (user_id, safe, escrow, mode, key_id) values (v_me, p_safe, case when v_mode = 'total' then null else p_escrow end, v_mode, p_key_id)
+  on conflict (user_id) do update set safe = excluded.safe, escrow = excluded.escrow, mode = excluded.mode, key_id = excluded.key_id, updated_at = now();
+  insert into public.chat_pubkeys (user_id, pub, mode, key_id) values (v_me, p_pub, v_mode, p_key_id)
+  on conflict (user_id) do update set pub = excluded.pub, mode = excluded.mode, key_id = excluded.key_id, updated_at = now();
+end $$;
+
+-- перезапереть свой сейф (смена пароля; восстановление с вошедшего устройства)
+create or replace function public.chat_key_safe_set(p_safe jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_safe is null then raise exception 'BAD_KEY'; end if;
+  update public.chat_keys set safe = p_safe, updated_at = now() where user_id = auth.uid();
+  if not found then raise exception 'NOT_FOUND'; end if;
+end $$;
+
+-- режим: «с восстановлением» (второй замок) / «полное» (второго замка нет)
+create or replace function public.chat_key_mode_set(p_mode text, p_escrow jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_mode not in ('recover','total') then raise exception 'BAD_MODE'; end if;
+  if p_mode = 'recover' and p_escrow is null then raise exception 'NO_ESCROW'; end if;
+  update public.chat_keys set mode = p_mode, escrow = case when p_mode = 'total' then null else p_escrow end, updated_at = now() where user_id = auth.uid();
+  if not found then raise exception 'NOT_FOUND'; end if;
+  update public.chat_pubkeys set mode = p_mode, updated_at = now() where user_id = auth.uid();
+end $$;
+
+-- ключ фирмы: создаёт первый администратор; выдаёт другим администраторам тот, у кого он уже есть
+create or replace function public.chat_org_key_init(p_pub jsonb, p_key_id text, p_blob jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_pub is null or p_blob is null or p_pub ? 'd' then raise exception 'BAD_KEY'; end if;
+  if exists (select 1 from public.chat_org_key) then raise exception 'KEY_EXISTS'; end if;
+  insert into public.chat_org_key (id, pub, key_id, created_by) values (1, p_pub, p_key_id, auth.uid());
+  insert into public.chat_org_holders (admin_id, blob, by_user) values (auth.uid(), p_blob, auth.uid());
+end $$;
+
+create or replace function public.chat_org_key_grant(p_admin uuid, p_blob jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if not exists (select 1 from public.chat_org_holders where admin_id = auth.uid()) then raise exception 'FORBIDDEN'; end if;
+  if not exists (select 1 from public.profiles where id = p_admin and role = 'admin' and not blocked) then raise exception 'NOT_ADMIN'; end if;
+  insert into public.chat_org_holders (admin_id, blob, by_user) values (p_admin, p_blob, auth.uid())
+  on conflict (admin_id) do update set blob = excluded.blob, by_user = excluded.by_user, updated_at = now();
+end $$;
+
+create or replace function public.chat_org_holders_list()
+returns uuid[] language sql security definer stable set search_path = public as $$
+  select case when public.my_role() = 'admin' then coalesce(array_agg(admin_id), array[]::uuid[]) else array[]::uuid[] end from public.chat_org_holders;
+$$;
+
+-- второй замок сотрудника — только администратору, только функцией, и КАЖДОЕ обращение пишется в журнал событий
+create or replace function public.chat_key_escrow_get(p_user uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_esc jsonb; v_name text; v_who text;
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  select escrow into v_esc from public.chat_keys where user_id = p_user and mode = 'recover';
+  select display_name into v_name from public.profiles where id = auth.uid();
+  select display_name into v_who  from public.profiles where id = p_user;
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_name, ''), 'chat_key_escrow', 'profile', p_user::text, jsonb_build_object('name', coalesce(v_who, ''), 'found', v_esc is not null));
+  return v_esc;
+end $$;
+
+create or replace function public.chat_key_admin_rewrap(p_user uuid, p_safe jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if p_safe is null then raise exception 'BAD_KEY'; end if;
+  update public.chat_keys set safe = p_safe, updated_at = now() where user_id = p_user and mode = 'recover';
+  if not found then raise exception 'NOT_FOUND'; end if;
+end $$;
+
+-- снятый с должности администратор теряет копию ключа фирмы
+create or replace function public.chat_org_holders_gc() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.role is distinct from 'admin' or new.blocked then delete from public.chat_org_holders where admin_id = new.id; end if;
+  return new;
+end $$;
+drop trigger if exists chat_org_holders_gc_tg on public.profiles;
+create trigger chat_org_holders_gc_tg after update of role, blocked on public.profiles for each row execute function public.chat_org_holders_gc();
+
+revoke all on function public.chat_key_put(jsonb, jsonb, jsonb, text, text, boolean), public.chat_key_safe_set(jsonb), public.chat_key_mode_set(text, jsonb),
+  public.chat_org_key_init(jsonb, text, jsonb), public.chat_org_key_grant(uuid, jsonb), public.chat_org_holders_list(), public.chat_key_escrow_get(uuid),
+  public.chat_key_admin_rewrap(uuid, jsonb) from public, anon;
+grant execute on function public.chat_key_put(jsonb, jsonb, jsonb, text, text, boolean), public.chat_key_safe_set(jsonb), public.chat_key_mode_set(text, jsonb),
+  public.chat_org_key_init(jsonb, text, jsonb), public.chat_org_key_grant(uuid, jsonb), public.chat_org_holders_list(), public.chat_key_escrow_get(uuid),
+  public.chat_key_admin_rewrap(uuid, jsonb) to authenticated;
+
+do $$
+declare miss text := '';
+begin
+  if to_regclass('public.chat_keys') is null then miss := miss || ' chat_keys'; end if;
+  if to_regclass('public.chat_pubkeys') is null then miss := miss || ' chat_pubkeys'; end if;
+  if to_regclass('public.chat_org_key') is null then miss := miss || ' chat_org_key'; end if;
+  if to_regprocedure('public.chat_key_put(jsonb,jsonb,jsonb,text,text,boolean)') is null then miss := miss || ' chat_key_put()'; end if;
+  if to_regprocedure('public.chat_key_escrow_get(uuid)') is null then miss := miss || ' chat_key_escrow_get()'; end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='chat_keys' and policyname='chat_keys_own') then miss := miss || ' chat_keys_own'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.21 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.21 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.22 · PUSH: отправка сразу от базы, защита от двойной отправки, ссылки на документ, «документ изменён»
+-- =====================================================================
+alter table public.push_queue add column if not exists claimed_at timestamptz;
+
+-- 1) Захват строк очереди: два одновременных запуска функции push (расписание + толчок от базы + пинг приложения)
+--    больше не отправят одно уведомление дважды. Захват «протухает» через 2 минуты — упавший запуск ничего не теряет.
+create or replace function public.push_claim(p_limit int)
+returns setof public.push_queue language plpgsql security definer set search_path = public as $$
+begin
+  return query
+  update public.push_queue q set claimed_at = now()
+   where q.id in (select id from public.push_queue
+                   where sent_at is null and tries < 5 and (claimed_at is null or claimed_at < now() - interval '2 minutes')
+                   order by created_at limit greatest(1, least(coalesce(p_limit, 200), 500)) for update skip locked)
+  returning q.*;
+end $$;
+revoke all on function public.push_claim(int) from public, anon, authenticated;
+grant execute on function public.push_claim(int) to service_role;
+
+-- 2) Толчок от базы: появилась строка в очереди — база сама зовёт Edge Function push (pg_net, асинхронно, после commit).
+--    Адрес функции и ключи лежат в app_secrets (их кладёт push-setup.sql). Нет pg_net или настроек — молча ничего не делаем:
+--    уведомление уйдёт по расписанию или от открытого приложения, как раньше. Один толчок на транзакцию.
+create or replace function public.push_kick()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_url text; v_key text; v_cron text;
+begin
+  if current_setting('techlog.restore', true) = '1' then return null; end if;
+  if current_setting('techlog.push_kicked', true) = '1' then return null; end if;
+  perform set_config('techlog.push_kicked', '1', true);
+  select value into v_url  from public.app_secrets where key = 'push_fn_url';
+  select value into v_key  from public.app_secrets where key = 'push_fn_key';
+  select value into v_cron from public.app_secrets where key = 'push_cron_key';
+  if coalesce(v_url, '') = '' or coalesce(v_key, '') = '' or coalesce(v_cron, '') = '' then return null; end if;
+  begin
+    perform net.http_post(url := v_url || '?send=1&kick=1',
+      /* ключ проекта нового формата (sb_publishable_…) — не JWT: его нельзя слать как Bearer, шлюз функций ответит 401.
+         Поэтому: apikey — всегда; Authorization — только для старого JWT-ключа (eyJ…). У функции push при ключах нового
+         формата должна быть ВЫКЛЮЧЕНА проверка «Verify JWT» — свою проверку (x-cron-key либо вход пользователя) она делает сама. */
+      headers := jsonb_build_object('Content-Type', 'application/json', 'apikey', v_key, 'x-cron-key', v_cron)
+                 || case when v_key like 'eyJ%' then jsonb_build_object('Authorization', 'Bearer ' || v_key) else '{}'::jsonb end,
+      body := '{}'::jsonb);
+  exception when others then null;            -- pg_net не включён / недоступен — доставка пойдёт прежним путём
+  end;
+  return null;
+end $$;
+drop trigger if exists push_kick_tg on public.push_queue;
+create trigger push_kick_tg after insert on public.push_queue for each statement execute function public.push_kick();
+
+-- 3) Уведомления о документах ведут прямо в документ; новое — «Документ изменён» (кто-то другой поправил ваш документ)
+create or replace function public.jobs_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_body text; v_url text; v_who text; r record;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  v_body := 'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · ' || to_char(new.date, 'DD.MM');
+  v_url  := './?doc=job:' || new.id::text;
+  if tg_op = 'INSERT' then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Новая задача', v_body, v_url);
+    end if;
+    return new;
+  end if;
+  if new.technician_id is distinct from old.technician_id and new.technician_id is not null then
+    perform public.push_enqueue(new.technician_id, 'job', 'Задача передана вам', v_body, v_url);
+    return new;
+  end if;
+  if old.status is distinct from 'approved' and new.status = 'approved' then
+    perform public.push_enqueue(new.technician_id, 'approve', 'Инвойс апрувлен',
+      v_body || ' · $' || round(coalesce(new.approved_total, new.total, 0)), v_url);
+    return new;
+  elsif old.status = 'approved' and new.status is distinct from 'approved' then
+    perform public.push_enqueue(new.technician_id, 'reset', 'Апрув снят с инвойса', v_body, v_url);
+    return new;
+  end if;
+  /* «Документ изменён»: содержимое поменял НЕ исполнитель (push_enqueue сам пропускает автора правки). Приложение шлёт
+     строку целиком при любом сохранении — сравниваем только значимые поля; не чаще раза в 10 минут на документ и человека. */
+  if auth.uid() is not null and (new.form_data is distinct from old.form_data or new.date is distinct from old.date
+       or new.unit_number is distinct from old.unit_number or new.complex_id is distinct from old.complex_id
+       or coalesce(new.note, '') is distinct from coalesce(old.note, '') or new.helper_ids is distinct from old.helper_ids) then
+    select display_name into v_who from public.profiles where id = auth.uid();
+    for r in select distinct x.uid from (
+               select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x
+              where x.uid is not null and x.uid <> auth.uid()
+    loop
+      if not exists (select 1 from public.push_queue where user_id = r.uid and kind = 'edit' and url = v_url and created_at > now() - interval '10 minutes') then
+        perform public.push_enqueue(r.uid, 'edit', 'Документ изменён', v_body || ' · ' || coalesce(v_who, ''), v_url);
+      end if;
+    end loop;
+  end if;
+  return new;
+end $$;
+
+create or replace function public.placements_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  if new.ext_of is null and new.technician_id is not null then
+    perform public.push_enqueue(new.technician_id, 'pickup', 'Новый пикап',
+      'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · до ' || to_char(new.due_date, 'DD.MM'),
+      './?day=' || to_char(new.due_date, 'YYYY-MM-DD'));
+  end if;
+  return new;
+end $$;
+
+create or replace function public.repairs_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_t text; v_b text; v_url text; r record;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  if old.status is distinct from 'approved' and new.status = 'approved' then
+    v_t := 'Ремонт апрувлен';
+  elsif old.status = 'approved' and new.status is distinct from 'approved' then
+    v_t := 'Апрув снят с ремонта';
+  else
+    return new;
+  end if;
+  v_b := 'REP-' || new.no || ' · Unit ' || coalesce(nullif(new.unit_number,''),'—');
+  v_url := './?doc=rep:' || new.id::text;
+  perform public.push_enqueue(new.created_by, 'approve', v_t, v_b, v_url);
+  for r in select distinct value::uuid as uid
+             from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+  loop
+    if r.uid is distinct from new.created_by then
+      perform public.push_enqueue(r.uid, 'approve', v_t, v_b, v_url);
+    end if;
+  end loop;
+  return new;
+end $$;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='push_queue' and column_name='claimed_at') then miss := miss || ' push_queue.claimed_at'; end if;
+  if to_regprocedure('public.push_claim(int)') is null then miss := miss || ' push_claim()'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'push_kick_tg') then miss := miss || ' push_kick_tg'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.22 применено — всё на месте. Для отправки «сразу от базы» выполните ещё push-setup.sql.'; end if;
+end $$;
+
+select 'TechLog v1.09.22 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.23 · РЕВЬЮ ЧАТА И ПУШЕЙ: заголовок уведомления = переписка, проверка ключа отметки чтения, тайм-аут вызова от базы
+-- =====================================================================
+create or replace function public.chat_send(
+  p_to uuid, p_channel text, p_group uuid, p_body text, p_important boolean, p_doc_kind text, p_doc uuid, p_doc_title text,
+  p_reply uuid, p_thumb text, p_img text, p_w int, p_h int)
+returns public.chat_msgs language plpgsql security definer set search_path = public as $$
+declare
+  v_me uuid := auth.uid(); v_role text := coalesce(public.my_role(), '');
+  v_body text := left(coalesce(trim(p_body), ''), 2000);
+  v_imp boolean := coalesce(p_important, false) and v_role in ('admin','manager');
+  v_name text; v_row public.chat_msgs; v_title text; v_text text; v_ok boolean; r record; v_img uuid;
+  v_has_img boolean := p_img is not null and p_thumb is not null; v_gname text;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if exists (select 1 from public.profiles where id = v_me and blocked) then raise exception 'BLOCKED'; end if;
+  if num_nonnulls(p_to, p_channel, p_group) <> 1 then raise exception 'BAD_TARGET'; end if;
+  if p_group is not null then
+    if not public.chat_is_member(p_group) then raise exception 'FORBIDDEN'; end if;
+    select name into v_gname from public.chat_groups where id = p_group;
+  end if;
+  if p_channel is not null and p_channel not in ('ann','all') then raise exception 'BAD_TARGET'; end if;
+  if p_channel = 'ann' and v_role not in ('admin','manager') then raise exception 'FORBIDDEN'; end if;
+  if p_to is not null and (p_to = v_me or not exists (select 1 from public.profiles where id = p_to and not blocked)) then raise exception 'NOT_FOUND'; end if;
+  if p_doc is not null then
+    if coalesce(p_doc_kind, '') not in ('job','prop','rep') then raise exception 'BAD_DOC'; end if;
+    if p_doc_kind = 'job' then v_ok := public.can_view_job(p_doc);
+    elsif p_doc_kind = 'rep' then v_ok := public.can_view_repair(p_doc);
+    else v_ok := exists (select 1 from public.proposals where id = p_doc);
+    end if;
+    if not coalesce(v_ok, false) then raise exception 'NO_ACCESS'; end if;
+  end if;
+  if v_has_img then
+    if left(p_img, 23) <> 'data:image/jpeg;base64,' or left(p_thumb, 23) <> 'data:image/jpeg;base64,' then raise exception 'BAD_IMAGE'; end if;
+    if length(p_img) > 1500000 or length(p_thumb) > 60000 then raise exception 'TOO_BIG'; end if;
+  end if;
+  if v_body = '' and p_doc is null and not v_has_img then raise exception 'EMPTY'; end if;
+  -- отвечать можно только на сообщение, которое сам видишь
+  if p_reply is not null and not public.chat_msg_visible(p_reply) then p_reply := null; end if;
+
+  if v_has_img then v_img := gen_random_uuid(); end if;
+  insert into public.chat_msgs (from_user, to_user, channel, group_id, body, important, doc_kind, doc_id, doc_title, reply_to, img_thumb, img_id, img_w, img_h)
+  values (v_me, p_to, p_channel, p_group, v_body, v_imp, case when p_doc is null then null else p_doc_kind end, p_doc,
+          case when p_doc is null then '' else left(coalesce(trim(p_doc_title), ''), 160) end, p_reply,
+          case when v_has_img then p_thumb end, v_img, case when v_has_img then p_w end, case when v_has_img then p_h end)
+  returning * into v_row;
+  if v_has_img then insert into public.chat_files (id, msg_id, data, bytes) values (v_img, v_row.id, p_img, (length(p_img) * 3) / 4); end if;
+
+  select display_name into v_name from public.profiles where id = v_me;
+  /* v1.09.23 (ревью): заголовок уведомления — ПЕРЕПИСКА (человек, группа, канал), а автор идёт в строку. Иначе стопка группы
+     называлась именем последнего написавшего: «Бригада · Олег (3)», хотя из трёх сообщений его было одно. */
+  v_title := case when v_imp then '❗ ' else '' end
+          || case when p_channel = 'ann' then 'Объявления' when p_channel = 'all' then 'Общий чат'
+                  when p_group is not null then coalesce(v_gname, 'Группа') else coalesce(v_name, 'TechLog') end;
+  v_text := case when p_to is null then split_part(coalesce(v_name, ''), ' ', 1) || ': ' else '' end
+         || case when v_body <> '' then left(v_body, 160) else '' end
+         || case when v_has_img then case when v_body <> '' then ' · ' else '' end || '📷 Фото' else '' end
+         || case when p_doc is not null then case when v_body <> '' or v_has_img then ' · ' else '' end || '📄 ' || left(coalesce(p_doc_title, 'документ'), 100) else '' end;
+  if p_to is not null then
+    perform public.push_enqueue(p_to, 'chat', v_title, v_text, './?chat=' || v_me::text);
+  elsif p_group is not null then
+    for r in select gm.user_id as id from public.chat_members gm join public.profiles pf on pf.id = gm.user_id
+              where gm.group_id = p_group and gm.user_id <> v_me and not pf.blocked limit 300 loop
+      perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=g:' || p_group::text);
+    end loop;
+  else
+    for r in select id from public.profiles where not blocked and id <> v_me limit 300 loop
+      perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=' || p_channel);
+    end loop;
+  end if;
+  if random() < 0.03 then perform public.chat_cleanup(); end if;      -- уборка «между делом»: отдельное расписание не нужно
+  return v_row;
+end $$;
+
+-- отметка чтения принимает только настоящие ключи переписок (раньше — любую строку до 60 знаков: мусор в таблице)
+create or replace function public.chat_mark_read(p_thread text, p_at timestamptz)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'AUTH'; end if;
+  if p_thread is null or p_thread !~ '^(ann|all|(g:)?[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$' then raise exception 'BAD_THREAD'; end if;
+  if left(p_thread, 2) = 'g:' and not public.chat_is_member(substr(p_thread, 3)::uuid) then raise exception 'FORBIDDEN'; end if;
+  insert into public.chat_reads (user_id, thread, read_at)
+  values (auth.uid(), p_thread, least(coalesce(p_at, now()), now() + interval '1 minute'))
+  on conflict (user_id, thread) do update set read_at = greatest(public.chat_reads.read_at, excluded.read_at);
+end $$;
+revoke all on function public.chat_mark_read(text, timestamptz) from public, anon;
+grant execute on function public.chat_mark_read(text, timestamptz) to authenticated;
+
+-- толчок от базы: функции нужно время (холодный старт + рассылка) — 2 секунды по умолчанию обрывали вызов
+create or replace function public.push_kick()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_url text; v_key text; v_cron text;
+begin
+  if current_setting('techlog.restore', true) = '1' then return null; end if;
+  if current_setting('techlog.push_kicked', true) = '1' then return null; end if;
+  perform set_config('techlog.push_kicked', '1', true);
+  select value into v_url  from public.app_secrets where key = 'push_fn_url';
+  select value into v_key  from public.app_secrets where key = 'push_fn_key';
+  select value into v_cron from public.app_secrets where key = 'push_cron_key';
+  if coalesce(v_url, '') = '' or coalesce(v_key, '') = '' or coalesce(v_cron, '') = '' then return null; end if;
+  begin
+    perform net.http_post(url := v_url || '?send=1&kick=1',
+      headers := jsonb_build_object('Content-Type', 'application/json', 'apikey', v_key, 'x-cron-key', v_cron)
+                 || case when v_key like 'eyJ%' then jsonb_build_object('Authorization', 'Bearer ' || v_key) else '{}'::jsonb end,
+      body := '{}'::jsonb, timeout_milliseconds := 10000);
+  exception when others then null;            -- pg_net не включён / недоступен — доставка пойдёт прежним путём
+  end;
+  return null;
+end $$;
+
+do $$
+declare miss text := '';
+begin
+  if position('BAD_THREAD' in pg_get_functiondef('public.chat_mark_read(text,timestamptz)'::regprocedure)) = 0 then miss := miss || ' chat_mark_read(проверка ключа)'; end if;
+  if position('timeout_milliseconds' in pg_get_functiondef('public.push_kick()'::regprocedure)) = 0 then miss := miss || ' push_kick(тайм-аут)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.23 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.23 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- =====================================================================
+-- v1.09.24 · ЧАТ: модерация в группах (создатель и назначенные админы группы), «не беспокоить», срок хранения по
+-- умолчанию БЕЗ ограничения, бухгалтер в чате с правами менеджера, лимиты от потока, пароль от 10 символов на сервере
+-- =====================================================================
+alter table public.chat_members add column if not exists role text not null default 'member';
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'chat_members_role_chk') then
+    alter table public.chat_members add constraint chat_members_role_chk check (role in ('member','admin'));
+  end if;
+end $$;
+
+-- модератор группы: её создатель или участник с ролью admin
+create or replace function public.chat_is_group_mod(p_group uuid)
+returns boolean language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.chat_groups g where g.id = p_group and g.created_by = auth.uid())
+      or exists (select 1 from public.chat_members m where m.group_id = p_group and m.user_id = auth.uid() and m.role = 'admin');
+$$;
+revoke all on function public.chat_is_group_mod(uuid) from public, anon;
+grant execute on function public.chat_is_group_mod(uuid) to authenticated;
+
+-- удалить сообщение: автор; администратор фирмы — в общих каналах; в группе — её модератор
+drop policy if exists chat_msgs_del on public.chat_msgs;
+create policy chat_msgs_del on public.chat_msgs for delete to authenticated
+  using (from_user = auth.uid()
+         or (channel is not null and public.my_role() = 'admin')
+         or (group_id is not null and public.chat_is_group_mod(group_id)));
+
+-- назначить / снять админа группы: создатель группы или администратор фирмы
+create or replace function public.chat_group_set_role(p_group uuid, p_user uuid, p_role text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if p_role not in ('member','admin') then raise exception 'BAD_ROLE'; end if;
+  if not exists (select 1 from public.chat_groups where id = p_group and (created_by = auth.uid() or public.my_role() = 'admin')) then raise exception 'FORBIDDEN'; end if;
+  update public.chat_members set role = p_role where group_id = p_group and user_id = p_user;
+  if not found then raise exception 'NOT_FOUND'; end if;
+end $$;
+revoke all on function public.chat_group_set_role(uuid, uuid, text) from public, anon;
+grant execute on function public.chat_group_set_role(uuid, uuid, text) to authenticated;
+
+-- название и состав теперь правит и админ группы (создателя убрать может только он сам или администратор фирмы)
+create or replace function public.chat_group_rename(p_group uuid, p_name text)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_name text := left(coalesce(trim(p_name), ''), 60);
+begin
+  if v_name = '' then raise exception 'EMPTY'; end if;
+  if not (public.chat_is_group_mod(p_group) or public.my_role() = 'admin') then raise exception 'FORBIDDEN'; end if;
+  update public.chat_groups set name = v_name where id = p_group;
+  if not found then raise exception 'NOT_FOUND'; end if;
+end $$;
+
+create or replace function public.chat_group_remove(p_group uuid, p_user uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_owner uuid; v_next uuid;
+begin
+  select created_by into v_owner from public.chat_groups where id = p_group; if not found then raise exception 'NOT_FOUND'; end if;
+  if not (p_user = auth.uid() or public.my_role() = 'admin' or (public.chat_is_group_mod(p_group) and p_user is distinct from v_owner)) then raise exception 'FORBIDDEN'; end if;
+  delete from public.chat_members where group_id = p_group and user_id = p_user;
+  select user_id into v_next from public.chat_members where group_id = p_group order by (role = 'admin') desc, added_at limit 1;   -- группа переходит админу группы, иначе самому давнему
+  if v_next is null then delete from public.chat_groups where id = p_group;
+  elsif v_owner is not distinct from p_user then update public.chat_groups set created_by = v_next where id = p_group; end if;
+  delete from public.chat_reads where user_id = p_user and thread = 'g:' || p_group::text;
+end $$;
+
+-- группы: не больше 20 новых в сутки от одного человека
+create or replace function public.chat_group_create(p_name text, p_members uuid[])
+returns uuid language plpgsql security definer set search_path = public as $$
+declare v_me uuid := auth.uid(); v_id uuid; v_name text := left(coalesce(trim(p_name), ''), 60); u uuid; v_who text;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if exists (select 1 from public.profiles where id = v_me and blocked) then raise exception 'BLOCKED'; end if;
+  if v_name = '' then raise exception 'EMPTY'; end if;
+  if (select count(*) from public.chat_groups where created_by = v_me and created_at > now() - interval '1 day') >= 20 then raise exception 'RATE_LIMIT'; end if;
+  insert into public.chat_groups (name, created_by) values (v_name, v_me) returning id into v_id;
+  insert into public.chat_members (group_id, user_id, added_by) values (v_id, v_me, v_me);
+  select display_name into v_who from public.profiles where id = v_me;
+  foreach u in array coalesce(p_members, array[]::uuid[]) loop
+    continue when u = v_me or not exists (select 1 from public.profiles where id = u and not blocked);
+    insert into public.chat_members (group_id, user_id, added_by) values (v_id, u, v_me) on conflict do nothing;
+    perform public.push_enqueue(u, 'chat', 'Вас добавили в группу', coalesce(v_who, '') || ': «' || v_name || '»', './?chat=g:' || v_id::text);
+  end loop;
+  return v_id;
+end $$;
+
+-- «не беспокоить»: переписка в списке profiles.push_prefs.chat_mute
+create or replace function public.chat_muted(p_user uuid, p_key text)
+returns boolean language sql security definer stable set search_path = public as $$
+  select coalesce((select (push_prefs -> 'chat_mute') ? p_key from public.profiles where id = p_user), false);
+$$;
+revoke all on function public.chat_muted(uuid, text) from public, anon, authenticated;
+
+-- срок хранения переписки: по умолчанию БЕЗ ограничения (0). Прежнее значение по умолчанию (180) сбрасывается;
+-- выставленное вручную другое число не трогается.
+alter table public.org_settings alter column chat_keep_days set default 0;
+update public.org_settings set chat_keep_days = 0 where chat_keep_days = 180;
+create or replace function public.chat_cleanup()
+returns int language plpgsql security definer set search_path = public as $$
+declare v_days int; v_n int := 0;
+begin
+  select coalesce(max(chat_keep_days), 0) into v_days from public.org_settings;
+  if v_days > 0 then
+    delete from public.chat_msgs where created_at < now() - make_interval(days => v_days);
+    get diagnostics v_n = row_count;
+  end if;
+  update public.push_queue set body = '' where kind = 'chat' and sent_at is not null and body <> '';
+  delete from public.push_queue where kind = 'chat' and sent_at is not null and sent_at < now() - interval '14 days';
+  return v_n;
+end $$;
+revoke all on function public.chat_cleanup() from public, anon, authenticated;
+
+create or replace function public.chat_send(
+  p_to uuid, p_channel text, p_group uuid, p_body text, p_important boolean, p_doc_kind text, p_doc uuid, p_doc_title text,
+  p_reply uuid, p_thumb text, p_img text, p_w int, p_h int)
+returns public.chat_msgs language plpgsql security definer set search_path = public as $$
+declare
+  v_me uuid := auth.uid(); v_role text := coalesce(public.my_role(), '');
+  v_body text := left(coalesce(trim(p_body), ''), 2000);
+  v_imp boolean := coalesce(p_important, false) and v_role in ('admin','manager','accountant');   -- v1.09.24: бухгалтер в чате — с правами менеджера
+  v_name text; v_row public.chat_msgs; v_title text; v_text text; v_ok boolean; r record; v_img uuid;
+  v_has_img boolean := p_img is not null and p_thumb is not null; v_gname text;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if exists (select 1 from public.profiles where id = v_me and blocked) then raise exception 'BLOCKED'; end if;
+  if num_nonnulls(p_to, p_channel, p_group) <> 1 then raise exception 'BAD_TARGET'; end if;
+  if p_group is not null then
+    if not public.chat_is_member(p_group) then raise exception 'FORBIDDEN'; end if;
+    select name into v_gname from public.chat_groups where id = p_group;
+  end if;
+  if p_channel is not null and p_channel not in ('ann','all') then raise exception 'BAD_TARGET'; end if;
+  if p_channel = 'ann' and v_role not in ('admin','manager','accountant') then raise exception 'FORBIDDEN'; end if;
+  -- v1.09.24: защита от потока — не больше 30 сообщений в минуту от одного человека
+  if (select count(*) from public.chat_msgs where from_user = v_me and created_at > now() - interval '1 minute') >= 30 then raise exception 'RATE_LIMIT'; end if;
+  if p_to is not null and (p_to = v_me or not exists (select 1 from public.profiles where id = p_to and not blocked)) then raise exception 'NOT_FOUND'; end if;
+  if p_doc is not null then
+    if coalesce(p_doc_kind, '') not in ('job','prop','rep') then raise exception 'BAD_DOC'; end if;
+    if p_doc_kind = 'job' then v_ok := public.can_view_job(p_doc);
+    elsif p_doc_kind = 'rep' then v_ok := public.can_view_repair(p_doc);
+    else v_ok := exists (select 1 from public.proposals where id = p_doc);
+    end if;
+    if not coalesce(v_ok, false) then raise exception 'NO_ACCESS'; end if;
+  end if;
+  if v_has_img then
+    if left(p_img, 23) <> 'data:image/jpeg;base64,' or left(p_thumb, 23) <> 'data:image/jpeg;base64,' then raise exception 'BAD_IMAGE'; end if;
+    if length(p_img) > 1500000 or length(p_thumb) > 60000 then raise exception 'TOO_BIG'; end if;
+  end if;
+  if v_body = '' and p_doc is null and not v_has_img then raise exception 'EMPTY'; end if;
+  -- отвечать можно только на сообщение, которое сам видишь
+  if p_reply is not null and not public.chat_msg_visible(p_reply) then p_reply := null; end if;
+
+  if v_has_img then v_img := gen_random_uuid(); end if;
+  insert into public.chat_msgs (from_user, to_user, channel, group_id, body, important, doc_kind, doc_id, doc_title, reply_to, img_thumb, img_id, img_w, img_h)
+  values (v_me, p_to, p_channel, p_group, v_body, v_imp, case when p_doc is null then null else p_doc_kind end, p_doc,
+          case when p_doc is null then '' else left(coalesce(trim(p_doc_title), ''), 160) end, p_reply,
+          case when v_has_img then p_thumb end, v_img, case when v_has_img then p_w end, case when v_has_img then p_h end)
+  returning * into v_row;
+  if v_has_img then insert into public.chat_files (id, msg_id, data, bytes) values (v_img, v_row.id, p_img, (length(p_img) * 3) / 4); end if;
+
+  select display_name into v_name from public.profiles where id = v_me;
+  /* v1.09.23 (ревью): заголовок уведомления — ПЕРЕПИСКА (человек, группа, канал), а автор идёт в строку. Иначе стопка группы
+     называлась именем последнего написавшего: «Бригада · Олег (3)», хотя из трёх сообщений его было одно. */
+  v_title := case when v_imp then '❗ ' else '' end
+          || case when p_channel = 'ann' then 'Объявления' when p_channel = 'all' then 'Общий чат'
+                  when p_group is not null then coalesce(v_gname, 'Группа') else coalesce(v_name, 'TechLog') end;
+  v_text := case when p_to is null then split_part(coalesce(v_name, ''), ' ', 1) || ': ' else '' end
+         || case when v_body <> '' then left(v_body, 160) else '' end
+         || case when v_has_img then case when v_body <> '' then ' · ' else '' end || '📷 Фото' else '' end
+         || case when p_doc is not null then case when v_body <> '' or v_has_img then ' · ' else '' end || '📄 ' || left(coalesce(p_doc_title, 'документ'), 100) else '' end;
+  /* v1.09.24: «не беспокоить» — переписка в списке profiles.push_prefs.chat_mute получателя пуш не шлёт.
+     Сообщение с пометкой «Важно» проходит всегда: ради этого пометка и существует. */
+  if p_to is not null then
+    if v_imp or not public.chat_muted(p_to, v_me::text) then
+      perform public.push_enqueue(p_to, 'chat', v_title, v_text, './?chat=' || v_me::text);
+    end if;
+  elsif p_group is not null then
+    for r in select gm.user_id as id from public.chat_members gm join public.profiles pf on pf.id = gm.user_id
+              where gm.group_id = p_group and gm.user_id <> v_me and not pf.blocked limit 300 loop
+      if v_imp or not public.chat_muted(r.id, 'g:' || p_group::text) then
+        perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=g:' || p_group::text);
+      end if;
+    end loop;
+  else
+    for r in select id from public.profiles where not blocked and id <> v_me limit 300 loop
+      if v_imp or not public.chat_muted(r.id, p_channel) then
+        perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=' || p_channel);
+      end if;
+    end loop;
+  end if;
+  if random() < 0.03 then perform public.chat_cleanup(); end if;      -- уборка «между делом»: отдельное расписание не нужно
+  return v_row;
+end $$;
+
+-- пароль от 10 символов — и на сервере (раньше проверяло только приложение)
+create or replace function public.admin_set_password(target uuid, new_password text)
+returns void language plpgsql security definer set search_path = public, auth, extensions as $$
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if length(coalesce(new_password,'')) < 10 then raise exception 'WEAK_PASSWORD'; end if;   -- v1.09.24: паролем заперт ключ переписки
+  update auth.users
+     set encrypted_password = extensions.crypt(new_password, extensions.gen_salt('bf')),
+         updated_at = now()
+   where id = target;
+  delete from auth.refresh_tokens where user_id = target::text;
+  delete from auth.sessions where user_id = target;
+end $$;
+
+create or replace function public.admin_create_user(
+  p_login text, p_email text, p_password text, p_display_name text, p_role text default 'tech')
+returns uuid language plpgsql security definer set search_path = public, auth, extensions as $$
+declare
+  new_id uuid := gen_random_uuid();
+  v_login text := lower(trim(coalesce(p_login,'')));
+  v_email text := lower(trim(coalesce(p_email,'')));
+  v_name  text := coalesce(nullif(trim(p_display_name),''), v_login);
+begin
+  if public.my_role() is distinct from 'admin' then raise exception 'FORBIDDEN'; end if;
+  if v_login !~ '^[a-z0-9_.-]{3,32}$' then raise exception 'BAD_LOGIN'; end if;
+  if v_email !~ '^[a-z0-9_.-]+@[a-z0-9.-]+$' or v_email not like v_login || '@%' then
+    raise exception 'BAD_EMAIL';
+  end if;
+  if length(coalesce(p_password,'')) < 10 then raise exception 'WEAK_PASSWORD'; end if;   -- v1.09.24
+  if p_role not in ('admin','manager','tech','accountant') then raise exception 'BAD_ROLE'; end if;
+  if exists (select 1 from public.profiles where lower(login) = v_login)
+     or exists (select 1 from auth.users where lower(email) = v_email) then
+    raise exception 'LOGIN_TAKEN';
+  end if;
+
+  perform set_config('techlog.admin_create', '1', true);   -- байпас триггера в этой транзакции
+
+  insert into auth.users (
+    id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+    confirmation_token, recovery_token, email_change, email_change_token_new,
+    email_change_token_current, phone_change, phone_change_token,
+    reauthentication_token, is_super_admin, is_sso_user)
+  values (
+    new_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+    v_email, extensions.crypt(p_password, extensions.gen_salt('bf')), now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    jsonb_build_object('login', v_login, 'display_name', v_name),
+    now(), now(),
+    '', '', '', '', '', '', '', '', false, false);
+
+  insert into auth.identities (
+    id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+  values (
+    gen_random_uuid(), new_id::text, new_id,
+    jsonb_build_object('sub', new_id::text, 'email', v_email,
+                       'email_verified', true, 'phone_verified', false),
+    'email', now(), now(), now());
+
+  insert into public.profiles (id, login, display_name, role, blocked)
+  values (new_id, v_login, v_name, p_role, false);
+
+  return new_id;
+end $$;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='chat_members' and column_name='role') then miss := miss || ' chat_members.role'; end if;
+  if to_regprocedure('public.chat_is_group_mod(uuid)') is null then miss := miss || ' chat_is_group_mod()'; end if;
+  if to_regprocedure('public.chat_group_set_role(uuid,uuid,text)') is null then miss := miss || ' chat_group_set_role()'; end if;
+  if to_regprocedure('public.chat_muted(uuid,text)') is null then miss := miss || ' chat_muted()'; end if;
+  if position('RATE_LIMIT' in pg_get_functiondef('public.chat_send(uuid,text,uuid,text,boolean,text,uuid,text,uuid,text,text,int,int)'::regprocedure)) = 0 then miss := miss || ' chat_send(лимит)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.24 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.24 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_25 (документооборот) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.25 · ДОКУМЕНТООБОРОТ ИНВОЙСА
+--   · личные права сотрудника: сокращение для номера (tag), «правка общих документов», «апрув инвойсов»;
+--   · бригада видит документ всегда; правит — основной, а помощник только при «Общем доступе» и личном праве;
+--   · статусы: черновик → выполнена (ждёт апрува, заперта) → апрув (заперт); «отозвать», «вернуть на доработку»,
+--     «запросить правку» (doc_requests);
+--   · одновременная правка: ревизия строки (rev) — чужие изменения молча не затираются (STALE_DOC),
+--     плюс мягкая «занято» (doc_locks) с продлением раз в 40 с и сроком жизни 2 минуты;
+--   · номер документа выдаётся при первом сохранении НЕ черновиком и замораживается (doc_no);
+--   · лента уведомлений (notices): каждое событие пуша пишется и в ленту — даже если пуш этого вида выключен;
+--   · новые события: добавили в бригаду, сняли с задачи, возврат на доработку, документ отозван;
+--   · «Важные объявления»: круг пишущих расширяет админ (can_announce), пуш канала не отключается.
+-- =====================================================================
+
+-- 1) Сотрудник: сокращение и личные права ------------------------------
+alter table public.profiles add column if not exists tag text;
+alter table public.profiles add column if not exists can_edit_docs boolean not null default true;
+alter table public.profiles add column if not exists can_approve   boolean not null default false;
+alter table public.profiles add column if not exists can_announce  boolean not null default false;
+alter table public.profiles drop constraint if exists profiles_tag_ck;
+alter table public.profiles add constraint profiles_tag_ck check (tag is null or tag ~ '^[A-Z0-9]{2,4}$');
+create unique index if not exists profiles_tag_uq on public.profiles(tag) where tag is not null;
+
+alter table public.org_settings add column if not exists docflow_v int not null default 0;
+
+-- разовый перенос: «менеджер может апрувить» (общая галочка) → личное право каждого менеджера
+do $$
+begin
+  if coalesce((select docflow_v from public.org_settings where id = 'org'), 0) < 1 then
+    set local session_replication_role = replica;
+    update public.profiles set can_approve = true
+     where role = 'manager'
+       and coalesce((select manager_can_approve from public.org_settings where id = 'org'), false);
+    update public.org_settings set docflow_v = 1 where id = 'org';
+    set local session_replication_role = origin;
+  end if;
+end $$;
+
+create or replace function public.can_approve_docs()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select (p.role = 'admin' or (p.role = 'manager' and p.can_approve)) and not p.blocked
+                     from public.profiles p where p.id = auth.uid()), false)
+$$;
+revoke all on function public.can_approve_docs() from public, anon;
+grant execute on function public.can_approve_docs() to authenticated;
+
+create or replace function public.profiles_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.id is distinct from old.id then
+    raise exception 'FORBIDDEN_FIELD_ID';
+  end if;
+  if coalesce(public.my_role(), 'tech') <> 'admin' then
+    if new.role         is distinct from old.role
+       or new.blocked   is distinct from old.blocked
+       or new.login     is distinct from old.login
+       or new.car_no    is distinct from old.car_no
+       or new.study_access is distinct from old.study_access
+       or new.tag           is distinct from old.tag
+       or new.can_edit_docs is distinct from old.can_edit_docs
+       or new.can_approve   is distinct from old.can_approve
+       or new.can_announce  is distinct from old.can_announce then
+      raise exception 'FORBIDDEN_FIELD';
+    end if;
+  end if;
+  return new;
+end $$;
+
+create or replace function public.admin_set_doc_rights(p_user uuid, p_tag text, p_edit boolean, p_approve boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_tag text := nullif(upper(regexp_replace(coalesce(p_tag, ''), '[^A-Za-z0-9]', '', 'g')), '');
+begin
+  if coalesce(public.my_role(), 'tech') <> 'admin' then raise exception 'FORBIDDEN'; end if;
+  if v_tag is not null and v_tag !~ '^[A-Z0-9]{2,4}$' then raise exception 'BAD_TAG'; end if;
+  if v_tag is not null and exists (select 1 from public.profiles where tag = v_tag and id <> p_user) then
+    raise exception 'TAG_TAKEN';
+  end if;
+  update public.profiles
+     set tag = v_tag,
+         can_edit_docs = coalesce(p_edit, can_edit_docs),
+         can_approve   = coalesce(p_approve, can_approve)
+   where id = p_user;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce((select display_name from public.profiles where id = auth.uid()), ''),
+          'doc_rights', 'profile', p_user::text,
+          jsonb_build_object('tag', v_tag, 'edit', p_edit, 'approve', p_approve));
+end $$;
+revoke all on function public.admin_set_doc_rights(uuid, text, boolean, boolean) from public, anon;
+grant execute on function public.admin_set_doc_rights(uuid, text, boolean, boolean) to authenticated;
+
+-- 2) Инвойс: ревизия, автор правки, замороженный номер, возврат, окно правки ----
+alter table public.jobs add column if not exists rev int not null default 0;
+alter table public.jobs add column if not exists updated_by uuid;
+alter table public.jobs add column if not exists doc_no text;
+alter table public.jobs add column if not exists numbered_at timestamptz;
+alter table public.jobs add column if not exists return_note text;
+alter table public.jobs add column if not exists returned_by uuid;
+alter table public.jobs add column if not exists approved_crew jsonb;
+alter table public.jobs add column if not exists edit_open_until timestamptz;
+
+-- номер больше не выдаётся при создании строки: счётчик свой, выдаёт триггер при первом НЕ черновике
+do $$
+declare v_next bigint;
+begin
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'jobs' and column_name = 'no' and is_identity = 'YES') then
+    alter table public.jobs alter column no drop identity;
+  end if;
+  alter table public.jobs alter column no drop not null;
+  alter table public.jobs alter column no drop default;
+  if to_regclass('public.jobs_doc_no_seq') is null then
+    select coalesce(max(no), 0) + 1 into v_next from public.jobs;
+    execute format('create sequence public.jobs_doc_no_seq start with %s', v_next);
+  end if;
+end $$;
+
+-- 3) Кто бригада, кто правит -------------------------------------------
+create or replace function public.is_job_crew(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.jobs j
+                  where j.id = p_job and (j.technician_id = auth.uid() or j.helper_ids ? auth.uid()::text))
+$$;
+revoke all on function public.is_job_crew(uuid) from public, anon;
+grant execute on function public.is_job_crew(uuid) to authenticated;
+
+-- помощник правит общий документ только с личным правом «правка общих документов»
+create or replace function public.is_shared_job_helper(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.shared_jobs_enabled()
+     and coalesce((select can_edit_docs from public.profiles where id = auth.uid()), false)
+     and exists (
+       select 1 from public.jobs j
+       where j.id = p_job
+         and j.shared_with_helpers
+         and j.helper_ids ? auth.uid()::text
+     )
+$$;
+
+-- бригада видит документ (а через него — фото и пикапы) всегда
+create or replace function public.can_view_job(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.jobs j
+    where j.id = p_job and (
+      j.technician_id = auth.uid()
+      or public.my_role() in ('admin','manager','accountant')
+      or j.helper_ids ? auth.uid()::text
+    )
+  )
+$$;
+
+drop policy if exists jobs_sel on public.jobs;
+create policy jobs_sel on public.jobs for select to authenticated
+  using (
+    technician_id = auth.uid()
+    or public.my_role() in ('admin','manager','accountant')
+    or helper_ids ? auth.uid()::text
+  );
+
+-- правка: основной, админ, менеджер (что именно можно — решает jobs_guard по статусу), помощник с правом
+drop policy if exists jobs_upd on public.jobs;
+create policy jobs_upd on public.jobs for update to authenticated
+  using (
+    technician_id = auth.uid()
+    or public.my_role() in ('admin','manager')
+    or public.is_shared_job_helper(id)
+  )
+  with check (
+    technician_id = auth.uid()
+    or public.my_role() in ('admin','manager')
+    or public.is_shared_job_helper(id)
+  );
+
+-- удаление строки: основной — только черновик, дальше — админ
+drop policy if exists jobs_del on public.jobs;
+create policy jobs_del on public.jobs for delete to authenticated
+  using ((technician_id = auth.uid() and status = 'draft') or public.my_role() = 'admin');
+
+drop policy if exists pl_sel on public.placements;
+create policy pl_sel on public.placements for select to authenticated
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager','accountant')
+         or public.is_shared_job_helper(job_id) or public.is_job_crew(job_id));
+
+-- 4) Сторож инвойса -----------------------------------------------------
+create or replace function public.jobs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_uid  uuid := auth.uid();
+  v_role text := coalesce(public.my_role(), 'tech');
+  v_appr boolean := public.can_approve_docs();
+  v_sys  boolean := auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1'
+                    or coalesce(current_setting('techlog.sysupd', true), '') = '1';
+  v_content boolean; v_no bigint;
+begin
+  new.updated_at := now();
+  if v_sys then return new; end if;
+
+  -- поля, которыми клиент не распоряжается
+  new.no := old.no; new.numbered_at := old.numbered_at; new.approved_crew := old.approved_crew;
+  if v_role = 'admin' then new.doc_no := coalesce(new.doc_no, old.doc_no); else new.doc_no := old.doc_no; end if;
+  if not v_appr then
+    new.edit_open_until := old.edit_open_until;
+    new.approved_total := old.approved_total; new.approved_by := old.approved_by; new.approved_at := old.approved_at;
+    if not (new.status = 'draft' and old.status = 'done') then
+      new.return_note := old.return_note; new.returned_by := old.returned_by;
+    end if;
+  end if;
+
+  v_content := new.form_data is distinct from old.form_data
+       or coalesce(new.note, '') is distinct from coalesce(old.note, '')
+       or new.date is distinct from old.date
+       or coalesce(new.unit_number, '') is distinct from coalesce(old.unit_number, '')
+       or new.complex_id is distinct from old.complex_id
+       or new.counterparty_id is distinct from old.counterparty_id
+       or new.work_type_id is distinct from old.work_type_id
+       or new.technician_id is distinct from old.technician_id
+       or new.helper_ids is distinct from old.helper_ids
+       or new.shared_with_helpers is distinct from old.shared_with_helpers
+       or new.total is distinct from old.total
+       or new.proposal_id is distinct from old.proposal_id;
+
+  -- смена основного исполнителя: админ всегда, менеджер — пока черновик
+  if new.technician_id is distinct from old.technician_id
+     and not (v_role = 'admin' or (v_role = 'manager' and old.status = 'draft')) then
+    raise exception 'FORBIDDEN_FIELD';
+  end if;
+  -- состав бригады и «Общий доступ» помощник не меняет
+  if (new.helper_ids is distinct from old.helper_ids or new.shared_with_helpers is distinct from old.shared_with_helpers)
+     and not (v_role in ('admin','manager') or old.technician_id = v_uid) then
+    raise exception 'FORBIDDEN_CREW';
+  end if;
+  -- в архив: основной — только черновик, дальше — админ
+  if new.archived_at is distinct from old.archived_at and old.status <> 'draft' and v_role <> 'admin' then
+    raise exception 'DOC_LOCKED_DELETE';
+  end if;
+
+  if new.status = 'approved' and old.status <> 'approved' and not v_appr then
+    raise exception 'FORBIDDEN_APPROVE';
+  end if;
+
+  if not v_appr then
+    if old.status = 'approved' and (v_content or new.status <> 'approved') then
+      raise exception 'DOC_LOCKED_APPROVED';
+    end if;
+    if old.status = 'done' then
+      if new.status = 'draft' then        -- «отозвать»: основной или менеджер; правки в том же сохранении допустимы
+        if not (old.technician_id = v_uid or v_role = 'manager') then raise exception 'DOC_LOCKED_DONE'; end if;
+      elsif v_content then
+        raise exception 'DOC_LOCKED_DONE';
+      end if;
+    end if;
+  end if;
+
+  -- ревизия: чужую правку, которую автор этой записи не видел, молча не затираем
+  if v_content or new.status is distinct from old.status then
+    if new.rev is distinct from old.rev and old.updated_by is distinct from v_uid then
+      raise exception 'STALE_DOC';
+    end if;
+    new.rev := old.rev + 1;
+    new.updated_by := v_uid;
+  else
+    new.rev := old.rev; new.updated_by := old.updated_by;
+  end if;
+
+  -- переходы статуса
+  if new.status = 'approved' and old.status <> 'approved' then
+    new.approved_by := coalesce(new.approved_by, v_uid);
+    new.approved_at := coalesce(new.approved_at, now());
+    new.approved_crew := jsonb_build_object('main', new.technician_id, 'crew', coalesce(new.helper_ids, '[]'::jsonb));
+    new.edit_open_until := null; new.return_note := null; new.returned_by := null;
+  elsif old.status = 'approved' and new.status <> 'approved' then
+    new.approved_total := null; new.approved_by := null; new.approved_at := null; new.approved_crew := null;
+  end if;
+  if new.status = 'done' and old.status = 'draft' then
+    new.return_note := null; new.returned_by := null;
+  end if;
+  if new.status = 'draft' and old.status <> 'draft' then
+    if old.technician_id is distinct from v_uid and coalesce(new.return_note, '') <> '' then new.returned_by := v_uid;
+    elsif old.technician_id = v_uid then new.return_note := null; new.returned_by := null; end if;
+  end if;
+
+  -- номер — при первом НЕ черновике
+  if new.status <> 'draft' and new.no is null then
+    loop v_no := nextval('public.jobs_doc_no_seq'); exit when not exists (select 1 from public.jobs where no = v_no); end loop;
+    new.no := v_no; new.numbered_at := now();
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists jobs_guard_tg on public.jobs;
+create trigger jobs_guard_tg before update on public.jobs
+  for each row execute function public.jobs_guard();
+
+-- новая строка: служебные поля приводятся в порядок ПОСЛЕ вставки. В BEFORE INSERT этого делать нельзя: приложение
+-- сохраняет через upsert, и BEFORE INSERT срабатывает при КАЖДОМ сохранении — счётчик номеров тратился бы впустую,
+-- а обнулённая ревизия ломала бы проверку STALE_DOC.
+create or replace function public.jobs_after_ins()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_no bigint;
+begin
+  if auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  if new.status = 'approved' and not public.can_approve_docs() then raise exception 'FORBIDDEN_APPROVE'; end if;
+  if new.status <> 'draft' then
+    loop v_no := nextval('public.jobs_doc_no_seq'); exit when not exists (select 1 from public.jobs where no = v_no); end loop;
+  end if;
+  perform set_config('techlog.sysupd', '1', true);
+  update public.jobs set no = v_no, numbered_at = case when v_no is null then null else now() end, doc_no = null,
+         rev = 0, updated_by = auth.uid(), edit_open_until = null, approved_crew = case when new.status = 'approved'
+           then jsonb_build_object('main', new.technician_id, 'crew', coalesce(new.helper_ids, '[]'::jsonb)) else null end
+   where id = new.id;
+  perform set_config('techlog.sysupd', '', true);
+  return new;
+end $$;
+drop trigger if exists jobs_after_ins_tg on public.jobs;
+create trigger jobs_after_ins_tg after insert on public.jobs
+  for each row execute function public.jobs_after_ins();
+
+-- запрет правки по давности: разрешённая правка (edit_open_until) его обходит
+create or replace function public.jobs_lock_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_n int;
+begin
+  select coalesce(edit_lock_days, 0) into v_n from public.org_settings where id = 'org';
+  if v_n > 0
+     and auth.uid() is not null
+     and coalesce(current_setting('techlog.sysupd', true), '') <> '1'
+     and coalesce(public.my_role(), 'tech') = 'tech'
+     and old.date < current_date - v_n
+     and not (old.edit_open_until is not null and old.edit_open_until > now()) then
+    raise exception 'LOCKED';
+  end if;
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end $$;
+
+-- замороженный текст номера: пишется один раз, когда номер уже выдан
+create or replace function public.job_fix_no(p_job uuid, p_text text)
+returns text language plpgsql security definer set search_path = public as $$
+declare v_cur text; v_txt text := left(regexp_replace(coalesce(p_text, ''), '[^A-Za-z0-9._-]', '', 'g'), 80);
+begin
+  if not public.can_view_job(p_job) then raise exception 'FORBIDDEN'; end if;
+  select doc_no into v_cur from public.jobs where id = p_job and no is not null and status <> 'draft';
+  if not found then return null; end if;
+  if v_cur is not null then return v_cur; end if;
+  if v_txt = '' then return null; end if;
+  perform set_config('techlog.sysupd', '1', true);
+  update public.jobs set doc_no = v_txt where id = p_job and doc_no is null;
+  perform set_config('techlog.sysupd', '', true);
+  return v_txt;
+end $$;
+revoke all on function public.job_fix_no(uuid, text) from public, anon;
+grant execute on function public.job_fix_no(uuid, text) to authenticated;
+
+-- апрув через функцию: право — личное
+create or replace function public.approve_job(p_job uuid, p_total numeric)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_unit text; v_name text;
+begin
+  if not public.can_approve_docs() then raise exception 'FORBIDDEN'; end if;
+  if p_total is null or p_total < 0 then raise exception 'BAD_TOTAL'; end if;
+  update public.jobs
+     set status = 'approved', approved_total = p_total, approved_by = auth.uid(), approved_at = now(), updated_at = now()
+   where id = p_job
+   returning unit_number into v_unit;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  select display_name into v_name from public.profiles where id = auth.uid();
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_name, ''), 'job_approve', 'job', p_job::text,
+          jsonb_build_object('unit', coalesce(v_unit, ''), 'total', p_total, 'via', 'rpc'));
+end $$;
+
+-- ремонты: то же личное право вместо общей галочки
+create or replace function public.repairs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_can boolean;
+begin
+  if coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  v_can := public.can_approve_docs();
+  if TG_OP = 'INSERT' then
+    if new.status in ('approved','declined') and not coalesce(v_can, false) then
+      new.status := 'draft';
+    end if;
+    return new;
+  end if;
+  if new.status is distinct from old.status
+     and new.status in ('approved','declined')
+     and not coalesce(v_can, false) then
+    raise exception 'FORBIDDEN_APPROVE';
+  end if;
+  return new;
+end $$;
+
+-- 5) Лента уведомлений ---------------------------------------------------
+create table if not exists public.notices (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  kind       text not null default '',
+  title      text not null default '',
+  body       text not null default '',
+  url        text not null default './',
+  actor      uuid,
+  created_at timestamptz not null default now(),
+  read_at    timestamptz
+);
+create index if not exists notices_user_idx on public.notices(user_id, created_at desc);
+alter table public.notices enable row level security;
+grant select, update on public.notices to authenticated;
+drop policy if exists notices_sel on public.notices;
+create policy notices_sel on public.notices for select to authenticated using (user_id = auth.uid());
+drop policy if exists notices_upd on public.notices;
+create policy notices_upd on public.notices for update to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create or replace function public.notices_mark_read()
+returns int language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  update public.notices set read_at = now() where user_id = auth.uid() and read_at is null;
+  get diagnostics n = row_count;
+  if random() < 0.05 then delete from public.notices where created_at < now() - interval '90 days'; end if;
+  return n;
+end $$;
+revoke all on function public.notices_mark_read() from public, anon;
+grant execute on function public.notices_mark_read() to authenticated;
+
+-- каждое событие — в ленту; пуш — только если этот вид у человека включён (переписка в ленту не идёт)
+create or replace function public.push_enqueue(
+  p_user uuid, p_kind text, p_title text, p_body text, p_url text default './')
+returns void language plpgsql security definer set search_path = public as $$
+declare v_prefs jsonb;
+begin
+  if p_user is null or p_user = auth.uid() then return; end if;
+  select push_prefs into v_prefs from public.profiles where id = p_user and not blocked;
+  if not found then return; end if;                             -- нет профиля / заблокирован
+  if p_kind <> 'chat' then
+    insert into public.notices(user_id, kind, title, body, url, actor)
+    values (p_user, p_kind, p_title, coalesce(p_body, ''), coalesce(p_url, './'), auth.uid());
+  end if;
+  if coalesce((coalesce(v_prefs, '{}'::jsonb)->>p_kind)::boolean, true) = false then return; end if;
+  insert into public.push_queue(user_id, kind, title, body, url)
+  values (p_user, p_kind, p_title, coalesce(p_body,''), coalesce(p_url,'./'));
+end $$;
+revoke all on function public.push_enqueue(uuid,text,text,text,text) from public, anon, authenticated;
+grant execute on function public.push_enqueue(uuid,text,text,text,text) to service_role;
+
+-- 6) События инвойса → лента и пуши ------------------------------------
+create or replace function public.jobs_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_body text; v_url text; v_who text; r record; v_done boolean := false;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  v_body := 'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · ' || to_char(new.date, 'DD.MM');
+  v_url  := './?doc=job:' || new.id::text;
+  if tg_op = 'INSERT' then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Новая задача', v_body, v_url);
+    end if;
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас добавили в бригаду', v_body, v_url);
+      end if;
+    end loop;
+    return new;
+  end if;
+  select display_name into v_who from public.profiles where id = auth.uid();
+
+  -- основной исполнитель сменился
+  if new.technician_id is distinct from old.technician_id then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Задача передана вам', v_body, v_url);
+    end if;
+    if old.technician_id is not null and not (coalesce(new.helper_ids, '[]'::jsonb) ? old.technician_id::text) then
+      perform public.push_enqueue(old.technician_id, 'job', 'Вас сняли с задачи', v_body || ' · ' || coalesce(v_who, ''), './');
+    end if;
+    v_done := true;
+  end if;
+  -- состав бригады
+  if new.helper_ids is distinct from old.helper_ids then
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+              where not (coalesce(old.helper_ids, '[]'::jsonb) ? value) and value::uuid is distinct from old.technician_id
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас добавили в бригаду', v_body, v_url);
+      end if;
+    end loop;
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(old.helper_ids, '[]'::jsonb))
+              where not (coalesce(new.helper_ids, '[]'::jsonb) ? value)
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас сняли с задачи', v_body || ' · ' || coalesce(v_who, ''), './');
+      end if;
+    end loop;
+    v_done := true;
+  end if;
+
+  -- статусы
+  if old.status is distinct from 'approved' and new.status = 'approved' then
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'approve', 'Инвойс апрувлен',
+        v_body || ' · $' || round(coalesce(new.approved_total, new.total, 0)), v_url);
+    end loop;
+    return new;
+  elsif old.status = 'approved' and new.status is distinct from 'approved' then
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'reset',
+        case when new.status = 'draft' then 'Апрув снят — документ в черновике' else 'Апрув снят с инвойса' end,
+        v_body || ' · ' || coalesce(v_who, '') || coalesce(' · ' || nullif(new.return_note, ''), ''), v_url);
+    end loop;
+    return new;
+  elsif old.status = 'done' and new.status = 'draft' then
+    if auth.uid() is distinct from new.technician_id then
+      for r in select distinct x.uid from (select new.technician_id as uid
+                 union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Возвращён на доработку',
+          v_body || ' · ' || coalesce(v_who, '') || coalesce(' · ' || nullif(new.return_note, ''), ''), v_url);
+      end loop;
+    else
+      for r in select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Документ отозван исполнителем', v_body || ' · ' || coalesce(v_who, ''), v_url);
+      end loop;
+    end if;
+    return new;
+  elsif old.status = 'draft' and new.status = 'done' then
+    for r in select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+    loop
+      perform public.push_enqueue(r.uid, 'approve', 'Ждёт апрува', v_body || ' · ' || coalesce(v_who, ''), v_url);
+    end loop;
+    return new;
+  end if;
+  if v_done then return new; end if;
+
+  /* «Документ изменён»: содержимое поменял НЕ исполнитель (push_enqueue сам пропускает автора правки). Приложение шлёт
+     строку целиком при любом сохранении — сравниваем только значимые поля; не чаще раза в 10 минут на документ и человека. */
+  if auth.uid() is not null and (new.form_data is distinct from old.form_data or new.date is distinct from old.date
+       or new.unit_number is distinct from old.unit_number or new.complex_id is distinct from old.complex_id
+       or coalesce(new.note, '') is distinct from coalesce(old.note, '')) then
+    for r in select distinct x.uid from (
+               select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x
+              where x.uid is not null and x.uid <> auth.uid()
+    loop
+      if not exists (select 1 from public.notices where user_id = r.uid and kind = 'edit' and url = v_url and created_at > now() - interval '10 minutes') then
+        perform public.push_enqueue(r.uid, 'edit',
+          case when new.date is distinct from old.date then 'Задача перенесена на ' || to_char(new.date, 'DD.MM') else 'Документ изменён' end,
+          v_body || ' · ' || coalesce(v_who, ''), v_url);
+      end if;
+    end loop;
+  end if;
+  return new;
+end $$;
+
+-- документ удалён (ушёл в архив) — бригада должна узнать
+create or replace function public.jobs_arch_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare r record; v_body text; v_who text;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  if old.archived_at is null and new.archived_at is not null then
+    v_body := 'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · ' || to_char(new.date, 'DD.MM');
+    select display_name into v_who from public.profiles where id = auth.uid();
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'job', 'Задача удалена', v_body || ' · ' || coalesce(v_who, ''), './');
+    end loop;
+  end if;
+  return new;
+end $$;
+drop trigger if exists jobs_arch_push_tg on public.jobs;
+create trigger jobs_arch_push_tg after update on public.jobs
+  for each row execute function public.jobs_arch_push_tg_fn();
+
+-- 7) Запросы на правку заапрувленного документа ---------------------------
+create table if not exists public.doc_requests (
+  id         uuid primary key default gen_random_uuid(),
+  kind       text not null default 'job' check (kind in ('job')),
+  doc_id     uuid not null,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  reason     text not null default '',
+  status     text not null default 'pending' check (status in ('pending','granted','denied')),
+  answer     text not null default '',
+  decided_by uuid,
+  decided_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists doc_requests_doc_idx on public.doc_requests(doc_id);
+create unique index if not exists doc_requests_one_pending on public.doc_requests(kind, doc_id) where status = 'pending';
+alter table public.doc_requests enable row level security;
+grant select on public.doc_requests to authenticated;
+drop policy if exists doc_requests_sel on public.doc_requests;
+create policy doc_requests_sel on public.doc_requests for select to authenticated
+  using (user_id = auth.uid() or public.my_role() in ('admin','manager'));
+
+create or replace function public.doc_request_edit(p_job uuid, p_reason text)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare j public.jobs%rowtype; v_id uuid; v_who text; r record; v_reason text := left(trim(coalesce(p_reason, '')), 500);
+begin
+  select * into j from public.jobs where id = p_job;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if not (j.technician_id = auth.uid() or j.helper_ids ? auth.uid()::text) then raise exception 'FORBIDDEN'; end if;
+  if j.status <> 'approved' then raise exception 'BAD_STATUS'; end if;
+  if length(v_reason) < 3 then raise exception 'REASON_REQUIRED'; end if;
+  if exists (select 1 from public.doc_requests where kind = 'job' and doc_id = p_job and status = 'pending') then
+    raise exception 'ALREADY_PENDING';
+  end if;
+  insert into public.doc_requests(kind, doc_id, user_id, reason) values ('job', p_job, auth.uid(), v_reason) returning id into v_id;
+  select display_name into v_who from public.profiles where id = auth.uid();
+  for r in select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+  loop
+    perform public.push_enqueue(r.uid, 'approve', 'Запрос на правку документа',
+      'Unit ' || coalesce(nullif(j.unit_number,''),'—') || ' · ' || to_char(j.date, 'DD.MM') || ' · ' || coalesce(v_who, '') || ' · ' || v_reason,
+      './?doc=job:' || p_job::text);
+  end loop;
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_who, ''), 'edit_request', 'job', p_job::text, jsonb_build_object('unit', j.unit_number, 'reason', v_reason));
+  return v_id;
+end $$;
+revoke all on function public.doc_request_edit(uuid, text) from public, anon;
+grant execute on function public.doc_request_edit(uuid, text) to authenticated;
+
+create or replace function public.doc_request_decide(p_id uuid, p_grant boolean, p_answer text)
+returns void language plpgsql security definer set search_path = public as $$
+declare q public.doc_requests%rowtype; j public.jobs%rowtype; v_who text; v_ans text := left(trim(coalesce(p_answer, '')), 500);
+begin
+  if not public.can_approve_docs() then raise exception 'FORBIDDEN'; end if;
+  select * into q from public.doc_requests where id = p_id for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if q.status <> 'pending' then raise exception 'ALREADY_DECIDED'; end if;
+  select * into j from public.jobs where id = q.doc_id;
+  update public.doc_requests set status = case when p_grant then 'granted' else 'denied' end,
+         answer = v_ans, decided_by = auth.uid(), decided_at = now() where id = p_id;
+  select display_name into v_who from public.profiles where id = auth.uid();
+  if p_grant and found and j.id is not null then
+    update public.jobs set status = 'draft', edit_open_until = now() + interval '24 hours',
+           return_note = nullif('Правка разрешена' || coalesce(': ' || nullif(v_ans, ''), ''), '') where id = q.doc_id;
+  end if;
+  if not p_grant then perform public.push_enqueue(q.user_id, 'reset', 'В правке отказано',
+    'Unit ' || coalesce(nullif(j.unit_number,''),'—') || ' · ' || to_char(j.date, 'DD.MM') || ' · ' || coalesce(v_who, '') || coalesce(' · ' || nullif(v_ans, ''), ''),
+    './?doc=job:' || q.doc_id::text); end if;   -- при разрешении автору запроса пишет триггер инвойса: «Апрув снят — документ в черновике»
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_who, ''), case when p_grant then 'edit_request_granted' else 'edit_request_denied' end,
+          'job', q.doc_id::text, jsonb_build_object('unit', j.unit_number, 'answer', v_ans));
+end $$;
+revoke all on function public.doc_request_decide(uuid, boolean, text) from public, anon;
+grant execute on function public.doc_request_decide(uuid, boolean, text) to authenticated;
+
+-- 8) «Занято»: кто сейчас правит документ ---------------------------------
+create table if not exists public.doc_locks (
+  kind      text not null,
+  doc_id    uuid not null,
+  user_id   uuid not null,
+  user_name text not null default '',
+  since     timestamptz not null default now(),
+  at        timestamptz not null default now(),
+  primary key (kind, doc_id)
+);
+alter table public.doc_locks enable row level security;
+grant select on public.doc_locks to authenticated;
+drop policy if exists doc_locks_sel on public.doc_locks;
+create policy doc_locks_sel on public.doc_locks for select to authenticated using (true);
+
+-- взять или продлить; p_force — перехват (админ, менеджер — всегда; остальные — только у «уснувшей» блокировки)
+create or replace function public.doc_lock(p_kind text, p_id uuid, p_force boolean default false)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare l public.doc_locks%rowtype; v_name text; v_role text := coalesce(public.my_role(), 'tech'); v_ask boolean := false;
+begin
+  if auth.uid() is null then raise exception 'FORBIDDEN'; end if;
+  if p_kind = 'job' and not public.can_view_job(p_id) then raise exception 'FORBIDDEN'; end if;
+  select display_name into v_name from public.profiles where id = auth.uid();
+  select * into l from public.doc_locks where kind = p_kind and doc_id = p_id for update;
+  if found and l.user_id <> auth.uid() and l.at > now() - interval '2 minutes'
+     and not (coalesce(p_force, false) and v_role in ('admin','manager')) then
+    if coalesce(p_force, false) then            -- «запросить редактирование»: держателю — уведомление, не чаще раза в 2 минуты
+      if not exists (select 1 from public.notices where user_id = l.user_id and kind = 'edit' and url = './?doc=' || p_kind || ':' || p_id::text
+                        and title = 'Просят доступ к документу' and created_at > now() - interval '2 minutes') then
+        perform public.push_enqueue(l.user_id, 'edit', 'Просят доступ к документу', coalesce(v_name, '') || ' ждёт, пока вы сохраните или закроете документ',
+                                    './?doc=' || p_kind || ':' || p_id::text);
+        v_ask := true;
+      end if;
+    end if;
+    return jsonb_build_object('ok', false, 'by', l.user_id, 'name', l.user_name, 'since', l.since, 'at', l.at, 'asked', v_ask);
+  end if;
+  insert into public.doc_locks(kind, doc_id, user_id, user_name, since, at)
+  values (p_kind, p_id, auth.uid(), coalesce(v_name, ''), now(), now())
+  on conflict (kind, doc_id) do update
+    set since = case when public.doc_locks.user_id = excluded.user_id then public.doc_locks.since else now() end,
+        user_id = excluded.user_id, user_name = excluded.user_name, at = now();
+  if random() < 0.02 then delete from public.doc_locks where at < now() - interval '1 day'; end if;
+  return jsonb_build_object('ok', true);
+end $$;
+revoke all on function public.doc_lock(text, uuid, boolean) from public, anon;
+grant execute on function public.doc_lock(text, uuid, boolean) to authenticated;
+
+create or replace function public.doc_unlock(p_kind text, p_id uuid)
+returns void language sql security definer set search_path = public as $$
+  delete from public.doc_locks where kind = p_kind and doc_id = p_id and user_id = auth.uid()
+$$;
+revoke all on function public.doc_unlock(text, uuid) from public, anon;
+grant execute on function public.doc_unlock(text, uuid) to authenticated;
+
+
+-- 9) «Важные объявления»: круг пишущих — админ, менеджеры, бухгалтер и те, кого выбрал админ ----------------
+alter table public.profiles add column if not exists can_announce boolean not null default false;
+
+create or replace function public.chat_can_announce()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select (p.role in ('admin','manager','accountant') or p.can_announce) and not p.blocked
+                     from public.profiles p where p.id = auth.uid()), false)
+$$;
+revoke all on function public.chat_can_announce() from public, anon;
+grant execute on function public.chat_can_announce() to authenticated;
+
+create or replace function public.admin_set_announce(p_user uuid, p_on boolean)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if coalesce(public.my_role(), 'tech') <> 'admin' then raise exception 'FORBIDDEN'; end if;
+  update public.profiles set can_announce = coalesce(p_on, false) where id = p_user;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce((select display_name from public.profiles where id = auth.uid()), ''),
+          'doc_rights', 'profile', p_user::text, jsonb_build_object('announce', coalesce(p_on, false)));
+end $$;
+revoke all on function public.admin_set_announce(uuid, boolean) from public, anon;
+grant execute on function public.admin_set_announce(uuid, boolean) to authenticated;
+
+create or replace function public.chat_send(
+  p_to uuid, p_channel text, p_group uuid, p_body text, p_important boolean, p_doc_kind text, p_doc uuid, p_doc_title text,
+  p_reply uuid, p_thumb text, p_img text, p_w int, p_h int)
+returns public.chat_msgs language plpgsql security definer set search_path = public as $$
+declare
+  v_me uuid := auth.uid(); v_role text := coalesce(public.my_role(), '');
+  v_body text := left(coalesce(trim(p_body), ''), 2000);
+  v_imp boolean := coalesce(p_important, false) and public.chat_can_announce();   -- v1.09.25: «Важно» ставит тот же круг, что пишет в «Важные объявления»
+  v_name text; v_row public.chat_msgs; v_title text; v_text text; v_ok boolean; r record; v_img uuid;
+  v_has_img boolean := p_img is not null and p_thumb is not null; v_gname text;
+begin
+  if v_me is null then raise exception 'AUTH'; end if;
+  if exists (select 1 from public.profiles where id = v_me and blocked) then raise exception 'BLOCKED'; end if;
+  if num_nonnulls(p_to, p_channel, p_group) <> 1 then raise exception 'BAD_TARGET'; end if;
+  if p_group is not null then
+    if not public.chat_is_member(p_group) then raise exception 'FORBIDDEN'; end if;
+    select name into v_gname from public.chat_groups where id = p_group;
+  end if;
+  if p_channel is not null and p_channel not in ('ann','all') then raise exception 'BAD_TARGET'; end if;
+  if p_channel = 'ann' and not public.chat_can_announce() then raise exception 'FORBIDDEN'; end if;   -- v1.09.25: админ, менеджеры, бухгалтер + выбранные админом
+  -- v1.09.24: защита от потока — не больше 30 сообщений в минуту от одного человека
+  if (select count(*) from public.chat_msgs where from_user = v_me and created_at > now() - interval '1 minute') >= 30 then raise exception 'RATE_LIMIT'; end if;
+  if p_to is not null and (p_to = v_me or not exists (select 1 from public.profiles where id = p_to and not blocked)) then raise exception 'NOT_FOUND'; end if;
+  if p_doc is not null then
+    if coalesce(p_doc_kind, '') not in ('job','prop','rep') then raise exception 'BAD_DOC'; end if;
+    if p_doc_kind = 'job' then v_ok := public.can_view_job(p_doc);
+    elsif p_doc_kind = 'rep' then v_ok := public.can_view_repair(p_doc);
+    else v_ok := exists (select 1 from public.proposals where id = p_doc);
+    end if;
+    if not coalesce(v_ok, false) then raise exception 'NO_ACCESS'; end if;
+  end if;
+  if v_has_img then
+    if left(p_img, 23) <> 'data:image/jpeg;base64,' or left(p_thumb, 23) <> 'data:image/jpeg;base64,' then raise exception 'BAD_IMAGE'; end if;
+    if length(p_img) > 1500000 or length(p_thumb) > 60000 then raise exception 'TOO_BIG'; end if;
+  end if;
+  if v_body = '' and p_doc is null and not v_has_img then raise exception 'EMPTY'; end if;
+  -- отвечать можно только на сообщение, которое сам видишь
+  if p_reply is not null and not public.chat_msg_visible(p_reply) then p_reply := null; end if;
+
+  if v_has_img then v_img := gen_random_uuid(); end if;
+  insert into public.chat_msgs (from_user, to_user, channel, group_id, body, important, doc_kind, doc_id, doc_title, reply_to, img_thumb, img_id, img_w, img_h)
+  values (v_me, p_to, p_channel, p_group, v_body, v_imp, case when p_doc is null then null else p_doc_kind end, p_doc,
+          case when p_doc is null then '' else left(coalesce(trim(p_doc_title), ''), 160) end, p_reply,
+          case when v_has_img then p_thumb end, v_img, case when v_has_img then p_w end, case when v_has_img then p_h end)
+  returning * into v_row;
+  if v_has_img then insert into public.chat_files (id, msg_id, data, bytes) values (v_img, v_row.id, p_img, (length(p_img) * 3) / 4); end if;
+
+  select display_name into v_name from public.profiles where id = v_me;
+  /* v1.09.23 (ревью): заголовок уведомления — ПЕРЕПИСКА (человек, группа, канал), а автор идёт в строку. Иначе стопка группы
+     называлась именем последнего написавшего: «Бригада · Олег (3)», хотя из трёх сообщений его было одно. */
+  v_title := case when v_imp then '❗ ' else '' end
+          || case when p_channel = 'ann' then 'Важные объявления' when p_channel = 'all' then 'Общий чат'
+                  when p_group is not null then coalesce(v_gname, 'Группа') else coalesce(v_name, 'TechLog') end;
+  v_text := case when p_to is null then split_part(coalesce(v_name, ''), ' ', 1) || ': ' else '' end
+         || case when v_body <> '' then left(v_body, 160) else '' end
+         || case when v_has_img then case when v_body <> '' then ' · ' else '' end || '📷 Фото' else '' end
+         || case when p_doc is not null then case when v_body <> '' or v_has_img then ' · ' else '' end || '📄 ' || left(coalesce(p_doc_title, 'документ'), 100) else '' end;
+  /* v1.09.24: «не беспокоить» — переписка в списке profiles.push_prefs.chat_mute получателя пуш не шлёт.
+     Сообщение с пометкой «Важно» проходит всегда: ради этого пометка и существует. */
+  if p_to is not null then
+    if v_imp or not public.chat_muted(p_to, v_me::text) then
+      perform public.push_enqueue(p_to, 'chat', v_title, v_text, './?chat=' || v_me::text);
+    end if;
+  elsif p_group is not null then
+    for r in select gm.user_id as id from public.chat_members gm join public.profiles pf on pf.id = gm.user_id
+              where gm.group_id = p_group and gm.user_id <> v_me and not pf.blocked limit 300 loop
+      if v_imp or not public.chat_muted(r.id, 'g:' || p_group::text) then
+        perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=g:' || p_group::text);
+      end if;
+    end loop;
+  else
+    for r in select id from public.profiles where not blocked and id <> v_me limit 300 loop
+      if p_channel = 'ann' then        -- v1.09.25: пуш «Важных объявлений» не отключается — ни «не беспокоить», ни галочкой вида
+        insert into public.push_queue(user_id, kind, title, body, url) values (r.id, 'chat', v_title, v_text, './?chat=ann');
+      elsif v_imp or not public.chat_muted(r.id, p_channel) then
+        perform public.push_enqueue(r.id, 'chat', v_title, v_text, './?chat=' || p_channel);
+      end if;
+    end loop;
+  end if;
+  if random() < 0.03 then perform public.chat_cleanup(); end if;      -- уборка «между делом»: отдельное расписание не нужно
+  return v_row;
+end $$;
+
+-- 10) Заморозка номеров уже существующих документов — пачкой, один раз, от имени админа ----------------------
+create or replace function public.job_fix_no_bulk(p_items jsonb)
+returns int language plpgsql security definer set search_path = public as $$
+declare r record; n int := 0; v_txt text;
+begin
+  if coalesce(public.my_role(), 'tech') <> 'admin' then raise exception 'FORBIDDEN'; end if;
+  perform set_config('techlog.sysupd', '1', true);
+  for r in select (x->>'id')::uuid as id, x->>'t' as t from jsonb_array_elements(coalesce(p_items, '[]'::jsonb)) x limit 1000
+  loop
+    v_txt := left(regexp_replace(coalesce(r.t, ''), '[^A-Za-z0-9._-]', '', 'g'), 80);
+    if v_txt <> '' then
+      update public.jobs set doc_no = v_txt where id = r.id and doc_no is null and no is not null and status <> 'draft';
+      if found then n := n + 1; end if;
+    end if;
+  end loop;
+  perform set_config('techlog.sysupd', '', true);
+  return n;
+end $$;
+revoke all on function public.job_fix_no_bulk(jsonb) from public, anon;
+grant execute on function public.job_fix_no_bulk(jsonb) to authenticated;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='tag') then miss := miss || ' profiles.tag'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='jobs' and column_name='rev') then miss := miss || ' jobs.rev'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='jobs' and column_name='doc_no') then miss := miss || ' jobs.doc_no'; end if;
+  if to_regclass('public.jobs_doc_no_seq') is null then miss := miss || ' jobs_doc_no_seq'; end if;
+  if to_regclass('public.notices') is null then miss := miss || ' notices'; end if;
+  if to_regclass('public.doc_requests') is null then miss := miss || ' doc_requests'; end if;
+  if to_regclass('public.doc_locks') is null then miss := miss || ' doc_locks'; end if;
+  if to_regprocedure('public.can_approve_docs()') is null then miss := miss || ' can_approve_docs()'; end if;
+  if to_regprocedure('public.doc_lock(text,uuid,boolean)') is null then miss := miss || ' doc_lock()'; end if;
+  if to_regprocedure('public.chat_can_announce()') is null then miss := miss || ' chat_can_announce()'; end if;
+  if to_regprocedure('public.job_fix_no_bulk(jsonb)') is null then miss := miss || ' job_fix_no_bulk()'; end if;
+  if position('chat_can_announce' in pg_get_functiondef('public.chat_send(uuid,text,uuid,text,boolean,text,uuid,text,uuid,text,text,int,int)'::regprocedure)) = 0 then miss := miss || ' chat_send(круг объявлений)'; end if;
+  if to_regprocedure('public.doc_request_decide(uuid,boolean,text)') is null then miss := miss || ' doc_request_decide()'; end if;
+  if position('STALE_DOC' in pg_get_functiondef('public.jobs_guard()'::regprocedure)) = 0 then miss := miss || ' jobs_guard(ревизия)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.25 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.25 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_26 (документооборот: разбор и решения) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.26 · ДОКУМЕНТООБОРОТ — ИСПРАВЛЕНИЯ ПО РАЗБОРУ
+--   · на согласование уходит только полностью переведённый документ (TRANSLATION_REQUIRED);
+--   · заметка пикапа — своя (placements.note), в инвойс не пишется;
+--   · техника, убранная из инвойса, не удаляется, а уходит в архив с пояснением (placements.archived_at / arch_note);
+--     складской регистр при этом возвращает её так же, как при удалении;
+--   · менеджер технику в чужом документе не правит (FORBIDDEN_EQUIPMENT);
+--   · привязка пропозала — не содержимое; к запертому инвойсу менеджер привязывает только с разрешения админа (LINK_LOCKED);
+--   · апрув собственного инвойса менеджером — только если админ разрешил (SELF_APPROVE_OFF);
+--   · основной удаляет только документ, у которого ещё нет номера (иначе обход: отозвал → удалил);
+--   · ревизия различает устройства одного человека (updated_dev);
+--   · отозвать может тот, кто правит черновик (в том числе помощник с правом); запрос правки — он же;
+--   · запрос правки закрывается сам, если документ ушёл из «Апрув» другим путём или удалён;
+--   · бухгалтеру — уведомление, если на правку возвращён документ с её отметкой;
+--   · мелочи: текст замороженного номера обязан содержать выданный номер; «занято» — только для известных видов.
+-- =====================================================================
+
+alter table public.placements add column if not exists archived_at timestamptz;
+alter table public.placements add column if not exists archived_by uuid;
+alter table public.placements add column if not exists arch_note   text;
+alter table public.placements add column if not exists note        text not null default '';
+alter table public.placements add column if not exists note_en     text not null default '';
+alter table public.jobs       add column if not exists arch_note   text;
+alter table public.jobs       add column if not exists updated_dev text;
+alter table public.repairs    add column if not exists arch_note   text;
+alter table public.proposals  add column if not exists arch_note   text;
+alter table public.org_settings add column if not exists self_approve      boolean not null default false;
+alter table public.org_settings add column if not exists mgr_link_locked   boolean not null default false;
+alter table public.org_settings add column if not exists pdf_approved_mark boolean not null default true;
+alter table public.org_settings add column if not exists pdf_draft_mark    boolean not null default true;
+
+alter table public.doc_requests drop constraint if exists doc_requests_status_check;
+alter table public.doc_requests add constraint doc_requests_status_check check (status in ('pending','granted','denied','closed'));
+
+-- сколько полей документа без перевода (то же правило, что в приложении: есть кириллица, а английского текста нет)
+create or replace function public.job_tr_missing(p_note text, p_note_en text, p_fd jsonb)
+returns int language sql immutable as $$
+  select (case when coalesce(p_note, '') ~ '[А-Яа-яЁё]' and btrim(coalesce(p_note_en, '')) = '' then 1 else 0 end)
+       + (select count(*)::int
+            from jsonb_array_elements(case when jsonb_typeof(p_fd->'others') = 'array' then p_fd->'others' else '[]'::jsonb end) o
+           where coalesce(o->>'desc', '') ~ '[А-Яа-яЁё]' and btrim(coalesce(o->>'desc_en', '')) = '')
+       + (case when coalesce(p_fd->'airduct'->>'note', '') ~ '[А-Яа-яЁё]' and btrim(coalesce(p_fd->'airduct'->>'note_en', '')) = '' then 1 else 0 end)
+$$;
+
+-- техника документа в сравнимом виде: только позиции с количеством больше нуля
+create or replace function public.job_equip_norm(p_fd jsonb)
+returns jsonb language sql immutable as $$
+  select coalesce(jsonb_object_agg(e.key, jsonb_build_object('q', e.value->>'qty', 'd', e.value->>'days')), '{}'::jsonb)
+    from jsonb_each(case when jsonb_typeof(p_fd->'equipment') = 'object' then p_fd->'equipment' else '{}'::jsonb end) e
+   where (e.value->>'qty') ~ '^[0-9]+(\.[0-9]+)?$' and (e.value->>'qty')::numeric > 0
+$$;
+
+create or replace function public.jobs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_uid  uuid := auth.uid();
+  v_role text := coalesce(public.my_role(), 'tech');
+  v_appr boolean := public.can_approve_docs();
+  v_sys  boolean := auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1'
+                    or coalesce(current_setting('techlog.sysupd', true), '') = '1';
+  v_content boolean; v_no bigint; v_self boolean; v_link boolean;
+begin
+  new.updated_at := now();
+  if v_sys then return new; end if;
+  select coalesce(self_approve, false), coalesce(mgr_link_locked, false) into v_self, v_link from public.org_settings where id = 'org';
+
+  -- поля, которыми клиент не распоряжается
+  new.no := old.no; new.numbered_at := old.numbered_at; new.approved_crew := old.approved_crew;
+  if v_role = 'admin' then new.doc_no := coalesce(new.doc_no, old.doc_no); else new.doc_no := old.doc_no; end if;
+  if not v_appr then
+    new.edit_open_until := old.edit_open_until;
+    new.approved_total := old.approved_total; new.approved_by := old.approved_by; new.approved_at := old.approved_at;
+    if not (new.status = 'draft' and old.status = 'done') then
+      new.return_note := old.return_note; new.returned_by := old.returned_by;
+    end if;
+  end if;
+
+  -- привязка пропозала — связь документов, а не содержимое инвойса
+  if new.proposal_id is distinct from old.proposal_id and old.status <> 'draft'
+     and not (v_role = 'admin' or v_appr or (v_role = 'manager' and coalesce(v_link, false))) then
+    raise exception 'LINK_LOCKED';
+  end if;
+
+  v_content := new.form_data is distinct from old.form_data
+       or coalesce(new.note, '') is distinct from coalesce(old.note, '')
+       or coalesce(new.note_en, '') is distinct from coalesce(old.note_en, '')
+       or new.date is distinct from old.date
+       or coalesce(new.unit_number, '') is distinct from coalesce(old.unit_number, '')
+       or new.complex_id is distinct from old.complex_id
+       or new.counterparty_id is distinct from old.counterparty_id
+       or new.work_type_id is distinct from old.work_type_id
+       or new.technician_id is distinct from old.technician_id
+       or new.helper_ids is distinct from old.helper_ids
+       or new.shared_with_helpers is distinct from old.shared_with_helpers
+       or new.total is distinct from old.total;
+
+  -- смена основного исполнителя: админ всегда, менеджер — пока черновик
+  if new.technician_id is distinct from old.technician_id
+     and not (v_role = 'admin' or (v_role = 'manager' and old.status = 'draft')) then
+    raise exception 'FORBIDDEN_FIELD';
+  end if;
+  -- состав бригады и «Общий доступ» помощник не меняет
+  if (new.helper_ids is distinct from old.helper_ids or new.shared_with_helpers is distinct from old.shared_with_helpers)
+     and not (v_role in ('admin','manager') or old.technician_id = v_uid) then
+    raise exception 'FORBIDDEN_CREW';
+  end if;
+  -- техника — это пикапы и склад исполнителя: менеджер в чужом документе её только видит
+  if v_role = 'manager' and old.technician_id is distinct from v_uid
+     and public.job_equip_norm(new.form_data) is distinct from public.job_equip_norm(old.form_data) then
+    raise exception 'FORBIDDEN_EQUIPMENT';
+  end if;
+  -- в архив: основной — только документ, который ещё ни разу не отправляли на согласование (иначе обход: отозвал → удалил), дальше — админ.
+  -- Признак — numbered_at, а не no: у черновиков, созданных до 1.09.25, номер есть с рождения, и удалять их по-прежнему можно.
+  if new.archived_at is distinct from old.archived_at and v_role <> 'admin'
+     and (old.numbered_at is not null or old.status <> 'draft') then
+    raise exception 'DOC_LOCKED_DELETE';
+  end if;
+
+  if new.status = 'approved' and old.status <> 'approved' then
+    if not v_appr then raise exception 'FORBIDDEN_APPROVE'; end if;
+    if v_role <> 'admin' and old.technician_id = v_uid and not coalesce(v_self, false) then
+      raise exception 'SELF_APPROVE_OFF';
+    end if;
+  end if;
+
+  if not v_appr then
+    if old.status = 'approved' and (v_content or new.status <> 'approved') then
+      raise exception 'DOC_LOCKED_APPROVED';
+    end if;
+    if old.status = 'done' then
+      if new.status = 'draft' then        -- «отозвать»: тот, кто правит черновик; правки в том же сохранении допустимы
+        if not (old.technician_id = v_uid or v_role = 'manager' or public.is_shared_job_helper(old.id)) then raise exception 'DOC_LOCKED_DONE'; end if;
+      elsif v_content then
+        raise exception 'DOC_LOCKED_DONE';
+      end if;
+    end if;
+  end if;
+
+  -- на согласование — только с переводом
+  if old.status = 'draft' and new.status <> 'draft'
+     and public.job_tr_missing(new.note, new.note_en, new.form_data) > 0 then
+    raise exception 'TRANSLATION_REQUIRED';
+  end if;
+
+  -- ревизия: чужую правку (или свою же с ДРУГОГО устройства), которую автор этой записи не видел, молча не затираем
+  if v_content or new.status is distinct from old.status then
+    if new.rev is distinct from old.rev
+       and (old.updated_by is distinct from v_uid or coalesce(old.updated_dev, '') is distinct from coalesce(new.updated_dev, '')) then
+      raise exception 'STALE_DOC';
+    end if;
+    new.rev := old.rev + 1;
+    new.updated_by := v_uid;
+  else
+    new.rev := old.rev; new.updated_by := old.updated_by; new.updated_dev := old.updated_dev;
+  end if;
+
+  -- переходы статуса
+  if new.status = 'approved' and old.status <> 'approved' then
+    new.approved_by := coalesce(new.approved_by, v_uid);
+    new.approved_at := coalesce(new.approved_at, now());
+    new.approved_crew := jsonb_build_object('main', new.technician_id, 'crew', coalesce(new.helper_ids, '[]'::jsonb));
+    new.edit_open_until := null; new.return_note := null; new.returned_by := null;
+  elsif old.status = 'approved' and new.status <> 'approved' then
+    new.approved_total := null; new.approved_by := null; new.approved_at := null; new.approved_crew := null;
+  end if;
+  if new.status = 'done' and old.status = 'draft' then
+    new.return_note := null; new.returned_by := null;
+  end if;
+  if new.status = 'draft' and old.status <> 'draft' then
+    if old.technician_id is distinct from v_uid and coalesce(new.return_note, '') <> '' then new.returned_by := v_uid;
+    elsif old.technician_id = v_uid then new.return_note := null; new.returned_by := null; end if;
+  end if;
+
+  -- номер — при первом НЕ черновике
+  if new.status <> 'draft' then
+    if new.no is null then
+      loop v_no := nextval('public.jobs_doc_no_seq'); exit when not exists (select 1 from public.jobs where no = v_no); end loop;
+      new.no := v_no;
+    end if;
+    if new.numbered_at is null then new.numbered_at := now(); end if;   -- «номер выдан»: документ отправляли на согласование
+  end if;
+  return new;
+end $$;
+
+-- новая строка сразу НЕ черновиком: те же правила (перевод, апрув)
+create or replace function public.jobs_after_ins()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_no bigint;
+begin
+  if auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  if new.status = 'approved' and not public.can_approve_docs() then raise exception 'FORBIDDEN_APPROVE'; end if;
+  if new.status <> 'draft' then
+    if public.job_tr_missing(new.note, new.note_en, new.form_data) > 0 then raise exception 'TRANSLATION_REQUIRED'; end if;
+    loop v_no := nextval('public.jobs_doc_no_seq'); exit when not exists (select 1 from public.jobs where no = v_no); end loop;
+  end if;
+  perform set_config('techlog.sysupd', '1', true);
+  update public.jobs set no = v_no, numbered_at = case when v_no is null then null else now() end, doc_no = null,
+         rev = 0, updated_by = auth.uid(), edit_open_until = null, approved_crew = case when new.status = 'approved'
+           then jsonb_build_object('main', new.technician_id, 'crew', coalesce(new.helper_ids, '[]'::jsonb)) else null end
+   where id = new.id;
+  perform set_config('techlog.sysupd', '', true);
+  return new;
+end $$;
+
+-- события инвойса: отзыв и возврат различаются по тому, КТО вернул документ в черновик
+create or replace function public.jobs_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_body text; v_url text; v_who text; r record; v_done boolean := false;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  v_body := 'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · ' || to_char(new.date, 'DD.MM');
+  v_url  := './?doc=job:' || new.id::text;
+  if tg_op = 'INSERT' then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Новая задача', v_body, v_url);
+    end if;
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас добавили в бригаду', v_body, v_url);
+      end if;
+    end loop;
+    return new;
+  end if;
+  select display_name into v_who from public.profiles where id = auth.uid();
+
+  -- основной исполнитель сменился
+  if new.technician_id is distinct from old.technician_id then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Задача передана вам', v_body, v_url);
+    end if;
+    if old.technician_id is not null and not (coalesce(new.helper_ids, '[]'::jsonb) ? old.technician_id::text) then
+      perform public.push_enqueue(old.technician_id, 'job', 'Вас сняли с задачи', v_body || ' · ' || coalesce(v_who, ''), './');
+    end if;
+    v_done := true;
+  end if;
+  -- состав бригады
+  if new.helper_ids is distinct from old.helper_ids then
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+              where not (coalesce(old.helper_ids, '[]'::jsonb) ? value) and value::uuid is distinct from old.technician_id
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас добавили в бригаду', v_body, v_url);
+      end if;
+    end loop;
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(old.helper_ids, '[]'::jsonb))
+              where not (coalesce(new.helper_ids, '[]'::jsonb) ? value)
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас сняли с задачи', v_body || ' · ' || coalesce(v_who, ''), './');
+      end if;
+    end loop;
+    v_done := true;
+  end if;
+
+  -- статусы
+  if old.status is distinct from 'approved' and new.status = 'approved' then
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'approve', 'Инвойс апрувлен',
+        v_body || ' · $' || round(coalesce(new.approved_total, new.total, 0)), v_url);
+    end loop;
+    return new;
+  elsif old.status = 'approved' and new.status is distinct from 'approved' then
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'reset',
+        case when new.status = 'draft' then 'Апрув снят — документ в черновике' else 'Апрув снят с инвойса' end,
+        v_body || ' · ' || coalesce(v_who, '') || coalesce(' · ' || nullif(new.return_note, ''), ''), v_url);
+    end loop;
+    return new;
+  elsif old.status = 'done' and new.status = 'draft' then
+    /* v1.09.26: вернуть на доработку может только согласующий; все остальные (основной, менеджер без права апрува,
+       помощник с правом правки) документ ОТЗЫВАЮТ — об этом узнают согласующие и остальная бригада */
+    if public.can_approve_docs() and auth.uid() is distinct from new.technician_id then
+      for r in select distinct x.uid from (select new.technician_id as uid
+                 union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Возвращён на доработку',
+          v_body || ' · ' || coalesce(v_who, '') || coalesce(' · ' || nullif(new.return_note, ''), ''), v_url);
+      end loop;
+    else
+      for r in select distinct x.uid from (
+                 select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+                 union select new.technician_id
+                 union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Документ отозван из согласования', v_body || ' · ' || coalesce(v_who, ''), v_url);
+      end loop;
+    end if;
+    return new;
+  elsif old.status = 'draft' and new.status = 'done' then
+    for r in select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+    loop
+      perform public.push_enqueue(r.uid, 'approve', 'Ждёт апрува', v_body || ' · ' || coalesce(v_who, ''), v_url);
+    end loop;
+    return new;
+  end if;
+  if v_done then return new; end if;
+
+  /* «Документ изменён»: содержимое поменял НЕ исполнитель (push_enqueue сам пропускает автора правки). Приложение шлёт
+     строку целиком при любом сохранении — сравниваем только значимые поля; не чаще раза в 10 минут на документ и человека. */
+  if auth.uid() is not null and (new.form_data is distinct from old.form_data or new.date is distinct from old.date
+       or new.unit_number is distinct from old.unit_number or new.complex_id is distinct from old.complex_id
+       or coalesce(new.note, '') is distinct from coalesce(old.note, '')) then
+    for r in select distinct x.uid from (
+               select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x
+              where x.uid is not null and x.uid <> auth.uid()
+    loop
+      if not exists (select 1 from public.notices where user_id = r.uid and kind = 'edit' and url = v_url and created_at > now() - interval '10 minutes') then
+        perform public.push_enqueue(r.uid, 'edit',
+          case when new.date is distinct from old.date then 'Задача перенесена на ' || to_char(new.date, 'DD.MM') else 'Документ изменён' end,
+          v_body || ' · ' || coalesce(v_who, ''), v_url);
+      end if;
+    end loop;
+  end if;
+  return new;
+end $$;
+
+-- строку основной удаляет, только пока у документа нет номера
+drop policy if exists jobs_del on public.jobs;
+create policy jobs_del on public.jobs for delete to authenticated
+  using ((technician_id = auth.uid() and status = 'draft' and numbered_at is null) or public.my_role() = 'admin');
+
+-- запрос правки закрывается сам, если документ ушёл из «Апрув» другим путём или удалён
+create or replace function public.jobs_req_close_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if (old.status = 'approved' and new.status <> 'approved') or (old.archived_at is null and new.archived_at is not null) then
+    update public.doc_requests set status = 'closed', decided_at = now(),
+           answer = case when new.archived_at is not null and old.archived_at is null then 'документ удалён' else 'документ уже возвращён в работу' end
+     where kind = 'job' and doc_id = new.id and status = 'pending';
+  end if;
+  return new;
+end $$;
+drop trigger if exists jobs_req_close_tg on public.jobs;
+create trigger jobs_req_close_tg after update on public.jobs
+  for each row execute function public.jobs_req_close_tg_fn();
+
+-- запрос правки подаёт тот, кто потом сможет править черновик: основной или помощник с правом и «Общим доступом»
+create or replace function public.doc_request_edit(p_job uuid, p_reason text)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare j public.jobs%rowtype; v_id uuid; v_who text; r record; v_reason text := left(trim(coalesce(p_reason, '')), 500);
+begin
+  select * into j from public.jobs where id = p_job;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if not (j.technician_id = auth.uid() or public.is_shared_job_helper(p_job)) then raise exception 'FORBIDDEN'; end if;
+  if j.status <> 'approved' then raise exception 'BAD_STATUS'; end if;
+  if length(v_reason) < 3 then raise exception 'REASON_REQUIRED'; end if;
+  if exists (select 1 from public.doc_requests where kind = 'job' and doc_id = p_job and status = 'pending') then
+    raise exception 'ALREADY_PENDING';
+  end if;
+  insert into public.doc_requests(kind, doc_id, user_id, reason) values ('job', p_job, auth.uid(), v_reason) returning id into v_id;
+  select display_name into v_who from public.profiles where id = auth.uid();
+  for r in select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+  loop
+    perform public.push_enqueue(r.uid, 'approve', 'Запрос на правку документа',
+      'Unit ' || coalesce(nullif(j.unit_number,''),'—') || ' · ' || to_char(j.date, 'DD.MM') || ' · ' || coalesce(v_who, '') || ' · ' || v_reason,
+      './?doc=job:' || p_job::text);
+  end loop;
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_who, ''), 'edit_request', 'job', p_job::text, jsonb_build_object('unit', j.unit_number, 'reason', v_reason));
+  return v_id;
+end $$;
+
+-- решение по запросу: при разрешении документа с отметкой бухгалтерии она узнаёт об этом
+create or replace function public.doc_request_decide(p_id uuid, p_grant boolean, p_answer text)
+returns void language plpgsql security definer set search_path = public as $$
+declare q public.doc_requests%rowtype; j public.jobs%rowtype; v_who text; v_ans text := left(trim(coalesce(p_answer, '')), 500); r record; v_body text;
+begin
+  if not public.can_approve_docs() then raise exception 'FORBIDDEN'; end if;
+  select * into q from public.doc_requests where id = p_id for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if q.status <> 'pending' then raise exception 'ALREADY_DECIDED'; end if;
+  select * into j from public.jobs where id = q.doc_id;
+  update public.doc_requests set status = case when p_grant then 'granted' else 'denied' end,
+         answer = v_ans, decided_by = auth.uid(), decided_at = now() where id = p_id;
+  select display_name into v_who from public.profiles where id = auth.uid();
+  v_body := 'Unit ' || coalesce(nullif(j.unit_number,''),'—') || ' · ' || to_char(j.date, 'DD.MM') || ' · ' || coalesce(v_who, '');
+  if p_grant and j.id is not null then
+    update public.jobs set status = 'draft', edit_open_until = now() + interval '24 hours',
+           return_note = nullif('Правка разрешена' || coalesce(': ' || nullif(v_ans, ''), ''), '') where id = q.doc_id;
+    if coalesce(j.acc_status, '') <> '' then
+      for r in select id as uid from public.profiles where not blocked and role = 'accountant'
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Инвойс с отметкой бухгалтерии возвращён на правку',
+          v_body || ' · отметка: ' || j.acc_status, './');
+      end loop;
+    end if;
+  end if;
+  if not p_grant then perform public.push_enqueue(q.user_id, 'reset', 'В правке отказано',
+    v_body || coalesce(' · ' || nullif(v_ans, ''), ''), './?doc=job:' || q.doc_id::text); end if;
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_who, ''), case when p_grant then 'edit_request_granted' else 'edit_request_denied' end,
+          'job', q.doc_id::text, jsonb_build_object('unit', j.unit_number, 'answer', v_ans, 'acc', coalesce(j.acc_status, '')));
+end $$;
+
+-- замороженный текст номера обязан содержать сам выданный номер
+create or replace function public.job_fix_no(p_job uuid, p_text text)
+returns text language plpgsql security definer set search_path = public as $$
+declare v_cur text; v_no bigint; v_txt text := left(regexp_replace(coalesce(p_text, ''), '[^A-Za-z0-9._-]', '', 'g'), 80);
+begin
+  if not public.can_view_job(p_job) then raise exception 'FORBIDDEN'; end if;
+  select doc_no, no into v_cur, v_no from public.jobs where id = p_job and no is not null and status <> 'draft';
+  if not found then return null; end if;
+  if v_cur is not null then return v_cur; end if;
+  if v_txt = '' then return null; end if;
+  if position(v_no::text in v_txt) = 0 then raise exception 'BAD_NUMBER_TEXT'; end if;
+  perform set_config('techlog.sysupd', '1', true);
+  update public.jobs set doc_no = v_txt where id = p_job and doc_no is null;
+  perform set_config('techlog.sysupd', '', true);
+  return v_txt;
+end $$;
+
+-- «занято»: только для известных видов документов
+create or replace function public.doc_lock(p_kind text, p_id uuid, p_force boolean default false)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare l public.doc_locks%rowtype; v_name text; v_role text := coalesce(public.my_role(), 'tech'); v_ask boolean := false;
+begin
+  if auth.uid() is null then raise exception 'FORBIDDEN'; end if;
+  if p_kind is distinct from 'job' then raise exception 'BAD_KIND'; end if;
+  if not public.can_view_job(p_id) then raise exception 'FORBIDDEN'; end if;
+  select display_name into v_name from public.profiles where id = auth.uid();
+  select * into l from public.doc_locks where kind = p_kind and doc_id = p_id for update;
+  if found and l.user_id <> auth.uid() and l.at > now() - interval '2 minutes'
+     and not (coalesce(p_force, false) and v_role in ('admin','manager')) then
+    if coalesce(p_force, false) then
+      if not exists (select 1 from public.notices where user_id = l.user_id and kind = 'edit' and url = './?doc=' || p_kind || ':' || p_id::text
+                        and title = 'Просят доступ к документу' and created_at > now() - interval '2 minutes') then
+        perform public.push_enqueue(l.user_id, 'edit', 'Просят доступ к документу', coalesce(v_name, '') || ' ждёт, пока вы сохраните или закроете документ',
+                                    './?doc=' || p_kind || ':' || p_id::text);
+        v_ask := true;
+      end if;
+    end if;
+    return jsonb_build_object('ok', false, 'by', l.user_id, 'name', l.user_name, 'since', l.since, 'at', l.at, 'asked', v_ask);
+  end if;
+  insert into public.doc_locks(kind, doc_id, user_id, user_name, since, at)
+  values (p_kind, p_id, auth.uid(), coalesce(v_name, ''), now(), now())
+  on conflict (kind, doc_id) do update
+    set since = case when public.doc_locks.user_id = excluded.user_id then public.doc_locks.since else now() end,
+        user_id = excluded.user_id, user_name = excluded.user_name, at = now();
+  if random() < 0.02 then delete from public.doc_locks where at < now() - interval '1 day'; end if;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- складской регистр: техника, ушедшая в архив (убрана из инвойса), возвращается так же, как при удалении строки
+create or replace function public.equip_pl_arch_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  if old.archived_at is null and new.archived_at is not null and not coalesce(new.picked_up, false) then
+    delete from public.equip_moves where placement_id = new.id;
+  elsif old.archived_at is not null and new.archived_at is null and not coalesce(new.picked_up, false) and new.ext_of is null then
+    perform public.equip_place(new.equipment_type_id, greatest(1, coalesce(new.qty, 1)), new.technician_id, new.id);
+  end if;
+  return new;
+end $$;
+drop trigger if exists equip_pl_arch_tg on public.placements;
+create trigger equip_pl_arch_tg after update of archived_at on public.placements
+  for each row execute function public.equip_pl_arch_tg_fn();
+
+update public.org_settings set docflow_v = 2 where id = 'org' and docflow_v < 2;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='placements' and column_name='arch_note') then miss := miss || ' placements.arch_note'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='placements' and column_name='note') then miss := miss || ' placements.note'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='jobs' and column_name='updated_dev') then miss := miss || ' jobs.updated_dev'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='self_approve') then miss := miss || ' org_settings.self_approve'; end if;
+  if to_regprocedure('public.job_tr_missing(text,text,jsonb)') is null then miss := miss || ' job_tr_missing()'; end if;
+  if position('TRANSLATION_REQUIRED' in pg_get_functiondef('public.jobs_guard()'::regprocedure)) = 0 then miss := miss || ' jobs_guard(перевод)'; end if;
+  if position('FORBIDDEN_EQUIPMENT' in pg_get_functiondef('public.jobs_guard()'::regprocedure)) = 0 then miss := miss || ' jobs_guard(техника)'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'equip_pl_arch_tg') then miss := miss || ' equip_pl_arch_tg'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'jobs_req_close_tg') then miss := miss || ' jobs_req_close_tg'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.26 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.26 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_27 (тест документооборота) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.27 · РЕЖИМ ТЕСТИРОВАНИЯ ДОКУМЕНТООБОРОТА
+--   Встроенный тест полного цикла идёт под настоящим пользователем (админ, менеджер, работник). Шаги «другой стороны»
+--   (назначить задачу работнику, апрувить, вернуть, решить запрос правки, убрать тестовые документы) выполняет
+--   Edge Function dft — от имени администратора или менеджера. Чтобы это не стало дырой:
+--   · режим включает ТОЛЬКО админ, на ограниченное время (dft_until), каждое включение — в журнале событий;
+--   · функция работает ТОЛЬКО с документами, помеченными is_test; пометку ставит только она сама (клиент её не ставит и
+--     не меняет: сторож возвращает прежнее значение, обычная вставка «тестовой» быть не может) — настоящий инвойс
+--     через функцию не апрувить;
+--   · dft_exec доступна только service_role (её зовёт Edge Function), внутри подменяется личность исполнителя
+--     (request.jwt.claim.sub) — все правила сторожей срабатывают так же, как для настоящего админа или менеджера;
+--   · тестовые документы не тратят настоящую нумерацию (свой диапазон 90000001…), не двигают склад, не шлют пушей;
+--     их события попадают только в ленту того, кто ведёт тест; уборка удаляет всё тестовое насовсем.
+--   Выключили режим или удалили функцию — приложение работает как раньше.
+-- =====================================================================
+
+alter table public.jobs       add column if not exists is_test    boolean not null default false;
+alter table public.jobs       add column if not exists test_owner uuid;
+alter table public.jobs       add column if not exists test_run   text;
+alter table public.placements add column if not exists is_test    boolean not null default false;
+alter table public.proposals  add column if not exists is_test    boolean not null default false;
+alter table public.proposals  add column if not exists test_owner uuid;
+alter table public.proposals  add column if not exists test_run   text;
+create index if not exists jobs_is_test_idx on public.jobs(is_test) where is_test;
+alter table public.org_settings add column if not exists dft_on    boolean not null default false;
+alter table public.org_settings add column if not exists dft_until timestamptz;
+alter table public.org_settings add column if not exists dft_by    uuid;
+do $$ begin
+  if to_regclass('public.jobs_test_no_seq') is null then create sequence public.jobs_test_no_seq; end if;
+end $$;
+
+create or replace function public.dft_enabled()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select dft_on and (dft_until is null or dft_until > now()) from public.org_settings where id = 'org'), false)
+$$;
+revoke all on function public.dft_enabled() from public, anon;
+grant execute on function public.dft_enabled() to authenticated, service_role;
+
+-- включает и выключает только админ; всегда на срок (1–72 часа), запись в журнале событий
+create or replace function public.admin_set_dft(p_on boolean, p_hours int default 4)
+returns timestamptz language plpgsql security definer set search_path = public as $$
+declare v_until timestamptz := case when coalesce(p_on, false) then now() + make_interval(hours => greatest(1, least(72, coalesce(p_hours, 4)))) end;
+begin
+  if coalesce(public.my_role(), 'tech') <> 'admin' then raise exception 'FORBIDDEN'; end if;
+  perform set_config('techlog.sysupd', '1', true);
+  update public.org_settings set dft_on = coalesce(p_on, false), dft_until = v_until, dft_by = case when coalesce(p_on, false) then auth.uid() end where id = 'org';
+  perform set_config('techlog.sysupd', '', true);
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce((select display_name from public.profiles where id = auth.uid()), ''),
+          case when coalesce(p_on, false) then 'dft_on' else 'dft_off' end, 'org', 'org', jsonb_build_object('until', v_until));
+  return v_until;
+end $$;
+revoke all on function public.admin_set_dft(boolean, int) from public, anon;
+grant execute on function public.admin_set_dft(boolean, int) to authenticated;
+
+-- тестовый пикап наследует пометку от своего документа (клиент её не задаёт)
+create or replace function public.placements_test_flag()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'INSERT' then new.is_test := coalesce((select j.is_test from public.jobs j where j.id = new.job_id), false);
+  else new.is_test := old.is_test; end if;
+  return new;
+end $$;
+drop trigger if exists placements_test_flag_tg on public.placements;
+create trigger placements_test_flag_tg before insert or update on public.placements
+  for each row execute function public.placements_test_flag();
+
+create or replace function public.jobs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_uid  uuid := auth.uid();
+  v_role text := coalesce(public.my_role(), 'tech');
+  v_appr boolean := public.can_approve_docs();
+  v_sys  boolean := auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1'
+                    or coalesce(current_setting('techlog.sysupd', true), '') = '1';
+  v_content boolean; v_no bigint; v_self boolean; v_link boolean;
+begin
+  new.updated_at := now();
+  if v_sys then return new; end if;
+  select coalesce(self_approve, false), coalesce(mgr_link_locked, false) into v_self, v_link from public.org_settings where id = 'org';
+
+  -- поля, которыми клиент не распоряжается
+  new.no := old.no; new.numbered_at := old.numbered_at; new.approved_crew := old.approved_crew;
+  new.is_test := old.is_test; new.test_owner := old.test_owner; new.test_run := old.test_run;   -- v1.09.27: пометку «тестовый» ставит только функция тестирования
+  if v_role = 'admin' then new.doc_no := coalesce(new.doc_no, old.doc_no); else new.doc_no := old.doc_no; end if;
+  if not v_appr then
+    new.edit_open_until := old.edit_open_until;
+    new.approved_total := old.approved_total; new.approved_by := old.approved_by; new.approved_at := old.approved_at;
+    if not (new.status = 'draft' and old.status = 'done') then
+      new.return_note := old.return_note; new.returned_by := old.returned_by;
+    end if;
+  end if;
+
+  -- привязка пропозала — связь документов, а не содержимое инвойса
+  if new.proposal_id is distinct from old.proposal_id and old.status <> 'draft'
+     and not (v_role = 'admin' or v_appr or (v_role = 'manager' and coalesce(v_link, false))) then
+    raise exception 'LINK_LOCKED';
+  end if;
+
+  v_content := new.form_data is distinct from old.form_data
+       or coalesce(new.note, '') is distinct from coalesce(old.note, '')
+       or coalesce(new.note_en, '') is distinct from coalesce(old.note_en, '')
+       or new.date is distinct from old.date
+       or coalesce(new.unit_number, '') is distinct from coalesce(old.unit_number, '')
+       or new.complex_id is distinct from old.complex_id
+       or new.counterparty_id is distinct from old.counterparty_id
+       or new.work_type_id is distinct from old.work_type_id
+       or new.technician_id is distinct from old.technician_id
+       or new.helper_ids is distinct from old.helper_ids
+       or new.shared_with_helpers is distinct from old.shared_with_helpers
+       or new.total is distinct from old.total;
+
+  -- смена основного исполнителя: админ всегда, менеджер — пока черновик
+  if new.technician_id is distinct from old.technician_id
+     and not (v_role = 'admin' or (v_role = 'manager' and old.status = 'draft')) then
+    raise exception 'FORBIDDEN_FIELD';
+  end if;
+  -- состав бригады и «Общий доступ» помощник не меняет
+  if (new.helper_ids is distinct from old.helper_ids or new.shared_with_helpers is distinct from old.shared_with_helpers)
+     and not (v_role in ('admin','manager') or old.technician_id = v_uid) then
+    raise exception 'FORBIDDEN_CREW';
+  end if;
+  -- техника — это пикапы и склад исполнителя: менеджер в чужом документе её только видит
+  if v_role = 'manager' and old.technician_id is distinct from v_uid
+     and public.job_equip_norm(new.form_data) is distinct from public.job_equip_norm(old.form_data) then
+    raise exception 'FORBIDDEN_EQUIPMENT';
+  end if;
+  -- в архив: основной — только документ, который ещё ни разу не отправляли на согласование (иначе обход: отозвал → удалил), дальше — админ.
+  -- Признак — numbered_at, а не no: у черновиков, созданных до 1.09.25, номер есть с рождения, и удалять их по-прежнему можно.
+  if new.archived_at is distinct from old.archived_at and v_role <> 'admin'
+     and (old.numbered_at is not null or old.status <> 'draft') then
+    raise exception 'DOC_LOCKED_DELETE';
+  end if;
+
+  if new.status = 'approved' and old.status <> 'approved' then
+    if not v_appr then raise exception 'FORBIDDEN_APPROVE'; end if;
+    if v_role <> 'admin' and old.technician_id = v_uid and not coalesce(v_self, false) then
+      raise exception 'SELF_APPROVE_OFF';
+    end if;
+  end if;
+
+  if not v_appr then
+    if old.status = 'approved' and (v_content or new.status <> 'approved') then
+      raise exception 'DOC_LOCKED_APPROVED';
+    end if;
+    if old.status = 'done' then
+      if new.status = 'draft' then        -- «отозвать»: тот, кто правит черновик; правки в том же сохранении допустимы
+        if not (old.technician_id = v_uid or v_role = 'manager' or public.is_shared_job_helper(old.id)) then raise exception 'DOC_LOCKED_DONE'; end if;
+      elsif v_content then
+        raise exception 'DOC_LOCKED_DONE';
+      end if;
+    end if;
+  end if;
+
+  -- на согласование — только с переводом
+  if old.status = 'draft' and new.status <> 'draft'
+     and public.job_tr_missing(new.note, new.note_en, new.form_data) > 0 then
+    raise exception 'TRANSLATION_REQUIRED';
+  end if;
+
+  -- ревизия: чужую правку (или свою же с ДРУГОГО устройства), которую автор этой записи не видел, молча не затираем
+  if v_content or new.status is distinct from old.status then
+    if new.rev is distinct from old.rev
+       and (old.updated_by is distinct from v_uid or coalesce(old.updated_dev, '') is distinct from coalesce(new.updated_dev, '')) then
+      raise exception 'STALE_DOC';
+    end if;
+    new.rev := old.rev + 1;
+    new.updated_by := v_uid;
+  else
+    new.rev := old.rev; new.updated_by := old.updated_by; new.updated_dev := old.updated_dev;
+  end if;
+
+  -- переходы статуса
+  if new.status = 'approved' and old.status <> 'approved' then
+    new.approved_by := coalesce(new.approved_by, v_uid);
+    new.approved_at := coalesce(new.approved_at, now());
+    new.approved_crew := jsonb_build_object('main', new.technician_id, 'crew', coalesce(new.helper_ids, '[]'::jsonb));
+    new.edit_open_until := null; new.return_note := null; new.returned_by := null;
+  elsif old.status = 'approved' and new.status <> 'approved' then
+    new.approved_total := null; new.approved_by := null; new.approved_at := null; new.approved_crew := null;
+  end if;
+  if new.status = 'done' and old.status = 'draft' then
+    new.return_note := null; new.returned_by := null;
+  end if;
+  if new.status = 'draft' and old.status <> 'draft' then
+    if old.technician_id is distinct from v_uid and coalesce(new.return_note, '') <> '' then new.returned_by := v_uid;
+    elsif old.technician_id = v_uid then new.return_note := null; new.returned_by := null; end if;
+  end if;
+
+  -- номер — при первом НЕ черновике
+  if new.status <> 'draft' then
+    if new.no is null then
+      if new.is_test then v_no := 90000000 + nextval('public.jobs_test_no_seq');     -- тестовые документы настоящую нумерацию не трогают
+      else loop v_no := nextval('public.jobs_doc_no_seq'); exit when not exists (select 1 from public.jobs where no = v_no); end loop; end if;
+      new.no := v_no;
+    end if;
+    if new.numbered_at is null then new.numbered_at := now(); end if;   -- «номер выдан»: документ отправляли на согласование
+  end if;
+  return new;
+end $$;
+
+create or replace function public.jobs_after_ins()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_no bigint; v_dft boolean := coalesce(current_setting('techlog.dft', true), '') = '1';
+begin
+  if auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  if new.status = 'approved' and not public.can_approve_docs() then raise exception 'FORBIDDEN_APPROVE'; end if;
+  if new.status <> 'draft' then
+    if public.job_tr_missing(new.note, new.note_en, new.form_data) > 0 then raise exception 'TRANSLATION_REQUIRED'; end if;
+    if new.is_test and v_dft then v_no := 90000000 + nextval('public.jobs_test_no_seq');
+    else loop v_no := nextval('public.jobs_doc_no_seq'); exit when not exists (select 1 from public.jobs where no = v_no); end loop; end if;
+  end if;
+  perform set_config('techlog.sysupd', '1', true);
+  update public.jobs set no = v_no, numbered_at = case when v_no is null then null else now() end, doc_no = null,
+         /* v1.09.27: обычная вставка «тестовой» быть не может */ is_test = (new.is_test and v_dft), test_owner = case when new.is_test and v_dft then new.test_owner end, test_run = case when new.is_test and v_dft then new.test_run end,
+         rev = 0, updated_by = auth.uid(), edit_open_until = null, approved_crew = case when new.status = 'approved'
+           then jsonb_build_object('main', new.technician_id, 'crew', coalesce(new.helper_ids, '[]'::jsonb)) else null end
+   where id = new.id;
+  perform set_config('techlog.sysupd', '', true);
+  return new;
+end $$;
+
+create or replace function public.push_enqueue(
+  p_user uuid, p_kind text, p_title text, p_body text, p_url text default './')
+returns void language plpgsql security definer set search_path = public as $$
+declare v_prefs jsonb; v_owner text := nullif(coalesce(current_setting('techlog.test_owner', true), ''), '');
+begin
+  if p_user is null or p_user = auth.uid() then return; end if;
+  if v_owner is not null then                                   -- v1.09.27: событие ТЕСТОВОГО документа — только в ленту того, кто ведёт тест; пуша нет
+    if p_user::text = v_owner then
+      insert into public.notices(user_id, kind, title, body, url, actor) values (p_user, p_kind, p_title, coalesce(p_body, ''), coalesce(p_url, './'), auth.uid());
+    end if;
+    return;
+  end if;
+  select push_prefs into v_prefs from public.profiles where id = p_user and not blocked;
+  if not found then return; end if;                             -- нет профиля / заблокирован
+  if p_kind <> 'chat' then
+    insert into public.notices(user_id, kind, title, body, url, actor)
+    values (p_user, p_kind, p_title, coalesce(p_body, ''), coalesce(p_url, './'), auth.uid());
+  end if;
+  if coalesce((coalesce(v_prefs, '{}'::jsonb)->>p_kind)::boolean, true) = false then return; end if;
+  insert into public.push_queue(user_id, kind, title, body, url)
+  values (p_user, p_kind, p_title, coalesce(p_body,''), coalesce(p_url,'./'));
+end $$;
+
+create or replace function public.jobs_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_body text; v_url text; v_who text; r record; v_done boolean := false;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  perform set_config('techlog.test_owner', case when new.is_test then coalesce(new.test_owner::text, '00000000-0000-0000-0000-000000000000') else '' end, true);   -- v1.09.27
+  v_body := 'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · ' || to_char(new.date, 'DD.MM');
+  v_url  := './?doc=job:' || new.id::text;
+  if tg_op = 'INSERT' then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Новая задача', v_body, v_url);
+    end if;
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас добавили в бригаду', v_body, v_url);
+      end if;
+    end loop;
+    return new;
+  end if;
+  select display_name into v_who from public.profiles where id = auth.uid();
+
+  -- основной исполнитель сменился
+  if new.technician_id is distinct from old.technician_id then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Задача передана вам', v_body, v_url);
+    end if;
+    if old.technician_id is not null and not (coalesce(new.helper_ids, '[]'::jsonb) ? old.technician_id::text) then
+      perform public.push_enqueue(old.technician_id, 'job', 'Вас сняли с задачи', v_body || ' · ' || coalesce(v_who, ''), './');
+    end if;
+    v_done := true;
+  end if;
+  -- состав бригады
+  if new.helper_ids is distinct from old.helper_ids then
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+              where not (coalesce(old.helper_ids, '[]'::jsonb) ? value) and value::uuid is distinct from old.technician_id
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас добавили в бригаду', v_body, v_url);
+      end if;
+    end loop;
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(old.helper_ids, '[]'::jsonb))
+              where not (coalesce(new.helper_ids, '[]'::jsonb) ? value)
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас сняли с задачи', v_body || ' · ' || coalesce(v_who, ''), './');
+      end if;
+    end loop;
+    v_done := true;
+  end if;
+
+  -- статусы
+  if old.status is distinct from 'approved' and new.status = 'approved' then
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'approve', 'Инвойс апрувлен',
+        v_body || ' · $' || round(coalesce(new.approved_total, new.total, 0)), v_url);
+    end loop;
+    return new;
+  elsif old.status = 'approved' and new.status is distinct from 'approved' then
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'reset',
+        case when new.status = 'draft' then 'Апрув снят — документ в черновике' else 'Апрув снят с инвойса' end,
+        v_body || ' · ' || coalesce(v_who, '') || coalesce(' · ' || nullif(new.return_note, ''), ''), v_url);
+    end loop;
+    return new;
+  elsif old.status = 'done' and new.status = 'draft' then
+    /* v1.09.26: вернуть на доработку может только согласующий; все остальные (основной, менеджер без права апрува,
+       помощник с правом правки) документ ОТЗЫВАЮТ — об этом узнают согласующие и остальная бригада */
+    if public.can_approve_docs() and auth.uid() is distinct from new.technician_id then
+      for r in select distinct x.uid from (select new.technician_id as uid
+                 union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Возвращён на доработку',
+          v_body || ' · ' || coalesce(v_who, '') || coalesce(' · ' || nullif(new.return_note, ''), ''), v_url);
+      end loop;
+    else
+      for r in select distinct x.uid from (
+                 select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+                 union select new.technician_id
+                 union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Документ отозван из согласования', v_body || ' · ' || coalesce(v_who, ''), v_url);
+      end loop;
+    end if;
+    return new;
+  elsif old.status = 'draft' and new.status = 'done' then
+    for r in select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+    loop
+      perform public.push_enqueue(r.uid, 'approve', 'Ждёт апрува', v_body || ' · ' || coalesce(v_who, ''), v_url);
+    end loop;
+    return new;
+  end if;
+  if v_done then return new; end if;
+
+  /* «Документ изменён»: содержимое поменял НЕ исполнитель (push_enqueue сам пропускает автора правки). Приложение шлёт
+     строку целиком при любом сохранении — сравниваем только значимые поля; не чаще раза в 10 минут на документ и человека. */
+  if auth.uid() is not null and (new.form_data is distinct from old.form_data or new.date is distinct from old.date
+       or new.unit_number is distinct from old.unit_number or new.complex_id is distinct from old.complex_id
+       or coalesce(new.note, '') is distinct from coalesce(old.note, '')) then
+    for r in select distinct x.uid from (
+               select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x
+              where x.uid is not null and x.uid <> auth.uid()
+    loop
+      if not exists (select 1 from public.notices where user_id = r.uid and kind = 'edit' and url = v_url and created_at > now() - interval '10 minutes') then
+        perform public.push_enqueue(r.uid, 'edit',
+          case when new.date is distinct from old.date then 'Задача перенесена на ' || to_char(new.date, 'DD.MM') else 'Документ изменён' end,
+          v_body || ' · ' || coalesce(v_who, ''), v_url);
+      end if;
+    end loop;
+  end if;
+  return new;
+end $$;
+
+create or replace function public.jobs_arch_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare r record; v_body text; v_who text;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  perform set_config('techlog.test_owner', case when new.is_test then coalesce(new.test_owner::text, '00000000-0000-0000-0000-000000000000') else '' end, true);   -- v1.09.27
+  if old.archived_at is null and new.archived_at is not null then
+    v_body := 'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · ' || to_char(new.date, 'DD.MM');
+    select display_name into v_who from public.profiles where id = auth.uid();
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'job', 'Задача удалена', v_body || ' · ' || coalesce(v_who, ''), './');
+    end loop;
+  end if;
+  return new;
+end $$;
+
+create or replace function public.doc_request_edit(p_job uuid, p_reason text)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare j public.jobs%rowtype; v_id uuid; v_who text; r record; v_reason text := left(trim(coalesce(p_reason, '')), 500);
+begin
+  select * into j from public.jobs where id = p_job;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  perform set_config('techlog.test_owner', case when j.is_test then coalesce(j.test_owner::text, '00000000-0000-0000-0000-000000000000') else '' end, true);   -- v1.09.27
+  if not (j.technician_id = auth.uid() or public.is_shared_job_helper(p_job)) then raise exception 'FORBIDDEN'; end if;
+  if j.status <> 'approved' then raise exception 'BAD_STATUS'; end if;
+  if length(v_reason) < 3 then raise exception 'REASON_REQUIRED'; end if;
+  if exists (select 1 from public.doc_requests where kind = 'job' and doc_id = p_job and status = 'pending') then
+    raise exception 'ALREADY_PENDING';
+  end if;
+  insert into public.doc_requests(kind, doc_id, user_id, reason) values ('job', p_job, auth.uid(), v_reason) returning id into v_id;
+  select display_name into v_who from public.profiles where id = auth.uid();
+  for r in select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+  loop
+    perform public.push_enqueue(r.uid, 'approve', 'Запрос на правку документа',
+      'Unit ' || coalesce(nullif(j.unit_number,''),'—') || ' · ' || to_char(j.date, 'DD.MM') || ' · ' || coalesce(v_who, '') || ' · ' || v_reason,
+      './?doc=job:' || p_job::text);
+  end loop;
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_who, ''), 'edit_request', 'job', p_job::text, jsonb_build_object('unit', j.unit_number, 'reason', v_reason));
+  return v_id;
+end $$;
+
+create or replace function public.doc_request_decide(p_id uuid, p_grant boolean, p_answer text)
+returns void language plpgsql security definer set search_path = public as $$
+declare q public.doc_requests%rowtype; j public.jobs%rowtype; v_who text; v_ans text := left(trim(coalesce(p_answer, '')), 500); r record; v_body text;
+begin
+  if not public.can_approve_docs() then raise exception 'FORBIDDEN'; end if;
+  select * into q from public.doc_requests where id = p_id for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if q.status <> 'pending' then raise exception 'ALREADY_DECIDED'; end if;
+  select * into j from public.jobs where id = q.doc_id;
+  perform set_config('techlog.test_owner', case when j.is_test then coalesce(j.test_owner::text, '00000000-0000-0000-0000-000000000000') else '' end, true);   -- v1.09.27
+  update public.doc_requests set status = case when p_grant then 'granted' else 'denied' end,
+         answer = v_ans, decided_by = auth.uid(), decided_at = now() where id = p_id;
+  select display_name into v_who from public.profiles where id = auth.uid();
+  v_body := 'Unit ' || coalesce(nullif(j.unit_number,''),'—') || ' · ' || to_char(j.date, 'DD.MM') || ' · ' || coalesce(v_who, '');
+  if p_grant and j.id is not null then
+    update public.jobs set status = 'draft', edit_open_until = now() + interval '24 hours',
+           return_note = nullif('Правка разрешена' || coalesce(': ' || nullif(v_ans, ''), ''), '') where id = q.doc_id;
+    if coalesce(j.acc_status, '') <> '' then
+      for r in select id as uid from public.profiles where not blocked and role = 'accountant'
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Инвойс с отметкой бухгалтерии возвращён на правку',
+          v_body || ' · отметка: ' || j.acc_status, './');
+      end loop;
+    end if;
+  end if;
+  if not p_grant then perform public.push_enqueue(q.user_id, 'reset', 'В правке отказано',
+    v_body || coalesce(' · ' || nullif(v_ans, ''), ''), './?doc=job:' || q.doc_id::text); end if;
+  insert into public.audit_log (actor, actor_name, action, entity, entity_id, details)
+  values (auth.uid(), coalesce(v_who, ''), case when p_grant then 'edit_request_granted' else 'edit_request_denied' end,
+          'job', q.doc_id::text, jsonb_build_object('unit', j.unit_number, 'answer', v_ans, 'acc', coalesce(j.acc_status, '')));
+end $$;
+
+create or replace function public.placements_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  if new.is_test then return new; end if;                          -- v1.09.27: тестовый пикап никого не будит
+  if new.ext_of is null and new.technician_id is not null then
+    perform public.push_enqueue(new.technician_id, 'pickup', 'Новый пикап',
+      'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · до ' || to_char(new.due_date, 'DD.MM'),
+      './?day=' || to_char(new.due_date, 'YYYY-MM-DD'));
+  end if;
+  return new;
+end $$;
+
+create or replace function public.equip_pl_sync()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_tech uuid; v_d int; v_n int;
+begin
+  -- восстановление из бэкапа: движения приезжают из самого бэкапа
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  if new.is_test then return new; end if;                          -- v1.09.27: тестовые пикапы склад не двигают
+
+  if tg_op = 'INSERT' then
+    if new.ext_of is null then
+      perform public.equip_place(new.equipment_type_id,
+                                 greatest(1, coalesce(new.qty, 1)),
+                                 new.technician_id, new.id);
+    end if;
+    return new;
+  end if;
+
+  -- «забрал» / отмена забора
+  if old.picked_up is distinct from new.picked_up then
+    v_tech := coalesce(new.picked_up_by, old.picked_up_by, new.technician_id);
+    if new.picked_up then
+      insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+      values ('pickup', new.equipment_type_id, greatest(1, coalesce(new.qty, 1)),
+              'site', 'car', v_tech, new.id, coalesce(new.picked_up_by, v_tech));
+    else
+      delete from public.equip_moves where placement_id = new.id and kind = 'pickup';
+      get diagnostics v_n = row_count;
+      if v_n = 0 then
+        insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+        values ('undo', new.equipment_type_id, greatest(1, coalesce(old.qty, 1)),
+                'car', 'site', v_tech, new.id, auth.uid());
+      end if;
+    end if;
+  end if;
+
+  -- «вернул на склад» / отмена возврата
+  if (old.returned_at is null) is distinct from (new.returned_at is null) then
+    v_tech := coalesce(new.picked_up_by, old.picked_up_by, new.technician_id);
+    if new.returned_at is not null then
+      insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+      values ('return', new.equipment_type_id, greatest(1, coalesce(new.qty, 1)),
+              'car', 'stock', v_tech, new.id, coalesce(new.returned_by, v_tech));
+    else
+      delete from public.equip_moves where placement_id = new.id and kind = 'return';
+      get diagnostics v_n = row_count;
+      if v_n = 0 then
+        insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+        values ('undo', new.equipment_type_id, greatest(1, coalesce(old.qty, 1)),
+                'stock', 'car', v_tech, new.id, auth.uid());
+      end if;
+    end if;
+  end if;
+
+  -- правка количества в форме работы. Строки, у которых есть продления,
+  -- форма не трогает (частичное продление меняет qty — это бумажный
+  -- перенос на строку продления, движения не нужны).
+  if old.qty is distinct from new.qty and new.ext_of is null
+     and not exists (select 1 from public.placements x where x.ext_of = new.id) then
+    v_d := coalesce(new.qty, 0) - coalesce(old.qty, 0);
+    if v_d <> 0 then
+      if new.returned_at is not null then                 -- уже сдано на склад
+        insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, placement_id, actor)
+        values ('undo', new.equipment_type_id, abs(v_d),
+                case when v_d > 0 then 'ext' else 'stock' end,
+                case when v_d > 0 then 'stock' else 'ext' end, new.id, auth.uid());
+      elsif new.picked_up then                            -- в машине
+        v_tech := coalesce(new.picked_up_by, new.technician_id);
+        insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+        values ('undo', new.equipment_type_id, abs(v_d),
+                case when v_d > 0 then 'site' else 'car' end,
+                case when v_d > 0 then 'car' else 'site' end, v_tech, new.id, auth.uid());
+      else                                                -- стоит на объекте
+        if v_d > 0 then
+          perform public.equip_place(new.equipment_type_id, v_d, new.technician_id, new.id);
+        else
+          insert into public.equip_moves (kind, equipment_type_id, qty, from_loc, to_loc, tech_id, placement_id, actor)
+          values ('undo', new.equipment_type_id, -v_d, 'site', 'car', new.technician_id, new.id, auth.uid());
+        end if;
+      end if;
+    end if;
+  end if;
+
+  return new;
+end $$;
+
+create or replace function public.equip_pl_arch_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  if new.is_test then return new; end if;                          -- v1.09.27
+  if old.archived_at is null and new.archived_at is not null and not coalesce(new.picked_up, false) then
+    delete from public.equip_moves where placement_id = new.id;
+  elsif old.archived_at is not null and new.archived_at is null and not coalesce(new.picked_up, false) and new.ext_of is null then
+    perform public.equip_place(new.equipment_type_id, greatest(1, coalesce(new.qty, 1)), new.technician_id, new.id);
+  end if;
+  return new;
+end $$;
+
+-- =====================================================================
+-- dft_exec — одна операция над ТЕСТОВЫМ документом от имени указанного человека. Только для service_role.
+-- =====================================================================
+create or replace function public.dft_exec(p_caller uuid, p_actor uuid, p_op text, p_args jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_role text; v_crole text; v_id uuid; v_job public.jobs%rowtype; v_pl public.placements%rowtype; v_res jsonb; v_n int := 0;
+  v_run text := left(coalesce(p_args->>'run', ''), 60); v_fn text; a jsonb := coalesce(p_args->'args', '{}'::jsonb);
+  v_patch jsonb := coalesce(p_args->'patch', '{}'::jsonb); v_row jsonb := coalesce(p_args->'row', '{}'::jsonb);
+begin
+  select role into v_crole from public.profiles where id = p_caller and not blocked;
+  if v_crole is null then raise exception 'DFT_NO_CALLER'; end if;
+
+  -- уборка работает и при выключенном режиме: остатки должны убираться всегда. Своё — любой, всё — только админ.
+  if p_op = 'cleanup' then
+    perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+    perform set_config('techlog.test_owner', '00000000-0000-0000-0000-000000000000', true);
+    for v_id in select id from public.jobs where is_test
+                  and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+                  and (v_run = '' or test_run = v_run)
+    loop
+      delete from public.doc_locks where doc_id = v_id;
+      delete from public.doc_requests where doc_id = v_id;
+      delete from public.notices where url like '%doc=job:' || v_id::text || '%';
+      delete from public.placements where job_id = v_id;
+      delete from public.jobs where id = v_id;
+      v_n := v_n + 1;
+    end loop;
+    delete from public.proposals where is_test
+       and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+       and (v_run = '' or test_run = v_run);
+    perform set_config('techlog.test_owner', '', true);
+    return jsonb_build_object('ok', true, 'deleted', v_n);
+  end if;
+
+  if not public.dft_enabled() then raise exception 'DFT_OFF'; end if;
+  select role into v_role from public.profiles where id = p_actor and not blocked;
+  if v_role is null then raise exception 'DFT_NO_ACTOR'; end if;
+
+  -- с этого места все сторожа видят p_actor как вошедшего пользователя
+  perform set_config('request.jwt.claim.sub', p_actor::text, true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', p_actor::text, 'role', 'authenticated')::text, true);
+  perform set_config('techlog.dft', '1', true);
+
+  if p_op = 'job_create' then
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_ins
+    insert into public.jobs (id, date, counterparty_id, complex_id, unit_number, work_type_id, technician_id, technician_name, helper_ids,
+                             shared_with_helpers, status, note, note_en, form_data, total, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), coalesce((v_row->>'date')::date, current_date), (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid,
+            coalesce(v_row->>'unit_number', 'DFTEST'), (v_row->>'work_type_id')::uuid, (v_row->>'technician_id')::uuid, coalesce(v_row->>'technician_name', ''),
+            coalesce(v_row->'helper_ids', '[]'::jsonb), coalesce((v_row->>'shared_with_helpers')::boolean, false), coalesce(v_row->>'status', 'draft'),
+            coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), coalesce(v_row->'form_data', '{}'::jsonb), coalesce((v_row->>'total')::numeric, 0),
+            true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_id;
+
+  elsif p_op in ('job_update', 'job_get') then
+    select * into v_job from public.jobs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;                       -- настоящий документ функция не трогает никогда
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if p_op = 'job_update' then
+      if not (v_job.technician_id = p_actor or v_role in ('admin','manager') or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_upd
+      update public.jobs j set (date, unit_number, complex_id, counterparty_id, work_type_id, technician_id, technician_name, helper_ids, shared_with_helpers,
+                               priority, sort_order, status, note, note_en, form_data, total, approved_total, approved_by, approved_at, return_note,
+                               archived_at, archived_by, arch_note, proposal_id, has_proposal, rev, updated_dev)
+        = (select r.date, r.unit_number, r.complex_id, r.counterparty_id, r.work_type_id, r.technician_id, r.technician_name, r.helper_ids, r.shared_with_helpers,
+                  r.priority, r.sort_order, r.status, r.note, r.note_en, r.form_data, r.total, r.approved_total, r.approved_by, r.approved_at, r.return_note,
+                  r.archived_at, r.archived_by, r.arch_note, r.proposal_id, r.has_proposal, r.rev, r.updated_dev
+             from jsonb_populate_record(j, v_patch) r)
+       where j.id = v_job.id;
+    end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_job.id;
+
+  elsif p_op = 'pl_upsert' then
+    select * into v_job from public.jobs where id = (v_row->>'job_id')::uuid;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;
+    select * into v_pl from public.placements where id = (v_row->>'id')::uuid;
+    if found then
+      update public.placements p set (qty, days, due_date, picked_up, picked_up_at, picked_up_by, returned_at, returned_by, superseded, superseded_at,
+                                      archived_at, archived_by, arch_note, note, note_en, technician_id)
+        = (select r.qty, r.days, r.due_date, r.picked_up, r.picked_up_at, r.picked_up_by, r.returned_at, r.returned_by, r.superseded, r.superseded_at,
+                  r.archived_at, r.archived_by, r.arch_note, r.note, r.note_en, r.technician_id from jsonb_populate_record(p, v_row) r)
+       where p.id = v_pl.id;
+    else
+      insert into public.placements (id, job_id, equipment_type_id, qty, days, placed_date, due_date, technician_id, complex_id, counterparty_id, unit_number, ext_of, note, note_en, no)
+      values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), v_job.id, (v_row->>'equipment_type_id')::uuid, coalesce((v_row->>'qty')::int, 1), coalesce((v_row->>'days')::int, 1),
+              coalesce((v_row->>'placed_date')::date, current_date), coalesce((v_row->>'due_date')::date, current_date + 1), (v_row->>'technician_id')::uuid,
+              coalesce((v_row->>'complex_id')::uuid, v_job.complex_id), coalesce((v_row->>'counterparty_id')::uuid, v_job.counterparty_id), coalesce(v_row->>'unit_number', v_job.unit_number),
+              (v_row->>'ext_of')::uuid, coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), 90000000 + nextval('public.jobs_test_no_seq'))   -- номер тестового пикапа — тоже из своего диапазона
+      returning id into v_id;
+    end if;
+    select to_jsonb(p) into v_res from public.placements p where p.id = coalesce(v_pl.id, v_id);
+
+  elsif p_op = 'prop_create' then
+    if v_role not in ('admin','manager') then raise exception 'RLS_DENIED'; end if;                  -- как политика prop_ins
+    insert into public.proposals (id, no, date, counterparty_id, complex_id, unit_number, note, items, total, status, created_by, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), 90000000 + nextval('public.jobs_test_no_seq'), coalesce((v_row->>'date')::date, current_date),
+            (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid, coalesce(v_row->>'unit_number', 'DFTEST'), coalesce(v_row->>'note', ''),
+            coalesce(v_row->'items', '[]'::jsonb), coalesce((v_row->>'total')::numeric, 0), coalesce(v_row->>'status', 'draft'), p_actor, true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(x) into v_res from public.proposals x where x.id = v_id;
+
+  elsif p_op = 'rpc' then
+    v_fn := p_args->>'fn';
+    -- цель любой функции — тестовый документ этого прогона
+    v_id := coalesce((a->>'p_job')::uuid, case when v_fn = 'doc_request_decide' then (select doc_id from public.doc_requests where id = (a->>'p_id')::uuid)
+                                               when v_fn in ('doc_lock','doc_unlock') then (a->>'p_id')::uuid end);
+    select * into v_job from public.jobs where id = v_id;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if v_fn = 'approve_job' then perform public.approve_job(v_id, (a->>'p_total')::numeric); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_request_edit' then v_res := to_jsonb(public.doc_request_edit(v_id, a->>'p_reason'));
+    elsif v_fn = 'doc_request_decide' then perform public.doc_request_decide((a->>'p_id')::uuid, (a->>'p_grant')::boolean, a->>'p_answer'); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_lock' then v_res := public.doc_lock('job', v_id, coalesce((a->>'p_force')::boolean, false));
+    elsif v_fn = 'doc_unlock' then perform public.doc_unlock('job', v_id); v_res := 'null'::jsonb;
+    elsif v_fn = 'job_fix_no' then v_res := to_jsonb(public.job_fix_no(v_id, a->>'p_text'));
+    elsif v_fn = 'link_job_proposal' then
+      if (a->>'p_prop') is not null and not exists (select 1 from public.proposals where id = (a->>'p_prop')::uuid and is_test) then raise exception 'DFT_NOT_TEST_DOC'; end if;
+      perform public.link_job_proposal(v_id, (a->>'p_prop')::uuid); v_res := 'null'::jsonb;
+    else raise exception 'DFT_BAD_FN';
+    end if;
+    v_res := jsonb_build_object('result', v_res, 'job', (select to_jsonb(j) from public.jobs j where j.id = v_id));
+  else
+    raise exception 'DFT_BAD_OP';
+  end if;
+
+  perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+  perform set_config('techlog.dft', '', true); perform set_config('techlog.test_owner', '', true);
+  return jsonb_build_object('ok', true, 'data', v_res);
+end $$;
+revoke all on function public.dft_exec(uuid, uuid, text, jsonb) from public, anon, authenticated;
+grant execute on function public.dft_exec(uuid, uuid, text, jsonb) to service_role;
+
+-- что видит приложение: включён ли режим, до какого времени, сколько осталось тестовых документов
+create or replace function public.dft_status()
+returns jsonb language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'on', public.dft_enabled(),
+    'until', (select dft_until from public.org_settings where id = 'org'),
+    'by', (select p.display_name from public.org_settings o join public.profiles p on p.id = o.dft_by where o.id = 'org'),
+    'mine', (select count(*) from public.jobs where is_test and test_owner = auth.uid()),
+    'all', case when public.my_role() = 'admin' then (select count(*) from public.jobs where is_test) end)
+$$;
+revoke all on function public.dft_status() from public, anon;
+grant execute on function public.dft_status() to authenticated;
+
+update public.org_settings set docflow_v = 3 where id = 'org' and docflow_v < 3;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='jobs' and column_name='is_test') then miss := miss || ' jobs.is_test'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='placements' and column_name='is_test') then miss := miss || ' placements.is_test'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='dft_until') then miss := miss || ' org_settings.dft_until'; end if;
+  if to_regclass('public.jobs_test_no_seq') is null then miss := miss || ' jobs_test_no_seq'; end if;
+  if to_regprocedure('public.dft_exec(uuid,uuid,text,jsonb)') is null then miss := miss || ' dft_exec()'; end if;
+  if to_regprocedure('public.admin_set_dft(boolean,int)') is null then miss := miss || ' admin_set_dft()'; end if;
+  if has_function_privilege('authenticated', 'public.dft_exec(uuid,uuid,text,jsonb)', 'execute') then miss := miss || ' dft_exec(ДОСТУПНА КЛИЕНТУ!)'; end if;
+  if position('new.is_test := old.is_test' in pg_get_functiondef('public.jobs_guard()'::regprocedure)) = 0 then miss := miss || ' jobs_guard(is_test)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.27 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.27 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_28 (тест документооборота — кнопками) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.28 · ТЕСТ ДОКУМЕНТООБОРОТА ИДЁТ КНОПКАМИ
+--   Всё, что роли доступно в интерфейсе, тест теперь делает кнопками самого приложения. Для этого серверу нужно три вещи:
+--   · job_adopt — документ, созданный кнопкой «Добавить задание», становится тестовым (условия — только свой свежий черновик DFTEST);
+--   · номер пикапа выдаётся ПОСЛЕ вставки (как у инвойса): тестовые пикапы, созданные кнопками приложения, берут номер
+--     из тестового диапазона и настоящую нумерацию пикапов не тратят;
+--   · решение по заявке на продление аренды (decide_ext_request) — в закрытом списке функции тестирования.
+-- =====================================================================
+
+-- номер пикапа: вместо identity — свой счётчик и выдача ПОСЛЕ вставки (BEFORE INSERT срабатывает при каждом upsert)
+do $$
+declare v_next bigint;
+begin
+  if exists (select 1 from information_schema.columns
+              where table_schema = 'public' and table_name = 'placements' and column_name = 'no' and is_identity = 'YES') then
+    alter table public.placements alter column no drop identity;
+  end if;
+  alter table public.placements alter column no drop not null;
+  alter table public.placements alter column no drop default;
+  if to_regclass('public.placements_doc_no_seq') is null then
+    select coalesce(max(no) filter (where no < 90000000), 0) + 1 into v_next from public.placements;
+    execute format('create sequence public.placements_doc_no_seq start with %s', v_next);
+  end if;
+end $$;
+
+create or replace function public.placements_after_ins()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_no bigint;
+begin
+  if new.no is not null then return new; end if;                  -- номер задан явно: восстановление из бэкапа, функция тестирования
+  if new.is_test then v_no := 90000000 + nextval('public.jobs_test_no_seq');
+  else loop v_no := nextval('public.placements_doc_no_seq'); exit when not exists (select 1 from public.placements where no = v_no); end loop; end if;
+  update public.placements set no = v_no where id = new.id;
+  return new;
+end $$;
+drop trigger if exists placements_after_ins_tg on public.placements;
+create trigger placements_after_ins_tg after insert on public.placements
+  for each row execute function public.placements_after_ins();
+
+-- номер, выданный базой, клиент не затирает (приложение шлёт строку целиком, а номера в ней может ещё не быть)
+create or replace function public.placements_test_flag()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'INSERT' then new.is_test := coalesce((select j.is_test from public.jobs j where j.id = new.job_id), false);
+  else new.is_test := old.is_test; if new.no is null then new.no := old.no; end if; end if;
+  return new;
+end $$;
+
+create or replace function public.dft_exec(p_caller uuid, p_actor uuid, p_op text, p_args jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_role text; v_crole text; v_id uuid; v_job public.jobs%rowtype; v_pl public.placements%rowtype; v_res jsonb; v_n int := 0;
+  v_run text := left(coalesce(p_args->>'run', ''), 60); v_fn text; a jsonb := coalesce(p_args->'args', '{}'::jsonb);
+  v_patch jsonb := coalesce(p_args->'patch', '{}'::jsonb); v_row jsonb := coalesce(p_args->'row', '{}'::jsonb);
+begin
+  select role into v_crole from public.profiles where id = p_caller and not blocked;
+  if v_crole is null then raise exception 'DFT_NO_CALLER'; end if;
+
+  -- уборка работает и при выключенном режиме: остатки должны убираться всегда. Своё — любой, всё — только админ.
+  if p_op = 'cleanup' then
+    perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+    perform set_config('techlog.test_owner', '00000000-0000-0000-0000-000000000000', true);
+    for v_id in select id from public.jobs where is_test
+                  and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+                  and (v_run = '' or test_run = v_run)
+    loop
+      delete from public.doc_locks where doc_id = v_id;
+      delete from public.doc_requests where doc_id = v_id;
+      delete from public.ext_requests where job_id = v_id;
+      delete from public.notices where url like '%doc=job:' || v_id::text || '%';
+      delete from public.placements where job_id = v_id;
+      delete from public.jobs where id = v_id;
+      v_n := v_n + 1;
+    end loop;
+    delete from public.proposals where is_test
+       and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+       and (v_run = '' or test_run = v_run);
+    perform set_config('techlog.test_owner', '', true);
+    return jsonb_build_object('ok', true, 'deleted', v_n);
+  end if;
+
+  if not public.dft_enabled() then raise exception 'DFT_OFF'; end if;
+  select role into v_role from public.profiles where id = p_actor and not blocked;
+  if v_role is null then raise exception 'DFT_NO_ACTOR'; end if;
+
+  -- с этого места все сторожа видят p_actor как вошедшего пользователя
+  perform set_config('request.jwt.claim.sub', p_actor::text, true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', p_actor::text, 'role', 'authenticated')::text, true);
+  perform set_config('techlog.dft', '1', true);
+
+  if p_op = 'job_adopt' then
+    /* v1.09.28: документ, который ведущий тест только что создал КНОПКОЙ «Добавить задание», становится тестовым. Условия жёсткие,
+       чтобы пометить можно было только свой свежий черновик, который и так разрешено удалить: черновик, ни разу не отправлялся,
+       создан не раньше 10 минут назад, юнит начинается с DFTEST, без пикапов; исполнитель — сам вызывающий (менеджеру и админу —
+       ещё и «без исполнителя»). Настоящий рабочий документ под эти условия не попадает. */
+    select * into v_job from public.jobs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if v_job.is_test then
+      if v_job.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    else
+      if v_job.status <> 'draft' or v_job.numbered_at is not null or v_job.archived_at is not null
+         or v_job.created_at < now() - interval '10 minutes' or coalesce(v_job.unit_number, '') not like 'DFTEST%'
+         or exists (select 1 from public.placements where job_id = v_job.id)
+         or not (v_job.technician_id = p_caller or (v_job.technician_id is null and v_crole in ('admin','manager'))) then
+        raise exception 'DFT_ADOPT_DENIED';
+      end if;
+      perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+      perform set_config('techlog.sysupd', '1', true);
+      update public.jobs set is_test = true, test_owner = p_caller, test_run = v_run where id = v_job.id;
+      perform set_config('techlog.sysupd', '', true);
+      delete from public.push_queue where url like '%doc=job:' || v_job.id::text || '%' and sent_at is null;
+    end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_job.id;
+    perform set_config('techlog.dft', '', true);
+    return jsonb_build_object('ok', true, 'data', v_res);
+  end if;
+
+  if p_op = 'job_create' then
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_ins
+    insert into public.jobs (id, date, counterparty_id, complex_id, unit_number, work_type_id, technician_id, technician_name, helper_ids,
+                             shared_with_helpers, status, note, note_en, form_data, total, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), coalesce((v_row->>'date')::date, current_date), (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid,
+            coalesce(v_row->>'unit_number', 'DFTEST'), (v_row->>'work_type_id')::uuid, (v_row->>'technician_id')::uuid, coalesce(v_row->>'technician_name', ''),
+            coalesce(v_row->'helper_ids', '[]'::jsonb), coalesce((v_row->>'shared_with_helpers')::boolean, false), coalesce(v_row->>'status', 'draft'),
+            coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), coalesce(v_row->'form_data', '{}'::jsonb), coalesce((v_row->>'total')::numeric, 0),
+            true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_id;
+
+  elsif p_op in ('job_update', 'job_get') then
+    select * into v_job from public.jobs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;                       -- настоящий документ функция не трогает никогда
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if p_op = 'job_update' then
+      if not (v_job.technician_id = p_actor or v_role in ('admin','manager') or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_upd
+      update public.jobs j set (date, unit_number, complex_id, counterparty_id, work_type_id, technician_id, technician_name, helper_ids, shared_with_helpers,
+                               priority, sort_order, status, note, note_en, form_data, total, approved_total, approved_by, approved_at, return_note,
+                               archived_at, archived_by, arch_note, proposal_id, has_proposal, rev, updated_dev)
+        = (select r.date, r.unit_number, r.complex_id, r.counterparty_id, r.work_type_id, r.technician_id, r.technician_name, r.helper_ids, r.shared_with_helpers,
+                  r.priority, r.sort_order, r.status, r.note, r.note_en, r.form_data, r.total, r.approved_total, r.approved_by, r.approved_at, r.return_note,
+                  r.archived_at, r.archived_by, r.arch_note, r.proposal_id, r.has_proposal, r.rev, r.updated_dev
+             from jsonb_populate_record(j, v_patch) r)
+       where j.id = v_job.id;
+    end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_job.id;
+
+  elsif p_op = 'pl_upsert' then
+    select * into v_job from public.jobs where id = (v_row->>'job_id')::uuid;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;
+    select * into v_pl from public.placements where id = (v_row->>'id')::uuid;
+    if found then
+      update public.placements p set (qty, days, due_date, picked_up, picked_up_at, picked_up_by, returned_at, returned_by, superseded, superseded_at,
+                                      archived_at, archived_by, arch_note, note, note_en, technician_id)
+        = (select r.qty, r.days, r.due_date, r.picked_up, r.picked_up_at, r.picked_up_by, r.returned_at, r.returned_by, r.superseded, r.superseded_at,
+                  r.archived_at, r.archived_by, r.arch_note, r.note, r.note_en, r.technician_id from jsonb_populate_record(p, v_row) r)
+       where p.id = v_pl.id;
+    else
+      insert into public.placements (id, job_id, equipment_type_id, qty, days, placed_date, due_date, technician_id, complex_id, counterparty_id, unit_number, ext_of, note, note_en, no)
+      values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), v_job.id, (v_row->>'equipment_type_id')::uuid, coalesce((v_row->>'qty')::int, 1), coalesce((v_row->>'days')::int, 1),
+              coalesce((v_row->>'placed_date')::date, current_date), coalesce((v_row->>'due_date')::date, current_date + 1), (v_row->>'technician_id')::uuid,
+              coalesce((v_row->>'complex_id')::uuid, v_job.complex_id), coalesce((v_row->>'counterparty_id')::uuid, v_job.counterparty_id), coalesce(v_row->>'unit_number', v_job.unit_number),
+              (v_row->>'ext_of')::uuid, coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), 90000000 + nextval('public.jobs_test_no_seq'))   -- номер тестового пикапа — тоже из своего диапазона
+      returning id into v_id;
+    end if;
+    select to_jsonb(p) into v_res from public.placements p where p.id = coalesce(v_pl.id, v_id);
+
+  elsif p_op = 'prop_create' then
+    if v_role not in ('admin','manager') then raise exception 'RLS_DENIED'; end if;                  -- как политика prop_ins
+    insert into public.proposals (id, no, date, counterparty_id, complex_id, unit_number, note, items, total, status, created_by, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), 90000000 + nextval('public.jobs_test_no_seq'), coalesce((v_row->>'date')::date, current_date),
+            (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid, coalesce(v_row->>'unit_number', 'DFTEST'), coalesce(v_row->>'note', ''),
+            coalesce(v_row->'items', '[]'::jsonb), coalesce((v_row->>'total')::numeric, 0), coalesce(v_row->>'status', 'draft'), p_actor, true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(x) into v_res from public.proposals x where x.id = v_id;
+
+  elsif p_op = 'rpc' then
+    v_fn := p_args->>'fn';
+    -- цель любой функции — тестовый документ этого прогона
+    v_id := coalesce((a->>'p_job')::uuid, case when v_fn = 'doc_request_decide' then (select doc_id from public.doc_requests where id = (a->>'p_id')::uuid)
+                                               when v_fn = 'decide_ext_request' then (select job_id from public.ext_requests where id = (a->>'p_id')::uuid)
+                                               when v_fn in ('doc_lock','doc_unlock') then (a->>'p_id')::uuid end);
+    select * into v_job from public.jobs where id = v_id;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if v_fn = 'approve_job' then perform public.approve_job(v_id, (a->>'p_total')::numeric); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_request_edit' then v_res := to_jsonb(public.doc_request_edit(v_id, a->>'p_reason'));
+    elsif v_fn = 'doc_request_decide' then perform public.doc_request_decide((a->>'p_id')::uuid, (a->>'p_grant')::boolean, a->>'p_answer'); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_lock' then v_res := public.doc_lock('job', v_id, coalesce((a->>'p_force')::boolean, false));
+    elsif v_fn = 'doc_unlock' then perform public.doc_unlock('job', v_id); v_res := 'null'::jsonb;
+    elsif v_fn = 'decide_ext_request' then perform public.decide_ext_request((a->>'p_id')::uuid, (a->>'p_ok')::boolean); v_res := 'null'::jsonb;
+    elsif v_fn = 'job_fix_no' then v_res := to_jsonb(public.job_fix_no(v_id, a->>'p_text'));
+    elsif v_fn = 'link_job_proposal' then
+      if (a->>'p_prop') is not null and not exists (select 1 from public.proposals where id = (a->>'p_prop')::uuid and is_test) then raise exception 'DFT_NOT_TEST_DOC'; end if;
+      perform public.link_job_proposal(v_id, (a->>'p_prop')::uuid); v_res := 'null'::jsonb;
+    else raise exception 'DFT_BAD_FN';
+    end if;
+    v_res := jsonb_build_object('result', v_res, 'job', (select to_jsonb(j) from public.jobs j where j.id = v_id));
+  else
+    raise exception 'DFT_BAD_OP';
+  end if;
+
+  perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+  perform set_config('techlog.dft', '', true); perform set_config('techlog.test_owner', '', true);
+  return jsonb_build_object('ok', true, 'data', v_res);
+end $$;
+revoke all on function public.dft_exec(uuid, uuid, text, jsonb) from public, anon, authenticated;
+grant execute on function public.dft_exec(uuid, uuid, text, jsonb) to service_role;
+
+update public.org_settings set docflow_v = 4 where id = 'org' and docflow_v < 4;
+
+do $$
+declare miss text := '';
+begin
+  if to_regclass('public.placements_doc_no_seq') is null then miss := miss || ' placements_doc_no_seq'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'placements_after_ins_tg') then miss := miss || ' placements_after_ins_tg'; end if;
+  if position('job_adopt' in pg_get_functiondef('public.dft_exec(uuid,uuid,text,jsonb)'::regprocedure)) = 0 then miss := miss || ' dft_exec(job_adopt)'; end if;
+  if has_function_privilege('authenticated', 'public.dft_exec(uuid,uuid,text,jsonb)', 'execute') then miss := miss || ' dft_exec(ДОСТУПНА КЛИЕНТУ!)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.28 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.28 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_29 (тест документооборота: все сценарии и журнал) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.29 · «Апрув не совпадает с расчётом» без догадок по времени: сервер запоминает ревизию документа на момент апрува
+--   (jobs.approved_rev). Документ правили после апрува ⇔ rev > approved_rev. Раньше раздел «Документооборота» судил по разнице
+--   времени апрува и правки (> 60 с) — часы телефона согласующего могли давать ложные срабатывания, а быстрая правка не замечалась.
+-- =====================================================================
+alter table public.jobs add column if not exists approved_rev int;
+update public.jobs set approved_rev = rev where status = 'approved' and approved_rev is null;
+
+create or replace function public.jobs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_uid  uuid := auth.uid();
+  v_role text := coalesce(public.my_role(), 'tech');
+  v_appr boolean := public.can_approve_docs();
+  v_sys  boolean := auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1'
+                    or coalesce(current_setting('techlog.sysupd', true), '') = '1';
+  v_content boolean; v_no bigint; v_self boolean; v_link boolean;
+begin
+  new.updated_at := now();
+  if v_sys then return new; end if;
+  select coalesce(self_approve, false), coalesce(mgr_link_locked, false) into v_self, v_link from public.org_settings where id = 'org';
+
+  -- поля, которыми клиент не распоряжается
+  new.no := old.no; new.numbered_at := old.numbered_at; new.approved_crew := old.approved_crew; new.approved_rev := old.approved_rev;
+  new.is_test := old.is_test; new.test_owner := old.test_owner; new.test_run := old.test_run;   -- v1.09.27: пометку «тестовый» ставит только функция тестирования
+  if v_role = 'admin' then new.doc_no := coalesce(new.doc_no, old.doc_no); else new.doc_no := old.doc_no; end if;
+  if not v_appr then
+    new.edit_open_until := old.edit_open_until;
+    new.approved_total := old.approved_total; new.approved_by := old.approved_by; new.approved_at := old.approved_at;
+    if not (new.status = 'draft' and old.status = 'done') then
+      new.return_note := old.return_note; new.returned_by := old.returned_by;
+    end if;
+  end if;
+
+  -- привязка пропозала — связь документов, а не содержимое инвойса
+  if new.proposal_id is distinct from old.proposal_id and old.status <> 'draft'
+     and not (v_role = 'admin' or v_appr or (v_role = 'manager' and coalesce(v_link, false))) then
+    raise exception 'LINK_LOCKED';
+  end if;
+
+  v_content := new.form_data is distinct from old.form_data
+       or coalesce(new.note, '') is distinct from coalesce(old.note, '')
+       or coalesce(new.note_en, '') is distinct from coalesce(old.note_en, '')
+       or new.date is distinct from old.date
+       or coalesce(new.unit_number, '') is distinct from coalesce(old.unit_number, '')
+       or new.complex_id is distinct from old.complex_id
+       or new.counterparty_id is distinct from old.counterparty_id
+       or new.work_type_id is distinct from old.work_type_id
+       or new.technician_id is distinct from old.technician_id
+       or new.helper_ids is distinct from old.helper_ids
+       or new.shared_with_helpers is distinct from old.shared_with_helpers
+       or new.total is distinct from old.total;
+
+  -- смена основного исполнителя: админ всегда, менеджер — пока черновик
+  if new.technician_id is distinct from old.technician_id
+     and not (v_role = 'admin' or (v_role = 'manager' and old.status = 'draft')) then
+    raise exception 'FORBIDDEN_FIELD';
+  end if;
+  -- состав бригады и «Общий доступ» помощник не меняет
+  if (new.helper_ids is distinct from old.helper_ids or new.shared_with_helpers is distinct from old.shared_with_helpers)
+     and not (v_role in ('admin','manager') or old.technician_id = v_uid) then
+    raise exception 'FORBIDDEN_CREW';
+  end if;
+  -- техника — это пикапы и склад исполнителя: менеджер в чужом документе её только видит
+  if v_role = 'manager' and old.technician_id is distinct from v_uid
+     and public.job_equip_norm(new.form_data) is distinct from public.job_equip_norm(old.form_data) then
+    raise exception 'FORBIDDEN_EQUIPMENT';
+  end if;
+  -- в архив: основной — только документ, который ещё ни разу не отправляли на согласование (иначе обход: отозвал → удалил), дальше — админ.
+  -- Признак — numbered_at, а не no: у черновиков, созданных до 1.09.25, номер есть с рождения, и удалять их по-прежнему можно.
+  if new.archived_at is distinct from old.archived_at and v_role <> 'admin'
+     and (old.numbered_at is not null or old.status <> 'draft') then
+    raise exception 'DOC_LOCKED_DELETE';
+  end if;
+
+  if new.status = 'approved' and old.status <> 'approved' then
+    if not v_appr then raise exception 'FORBIDDEN_APPROVE'; end if;
+    if v_role <> 'admin' and old.technician_id = v_uid and not coalesce(v_self, false) then
+      raise exception 'SELF_APPROVE_OFF';
+    end if;
+  end if;
+
+  if not v_appr then
+    if old.status = 'approved' and (v_content or new.status <> 'approved') then
+      raise exception 'DOC_LOCKED_APPROVED';
+    end if;
+    if old.status = 'done' then
+      if new.status = 'draft' then        -- «отозвать»: тот, кто правит черновик; правки в том же сохранении допустимы
+        if not (old.technician_id = v_uid or v_role = 'manager' or public.is_shared_job_helper(old.id)) then raise exception 'DOC_LOCKED_DONE'; end if;
+      elsif v_content then
+        raise exception 'DOC_LOCKED_DONE';
+      end if;
+    end if;
+  end if;
+
+  -- на согласование — только с переводом
+  if old.status = 'draft' and new.status <> 'draft'
+     and public.job_tr_missing(new.note, new.note_en, new.form_data) > 0 then
+    raise exception 'TRANSLATION_REQUIRED';
+  end if;
+
+  -- ревизия: чужую правку (или свою же с ДРУГОГО устройства), которую автор этой записи не видел, молча не затираем
+  if v_content or new.status is distinct from old.status then
+    if new.rev is distinct from old.rev
+       and (old.updated_by is distinct from v_uid or coalesce(old.updated_dev, '') is distinct from coalesce(new.updated_dev, '')) then
+      raise exception 'STALE_DOC';
+    end if;
+    new.rev := old.rev + 1;
+    new.updated_by := v_uid;
+  else
+    new.rev := old.rev; new.updated_by := old.updated_by; new.updated_dev := old.updated_dev;
+  end if;
+
+  -- согласующий обновил апрувленную сумму у уже заапрувленного документа — апрув «переставлен» на текущую ревизию
+  if old.status = 'approved' and new.status = 'approved' and v_appr and new.approved_total is distinct from old.approved_total then new.approved_rev := new.rev; end if;
+  -- переходы статуса
+  if new.status = 'approved' and old.status <> 'approved' then
+    new.approved_by := coalesce(new.approved_by, v_uid);
+    new.approved_at := coalesce(new.approved_at, now());
+    new.approved_crew := jsonb_build_object('main', new.technician_id, 'crew', coalesce(new.helper_ids, '[]'::jsonb));
+    new.approved_rev := new.rev;                                   -- v1.09.29: ревизия на момент апрува — по ней видно, что документ правили ПОСЛЕ апрува
+    new.edit_open_until := null; new.return_note := null; new.returned_by := null;
+  elsif old.status = 'approved' and new.status <> 'approved' then
+    new.approved_total := null; new.approved_by := null; new.approved_at := null; new.approved_crew := null; new.approved_rev := null;
+  end if;
+  if new.status = 'done' and old.status = 'draft' then
+    new.return_note := null; new.returned_by := null;
+  end if;
+  if new.status = 'draft' and old.status <> 'draft' then
+    if old.technician_id is distinct from v_uid and coalesce(new.return_note, '') <> '' then new.returned_by := v_uid;
+    elsif old.technician_id = v_uid then new.return_note := null; new.returned_by := null; end if;
+  end if;
+
+  -- номер — при первом НЕ черновике
+  if new.status <> 'draft' then
+    if new.no is null then
+      if new.is_test then v_no := 90000000 + nextval('public.jobs_test_no_seq');     -- тестовые документы настоящую нумерацию не трогают
+      else loop v_no := nextval('public.jobs_doc_no_seq'); exit when not exists (select 1 from public.jobs where no = v_no); end loop; end if;
+      new.no := v_no;
+    end if;
+    if new.numbered_at is null then new.numbered_at := now(); end if;   -- «номер выдан»: документ отправляли на согласование
+  end if;
+  return new;
+end $$;
+
+update public.org_settings set docflow_v = 5 where id = 'org' and docflow_v < 5;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='jobs' and column_name='approved_rev') then miss := miss || ' jobs.approved_rev'; end if;
+  if position('approved_rev' in pg_get_functiondef('public.jobs_guard()'::regprocedure)) = 0 then miss := miss || ' jobs_guard(approved_rev)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.29 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.29 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_30 (тест документооборота: ремонт, пропозал кнопками, все ветки) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.30 · функция тестирования умеет больше: документ ремонта (rep_create / rep_update / rep_get), приём в тест пропозала и
+--   ремонта, созданных кнопками приложения (prop_adopt / rep_adopt), уборка удаляет и тестовые ремонты. Пометку «тестовый» у ремонта,
+--   как и у инвойса, ставит только функция; события тестового ремонта приходят только ведущему тест и без пушей.
+-- =====================================================================
+alter table public.repairs add column if not exists is_test    boolean not null default false;
+alter table public.repairs add column if not exists test_owner uuid;
+alter table public.repairs add column if not exists test_run   text;
+
+create or replace function public.repairs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_can boolean;
+begin
+  if coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  v_can := public.can_approve_docs();
+  if TG_OP = 'INSERT' then
+    if coalesce(current_setting('techlog.dft', true), '') <> '1' then new.is_test := false; new.test_owner := null; new.test_run := null; end if;   -- v1.09.30: пометку «тестовый» ставит только функция тестирования
+    if new.status in ('approved','declined') and not coalesce(v_can, false) then
+      new.status := 'draft';
+    end if;
+    return new;
+  end if;
+  if coalesce(current_setting('techlog.dft', true), '') <> '1' then new.is_test := old.is_test; new.test_owner := old.test_owner; new.test_run := old.test_run; end if;
+  if new.status is distinct from old.status
+     and new.status in ('approved','declined')
+     and not coalesce(v_can, false) then
+    raise exception 'FORBIDDEN_APPROVE';
+  end if;
+  return new;
+end $$;
+
+create or replace function public.repairs_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_t text; v_b text; v_url text; r record;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  perform set_config('techlog.test_owner', case when new.is_test then coalesce(new.test_owner::text, '00000000-0000-0000-0000-000000000000') else '' end, true);   -- v1.09.30
+  if old.status is distinct from 'approved' and new.status = 'approved' then
+    v_t := 'Ремонт апрувлен';
+  elsif old.status = 'approved' and new.status is distinct from 'approved' then
+    v_t := 'Апрув снят с ремонта';
+  else
+    return new;
+  end if;
+  v_b := 'REP-' || new.no || ' · Unit ' || coalesce(nullif(new.unit_number,''),'—');
+  v_url := './?doc=rep:' || new.id::text;
+  perform public.push_enqueue(new.created_by, 'approve', v_t, v_b, v_url);
+  for r in select distinct value::uuid as uid
+             from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+  loop
+    if r.uid is distinct from new.created_by then
+      perform public.push_enqueue(r.uid, 'approve', v_t, v_b, v_url);
+    end if;
+  end loop;
+  return new;
+end $$;
+
+create or replace function public.dft_exec(p_caller uuid, p_actor uuid, p_op text, p_args jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_role text; v_crole text; v_id uuid; v_job public.jobs%rowtype; v_pl public.placements%rowtype; v_rep public.repairs%rowtype; v_prop public.proposals%rowtype; v_res jsonb; v_n int := 0;
+  v_run text := left(coalesce(p_args->>'run', ''), 60); v_fn text; a jsonb := coalesce(p_args->'args', '{}'::jsonb);
+  v_patch jsonb := coalesce(p_args->'patch', '{}'::jsonb); v_row jsonb := coalesce(p_args->'row', '{}'::jsonb);
+begin
+  select role into v_crole from public.profiles where id = p_caller and not blocked;
+  if v_crole is null then raise exception 'DFT_NO_CALLER'; end if;
+
+  -- уборка работает и при выключенном режиме: остатки должны убираться всегда. Своё — любой, всё — только админ.
+  if p_op = 'cleanup' then
+    perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+    perform set_config('techlog.test_owner', '00000000-0000-0000-0000-000000000000', true);
+    for v_id in select id from public.jobs where is_test
+                  and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+                  and (v_run = '' or test_run = v_run)
+    loop
+      delete from public.doc_locks where doc_id = v_id;
+      delete from public.doc_requests where doc_id = v_id;
+      delete from public.ext_requests where job_id = v_id;
+      delete from public.notices where url like '%doc=job:' || v_id::text || '%';
+      delete from public.placements where job_id = v_id;
+      delete from public.jobs where id = v_id;
+      v_n := v_n + 1;
+    end loop;
+    delete from public.repairs where is_test
+       and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+       and (v_run = '' or test_run = v_run);
+    delete from public.notices where url like '%doc=rep:%' and user_id = p_caller and body like '%DFTEST%';
+    delete from public.proposals where is_test
+       and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+       and (v_run = '' or test_run = v_run);
+    perform set_config('techlog.test_owner', '', true);
+    return jsonb_build_object('ok', true, 'deleted', v_n);
+  end if;
+
+  if not public.dft_enabled() then raise exception 'DFT_OFF'; end if;
+  select role into v_role from public.profiles where id = p_actor and not blocked;
+  if v_role is null then raise exception 'DFT_NO_ACTOR'; end if;
+
+  -- с этого места все сторожа видят p_actor как вошедшего пользователя
+  perform set_config('request.jwt.claim.sub', p_actor::text, true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', p_actor::text, 'role', 'authenticated')::text, true);
+  perform set_config('techlog.dft', '1', true);
+
+  if p_op in ('prop_adopt', 'rep_adopt') then
+    /* v1.09.30: пропозал или ремонт, созданный КНОПКАМИ приложения, принимается в тест — условия те же, что у задачи:
+       свой (created_by = вызывающий), черновик, создан не раньше 10 минут назад, юнит начинается с DFTEST */
+    if p_op = 'prop_adopt' then
+      select * into v_prop from public.proposals where id = (p_args->>'id')::uuid;
+      if not found then raise exception 'NOT_FOUND'; end if;
+      if not v_prop.is_test then
+        if v_prop.status <> 'draft' or v_prop.created_by is distinct from p_caller or v_prop.created_at < now() - interval '10 minutes'
+           or coalesce(v_prop.unit_number, '') not like 'DFTEST%' or v_prop.archived_at is not null then raise exception 'DFT_ADOPT_DENIED'; end if;
+        update public.proposals set is_test = true, test_owner = p_caller, test_run = v_run where id = v_prop.id;
+      elsif v_prop.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+      select to_jsonb(x) into v_res from public.proposals x where x.id = v_prop.id;
+    else
+      select * into v_rep from public.repairs where id = (p_args->>'id')::uuid;
+      if not found then raise exception 'NOT_FOUND'; end if;
+      if not v_rep.is_test then
+        if v_rep.status <> 'draft' or v_rep.created_by is distinct from p_caller or v_rep.created_at < now() - interval '10 minutes'
+           or coalesce(v_rep.unit_number, '') not like 'DFTEST%' or v_rep.archived_at is not null
+           or (v_rep.job_id is not null and not exists (select 1 from public.jobs where id = v_rep.job_id and is_test)) then raise exception 'DFT_ADOPT_DENIED'; end if;
+        perform set_config('techlog.dft', '1', true);
+        update public.repairs set is_test = true, test_owner = p_caller, test_run = v_run where id = v_rep.id;
+        perform set_config('techlog.dft', '', true);
+      elsif v_rep.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+      select to_jsonb(x) into v_res from public.repairs x where x.id = v_rep.id;
+    end if;
+    return jsonb_build_object('ok', true, 'data', v_res);
+  end if;
+
+  if p_op = 'job_adopt' then
+    /* v1.09.28: документ, который ведущий тест только что создал КНОПКОЙ «Добавить задание», становится тестовым. Условия жёсткие,
+       чтобы пометить можно было только свой свежий черновик, который и так разрешено удалить: черновик, ни разу не отправлялся,
+       создан не раньше 10 минут назад, юнит начинается с DFTEST, без пикапов; исполнитель — сам вызывающий (менеджеру и админу —
+       ещё и «без исполнителя»). Настоящий рабочий документ под эти условия не попадает. */
+    select * into v_job from public.jobs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if v_job.is_test then
+      if v_job.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    else
+      if v_job.status <> 'draft' or v_job.numbered_at is not null or v_job.archived_at is not null
+         or v_job.created_at < now() - interval '10 minutes' or coalesce(v_job.unit_number, '') not like 'DFTEST%'
+         or exists (select 1 from public.placements where job_id = v_job.id)
+         or not (v_job.technician_id = p_caller or (v_job.technician_id is null and v_crole in ('admin','manager'))) then
+        raise exception 'DFT_ADOPT_DENIED';
+      end if;
+      perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+      perform set_config('techlog.sysupd', '1', true);
+      update public.jobs set is_test = true, test_owner = p_caller, test_run = v_run where id = v_job.id;
+      perform set_config('techlog.sysupd', '', true);
+      delete from public.push_queue where url like '%doc=job:' || v_job.id::text || '%' and sent_at is null;
+    end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_job.id;
+    perform set_config('techlog.dft', '', true);
+    return jsonb_build_object('ok', true, 'data', v_res);
+  end if;
+
+  if p_op = 'job_create' then
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_ins
+    insert into public.jobs (id, date, counterparty_id, complex_id, unit_number, work_type_id, technician_id, technician_name, helper_ids,
+                             shared_with_helpers, status, note, note_en, form_data, total, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), coalesce((v_row->>'date')::date, current_date), (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid,
+            coalesce(v_row->>'unit_number', 'DFTEST'), (v_row->>'work_type_id')::uuid, (v_row->>'technician_id')::uuid, coalesce(v_row->>'technician_name', ''),
+            coalesce(v_row->'helper_ids', '[]'::jsonb), coalesce((v_row->>'shared_with_helpers')::boolean, false), coalesce(v_row->>'status', 'draft'),
+            coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), coalesce(v_row->'form_data', '{}'::jsonb), coalesce((v_row->>'total')::numeric, 0),
+            true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_id;
+
+  elsif p_op in ('job_update', 'job_get') then
+    select * into v_job from public.jobs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;                       -- настоящий документ функция не трогает никогда
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if p_op = 'job_update' then
+      if not (v_job.technician_id = p_actor or v_role in ('admin','manager') or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_upd
+      update public.jobs j set (date, unit_number, complex_id, counterparty_id, work_type_id, technician_id, technician_name, helper_ids, shared_with_helpers,
+                               priority, sort_order, status, note, note_en, form_data, total, approved_total, approved_by, approved_at, return_note,
+                               archived_at, archived_by, arch_note, proposal_id, has_proposal, rev, updated_dev)
+        = (select r.date, r.unit_number, r.complex_id, r.counterparty_id, r.work_type_id, r.technician_id, r.technician_name, r.helper_ids, r.shared_with_helpers,
+                  r.priority, r.sort_order, r.status, r.note, r.note_en, r.form_data, r.total, r.approved_total, r.approved_by, r.approved_at, r.return_note,
+                  r.archived_at, r.archived_by, r.arch_note, r.proposal_id, r.has_proposal, r.rev, r.updated_dev
+             from jsonb_populate_record(j, v_patch) r)
+       where j.id = v_job.id;
+    end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_job.id;
+
+  elsif p_op = 'pl_upsert' then
+    select * into v_job from public.jobs where id = (v_row->>'job_id')::uuid;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;
+    select * into v_pl from public.placements where id = (v_row->>'id')::uuid;
+    if found then
+      update public.placements p set (qty, days, due_date, picked_up, picked_up_at, picked_up_by, returned_at, returned_by, superseded, superseded_at,
+                                      archived_at, archived_by, arch_note, note, note_en, technician_id)
+        = (select r.qty, r.days, r.due_date, r.picked_up, r.picked_up_at, r.picked_up_by, r.returned_at, r.returned_by, r.superseded, r.superseded_at,
+                  r.archived_at, r.archived_by, r.arch_note, r.note, r.note_en, r.technician_id from jsonb_populate_record(p, v_row) r)
+       where p.id = v_pl.id;
+    else
+      insert into public.placements (id, job_id, equipment_type_id, qty, days, placed_date, due_date, technician_id, complex_id, counterparty_id, unit_number, ext_of, note, note_en, no)
+      values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), v_job.id, (v_row->>'equipment_type_id')::uuid, coalesce((v_row->>'qty')::int, 1), coalesce((v_row->>'days')::int, 1),
+              coalesce((v_row->>'placed_date')::date, current_date), coalesce((v_row->>'due_date')::date, current_date + 1), (v_row->>'technician_id')::uuid,
+              coalesce((v_row->>'complex_id')::uuid, v_job.complex_id), coalesce((v_row->>'counterparty_id')::uuid, v_job.counterparty_id), coalesce(v_row->>'unit_number', v_job.unit_number),
+              (v_row->>'ext_of')::uuid, coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), 90000000 + nextval('public.jobs_test_no_seq'))   -- номер тестового пикапа — тоже из своего диапазона
+      returning id into v_id;
+    end if;
+    select to_jsonb(p) into v_res from public.placements p where p.id = coalesce(v_pl.id, v_id);
+
+  elsif p_op = 'prop_create' then
+    if v_role not in ('admin','manager') then raise exception 'RLS_DENIED'; end if;                  -- как политика prop_ins
+    insert into public.proposals (id, no, date, counterparty_id, complex_id, unit_number, note, items, total, status, created_by, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), 90000000 + nextval('public.jobs_test_no_seq'), coalesce((v_row->>'date')::date, current_date),
+            (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid, coalesce(v_row->>'unit_number', 'DFTEST'), coalesce(v_row->>'note', ''),
+            coalesce(v_row->'items', '[]'::jsonb), coalesce((v_row->>'total')::numeric, 0), coalesce(v_row->>'status', 'draft'), p_actor, true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(x) into v_res from public.proposals x where x.id = v_id;
+
+  elsif p_op = 'rep_create' then
+    if (v_row->>'created_by') is not null and (v_row->>'created_by')::uuid is distinct from p_actor then raise exception 'RLS_DENIED'; end if;   -- как политика rep_ins
+    if (v_row->>'job_id') is not null and not exists (select 1 from public.jobs where id = (v_row->>'job_id')::uuid and is_test) then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    insert into public.repairs (id, no, date, counterparty_id, complex_id, unit_number, job_id, helper_ids, items, materials, note, note_en, total, status, created_by, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), 90000000 + nextval('public.jobs_test_no_seq'), coalesce((v_row->>'date')::date, current_date), (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid,
+            coalesce(v_row->>'unit_number', 'DFTEST'), (v_row->>'job_id')::uuid, coalesce(v_row->'helper_ids', '[]'::jsonb), coalesce(v_row->'items', '[]'::jsonb), coalesce(v_row->'materials', '[]'::jsonb),
+            coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), coalesce((v_row->>'total')::numeric, 0), coalesce(v_row->>'status', 'draft'), p_actor, true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(x) into v_res from public.repairs x where x.id = v_id;
+
+  elsif p_op in ('rep_update', 'rep_get') then
+    select * into v_rep from public.repairs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if not v_rep.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_rep.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if p_op = 'rep_update' then
+      if not (v_role in ('admin','manager') or v_rep.created_by = p_actor) then raise exception 'RLS_DENIED'; end if;                  -- как политика rep_upd
+      update public.repairs x set (date, unit_number, items, materials, note, note_en, total, status, decline_reason, decided_by, decided_at, hist, helper_ids, job_id, archived_at, arch_note)
+        = (select r.date, r.unit_number, r.items, r.materials, r.note, r.note_en, r.total, r.status, r.decline_reason, r.decided_by, r.decided_at, r.hist, r.helper_ids, r.job_id, r.archived_at, r.arch_note
+             from jsonb_populate_record(x, v_patch) r)
+       where x.id = v_rep.id;
+    end if;
+    select to_jsonb(x) into v_res from public.repairs x where x.id = v_rep.id;
+
+  elsif p_op = 'rpc' then
+    v_fn := p_args->>'fn';
+    -- цель любой функции — тестовый документ этого прогона
+    v_id := coalesce((a->>'p_job')::uuid, case when v_fn = 'doc_request_decide' then (select doc_id from public.doc_requests where id = (a->>'p_id')::uuid)
+                                               when v_fn = 'decide_ext_request' then (select job_id from public.ext_requests where id = (a->>'p_id')::uuid)
+                                               when v_fn in ('doc_lock','doc_unlock') then (a->>'p_id')::uuid end);
+    select * into v_job from public.jobs where id = v_id;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if v_fn = 'approve_job' then perform public.approve_job(v_id, (a->>'p_total')::numeric); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_request_edit' then v_res := to_jsonb(public.doc_request_edit(v_id, a->>'p_reason'));
+    elsif v_fn = 'doc_request_decide' then perform public.doc_request_decide((a->>'p_id')::uuid, (a->>'p_grant')::boolean, a->>'p_answer'); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_lock' then v_res := public.doc_lock('job', v_id, coalesce((a->>'p_force')::boolean, false));
+    elsif v_fn = 'doc_unlock' then perform public.doc_unlock('job', v_id); v_res := 'null'::jsonb;
+    elsif v_fn = 'decide_ext_request' then perform public.decide_ext_request((a->>'p_id')::uuid, (a->>'p_ok')::boolean); v_res := 'null'::jsonb;
+    elsif v_fn = 'job_fix_no' then v_res := to_jsonb(public.job_fix_no(v_id, a->>'p_text'));
+    elsif v_fn = 'link_job_proposal' then
+      if (a->>'p_prop') is not null and not exists (select 1 from public.proposals where id = (a->>'p_prop')::uuid and is_test) then raise exception 'DFT_NOT_TEST_DOC'; end if;
+      perform public.link_job_proposal(v_id, (a->>'p_prop')::uuid); v_res := 'null'::jsonb;
+    else raise exception 'DFT_BAD_FN';
+    end if;
+    v_res := jsonb_build_object('result', v_res, 'job', (select to_jsonb(j) from public.jobs j where j.id = v_id));
+  else
+    raise exception 'DFT_BAD_OP';
+  end if;
+
+  perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+  perform set_config('techlog.dft', '', true); perform set_config('techlog.test_owner', '', true);
+  return jsonb_build_object('ok', true, 'data', v_res);
+end $$;
+revoke all on function public.dft_exec(uuid, uuid, text, jsonb) from public, anon, authenticated;
+grant execute on function public.dft_exec(uuid, uuid, text, jsonb) to service_role;
+
+update public.org_settings set docflow_v = 6 where id = 'org' and docflow_v < 6;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='repairs' and column_name='is_test') then miss := miss || ' repairs.is_test'; end if;
+  if position('rep_create' in pg_get_functiondef('public.dft_exec(uuid,uuid,text,jsonb)'::regprocedure)) = 0 then miss := miss || ' dft_exec(rep_create)'; end if;
+  if position('prop_adopt' in pg_get_functiondef('public.dft_exec(uuid,uuid,text,jsonb)'::regprocedure)) = 0 then miss := miss || ' dft_exec(prop_adopt)'; end if;
+  if has_function_privilege('authenticated', 'public.dft_exec(uuid,uuid,text,jsonb)', 'execute') then miss := miss || ' dft_exec(ДОСТУПНА КЛИЕНТУ!)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.30 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.30 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_31 (пропозал без «отправки клиенту», пуши в тесте, фото и PDF на Диск) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.31
+--   · Пропозал клиенту не отправляется: статус «Отправлен» выключен, включает админ (org_settings.prop_send_on, по умолчанию выкл.).
+--     Сервер не даёт перевести пропозал в «Отправлен», пока настройка выключена (PROP_SEND_OFF); уже отправленные остаются как есть.
+--   · Тест документооборота: события тестовых документов теперь идут и в ленту, и ПУШЕМ (раньше пуш подавлялся) — ведущему тест,
+--     а с галочкой «всем участникам» (jobs.test_wide) — всем обычным получателям. dft_pushes — что ушло в очередь пушей за прогон.
+-- =====================================================================
+alter table public.org_settings add column if not exists prop_send_on boolean not null default false;
+alter table public.jobs add column if not exists test_wide boolean not null default false;
+
+create or replace function public.proposals_send_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  if new.status = 'sent' and (tg_op = 'INSERT' or old.status is distinct from 'sent')
+     and not coalesce((select prop_send_on from public.org_settings where id = 'org'), false) then
+    raise exception 'PROP_SEND_OFF';
+  end if;
+  return new;
+end $$;
+drop trigger if exists proposals_send_guard_tg on public.proposals;
+create trigger proposals_send_guard_tg before insert or update on public.proposals
+  for each row execute function public.proposals_send_guard();
+
+create or replace function public.push_enqueue(
+  p_user uuid, p_kind text, p_title text, p_body text, p_url text default './')
+returns void language plpgsql security definer set search_path = public as $$
+declare v_prefs jsonb; v_owner text := nullif(coalesce(current_setting('techlog.test_owner', true), ''), '');
+begin
+  if p_user is null or p_user = auth.uid() then return; end if;
+  /* v1.09.31: событие ТЕСТОВОГО документа получает тот, кто ведёт тест (а с галочкой «всем участникам» — все обычные получатели).
+     Дальше всё как у настоящего события: строка в ленте «Уведомления» И пуш по личным настройкам — тест проверяет доставку целиком. */
+  if v_owner is not null and p_user::text <> v_owner and coalesce(current_setting('techlog.test_wide', true), '') <> '1' then return; end if;
+  select push_prefs into v_prefs from public.profiles where id = p_user and not blocked;
+  if not found then return; end if;                             -- нет профиля / заблокирован
+  if p_kind <> 'chat' then
+    insert into public.notices(user_id, kind, title, body, url, actor)
+    values (p_user, p_kind, p_title, coalesce(p_body, ''), coalesce(p_url, './'), auth.uid());
+  end if;
+  if coalesce((coalesce(v_prefs, '{}'::jsonb)->>p_kind)::boolean, true) = false then return; end if;
+  insert into public.push_queue(user_id, kind, title, body, url)
+  values (p_user, p_kind, p_title, coalesce(p_body,''), coalesce(p_url,'./'));
+end $$;
+
+create or replace function public.jobs_push_tg_fn()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_body text; v_url text; v_who text; r record; v_done boolean := false;
+begin
+  if current_setting('techlog.restore', true) = '1' then return new; end if;
+  perform set_config('techlog.test_owner', case when new.is_test then coalesce(new.test_owner::text, '00000000-0000-0000-0000-000000000000') else '' end, true);   -- v1.09.27
+  perform set_config('techlog.test_wide', case when new.is_test and coalesce(new.test_wide, false) then '1' else '' end, true);                                        -- v1.09.31
+  v_body := 'Unit ' || coalesce(nullif(new.unit_number,''),'—') || ' · ' || to_char(new.date, 'DD.MM');
+  v_url  := './?doc=job:' || new.id::text;
+  if tg_op = 'INSERT' then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Новая задача', v_body, v_url);
+    end if;
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас добавили в бригаду', v_body, v_url);
+      end if;
+    end loop;
+    return new;
+  end if;
+  select display_name into v_who from public.profiles where id = auth.uid();
+
+  -- основной исполнитель сменился
+  if new.technician_id is distinct from old.technician_id then
+    if new.technician_id is not null then
+      perform public.push_enqueue(new.technician_id, 'job', 'Задача передана вам', v_body, v_url);
+    end if;
+    if old.technician_id is not null and not (coalesce(new.helper_ids, '[]'::jsonb) ? old.technician_id::text) then
+      perform public.push_enqueue(old.technician_id, 'job', 'Вас сняли с задачи', v_body || ' · ' || coalesce(v_who, ''), './');
+    end if;
+    v_done := true;
+  end if;
+  -- состав бригады
+  if new.helper_ids is distinct from old.helper_ids then
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))
+              where not (coalesce(old.helper_ids, '[]'::jsonb) ? value) and value::uuid is distinct from old.technician_id
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас добавили в бригаду', v_body, v_url);
+      end if;
+    end loop;
+    for r in select value::uuid as uid from jsonb_array_elements_text(coalesce(old.helper_ids, '[]'::jsonb))
+              where not (coalesce(new.helper_ids, '[]'::jsonb) ? value)
+    loop
+      if r.uid is distinct from new.technician_id then
+        perform public.push_enqueue(r.uid, 'job', 'Вас сняли с задачи', v_body || ' · ' || coalesce(v_who, ''), './');
+      end if;
+    end loop;
+    v_done := true;
+  end if;
+
+  -- статусы
+  if old.status is distinct from 'approved' and new.status = 'approved' then
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'approve', 'Инвойс апрувлен',
+        v_body || ' · $' || round(coalesce(new.approved_total, new.total, 0)), v_url);
+    end loop;
+    return new;
+  elsif old.status = 'approved' and new.status is distinct from 'approved' then
+    for r in select distinct x.uid from (select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+    loop
+      perform public.push_enqueue(r.uid, 'reset',
+        case when new.status = 'draft' then 'Апрув снят — документ в черновике' else 'Апрув снят с инвойса' end,
+        v_body || ' · ' || coalesce(v_who, '') || coalesce(' · ' || nullif(new.return_note, ''), ''), v_url);
+    end loop;
+    return new;
+  elsif old.status = 'done' and new.status = 'draft' then
+    /* v1.09.26: вернуть на доработку может только согласующий; все остальные (основной, менеджер без права апрува,
+       помощник с правом правки) документ ОТЗЫВАЮТ — об этом узнают согласующие и остальная бригада */
+    if public.can_approve_docs() and auth.uid() is distinct from new.technician_id then
+      for r in select distinct x.uid from (select new.technician_id as uid
+                 union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Возвращён на доработку',
+          v_body || ' · ' || coalesce(v_who, '') || coalesce(' · ' || nullif(new.return_note, ''), ''), v_url);
+      end loop;
+    else
+      for r in select distinct x.uid from (
+                 select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+                 union select new.technician_id
+                 union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x where x.uid is not null
+      loop
+        perform public.push_enqueue(r.uid, 'reset', 'Документ отозван из согласования', v_body || ' · ' || coalesce(v_who, ''), v_url);
+      end loop;
+    end if;
+    return new;
+  elsif old.status = 'draft' and new.status = 'done' then
+    for r in select id as uid from public.profiles where not blocked and (role = 'admin' or (role = 'manager' and can_approve))
+    loop
+      perform public.push_enqueue(r.uid, 'approve', 'Ждёт апрува', v_body || ' · ' || coalesce(v_who, ''), v_url);
+    end loop;
+    return new;
+  end if;
+  if v_done then return new; end if;
+
+  /* «Документ изменён»: содержимое поменял НЕ исполнитель (push_enqueue сам пропускает автора правки). Приложение шлёт
+     строку целиком при любом сохранении — сравниваем только значимые поля; не чаще раза в 10 минут на документ и человека. */
+  if auth.uid() is not null and (new.form_data is distinct from old.form_data or new.date is distinct from old.date
+       or new.unit_number is distinct from old.unit_number or new.complex_id is distinct from old.complex_id
+       or coalesce(new.note, '') is distinct from coalesce(old.note, '')) then
+    for r in select distinct x.uid from (
+               select new.technician_id as uid
+               union select value::uuid from jsonb_array_elements_text(coalesce(new.helper_ids, '[]'::jsonb))) x
+              where x.uid is not null and x.uid <> auth.uid()
+    loop
+      if not exists (select 1 from public.notices where user_id = r.uid and kind = 'edit' and url = v_url and created_at > now() - interval '10 minutes') then
+        perform public.push_enqueue(r.uid, 'edit',
+          case when new.date is distinct from old.date then 'Задача перенесена на ' || to_char(new.date, 'DD.MM') else 'Документ изменён' end,
+          v_body || ' · ' || coalesce(v_who, ''), v_url);
+      end if;
+    end loop;
+  end if;
+  return new;
+end $$;
+
+create or replace function public.dft_exec(p_caller uuid, p_actor uuid, p_op text, p_args jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_role text; v_crole text; v_id uuid; v_job public.jobs%rowtype; v_pl public.placements%rowtype; v_rep public.repairs%rowtype; v_prop public.proposals%rowtype; v_res jsonb; v_n int := 0;
+  v_run text := left(coalesce(p_args->>'run', ''), 60); v_fn text; a jsonb := coalesce(p_args->'args', '{}'::jsonb);
+  v_patch jsonb := coalesce(p_args->'patch', '{}'::jsonb); v_row jsonb := coalesce(p_args->'row', '{}'::jsonb);
+begin
+  select role into v_crole from public.profiles where id = p_caller and not blocked;
+  if v_crole is null then raise exception 'DFT_NO_CALLER'; end if;
+
+  -- уборка работает и при выключенном режиме: остатки должны убираться всегда. Своё — любой, всё — только админ.
+  if p_op = 'cleanup' then
+    perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+    perform set_config('techlog.test_owner', '00000000-0000-0000-0000-000000000000', true);
+    for v_id in select id from public.jobs where is_test
+                  and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+                  and (v_run = '' or test_run = v_run)
+    loop
+      delete from public.doc_locks where doc_id = v_id;
+      delete from public.doc_requests where doc_id = v_id;
+      delete from public.ext_requests where job_id = v_id;
+      delete from public.notices where url like '%doc=job:' || v_id::text || '%';
+      delete from public.placements where job_id = v_id;
+      delete from public.jobs where id = v_id;
+      v_n := v_n + 1;
+    end loop;
+    delete from public.repairs where is_test
+       and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+       and (v_run = '' or test_run = v_run);
+    delete from public.notices where url like '%doc=rep:%' and user_id = p_caller and body like '%DFTEST%';
+    delete from public.proposals where is_test
+       and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+       and (v_run = '' or test_run = v_run);
+    perform set_config('techlog.test_owner', '', true);
+    return jsonb_build_object('ok', true, 'deleted', v_n);
+  end if;
+
+  if not public.dft_enabled() then raise exception 'DFT_OFF'; end if;
+  select role into v_role from public.profiles where id = p_actor and not blocked;
+  if v_role is null then raise exception 'DFT_NO_ACTOR'; end if;
+
+  -- с этого места все сторожа видят p_actor как вошедшего пользователя
+  perform set_config('request.jwt.claim.sub', p_actor::text, true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', p_actor::text, 'role', 'authenticated')::text, true);
+  perform set_config('techlog.dft', '1', true);
+
+  if p_op in ('prop_adopt', 'rep_adopt') then
+    /* v1.09.30: пропозал или ремонт, созданный КНОПКАМИ приложения, принимается в тест — условия те же, что у задачи:
+       свой (created_by = вызывающий), черновик, создан не раньше 10 минут назад, юнит начинается с DFTEST */
+    if p_op = 'prop_adopt' then
+      select * into v_prop from public.proposals where id = (p_args->>'id')::uuid;
+      if not found then raise exception 'NOT_FOUND'; end if;
+      if not v_prop.is_test then
+        if v_prop.status <> 'draft' or v_prop.created_by is distinct from p_caller or v_prop.created_at < now() - interval '10 minutes'
+           or coalesce(v_prop.unit_number, '') not like 'DFTEST%' or v_prop.archived_at is not null then raise exception 'DFT_ADOPT_DENIED'; end if;
+        update public.proposals set is_test = true, test_owner = p_caller, test_run = v_run where id = v_prop.id;
+      elsif v_prop.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+      select to_jsonb(x) into v_res from public.proposals x where x.id = v_prop.id;
+    else
+      select * into v_rep from public.repairs where id = (p_args->>'id')::uuid;
+      if not found then raise exception 'NOT_FOUND'; end if;
+      if not v_rep.is_test then
+        if v_rep.status <> 'draft' or v_rep.created_by is distinct from p_caller or v_rep.created_at < now() - interval '10 minutes'
+           or coalesce(v_rep.unit_number, '') not like 'DFTEST%' or v_rep.archived_at is not null
+           or (v_rep.job_id is not null and not exists (select 1 from public.jobs where id = v_rep.job_id and is_test)) then raise exception 'DFT_ADOPT_DENIED'; end if;
+        perform set_config('techlog.dft', '1', true);
+        update public.repairs set is_test = true, test_owner = p_caller, test_run = v_run where id = v_rep.id;
+        perform set_config('techlog.dft', '', true);
+      elsif v_rep.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+      select to_jsonb(x) into v_res from public.repairs x where x.id = v_rep.id;
+    end if;
+    return jsonb_build_object('ok', true, 'data', v_res);
+  end if;
+
+  if p_op = 'job_adopt' then
+    /* v1.09.28: документ, который ведущий тест только что создал КНОПКОЙ «Добавить задание», становится тестовым. Условия жёсткие,
+       чтобы пометить можно было только свой свежий черновик, который и так разрешено удалить: черновик, ни разу не отправлялся,
+       создан не раньше 10 минут назад, юнит начинается с DFTEST, без пикапов; исполнитель — сам вызывающий (менеджеру и админу —
+       ещё и «без исполнителя»). Настоящий рабочий документ под эти условия не попадает. */
+    select * into v_job from public.jobs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if v_job.is_test then
+      if v_job.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    else
+      if v_job.status <> 'draft' or v_job.numbered_at is not null or v_job.archived_at is not null
+         or v_job.created_at < now() - interval '10 minutes' or coalesce(v_job.unit_number, '') not like 'DFTEST%'
+         or exists (select 1 from public.placements where job_id = v_job.id)
+         or not (v_job.technician_id = p_caller or (v_job.technician_id is null and v_crole in ('admin','manager'))) then
+        raise exception 'DFT_ADOPT_DENIED';
+      end if;
+      perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+      perform set_config('techlog.sysupd', '1', true);
+      update public.jobs set is_test = true, test_owner = p_caller, test_run = v_run, test_wide = coalesce((p_args->>'wide')::boolean, false) where id = v_job.id;
+      perform set_config('techlog.sysupd', '', true);
+      delete from public.push_queue where url like '%doc=job:' || v_job.id::text || '%' and sent_at is null;
+    end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_job.id;
+    perform set_config('techlog.dft', '', true);
+    return jsonb_build_object('ok', true, 'data', v_res);
+  end if;
+
+  if p_op = 'job_create' then
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_ins
+    insert into public.jobs (id, date, counterparty_id, complex_id, unit_number, work_type_id, technician_id, technician_name, helper_ids,
+                             shared_with_helpers, status, note, note_en, form_data, total, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), coalesce((v_row->>'date')::date, current_date), (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid,
+            coalesce(v_row->>'unit_number', 'DFTEST'), (v_row->>'work_type_id')::uuid, (v_row->>'technician_id')::uuid, coalesce(v_row->>'technician_name', ''),
+            coalesce(v_row->'helper_ids', '[]'::jsonb), coalesce((v_row->>'shared_with_helpers')::boolean, false), coalesce(v_row->>'status', 'draft'),
+            coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), coalesce(v_row->'form_data', '{}'::jsonb), coalesce((v_row->>'total')::numeric, 0),
+            true, p_caller, v_run)
+    returning id into v_id;
+    if coalesce((p_args->>'wide')::boolean, false) then perform set_config('techlog.sysupd', '1', true); update public.jobs set test_wide = true where id = v_id; perform set_config('techlog.sysupd', '', true); end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_id;
+
+  elsif p_op in ('job_update', 'job_get') then
+    select * into v_job from public.jobs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;                       -- настоящий документ функция не трогает никогда
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if p_op = 'job_update' then
+      if not (v_job.technician_id = p_actor or v_role in ('admin','manager') or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_upd
+      update public.jobs j set (date, unit_number, complex_id, counterparty_id, work_type_id, technician_id, technician_name, helper_ids, shared_with_helpers,
+                               priority, sort_order, status, note, note_en, form_data, total, approved_total, approved_by, approved_at, return_note,
+                               archived_at, archived_by, arch_note, proposal_id, has_proposal, rev, updated_dev)
+        = (select r.date, r.unit_number, r.complex_id, r.counterparty_id, r.work_type_id, r.technician_id, r.technician_name, r.helper_ids, r.shared_with_helpers,
+                  r.priority, r.sort_order, r.status, r.note, r.note_en, r.form_data, r.total, r.approved_total, r.approved_by, r.approved_at, r.return_note,
+                  r.archived_at, r.archived_by, r.arch_note, r.proposal_id, r.has_proposal, r.rev, r.updated_dev
+             from jsonb_populate_record(j, v_patch) r)
+       where j.id = v_job.id;
+    end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_job.id;
+
+  elsif p_op = 'pl_upsert' then
+    select * into v_job from public.jobs where id = (v_row->>'job_id')::uuid;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;
+    select * into v_pl from public.placements where id = (v_row->>'id')::uuid;
+    if found then
+      update public.placements p set (qty, days, due_date, picked_up, picked_up_at, picked_up_by, returned_at, returned_by, superseded, superseded_at,
+                                      archived_at, archived_by, arch_note, note, note_en, technician_id)
+        = (select r.qty, r.days, r.due_date, r.picked_up, r.picked_up_at, r.picked_up_by, r.returned_at, r.returned_by, r.superseded, r.superseded_at,
+                  r.archived_at, r.archived_by, r.arch_note, r.note, r.note_en, r.technician_id from jsonb_populate_record(p, v_row) r)
+       where p.id = v_pl.id;
+    else
+      insert into public.placements (id, job_id, equipment_type_id, qty, days, placed_date, due_date, technician_id, complex_id, counterparty_id, unit_number, ext_of, note, note_en, no)
+      values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), v_job.id, (v_row->>'equipment_type_id')::uuid, coalesce((v_row->>'qty')::int, 1), coalesce((v_row->>'days')::int, 1),
+              coalesce((v_row->>'placed_date')::date, current_date), coalesce((v_row->>'due_date')::date, current_date + 1), (v_row->>'technician_id')::uuid,
+              coalesce((v_row->>'complex_id')::uuid, v_job.complex_id), coalesce((v_row->>'counterparty_id')::uuid, v_job.counterparty_id), coalesce(v_row->>'unit_number', v_job.unit_number),
+              (v_row->>'ext_of')::uuid, coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), 90000000 + nextval('public.jobs_test_no_seq'))   -- номер тестового пикапа — тоже из своего диапазона
+      returning id into v_id;
+    end if;
+    select to_jsonb(p) into v_res from public.placements p where p.id = coalesce(v_pl.id, v_id);
+
+  elsif p_op = 'prop_create' then
+    if v_role not in ('admin','manager') then raise exception 'RLS_DENIED'; end if;                  -- как политика prop_ins
+    insert into public.proposals (id, no, date, counterparty_id, complex_id, unit_number, note, items, total, status, created_by, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), 90000000 + nextval('public.jobs_test_no_seq'), coalesce((v_row->>'date')::date, current_date),
+            (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid, coalesce(v_row->>'unit_number', 'DFTEST'), coalesce(v_row->>'note', ''),
+            coalesce(v_row->'items', '[]'::jsonb), coalesce((v_row->>'total')::numeric, 0), coalesce(v_row->>'status', 'draft'), p_actor, true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(x) into v_res from public.proposals x where x.id = v_id;
+
+  elsif p_op = 'rep_create' then
+    if (v_row->>'created_by') is not null and (v_row->>'created_by')::uuid is distinct from p_actor then raise exception 'RLS_DENIED'; end if;   -- как политика rep_ins
+    if (v_row->>'job_id') is not null and not exists (select 1 from public.jobs where id = (v_row->>'job_id')::uuid and is_test) then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    insert into public.repairs (id, no, date, counterparty_id, complex_id, unit_number, job_id, helper_ids, items, materials, note, note_en, total, status, created_by, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), 90000000 + nextval('public.jobs_test_no_seq'), coalesce((v_row->>'date')::date, current_date), (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid,
+            coalesce(v_row->>'unit_number', 'DFTEST'), (v_row->>'job_id')::uuid, coalesce(v_row->'helper_ids', '[]'::jsonb), coalesce(v_row->'items', '[]'::jsonb), coalesce(v_row->'materials', '[]'::jsonb),
+            coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), coalesce((v_row->>'total')::numeric, 0), coalesce(v_row->>'status', 'draft'), p_actor, true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(x) into v_res from public.repairs x where x.id = v_id;
+
+  elsif p_op in ('rep_update', 'rep_get') then
+    select * into v_rep from public.repairs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if not v_rep.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_rep.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if p_op = 'rep_update' then
+      if not (v_role in ('admin','manager') or v_rep.created_by = p_actor) then raise exception 'RLS_DENIED'; end if;                  -- как политика rep_upd
+      update public.repairs x set (date, unit_number, items, materials, note, note_en, total, status, decline_reason, decided_by, decided_at, hist, helper_ids, job_id, archived_at, arch_note)
+        = (select r.date, r.unit_number, r.items, r.materials, r.note, r.note_en, r.total, r.status, r.decline_reason, r.decided_by, r.decided_at, r.hist, r.helper_ids, r.job_id, r.archived_at, r.arch_note
+             from jsonb_populate_record(x, v_patch) r)
+       where x.id = v_rep.id;
+    end if;
+    select to_jsonb(x) into v_res from public.repairs x where x.id = v_rep.id;
+
+  elsif p_op = 'rpc' then
+    v_fn := p_args->>'fn';
+    -- цель любой функции — тестовый документ этого прогона
+    v_id := coalesce((a->>'p_job')::uuid, case when v_fn = 'doc_request_decide' then (select doc_id from public.doc_requests where id = (a->>'p_id')::uuid)
+                                               when v_fn = 'decide_ext_request' then (select job_id from public.ext_requests where id = (a->>'p_id')::uuid)
+                                               when v_fn in ('doc_lock','doc_unlock') then (a->>'p_id')::uuid end);
+    select * into v_job from public.jobs where id = v_id;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if v_fn = 'approve_job' then perform public.approve_job(v_id, (a->>'p_total')::numeric); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_request_edit' then v_res := to_jsonb(public.doc_request_edit(v_id, a->>'p_reason'));
+    elsif v_fn = 'doc_request_decide' then perform public.doc_request_decide((a->>'p_id')::uuid, (a->>'p_grant')::boolean, a->>'p_answer'); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_lock' then v_res := public.doc_lock('job', v_id, coalesce((a->>'p_force')::boolean, false));
+    elsif v_fn = 'doc_unlock' then perform public.doc_unlock('job', v_id); v_res := 'null'::jsonb;
+    elsif v_fn = 'decide_ext_request' then perform public.decide_ext_request((a->>'p_id')::uuid, (a->>'p_ok')::boolean); v_res := 'null'::jsonb;
+    elsif v_fn = 'job_fix_no' then v_res := to_jsonb(public.job_fix_no(v_id, a->>'p_text'));
+    elsif v_fn = 'link_job_proposal' then
+      if (a->>'p_prop') is not null and not exists (select 1 from public.proposals where id = (a->>'p_prop')::uuid and is_test) then raise exception 'DFT_NOT_TEST_DOC'; end if;
+      perform public.link_job_proposal(v_id, (a->>'p_prop')::uuid); v_res := 'null'::jsonb;
+    else raise exception 'DFT_BAD_FN';
+    end if;
+    v_res := jsonb_build_object('result', v_res, 'job', (select to_jsonb(j) from public.jobs j where j.id = v_id));
+  else
+    raise exception 'DFT_BAD_OP';
+  end if;
+
+  perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+  perform set_config('techlog.dft', '', true); perform set_config('techlog.test_owner', '', true);
+  return jsonb_build_object('ok', true, 'data', v_res);
+end $$;
+
+-- что ушло в очередь пушей по тестовым документам вызывающего (для отчёта теста); только service_role
+create or replace function public.dft_pushes(p_caller uuid, p_run text)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('title', q.title, 'to', (select display_name from public.profiles where id = q.user_id), 'kind', q.kind,
+                                               'created_at', q.created_at, 'sent_at', q.sent_at, 'tries', q.tries, 'err', q.last_err) order by q.created_at), '[]'::jsonb)
+    from public.push_queue q
+   where exists (select 1 from public.jobs j where j.is_test and j.test_owner = p_caller and (coalesce(p_run, '') = '' or j.test_run = p_run)
+                   and q.url like '%' || j.id::text || '%')
+$$;
+revoke all on function public.dft_pushes(uuid, text) from public, anon, authenticated;
+grant execute on function public.dft_pushes(uuid, text) to service_role;
+
+update public.org_settings set docflow_v = 7 where id = 'org' and docflow_v < 7;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='org_settings' and column_name='prop_send_on') then miss := miss || ' org_settings.prop_send_on'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='jobs' and column_name='test_wide') then miss := miss || ' jobs.test_wide'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'proposals_send_guard_tg') then miss := miss || ' proposals_send_guard_tg'; end if;
+  if to_regprocedure('public.dft_pushes(uuid,text)') is null then miss := miss || ' dft_pushes()'; end if;
+  if has_function_privilege('authenticated', 'public.dft_pushes(uuid,text)', 'execute') then miss := miss || ' dft_pushes(ДОСТУПНА КЛИЕНТУ!)'; end if;
+  if position('test_wide' in pg_get_functiondef('public.push_enqueue(uuid,text,text,text,text)'::regprocedure)) = 0 then miss := miss || ' push_enqueue(test_wide)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.31 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.31 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_32 (по итогам первого живого прогона теста) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.32 · ДВЕ НАСТОЯЩИЕ ОШИБКИ ДОСТУПА, найденные первым прогоном теста на живой базе
+--   Приложение сохраняет документы командой upsert (INSERT … ON CONFLICT DO UPDATE). PostgreSQL при этом проверяет политику
+--   ВСТАВКИ для предлагаемой строки, даже когда запись в итоге обновляется. Политики вставки были уже, чем политики правки:
+--   · repairs: вставка — только «свой» ремонт → менеджер и админ НЕ МОГЛИ сохранить чужой ремонт: апрув, отклонение и любая
+--     правка ремонта, созданного работником, заканчивались «new row violates row-level security policy for table repairs»;
+--   · jobs: вставка — основной исполнитель или менеджер/админ → помощник с «Общим доступом» НЕ МОГ сохранить документ основного
+--     (обычный UPDATE проходил, а upsert приложения — нет).
+--   Теперь вставка разрешена тем же, кому разрешена правка. Создать чужой документ помощник по-прежнему не может:
+--   is_shared_job_helper смотрит на УЖЕ существующую строку.
+--   Дополнительно: «тестовая» строка, пришедшая не от функции тестирования (например, из очереди досыла после уборки теста),
+--   отклоняется (DFT_TEST_ROW), а не превращается молча в настоящий документ.
+-- =====================================================================
+drop policy if exists jobs_ins on public.jobs;
+create policy jobs_ins on public.jobs for insert to authenticated
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager') or public.is_shared_job_helper(id));
+
+drop policy if exists rep_ins on public.repairs;
+create policy rep_ins on public.repairs for insert to authenticated
+  with check (created_by = auth.uid() or public.my_role() in ('admin','manager'));
+
+create or replace function public.repairs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_can boolean;
+begin
+  if coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  v_can := public.can_approve_docs();
+  if TG_OP = 'INSERT' then
+    /* v1.09.32: пометку «тестовый» здесь не трогаем — BEFORE INSERT срабатывает и при обычном сохранении (upsert) существующего тестового ремонта.
+       Настоящую вставку «тестовой» строки не от функции тестирования отклоняет repairs_after_ins (AFTER INSERT бывает только при реальной вставке). */
+    if new.status in ('approved','declined') and not coalesce(v_can, false) then
+      new.status := 'draft';
+    end if;
+    return new;
+  end if;
+  if coalesce(current_setting('techlog.dft', true), '') <> '1' then new.is_test := old.is_test; new.test_owner := old.test_owner; new.test_run := old.test_run; end if;
+  if new.status is distinct from old.status
+     and new.status in ('approved','declined')
+     and not coalesce(v_can, false) then
+    raise exception 'FORBIDDEN_APPROVE';
+  end if;
+  return new;
+end $$;
+
+create or replace function public.repairs_after_ins()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  if new.is_test and coalesce(current_setting('techlog.dft', true), '') <> '1' then raise exception 'DFT_TEST_ROW'; end if;
+  return new;
+end $$;
+drop trigger if exists repairs_after_ins_tg on public.repairs;
+create trigger repairs_after_ins_tg after insert on public.repairs
+  for each row execute function public.repairs_after_ins();
+
+-- то же для инвойса и пропозала: настоящая вставка «тестовой» строки не от функции — отказ
+create or replace function public.test_row_after_ins()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  if new.is_test and coalesce(current_setting('techlog.dft', true), '') <> '1' then raise exception 'DFT_TEST_ROW'; end if;
+  return new;
+end $$;
+drop trigger if exists jobs_test_row_tg on public.jobs;
+create trigger jobs_test_row_tg after insert on public.jobs
+  for each row execute function public.test_row_after_ins();
+drop trigger if exists proposals_test_row_tg on public.proposals;
+create trigger proposals_test_row_tg after insert on public.proposals
+  for each row execute function public.test_row_after_ins();
+
+update public.org_settings set docflow_v = 8 where id = 'org' and docflow_v < 8;
+
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'jobs' and policyname = 'jobs_ins' and with_check like '%is_shared_job_helper%') then miss := miss || ' jobs_ins(помощник)'; end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'repairs' and policyname = 'rep_ins' and with_check like '%manager%') then miss := miss || ' rep_ins(менеджер)'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'repairs_after_ins_tg') then miss := miss || ' repairs_after_ins_tg'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'jobs_test_row_tg') then miss := miss || ' jobs_test_row_tg'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.32 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.32 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_33 (по итогам второго живого прогона) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.33 · функция тестирования: заявка на продление аренды сверх лимита от имени работника (ext_req_create) — теперь
+--   заявку и решение по ней тест проходит при любой ведущей роли (менеджер и админ решают её кнопкой на главной).
+-- =====================================================================
+
+create or replace function public.dft_exec(p_caller uuid, p_actor uuid, p_op text, p_args jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  v_role text; v_crole text; v_id uuid; v_job public.jobs%rowtype; v_pl public.placements%rowtype; v_rep public.repairs%rowtype; v_prop public.proposals%rowtype; v_res jsonb; v_n int := 0;
+  v_run text := left(coalesce(p_args->>'run', ''), 60); v_fn text; a jsonb := coalesce(p_args->'args', '{}'::jsonb);
+  v_patch jsonb := coalesce(p_args->'patch', '{}'::jsonb); v_row jsonb := coalesce(p_args->'row', '{}'::jsonb);
+begin
+  select role into v_crole from public.profiles where id = p_caller and not blocked;
+  if v_crole is null then raise exception 'DFT_NO_CALLER'; end if;
+
+  -- уборка работает и при выключенном режиме: остатки должны убираться всегда. Своё — любой, всё — только админ.
+  if p_op = 'cleanup' then
+    perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+    perform set_config('techlog.test_owner', '00000000-0000-0000-0000-000000000000', true);
+    for v_id in select id from public.jobs where is_test
+                  and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+                  and (v_run = '' or test_run = v_run)
+    loop
+      delete from public.doc_locks where doc_id = v_id;
+      delete from public.doc_requests where doc_id = v_id;
+      delete from public.ext_requests where job_id = v_id;
+      delete from public.notices where url like '%doc=job:' || v_id::text || '%';
+      delete from public.placements where job_id = v_id;
+      delete from public.jobs where id = v_id;
+      v_n := v_n + 1;
+    end loop;
+    delete from public.repairs where is_test
+       and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+       and (v_run = '' or test_run = v_run);
+    delete from public.notices where url like '%doc=rep:%' and user_id = p_caller and body like '%DFTEST%';
+    delete from public.proposals where is_test
+       and (case when coalesce((p_args->>'all')::boolean, false) and v_crole = 'admin' then true else test_owner = p_caller end)
+       and (v_run = '' or test_run = v_run);
+    perform set_config('techlog.test_owner', '', true);
+    return jsonb_build_object('ok', true, 'deleted', v_n);
+  end if;
+
+  if not public.dft_enabled() then raise exception 'DFT_OFF'; end if;
+  select role into v_role from public.profiles where id = p_actor and not blocked;
+  if v_role is null then raise exception 'DFT_NO_ACTOR'; end if;
+
+  -- с этого места все сторожа видят p_actor как вошедшего пользователя
+  perform set_config('request.jwt.claim.sub', p_actor::text, true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', p_actor::text, 'role', 'authenticated')::text, true);
+  perform set_config('techlog.dft', '1', true);
+
+  if p_op in ('prop_adopt', 'rep_adopt') then
+    /* v1.09.30: пропозал или ремонт, созданный КНОПКАМИ приложения, принимается в тест — условия те же, что у задачи:
+       свой (created_by = вызывающий), черновик, создан не раньше 10 минут назад, юнит начинается с DFTEST */
+    if p_op = 'prop_adopt' then
+      select * into v_prop from public.proposals where id = (p_args->>'id')::uuid;
+      if not found then raise exception 'NOT_FOUND'; end if;
+      if not v_prop.is_test then
+        if v_prop.status <> 'draft' or v_prop.created_by is distinct from p_caller or v_prop.created_at < now() - interval '10 minutes'
+           or coalesce(v_prop.unit_number, '') not like 'DFTEST%' or v_prop.archived_at is not null then raise exception 'DFT_ADOPT_DENIED'; end if;
+        update public.proposals set is_test = true, test_owner = p_caller, test_run = v_run where id = v_prop.id;
+      elsif v_prop.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+      select to_jsonb(x) into v_res from public.proposals x where x.id = v_prop.id;
+    else
+      select * into v_rep from public.repairs where id = (p_args->>'id')::uuid;
+      if not found then raise exception 'NOT_FOUND'; end if;
+      if not v_rep.is_test then
+        if v_rep.status <> 'draft' or v_rep.created_by is distinct from p_caller or v_rep.created_at < now() - interval '10 minutes'
+           or coalesce(v_rep.unit_number, '') not like 'DFTEST%' or v_rep.archived_at is not null
+           or (v_rep.job_id is not null and not exists (select 1 from public.jobs where id = v_rep.job_id and is_test)) then raise exception 'DFT_ADOPT_DENIED'; end if;
+        perform set_config('techlog.dft', '1', true);
+        update public.repairs set is_test = true, test_owner = p_caller, test_run = v_run where id = v_rep.id;
+        perform set_config('techlog.dft', '', true);
+      elsif v_rep.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+      select to_jsonb(x) into v_res from public.repairs x where x.id = v_rep.id;
+    end if;
+    return jsonb_build_object('ok', true, 'data', v_res);
+  end if;
+
+  if p_op = 'job_adopt' then
+    /* v1.09.28: документ, который ведущий тест только что создал КНОПКОЙ «Добавить задание», становится тестовым. Условия жёсткие,
+       чтобы пометить можно было только свой свежий черновик, который и так разрешено удалить: черновик, ни разу не отправлялся,
+       создан не раньше 10 минут назад, юнит начинается с DFTEST, без пикапов; исполнитель — сам вызывающий (менеджеру и админу —
+       ещё и «без исполнителя»). Настоящий рабочий документ под эти условия не попадает. */
+    select * into v_job from public.jobs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if v_job.is_test then
+      if v_job.test_owner is distinct from p_caller then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    else
+      if v_job.status <> 'draft' or v_job.numbered_at is not null or v_job.archived_at is not null
+         or v_job.created_at < now() - interval '10 minutes' or coalesce(v_job.unit_number, '') not like 'DFTEST%'
+         or exists (select 1 from public.placements where job_id = v_job.id)
+         or not (v_job.technician_id = p_caller or (v_job.technician_id is null and v_crole in ('admin','manager'))) then
+        raise exception 'DFT_ADOPT_DENIED';
+      end if;
+      perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+      perform set_config('techlog.sysupd', '1', true);
+      update public.jobs set is_test = true, test_owner = p_caller, test_run = v_run, test_wide = coalesce((p_args->>'wide')::boolean, false) where id = v_job.id;
+      perform set_config('techlog.sysupd', '', true);
+      delete from public.push_queue where url like '%doc=job:' || v_job.id::text || '%' and sent_at is null;
+    end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_job.id;
+    perform set_config('techlog.dft', '', true);
+    return jsonb_build_object('ok', true, 'data', v_res);
+  end if;
+
+  if p_op = 'job_create' then
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_ins
+    insert into public.jobs (id, date, counterparty_id, complex_id, unit_number, work_type_id, technician_id, technician_name, helper_ids,
+                             shared_with_helpers, status, note, note_en, form_data, total, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), coalesce((v_row->>'date')::date, current_date), (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid,
+            coalesce(v_row->>'unit_number', 'DFTEST'), (v_row->>'work_type_id')::uuid, (v_row->>'technician_id')::uuid, coalesce(v_row->>'technician_name', ''),
+            coalesce(v_row->'helper_ids', '[]'::jsonb), coalesce((v_row->>'shared_with_helpers')::boolean, false), coalesce(v_row->>'status', 'draft'),
+            coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), coalesce(v_row->'form_data', '{}'::jsonb), coalesce((v_row->>'total')::numeric, 0),
+            true, p_caller, v_run)
+    returning id into v_id;
+    if coalesce((p_args->>'wide')::boolean, false) then perform set_config('techlog.sysupd', '1', true); update public.jobs set test_wide = true where id = v_id; perform set_config('techlog.sysupd', '', true); end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_id;
+
+  elsif p_op in ('job_update', 'job_get') then
+    select * into v_job from public.jobs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;                       -- настоящий документ функция не трогает никогда
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if p_op = 'job_update' then
+      if not (v_job.technician_id = p_actor or v_role in ('admin','manager') or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;   -- как политика jobs_upd
+      update public.jobs j set (date, unit_number, complex_id, counterparty_id, work_type_id, technician_id, technician_name, helper_ids, shared_with_helpers,
+                               priority, sort_order, status, note, note_en, form_data, total, approved_total, approved_by, approved_at, return_note,
+                               archived_at, archived_by, arch_note, proposal_id, has_proposal, rev, updated_dev)
+        = (select r.date, r.unit_number, r.complex_id, r.counterparty_id, r.work_type_id, r.technician_id, r.technician_name, r.helper_ids, r.shared_with_helpers,
+                  r.priority, r.sort_order, r.status, r.note, r.note_en, r.form_data, r.total, r.approved_total, r.approved_by, r.approved_at, r.return_note,
+                  r.archived_at, r.archived_by, r.arch_note, r.proposal_id, r.has_proposal, r.rev, r.updated_dev
+             from jsonb_populate_record(j, v_patch) r)
+       where j.id = v_job.id;
+    end if;
+    select to_jsonb(j) into v_res from public.jobs j where j.id = v_job.id;
+
+  elsif p_op = 'pl_upsert' then
+    select * into v_job from public.jobs where id = (v_row->>'job_id')::uuid;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if not (v_role in ('admin','manager') or (v_row->>'technician_id')::uuid = p_actor or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;
+    select * into v_pl from public.placements where id = (v_row->>'id')::uuid;
+    if found then
+      update public.placements p set (qty, days, due_date, picked_up, picked_up_at, picked_up_by, returned_at, returned_by, superseded, superseded_at,
+                                      archived_at, archived_by, arch_note, note, note_en, technician_id)
+        = (select r.qty, r.days, r.due_date, r.picked_up, r.picked_up_at, r.picked_up_by, r.returned_at, r.returned_by, r.superseded, r.superseded_at,
+                  r.archived_at, r.archived_by, r.arch_note, r.note, r.note_en, r.technician_id from jsonb_populate_record(p, v_row) r)
+       where p.id = v_pl.id;
+    else
+      insert into public.placements (id, job_id, equipment_type_id, qty, days, placed_date, due_date, technician_id, complex_id, counterparty_id, unit_number, ext_of, note, note_en, no)
+      values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), v_job.id, (v_row->>'equipment_type_id')::uuid, coalesce((v_row->>'qty')::int, 1), coalesce((v_row->>'days')::int, 1),
+              coalesce((v_row->>'placed_date')::date, current_date), coalesce((v_row->>'due_date')::date, current_date + 1), (v_row->>'technician_id')::uuid,
+              coalesce((v_row->>'complex_id')::uuid, v_job.complex_id), coalesce((v_row->>'counterparty_id')::uuid, v_job.counterparty_id), coalesce(v_row->>'unit_number', v_job.unit_number),
+              (v_row->>'ext_of')::uuid, coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), 90000000 + nextval('public.jobs_test_no_seq'))   -- номер тестового пикапа — тоже из своего диапазона
+      returning id into v_id;
+    end if;
+    select to_jsonb(p) into v_res from public.placements p where p.id = coalesce(v_pl.id, v_id);
+
+  elsif p_op = 'ext_req_create' then
+    /* v1.09.33: заявка на продление аренды сверх лимита — от имени работника (как кнопка «Запросить…» в карточке пикапа):
+       по всем ожидающим строкам пикапа тестового документа, на p_args->>'days' дней */
+    select * into v_job from public.jobs where id = (p_args->>'job_id')::uuid;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if not (v_job.technician_id = p_actor or public.is_shared_job_helper(v_job.id)) then raise exception 'RLS_DENIED'; end if;   -- заявку подаёт тот, у кого пикапы
+    insert into public.ext_requests (id, job_id, requested_by, days, qty_total, payload, unit, cx, eq)
+    select gen_random_uuid(), v_job.id, p_actor, greatest(1, least(60, coalesce((p_args->>'days')::int, 4))),
+           coalesce(sum(p.qty), 0), coalesce(jsonb_agg(jsonb_build_object('id', p.id, 'qty', p.qty)), '[]'::jsonb),
+           coalesce(v_job.unit_number, ''), coalesce((select abbr from public.complexes where id = v_job.complex_id), ''),
+           coalesce(string_agg(coalesce(e.abbr, '?') || '×' || p.qty, ' '), '')
+      from public.placements p left join public.equipment_types e on e.id = p.equipment_type_id
+     where p.job_id = v_job.id and not p.picked_up and not coalesce(p.superseded, false) and p.archived_at is null
+    returning id into v_id;
+    if v_id is null or (select qty_total from public.ext_requests where id = v_id) = 0 then
+      delete from public.ext_requests where id = v_id; raise exception 'DFT_NO_PENDING';
+    end if;
+    select to_jsonb(x) into v_res from public.ext_requests x where x.id = v_id;
+
+  elsif p_op = 'prop_create' then
+    if v_role not in ('admin','manager') then raise exception 'RLS_DENIED'; end if;                  -- как политика prop_ins
+    insert into public.proposals (id, no, date, counterparty_id, complex_id, unit_number, note, items, total, status, created_by, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), 90000000 + nextval('public.jobs_test_no_seq'), coalesce((v_row->>'date')::date, current_date),
+            (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid, coalesce(v_row->>'unit_number', 'DFTEST'), coalesce(v_row->>'note', ''),
+            coalesce(v_row->'items', '[]'::jsonb), coalesce((v_row->>'total')::numeric, 0), coalesce(v_row->>'status', 'draft'), p_actor, true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(x) into v_res from public.proposals x where x.id = v_id;
+
+  elsif p_op = 'rep_create' then
+    if (v_row->>'created_by') is not null and (v_row->>'created_by')::uuid is distinct from p_actor then raise exception 'RLS_DENIED'; end if;   -- как политика rep_ins
+    if (v_row->>'job_id') is not null and not exists (select 1 from public.jobs where id = (v_row->>'job_id')::uuid and is_test) then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    insert into public.repairs (id, no, date, counterparty_id, complex_id, unit_number, job_id, helper_ids, items, materials, note, note_en, total, status, created_by, is_test, test_owner, test_run)
+    values (coalesce((v_row->>'id')::uuid, gen_random_uuid()), 90000000 + nextval('public.jobs_test_no_seq'), coalesce((v_row->>'date')::date, current_date), (v_row->>'counterparty_id')::uuid, (v_row->>'complex_id')::uuid,
+            coalesce(v_row->>'unit_number', 'DFTEST'), (v_row->>'job_id')::uuid, coalesce(v_row->'helper_ids', '[]'::jsonb), coalesce(v_row->'items', '[]'::jsonb), coalesce(v_row->'materials', '[]'::jsonb),
+            coalesce(v_row->>'note', ''), coalesce(v_row->>'note_en', ''), coalesce((v_row->>'total')::numeric, 0), coalesce(v_row->>'status', 'draft'), p_actor, true, p_caller, v_run)
+    returning id into v_id;
+    select to_jsonb(x) into v_res from public.repairs x where x.id = v_id;
+
+  elsif p_op in ('rep_update', 'rep_get') then
+    select * into v_rep from public.repairs where id = (p_args->>'id')::uuid;
+    if not found then raise exception 'NOT_FOUND'; end if;
+    if not v_rep.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_rep.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if p_op = 'rep_update' then
+      if not (v_role in ('admin','manager') or v_rep.created_by = p_actor) then raise exception 'RLS_DENIED'; end if;                  -- как политика rep_upd
+      update public.repairs x set (date, unit_number, items, materials, note, note_en, total, status, decline_reason, decided_by, decided_at, hist, helper_ids, job_id, archived_at, arch_note)
+        = (select r.date, r.unit_number, r.items, r.materials, r.note, r.note_en, r.total, r.status, r.decline_reason, r.decided_by, r.decided_at, r.hist, r.helper_ids, r.job_id, r.archived_at, r.arch_note
+             from jsonb_populate_record(x, v_patch) r)
+       where x.id = v_rep.id;
+    end if;
+    select to_jsonb(x) into v_res from public.repairs x where x.id = v_rep.id;
+
+  elsif p_op = 'rpc' then
+    v_fn := p_args->>'fn';
+    -- цель любой функции — тестовый документ этого прогона
+    v_id := coalesce((a->>'p_job')::uuid, case when v_fn = 'doc_request_decide' then (select doc_id from public.doc_requests where id = (a->>'p_id')::uuid)
+                                               when v_fn = 'decide_ext_request' then (select job_id from public.ext_requests where id = (a->>'p_id')::uuid)
+                                               when v_fn in ('doc_lock','doc_unlock') then (a->>'p_id')::uuid end);
+    select * into v_job from public.jobs where id = v_id;
+    if not found or not v_job.is_test then raise exception 'DFT_NOT_TEST_DOC'; end if;
+    if v_job.test_owner is distinct from p_caller and v_crole <> 'admin' then raise exception 'DFT_NOT_YOUR_RUN'; end if;
+    if v_fn = 'approve_job' then perform public.approve_job(v_id, (a->>'p_total')::numeric); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_request_edit' then v_res := to_jsonb(public.doc_request_edit(v_id, a->>'p_reason'));
+    elsif v_fn = 'doc_request_decide' then perform public.doc_request_decide((a->>'p_id')::uuid, (a->>'p_grant')::boolean, a->>'p_answer'); v_res := 'null'::jsonb;
+    elsif v_fn = 'doc_lock' then v_res := public.doc_lock('job', v_id, coalesce((a->>'p_force')::boolean, false));
+    elsif v_fn = 'doc_unlock' then perform public.doc_unlock('job', v_id); v_res := 'null'::jsonb;
+    elsif v_fn = 'decide_ext_request' then perform public.decide_ext_request((a->>'p_id')::uuid, (a->>'p_ok')::boolean); v_res := 'null'::jsonb;
+    elsif v_fn = 'job_fix_no' then v_res := to_jsonb(public.job_fix_no(v_id, a->>'p_text'));
+    elsif v_fn = 'link_job_proposal' then
+      if (a->>'p_prop') is not null and not exists (select 1 from public.proposals where id = (a->>'p_prop')::uuid and is_test) then raise exception 'DFT_NOT_TEST_DOC'; end if;
+      perform public.link_job_proposal(v_id, (a->>'p_prop')::uuid); v_res := 'null'::jsonb;
+    else raise exception 'DFT_BAD_FN';
+    end if;
+    v_res := jsonb_build_object('result', v_res, 'job', (select to_jsonb(j) from public.jobs j where j.id = v_id));
+  else
+    raise exception 'DFT_BAD_OP';
+  end if;
+
+  perform set_config('request.jwt.claim.sub', '', true); perform set_config('request.jwt.claims', '', true);
+  perform set_config('techlog.dft', '', true); perform set_config('techlog.test_owner', '', true);
+  return jsonb_build_object('ok', true, 'data', v_res);
+end $$;
+revoke all on function public.dft_exec(uuid, uuid, text, jsonb) from public, anon, authenticated;
+grant execute on function public.dft_exec(uuid, uuid, text, jsonb) to service_role;
+
+update public.org_settings set docflow_v = 9 where id = 'org' and docflow_v < 9;
+
+do $$
+declare miss text := '';
+begin
+  if position('ext_req_create' in pg_get_functiondef('public.dft_exec(uuid,uuid,text,jsonb)'::regprocedure)) = 0 then miss := miss || ' dft_exec(ext_req_create)'; end if;
+  if has_function_privilege('authenticated', 'public.dft_exec(uuid,uuid,text,jsonb)', 'execute') then miss := miss || ' dft_exec(ДОСТУПНА КЛИЕНТУ!)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.33 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.33 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_34 (по итогам третьего живого прогона) ▄▄▄▄▄▄▄▄▄▄
+-- =====================================================================
+-- v1.09.34 · ремонт: автора и время решения (апрув / отклонение) записывает сервер — раньше их ставила только кнопка приложения,
+--   и апрув любым другим путём оставлял их пустыми. Возврат ремонта в черновик или на апрув решение снимает.
+-- =====================================================================
+
+create or replace function public.repairs_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_can boolean;
+begin
+  if coalesce(current_setting('techlog.restore', true), '') = '1' then return new; end if;
+  v_can := public.can_approve_docs();
+  if TG_OP = 'INSERT' then
+    /* v1.09.32: пометку «тестовый» здесь не трогаем — BEFORE INSERT срабатывает и при обычном сохранении (upsert) существующего тестового ремонта.
+       Настоящую вставку «тестовой» строки не от функции тестирования отклоняет repairs_after_ins (AFTER INSERT бывает только при реальной вставке). */
+    if new.status in ('approved','declined') and not coalesce(v_can, false) then
+      new.status := 'draft';
+    end if;
+    return new;
+  end if;
+  if coalesce(current_setting('techlog.dft', true), '') <> '1' then new.is_test := old.is_test; new.test_owner := old.test_owner; new.test_run := old.test_run; end if;
+  if new.status is distinct from old.status
+     and new.status in ('approved','declined')
+     and not coalesce(v_can, false) then
+    raise exception 'FORBIDDEN_APPROVE';
+  end if;
+  /* v1.09.34: кто и когда решил судьбу ремонта, записывает сервер — а не только кнопка приложения (третий живой прогон:
+     апрув через функцию тестирования оставлял decided_by пустым). Возврат в черновик / на апрув решение снимает. */
+  if new.status is distinct from old.status then
+    if new.status in ('approved','declined') then
+      new.decided_by := coalesce(new.decided_by, auth.uid()); new.decided_at := coalesce(new.decided_at, now());
+    elsif new.status in ('draft','sent') then
+      new.decided_by := null; new.decided_at := null;
+    end if;
+  end if;
+  return new;
+end $$;
+
+update public.org_settings set docflow_v = 10 where id = 'org' and docflow_v < 10;
+
+do $$
+declare miss text := '';
+begin
+  if position('new.decided_by := coalesce(new.decided_by, auth.uid())' in pg_get_functiondef('public.repairs_guard()'::regprocedure)) = 0 then miss := miss || ' repairs_guard(decided_by)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.34 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.34 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;

@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.33';
-const DB_SQL_FILE = 'full-install-1_09_33.sql';
+const APP_VERSION = '1.09.34';
+const DB_SQL_FILE = 'full-install-1_09_34.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -847,7 +847,7 @@ const I18N = {
     tab_dft: 'Тест документооборота', dft_card: 'Тест документооборота',
     dft_hint: 'Полный цикл документа под вашей ролью: шаги вашей роли идут настоящим путём приложения, шаги остальных ролей выполняет служебная функция dft. «+» — шаг должен пройти, «−» — сервер обязан отказать. Всё тестовое удаляется в конце; отчёт с запросами и ответами сервера можно скопировать или скачать.',
     dft_on_q: 'Включить режим тестирования документооборота? Пока он включён, служебная функция может действовать от имени администратора и менеджера — только над тестовыми документами. Режим выключится сам по истечении срока.',
-    dft_need_sql: 'Сначала выполните supabase/update-to-1_09_33.sql', dft_on_done: 'Режим тестирования ВКЛЮЧЁН — не забудьте выключить', dft_off_done: 'Режим тестирования выключен', dft_warn_t: 'Включён режим тестирования',
+    dft_need_sql: 'Сначала выполните supabase/update-to-1_09_34.sql', dft_on_done: 'Режим тестирования ВКЛЮЧЁН — не забудьте выключить', dft_off_done: 'Режим тестирования выключен', dft_warn_t: 'Включён режим тестирования',
     dft_warn_text: 'Режим тестирования документооборота включён до {UNTIL} (включил(а) {WHO}). Пока он включён, служебная функция dft действует от имени администратора и менеджера над тестовыми документами. Настоящие документы она не трогает, но это потенциальная дыра — выключите режим, когда тестирование закончено.',
     dft_warn_off: 'Выключить сейчас', dft_warn_keep: 'Оставить включённым', dft_cleaned: 'Тестовых документов убрано: {N}', dft_mode_on: 'Режим тестирования включён', dft_mode_off: 'Режим тестирования выключен',
     dft_mode_until: 'до {UNTIL} · включил(а) {WHO}', dft_mode_h: 'Включает только администратор и только на срок. Каждое включение пишется в журнал событий.', dft_mode_btn_off: 'Выключить', dft_mode_btn_on: 'Включить', dft_h: 'ч',
@@ -2305,7 +2305,7 @@ const I18N = {
     tab_dft: 'Workflow test', dft_card: 'Workflow test',
     dft_hint: 'The full document cycle under your role: your own steps go the real app way, the other roles are played by the dft helper function. "+" must pass, "−" must be refused by the server. Everything created is deleted at the end; the report with server requests and answers can be copied or downloaded.',
     dft_on_q: 'Turn the workflow test mode on? While it is on, the helper function may act as the admin and a manager — on test documents only. The mode turns itself off when the period ends.',
-    dft_need_sql: 'Run supabase/update-to-1_09_33.sql first', dft_on_done: 'Test mode is ON — remember to turn it off', dft_off_done: 'Test mode is off', dft_warn_t: 'Test mode is on',
+    dft_need_sql: 'Run supabase/update-to-1_09_34.sql first', dft_on_done: 'Test mode is ON — remember to turn it off', dft_off_done: 'Test mode is off', dft_warn_t: 'Test mode is on',
     dft_warn_text: 'The workflow test mode is on until {UNTIL} (turned on by {WHO}). While it is on, the dft helper function acts as the admin and a manager on test documents. It never touches real documents, but it is a potential hole — turn the mode off when testing is over.',
     dft_warn_off: 'Turn off now', dft_warn_keep: 'Keep it on', dft_cleaned: 'Test documents removed: {N}', dft_mode_on: 'Test mode is on', dft_mode_off: 'Test mode is off', dft_mode_until: 'until {UNTIL} · turned on by {WHO}',
     dft_mode_h: 'Only the admin turns it on, and only for a period. Every switch is written to the event journal.', dft_mode_btn_off: 'Turn off', dft_mode_btn_on: 'Turn on', dft_h: 'h',
@@ -28054,7 +28054,7 @@ const DFT_NET_RE = /\/rest\/v1\/(jobs|placements|proposals|doc_requests|doc_lock
 const DFT_NET_SKIP = /\/rest\/v1\/(chat_|push_sub|user_sessions|rpc\/(chat_|push_|session_|seen_))|\/realtime\/|\/auth\/v1\//
 
 function dftOn(){ const o = (state.data && state.data.org_settings) || {}; return o.dft_on === true && (!o.dft_until || Date.parse(o.dft_until) > Date.now()); }
-function dftSchemaOk(){ return !HAS_SB || +(((state.data || {}).org_settings || {}).docflow_v) >= 9; }   // v1.09.28: нужен job_adopt и номер пикапа после вставки
+function dftSchemaOk(){ return !HAS_SB || +(((state.data || {}).org_settings || {}).docflow_v) >= 10; }   // v1.09.28: нужен job_adopt и номер пикапа после вставки
 function dftCut(v, n){ let s = typeof v === 'string' ? v : JSON.stringify(v); s = String(s == null ? '' : s).replace(/\s+/g, ' '); return s.length > (n || 700) ? s.slice(0, n || 700) + ' …[' + s.length + ']' : s; }
 /* text — строка для панели (короткая), full — строка для отчёта (длинная, до 6000 знаков тела) */
 function dftLog(text, cls, full){ tlogLine(full || text, cls); const b = document.getElementById('dft-log'); if (b){ const d = document.createElement('div'); d.className = 'dft-l ' + (cls || ''); d.textContent = text; b.appendChild(d); while (b.children.length > 60) b.removeChild(b.firstChild); b.scrollTop = b.scrollHeight; } }
@@ -28788,7 +28788,7 @@ async function dftRun(){
       else { const d = okR(await dftExec('W', 'ext_req_create', { job_id: J, days })); if (HAS_SB) await syncNow(true); else (state.data.ext_requests = state.data.ext_requests || []).some(r => r.id === d.id) || state.data.ext_requests.push(d); }
       const rq = (state.data.ext_requests || []).find(r => r.job_id === J && r.status === 'pending'); must(rq && +rq.days === days, 'ext_request'); return rq; };
     const extDecide = async (rq, ok) => { const who = mineOf('MGR', 'APR', 'ADM');
-      if (isMe(who) && HAS_SB){ await ui.tab('home'); await U.click(`[onclick="App.extReqDecide('${rq.id}', ${ok})"]`, ok ? t('ext_req_ok') : t('ext_req_no')); await U.wait(() => ((state.data.ext_requests || []).find(r => r.id === rq.id) || {}).status === (ok ? 'approved' : 'rejected'), 15000, t('ext_req_title')); await sleep(500); }
+      if (isMe(who) && HAS_SB){ await ui.tab('board'); await U.click(`[onclick="App.extReqDecide('${rq.id}', ${ok})"]`, t('tab_board') + ' → ' + (ok ? t('ext_req_ok') : t('ext_req_no'))); await U.wait(() => ((state.data.ext_requests || []).find(r => r.id === rq.id) || {}).status === (ok ? 'approved' : 'rejected'), 15000, t('ext_req_title')); await sleep(500); }
       else okR(await rpc(first('MGR', 'APR', 'ADM'), 'decide_ext_request', { p_id: rq.id, p_ok: !!ok }));
       if (HAS_SB){ const x = await state.sb.from('ext_requests').select('status').eq('id', rq.id).maybeSingle(); must(x.data && x.data.status === (ok ? 'approved' : 'rejected'), 'status=' + (x.data && x.data.status)); await syncNow(true); }
       else must(((state.data.ext_requests || []).find(r => r.id === rq.id) || {}).status === (ok ? 'approved' : 'rejected'), 'status'); return { note: (isMe(who) && HAS_SB ? '☛ ' : '') + who }; };

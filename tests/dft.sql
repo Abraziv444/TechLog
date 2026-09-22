@@ -215,10 +215,13 @@ select pg_temp.ok('апрув ремонта от имени работника 
   pg_temp.throws($q$select public.dft_exec('00000000-0000-0000-0000-0000000000b4', '00000000-0000-0000-0000-0000000000b4', 'rep_update', '{"id":"88888888-0000-0000-0000-0000000000a1","patch":{"status":"approved"}}')$q$, 'FORBIDDEN_APPROVE')
   and pg_temp.throws($q$select public.dft_exec('00000000-0000-0000-0000-0000000000b4', '00000000-0000-0000-0000-0000000000b2', 'rep_update', '{"id":"88888888-0000-0000-0000-0000000000a1","patch":{"status":"approved"}}')$q$, 'FORBIDDEN_APPROVE'));
 select (public.dft_exec(:TECH, :APPR, 'rep_update', '{"id":"88888888-0000-0000-0000-0000000000a1","patch":{"status":"approved"}}')->'data'->>'status') as st1 \gset
+select pg_temp.ok('v1.09.34: автора и время апрува записал сервер', (select decided_by = :APPR::uuid and decided_at is not null from public.repairs where id = '88888888-0000-0000-0000-0000000000a1'));
 select pg_temp.ok('менеджер С правом апрува апрувит ремонт; работнику (владельцу прогона) в ленту — «Ремонт апрувлен», посторонним пушей нет',
   :'st1' = 'approved' and exists(select 1 from public.notices where user_id = :TECH::uuid and title = 'Ремонт апрувлен') and not exists(select 1 from public.push_queue where user_id <> :TECH::uuid and url like '%88888888-0000-0000-0000-0000000000a1%'));
 select (public.dft_exec(:TECH, :ADM, 'rep_update', '{"id":"88888888-0000-0000-0000-0000000000a1","patch":{"status":"declined","decline_reason":"не та квартира"}}')->'data'->>'status') as st2 \gset
 select pg_temp.ok('админ отклоняет ремонт с причиной', :'st2' = 'declined' and (select decline_reason from public.repairs where id = '88888888-0000-0000-0000-0000000000a1') = 'не та квартира');
+select (public.dft_exec(:TECH, :TECH, 'rep_update', '{"id":"88888888-0000-0000-0000-0000000000a1","patch":{"status":"sent"}}')->'data'->>'status') as st3 \gset
+select pg_temp.ok('работник отправил ремонт снова — решение снято сервером', :'st3' = 'sent' and (select decided_by is null and decided_at is null from public.repairs where id = '88888888-0000-0000-0000-0000000000a1'));
 select pg_temp.ok('посторонний работник тестовый ремонт не правит: RLS_DENIED',
   pg_temp.throws($q$select public.dft_exec('00000000-0000-0000-0000-0000000000b4', '00000000-0000-0000-0000-0000000000b5', 'rep_update', '{"id":"88888888-0000-0000-0000-0000000000a1","patch":{"note":"x"}}')$q$, 'RLS_DENIED'));
 -- пометку у ремонта клиент не ставит

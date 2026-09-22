@@ -2366,6 +2366,13 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
     src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(12000, s.length * 40)))") && src.includes('function toast(msg, kind, ms){')   /* v1.09.12: не дольше 12 с, крестик, нажатие мимо */
     && src.includes("el.classList.add('tap'); el.onclick = () => el.remove();") && src.includes("x.className = 't-x'") && css.includes('.toast.tap{cursor:pointer}'));
 
+  /* ---------- v1.09.34 ---------- */
+  console.log('\n— v1.09.34: по итогам третьего живого прогона —');
+  t('v1.09.34: версии (app = sw = version.json, не ниже 1.09.34) и SQL-комплект на месте; сервер записывает автора решения по ремонту',
+    T.APP_VERSION >= '1.09.34' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
+    && ['update-to-1_09_34.sql', 'full-install-1_09_34.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.readFileSync(ROOT + '/supabase/full-install-1_09_34.sql', 'utf8').includes('new.decided_by := coalesce(new.decided_by, auth.uid()); new.decided_at := coalesce(new.decided_at, now());'));
+  t('v1.09.34: решение по заявке на продление тест ищет на экране «Доска», где приложение его показывает', src.includes("if (isMe(who) && HAS_SB){ await ui.tab('board');"));
+
   /* ---------- v1.09.33 ---------- */
   console.log('\n— v1.09.33: по итогам второго живого прогона —');
   t('v1.09.33: версии (app = sw = version.json, не ниже 1.09.33), SQL-комплект, функция dft с ext_req_create',
