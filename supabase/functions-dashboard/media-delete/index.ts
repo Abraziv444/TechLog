@@ -2,17 +2,19 @@ import { svc, userClient, driveToken, driveConfig, monthFolder, moveFile,
          CORS, jres, FN_VER, ARCHIVE_DIR, PHOTOS_DIR, FILES_DIR, INVOICES_DIR,
          folderIdOf } from "./google.ts";
 
+const DEL_VER = "1.09.38";           // v1.09.38: режим inv_archive (общий FN_VER не трогаем — иначе передеплой всех функций)
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»
-    return new Response(JSON.stringify({ fn: "media-delete", ver: FN_VER }),
+    return new Response(JSON.stringify({ fn: "media-delete", ver: FN_VER, del: DEL_VER }),
       { headers: { ...CORS, "Content-Type": "application/json" } });
   const sb = userClient(req);
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return jres({ error: "UNAUTHORIZED" }, 401);
   const { data: prof } = await sb.from("profiles").select("role,display_name").eq("id", user.id).maybeSingle();
 
-  const { media_id, job_id, repair_id, mode } = await req.json();
+  const { media_id, job_id, repair_id, mode, why } = await req.json();
+  const s = svc();                    // v1.09.38: раньше объявлялся ниже — ветка ремонта обращалась к нему до объявления
 
   /* v1.08.48: удаление документа РЕМОНТА уносит его файлы — та же логика,
      что и у задач: только из архива, право админа или автора; файлы в
@@ -46,8 +48,29 @@ Deno.serve(async (req) => {
     }
     return jres({ ok: true, files: rows?.length ?? 0, trashed });
   }
-  const s = svc();
-
+  /* v1.09.38 · ИНВОЙС ВЕРНУЛСЯ В ЧЕРНОВИК / ЦЕНА ИЗМЕНИЛАСЬ ПРИ АПРУВЕ: действующие PDF документа (kind invoice, без
+     archived_at) переезжают в «Архив TechLog / Invoices / ГГГГ-ММ»; строки media остаются с archived_at — история цела.
+     Право: админ, менеджер или основной исполнитель; документ должен быть виден пользователю (RLS через его клиента). */
+  if (job_id && mode === "inv_archive") {
+    const { data: job } = await sb.from("jobs").select("id,technician_id,date").eq("id", job_id).maybeSingle();
+    if (!job) return jres({ error: "NO_ACCESS" }, 403);
+    const boss = prof?.role === "admin" || prof?.role === "manager";
+    if (!boss && (job as any).technician_id !== user.id) return jres({ error: "FORBIDDEN" }, 403);
+    const { data: rows } = await s.from("media").select("id,drive_file_id")
+      .eq("job_id", job_id).eq("kind", "invoice").is("archived_at", null);
+    let moved = 0;
+    if (rows?.length) {
+      const t = await driveToken();
+      const cfg = await driveConfig();
+      const ym = String((job as any).date ?? "").slice(0, 7) || "old";
+      const dest = await monthFolder(t, await monthFolder(t, await monthFolder(t, cfg.gd_folder_id, ARCHIVE_DIR), INVOICES_DIR), ym);
+      for (const m of rows) if (m.drive_file_id && dest && await moveFile(t, m.drive_file_id, dest)) moved++;
+      await s.from("media").update({ archived_at: new Date().toISOString() }).in("id", rows.map((r) => r.id));
+    }
+    await s.from("audit_log").insert({ actor: user.id, actor_name: prof?.display_name ?? "", action: "inv_archive",
+      entity: "job", entity_id: job_id, details: { files: rows?.length ?? 0, moved, why: String(why ?? "") } });
+    return jres({ ok: true, files: rows?.length ?? 0, moved, ver: DEL_VER });
+  }
   /* v1.07.88 · АРХИВ (корзина). Документ, помеченный на удаление, не теряет
      файлы: они переезжают в папку «Архив TechLog / <документ>» на Диске.
      Вернуть документ из архива — файлы едут обратно в рабочие папки.

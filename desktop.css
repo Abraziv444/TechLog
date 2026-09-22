@@ -101,6 +101,17 @@
   html.tl-desktop .tabbar.tb-tight .tab{ padding:5px 4px; gap:2px; }
   html.tl-desktop .tabbar.tb-tight .tab svg{ width:22px; height:22px; }
   html.tl-desktop .tabbar.tb-tight .tab span{ font-size:.55rem; }
+  /* v1.09.38: классы нижнего меню в несколько рядов в колонке не действуют (страховка к перерисовке при смене ширины) */
+  html.tl-desktop .tabbar.tb-multi{ flex-wrap:nowrap; justify-content:flex-start; row-gap:0; }
+  html.tl-desktop .tabbar.tb-multi .tab{ flex:0 0 auto; max-width:none; padding-left:4px; padding-right:4px; }
+  html.tl-desktop .tabbar.tb-multi .tab span{ letter-spacing:0; }
+  /* v1.09.38: МЕНЮ НЕ ВЛЕЗАЕТ ПО ВЫСОТЕ — tabbarSideFit() ужимает по шагам: отступы/шрифт/значки до 80 %, затем прячет
+     подписи (название остаётся во всплывающей подсказке), затем уменьшает значки до 16 px; дальше смысла нет — прокрутка */
+  html.tl-desktop .tabbar.tbf{ gap:var(--tbf-gap) !important; }
+  html.tl-desktop .tabbar.tbf .tab{ padding-top:var(--tbf-pt) !important; padding-bottom:var(--tbf-pt) !important; gap:var(--tbf-tg) !important; }
+  html.tl-desktop .tabbar.tbf .tab svg{ width:var(--tbf-ic) !important; height:var(--tbf-ic) !important; }
+  html.tl-desktop .tabbar.tbf .tab span{ font-size:var(--tbf-fs) !important; }
+  html.tl-desktop .tabbar.tbf-nolab .tab span{ display:none !important; }
 
   /* ---------- Плавающая кнопка «＋» — в правый нижний угол ---------- */
   html.tl-desktop .fab{ right:28px; left:auto; bottom:28px; }

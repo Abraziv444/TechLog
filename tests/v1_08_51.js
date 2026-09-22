@@ -41,10 +41,10 @@ function t(name, cond, note){
   {
     const chips = await p.evaluate(() => [...document.querySelectorAll('.st-chip')].map(c => ({ no: c.querySelector('.st-chip-no').textContent.trim(), on: c.classList.contains('on'), t: c.querySelector('.st-chip-t').textContent.trim() })));
     t('восемь чипов разделов сверху, выбран 1-й, подписи короткие («Вода», «Пожар»…)',
-      chips.length === 8 && chips[0].on && chips.filter(c => c.on).length === 1 && chips[0].t === 'Вода' && chips[1].t === 'Пожар' && chips[7].t === 'Материалы', JSON.stringify(chips));
+      chips.length === 7 && chips[0].on && chips.filter(c => c.on).length === 1 && chips[0].t === 'Вода' && chips[1].t === 'Пожар' && !chips.some(c => c.t === 'Материалы')   /* v1.09.38: раздел 8 убран */, JSON.stringify(chips));
     t('вкладок и переключателя языка нет', !(await p.$('.acc-nav')) && !(await p.$('.st-lang')));
     const secs = [];
-    for (const n of [1, 2, 3, 4, 5, 6, 7, 8]){
+    for (const n of [1, 2, 3, 4, 5, 6, 7]){   /* v1.09.38: раздел 8 убран */
       await p.evaluate(id => window.App.studySel(id), n); await p.waitForTimeout(150);
       secs.push(await p.evaluate(() => {
         const c = document.querySelector('.st-sec');
@@ -56,9 +56,9 @@ function t(name, cond, note){
     }
     t('чип переключает карточку раздела, выбор запоминается на устройстве', secs.every((x, i) => x.no === String(i + 1) && x.on === String(i + 1) && x.saved === String(i + 1)), JSON.stringify(secs.map(x => [x.no, x.on, x.saved])));
     t('в карточке ровно две кнопки — «Тест» и «Книга»', secs.every(x => x.nb === 2 && /тест\|книга/.test(x.labels)), secs[0].labels);
-    t('«Тест» активен у всех семи разделов 1–7, у раздела 8 погашен',
+    t('«Тест» активен у всех семи разделов 1–7',
       secs.filter(x => x.test).map(x => x.no).join(',') === '1,2,3,4,5,6,7', JSON.stringify(secs.map(x => [x.no, x.test])));
-    t('«Книга» активна у всех разделов 1–8 (v1.08.60–66: section-N-ru/en, 8 — образец)', secs.filter(x => x.book).map(x => x.no).join(',') === '1,2,3,4,5,6,7,8', JSON.stringify(secs.map(x => [x.no, x.book])));
+    t('«Книга» активна у всех разделов 1–7 (v1.08.60–66: section-N-ru/en)', secs.filter(x => x.book).map(x => x.no).join(',') === '1,2,3,4,5,6,7', JSON.stringify(secs.map(x => [x.no, x.book])));
     const cards = await p.evaluate(() => ({ res: !!document.querySelector('.st-cap') && /Мои результаты/.test(document.querySelector('.st-cap').textContent), overall: [...document.querySelectorAll('.st-cap')].some(c => /Общий прогресс/.test(c.textContent)),
       stat: [...document.querySelectorAll('.st-cap')].some(c => /Статистика/.test(c.textContent)), pills: document.querySelectorAll('.st-pill').length, empty: !!document.querySelector('.st-empty') }));
     t('на экране без кнопок: «Мои результаты» (пока пусто), «Общий прогресс» с 7 пилюлями разделов, «Статистика» (админ)', cards.res && cards.overall && cards.stat && cards.pills === 7 && cards.empty, JSON.stringify(cards));
@@ -257,17 +257,17 @@ function t(name, cond, note){
 
   console.log('— чтение учебника (раздел 8) —');
   {
-    await p.evaluate(() => window.App.studyRead('8')); await p.waitForTimeout(700);
+    await p.evaluate(() => window.App.studyRead('7')); await p.waitForTimeout(700);
     const rd = await p.evaluate(() => ({ frame: !!document.querySelector('.st-frame'), src: (document.querySelector('.st-frame') || {}).getAttribute && document.querySelector('.st-frame').getAttribute('src'),
       timer: !!document.querySelector('#st-timer'), sandbox: document.querySelector('.st-frame').getAttribute('sandbox') }));
-    t('рамка учебника с section-8.html, таймер, песочница со скриптами (v1.08.60: листалка внутри книги)', rd.frame && /books\/section-8\.html/.test(rd.src) && rd.timer && /allow-same-origin/.test(rd.sandbox) && /allow-scripts/.test(rd.sandbox), JSON.stringify(rd));
+    t('рамка учебника с section-7 (v1.09.38: раздел 8 убран), таймер, песочница со скриптами (v1.08.60: листалка внутри книги)', rd.frame && /books\/section-7-(ru|en)\.html/.test(rd.src) && rd.timer && /allow-same-origin/.test(rd.sandbox) && /allow-scripts/.test(rd.sandbox), JSON.stringify(rd));
     await p.waitForTimeout(5300);
     await p.evaluate(() => window.App.studyReadClose()); await p.waitForTimeout(1700);
     const rs = await p.evaluate(() => (JSON.parse(localStorage.getItem('techlog_state_v1') || '{}').study_sessions || []).find(s => s.kind === 'read'));
-    t('чтение ≥5 с записано как сессия read по разделу 8', rs && +rs.section === 8 && rs.duration_ms >= 5000, JSON.stringify(rs && { sec: rs.section, ms: rs.duration_ms }));
-    await p.evaluate(() => window.App.studySel('8')); await p.waitForTimeout(200);
+    t('чтение ≥5 с записано как сессия read по разделу 7', rs && +rs.section === 7 && rs.duration_ms >= 5000, JSON.stringify(rs && { sec: rs.section, ms: rs.duration_ms }));
+    await p.evaluate(() => window.App.studySel('7')); await p.waitForTimeout(200);
     const k8 = await p.evaluate(() => [...document.querySelectorAll('.st-kpi')].map(k => k.textContent.replace(/\s+/g, ' ').trim()));
-    t('в «Моих результатах» раздела 8 появилось время чтения (≥5 с)', k8.some(x => /время чтения/.test(x) && /[5-9] с|мин/.test(x)), JSON.stringify(k8));
+    t('в «Моих результатах» раздела 7 появилось время чтения (≥5 с)', k8.some(x => /время чтения/.test(x) && /[5-9] с|мин/.test(x)), JSON.stringify(k8));
   }
 
   console.log('— результаты и статистика прямо на экране —');

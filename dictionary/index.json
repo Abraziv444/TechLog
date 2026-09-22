@@ -1,7 +1,7 @@
 {
   "schema": "techlog-study",
   "schema_version": 1,
-  "updated": "2026-09-14",
+  "updated": "2026-09-22",
   "note": "Каталог учебных разделов. title — полное название, short — подпись на чипе сверху экрана «Учёба», test — файл теста (dictionary/tests/…), book — книга (dictionary/books/…, .html или .pdf): строка — один файл на оба языка, либо {\"ru\": …, \"en\": …} — какую открыть, решает язык интерфейса в Настройках. Файла нет — кнопка гаснет. Добавили файл — просто впишите имя сюда.",
   "sections": [
     {
@@ -150,24 +150,6 @@
         "ru": "books/section-7-ru.html",
         "en": "books/section-7-en.html"
       }
-    },
-    {
-      "id": 8,
-      "color": "#CE82FF",
-      "tab": {
-        "ru": "резерв",
-        "en": "reserved"
-      },
-      "title": {
-        "ru": "Раздел 8 — учебные материалы",
-        "en": "Section 8 — study materials"
-      },
-      "short": {
-        "ru": "Материалы",
-        "en": "Materials"
-      },
-      "test": "tests/section-8.json",
-      "book": "books/section-8.html"
     }
   ]
 }

@@ -21,11 +21,12 @@
      exec    { as, tech?, op, args }                  → { ok, data | error, actor, ms }   (HTTP 200 и при отказе базы: отказ — это ответ)
      cleanup { run?, all? }                           → { ok, deleted, files, trashed }   (работает и при выключенном режиме; файлы — в корзину Диска)
      pushes  { run }                                  → { ok, rows }                       (очередь пушей по тестовым документам прогона)
+     probe   { names }                                → { ok, rows:[{name,status,cors,body,ms}] } (админ, менеджер; ответ функций со стороны сервера)
    as: "self" | "admin" | "manager" | "manager_appr" | "tech" (+ tech: uuid работника)
    ===================================================================== */
 import { svc, userClient, driveToken, CORS, jres } from "../_shared/google.ts";
 
-const DFT_VER = "1.09.33";
+const DFT_VER = "1.09.37";
 const OPS = new Set(["job_create", "job_adopt", "job_update", "job_get", "pl_upsert", "ext_req_create", "prop_create", "prop_adopt", "rep_create", "rep_adopt", "rep_update", "rep_get", "rpc"]);   // job_adopt (v1.09.28): документ, созданный кнопкой приложения, становится тестовым
 
 type Prof = { id: string; role: string; display_name: string; blocked: boolean; can_approve?: boolean };
@@ -95,6 +96,26 @@ Deno.serve(async (req) => {
     }
 
     const a = await actors(s, org, user.id);
+    /* v1.09.37: ДИАГНОЗ ФУНКЦИЙ СО СТОРОНЫ СЕРВЕРА. Браузер не может прочитать ответ функции, у которой нет заголовков CORS,
+       и видит только «Failed to fetch». Отсюда (сервер → сервер) CORS не мешает: видно настоящий ответ шлюза —
+       404 NOT_FOUND (функции нет в проекте), 503 BOOT_ERROR (задеплоена, но не запускается, с текстом ошибки) или
+       нормальный ответ функции. Только админ и менеджер, только функции из списка проекта; работает и при выключенном режиме. */
+    if (action === "probe") {
+      if (!["admin", "manager"].includes((me as Prof).role)) return jres({ ok: false, error: { message: "FORBIDDEN" } }, 403);
+      const ALLOW = new Set(["media-health", "media-begin", "media-put", "media-commit", "media-view", "media-delete", "media-oauth", "push", "backup", "bouncie", "dft"]);
+      const names = (Array.isArray(body?.names) ? body.names : []).map((n: unknown) => String(n)).filter((n: string) => ALLOW.has(n)).slice(0, 11);
+      const base = (Deno.env.get("SUPABASE_URL") ?? "") + "/functions/v1/", auth = req.headers.get("Authorization") ?? "", anon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      const rows = await Promise.all(names.map(async (n: string) => {
+        const t0 = Date.now();
+        try {
+          const r = await fetch(base + n + "?ping=1", { headers: { Authorization: auth, apikey: anon } });
+          const tx = (await r.text().catch(() => "")).slice(0, 400);
+          return { name: n, status: r.status, cors: r.headers.get("access-control-allow-origin") ?? "", body: tx, ms: Date.now() - t0 };
+        } catch (e) { return { name: n, status: 0, cors: "", body: String((e as Error)?.message ?? e).slice(0, 200), ms: Date.now() - t0 }; }
+      }));
+      return jres({ ok: true, ver: DFT_VER, rows });
+    }
+
     if (action === "status") {
       const mine = await s.from("jobs").select("id", { count: "exact", head: true }).eq("is_test", true).eq("test_owner", user.id);
       const all = (me as Prof).role === "admin" ? await s.from("jobs").select("id", { count: "exact", head: true }).eq("is_test", true) : null;

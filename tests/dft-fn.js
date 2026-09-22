@@ -79,6 +79,15 @@ const call = async (body) => handler({ method: 'POST', url: 'https://x/functions
   t('отказ базы (настоящий документ) возвращается как ОТВЕТ: HTTP 200, ok=false, код и текст ошибки — для журнала теста', r.status === 200 && r.body.ok === false && r.body.error.message === 'DFT_NOT_TEST_DOC' && r.body.error.code === 'P0001' && typeof r.body.ms === 'number', r.body);
   r = await call({ action: 'nope' });
   t('неизвестное действие — 400', r.status === 400);
+  /* v1.09.37: probe — ответ функций со стороны сервера */
+  me = { id: 'tech' }; r = await call({ action: 'probe', names: ['bouncie'] });
+  t('probe: работнику нельзя (403)', r.status === 403 && r.body.error.message === 'FORBIDDEN');
+  const seen = []; global.fetch = async (u, o) => { seen.push({ u: String(u), a: o && o.headers && o.headers.Authorization }); return { status: /bouncie/.test(u) ? 404 : 200, headers: { get: () => null }, text: async () => /bouncie/.test(u) ? '{"code":"NOT_FOUND"}' : '{"fn":"push","ver":"1.09.23"}' }; };
+  me = { id: 'mgr' }; r = await call({ action: 'probe', names: ['bouncie', 'push', 'evil-fn', '../x'] });
+  t('probe: менеджер — только функции проекта (чужие имена отброшены), ответ шлюза как есть, вход вызывающего передан', r.status === 200 && r.body.ok && r.body.rows.length === 2 && r.body.rows[0].status === 404 && /NOT_FOUND/.test(r.body.rows[0].body)
+    && r.body.rows[1].status === 200 && seen.length === 2 && seen.every(x => /\?ping=1$/.test(x.u) && x.a === 'Bearer x'), { rows: r.body.rows, seen });
+  DB.org_settings[0].dft_on = false; r = await call({ action: 'probe', names: ['push'] });
+  t('probe работает и при выключенном режиме тестирования', r.body.ok === true); DB.org_settings[0].dft_on = true;
   me = { id: 'adm1' }; r = await call({ action: 'status' });
   t('админ в status видит и общее число тестовых документов', r.body.all === 1 && r.body.mine === 0, r.body);
 

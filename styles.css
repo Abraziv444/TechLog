@@ -74,6 +74,9 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   transform:rotate(-4deg);   /* v1.07.79: белый по зелёному давал 2.09 */
 }
 .logo span{transform:rotate(4deg)}
+/* v1.09.38: логотип-картинка — без зелёной подложки, наклона и тени-кнопки */
+.logo.logo-pic{background:transparent;box-shadow:none;transform:none;overflow:hidden;padding:0}
+.logo.logo-pic .logo-img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit;pointer-events:none;user-select:none}
 .brand{line-height:1.05;flex:1;min-width:0}
 .brand .name{font-weight:900;font-size:1.25rem}
 .brand .name b{color:var(--blue)}
@@ -2338,6 +2341,8 @@ button.net-pill::after{ content:"";position:absolute;left:-2px;right:-2px;top:-4
 .btn .net-pill{ flex:0 0 auto;min-width:0 }
 button.btn:has(> .net-pill){ flex-wrap:wrap }
 .net-pill.slow::before{ background:var(--orange);box-shadow:0 0 5px var(--orange) }
+/* v1.09.38: у .net-pill свой display:inline-flex, и он перебивал атрибут hidden — «Скрыть статистику связи» не прятала бейдж */
+.net-pill[hidden]{ display:none !important }
 @media (max-width:380px){ .net-pill{ font-size:.5rem;padding:1px 5px;gap:3px;min-width:86px } }
 /* v1.08.50: номер машины = присланный руль с цифрой внутри.
    Прежние рамки-кружочки снимаются: сам значок и есть «кружок».
@@ -3280,6 +3285,26 @@ html.tl-desktop .modal.cl-modal{max-width:min(760px,94vw);width:min(760px,94vw)}
 .chg-m{gap:10px}
 .chg-m .ch-ava{flex:0 0 34px;width:34px;height:34px;font-size:.72rem}
 .ch-head .ch-ib{flex:0 0 42px}
+/* v1.09.38 · ЧАТ: кнопки шапки переписки — у правого края (заголовок забирает всю середину), текст сообщений — обычной
+   жирности, поле ввода растёт, а на телефоне открытая переписка занимает экран без заголовка «Сообщения» над ней */
+.ch-head .grow{flex:1 1 auto;min-width:0}
+.ch-head .grow b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-head .grow .tiny{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-text{font-weight:600;font-size:.95rem}
+.ch-bub{box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.ch-msgs{background:var(--bg,#0F171B)}
+.ch-compose{padding:8px}
+.ch-row{align-items:flex-end}
+.ch-row textarea{border-radius:20px;padding:10px 14px}
+.ch-send{border-radius:50%;width:44px;flex-basis:44px;height:44px}
+.ch-wrap.narrow .ch-row{gap:4px}
+.ch-wrap.narrow .ch-row .ch-ib{flex:0 0 36px;width:36px;height:40px;border-radius:12px}
+.ch-wrap.narrow .ch-row .ch-ib .ic{width:18px;height:18px}
+.ch-wrap.narrow .ch-pane{border-radius:14px}
+.ch-wrap.narrow .ch-head{padding:6px 8px;gap:6px}
+#app.scr-chat:has(.ch-wrap.narrow.has-thread) > .section-title{display:none}
+.ch-top .ch-newg{height:44px;min-height:44px;border-radius:14px}
+.ch-list .ch-th{margin-bottom:6px}
 
 /* ===== v1.09.21: ключи защиты переписки ===== */
 .ck-fp{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;white-space:nowrap}
@@ -3411,3 +3436,67 @@ html.tl-desktop .dft-panel { bottom: 14px; }
 .fn-row { padding: 2px 0; overflow-wrap: anywhere; }
 .fn-row svg { width: 13px; height: 13px; vertical-align: -2px; }
 .fn-row.bad b { color: var(--red); }
+
+/* =====================================================================
+   v1.09.38 · рабочее время пушей, машина по трекеру, ТО и заметки, «Моя машина»
+   ===================================================================== */
+.wk-box.off{opacity:.55}
+.wk-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:6px 0}
+.wk-d{min-width:0;min-height:38px;padding:0 2px;border-radius:10px;border:2px solid var(--line);background:var(--panel-2,#1b2a32);color:var(--dim);font:inherit;font-weight:900;cursor:pointer}
+.wk-d.on{border-color:var(--blue);color:var(--blue);background:rgba(28,176,246,.12)}
+.wk-d:disabled{cursor:default}
+.wk-hm{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px}
+.wk-hm input{width:100%;min-width:0;padding-left:8px;padding-right:4px}
+.trk-mk.dis{opacity:.45;filter:grayscale(1);cursor:help}
+.mt-sec{margin-top:10px;padding-top:8px;border-top:2px solid var(--line-soft,#26363E)}
+.mt-h{font-weight:900;margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mt-row{padding:8px 10px;border:2px solid var(--line);border-radius:12px;margin-bottom:6px;background:var(--panel-2,#1b2a32)}
+.mt-f{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0}
+.mt-f label{display:flex;flex-direction:column;gap:2px;flex:1 1 130px;min-width:0;text-align:left;align-items:stretch}
+.mt-f label .tiny{text-align:left}
+.mt-row:not(.own) .mt-ownw{display:none}
+.mt-st.st-over{color:var(--red)} .mt-st.st-soon{color:#B9932F} .mt-st.st-ok{color:var(--green)} .mt-st.st-none,.mt-st.st-nodo{color:var(--dim)}
+.mt-ico{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;border:2px solid var(--line);color:var(--blue)}
+.rowline.off{opacity:.6}
+.vn-add{display:flex;flex-direction:column;gap:6px;margin-bottom:6px}
+.vn-add textarea{min-height:56px;resize:vertical}
+.vn-row{padding:6px 8px;border-left:3px solid var(--blue);border-radius:6px;background:var(--panel-2,#1b2a32);margin-bottom:6px}
+.vn-meta{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--dim)}
+.vn-meta .ch-del{margin-left:auto}
+.vn-body{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:2px}
+.mc-top{display:flex;align-items:center;gap:10px;margin:6px 0 10px}
+.mc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.mc-grid > div{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:12px;background:var(--panel-2,#1b2a32);border:2px solid var(--line-soft,#26363E);min-width:0}
+.mc-grid b{overflow-wrap:anywhere}
+.mc-grid .mc-wide{grid-column:1/-1}
+.mc-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.02em}
+.mc-mt{padding:8px 0;border-bottom:1px solid var(--line-soft,#26363E)}
+.mc-mt:last-child{border-bottom:0}
+.mc-mt-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.mc-bar{height:8px;border-radius:4px;background:var(--panel-2,#1b2a32);overflow:hidden;margin:6px 0 4px;border:1px solid var(--line)}
+.mc-bar i{display:block;height:100%;background:var(--green)}
+.mc-mt.st-soon .mc-bar i{background:#FFC800} .mc-mt.st-over .mc-bar i{background:var(--red)}
+
+/* ---------- v1.09.38 · этапы водителя: на точке — светится, пройдено — блёкло; одинаково на карте ТВ, карточках ТВ и доске ---------- */
+@keyframes stgGlow{0%,100%{box-shadow:0 0 0 2px rgba(88,204,2,.55),0 0 8px rgba(88,204,2,.55)}50%{box-shadow:0 0 0 5px rgba(88,204,2,.18),0 0 20px rgba(88,204,2,.95)}}
+.tvpin.st-here,.bjob.st-here,.bpk.st-here,.tvr-s.st-here{animation:stgGlow 1.8s ease-in-out infinite;border-color:var(--green) !important}
+.tvpin.st-done{opacity:.4;filter:grayscale(.7)}
+.bjob.st-done,.bpk.st-done,.tvr-s.st-done{opacity:.45;filter:grayscale(.5)}
+@media (prefers-reduced-motion:reduce){.tvpin.st-here,.bjob.st-here,.bpk.st-here,.tvr-s.st-here{animation:none;box-shadow:0 0 0 3px rgba(88,204,2,.6)}}
+.tv-office{background:#fff;color:#0F171B;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;border:2px solid #0F171B}
+.tv-office .ic{width:18px;height:18px}
+.twg-route .tvr{margin-bottom:8px}
+.tvr-h{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.tvr-line{flex:1;height:3px;border-radius:2px;opacity:.8}
+.tvr-stops{display:flex;flex-wrap:wrap;gap:6px}
+.tvr-s{display:flex;align-items:center;gap:6px;padding:4px 8px 4px 6px;border:2px solid var(--line);border-left-width:4px;border-radius:10px;background:var(--panel-2,#1b2a32);min-width:0;max-width:100%}
+.tvr-no{flex:0 0 auto;min-width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--bg,#0F171B);font-weight:900;font-size:.72rem}
+.tvr-t{display:flex;flex-direction:column;min-width:0}
+.tvr-t b,.tvr-t .tiny{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tvr-live{font-size:.66rem;font-weight:900;color:var(--green);text-transform:uppercase}
+.office-row{display:flex;gap:6px}
+.office-row input{flex:1;min-width:0}
+.office-sub{margin-top:12px;padding-top:10px;border-top:2px solid var(--line-soft,#26363E)}
+.office-sub > div:first-child svg{width:18px;height:18px;vertical-align:-3px}
+.tv-legend .sw-here{background:#FF9600;box-shadow:0 0 0 2px var(--green),0 0 8px var(--green)}
+.tv-legend .sw-passed{background:#FF9600;opacity:.4}

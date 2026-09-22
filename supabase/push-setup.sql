@@ -4,9 +4,9 @@
 --   1) включает расширения pg_net (база сама зовёт Edge Function) и pg_cron (расписание);
 --   2) кладёт в app_secrets адрес функции push и публичный anon-ключ проекта — тот же, что в config.js
 --      (он и так отдаётся каждому браузеру; таблица app_secrets клиентам закрыта);
---   3) ставит расписание: утренняя сводка пикапов 11:30 UTC (7:30 в Атланте летом, 6:30 зимой)
---      и страховочный разбор очереди каждые 5 минут — на случай, если толчок от базы не дошёл.
--- ПЕРЕД ЗАПУСКОМ: выполнен update-to-1_09_22.sql и передеплоена Edge Function push (PUSH_VER 1.09.22).
+--   3) ставит расписание: минутный тик push_cron_tick() (v1.09.38) — отложенные до рабочего времени пуши, утренняя
+--      сводка в 07:30 по поясу фирмы и страховочный разбор очереди раз в 5 минут.
+-- ПЕРЕД ЗАПУСКОМ: выполнен update-to-1_09_38.sql (в нём функция тика) и передеплоена Edge Function push (PUSH_VER 1.09.22).
 -- ВАЖНО — «Verify JWT»: у этого проекта ключи нового формата (sb_publishable_…), это не JWT. База и расписание обращаются
 -- к функции без входа пользователя, и шлюз отклонит их с 401, пока у функции включена проверка JWT. Откройте
 -- Supabase → Edge Functions → push → Details и ВЫКЛЮЧИТЕ «Verify JWT» (Enforce JWT verification). Это безопасно:
@@ -25,27 +25,11 @@ on conflict (key) do update set value = excluded.value;
 do $$ begin perform cron.unschedule('techlog-push-morning'); exception when others then null; end $$;
 do $$ begin perform cron.unschedule('techlog-push-queue');   exception when others then null; end $$;
 
-select cron.schedule('techlog-push-morning', '30 11 * * *', $cron$
-  select net.http_post(
-    url := (select value from public.app_secrets where key = 'push_fn_url') || '?send=1&morning=1',
-    headers := jsonb_build_object('Content-Type', 'application/json',
-      'apikey', (select value from public.app_secrets where key = 'push_fn_key'),
-      'x-cron-key', (select value from public.app_secrets where key = 'push_cron_key'))
-      || case when (select value from public.app_secrets where key = 'push_fn_key') like 'eyJ%'
-              then jsonb_build_object('Authorization', 'Bearer ' || (select value from public.app_secrets where key = 'push_fn_key')) else '{}'::jsonb end,
-    body := '{}'::jsonb, timeout_milliseconds := 10000);
-$cron$);
-
-select cron.schedule('techlog-push-queue', '*/5 * * * *', $cron$
-  select net.http_post(
-    url := (select value from public.app_secrets where key = 'push_fn_url') || '?send=1',
-    headers := jsonb_build_object('Content-Type', 'application/json',
-      'apikey', (select value from public.app_secrets where key = 'push_fn_key'),
-      'x-cron-key', (select value from public.app_secrets where key = 'push_cron_key'))
-      || case when (select value from public.app_secrets where key = 'push_fn_key') like 'eyJ%'
-              then jsonb_build_object('Authorization', 'Bearer ' || (select value from public.app_secrets where key = 'push_fn_key')) else '{}'::jsonb end,
-    body := '{}'::jsonb, timeout_milliseconds := 10000);
-$cron$);
+/* v1.09.38: ОДИН минутный тик вместо «утро в 11:30 UTC» и «очередь раз в 5 минут». Тик — функция базы push_cron_tick()
+   (update-to-1_09_38.sql): Edge Function push зовётся, только когда созрели пуши, отложенные до рабочего времени
+   получателя, когда пора утренней сводки (по местному времени фирмы, 07:30 — летом и зимой одинаково) и раз в
+   5 минут для страховки, как раньше. Если функции тика ещё нет — сначала выполните update-to-1_09_38.sql. */
+select cron.schedule('techlog-push-queue', '* * * * *', 'select public.push_cron_tick()');
 
 -- проверка: что записано и что запланировано
 select key, case when key = 'push_fn_key' then left(value, 12) || '…' else value end as value

@@ -87,7 +87,9 @@ const expose = `;window.__T = {
   /* v1.09.35 */
   dftIssue, dftSevFor, dftIssuesText,
   /* v1.09.36 */
-  SRV_FNS, fnProbe, fnStText, fnVerOk
+  SRV_FNS, fnProbe, fnStText, fnVerOk,
+  /* v1.09.37 */
+  tfill
 };`;
 
 try {
@@ -1508,8 +1510,8 @@ console.log('\n— v1.08.51: учёба —');
   t('study_sessions в синке и в бэкапе; DB-диагностика знает новые колонки',
     T.TABLES.includes('study_sessions') && T.BK_TABLES.includes('study_sessions')
     && T.DB_NEED_COLS.some(c => c[0] === 'study_sessions') && T.DB_NEED_COLS.some(c => c[0] === 'profiles' && c[1] === 'study_access'));
-  t('каталог: 8 разделов по умолчанию, тест, учебник и короткая подпись у каждого',
-    T.studyDefaultCat().sections.length === 8 && T.studyDefaultCat().sections.every(s => /^tests\/section-\d\.json$/.test(s.test)
+  t('каталог: 7 разделов по умолчанию (v1.09.38: 8-й «Материалы» убран), тест, учебник и короткая подпись у каждого',
+    T.studyDefaultCat().sections.length === 7 && T.studyDefaultCat().sections.every(s => /^tests\/section-\d\.json$/.test(s.test)
       && (typeof s.book === 'string' ? /^books\/section-\d\.html$/.test(s.book) : /^books\/section-\d-ru\.html$/.test(s.book.ru) && /^books\/section-\d-en\.html$/.test(s.book.en))
       && s.short && s.short.ru && s.short.en));
   /* v1.08.60: книга на двух языках — выбор по языку интерфейса, строка по-прежнему работает */
@@ -1712,15 +1714,15 @@ console.log('\n— v1.08.51: учёба —');
     && src.includes("if (!HAS_SB || !isAdmin() || !foldOpen('tvc')) return;") && !src.includes("foldOpen('tvs')")
     && src.includes("Настройки → «Режим телевизора» → «ТВ-экраны»") && src.includes("Settings → “TV mode” → “TV screens”"));
   t('v1.09.00: «Push уведомления и подсказки» одним разделом; «Прочие функции» (Функции, Код приглашения, PWA) — последний раздел перед «Выйти»',
-    /\$\{fold\('push', t\('push_pop_card'\), 'bell', pbCardHtml\(\) \+ (pdCardHtml\(\) \+ )?popCardHtml\(\)\)\}/.test(src) && !src.includes("fold('pop'")   /* v1.09.22: между ними — «Доставка уведомлений» */
+    /\$\{fold\('push', t\('push_pop_card'\), 'bell', pbCardHtml\(\) \+ (wkCardHtml\(\) \+ )?(pdCardHtml\(\) \+ )?popCardHtml\(\)\)\}/.test(src) && !src.includes("fold('pop'")   /* v1.09.22: между ними — «Доставка уведомлений» */
     && !src.includes("fold('feat'") && /\$\{fold\('misc', t\('misc_card'\), 'gear', miscCardHtml\(\)\)\}\n\n  <button class="btn btn-red"(?: id="set-logout")? onclick="App\.logout\(\)">/.test(src)   /* v1.09.09: у кнопки появился id */
-    && src.includes("return (isAdmin() ? featCardHtml() + inviteCardHtml() : '') + pwaCardHtml();")
+    && /return (tzCardHtml\(\) \+ )?\(isAdmin\(\) \? featCardHtml\(\) \+ inviteCardHtml\(\) : ''\) \+ pwaCardHtml\(\);/.test(src)   /* v1.09.38: + пояс фирмы */
     && (src.match(/onclick="App\.inviteSave\(\)"/g) || []).length === 1 && (src.match(/onclick="App\.updCheck\(\)"/g) || []).length === 1
     && /function inviteCardHtml\(\)\{\s*if \(!isAdmin\(\)\) return '';/.test(src)
     && ['misc_card', 'push_pop_card'].every(k => (src.match(new RegExp('\\b' + k + ": '", 'g')) || []).length === 2));
-  t('dictionary/index.json: 8 разделов, файлы всех семи разделов и учебник 8 реально лежат в сборке',
-    idx.sections.length === 8 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
-    && fs.existsSync(ROOT + '/dictionary/' + idx.sections[7].book) && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')
+  t('dictionary/index.json: 7 разделов (v1.09.38: 8-й убран), файлы всех семи разделов реально лежат в сборке',
+    idx.sections.length === 7 && [1, 2, 3, 4, 5, 6, 7].every(n => fs.existsSync(ROOT + '/dictionary/' + idx.sections[n - 1].test))
+    && !fs.existsSync(ROOT + '/dictionary/books/section-8.html') && fs.existsSync(ROOT + '/dictionary/tests/SCHEMA.md')
     && fs.existsSync(ROOT + '/dictionary/tests/template.json') && fs.existsSync(ROOT + '/dictionary/tests/tools/normalize-quiz.py'));
   /* нормализация: единый формат и три старых варианта структуры */
   const canon = T.qzNorm(JSON.parse(fs.readFileSync(ROOT + '/dictionary/tests/template.json', 'utf8')), 1);
@@ -2369,6 +2371,32 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   t('v1.09.03: длинная подсказка «?» висит дольше и закрывается нажатием',
     src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(12000, s.length * 40)))") && src.includes('function toast(msg, kind, ms){')   /* v1.09.12: не дольше 12 с, крестик, нажатие мимо */
     && src.includes("el.classList.add('tap'); el.onclick = () => el.remove();") && src.includes("x.className = 't-x'") && css.includes('.toast.tap{cursor:pointer}'));
+
+  /* ---------- v1.09.37 ---------- */
+  console.log('\n— v1.09.37: диагноз функции со стороны сервера; подстановка всех {X} —');
+  t('v1.09.37: версии (app = sw = version.json, не ниже 1.09.37); функция dft 1.09.37 с действием probe', T.APP_VERSION >= '1.09.37' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'")
+    && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION && /const DFT_VER = "1\.09\.37"/.test(fs.readFileSync(ROOT + '/supabase/functions/dft/index.ts', 'utf8'))
+    && fs.readFileSync(ROOT + '/supabase/functions/dft/index.ts', 'utf8').includes('if (action === "probe")'));
+  t('v1.09.37: ни один текст с повторяющейся подстановкой не заполняется одиночным .replace (дважды оставались «{NEW}» и «{N}»)', (() => {
+    const keys = []; for (const m of src.matchAll(/\b([a-z][a-z0-9_]*):\s*'((?:[^'\\]|\\.)*)'/g)){ for (const ph of new Set(m[2].match(/\{[A-Z_]+\}/g) || [])) if (m[2].split(ph).length > 2) keys.push([m[1], ph]); }
+    const bad = keys.filter(([k, ph]) => src.split('\n').some(l => l.includes("t('" + k + "')") && l.includes(".replace('" + ph + "'")));
+    return keys.length >= 3 && bad.length === 0 && T.tfill('{A}-{A}/{B}', { A: 1, B: 2 }) === '1-1/2'; })());
+  await (async () => {
+    const f0 = w.fetch, resp = (status, body) => ({ status, ok: status < 400, json: async () => body, text: async () => JSON.stringify(body) });
+    const run = async (srvRow) => { w.fetch = async (u, o) => { if (/\/dft$/.test(String(u))) return resp(200, srvRow ? { ok: true, rows: [srvRow] } : { error: 'BAD_ACTION' });
+        if (o && o.mode === 'no-cors') return { type: 'opaque', status: 0 }; throw new TypeError('Failed to fetch'); };
+      try{ return await T.fnProbe('bouncie'); } finally { w.fetch = f0; } };
+    const a = await run({ name: 'bouncie', status: 404, body: '{"code":"NOT_FOUND","message":"Requested function was not found"}' });
+    const b = await run({ name: 'bouncie', status: 503, body: '{"code":"BOOT_ERROR","message":"Function failed to start (please check logs)"}' });
+    const c = await run({ name: 'bouncie', status: 200, body: '{"fn":"bouncie","ver":"1.09.10"}' });
+    const d = await run(null);
+    const all = [a, b, c, d].map(T.fnStText).join(' ');
+    t('v1.09.37: браузер ответа не видит — диагноз с сервера: не задеплоена (404 NOT_FOUND), не запускается (BOOT_ERROR), отвечает серверу без CORS; без dft 1.09.37 — подсказка передеплоить её; в тексте нет «{…}»',
+      a.st === 'missing' && /NOT_FOUND/.test(T.fnStText(a)) && b.st === 'boot' && /BOOT_ERROR/.test(T.fnStText(b)) && /functions-dashboard\/bouncie/.test(T.fnStText(b)) && c.st === 'nocors_srv' && d.st === 'nocors' && /dft 1\.09\.37/.test(T.fnStText(d))
+      && !/\{[A-Z]+\}/.test(all), { a: a.st, b: b.st, c: c.st, d: d.st, all: all.slice(0, 300) });
+  })();
+  t('v1.09.37: запросы самой проверки функций не дублируются в проблемы прогона; «документа больше нет» после «Удалить навсегда» — ожидаемый ответ',
+    src.includes("const isProbe = /[?&]probe=1/.test(url);") && src.includes("if (!isProbe) dftIssue('err', t('dfi_net')") && src.includes("/* проверка «документа больше нет»: NOT_FOUND — ожидаемый ответ */"));
 
   /* ---------- v1.09.36 ---------- */
   console.log('\n— v1.09.36: функции сервера — есть ли, запускаются ли, какой версии —');

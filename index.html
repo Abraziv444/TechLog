@@ -50,7 +50,7 @@
 </head>
 <body>
 <div id="app" aria-live="polite">
-  <div class="login-wrap boot-splash"><div class="logo"><span>TL</span></div>
+  <div class="login-wrap boot-splash"><div class="logo logo-pic"><img class="logo-img" src="./icons/icon-192.png" alt="TechLog" width="44" height="44"></div>
   <div class="hello">TechLog</div><div class="tiny">загрузка…</div></div>
 </div>
 <div id="toasts"></div>
@@ -93,7 +93,7 @@
     try{ var r = await fetch('./version.json?ts=' + Date.now(), {cache:'no-store'}); var v = await r.json(); lines.push(W.srv + v.version); }
     catch(e){ lines.push('version.json: ' + W.na); }
     app.innerHTML = '<div class="login-wrap">' +
-      '<div class="logo"><span>TL</span></div>' +
+      '<div class="logo logo-pic"><img class="logo-img" src="./icons/icon-192.png" alt="TechLog" width="44" height="44"></div>' +
       '<div class="hello">' + W.title + '</div>' +
       '<div class="tiny" style="text-align:left;white-space:pre-line;background:#17232A;border:2px solid #31434C;border-radius:12px;padding:10px 12px;margin-top:10px">' + lines.join('\n') + '</div>' +
       '<button class="btn btn-red" style="margin-top:14px" onclick="__tlReset()">' + W.reset + '</button>' +

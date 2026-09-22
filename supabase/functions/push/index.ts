@@ -11,6 +11,8 @@ import webpush from "npm:web-push@3.6.7";
        апрува (jobs, placements, repairs) — функция push_enqueue уважает
        personal push_prefs и не шлёт автору действия;
      - эта функция: дайджест «просроченные пикапы» (раз в ~6 часов);
+     - v1.09.38: строки вне рабочего времени получателя лежат с hold_until (ставит база) — их не трогаем,
+       пока не придёт время; расписание раз в минуту (push_cron_tick) зовёт функцию, когда они созрели;
      - функция bouncie: Check Engine, низкое топливо, ТО.
 
    Режимы:
@@ -25,7 +27,7 @@ import webpush from "npm:web-push@3.6.7";
    пингует ?send=1 раз в ~2 минуты и сразу после действий-триггеров.
    ===================================================================== */
 
-const PUSH_VER = "1.09.23";
+const PUSH_VER = "1.09.38";
 type Sb = ReturnType<typeof svc>;
 
 async function vapid(s: Sb): Promise<{ pub: string; priv: string }> {
@@ -51,9 +53,22 @@ async function cronKey(s: Sb): Promise<string> {
   return v;
 }
 
-/* сегодняшняя дата фирмы (Атланта) */
-function todayNY(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+/* v1.09.38: пояс фирмы — org_settings.tz (по умолчанию Нью-Йорк); тот же, что у приложения и функций базы */
+let _tz = "";
+async function orgTZ(s: Sb): Promise<string> {
+  if (_tz) return _tz;
+  let z = "America/New_York";
+  try {
+    const { data } = await s.from("org_settings").select("tz").eq("id", "org").maybeSingle();
+    if (data?.tz) { new Intl.DateTimeFormat("en-CA", { timeZone: data.tz }); z = data.tz; }
+  } catch (_e) { /* колонки ещё нет или пояс неверный — Нью-Йорк */ }
+  return (_tz = z);
+}
+async function todayNY(s: Sb): Promise<string> {
+  return new Date().toLocaleDateString("en-CA", { timeZone: await orgTZ(s) });
+}
+async function nowHM(s: Sb): Promise<string> {
+  return new Date().toLocaleTimeString("en-GB", { timeZone: await orgTZ(s), hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 /* дайджест просроченных пикапов — не чаще раза в 6 часов */
@@ -65,7 +80,7 @@ async function enqueueOverdue(s: Sb) {
   if (Date.now() - last < 6 * 3600 * 1000) return;
   await s.from("org_settings").update({ push_overdue_at: new Date().toISOString() }).eq("id", org.id);
 
-  const today = todayNY();
+  const today = await todayNY(s);
   const { data: pls } = await s.from("placements")
     .select("technician_id, unit_number, due_date, picked_up")
     .eq("picked_up", false).eq("superseded", false)
@@ -91,7 +106,14 @@ async function enqueueOverdue(s: Sb) {
    (день по Нью-Йорку; отметка в app_secrets.push_morning_day — схема базы не меняется).
    Личная галочка та же, что у «Пикап просрочен» (push_prefs.overdue). */
 async function enqueueMorning(s: Sb): Promise<number> {
-  const today = todayNY();
+  const today = await todayNY(s);
+  /* v1.09.38: сводка — не раньше утреннего часа фирмы (org_settings.push_morning_hm, 07:30), летом и зимой одинаково;
+     расписание (push_cron_tick) и так зовёт с morning=1 только после него — это страховка от старого расписания в UTC */
+  try {
+    const { data: o } = await s.from("org_settings").select("push_morning_hm").eq("id", "org").maybeSingle();
+    const hm = /^\d{2}:\d{2}$/.test(String(o?.push_morning_hm ?? "")) ? String(o!.push_morning_hm) : "07:30";
+    if ((await nowHM(s)) < hm) return 0;
+  } catch (_e) { /* колонки ещё нет — как раньше */ }
   const { data: mk } = await s.from("app_secrets").select("value").eq("key", "push_morning_day").maybeSingle();
   if (mk?.value === today) return 0;
   await s.from("app_secrets").upsert([{ key: "push_morning_day", value: today }], { onConflict: "key" });
@@ -144,7 +166,9 @@ async function deliver(s: Sb): Promise<{ sent: number; dropped: number; closed: 
   const cl = await s.rpc("push_claim", { p_limit: 200 });
   if (!cl.error) q = cl.data as any[];
   else {
-    const old = await s.from("push_queue").select("*").is("sent_at", null).lt("tries", 5).order("created_at").limit(200);
+    const old = await s.from("push_queue").select("*").is("sent_at", null).lt("tries", 5)
+      .or("hold_until.is.null,hold_until.lte." + new Date().toISOString())      // v1.09.38: рабочее время получателя
+      .order("created_at").limit(200);
     q = old.data as any[];
   }
   if (!q?.length) return { sent: 0, dropped: 0, closed: 0 };

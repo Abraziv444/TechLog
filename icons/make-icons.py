@@ -108,3 +108,22 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+# v1.09.38: значок уведомления (badge) — одноцветный силуэт на прозрачном фоне. Android показывает
+# у badge только прозрачность: цветная квадратная иконка превращалась в белый квадрат.
+def make_badge(size=96):
+    im = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    m = size * 0.08
+    d.rounded_rectangle((m, m, size - m, size - m), radius=size * 0.2, fill=(255, 255, 255, 255))
+    w = max(3, round(size * 0.13))
+    pts = [(size * 0.27, size * 0.52), (size * 0.44, size * 0.68), (size * 0.74, size * 0.34)]
+    d.line(pts, fill=(0, 0, 0, 0), width=w, joint='curve')
+    for x, y in (pts[0], pts[-1]):
+        d.ellipse((x - w / 2, y - w / 2, x + w / 2, y + w / 2), fill=(0, 0, 0, 0))
+    return im
+
+
+if __name__ == '__main__' and os.environ.get('BADGE_ONLY'):
+    make_badge().save(os.path.join(HERE, 'badge-96.png'))

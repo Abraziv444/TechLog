@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.09.36';
+const VERSION = '1.09.38';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -32,6 +32,7 @@ const ASSETS = [
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
   './icons/favicon-64.png',
+  './icons/badge-96.png',
   './icons/apple-touch-icon-180.png',
   './dictionary/index.json'
 ];
@@ -213,12 +214,17 @@ function tlStack(prevData, d){
   const base = String(d.title || 'TechLog').replace(/\s\(\d+\)$/, '');
   return { lines, count, title: count > 1 ? base + ' (' + count + ')' : base, body: lines.slice(-5).join('\n') };
 }
+/* v1.09.38: значок уведомления. badge (маленький в строке состояния Android) — ТОЛЬКО одноцветный силуэт на прозрачном фоне:
+   Android берёт у картинки одну прозрачность, и цветная квадратная иконка превращалась в белый квадрат — «иконки нет».
+   Большая иконка — полным адресом от области воркера: так её находит и уведомление, показанное без открытого окна. */
+const TL_ICON = new URL('./icons/icon-192.png', self.registration.scope).href;
+const TL_BADGE = new URL('./icons/badge-96.png', self.registration.scope).href;
 async function tlShowPush(d){
   const tag = String(d.tag || ('techlog-' + (d.title || ''))), chat = d.kind === 'chat';
   let prevData = null;
   if (chat){ try{ const prev = await self.registration.getNotifications({ tag }); if (prev && prev.length){ prevData = prev[0].data || {}; prev.forEach(n => n.close()); } }catch(e){} }
   const st = chat ? tlStack(prevData, d) : { lines: [String(d.body || '')], count: 1, title: String(d.title || 'TechLog'), body: String(d.body || '') };
-  const opts = { body: st.body, icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag, renotify: true,
+  const opts = { body: st.body, icon: TL_ICON, badge: TL_BADGE, tag, renotify: true,
     timestamp: +d.ts || Date.now(), data: { url: d.url || './', kind: d.kind || '', lines: st.lines, count: st.count, tag },
     actions: [{ action: 'open', title: 'Открыть' }, { action: 'close', title: 'Закрыть' }] };
   try{ await self.registration.showNotification(st.title, opts); }

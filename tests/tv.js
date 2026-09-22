@@ -82,7 +82,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAIL: ' + m); console.log('OK:',
     return b.classList.contains('fold-b') && b.firstElementChild.id === 'tvs-card' && !document.querySelector('.fold-h[onclick="App.foldToggle(\'tvs\')"]'); }),
     '«ТВ-экраны» — в самом начале «Режима телевизора», отдельного спойлера нет');
   ok(await p.locator('.tvz-zone').count() === 2, 'конструктор: две зоны раскладки');
-  ok(await p.locator('.tvz-item').count() === 5, 'конструктор: пять блоков');
+  ok(await p.locator('.tvz-item').count() === 6, 'конструктор: шесть блоков (v1.09.38: + «Маршруты водителей»)');
   ok(await p.locator('.chk-line input').count() >= 7, 'семь чекбоксов «что показывать»');
 
   /* правило авто-сжатия: 10 > 6 в подсказке, степпер меняет значение */
@@ -100,7 +100,7 @@ const ok = (c, m) => { if (!c) throw new Error('FAIL: ' + m); console.log('OK:',
   ok(railAfter === railBefore + 1, `⇄ перенёс график в правую колонку (${railBefore}→${railAfter})`);
   await p.evaluate(() => App.tvcReset());
   await p.waitForTimeout(300);
-  ok((await p.locator('.tvz-zone').first().locator('.tvz-item').count()) === 2, '«Сбросить» вернул раскладку по умолчанию');
+  ok((await p.locator('.tvz-zone').first().locator('.tvz-item').count()) === 3, '«Сбросить» вернул раскладку по умолчанию (v1.09.38: в правой колонке три блока — сводка, маршруты, сотрудники)');
 
   /* ---- 5. ТВ-экран уважает сохранённую раскладку (демо) ---- */
   await p.evaluate(() => { App.tvcFlag('chMi', false); });
