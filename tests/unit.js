@@ -2366,6 +2366,18 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
     src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(12000, s.length * 40)))") && src.includes('function toast(msg, kind, ms){')   /* v1.09.12: не дольше 12 с, крестик, нажатие мимо */
     && src.includes("el.classList.add('tap'); el.onclick = () => el.remove();") && src.includes("x.className = 't-x'") && css.includes('.toast.tap{cursor:pointer}'));
 
+  /* ---------- v1.09.32 ---------- */
+  console.log('\n— v1.09.32: по итогам первого живого прогона теста —');
+  t('v1.09.32: версии (app = sw = version.json, не ниже 1.09.32) и SQL-комплект на месте',
+    T.APP_VERSION >= '1.09.32' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
+    && ['update-to-1_09_32.sql', 'full-install-1_09_32.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)));
+  t('v1.09.32: политики вставки пропускают тех же, кого политики правки (приложение пишет upsert); «тестовая» строка не от функции отклоняется', (() => { const q = fs.readFileSync(ROOT + '/supabase/full-install-1_09_32.sql', 'utf8'), tail = q.slice(q.lastIndexOf('ДЕЛЬТА · update-to-1_09_32'));
+    return tail.includes("with check (technician_id = auth.uid() or public.my_role() in ('admin','manager') or public.is_shared_job_helper(id));") && tail.includes("with check (created_by = auth.uid() or public.my_role() in ('admin','manager'));") && tail.includes("raise exception 'DFT_TEST_ROW'"); })());
+  t('v1.09.32: отказ политики доступа окончателен для очереди досыла любой таблицы; тестовые строки вне прогона не досылаются; отказ записи виден для любой таблицы',
+    src.includes("else if (/row-level security|42501|DFT_TEST_ROW/i.test(errStr(r.error))){") && src.includes("if (!DFT.running && it.op !== 'delete' && it.payload && it.payload.is_test === true)") && src.includes("if (error) return { ok: false, code: 'ERROR' };"));
+  t('v1.09.32: в сценарии — группа «Я — помощник» (сохранение документа основного кнопками), итог по ленте до уборки, предупреждение о недостающих ролях',
+    src.includes("G(t('dft_g_s'));") && src.includes("t('dft_roles_miss')") && src.indexOf("t('dft_end_feed')") < src.indexOf("t('dft_i_push')") && src.includes(".gte('at', TLOG.cur.started)"));
+
   /* ---------- v1.09.31 ---------- */
   console.log('\n— v1.09.31: пропозал без «отправки клиенту», фото/видео/PDF на Диск и пуши в тесте —');
   t('v1.09.31: версии (app = sw = version.json, не ниже 1.09.31), SQL-комплект, функция dft с отчётом о пушах и уборкой файлов Диска',

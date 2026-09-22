@@ -530,6 +530,58 @@ select pg_temp.me(:ADM);
 update public.jobs set status = 'draft', return_note = 'x' where id = :J7;
 select pg_temp.ok('апрув снят — approved_rev очищен', (select approved_rev is null from public.jobs where id = :J7));
 
+-- ===== v1.09.32 · приложение сохраняет через upsert: политика ВСТАВКИ не должна быть уже политики правки =====
+-- (нашёл первый прогон встроенного теста на живой базе: админ не мог отклонить ремонт работника, помощник — сохранить документ основного)
+\set J8 '''11111111-0000-0000-0000-0000000000d8'''
+\set R8 '''22222222-0000-0000-0000-0000000000d8'''
+set session_replication_role = replica;
+insert into public.jobs (id, date, unit_number, technician_id, helper_ids, shared_with_helpers, status) values (:J8, current_date, '808', :MAIN, jsonb_build_array(:HELP), true, 'draft');
+insert into public.repairs (id, date, unit_number, created_by, status) values (:R8, current_date, '808', :MAIN, 'sent');
+update public.profiles set can_edit_docs = true where id = :HELP::uuid;
+update public.org_settings set allow_shared_jobs = true where id = 'org';
+set session_replication_role = origin;
+create function pg_temp.as_user(p_uid text, p_sql text) returns text language plpgsql as $$
+begin
+  perform set_config('request.jwt.claim.sub', p_uid, true);
+  set local role authenticated;
+  begin execute p_sql; exception when others then reset role; return sqlerrm; end;
+  reset role; return 'ok';
+end $$;
+select pg_temp.ok('upsert: помощник с «Общим доступом» сохраняет документ основного так, как это делает приложение',
+  pg_temp.as_user(:HELP, $q$insert into public.jobs (id, date, unit_number, technician_id, helper_ids, shared_with_helpers, status, note_en) values ('11111111-0000-0000-0000-0000000000d8', current_date, '808', '00000000-0000-0000-0000-0000000000a4', '["00000000-0000-0000-0000-0000000000a5"]', true, 'draft', 'helper upsert') on conflict (id) do update set note_en = excluded.note_en$q$) = 'ok');
+select pg_temp.ok('…и правка помощника действительно записана', (select note_en from public.jobs where id = :J8) = 'helper upsert');
+select pg_temp.ok('upsert: посторонний работник чужой документ так не сохранит; помощник чужой НОВЫЙ документ не создаст',
+  pg_temp.as_user(:OUT, $q$insert into public.jobs (id, date, unit_number, technician_id, status, note_en) values ('11111111-0000-0000-0000-0000000000d8', current_date, '808', '00000000-0000-0000-0000-0000000000a4', 'draft', 'x') on conflict (id) do update set note_en = excluded.note_en$q$) like '%row-level security%'
+  and pg_temp.as_user(:HELP, $q$insert into public.jobs (id, date, unit_number, technician_id, status) values ('11111111-0000-0000-0000-0000000000e8', current_date, '809', '00000000-0000-0000-0000-0000000000a4', 'draft')$q$) like '%row-level security%');
+set session_replication_role = replica;
+update public.jobs set shared_with_helpers = false where id = :J8;
+set session_replication_role = origin;
+select pg_temp.ok('upsert: без «Общего доступа» помощник документ основного не сохраняет',
+  pg_temp.as_user(:HELP, $q$insert into public.jobs (id, date, unit_number, technician_id, status, note_en) values ('11111111-0000-0000-0000-0000000000d8', current_date, '808', '00000000-0000-0000-0000-0000000000a4', 'draft', 'no') on conflict (id) do update set note_en = excluded.note_en$q$) like '%row-level security%');
+select pg_temp.ok('upsert: админ отклоняет ремонт, созданный работником (именно это упало на живой базе)',
+  pg_temp.as_user(:ADM, $q$insert into public.repairs (id, date, unit_number, created_by, status, decline_reason) values ('22222222-0000-0000-0000-0000000000d8', current_date, '808', '00000000-0000-0000-0000-0000000000a4', 'declined', 'не та квартира') on conflict (id) do update set status = excluded.status, decline_reason = excluded.decline_reason$q$) = 'ok');
+select pg_temp.ok('…ремонт отклонён, причина записана', (select status = 'declined' and decline_reason = 'не та квартира' from public.repairs where id = :R8));
+select pg_temp.ok('upsert: менеджер с правом апрува апрувит ремонт работника',
+  pg_temp.as_user(:MGR, $q$insert into public.repairs (id, date, unit_number, created_by, status) values ('22222222-0000-0000-0000-0000000000d8', current_date, '808', '00000000-0000-0000-0000-0000000000a4', 'approved') on conflict (id) do update set status = excluded.status$q$) = 'ok');
+select pg_temp.ok('…ремонт апрувлен', (select status from public.repairs where id = :R8) = 'approved');
+select pg_temp.ok('upsert: посторонний работник чужой ремонт не сохраняет',
+  pg_temp.as_user(:OUT, $q$insert into public.repairs (id, date, unit_number, created_by, status, note) values ('22222222-0000-0000-0000-0000000000d8', current_date, '808', '00000000-0000-0000-0000-0000000000a4', 'approved', 'x') on conflict (id) do update set note = excluded.note$q$) like '%row-level security%');
+select pg_temp.as_user(:ADM, $q$update public.repairs set status = 'sent' where id = '22222222-0000-0000-0000-0000000000d8'$q$) as back_to_sent \gset
+set session_replication_role = replica;
+update public.profiles set can_approve = false where id = :MGR2::uuid;   -- выше по файлу проверка переноса общей галочки выдала право обоим менеджерам
+set session_replication_role = origin;
+select pg_temp.ok('менеджер БЕЗ права апрува ремонт не апрувит: FORBIDDEN_APPROVE',
+  pg_temp.as_user(:MGR2, $q$update public.repairs set status = 'approved' where id = '22222222-0000-0000-0000-0000000000d8'$q$) like '%FORBIDDEN_APPROVE%');
+/* ЗАМЕТКА к будущей работе над ремонтами: при upsert сторож ремонта на ветке INSERT молча превращает «approved» в «draft»
+   у того, кто апрувить не может, — BEFORE INSERT срабатывает и при обновлении. Апрува так не получить, но и отказа нет. */
+select pg_temp.ok('…а upsert того же менеджера апрува не даёт (статус не «approved»)',
+  pg_temp.as_user(:MGR2, $q$insert into public.repairs (id, date, unit_number, created_by, status) values ('22222222-0000-0000-0000-0000000000d8', current_date, '808', '00000000-0000-0000-0000-0000000000a4', 'approved') on conflict (id) do update set status = excluded.status$q$) is not null);
+select pg_temp.ok('…ремонт не апрувлен', (select status <> 'approved' from public.repairs where id = :R8));
+select pg_temp.ok('«тестовая» строка не от функции тестирования отклоняется, а не становится настоящим документом: DFT_TEST_ROW',
+  pg_temp.as_user(:ADM, $q$insert into public.repairs (id, date, unit_number, created_by, status, is_test) values ('22222222-0000-0000-0000-0000000000e9', current_date, 'DFTEST', '00000000-0000-0000-0000-0000000000a1', 'draft', true)$q$) like '%DFT_TEST_ROW%'
+  and pg_temp.as_user(:MAIN, $q$insert into public.jobs (id, date, unit_number, technician_id, status, is_test) values ('11111111-0000-0000-0000-0000000000e9', current_date, 'DFTEST', '00000000-0000-0000-0000-0000000000a4', 'draft', true)$q$) like '%DFT_TEST_ROW%'
+  and not exists(select 1 from public.repairs where id = '22222222-0000-0000-0000-0000000000e9') and not exists(select 1 from public.jobs where id = '11111111-0000-0000-0000-0000000000e9'));
+
 select n, case when ok then '✓' else '✗' end || ' ' || name || case when note <> '' then '  [' || note || ']' else '' end from r order by n;
 select 'ИТОГ: ' || count(*) filter (where ok) || ' ✓ / ' || count(*) filter (where not ok) || ' ✗' from r;
 rollback;

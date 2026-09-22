@@ -45,8 +45,9 @@ create function pg_temp.me(p text) returns void language sql as $$ select set_co
 select pg_temp.me(:TECH);
 update public.jobs set is_test = true, test_owner = :TECH where id = :REAL;
 select pg_temp.ok('обновлением пометка «тестовый» не ставится', (select is_test = false and test_owner is null from public.jobs where id = :REAL));
-insert into public.jobs (id, date, unit_number, technician_id, status, is_test, test_owner) values ('44444444-0000-0000-0000-0000000000f2', current_date, 'REAL-2', :TECH, 'draft', true, :TECH);
-select pg_temp.ok('вставкой — тоже: строка становится обычной', (select is_test = false and test_owner is null from public.jobs where id = '44444444-0000-0000-0000-0000000000f2'));
+select pg_temp.ok('v1.09.32: вставка «тестовой» строки не от функции отклоняется (DFT_TEST_ROW), а не становится настоящим документом',
+  pg_temp.throws($q$insert into public.jobs (id, date, unit_number, technician_id, status, is_test, test_owner) values ('44444444-0000-0000-0000-0000000000f2', current_date, 'REAL-2', '00000000-0000-0000-0000-0000000000b4', 'draft', true, '00000000-0000-0000-0000-0000000000b4')$q$, 'DFT_TEST_ROW')
+  and not exists(select 1 from public.jobs where id = '44444444-0000-0000-0000-0000000000f2'));
 select pg_temp.ok('dft_exec клиенту недоступна (ни authenticated, ни anon)',
   not has_function_privilege('authenticated', 'public.dft_exec(uuid,uuid,text,jsonb)', 'execute') and not has_function_privilege('anon', 'public.dft_exec(uuid,uuid,text,jsonb)', 'execute')
   and has_function_privilege('service_role', 'public.dft_exec(uuid,uuid,text,jsonb)', 'execute'));
@@ -222,8 +223,10 @@ select pg_temp.ok('посторонний работник тестовый ре
   pg_temp.throws($q$select public.dft_exec('00000000-0000-0000-0000-0000000000b4', '00000000-0000-0000-0000-0000000000b5', 'rep_update', '{"id":"88888888-0000-0000-0000-0000000000a1","patch":{"note":"x"}}')$q$, 'RLS_DENIED'));
 -- пометку у ремонта клиент не ставит
 select pg_temp.me(:TECH);
-insert into public.repairs (id, date, unit_number, created_by, status, is_test, test_owner) values ('88888888-0000-0000-0000-0000000000a2', current_date, 'DFTEST-UI', :TECH, 'draft', true, :TECH);
-select pg_temp.ok('обычной вставкой ремонт «тестовым» не становится', (select is_test = false from public.repairs where id = '88888888-0000-0000-0000-0000000000a2'));
+select pg_temp.ok('обычной вставкой «тестовый» ремонт не создать: DFT_TEST_ROW',
+  pg_temp.throws($q$insert into public.repairs (id, date, unit_number, created_by, status, is_test, test_owner) values ('88888888-0000-0000-0000-0000000000a2', current_date, 'DFTEST-UI', '00000000-0000-0000-0000-0000000000b4', 'draft', true, '00000000-0000-0000-0000-0000000000b4')$q$, 'DFT_TEST_ROW'));
+select pg_temp.me(:TECH);
+insert into public.repairs (id, date, unit_number, created_by, status) values ('88888888-0000-0000-0000-0000000000a2', current_date, 'DFTEST-UI', :TECH, 'draft');
 update public.repairs set is_test = true where id = '88888888-0000-0000-0000-0000000000a2';
 select pg_temp.ok('…и правкой — тоже', (select is_test = false from public.repairs where id = '88888888-0000-0000-0000-0000000000a2'));
 insert into public.proposals (id, date, unit_number, status, created_by) values ('55555555-0000-0000-0000-0000000000a2', current_date, 'DFTEST-UI', 'draft', :TECH);
