@@ -21,7 +21,7 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
       && q.includes("90000000 + nextval('public.jobs_test_no_seq')") && q.includes('if new.is_test then return new; end if;') && q.includes("if p_user::text = v_owner then"));
   }
   const fnSrc = fs.readFileSync(path.join(ROOT, 'supabase/functions/dft/index.ts'), 'utf8');
-  t('Edge Function dft: закрытый список операций, режим проверяется, отказ базы — это ответ; копия для Dashboard совпадает', fnSrc.includes('const OPS = new Set(["job_create", "job_adopt", "job_update", "job_get", "pl_upsert", "prop_create", "prop_adopt", "rep_create", "rep_adopt", "rep_update", "rep_get", "rpc"]);') && fnSrc.includes('if (action === "pushes")') && fnSrc.includes('body: JSON.stringify({ trashed: true })')
+  t('Edge Function dft: закрытый список операций, режим проверяется, отказ базы — это ответ; копия для Dashboard совпадает', fnSrc.includes('const OPS = new Set(["job_create", "job_adopt", "job_update", "job_get", "pl_upsert", "ext_req_create", "prop_create", "prop_adopt", "rep_create", "rep_adopt", "rep_update", "rep_get", "rpc"]);') && fnSrc.includes('if (action === "pushes")') && fnSrc.includes('body: JSON.stringify({ trashed: true })')
     && fnSrc.includes('if (!on) return jres({ ok: false, error: { message: "DFT_OFF" } });') && fs.readFileSync(path.join(ROOT, 'supabase/functions-dashboard/dft/index.ts'), 'utf8') === fnSrc.replace('"../_shared/google.ts"', '"./google.ts"'));
 
   const br = await chromium.launch({ executablePath: EXE, args: ['--no-sandbox', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });   /* v1.09.31: съёмка способом 1 — с поддельной камерой браузера */
@@ -98,6 +98,7 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
     rt.steps.filter(s => /способом 1|пропозал|Диск/i.test(s.n)).map(s => s.n.slice(0, 40) + ' :: ' + s.ok + ' ' + s.x).slice(0, 10));
   t('после теста в очереди фото и видео ничего не осталось', await p.evaluate(() => mediaQ.filter(x => /DFTEST/.test(JSON.stringify(x.meta || {})) || !state.data.jobs.some(j => j.id === x.job_id)).length === 0));
   const rm = await runAs('demo-manager', 'demo-tech');
+  t('заявка на продление (1.09.33): при любой ведущей роли — подана, отклонена, новая одобрена (продление создано)', ['Заявка на продление сверх лимита', 'отклоняет заявку', 'согласующий одобряет'].every(k => rt.steps.some(s => s.n.includes(k) && s.ok === true) && rm.steps.some(s => s.n.includes(k) && s.ok === true)), [rt, rm].map(r => r.steps.filter(s => /заявк/i.test(s.n)).map(s => s.n.slice(0, 40) + '::' + s.ok + ' ' + s.x)));
   t('менеджер: у работника «через функцию» номер приложением не заморожен — проверен и отказ BAD_NUMBER_TEXT (у работника-ведущего этот шаг пропускается: номер морозит само приложение)',
     rm.steps.some(x => x.ok === true && x.x === '→ BAD_NUMBER_TEXT') && rt.steps.some(x => x.ok === null && /заморожен приложением/.test(x.x)));
   t('все коды отказа сервера встретились хотя бы в одном из трёх прогонов', (() => { const all = [rt, rm].flatMap(r => r.steps).filter(s => s.ok === true).map(s => s.x);

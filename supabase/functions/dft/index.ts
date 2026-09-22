@@ -25,8 +25,8 @@
    ===================================================================== */
 import { svc, userClient, driveToken, CORS, jres } from "../_shared/google.ts";
 
-const DFT_VER = "1.09.31";
-const OPS = new Set(["job_create", "job_adopt", "job_update", "job_get", "pl_upsert", "prop_create", "prop_adopt", "rep_create", "rep_adopt", "rep_update", "rep_get", "rpc"]);   // job_adopt (v1.09.28): документ, созданный кнопкой приложения, становится тестовым
+const DFT_VER = "1.09.33";
+const OPS = new Set(["job_create", "job_adopt", "job_update", "job_get", "pl_upsert", "ext_req_create", "prop_create", "prop_adopt", "rep_create", "rep_adopt", "rep_update", "rep_get", "rpc"]);   // job_adopt (v1.09.28): документ, созданный кнопкой приложения, становится тестовым
 
 type Prof = { id: string; role: string; display_name: string; blocked: boolean; can_approve?: boolean };
 

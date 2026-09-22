@@ -83,7 +83,7 @@ const expose = `;window.__T = {
   /* v1.09.27 */
   DFT, dftOn, dftStripTest, dftDemoExec, dftFullForm, dftNorm, dftCut, DFT_NET_RE, calcTotal, priceResolver,
   /* v1.09.31 */
-  propStatuses, propSendOn
+  propStatuses, propSendOn, toast
 };`;
 
 try {
@@ -2366,6 +2366,23 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
     src.includes("toast('ℹ ' + s, 'inf', Math.max(3800, Math.min(12000, s.length * 40)))") && src.includes('function toast(msg, kind, ms){')   /* v1.09.12: не дольше 12 с, крестик, нажатие мимо */
     && src.includes("el.classList.add('tap'); el.onclick = () => el.remove();") && src.includes("x.className = 't-x'") && css.includes('.toast.tap{cursor:pointer}'));
 
+  /* ---------- v1.09.33 ---------- */
+  console.log('\n— v1.09.33: по итогам второго живого прогона —');
+  t('v1.09.33: версии (app = sw = version.json, не ниже 1.09.33), SQL-комплект, функция dft с ext_req_create',
+    T.APP_VERSION >= '1.09.33' && fs.readFileSync(ROOT + '/sw.js', 'utf8').includes("VERSION = '" + T.APP_VERSION + "'") && JSON.parse(fs.readFileSync(ROOT + '/version.json', 'utf8')).version === T.APP_VERSION
+    && ['update-to-1_09_33.sql', 'full-install-1_09_33.sql'].every(f => fs.existsSync(ROOT + '/supabase/' + f)) && fs.readFileSync(ROOT + '/supabase/functions/dft/index.ts', 'utf8').includes('"ext_req_create"'));
+  t('v1.09.33: подсказки тест читает из памяти, а не с экрана (касание телефона убирает длинную подсказку)', (() => { const r0 = T.DFT.running, t0 = T.DFT.toasts; try{ T.DFT.running = true; T.DFT.toasts = []; T.toast('🔒 проверка подсказки', 'err', 8000);
+      const el = w.document.querySelector('#toasts .toast'); if (el) el.remove(); return T.DFT.toasts.length === 1 && /проверка подсказки/.test(T.DFT.toasts[0]); } finally { T.DFT.running = r0; T.DFT.toasts = t0; } })());
+  t('v1.09.33: вызовы Edge Functions попадают в отчёт через перехват fetch на время теста; двоичные ответы (фото, видео) в отчёт не сливаются; PDF ждёт очередь отправки, а не периодический обмен',
+    src.includes("if (/\\/functions\\/v1\\/(?!dft(\\?|$))/.test(u)) dftNetLog(u, init, pr);") && src.includes("window.fetch = fetch0;") && src.includes("if (ct && !/json|text|javascript/i.test(ct)){") && src.includes("const inQ = () => ctQOf(J).filter(x => x.kind === 'invoice');"));
+  t('v1.09.33: демо-зеркало — заявка на продление и решение по ней: одобрение создаёт продление, отклонение — нет', (() => { const D = T.state.data, s0 = { jobs: D.jobs, pl: D.placements, ex: D.ext_requests, prof: D.profiles, u: T.state.user };
+    try{ D.profiles = [{ id: 'tw', role: 'tech', display_name: 'W' }, { id: 'mm', role: 'manager', display_name: 'M' }]; T.state.user = D.profiles[0]; T.DFT.owner = 'tw';
+      D.jobs = [{ id: 'tj', is_test: true, technician_id: 'tw', status: 'draft', helper_ids: [], form_data: {} }]; D.placements = [{ id: 'p1', job_id: 'tj', equipment_type_id: 'e1', qty: 2, days: 1, due_date: '2026-09-22', picked_up: false, superseded: false }]; D.ext_requests = [];
+      const c = T.dftDemoExec('tw', 'ext_req_create', { job_id: 'tj', days: 4 }); if (!c.ok) return false; const no = T.dftDemoExec('mm', 'rpc', { fn: 'decide_ext_request', args: { p_id: c.data.id, p_ok: false } });
+      const c2 = T.dftDemoExec('tw', 'ext_req_create', { job_id: 'tj', days: 4 }); const ok2 = T.dftDemoExec('mm', 'rpc', { fn: 'decide_ext_request', args: { p_id: c2.data.id, p_ok: true } });
+      const ext = D.placements.find(p => p.ext_of === 'p1'); return no.ok && D.ext_requests[0].status === 'rejected' && ok2.ok && !!ext && ext.qty === 2 && ext.due_date === '2026-09-26' && D.placements.find(p => p.id === 'p1').superseded === true && T.dftDemoExec('tw', 'rpc', { fn: 'decide_ext_request', args: { p_id: c2.data.id, p_ok: true } }).error.message === 'FORBIDDEN'; }
+    finally { D.jobs = s0.jobs; D.placements = s0.pl; D.ext_requests = s0.ex; D.profiles = s0.prof; T.state.user = s0.u; } })());
+
   /* ---------- v1.09.32 ---------- */
   console.log('\n— v1.09.32: по итогам первого живого прогона теста —');
   t('v1.09.32: версии (app = sw = version.json, не ниже 1.09.32) и SQL-комплект на месте',
@@ -2418,7 +2435,7 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   t('v1.09.29: журнал теста — все запросы кроме шума, заголовки и номер запроса Supabase, время запроса, тело до 6000 знаков в отчёте',
     src.includes('const DFT_NET_SKIP = ') && src.includes("['sb-request-id', 'x-request-id', 'content-range'") && src.includes("dftCut(tx, 6000)") && src.includes("' ms' + hr"));
   t('v1.09.29: в отчёт идут подсказки, окна, вопросы приложения, ошибки JavaScript, снимок документа после шага и контекст провала',
-    src.includes("if (DFT.running) dftLog('   💬 '") && src.includes("dftLog('   ▣ '") && src.includes("window.addEventListener('unhandledrejection', onErr);") && src.includes("dftLog('   ∑ '") && src.includes("dftLog('   ✗ ' + ctx(), 'err');")
+    src.includes("if (DFT.running){ dftLog('   💬 '") && src.includes("dftLog('   ▣ '") && src.includes("window.addEventListener('unhandledrejection', onErr);") && src.includes("dftLog('   ∑ '") && src.includes("dftLog('   ✗ ' + ctx(), 'err');")
     && src.includes("DFT.asked.push(String(q));"));
   t('v1.09.29: отчёт, не поместившийся в память браузера, не пропадает молча — укороченная копия и предупреждение', src.includes('c.big = true;') && src.includes("t('dft_big')"));
   t('v1.09.29: «апрув не совпадает с расчётом» — по ревизии на момент апрува, а не по часам', (() => { const d0 = T.state.data.jobs, u0 = T.state.user; try{ T.state.user = { id: 'adm', role: 'admin' };
@@ -2461,7 +2478,7 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
       return a.ok === false && a.error.message === 'DFT_NOT_TEST_DOC' && b.error.message === 'DFT_NOT_TEST_DOC' && T.state.data.jobs[0].status === 'done'; }
     finally{ T.state.data.jobs = j0; T.state.data.profiles = T.state.data.profiles.filter(p => p.id !== 'dfa'); } })());
   t('v1.09.27: запросы во время теста пишутся в отчёт; записи журнала событий помечаются; админ предупреждается при каждом входе',
-    src.includes('if (DFT.running) dftNetLog(url, init, p);') && src.includes('if (DFT.running) details = { ...(details || {}), test: true };') && src.includes('setTimeout(dftAdminWarn, 1200);') && src.includes('dftStripTest(state.data);'));
+    src.includes('dftNetLog(url, init, p);') && src.includes('if (DFT.running) details = { ...(details || {}), test: true };') && src.includes('setTimeout(dftAdminWarn, 1200);') && src.includes('dftStripTest(state.data);'));
 
   /* ---------- v1.09.26 ---------- */
   console.log('\n— v1.09.26: документооборот, исправления по разбору —');

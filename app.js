@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.32';
-const DB_SQL_FILE = 'full-install-1_09_32.sql';
+const APP_VERSION = '1.09.33';
+const DB_SQL_FILE = 'full-install-1_09_33.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -837,6 +837,7 @@ const I18N = {
     /* v1.08.46 */
     sel_clear: 'Очистить поле',
     /* v1.09.27: тест документооборота */
+    dft_e_req_ok: 'Новая заявка на продление — согласующий одобряет: продление создано', dft_ext_none: 'после одобрения заявки продления не появились', dft_ext_src: 'исходная строка после продления не закрыта и не уменьшена', dft_mgr_needed: 'нужен менеджер или админ',
     pend_dropped: 'Сервер окончательно отказал в записи ({T}) — она убрана из очереди досыла. Откройте документ и сохраните его заново', dft_g_s: 'S · Я — помощник в чужом документе', dft_s1: 'Менеджер создаёт задачу ДРУГОМУ работнику, а меня ставит помощником', dft_s2: 'Без «Общего доступа» помощник документ основного только видит', dft_s3: 'Основной включил «Общий доступ» — помощник кнопками правит и СОХРАНЯЕТ документ основного', dft_s3_note: 'сохранено приложением — настоящие политики доступа', dft_s4: 'Помощник не меняет бригаду, «Общий доступ» и не удаляет документ', dft_roles_miss: 'Для полного прогона не хватает сотрудников: {R}. Шаги этих ролей будут пропущены', dft_role_APR: 'менеджер С правом апрува', dft_role_MGR: 'менеджер БЕЗ права апрува', dft_role_W2: 'второй работник',
     prop_send_chk: 'Статус «Отправлен» у пропозала (отправка клиенту)', prop_send_off: 'Пропозал клиенту не отправляется: статус «Отправлен» выключен. Включить его может администратор — Настройки → Пропозалы', dft_wide: 'Уведомления и пуши — всем участникам, а не только мне', dft_media_chk: 'Фото, видео и PDF на Google Диск (съёмка способом 1)', dft_hdr_push: 'Уведомления', dft_g_m: 'M · Фото, видео и PDF на Google Диск', dft_m0: 'Google Диск подключён', dft_m0_na: 'состояние Диска видит только админ — проверится отправкой', dft_m1: 'Фото способом 1 (камера в приложении, без участия человека)', dft_m2: 'Видео способом 1 — ролик 3 с', dft_m3: 'Документ сохранён — фото и видео отправлены на Google Диск', dft_m4: 'Миниатюры с сервера и просмотр файлов с Диска', dft_m5: 'PDF ЧЕРНОВИКА на Диск не уходит', dft_m6: 'PDF отправленного документа ушёл на Google Диск', dft_m_prev: 'превью камеры не запустилось', dft_m_shot: 'кадр', dft_m_rec: 'запись ролика', dft_m_queue: 'файлы не встали в очередь', dft_m_limit: 'лимит видео в документе исчерпан', dft_m_nobtn: 'кнопки отправки PDF на Диск в документе нет', dft_p1: 'Работник отмечает «Нужен пропозал» — менеджер видит запрос «P?»', dft_p2: 'Статуса «Отправлен» у пропозала нет (клиенту пропозал не отправляется)', dft_p3: 'Согласующий отвязывает пропозал и привязывает снова', dft_p4: 'Работник видит привязанный пропозал, а привязать или отвязать не может', dft_i_push: 'Пуши за прогон: что ушло в очередь и отправлено', dft_push_none: 'в очереди пушей нет ни одной строки по тестовым документам', dft_push_bad: 'пуши не отправляются', dft_push_q: 'в очереди', dft_push_s: 'отправлено', dft_push_e: 'с ошибкой', dft_i_media: 'Файлы тестовых документов — в корзину Google Диска',
     dft_g_c2: 'C2 · Второй согласующий — тот же круг от имени другого', dft_c2_ret: 'Работник сдаёт — второй согласующий возвращает на доработку', dft_c2_appr: 'Работник сдаёт снова — второй согласующий апрувит', dft_c2_deny: 'Запрос правки — второй согласующий отказывает', dft_c2_grant: 'Запрос правки — второй согласующий разрешает', dft_g_l: 'L · Запрет правки по давности и окно правки', dft_l0: 'Запрет правки по давности включён', dft_l1: 'Работник правит документ старше срока', dft_l2: 'Апрув → запрос → разрешение: работник правит старый документ внутри суточного окна', dft_l3: 'Запрет по давности возвращён в прежнее положение', dft_lock_off: 'запрет по давности выключен, а включить его может только админ', dft_days_w: 'дн.', dft_u_settings: 'включён галочкой в Настройках', dft_a2move: 'Менеджер переносит задачу — работнику в ленту «Задача перенесена»', dft_n_given: 'Работнику в ленту пришло «Задача передана вам»', dft_pdf_appr: 'PDF заапрувленного — со штампом APPROVED', dft_p_ui: 'Создаю пропозал кнопками: «Новый пропозал», поля, строка, «Сохранить»; принят в тест', dft_adopt_s: 'принят в тест служебно', dft_p_noright: 'кнопки «Новый пропозал» нет: создавать пропозалы менеджеру не разрешено в настройках', dft_g_r: 'R · Документ ремонта', dft_r1: 'Работник создаёт ремонт из задачи (строка работ, «Сохранить»)', dft_r2: 'Работник отправляет ремонт на апрув', dft_r3: 'Работник апрувит ремонт', dft_r4: 'Менеджер без права апрува апрувит ремонт', dft_r5: 'МЕНЕДЖЕР с правом апрува апрувит ремонт', dft_r5n: 'Работнику в ленту пришло «Ремонт апрувлен»', dft_r6: 'АДМИН отклоняет ремонт с причиной', dft_r7: 'Работник отправляет снова — АДМИН апрувит', dft_rep_arch: 'связанный ремонт не ушёл в архив с пояснением', dft_ar1: 'Экран «Архив»: пикапы в архиве с пояснением, удалённый документ на месте', dft_ar2: 'Экран «Архив»: «Вернуть из архива» и «Удалить навсегда»', dft_not_purged: 'документ не удалён насовсем', dft_f_off: 'Без связи: правка уходит в очередь; связь вернулась — конфликт → «Записать мои поверх»', dft_only_sb_w: 'шаг идёт только у ведущего-работника и только с сервером', dft_no_queue: 'правка не попала в очередь', dft_net_off: 'связь выключена', dft_net_on: 'связь включена',
@@ -846,7 +847,7 @@ const I18N = {
     tab_dft: 'Тест документооборота', dft_card: 'Тест документооборота',
     dft_hint: 'Полный цикл документа под вашей ролью: шаги вашей роли идут настоящим путём приложения, шаги остальных ролей выполняет служебная функция dft. «+» — шаг должен пройти, «−» — сервер обязан отказать. Всё тестовое удаляется в конце; отчёт с запросами и ответами сервера можно скопировать или скачать.',
     dft_on_q: 'Включить режим тестирования документооборота? Пока он включён, служебная функция может действовать от имени администратора и менеджера — только над тестовыми документами. Режим выключится сам по истечении срока.',
-    dft_need_sql: 'Сначала выполните supabase/update-to-1_09_31.sql', dft_on_done: 'Режим тестирования ВКЛЮЧЁН — не забудьте выключить', dft_off_done: 'Режим тестирования выключен', dft_warn_t: 'Включён режим тестирования',
+    dft_need_sql: 'Сначала выполните supabase/update-to-1_09_33.sql', dft_on_done: 'Режим тестирования ВКЛЮЧЁН — не забудьте выключить', dft_off_done: 'Режим тестирования выключен', dft_warn_t: 'Включён режим тестирования',
     dft_warn_text: 'Режим тестирования документооборота включён до {UNTIL} (включил(а) {WHO}). Пока он включён, служебная функция dft действует от имени администратора и менеджера над тестовыми документами. Настоящие документы она не трогает, но это потенциальная дыра — выключите режим, когда тестирование закончено.',
     dft_warn_off: 'Выключить сейчас', dft_warn_keep: 'Оставить включённым', dft_cleaned: 'Тестовых документов убрано: {N}', dft_mode_on: 'Режим тестирования включён', dft_mode_off: 'Режим тестирования выключен',
     dft_mode_until: 'до {UNTIL} · включил(а) {WHO}', dft_mode_h: 'Включает только администратор и только на срок. Каждое включение пишется в журнал событий.', dft_mode_btn_off: 'Выключить', dft_mode_btn_on: 'Включить', dft_h: 'ч',
@@ -2294,6 +2295,7 @@ const I18N = {
     /* v1.08.46 */
     sel_clear: 'Clear field',
     /* v1.09.27: workflow test */
+    dft_e_req_ok: 'A new extension request — the approver approves: the extension is created', dft_ext_none: 'no extension rows appeared after the approval', dft_ext_src: 'the source row is neither closed nor reduced after the extension', dft_mgr_needed: 'a manager or the admin is needed',
     pend_dropped: 'The server refused the write for good ({T}) — it was removed from the resend queue. Open the document and save it again', dft_g_s: 'S · I am a helper in someone else\'s document', dft_s1: 'A manager creates a job for ANOTHER worker and makes me a helper', dft_s2: 'Without Shared access a helper only views the lead\'s document', dft_s3: 'The lead turned Shared access on — the helper edits and SAVES the lead\'s document with the app controls', dft_s3_note: 'saved by the app — real access policies', dft_s4: 'The helper cannot change the crew or Shared access and cannot delete the document', dft_roles_miss: 'Employees missing for a full run: {R}. Steps of these roles will be skipped', dft_role_APR: 'a manager WITH the approve right', dft_role_MGR: 'a manager WITHOUT the approve right', dft_role_W2: 'a second worker',
     prop_send_chk: 'The "Sent" proposal status (sending to the client)', prop_send_off: 'Proposals are not sent to the client: the "Sent" status is off. The admin can turn it on — Settings → Proposals', dft_wide: 'Notifications and pushes — to all participants, not only me', dft_media_chk: 'Photo, video and PDF to Google Drive (capture method 1)', dft_hdr_push: 'Notifications', dft_g_m: 'M · Photo, video and PDF to Google Drive', dft_m0: 'Google Drive is connected', dft_m0_na: 'only the admin sees the Drive state — the upload will tell', dft_m1: 'Photos with method 1 (in-app camera, no human involved)', dft_m2: 'Video with method 1 — a 3 s clip', dft_m3: 'The document is saved — photos and video are uploaded to Google Drive', dft_m4: 'Server thumbnails and viewing files from Drive', dft_m5: 'A DRAFT PDF does not go to Drive', dft_m6: 'The PDF of the submitted document went to Google Drive', dft_m_prev: 'the camera preview did not start', dft_m_shot: 'shot', dft_m_rec: 'recording a clip', dft_m_queue: 'files did not reach the queue', dft_m_limit: 'the document video limit is used up', dft_m_nobtn: 'the document has no Send PDF to Drive button', dft_p1: 'The worker ticks "Proposal needed" — a manager sees the "P?" request', dft_p2: 'A proposal has no "Sent" status (proposals are not sent to the client)', dft_p3: 'An approver unlinks the proposal and links it again', dft_p4: 'The worker sees the linked proposal but cannot link or unlink', dft_i_push: 'Pushes of the run: queued and sent', dft_push_none: 'the push queue has no rows for the test documents', dft_push_bad: 'pushes are not being sent', dft_push_q: 'queued', dft_push_s: 'sent', dft_push_e: 'failed', dft_i_media: 'Files of the test documents — to the Google Drive trash',
     dft_g_c2: 'C2 · The second approver — the same round by the other one', dft_c2_ret: 'The worker submits — the second approver returns it', dft_c2_appr: 'The worker resubmits — the second approver approves', dft_c2_deny: 'Edit request — the second approver refuses', dft_c2_grant: 'Edit request — the second approver allows', dft_g_l: 'L · Age lock and the edit window', dft_l0: 'The age lock is on', dft_l1: 'The worker edits a document older than the period', dft_l2: 'Approve → request → permission: the worker edits the old document inside the one-day window', dft_l3: 'The age lock is back to its previous position', dft_lock_off: 'the age lock is off and only the admin can turn it on', dft_days_w: 'd', dft_u_settings: 'turned on with the Settings checkbox', dft_a2move: 'A manager moves the job — the worker gets "Job moved" in the feed', dft_n_given: 'The worker got "Job handed to you"', dft_pdf_appr: 'An approved PDF carries the APPROVED stamp', dft_p_ui: 'Creating a proposal with buttons: New proposal, fields, a row, Save; adopted into the test', dft_adopt_s: 'adopted by the service call', dft_p_noright: 'no New proposal button: managers are not allowed to create proposals in the settings', dft_g_r: 'R · Repair document', dft_r1: 'The worker creates a repair from the job (a work row, Save)', dft_r2: 'The worker sends the repair for approval', dft_r3: 'The worker approves the repair', dft_r4: 'A manager without the right approves the repair', dft_r5: 'A MANAGER with the approve right approves the repair', dft_r5n: 'The worker got "Repair approved"', dft_r6: 'The ADMIN declines the repair with a reason', dft_r7: 'The worker sends it again — the ADMIN approves', dft_rep_arch: 'the linked repair was not archived with a note', dft_ar1: 'Archive screen: archived pickups with a note, the deleted document is there', dft_ar2: 'Archive screen: Restore and Delete for good', dft_not_purged: 'the document was not deleted for good', dft_f_off: 'Offline: the edit goes to the queue; back online — conflict → Write my changes over it', dft_only_sb_w: 'this step runs only when a worker leads and only with the server', dft_no_queue: 'the edit did not reach the queue', dft_net_off: 'connection turned off', dft_net_on: 'connection turned on',
@@ -2303,7 +2305,7 @@ const I18N = {
     tab_dft: 'Workflow test', dft_card: 'Workflow test',
     dft_hint: 'The full document cycle under your role: your own steps go the real app way, the other roles are played by the dft helper function. "+" must pass, "−" must be refused by the server. Everything created is deleted at the end; the report with server requests and answers can be copied or downloaded.',
     dft_on_q: 'Turn the workflow test mode on? While it is on, the helper function may act as the admin and a manager — on test documents only. The mode turns itself off when the period ends.',
-    dft_need_sql: 'Run supabase/update-to-1_09_31.sql first', dft_on_done: 'Test mode is ON — remember to turn it off', dft_off_done: 'Test mode is off', dft_warn_t: 'Test mode is on',
+    dft_need_sql: 'Run supabase/update-to-1_09_33.sql first', dft_on_done: 'Test mode is ON — remember to turn it off', dft_off_done: 'Test mode is off', dft_warn_t: 'Test mode is on',
     dft_warn_text: 'The workflow test mode is on until {UNTIL} (turned on by {WHO}). While it is on, the dft helper function acts as the admin and a manager on test documents. It never touches real documents, but it is a potential hole — turn the mode off when testing is over.',
     dft_warn_off: 'Turn off now', dft_warn_keep: 'Keep it on', dft_cleaned: 'Test documents removed: {N}', dft_mode_on: 'Test mode is on', dft_mode_off: 'Test mode is off', dft_mode_until: 'until {UNTIL} · turned on by {WHO}',
     dft_mode_h: 'Only the admin turns it on, and only for a period. Every switch is written to the event journal.', dft_mode_btn_off: 'Turn off', dft_mode_btn_on: 'Turn on', dft_h: 'h',
@@ -5896,7 +5898,7 @@ function toastGo(msg, kind, ms, fn){
   try{ const box = document.getElementById('toasts'), el = box && box.lastElementChild; if (el && typeof fn === 'function'){ el.classList.add('go'); el.onclick = () => { try{ el.remove(); }catch(e){} fn(); }; } }catch(e){}
 }
 function toast(msg, kind, ms){
-  try{ if (DFT.running) dftLog('   💬 ' + (kind === 'err' ? '⛔ ' : '') + String(msg), kind === 'err' ? 'neterr' : 'ui'); }catch(e){}   // v1.09.29: подсказки — в отчёт теста
+  try{ if (DFT.running){ dftLog('   💬 ' + (kind === 'err' ? '⛔ ' : '') + String(msg), kind === 'err' ? 'neterr' : 'ui'); (DFT.toasts = DFT.toasts || []).push(String(msg)); } }catch(e){}   // v1.09.29: подсказки — в отчёт теста; v1.09.33: и в память теста (касание экрана убирает подсказку с экрана раньше проверки)
   const now = Date.now();                                  // v1.07.26: не спамим одинаковыми
   if (toast._m === msg && now - (toast._t || 0) < 1800) return;
   toast._m = msg; toast._t = now;
@@ -7409,7 +7411,7 @@ function authWhy(code){ const w = AUTH_WHY[String(code || '').toLowerCase()]; re
 function sbFetch(input, init){
   const url = typeof input === 'string' ? input : ((input && input.url) || '');
   const p = window.fetch(input, init);
-  if (DFT.running) dftNetLog(url, init, p);                    // v1.09.27: тест документооборота пишет запросы и ответы сервера в отчёт
+  if (DFT.running && !/\/functions\/v1\//.test(url)) dftNetLog(url, init, p);   // v1.09.27: тест документооборота пишет запросы и ответы сервера в отчёт (функции — через общий перехват fetch, v1.09.33)
   if (!/\/auth\/v1\/(token|logout)/.test(url)) return p;
   return p.then(r => {
     try{
@@ -28052,7 +28054,7 @@ const DFT_NET_RE = /\/rest\/v1\/(jobs|placements|proposals|doc_requests|doc_lock
 const DFT_NET_SKIP = /\/rest\/v1\/(chat_|push_sub|user_sessions|rpc\/(chat_|push_|session_|seen_))|\/realtime\/|\/auth\/v1\//
 
 function dftOn(){ const o = (state.data && state.data.org_settings) || {}; return o.dft_on === true && (!o.dft_until || Date.parse(o.dft_until) > Date.now()); }
-function dftSchemaOk(){ return !HAS_SB || +(((state.data || {}).org_settings || {}).docflow_v) >= 7; }   // v1.09.28: нужен job_adopt и номер пикапа после вставки
+function dftSchemaOk(){ return !HAS_SB || +(((state.data || {}).org_settings || {}).docflow_v) >= 9; }   // v1.09.28: нужен job_adopt и номер пикапа после вставки
 function dftCut(v, n){ let s = typeof v === 'string' ? v : JSON.stringify(v); s = String(s == null ? '' : s).replace(/\s+/g, ' '); return s.length > (n || 700) ? s.slice(0, n || 700) + ' …[' + s.length + ']' : s; }
 /* text — строка для панели (короткая), full — строка для отчёта (длинная, до 6000 знаков тела) */
 function dftLog(text, cls, full){ tlogLine(full || text, cls); const b = document.getElementById('dft-log'); if (b){ const d = document.createElement('div'); d.className = 'dft-l ' + (cls || ''); d.textContent = text; b.appendChild(d); while (b.children.length > 60) b.removeChild(b.firstChild); b.scrollTop = b.scrollHeight; } }
@@ -28065,6 +28067,8 @@ function dftNetLog(url, init, p){
     const hq = dftHdr(init && init.headers, ['Prefer', 'Range', 'Accept-Profile', 'Content-Profile']);
     dftLog('   → #' + n + ' ' + m + ' ' + dftCut(path, 300) + (body ? ' · ' + dftCut(body, 600) : ''), 'net', '   → #' + n + ' ' + m + ' ' + dftCut(path, 1200) + hq + (body ? ' · ' + dftCut(body, 6000) : ''));
     p.then(r => { const ms = Math.round(performance.now() - t0), hr = dftHdr(r.headers, ['sb-request-id', 'x-request-id', 'content-range', 'x-envoy-upstream-service-time']);
+      let ct = ''; try{ ct = r.headers.get('content-type') || ''; }catch(e){}
+      if (ct && !/json|text|javascript/i.test(ct)){ dftLog('   ← #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms · [' + ct.split(';')[0] + (r.headers.get('content-length') ? ' · ' + dftCut(r.headers.get('content-length'), 20) + ' B' : '') + ']', r.ok ? 'net' : 'neterr'); return; }
       try{ r.clone().text().then(tx => dftLog('   ← #' + n + ' HTTP ' + r.status + ' · ' + ms + ' ms' + (tx ? ' · ' + dftCut(tx, 600) : ''), r.ok ? 'net' : 'neterr', '   ← #' + n + ' HTTP ' + r.status + ' ' + (r.statusText || '') + ' · ' + ms + ' ms' + hr + (tx ? ' · ' + dftCut(tx, 6000) : ''))).catch(() => {}); }catch(e){} },
       e => dftLog('   ← #' + n + ' сеть: ' + errStr(e), 'neterr'));
   }catch(e){}
@@ -28299,6 +28303,13 @@ function dftDemoExec(actorId, op, args){
     else if (old.status === 'approved' && nw.status !== 'approved') [nw.created_by].concat(nw.helper_ids || []).forEach(x => n2(x, 'Апрув снят с ремонта'));
     d.repairs[d.repairs.indexOf(old)] = nw; return { ok: true, data: JSON.parse(JSON.stringify(nw)) };
   }
+  if (op === 'ext_req_create'){
+    const j = getJob(args.job_id); if (!j || !j.is_test) return fail('DFT_NOT_TEST_DOC'); if (!(j.technician_id === actorId || sharedHelper(j))) return fail('RLS_DENIED');
+    const rows = (d.placements || []).filter(p => p.job_id === j.id && pkPending(p)); if (!rows.length) return fail('DFT_NO_PENDING');
+    const r = { id: uid(), job_id: j.id, requested_by: actorId, requested_at: new Date().toISOString(), days: Math.max(1, Math.min(60, +args.days || 4)), qty_total: rows.reduce((s, p) => s + (+p.qty || 1), 0), payload: rows.map(p => ({ id: p.id, qty: +p.qty || 1 })),
+      unit: j.unit_number || '', cx: (cxById(j.complex_id) || {}).abbr || '', eq: rows.map(p => ((etById(p.equipment_type_id) || {}).abbr || '?') + '×' + (+p.qty || 1)).join(' '), status: 'pending' };
+    (d.ext_requests = d.ext_requests || []).push(r); return { ok: true, data: JSON.parse(JSON.stringify(r)) };
+  }
   if (op === 'prop_create'){
     if (role !== 'admin' && role !== 'manager') return fail('RLS_DENIED');
     const row = args.row || {}, p = { id: row.id || uid(), no: 90000000 + (++DFT.seq), date: todayISO(), counterparty_id: row.counterparty_id || null, complex_id: row.complex_id || null, unit_number: row.unit_number || 'DFTEST', note: '', items: row.items || [],
@@ -28307,7 +28318,7 @@ function dftDemoExec(actorId, op, args){
   }
   if (op === 'rpc'){
     const fn = args.fn, a = args.args || {};
-    const jid = a.p_job || (fn === 'doc_request_decide' ? ((d.doc_requests || []).find(q => q.id === a.p_id) || {}).doc_id : (fn === 'doc_lock' || fn === 'doc_unlock') ? a.p_id : null), j = getJob(jid);
+    const jid = a.p_job || (fn === 'doc_request_decide' ? ((d.doc_requests || []).find(q => q.id === a.p_id) || {}).doc_id : fn === 'decide_ext_request' ? ((d.ext_requests || []).find(q => q.id === a.p_id) || {}).job_id : (fn === 'doc_lock' || fn === 'doc_unlock') ? a.p_id : null), j = getJob(jid);
     if (!j || !j.is_test) return fail('DFT_NOT_TEST_DOC');
     const wrap = r => r.ok ? { ok: true, data: { result: r.result === undefined ? null : r.result, job: JSON.parse(JSON.stringify(getJob(jid))) } } : r;
     if (fn === 'approve_job'){ if (!appr) return fail('FORBIDDEN'); const r = dftDemoExec(actorId, 'job_update', { id: jid, patch: { status: 'approved', approved_total: +a.p_total, approved_by: actorId, approved_at: new Date().toISOString() } }); return wrap(r); }
@@ -28328,6 +28339,14 @@ function dftDemoExec(actorId, op, args){
       DFT.locks[jid] = { by: actorId, name: A.display_name, since: (l && l.by === actorId) ? l.since : Date.now(), at: Date.now() }; return wrap({ ok: true, result: { ok: true } }); }
     if (fn === 'doc_unlock'){ if (DFT.locks[jid] && DFT.locks[jid].by === actorId) delete DFT.locks[jid]; return wrap({ ok: true }); }
     if (fn === 'job_fix_no'){ if (j.no == null || j.status === 'draft') return wrap({ ok: true, result: null }); if (j.doc_no) return wrap({ ok: true, result: j.doc_no }); const tx = String(a.p_text || '').replace(/[^A-Za-z0-9._-]/g, ''); if (!tx.includes(String(j.no))) return fail('BAD_NUMBER_TEXT'); j.doc_no = tx; return wrap({ ok: true, result: tx }); }
+    if (fn === 'decide_ext_request'){
+      if (role !== 'admin' && role !== 'manager') return fail('FORBIDDEN'); const q = (d.ext_requests || []).find(x => x.id === a.p_id && x.status === 'pending'); if (!q) return fail('NOT_FOUND');
+      q.status = a.p_ok ? 'approved' : 'rejected'; q.decided_by = actorId; q.decided_at = new Date().toISOString();
+      if (a.p_ok) for (const row of q.payload || []){ const pl = (d.placements || []).find(p => p.id === row.id && p.job_id === q.job_id && !p.picked_up && !p.superseded); if (!pl) continue; const qty = Math.min(+row.qty || 0, +pl.qty || 0); if (qty <= 0) continue;
+        const base = pl.due_date > todayISO() ? pl.due_date : todayISO(); d.placements.push({ ...pl, id: uid(), ext_of: pl.id, qty, days: q.days, placed_date: base, due_date: addDaysISO(base, q.days), superseded: false, superseded_at: null, picked_up: false, picked_up_at: null, no: 90000000 + (++DFT.seq), is_test: true });
+        if (qty >= +pl.qty){ pl.superseded = true; pl.superseded_at = new Date().toISOString(); } else pl.qty = +pl.qty - qty; }
+      return wrap({ ok: true });
+    }
     if (fn === 'link_job_proposal'){ if (role !== 'admin' && role !== 'manager') return fail('FORBIDDEN'); if (a.p_prop && !(d.proposals || []).some(p => p.id === a.p_prop && p.is_test)) return fail('DFT_NOT_TEST_DOC');
       const r = dftDemoExec(actorId, 'job_update', { id: jid, patch: { proposal_id: a.p_prop || null, has_proposal: !!a.p_prop } }); return wrap(r); }
     return fail('DFT_BAD_FN');
@@ -28403,8 +28422,9 @@ const U = {
   async stepTo(id, target){ const st = await U.wait(() => document.querySelector('.stepper[data-st="' + id + '"]'), 7000, id);
     for (let i = 0; i < 14; i++){ const v = parseInt(st.querySelector('.val').textContent) || 0; if (v === target) return; const b = st.querySelector('button[data-act="' + (v < target ? '+' : '-') + '"]');
       if (!U.vis(b)) throw new Error(t('dft_ui_off') + ': ' + id); if (!i) dftLog('   ☛ ' + id + ' → ' + target, 'ui'); b.click(); await U.sleep(50); } },
-  toast(){ const x = document.querySelectorAll('#toasts .toast'); return x.length ? (x[x.length - 1].textContent || '') : ''; },
-  clearToasts(){ document.querySelectorAll('#toasts .toast').forEach(x => x.remove()); }
+  /* v1.09.33: подсказки читаются из памяти теста, а не с экрана — на телефоне любое касание убирает длинную подсказку */
+  toast(){ const a = DFT.toasts || []; if (a.length) return a[a.length - 1]; const x = document.querySelectorAll('#toasts .toast'); return x.length ? (x[x.length - 1].textContent || '') : ''; },
+  clearToasts(){ DFT.toasts = []; document.querySelectorAll('#toasts .toast').forEach(x => x.remove()); }
 };
 
 /* ---------- прогон ---------- */
@@ -28431,7 +28451,7 @@ async function dftRun(){
   if (!dftOn()){ toast('🔒 ' + t('dft_mode_off'), 'err'); return; }
   const w = document.getElementById('dft-worker'); if (w) DFT.worker = w.value;
   DFT.jh = null; DFT.rep = null;
-  Object.assign(DFT, { running: true, stop: false, next: null, rows: [], run: 'dft-' + Date.now().toString(36), owner: state.user.id, locks: {}, seq: 0, net: 0, asked: [], marks: [], jsErr: 0 });
+  Object.assign(DFT, { running: true, stop: false, next: null, rows: [], run: 'dft-' + Date.now().toString(36), owner: state.user.id, locks: {}, seq: 0, net: 0, asked: [], marks: [], jsErr: 0, toasts: [] });
   tlogStart('docflow', t('dft_card'));
   const scr0 = state.screen, confirm0 = window.confirm, prompt0 = window.prompt; let promptAns = '';
   /* v1.09.29: вопросы приложения, на которые тест отвечает сам, — в отчёт; ошибки кода во время теста — тоже */
@@ -28439,6 +28459,8 @@ async function dftRun(){
   window.prompt = (q, d) => { DFT.asked.push(String(q)); dftLog('   ? ' + dftCut(q, 200) + ' → «' + promptAns + '»', 'ui'); return promptAns; };
   const onErr = e => { DFT.jsErr++; dftLog('⛔ JS: ' + dftCut((e && (e.message || (e.reason && (e.reason.stack || e.reason.message || e.reason)))) || e, 600) + (e && e.filename ? ' @ ' + String(e.filename).split('/').pop() + ':' + e.lineno : ''), 'err'); };
   window.addEventListener('error', onErr); window.addEventListener('unhandledrejection', onErr);
+  /* v1.09.33: вызовы Edge Functions (media-begin / put / commit / view, push) идут мимо обёртки supabase — перехватываем fetch на время теста */
+  const fetch0 = window.fetch; window.fetch = function(input, init){ const pr = fetch0.apply(this, arguments); try{ const u = typeof input === 'string' ? input : ((input && input.url) || ''); if (/\/functions\/v1\/(?!dft(\?|$))/.test(u)) dftNetLog(u, init, pr); }catch(e){} return pr; };
   try{ closeModal(); }catch(e){}
   dftPanelOpen();
   const hd = document.getElementById('dft-head'); if (hd) hd.textContent = shortName(state.user.display_name || '') + ' · ' + t('role_' + state.user.role) + ' · ' + DFT.run + (HAS_SB ? '' : ' · demo');
@@ -28579,7 +28601,10 @@ async function dftRun(){
       await step('−', t('dft_m5'), async () => { if (!HAS_SB) throw SKIP(t('ct_demo')); await ui.openDoc(J); const b = U.q(`[onclick="App.invToDrive('${J}')"]`); if (!b){ await ui.closeDoc(); throw SKIP(t('dft_m_nobtn')); } U.clearToasts(); await U.click(`[onclick="App.invToDrive('${J}')"]`, t('inv_drive_hint')); await sleep(600);
         const has = (state.data.media || []).some(m => m.job_id === J && m.kind === 'invoice'); await ui.closeDoc(); must(!has && /Диск|Drive/i.test(U.toast()), t('dft_ui_notoast')); return { note: t('inv_drive_draft').slice(0, 60) + '…' }; });
       DFT.pdfToDrive = async () => { if (!HAS_SB) throw SKIP(t('ct_demo')); await ui.openDoc(J); if (!U.q(`[onclick="App.invToDrive('${J}')"]`)){ await ui.closeDoc(); throw SKIP(t('dft_m_nobtn')); } await U.click(`[onclick="App.invToDrive('${J}')"]`, t('inv_drive_hint'));
-        await U.wait(() => (state.data.media || []).some(m => m.job_id === J && m.kind === 'invoice' && m.drive_file_id), 90000, 'PDF → Drive'); await ui.closeDoc(); const m = state.data.media.find(x => x.job_id === J && x.kind === 'invoice'); return { note: (m.file_name || 'PDF') + ' · drive ' + String(m.drive_file_id).slice(0, 8) + '…' }; };
+        /* v1.09.33: ждём не периодический обмен (живой прогон: 79 с), а саму очередь отправки, потом обмен вручную */
+        const inQ = () => ctQOf(J).filter(x => x.kind === 'invoice'); await U.wait(() => inQ().length || (state.data.media || []).some(m => m.job_id === J && m.kind === 'invoice'), 15000, t('dft_m_queue')); const t0 = performance.now();
+        mediaFlush(true).catch(() => {}); for (;;){ const left = inQ(); if (!left.length) break; if (performance.now() - t0 > 120000) throw new Error('PDF → Drive: ' + (left[0].error || t('dft_m_queue'))); if (!_mediaBusy && Math.round((performance.now() - t0) / 500) % 20 === 19) mediaFlush(true).catch(() => {}); await sleep(500); }
+        try{ await syncNow(true); }catch(e){} await U.wait(() => (state.data.media || []).some(m => m.job_id === J && m.kind === 'invoice' && m.drive_file_id), 20000, 'PDF → Drive'); await ui.closeDoc(); const m = state.data.media.find(x => x.job_id === J && x.kind === 'invoice'); return { note: (m.file_name || 'PDF') + ' · drive ' + String(m.drive_file_id).slice(0, 8) + '… · ' + Math.round((performance.now() - t0) / 1000) + ' s' }; };
     }
     await step('−', t('dft_a4'), async () => { const who = mineOf('MGR', 'APR'); need(who); if (!ets.length) throw SKIP(t('dft_no_eq'));
       if (isMe(who)){ await ui.openDoc(J); present('#eq-ro', t('eq_ro_note')); must(!U.vis(document.querySelector('.stepper[data-st="eq-q-' + ets[0].id + '"] button')), t('dft_ui_avail') + ': eq stepper'); U.clearToasts(); await U.click('#eq-ro', 'Equipment Rental'); must(/пикап|pickup/i.test(U.toast()), t('dft_ui_notoast')); await ui.closeDoc(); }
@@ -28756,11 +28781,19 @@ async function dftRun(){
       else { const f2 = JSON.parse(JSON.stringify((await dftPull(J)).form_data)); delete f2.equipment[k]; okR(await upd('W', J, { form_data: f2, total: calcTotal(f2, priceResolver(cx.counterparty_id)) }));
         okR(await dftExec('W', 'pl_upsert', { row: { ...p, archived_at: new Date().toISOString(), archived_by: W.id, arch_note: 'Техника удалена из инвойса — тест', superseded: true } })); }
       await dftPull(J); const a = state.data.placements.find(x => x.id === p.id); must(a && a.archived_at && !pkPending(a) && /удалена из инвойса|removed from invoice/i.test(a.arch_note || ''), 'archived'); return { note: t('dft_arch_kept') }; });
-    await step('+', t('dft_e_req'), async () => { const p0 = state.data.placements.find(p => p.job_id === J && pkPending(p)); if (!p0) throw SKIP(t('dft_no_eq')); if (!isMe('W')) throw SKIP(t('dft_only_ui'));
-      promptAns = String(maxExtendDays() + 1); await ui.goDay(todayISO()); await U.click(`.item.clicky[onclick*="pickupModal('${J}'"]`, t('pickup') + ' Unit'); await U.click('[onclick^="App.extendModal("]', t('extend_rent')); await U.click('[onclick="App.extReqCreate()"]', t('ext_req_btn')); await sleep(600);
-      const rq = (state.data.ext_requests || []).find(r => r.job_id === J && r.status === 'pending'); must(rq && +rq.days === maxExtendDays() + 1, 'ext_request'); DFT.extReq = rq.id; return { note: rq.days + ' ' + t('days') }; });
-    await step('+', t('dft_e_req_no'), async () => { if (!DFT.extReq) throw SKIP(t('dft_only_ui')); if (!HAS_SB){ state.data.ext_requests = (state.data.ext_requests || []).filter(r => r.id !== DFT.extReq); throw SKIP(t('dft_only_sb')); }
-      const who = first('MGR', 'APR', 'ADM'); okR(await rpc(who, 'decide_ext_request', { p_id: DFT.extReq, p_ok: false })); const x = await state.sb.from('ext_requests').select('status').eq('id', DFT.extReq).maybeSingle(); must(x.data && x.data.status === 'rejected', 'status'); return { note: who }; });
+    /* v1.09.33: заявка на продление — при любой ведущей роли. Работник подаёт кнопкой «Запросить…», остальные — за него через функцию;
+       менеджер и админ решают заявку кнопкой на главной, у работника решает функция */
+    const extAsk = async () => { const days = maxExtendDays() + 1;
+      if (isMe('W')){ promptAns = String(days); await ui.goDay(todayISO()); await U.click(`.item.clicky[onclick*="pickupModal('${J}'"]`, t('pickup') + ' Unit'); await U.click('[onclick^="App.extendModal("]', t('extend_rent')); await U.click('[onclick="App.extReqCreate()"]', t('ext_req_btn')); await sleep(600); }
+      else { const d = okR(await dftExec('W', 'ext_req_create', { job_id: J, days })); if (HAS_SB) await syncNow(true); else (state.data.ext_requests = state.data.ext_requests || []).some(r => r.id === d.id) || state.data.ext_requests.push(d); }
+      const rq = (state.data.ext_requests || []).find(r => r.job_id === J && r.status === 'pending'); must(rq && +rq.days === days, 'ext_request'); return rq; };
+    const extDecide = async (rq, ok) => { const who = mineOf('MGR', 'APR', 'ADM');
+      if (isMe(who) && HAS_SB){ await ui.tab('home'); await U.click(`[onclick="App.extReqDecide('${rq.id}', ${ok})"]`, ok ? t('ext_req_ok') : t('ext_req_no')); await U.wait(() => ((state.data.ext_requests || []).find(r => r.id === rq.id) || {}).status === (ok ? 'approved' : 'rejected'), 15000, t('ext_req_title')); await sleep(500); }
+      else okR(await rpc(first('MGR', 'APR', 'ADM'), 'decide_ext_request', { p_id: rq.id, p_ok: !!ok }));
+      if (HAS_SB){ const x = await state.sb.from('ext_requests').select('status').eq('id', rq.id).maybeSingle(); must(x.data && x.data.status === (ok ? 'approved' : 'rejected'), 'status=' + (x.data && x.data.status)); await syncNow(true); }
+      else must(((state.data.ext_requests || []).find(r => r.id === rq.id) || {}).status === (ok ? 'approved' : 'rejected'), 'status'); return { note: (isMe(who) && HAS_SB ? '☛ ' : '') + who }; };
+    await step('+', t('dft_e_req'), async () => { const p0 = state.data.placements.find(p => p.job_id === J && pkPending(p)); if (!p0) throw SKIP(t('dft_no_eq')); const rq = await extAsk(); DFT.extReq = rq.id; return { note: rq.days + ' ' + t('days') + (isMe('W') ? ' · ☛' : ' · ⇒ W') }; });
+    await step('+', t('dft_e_req_no'), async () => { if (!DFT.extReq) throw SKIP('ext_request'); return extDecide({ id: DFT.extReq }, false); });
     await step('+', t('dft_e2'), async () => { const p0 = state.data.placements.find(p => p.job_id === J && pkPending(p) && !p.ext_of); if (!p0) throw SKIP(t('dft_no_eq')); const part = isMe('W') && +p0.qty >= 2;
       if (isMe('W')){ await ui.goDay(todayISO()); await U.click(`.item.clicky[onclick*="pickupModal('${J}'"]`, t('pickup') + ' Unit'); await U.click('[onclick^="App.extendModal("]', t('extend_rent'));
         if (part){ await U.click(`[onclick="App.extMode('sel')"]`, t('ext_partial')); await U.click(`[onclick="App.extQty('${p0.id}',-1)"]`, '−1'); }
@@ -28769,6 +28802,9 @@ async function dftRun(){
       else { okR(await dftExec('W', 'pl_upsert', { row: { id: uid(), job_id: J, equipment_type_id: p0.equipment_type_id, qty: p0.qty, days: 2, placed_date: p0.due_date, due_date: addDaysISO(p0.due_date, 2), technician_id: p0.technician_id, complex_id: p0.complex_id, counterparty_id: p0.counterparty_id, unit_number: p0.unit_number, ext_of: p0.id } }));
         okR(await dftExec('W', 'pl_upsert', { row: { ...p0, superseded: true, superseded_at: new Date().toISOString() } })); }
       await dftPull(J); const pend = state.data.placements.filter(p => p.job_id === J && pkPending(p)); must(pend.some(p => p.ext_of === p0.id) && !pend.some(p => p.id === p0.id), 'pending: ' + pend.length); return { note: '+2 ' + t('days') }; });
+    await step('+', t('dft_e_req_ok'), async () => { await dftPull(J); const pend = state.data.placements.filter(p => p.job_id === J && pkPending(p)); if (!pend.length) throw SKIP(t('dft_no_eq')); const rq = await extAsk(); const r = await extDecide(rq, true); await dftPull(J);
+      const now = state.data.placements.filter(p => p.job_id === J && pkPending(p)), ext = now.filter(p => pend.some(q => p.ext_of === q.id)); must(ext.length, t('dft_ext_none'));   /* заявка из карточки пикапа охватывает строки, показанные на выбранный день */
+      must(pend.filter(q => ext.some(p => p.ext_of === q.id)).every(q => { const cur = state.data.placements.find(p => p.id === q.id); return cur && (cur.superseded || +cur.qty < +q.qty); }), t('dft_ext_src')); return { note: r.note + ' · +' + rq.days + ' ' + t('days') + ' · ' + ext.length }; });
     await step('+', t('dft_e4'), async () => { const ext = state.data.placements.find(p => p.job_id === J && pkPending(p)); if (!ext) throw SKIP(t('dft_no_eq'));
       if (isMe('W')){ await ui.goDay(ext.due_date); await U.click(`.item.clicky[onclick*="pickupModal('${J}'"]`, t('pickup') + ' Unit'); await U.click('[onclick^="App.pickupGroup("]', t('pick_all_btn')); await sleep(700); await ui.reset(); }
       else okR(await dftExec('W', 'pl_upsert', { row: { ...ext, picked_up: true, picked_up_at: new Date().toISOString(), picked_up_by: W.id } }));
@@ -28895,7 +28931,7 @@ async function dftRun(){
     try{ await step('·', t('dft_i1'), async () => { let n = 0; if (HAS_SB){ const r = await dftCall('cleanup', { run: DFT.run }); okR(r); n = r.deleted || 0; const st = await dftStatusLoad(true); if (st && st.mine) throw new Error(t('dft_left') + ' ' + st.mine); }
       else { const ids = state.data.jobs.filter(j => j.is_test && j.test_run === DFT.run).map(j => j.id); n = ids.length; dftPurgeLocal(ids); state.data.proposals = state.data.proposals.filter(p => !p.is_test); }
       dftPurgeLocal(); if (state.data.jobs.some(j => j.is_test)) throw new Error(t('dft_left')); return { note: t('dft_deleted') + ' ' + n }; }); }catch(e){}
-    window.removeEventListener('error', onErr); window.removeEventListener('unhandledrejection', onErr);
+    window.removeEventListener('error', onErr); window.removeEventListener('unhandledrejection', onErr); window.fetch = fetch0;
     DFT.stepMode = sm; window.confirm = confirm0; window.prompt = prompt0; DFT.running = false; DFT.next = null;
     const okN = out.filter(x => x.ok === true).length, badN = out.filter(x => x.ok === false).length + (DFT.jsErr ? 1 : 0), skipN = out.filter(x => x.ok === null).length;
     if (DFT.jsErr) tlogStep({ name: '· ' + t('dft_js_err'), ok: false, ms: 0, extra: String(DFT.jsErr) });

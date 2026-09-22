@@ -273,6 +273,25 @@ select pg_temp.ok('уже отправленный пропозал при вы�
 select set_config('request.jwt.claim.sub', '', true);
 select public.dft_exec(:TECH, :TECH, 'cleanup', '{"run":"r4"}') is not null as c4 \gset
 
+-- ===== 12. v1.09.33 · заявка на продление сверх лимита от имени работника =====
+select set_config('request.jwt.claim.sub', '', true);
+select (public.dft_exec(:TECH, :MGR, 'job_create', jsonb_build_object('run', 'r5', 'row', jsonb_build_object('id', '44444444-0000-0000-0000-0000000000e5', 'technician_id', :TECH, 'unit_number', 'DFTEST-X')))->>'ok')::boolean as j5 \gset
+select pg_temp.ok('заявка без ожидающих пикапов не создаётся: DFT_NO_PENDING',
+  pg_temp.throws($q$select public.dft_exec('00000000-0000-0000-0000-0000000000b4', '00000000-0000-0000-0000-0000000000b4', 'ext_req_create', '{"job_id":"44444444-0000-0000-0000-0000000000e5","days":4}')$q$, 'DFT_NO_PENDING'));
+select (public.dft_exec(:TECH, :ADM, 'pl_upsert', jsonb_build_object('row', jsonb_build_object('id', '66666666-0000-0000-0000-0000000000e5', 'job_id', '44444444-0000-0000-0000-0000000000e5', 'equipment_type_id', '77777777-0000-0000-0000-0000000000e1', 'qty', 2, 'days', 1,
+  'due_date', (current_date + 1)::text, 'technician_id', :TECH)))->>'ok')::boolean as pl5 \gset
+select pg_temp.ok('заявка от имени постороннего работника: RLS_DENIED',
+  pg_temp.throws($q$select public.dft_exec('00000000-0000-0000-0000-0000000000b4', '00000000-0000-0000-0000-0000000000b5', 'ext_req_create', '{"job_id":"44444444-0000-0000-0000-0000000000e5","days":4}')$q$, 'RLS_DENIED'));
+select public.dft_exec(:TECH, :TECH, 'ext_req_create', '{"job_id":"44444444-0000-0000-0000-0000000000e5","days":4}')->'data'->>'id' as rq5 \gset
+select pg_temp.ok('заявка от имени исполнителя создана: дни, количество, состав техники, ожидает решения',
+  (select days = 4 and qty_total = 2 and eq like 'DFB×2%' and status = 'pending' and requested_by = :TECH::uuid from public.ext_requests where id = :'rq5'::uuid));
+select (public.dft_exec(:TECH, :MGR, 'rpc', jsonb_build_object('fn', 'decide_ext_request', 'args', jsonb_build_object('p_id', :'rq5', 'p_ok', true)))->>'ok')::boolean as dec5 \gset
+select pg_temp.ok('решение по заявке — через закрытый список функции (менеджер): заявка одобрена, продление создано тестовым',
+  :'dec5'::boolean and (select status = 'approved' from public.ext_requests where id = :'rq5'::uuid)
+  and exists(select 1 from public.placements where ext_of = '66666666-0000-0000-0000-0000000000e5' and is_test));
+select public.dft_exec(:TECH, :TECH, 'cleanup', '{"run":"r5"}')->>'deleted' as c5 \gset
+select pg_temp.ok('уборка удалила и заявку', not exists(select 1 from public.ext_requests where id = :'rq5'::uuid));
+
 select n, case when ok then '✓' else '✗' end || ' ' || name || case when note <> '' then '  [' || note || ']' else '' end from r order by n;
 select 'ИТОГ: ' || count(*) filter (where ok) || ' ✓ / ' || count(*) filter (where not ok) || ' ✗' from r;
 rollback;
