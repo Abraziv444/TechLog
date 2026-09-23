@@ -1,6 +1,9 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, dirFor, ymDir,
          folderIdOf, INVOICES_DIR, CORS, jres, FN_VER, techDirLabel } from "../_shared/google.ts";
 
+/* v1.09.42 (п. 56): у каждой функции своя версия в ver — «Функции сервера» видят старую копию даже без правки общего google.ts (общий FN_VER — в lib) */
+const COMMIT_VER = "1.09.42";
+
 /* v1.08.13: имя папки сотрудника — как в media-begin */
 function techDirName(display: string) {
   const p = String(display ?? "").trim().split(/\s+/).filter(Boolean);
@@ -13,7 +16,7 @@ function techDirName(display: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»
-    return new Response(JSON.stringify({ fn: "media-commit", ver: FN_VER }),
+    return new Response(JSON.stringify({ fn: "media-commit", ver: COMMIT_VER, lib: FN_VER }),
       { headers: { ...CORS, "Content-Type": "application/json" } });
   try {
     const sb = userClient(req);

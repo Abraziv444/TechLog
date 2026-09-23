@@ -234,7 +234,7 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
   const sql = fs.readFileSync(path.join(ROOT, 'supabase/update-to-1_09_40.sql'), 'utf8');
   const full = fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_09_40.sql'), 'utf8');
   t('SQL 1.09.40: стражи удаления, журнал, pl_upd, upload_id; full-install = 1.09.38 + обновление', ['dir_del_guard_tg', 'profile_del_guard_tg', 'audit_guard_tg', 'is_job_main', 'media add column if not exists upload_id'].every(k => sql.includes(k))
-    && full.startsWith(fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_09_38.sql'), 'utf8')) && full.endsWith(sql) && src.includes("const DB_SQL_FILE = 'full-install-1_09_40.sql';"));
+    && full.startsWith(fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_09_38.sql'), 'utf8')) && full.endsWith(sql) && /const DB_SQL_FILE = 'full-install-1_09_(4\d|[5-9]\d)\.sql';/.test(src));   // v1.09.42: файл базы двинулся дальше
   const fn = n => fs.readFileSync(path.join(ROOT, 'supabase/functions', n, 'index.ts'), 'utf8');
   t('Edge: media-put сверяет upload_id с владельцем и статусом; media-begin его пишет; свои версии в ver', /eq\("upload_id", upId\)/.test(fn('media-put')) && /RELAY_FORBIDDEN/.test(fn('media-put'))
     && /update\(\{ upload_id: uid \}\)/.test(fn('media-begin')) && /ver: BEGIN_VER/.test(fn('media-begin')) && /ver: PUT_VER/.test(fn('media-put')) && /ver: DEL_VER/.test(fn('media-delete')));

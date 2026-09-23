@@ -1,6 +1,9 @@
 import { svc, userClient, driveToken, monthFolder, CORS, jres, FN_VER,
          PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, ymDir, techDirLabel, BLOCKED_SUFFIX } from "../_shared/google.ts";
 
+/* v1.09.42 (п. 56): у каждой функции своя версия в ver — «Функции сервера» видят старую копию даже без правки общего google.ts (общий FN_VER — в lib) */
+const HEALTH_VER = "1.09.42";
+
 /* v1.07.64 · три режима:
    ?cfg=1     — только конфиг без секретов (быстро, для отрисовки карточки);
    ?reveal=1  — реальные значения секретов админу по клику «глаза»;
@@ -36,7 +39,7 @@ async function saveQuota(s: ReturnType<typeof svc>, about: Record<string, any>) 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (new URL(req.url).searchParams.get("ping"))         // v1.07.72: «кто ты»
-    return jres({ fn: "media-health", ver: FN_VER });
+    return jres({ fn: "media-health", ver: HEALTH_VER, lib: FN_VER });
   const sb = userClient(req);
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return jres({ error: "UNAUTHORIZED" }, 401);

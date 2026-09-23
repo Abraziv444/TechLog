@@ -1,9 +1,12 @@
 import { userClient, driveToken, CORS, FN_VER } from "../_shared/google.ts";
 
+/* v1.09.42 (п. 56): у каждой функции своя версия в ver — «Функции сервера» видят старую копию даже без правки общего google.ts (общий FN_VER — в lib) */
+const VIEW_VER = "1.09.42";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»
-    return new Response(JSON.stringify({ fn: "media-view", ver: FN_VER }),
+    return new Response(JSON.stringify({ fn: "media-view", ver: VIEW_VER, lib: FN_VER }),
       { headers: { ...CORS, "Content-Type": "application/json" } });
   const id = new URL(req.url).searchParams.get("id") ?? "";
   const sb = userClient(req);

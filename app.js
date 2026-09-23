@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.41';
-const DB_SQL_FILE = 'full-install-1_09_40.sql';
+const APP_VERSION = '1.09.42';
+const DB_SQL_FILE = 'full-install-1_09_42.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -509,12 +509,12 @@ const I18N = {
     mc_menu_tip: 'Личная настройка. По умолчанию пункта в меню нет — раздел всегда доступен здесь, в Настройках.',
     mc_none: 'За вами машина не закреплена. Машину закрепляет админ: Справочники → Автомобили.', mc_ro: 'Данные машины меняет только админ; пробег и состояние приходят с трекера.',
     mc_odo: 'Пробег', mc_fuel: 'Топливо', mc_upd: 'обновлено', mc_pick: 'Машина', mc_tracker: 'Трекер', mc_mil_ok: 'не горит', mc_mil_on: 'горит',
-    mt_title: 'ТО', mt_every: 'каждые {N} mi', mt_own: 'свой интервал', mt_last: 'Последнее ТО, mi', mt_left: 'осталось {N} mi', mt_over: 'просрочено на {N} mi',
-    mt_none: 'последнее ТО не отмечено', mt_next: 'следующее на {N} mi', mt_no_odo: 'пробег с трекера ещё не пришёл', mt_own_chk: 'Свой интервал для этой машины', mt_own_mi: 'Интервал, mi',
-    mt_types_empty: 'Видов ТО пока нет — их заводит админ: Справочники → Виды ТО.', mt_edit: 'Вид ТО', mt_new: 'Новый вид ТО', mt_name: 'Название', mt_int: 'Интервал, mi', mt_rem: 'Напомнить за, mi',
-    mt_active: 'Используется', mt_inactive: 'не используется', mt_bad: 'Нужны название и интервал от 100 до 200000 mi',
-    mt_hint: 'Пробег следующего ТО = пробег последнего ТО машины + интервал. Для отдельной машины интервал меняется галочкой «Свой интервал» в её карточке. Пуш «Пора на ТО» получают водитель и админ, когда до ТО остаётся меньше «Напомнить за».',
-    mt_del_q: 'Удалить вид ТО «{N}»? Отметки этого ТО у всех машин тоже удалятся.', mt_saved: 'ТО сохранено', mt_need_sql: 'ТО и заметки появятся после обновления базы (update-to-1_09_38.sql).',
+    mnt_title: 'ТО', mnt_every: 'каждые {N} mi', mnt_own: 'свой интервал', mnt_last: 'Последнее ТО, mi', mnt_left: 'осталось {N} mi', mnt_over: 'просрочено на {N} mi',
+    mnt_none: 'последнее ТО не отмечено', mnt_next: 'следующее на {N} mi', mnt_no_odo: 'пробег с трекера ещё не пришёл', mnt_own_chk: 'Свой интервал для этой машины', mnt_own_mi: 'Интервал, mi',
+    mnt_types_empty: 'Видов ТО пока нет — их заводит админ: Справочники → Виды ТО.', mnt_edit: 'Вид ТО', mnt_new: 'Новый вид ТО', mnt_name: 'Название', mnt_int: 'Интервал, mi', mnt_rem: 'Напомнить за, mi',
+    mnt_active: 'Используется', mnt_inactive: 'не используется', mnt_bad: 'Нужны название и интервал от 100 до 200000 mi',
+    mnt_hint: 'Пробег следующего ТО = пробег последнего ТО машины + интервал. Для отдельной машины интервал меняется галочкой «Свой интервал» в её карточке. Пуш «Пора на ТО» получают водитель и админ, когда до ТО остаётся меньше «Напомнить за».',
+    mnt_del_q: 'Удалить вид ТО «{N}»? Отметки этого ТО у всех машин тоже удалятся.', mnt_saved: 'ТО сохранено', mnt_need_sql: 'ТО и заметки появятся после обновления базы (update-to-1_09_38.sql).',
     mc_notes: 'Заметки по машине', mc_note_ph: 'Что заметили: звук, шина, царапина…', mc_note_add: 'Добавить заметку', mc_notes_mine: 'Вы видите только свои заметки; админ и менеджер видят все.',
     mc_notes_all: 'Все заметки по машине — от всех сотрудников.', mc_notes_empty: 'Заметок пока нет', mc_note_del_q: 'Удалить заметку?', mc_note_empty: 'Напишите текст заметки',
     wk_title: 'Рабочее время для уведомлений', wk_on: 'Присылать уведомления только в рабочее время', wk_from: 'с', wk_to: 'до',
@@ -821,6 +821,11 @@ const I18N = {
     rep_no_rights: 'Апрув ставит администратор (и менеджер, если это разрешено в настройках)',
     rep_no_edit: 'Сохранять может автор документа, менеджер или админ',
     rep_ro_note: 'Документ открыт только для просмотра: править и сохранять его может автор, менеджер или админ',
+    upd_check_title: 'Проверить обновления',
+    ask_text_ok: 'Готово',
+    media_mb_card: 'Размер файла, не больше (МБ)', media_mb_photo: 'Фото', media_mb_video: 'Видео', media_mb_file: 'Вложение', media_mb_inv: 'PDF-инвойс',
+    media_mb_hint: 'Проверяет сервер (media-begin 1.09.42): файл больше — не загрузится. Пусто в базе — прежние 8 / 120 / 25 / 20 МБ.',
+    media_file_big_n: 'Файл больше {N} МБ — прикрепите ссылку или сожмите',
     tab_rep_screen: 'Ремонт', tab_mycar_help: 'Моя машина',
     pickups_all: 'Пикапы',
     dfl_stuck_chip: 'завис', dfl_stuck_line: 'Из них висят дольше двух дней: {N}',
@@ -2032,12 +2037,12 @@ const I18N = {
     mc_menu_tip: 'Personal setting. The menu item is off by default — the section is always here in Settings.',
     mc_none: 'No vehicle is assigned to you. The admin assigns vehicles in Directories → Vehicles.', mc_ro: 'Only the admin changes vehicle data; mileage and state come from the tracker.',
     mc_odo: 'Mileage', mc_fuel: 'Fuel', mc_upd: 'updated', mc_pick: 'Vehicle', mc_tracker: 'Tracker', mc_mil_ok: 'off', mc_mil_on: 'ON',
-    mt_title: 'Service', mt_every: 'every {N} mi', mt_own: 'own interval', mt_last: 'Last service, mi', mt_left: '{N} mi left', mt_over: 'overdue by {N} mi',
-    mt_none: 'last service not recorded', mt_next: 'next at {N} mi', mt_no_odo: 'no mileage from the tracker yet', mt_own_chk: 'Own interval for this vehicle', mt_own_mi: 'Interval, mi',
-    mt_types_empty: 'No service types yet — the admin adds them in Directories → Service types.', mt_edit: 'Service type', mt_new: 'New service type', mt_name: 'Name', mt_int: 'Interval, mi', mt_rem: 'Remind before, mi',
-    mt_active: 'In use', mt_inactive: 'not in use', mt_bad: 'A name and an interval of 100–200000 mi are required',
-    mt_hint: 'Next service mileage = the vehicle last service mileage + interval. For a single vehicle the interval is changed with "Own interval" in its card. The driver and the admin get a "Service due" push when less than "Remind before" is left.',
-    mt_del_q: 'Delete service type "{N}"? Its records on all vehicles are deleted too.', mt_saved: 'Service saved', mt_need_sql: 'Service and notes appear after the database update (update-to-1_09_38.sql).',
+    mnt_title: 'Service', mnt_every: 'every {N} mi', mnt_own: 'own interval', mnt_last: 'Last service, mi', mnt_left: '{N} mi left', mnt_over: 'overdue by {N} mi',
+    mnt_none: 'last service not recorded', mnt_next: 'next at {N} mi', mnt_no_odo: 'no mileage from the tracker yet', mnt_own_chk: 'Own interval for this vehicle', mnt_own_mi: 'Interval, mi',
+    mnt_types_empty: 'No service types yet — the admin adds them in Directories → Service types.', mnt_edit: 'Service type', mnt_new: 'New service type', mnt_name: 'Name', mnt_int: 'Interval, mi', mnt_rem: 'Remind before, mi',
+    mnt_active: 'In use', mnt_inactive: 'not in use', mnt_bad: 'A name and an interval of 100–200000 mi are required',
+    mnt_hint: 'Next service mileage = the vehicle last service mileage + interval. For a single vehicle the interval is changed with "Own interval" in its card. The driver and the admin get a "Service due" push when less than "Remind before" is left.',
+    mnt_del_q: 'Delete service type "{N}"? Its records on all vehicles are deleted too.', mnt_saved: 'Service saved', mnt_need_sql: 'Service and notes appear after the database update (update-to-1_09_38.sql).',
     mc_notes: 'Vehicle notes', mc_note_ph: 'What you noticed: a noise, a tire, a scratch…', mc_note_add: 'Add note', mc_notes_mine: 'You see only your notes; the admin and managers see all of them.',
     mc_notes_all: 'All notes on this vehicle, from every employee.', mc_notes_empty: 'No notes yet', mc_note_del_q: 'Delete the note?', mc_note_empty: 'Type the note text',
     wk_title: 'Working hours for notifications', wk_on: 'Send notifications only during working hours', wk_from: 'from', wk_to: 'to',
@@ -2337,6 +2342,11 @@ const I18N = {
     rep_no_rights: 'Approval is for admin (and manager, if allowed in settings)',
     rep_no_edit: 'Only the document author, a manager or the admin can save it',
     rep_ro_note: 'This document is view-only: the author, a manager or the admin can edit and save it',
+    upd_check_title: 'Check for updates',
+    ask_text_ok: 'Done',
+    media_mb_card: 'File size, max (MB)', media_mb_photo: 'Photo', media_mb_video: 'Video', media_mb_file: 'Attachment', media_mb_inv: 'PDF invoice',
+    media_mb_hint: 'Checked by the server (media-begin 1.09.42): a bigger file will not upload. Empty in the database — the former 8 / 120 / 25 / 20 MB.',
+    media_file_big_n: 'File over {N} MB — attach a link or compress it',
     tab_rep_screen: 'Repairs', tab_mycar_help: 'My car',
     pickups_all: 'Pickups',
     dfl_stuck_chip: 'stuck', dfl_stuck_line: 'Of these, stuck for more than two days: {N}',
@@ -6692,7 +6702,7 @@ const NET_ONLY = new Set([
   /* пуши, 2FA, ТВ, Bouncie, перевод, карты */
   'pbSub', 'pbUnsub', 'mfaEnroll', 'mfaDisable', 'mfaDisableGo', 'mfaVerifyEnroll', 'mfaLoginVerify',
   'tvStart', 'tvNewCode', 'tvListRefresh', 'tvApprove', 'tvDeny', 'tvRevoke',
-  'bnConnect', 'bnTest', 'bnSaveKeys', 'bnTrack', 'vehSave', 'vehDel', 'vehImport', 'vehServiceSet',
+  'bnConnect', 'bnTest', 'bnSaveKeys', 'bnTrack', 'vehSave', 'vehDel', 'vehImport',
   'translateEn', 'trRun', 'trRunSel', 'trOneDoc', 'trFill', 'trPdfNow',
   'geocodeCx', 'mapSearch', 'mapRoute', 'optRoute',
 ]);
@@ -6998,6 +7008,7 @@ const DB_NEED_COLS = [
   ['work_types',    'preset'],       // v1.09.08: стандартные галочки вида работы
   ['bn_devices',    'checked_at'],
   ['media',         'upload_id'],     // v1.09.40: сессия загрузки для media-put
+  ['org_settings',  'media_mb_photo'],// v1.09.42: размер файлов — в настройках
   ['org_settings',  'tz'],            // v1.09.38: пояс фирмы
   ['maint_types',   'interval_mi'],   // v1.09.38: справочник ТО
   ['vehicle_maint', 'last_mi'],
@@ -7079,14 +7090,14 @@ const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
                       'admin_set_drive_config', 'equip_op', 'admin_set_role',
                       'vehicle_save', 'admin_set_bouncie_config',    // v1.08.32
                       'admin_sessions', 'admin_kill_sessions',        // v1.08.33
-                      'admin_last_seen', 'vehicle_service_set',
+                      'admin_last_seen',
   'tv_list', 'tv_decide', 'tv_cleanup',       // v1.08.33 · v1.08.48
   'acc_doc_mark',               // v1.08.39
   'bn_devices_sync',            // v1.09.01
   'doc_lock', 'doc_request_edit', 'doc_request_decide', 'job_fix_no', 'admin_set_doc_rights', 'admin_set_announce', 'notices_mark_read',   // v1.09.25
   'admin_set_dft'];                                         // v1.09.27
 
-const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','equipment_stock','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings','study_sessions','bn_devices','maint_types','vehicle_maint','vehicle_notes','inv_drive'];   // v1.09.38: ТО и заметки по машинам   // v1.09.01: + справочник трекеров Bouncie (RLS: только админ)   // v1.08.51: + сессии учёбы (RLS: свои; админ — все)   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)
+const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings','study_sessions','bn_devices','maint_types','vehicle_maint','vehicle_notes','inv_drive'];   // v1.09.38: ТО и заметки по машинам   // v1.09.01: + справочник трекеров Bouncie (RLS: только админ)   // v1.08.51: + сессии учёбы (RLS: свои; админ — все)   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)   // v1.09.42 (п. 53): equipment_stock не грузится при обмене — остатки по журналу движений (в бэкапе таблица осталась)
 
 function emptyData(){
   const d = { org_settings: {
@@ -7923,6 +7934,8 @@ function maxExtendDays(){ const v = +((state.data && state.data.org_settings || 
 /* v1.07.76: вложения «скрепкой». Лимит документов фиксированный — тот же,
    что проверяет сервер; фото и видео идут по обычным лимитам из настроек. */
 const M_FILE_MAX = 20, M_FILE_BYTES = 25 * 1024 * 1024;
+/* v1.09.42 (п. 51): размер вложения — из настроек (org_settings.media_mb_file, МБ); пусто — прежние 25 МБ */
+function mFileBytes(){ const v = parseInt(((state.data && state.data.org_settings) || {}).media_mb_file, 10); return v > 0 ? v * 1e6 : M_FILE_BYTES; }
 const M_INV_MAX = 50;            /* v1.07.85: предохранитель на число PDF-инвойсов документа */
 /* v1.08.48: у записи очереди/медиа один владелец — задача ИЛИ ремонт */
 function mOwnId(x){ return x && (x.doc === 'rep' ? x.repair_id : x.job_id); }
@@ -8964,7 +8977,7 @@ function viewHeader(){
     <div class="logo-wrap">
       <div class="logo logo-pic clicky" role="button" tabindex="0" title="${t('tab_home')}" onclick="App.logoHome()">${logoImg()}</div>
     </div>
-    <div class="brand clicky" role="button" tabindex="0" title="${t('upd_checking')}" onclick="App.checkVerClick()">
+    <div class="brand clicky" role="button" tabindex="0" title="${t('upd_check_title')}" onclick="App.checkVerClick()">
       <div class="name">Tech<b>Log</b><span class="name-tag">${t('app_tag')}</span></div>
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
@@ -9362,13 +9375,13 @@ async function dfProblemRetry(id){
   const x = dfProblems().find(q => q.id === id); if (!x) return;
   const fresh = (await jobRefetch(x.doc_id, true)) || jobOrig({ id: x.doc_id });
   if (!fresh){ toast('⚠ ' + t('dfl_gone'), 'err'); dfProblemDrop(id); render(); return; }
-  if (!confirm(t('dfl_retry_q'))) return;
+  if (!(await askYes(t('dfl_retry_q')))) return;
   dfProblemDrop(id);
   const r = await dbUpsert('jobs', { ...x.row, rev: fresh.rev, no: fresh.no, doc_no: fresh.doc_no, numbered_at: fresh.numbered_at });
   if (!r || r.ok !== false){ audit('job_overwrite', 'job', x.doc_id, { unit: x.row.unit_number, from: 'docflow' }); toast('✓ ' + t('saved')); }
   render();
 }
-function dfProblemDiscard(id){ if (!confirm(t('dfl_drop_q'))) return; dfProblemDrop(id); render(); }
+async function dfProblemDiscard(id){ if (!(await askYes(t('dfl_drop_q'), { danger: true }))) return; dfProblemDrop(id); render(); }
 
 function dflDays(ts){ const d = Math.floor((Date.now() - Date.parse(ts || 0)) / 864e5); return isFinite(d) && d > 0 ? d : 0; }
 function dflCollect(){
@@ -10672,6 +10685,65 @@ function askModal(o){
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && _askResolve && $('#overlay')) closeModal();
 });
+/* =====================================================================
+   v1.09.42 (п. 42) · ВОПРОСЫ «ДА / НЕТ» И «ВВЕДИТЕ ТЕКСТ» В ОКНЕ ПРИЛОЖЕНИЯ.
+   askYes(text, o) → Promise<boolean>, askText(text, def, o) → Promise<string|null>.
+   Окно ложится ПОВЕРХ уже открытого (#ask-ov, своё id) — открытое окно не закрывается и его поля
+   читаются после ответа. Встроенные прогоны (тест документооборота, регресс, тест съёмки) подменяют
+   window.confirm / prompt — тогда отвечает подмена, как раньше; автотесты (navigator.webdriver)
+   получают системное окно, если сами не попросили окно приложения (window.__tlAskModal = true).
+   ===================================================================== */
+const _NATIVE_CONFIRM = window.confirm, _NATIVE_PROMPT = window.prompt;
+let _askTopRes = null;
+function askNative(kind){
+  const f = kind === 'prompt' ? window.prompt : window.confirm, n = kind === 'prompt' ? _NATIVE_PROMPT : _NATIVE_CONFIRM;
+  if (typeof f === 'function' && f !== n) return f;
+  try{ if (navigator.webdriver && window.__tlAskModal !== true && typeof f === 'function') return f; }catch(e){}
+  return null;
+}
+function askYes(text, o){
+  const nat = askNative('confirm'); if (nat) return Promise.resolve(!!nat.call(window, String(text)));
+  return askTop({ ...(o || {}), text });
+}
+function askText(text, def, o){
+  const nat = askNative('prompt'); if (nat) return Promise.resolve(nat.call(window, String(text), def == null ? '' : String(def)));
+  return askTop({ ...(o || {}), text, input: true, value: def == null ? '' : String(def) });
+}
+function askTop(o){
+  return new Promise(res => {
+    askTopClose();
+    const under = document.getElementById('overlay'); if (under){ try{ under.inert = true; }catch(e){} }
+    const ov = document.createElement('div'); ov.className = 'overlay ask-top'; ov.id = 'ask-ov'; ov._input = !!o.input;
+    ov.innerHTML = `<div class="modal" role="alertdialog" aria-modal="true">
+      <h3>${ic(o.icon || (o.input ? 'pencil' : 'help'))} ${esc(o.title || t('ask_title'))}</h3>
+      <div class="ask-text">${esc(String(o.text || '')).replace(/\n/g, '<br>')}</div>
+      ${o.input ? `<input id="ask-in" autocomplete="off" value="${esc(o.value || '')}"${o.numeric ? ' inputmode="numeric"' : ''} style="width:100%;margin:2px 0 10px">` : ''}
+      <div class="ask-btns">
+        <button type="button" class="btn ${o.danger ? 'btn-red' : 'btn-green'}" id="ask-ok">${o.okIcon ? ic(o.okIcon) + ' ' : ''}${esc(o.ok || (o.input ? t('ask_text_ok') : t('ask_ok')))}</button>
+        <button type="button" class="btn btn-ghost" id="ask-no">${esc(o.cancel || t('cancel'))}</button>
+      </div></div>`;
+    _askTopRes = res;
+    const no = () => askTopClose(o.input ? null : false);
+    ov.addEventListener('click', e => { if (e.target === ov) no(); });
+    ov.querySelector('#ask-ok').onclick = () => askTopClose(o.input ? String((ov.querySelector('#ask-in') || {}).value || '') : true);
+    ov.querySelector('#ask-no').onclick = no;
+    const inp = ov.querySelector('#ask-in');
+    if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); ov.querySelector('#ask-ok').click(); } });
+    document.body.appendChild(ov);
+    if (!document.getElementById('overlay')) modalTrap(true);
+    setTimeout(() => { const f = ov.querySelector(o.input ? '#ask-in' : '#ask-no'); if (f){ try{ f.focus(); if (o.input) f.select(); }catch(e){} } }, 40);
+  });
+}
+function askTopOpen(){ return !!document.getElementById('ask-ov'); }
+function askTopClose(v){
+  const ov = document.getElementById('ask-ov'), inputMode = !!(ov && ov._input);
+  if (ov) ov.remove();
+  const under = document.getElementById('overlay');
+  if (under){ try{ under.inert = false; }catch(e){} } else if (ov) modalTrap(false);
+  const r = _askTopRes; _askTopRes = null;
+  if (r) r(v === undefined ? (inputMode ? null : false) : v);
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && askTopOpen()){ e.stopPropagation(); askTopClose(); } }, true);
 function modalHead(title, iconName){ return `<h3><button class="back-x" aria-label="${t('back')}" onclick="App.closeModal()">${ic('arr_l')}</button> ${iconName?ic(iconName)+' ':''}${esc(title)}</h3>`; }
 
 /* ---------- Добавить задание ---------- */
@@ -10900,7 +10972,7 @@ async function createTask(){
 
 /* ---------- Пикап: забрать группу ---------- */
 async function pickupGroup(jobId){
-  if (!confirm(t('pickup_confirm'))) return;
+  if (!(await askYes(t('pickup_confirm'), { icon: 'box' }))) return;
   const now = new Date().toISOString();
   const list = state.data.placements.filter(p => p.job_id === jobId && pkPending(p))
     .filter(p => canTouchPk(p));
@@ -11181,7 +11253,7 @@ function jobHistory(jobId){
 /* «Забрать сейчас» из истории: досрочный вывоз = аннулирование пикапа/продления */
 async function pickupOne(pid, jobId){
   const p = state.data.placements.find(x => x.id === pid); if (!p) return;
-  if (!confirm(t('pickup_confirm'))) return;
+  if (!(await askYes(t('pickup_confirm'), { icon: 'box' }))) return;
   { const now_ = new Date().toISOString();
     await dbUpsert('placements', { ...p, picked_up: true, picked_up_at: now_, picked_up_by: state.user.id, ...stockLiteRet(now_) }); }   // v1.09.09
   audit(p.due_date > todayISO() ? 'pickup_early' : 'pickup_done', 'placement', pid, {   // v1.07.18
@@ -11194,7 +11266,7 @@ async function pickupOne(pid, jobId){
 /* v1.07.26: восстановление вывезенного пикапа/продления — снова «в аренде» */
 async function restorePk(pid, jobId){
   const p = state.data.placements.find(x => x.id === pid); if (!p || !p.picked_up) return;
-  if (!confirm(t('restore_pk') + '?')) return;
+  if (!(await askYes(t('restore_pk') + '?'))) return;
   await dbUpsert('placements', { ...p, picked_up: false, picked_up_at: null, picked_up_by: null,
     returned_at: null, returned_by: null });        // v1.08.26: и со склада снимаем
   audit('pickup_restore', 'placement', pid, { unit: p.unit_number,
@@ -11664,7 +11736,7 @@ function dfDemoEvents(o, j){
 /* ---------- действия в документе ---------- */
 async function jobWithdraw(){
   const o = jobOrig(jobDraft); if (!o || !jobMode(jobDraft).canWithdraw) return;
-  if (!confirm(t('df_withdraw_q'))) return;
+  if (!(await askYes(t('df_withdraw_q')))) return;
   const row = { ...o, status: 'draft', return_note: null, returned_by: null, updated_at: new Date().toISOString() };
   const r = await dbUpsert('jobs', row, { svc: ['status', 'return_note', 'returned_by'] }); if (r && r.ok === false) return;   // v1.09.26: строка устарела — статус накатывается на свежую, чужие правки целы
   audit('job_reopen', 'job', o.id, { unit: o.unit_number, date: o.date, via: 'withdraw' });
@@ -11723,7 +11795,7 @@ async function dfReqDecide(id, grant){
   if (!canApprove()) return;
   const q = dfReqs().find(r => r.id === id); if (!q || q.status !== 'pending') return;
   let answer = '';
-  if (!grant){ answer = prompt(t('df_req_deny_ph'), ''); if (answer === null) return; answer = String(answer).trim(); }
+  if (!grant){ answer = await askText(t('df_req_deny_ph'), ''); if (answer === null) return; answer = String(answer).trim(); }
   if (HAS_SB){
     const j0 = jobById(q.doc_id), prevSt = j0 ? { status: j0.status || 'draft', approved_total: j0.approved_total, total: j0.total } : null;
     const { error } = await state.sb.rpc('doc_request_decide', { p_id: id, p_grant: !!grant, p_answer: answer });
@@ -12710,7 +12782,7 @@ async function saveJob(goHome){
       /* v1.09.26: согласующий поправил уже заапрувленный документ, и расчётная сумма изменилась — апрувленная молча прежней не остаётся */
       if (orig && orig.status === 'approved' && doneChk.checked && Math.round(+j.total * 100) !== Math.round(+orig.total * 100)
           && Math.round(+(orig.approved_total ?? orig.total) * 100) !== Math.round(+j.total * 100)){
-        if (confirm(t('df_sum_q').split('{OLD}').join(money(orig.approved_total ?? orig.total)).split('{NEW}').join(money(j.total)))){   // v1.09.35: в тексте по два {OLD} и {NEW} — заменяем все
+        if (await askYes(t('df_sum_q').split('{OLD}').join(money(orig.approved_total ?? orig.total)).split('{NEW}').join(money(j.total)))){   // v1.09.35: в тексте по два {OLD} и {NEW} — заменяем все
           j.approved_total = j.total; j.approved_by = state.user.id; j.approved_at = new Date().toISOString();
           audit('approve_resum', 'job', j.id, { unit: j.unit_number, old: +(orig.approved_total ?? orig.total), new: +j.total });
         }
@@ -12843,7 +12915,7 @@ async function deleteJob(){
   { const _o = jobOrig(jobDraft) || jobDraft; if (!isAdmin() && ((_o.status || 'draft') !== 'draft' || _o.numbered_at)){ toast('⛔ ' + t('df_rej_DOC_LOCKED_DELETE'), 'err'); return; } }   // v1.09.25
   if (editLocked(jobDraft)){ toast('🔒 ' + t('lock_note').replace('{N}', editLockDays()), 'err'); return; }
   if (docBlockers('job', jobDraft.id).length){ chainBlockModal('job', jobDraft.id); return; }   // v1.08.30
-  if (!confirm(t('arch_q'))) return;
+  if (!(await askYes(t('arch_q'), { danger: true, okIcon: 'trash' }))) return;
   localStorage.removeItem('techlog_draft');
   await archiveDoc('job', jobDraft.id);
   state.screen = 'home'; render();
@@ -12899,7 +12971,7 @@ async function purgeDoc(kind, id){
   if (!isAdmin()){ toast('⚠ ' + t('arch_only_admin'), 'err'); return; }
   const row = kind === 'prop' ? propById(id) : kind === 'rep' ? repById(id) : jobById(id);
   if (!row || !isArch(row)){ toast('⚠ ' + t('arch_title'), 'err'); return; }
-  if (!confirm(t('arch_purge_q'))) return;
+  if (!(await askYes(t('arch_purge_q'), { danger: true, okIcon: 'trash' }))) return;
   if (kind === 'rep'){                                            // v1.08.30
     await mediaDropRepair(id);                   // v1.08.48: файлы — в корзину Диска
     await dbDelete('repairs', id);
@@ -15820,7 +15892,7 @@ const App = {
   },
   noHelp(){ openModal(modalHead(t('no_help_t'), 'receipt') + noHelpHtml()); },
   /* v1.07.88: архив-корзина и сверка */
-  archive(kind, id){ if (confirm(t('arch_q'))) archiveDoc(kind, id); },
+  async archive(kind, id){ if (await askYes(t('arch_q'), { danger: true, okIcon: 'trash' })) archiveDoc(kind, id); },
   unarchive: unarchiveDoc,
   purgeDoc,
   auditRun,
@@ -15836,12 +15908,12 @@ const App = {
     toast('✓ ' + t('cam_native_done')); render();
   },
   camUsm(v){ camSet('usm', v ? '1' : '0'); render(); },
-  camFix(){
+  async camFix(){
     /* v1.07.91: раньше эта кнопка молча включала служебный режим съёмки — и
        снимки становились мягче. Теперь предупреждаем и переключаем только по
        согласию; «Камера» и без этого вызывает камеру напрямую. */
     if (camMode() === 'quick'){ toast('ℹ ' + t('cam_nocam_hint'), 'inf'); return; }
-    if (confirm(t('cam_nocam_hint') + '\n\n' + t('cam_mode_quick_h'))){
+    if (await askYes(t('cam_nocam_hint') + '\n\n' + t('cam_mode_quick_h'))){
       App.camMode('quick'); toast('✓ ' + t('cam_switched'));
     }
   },
@@ -16072,7 +16144,6 @@ const App = {
   staffKillSessions(uid){ staffKillSessions(uid); },
   ttDate(v){ state.ttDate = v || todayISO(); render(); },
   bnTrack(imei){ TRKH.sel = new Set([String(imei)]); TRKH.mode = 'day'; TRKH.date = todayISO(); state.screen = 'map'; trkMode(true); },   // v1.09.10: трек дня переехал во вкладку «Треки» карты
-  vehServiceSet(id, v){ vehServiceSet(id, v); },
   optRoute(){ optRouteModal(); },
   optOpen(){ optOpenNav(); },
   optApply(){ optApplyOrder(); },
@@ -16349,6 +16420,7 @@ async function backPressed(){
   const ud = document.getElementById('uidiag-modal');
   if (ud){ const x = ud.querySelector('.ud-x'); if (x) x.click(); else ud.remove(); return 'uidiag'; }
   if (document.querySelector('.tl-dd, #dsk-cal')){ try{ window.TLUI && TLUI.closeAll(); }catch(e){} return 'popup'; }
+  if (askTopOpen()){ askTopClose(); return 'ask'; }                   // v1.09.42: вопрос поверх окна — «назад» = «нет»
   const ov = document.getElementById('overlay');
   if (ov){
     /* стрелка «назад» самого окна знает, куда вести: к предыдущему окну (пикап →
@@ -17292,7 +17364,7 @@ async function tvCleanup(mode){
       ? list.filter(x => x.status === 'approved').length
       : list.filter(x => x.status === 'approved'
           && (!x.last_seen_at || Date.now() - Date.parse(x.last_seen_at) > 864e5)).length;
-    if (!confirm(t(mode === 'revoke_all' ? 'tvs_kill_q' : 'tvs_inact_q').replace('{N}', n))) return;
+    if (!(await askYes(t(mode === 'revoke_all' ? 'tvs_kill_q' : 'tvs_inact_q').replace('{N}', n), { danger: true }))) return;
   }
   try{
     const { data, error } = await state.sb.rpc('tv_cleanup', { p_mode: mode });
@@ -18003,7 +18075,9 @@ function bnCarPopup(v, bv, x){
 }
 /* v1.08.33: метка ТО по одометру */
 function vehServiceLine(v){
-  const ml = vehMaintLine(v); if (ml) return ml;   // v1.09.38: ТО по видам из справочника; старое «ТО на пробеге» — пока не перенесено
+  const ml = vehMaintLine(v); if (ml) return ml;   // v1.09.38: ТО по видам из справочника
+  return '';                                       // v1.09.42 (п. 53): запасной строки по vehicles.service_due_mi больше нет — колонка в архиве
+  // eslint-disable-next-line no-unreachable
   if (!v || !v.service_due_mi) return '';
   const odo = v.last_odo != null ? +v.last_odo : null;
   if (odo == null) return '';
@@ -18026,37 +18100,7 @@ function polyDecode(str){
   }
   return pts;
 }
-async function bnTrackShow(imei){
-  imei = String(imei || '');
-  if (!window.L || !mapObj) return;
-  if (BN.track.imei === imei){ bnTrackClear(); return; }   // повторный клик — убрать
-  bnTrackClear();
-  let trips = [];
-  if (HAS_SB){
-    const j = await bnFetch('?track=1&imei=' + encodeURIComponent(imei) + '&date=' + todayISO());
-    if (!j){ toast('⚠ ' + (BN.err || t('bn_no_access')), 'err'); return; }
-    trips = j.trips || [];
-  } else {
-    /* демо: синтетический зигзаг от комплекса к текущей позиции машины */
-    const bv = bnByImei(imei); const loc = bv && bv.stats && bv.stats.location;
-    const cx = (state.data.complexes || []).find(c => c.lat != null);
-    if (loc && cx){
-      const a = [+cx.lat, +cx.lng], b = [+loc.lat, +(loc.lon ?? loc.lng)];
-      const mid = [(a[0]+b[0])/2 + 0.004, (a[1]+b[1])/2 - 0.004];
-      trips = [{ gps: null, pts: [a, mid, b] }];
-    }
-  }
-  const lines = [];
-  for (const tr of trips){
-    const pts = tr.pts || polyDecode(tr.gps || '');
-    if (pts.length > 1) lines.push(pts);
-  }
-  if (!lines.length){ toast('ℹ ' + t('tt_none'), 'inf'); return; }
-  BN.track.imei = imei;
-  BN.track.layer = L.layerGroup(lines.map(pts =>
-    L.polyline(pts, { color: '#3B82F6', weight: 4, opacity: .85 }))).addTo(mapObj);
-  try{ mapObj.fitBounds(L.latLngBounds(lines.flat()), { padding: [30, 30] }); }catch(_e){}
-}
+/* v1.09.42 (п. 52): bnTrackShow убран — трек дня открывается вкладкой «Треки» (v1.09.10) */
 /* =====================================================================
    v1.09.10 · ИСТОРИЯ ТРЕКОВ — вкладка «Треки» на карте.
    День или неделя, календарь, все машины сразу или выбранные (одна / несколько). Поездки
@@ -18601,43 +18645,43 @@ function mtCalc(v, ty, row){
   const next = +row.last_mi + int, odo = vehOdo(v), left = odo == null ? null : Math.round(next - odo);
   return { int, next, left, odo, st: left == null ? 'nodo' : left <= 0 ? 'over' : left <= (+ty.remind_mi || 0) ? 'soon' : 'ok' };
 }
-function mtStText(c){ return c.st === 'none' ? t('mt_none') : c.st === 'nodo' ? t('mt_next').replace('{N}', Math.round(c.next)) + ' · ' + t('mt_no_odo')
-  : (c.left <= 0 ? t('mt_over').replace('{N}', -c.left) : t('mt_left').replace('{N}', c.left)) + ' · ' + t('mt_next').replace('{N}', Math.round(c.next)); }
+function mtStText(c){ return c.st === 'none' ? t('mnt_none') : c.st === 'nodo' ? t('mnt_next').replace('{N}', Math.round(c.next)) + ' · ' + t('mnt_no_odo')
+  : (c.left <= 0 ? t('mnt_over').replace('{N}', -c.left) : t('mnt_left').replace('{N}', c.left)) + ' · ' + t('mnt_next').replace('{N}', Math.round(c.next)); }
 /* строка «ближайшее ТО» для списков машин и карты */
 function vehMaintLine(v){
   let best = null;
   for (const ty of mtTypes()){ const c = mtCalc(v, ty, vmRow(v.id, ty.id)); if (c.left == null) continue; if (!best || c.left < best.c.left) best = { ty, c }; }
   if (!best || best.c.st === 'ok') return '';
   const col = best.c.st === 'over' ? 'var(--red,#e33)' : '#B9932F';
-  return `<span style="color:${col}">🔧 ${esc(best.ty.name)}: ${esc(best.c.left <= 0 ? t('mt_over').replace('{N}', -best.c.left) : t('mt_left').replace('{N}', best.c.left))}</span>`;
+  return `<span style="color:${col}">🔧 ${esc(best.ty.name)}: ${esc(best.c.left <= 0 ? t('mnt_over').replace('{N}', -best.c.left) : t('mnt_left').replace('{N}', best.c.left))}</span>`;
 }
 /* ---- справочник «Виды ТО» (админ) ---- */
 function dirMaint(){
   const list = mtTypes(true);
-  return `${mtNoDb() ? `<div class="banner b-yellow">${ic('warn')} ${t('mt_need_sql')}</div>` : ''}<div class="tiny" style="margin-bottom:8px">${t('mt_hint')}</div>
+  return `${mtNoDb() ? `<div class="banner b-yellow">${ic('warn')} ${t('mnt_need_sql')}</div>` : ''}<div class="tiny" style="margin-bottom:8px">${t('mnt_hint')}</div>
     <div class="card">${list.map(x => `<div class="rowline${x.active === false ? ' off' : ''}">
       <span class="mt-ico">${ic('toolbox')}</span>
-      <div class="grow"><b>${esc(x.name)}</b>${x.active === false ? ` <span class="chip">${t('mt_inactive')}</span>` : ''}
-        <div class="tiny">${esc(t('mt_every').replace('{N}', x.interval_mi))} · ${t('mt_rem')}: ${+x.remind_mi || 0}</div></div>
+      <div class="grow"><b>${esc(x.name)}</b>${x.active === false ? ` <span class="chip">${t('mnt_inactive')}</span>` : ''}
+        <div class="tiny">${esc(t('mnt_every').replace('{N}', x.interval_mi))} · ${t('mnt_rem')}: ${+x.remind_mi || 0}</div></div>
       <button class="btn btn-ghost sm" onclick="App.mtModal('${x.id}')">${t('edit')}</button></div>`).join('') || `<div class="list-empty">—</div>`}</div>
     <button class="btn btn-green" onclick="App.mtModal()">${ic('plus')} ${t('add')}</button>`;
 }
 function mtModal(id){
   if (!isAdmin()) return;
   const x = mtAll().find(r => r.id === id) || { id: null, name: '', interval_mi: 5000, remind_mi: 500, active: true };
-  openModal(`${modalHead(x.id ? t('mt_edit') : t('mt_new'), 'toolbox')}
-    <div class="form-row"><span class="lbl">${t('mt_name')}</span><input id="mt-name" maxlength="60" value="${esc(x.name)}" placeholder="Замена масла / Oil change"></div>
-    <div class="form-row"><span class="lbl">${t('mt_int')}</span><input id="mt-int" type="number" inputmode="numeric" min="100" max="200000" step="100" value="${+x.interval_mi || ''}"></div>
-    <div class="form-row"><span class="lbl">${t('mt_rem')}</span><input id="mt-rem" type="number" inputmode="numeric" min="0" max="50000" step="50" value="${+x.remind_mi || 0}"></div>
-    <label class="chk-line"><input type="checkbox" id="mt-act" ${x.active !== false ? 'checked' : ''}> ${t('mt_active')}</label>
-    <div class="tiny" style="margin:6px 0 10px">${t('mt_hint')}</div>
+  openModal(`${modalHead(x.id ? t('mnt_edit') : t('mnt_new'), 'toolbox')}
+    <div class="form-row"><span class="lbl">${t('mnt_name')}</span><input id="mt-name" maxlength="60" value="${esc(x.name)}" placeholder="Замена масла / Oil change"></div>
+    <div class="form-row"><span class="lbl">${t('mnt_int')}</span><input id="mt-int" type="number" inputmode="numeric" min="100" max="200000" step="100" value="${+x.interval_mi || ''}"></div>
+    <div class="form-row"><span class="lbl">${t('mnt_rem')}</span><input id="mt-rem" type="number" inputmode="numeric" min="0" max="50000" step="50" value="${+x.remind_mi || 0}"></div>
+    <label class="chk-line"><input type="checkbox" id="mt-act" ${x.active !== false ? 'checked' : ''}> ${t('mnt_active')}</label>
+    <div class="tiny" style="margin:6px 0 10px">${t('mnt_hint')}</div>
     <button class="btn btn-green" onclick="App.mtSave('${x.id || ''}')">${ic('save')} ${t('save')}</button>
     ${x.id ? `<button class="btn btn-red" style="margin-top:8px" onclick="App.mtDel('${x.id}')">${ic('trash')} ${t('delete')}</button>` : ''}`);
 }
 async function mtSave(id){
   if (!isAdmin()) return;
   const name = String(($('#mt-name') || {}).value || '').trim().slice(0, 60), int = parseInt(($('#mt-int') || {}).value, 10), rem = Math.max(0, parseInt(($('#mt-rem') || {}).value, 10) || 0);
-  if (!name || !(int >= 100 && int <= 200000) || rem > 50000){ toast('⚠ ' + t('mt_bad'), 'err'); return; }
+  if (!name || !(int >= 100 && int <= 200000) || rem > 50000){ toast('⚠ ' + t('mnt_bad'), 'err'); return; }
   const prev = mtAll().find(r => r.id === id);
   const row = { ...(prev || { created_at: new Date().toISOString(), sort: mtAll().length + 1 }), id: id || uid(), name, interval_mi: int, remind_mi: rem, active: !!($('#mt-act') || {}).checked };
   await dbUpsert('maint_types', row);
@@ -18646,7 +18690,7 @@ async function mtSave(id){
 }
 async function mtDel(id){
   const x = mtAll().find(r => r.id === id); if (!x || !isAdmin()) return;
-  if (!(await askModal({ title: t('mt_edit'), text: t('mt_del_q').replace('{N}', x.name), ok: t('delete') }))) return;
+  if (!(await askModal({ title: t('mnt_edit'), text: t('mnt_del_q').replace('{N}', x.name), ok: t('delete') }))) return;
   await dbDelete('maint_types', id);
   state.data.vehicle_maint = vmAll().filter(r => r.type_id !== id); saveLocal();
   audit('mt_del', 'maint_types', id, { name: x.name });
@@ -18655,14 +18699,14 @@ async function mtDel(id){
 /* ---- раздел ТО в карточке машины (админ) ---- */
 function vehMaintHtml(v){
   const types = mtTypes();
-  if (!types.length) return `<div class="mt-sec"><div class="mt-h">${ic('toolbox')} ${t('mt_title')}</div><div class="tiny">${t('mt_types_empty')}</div></div>`;
-  return `<div class="mt-sec"><div class="mt-h">${ic('toolbox')} ${t('mt_title')}${vehOdo(v) != null ? ` <span class="tiny">· ${t('mc_odo')}: ${Math.round(vehOdo(v))} ${t('bn_mi')}</span>` : ''}</div>` + types.map(ty => {
+  if (!types.length) return `<div class="mt-sec"><div class="mt-h">${ic('toolbox')} ${t('mnt_title')}</div><div class="tiny">${t('mnt_types_empty')}</div></div>`;
+  return `<div class="mt-sec"><div class="mt-h">${ic('toolbox')} ${t('mnt_title')}${vehOdo(v) != null ? ` <span class="tiny">· ${t('mc_odo')}: ${Math.round(vehOdo(v))} ${t('bn_mi')}</span>` : ''}</div>` + types.map(ty => {
     const r = v.id ? vmRow(v.id, ty.id) : null, c = mtCalc(v, ty, r), own = !!(r && r.own_on);
     return `<div class="mt-row${own ? ' own' : ''}" data-t="${ty.id}">
-      <div class="mt-name"><b>${esc(ty.name)}</b> <span class="tiny">${esc(t('mt_every').replace('{N}', ty.interval_mi))}</span></div>
-      <div class="mt-f"><label><span class="tiny">${t('mt_last')}</span><input type="number" inputmode="numeric" class="mt-last" min="0" step="1" value="${r && r.last_mi != null ? Math.round(+r.last_mi) : ''}" placeholder="${vehOdo(v) != null ? Math.round(vehOdo(v)) : ''}"></label>
-        <label class="mt-ownw"><span class="tiny">${t('mt_own_mi')}</span><input type="number" inputmode="numeric" class="mt-own-mi" min="100" max="200000" step="100" value="${r && r.own_mi ? +r.own_mi : ''}" placeholder="${ty.interval_mi}"></label></div>
-      <label class="chk-line mt-own"><input type="checkbox" class="mt-own-chk" ${own ? 'checked' : ''} onchange="this.closest('.mt-row').classList.toggle('own', this.checked)"> ${t('mt_own_chk')}</label>
+      <div class="mt-name"><b>${esc(ty.name)}</b> <span class="tiny">${esc(t('mnt_every').replace('{N}', ty.interval_mi))}</span></div>
+      <div class="mt-f"><label><span class="tiny">${t('mnt_last')}</span><input type="number" inputmode="numeric" class="mt-last" min="0" step="1" value="${r && r.last_mi != null ? Math.round(+r.last_mi) : ''}" placeholder="${vehOdo(v) != null ? Math.round(vehOdo(v)) : ''}"></label>
+        <label class="mt-ownw"><span class="tiny">${t('mnt_own_mi')}</span><input type="number" inputmode="numeric" class="mt-own-mi" min="100" max="200000" step="100" value="${r && r.own_mi ? +r.own_mi : ''}" placeholder="${ty.interval_mi}"></label></div>
+      <label class="chk-line mt-own"><input type="checkbox" class="mt-own-chk" ${own ? 'checked' : ''} onchange="this.closest('.mt-row').classList.toggle('own', this.checked)"> ${t('mnt_own_chk')}</label>
       <div class="tiny mt-st st-${c.st}">${esc(mtStText(c))}</div></div>`;
   }).join('') + `</div>`;
 }
@@ -18677,7 +18721,7 @@ async function vmSave(vid, rows){
   for (const x of rows || []){
     const prev = vmRow(vid, x.type_id);
     const last = x.last === '' ? null : Math.max(0, Math.round(+x.last)), ownMi = x.ownMi === '' ? null : Math.round(+x.ownMi);
-    if (x.own && !(ownMi >= 100 && ownMi <= 200000)){ toast('⚠ ' + t('mt_bad'), 'err'); continue; }
+    if (x.own && !(ownMi >= 100 && ownMi <= 200000)){ toast('⚠ ' + t('mnt_bad'), 'err'); continue; }
     const same = prev && (prev.last_mi == null ? null : Math.round(+prev.last_mi)) === last && !!prev.own_on === x.own && (x.own ? +prev.own_mi === ownMi : true);
     if (same || (!prev && last == null && !x.own)) continue;
     const row = { id: prev ? prev.id : uid(), vehicle_id: vid, type_id: x.type_id, last_mi: last, own_on: x.own, own_mi: x.own ? ownMi : (prev ? prev.own_mi : null),
@@ -18744,10 +18788,10 @@ function myCarHtml(inSettings){
   const odo = vehOdo(v), fuel = typeof st.fuelLevel === 'number' ? Math.round(st.fuelLevel) : null, upd = st.lastUpdated || (dev && dev.reported_at) || null;
   const types = mtTypes();
   const maint = types.length ? types.map(ty => { const c = mtCalc(v, ty, vmRow(v.id, ty.id)); const pct = c.next != null && c.odo != null ? Math.max(0, Math.min(100, Math.round((c.odo - (c.next - c.int)) / c.int * 100))) : 0;
-      return `<div class="mc-mt st-${c.st}"><div class="mc-mt-h"><b>${esc(ty.name)}</b><span class="tiny">${esc(t('mt_every').replace('{N}', c.int))}${vmRow(v.id, ty.id) && vmRow(v.id, ty.id).own_on ? ' · ' + t('mt_own') : ''}</span></div>
+      return `<div class="mc-mt st-${c.st}"><div class="mc-mt-h"><b>${esc(ty.name)}</b><span class="tiny">${esc(t('mnt_every').replace('{N}', c.int))}${vmRow(v.id, ty.id) && vmRow(v.id, ty.id).own_on ? ' · ' + t('mnt_own') : ''}</span></div>
         ${c.next != null ? `<div class="mc-bar"><i style="width:${pct}%"></i></div>` : ''}<div class="tiny mt-st st-${c.st}">${esc(mtStText(c))}</div></div>`; }).join('')
-    : `<div class="tiny">${t('mt_types_empty')}</div>`;
-  return `${mtNoDb() ? `<div class="banner b-yellow">${ic('warn')} ${t('mt_need_sql')}</div>` : ''}<div class="card" id="mc-card">${menuChk}${pick}
+    : `<div class="tiny">${t('mnt_types_empty')}</div>`;
+  return `${mtNoDb() ? `<div class="banner b-yellow">${ic('warn')} ${t('mnt_need_sql')}</div>` : ''}<div class="card" id="mc-card">${menuChk}${pick}
     <div class="mc-top"><span class="carno-dot">${carNoSvg(v.car_no)}</span><div class="grow"><b>${esc(v.make || '—')}</b>
       <div class="tiny">${v.driver_id ? ic('crew') + ' ' + esc(profName(v.driver_id)) : t('veh_no_driver_l')}</div></div></div>
     <div class="mc-grid">
@@ -18760,7 +18804,7 @@ function myCarHtml(inSettings){
     </div>
     ${v.imei && !bnVisible() ? `<div class="tiny" id="mc-no-trk" style="margin-top:6px">${ic('lock')} ${t('mc_no_trk')}</div>` : ''}
     <div class="tiny" style="margin-top:6px;color:var(--dim)">${ic('lock')} ${t('mc_ro')}</div></div>
-    <div class="card"><div class="mt-h">${ic('toolbox')} ${t('mt_title')}</div>${maint}</div>
+    <div class="card"><div class="mt-h">${ic('toolbox')} ${t('mnt_title')}</div>${maint}</div>
     <div class="card">${vehNotesHtml(v, vnCanAdd(v))}</div>`;
 }
 function mcPick(id){ state.mcSel = id; render(); }
@@ -18886,20 +18930,9 @@ async function vehSave(id){
   BN.at = BN.statsAt = 0;                          // подтянуть трекинг с новым составом
   render();
 }
-async function vehServiceSet(id, val){
-  if (!isAdmin()) return;
-  const mi = Math.max(0, parseInt(val, 10) || 0);
-  if (HAS_SB){
-    const { error } = await state.sb.rpc('vehicle_service_set', { p_id: id, p_mi: mi });
-    if (error){ toast('⚠ ' + rpcFail(error, 'vehicle_service_set'), 'err'); return; }
-  }
-  const v = bnVehicles().find(x => x.id === id);
-  if (v){ v.service_due_mi = mi || null; v.service_notified = false; saveLocal(); }
-  audit('veh_service', 'vehicle', id, { mi });
-  toast('✓ ' + t('saved'));
-}
+/* v1.09.42 (п. 52): vehServiceSet / RPC vehicle_service_set убраны — ТО ведётся по видам из справочника (v1.09.38) */
 async function vehDel(id){
-  if (!isAdmin() || !confirm(t('veh_del_q'))) return;
+  if (!isAdmin() || !(await askYes(t('veh_del_q'), { danger: true, okIcon: 'trash' }))) return;
   const v = bnVehicles().find(x => x.id === id);
   await dbDelete('vehicles', id);
   audit('veh_del', 'vehicle', id, { make: v && v.make });
@@ -20114,7 +20147,7 @@ async function staffKillSessions(uid_){
   /* v1.08.48: по просьбе — вместе с сессиями человека завершаются и все
      активные ТВ-экраны; число называем прямо в вопросе. */
   const tvN = (TVS.list || []).filter(x => x.status === 'approved').length;
-  if (!confirm(tvN ? t('st_kill_q_tv').replace('{N}', tvN) : t('st_kill') + '?')) return;
+  if (!(await askYes(tvN ? t('st_kill_q_tv').replace('{N}', tvN) : t('st_kill') + '?', { danger: true }))) return;
   const { error } = await state.sb.rpc('admin_kill_sessions', { target: uid_ });
   if (error){ toast('⚠ ' + rpcFail(error, 'admin_kill_sessions'), 'err'); return; }
   if (tvN){
@@ -20324,7 +20357,7 @@ async function staffBlock(uid_){
   const u = state.data.profiles.find(p=>p.id===uid_); if (!u) return;
   if (u.id === state.user.id){ toast('⛔ ' + t('cant_self'), 'err'); return; }
   const want = !u.blocked;
-  if (want && !confirm(t('block_confirm') + ' ' + u.display_name)) return;
+  if (want && !(await askYes(t('block_confirm') + ' ' + u.display_name, { danger: true }))) return;
   if (HAS_SB){
     // серверная часть: banned_until в auth + завершение сессий (RPC из schema.sql)
     const { error } = await state.sb.rpc('admin_set_blocked', { target: uid_, p_blocked: want });
@@ -22622,7 +22655,7 @@ async function saveProposal(){
 async function delProposal(id){
   if (!isAdmin()) return;
   if (docBlockers('prop', id).length){ chainBlockModal('prop', id); return; }   // v1.08.30
-  if (!confirm(t('arch_q'))) return;                 // v1.07.88: в архив, а не в никуда
+  if (!(await askYes(t('arch_q'), { danger: true, okIcon: 'trash' }))) return;                 // v1.07.88: в архив, а не в никуда
   await archiveDoc('prop', id);
   propDraft = null; render();
 }
@@ -22906,7 +22939,7 @@ async function stockModeSet(v){
   if ((stockLite() ? 'lite' : 'full') === v) return;
   if (v === 'lite'){
     const inCars = (state.data.equipment_types || []).reduce((a, et) => a + (emRow(et.id).car || 0), 0);
-    if (inCars > 0 && !confirm(t('stk_lite_cars').replace('{N}', inCars))) return;
+    if (inCars > 0 && !(await askYes(t('stk_lite_cars').replace('{N}', inCars)))) return;
   }
   await dbSaveOrg({ ...state.data.org_settings, stock_mode: v });
   audit('org_toggle', 'org', 'stock_mode', { value: v });
@@ -23009,7 +23042,7 @@ async function returnAllMine(){
   const list = myOnHand();
   if (!list.length){ toast(t('sb_none_mine'), 'inf'); return; }
   const qty = list.reduce((n, p) => n + (+p.qty || 0), 0);
-  if (!confirm(t('sb_all_q').replace('{N}', qty).replace('{U}', new Set(list.map(p => p.job_id)).size))) return;
+  if (!(await askYes(t('sb_all_q').replace('{N}', qty).replace('{U}', new Set(list.map(p => p.job_id)).size)))) return;
   const now = new Date().toISOString();
   for (const p of list) await dbUpsert('placements', { ...p, returned_at: now, returned_by: state.user.id });
   audit('stock_return_all', 'stock', state.user.id, { qty, docs: new Set(list.map(p => p.job_id)).size,
@@ -23922,7 +23955,7 @@ async function saveRepair(quiet){
 async function delRepair(id){
   const r = repById(id); if (!r) return;
   if (!(isAdmin() || r.created_by === state.user.id)) return;
-  if (!confirm(t('arch_q'))) return;
+  if (!(await askYes(t('arch_q'), { danger: true, okIcon: 'trash' }))) return;
   await archiveDoc('rep', id);                                    // v1.08.30: общий путь
   repDraft = null; render();
 }
@@ -24212,7 +24245,7 @@ function pendingExtReqHtml(jobId){
 }
 async function extReqCreate(){
   const d = extDraft; if (!d) return;
-  let days = parseInt(prompt(t('ext_req_days_q'), String(maxExtendDays() + 1)) || '0', 10);
+  let days = parseInt((await askText(t('ext_req_days_q'), String(maxExtendDays() + 1), { numeric: true })) || '0', 10);
   if (!(days >= 1)) return;
   days = Math.min(30, days);
   const rows = d.rows.map(p => ({ id: p.id,
@@ -24326,7 +24359,7 @@ function extReqStripHtml(title){
 }
 async function extReqDecide(id, ok){
   if (!isManager()) return;
-  if (!confirm((ok ? t('ext_req_ok') : t('ext_req_no')) + '?')) return;
+  if (!(await askYes((ok ? t('ext_req_ok') : t('ext_req_no')) + '?', { danger: !ok }))) return;
   if (!HAS_SB){ toast('Supabase only', 'err'); return; }
   const { error } = await state.sb.rpc('decide_ext_request', { p_id: id, p_ok: !!ok });
   if (error){ toast('⛔ ' + rpcFail(error, 'decide_ext_request'), 'err'); return; }
@@ -25254,7 +25287,7 @@ async function mediaEnqueueFile(jobId, f, kind, doc = 'job', ex){
     blob = f; thumb = await mVideoThumb(f).catch(() => null); mime = f.type || 'video/mp4';
     durV = Math.round(dur) || 0;                 // v1.08.47: таймаут сжатия считается от длины
   } else {
-    if (f.size > M_FILE_BYTES){ toast('⚠ ' + t('media_file_big'), 'err'); return false; }
+    if (f.size > mFileBytes()){ toast('⚠ ' + t('media_file_big_n').replace('{N}', Math.round(mFileBytes() / 1e6)), 'err'); return false; }   // v1.09.42 (п. 51): предел — из настроек
     blob = f; mime = f.type || 'application/octet-stream';
   }
   const it = { qid: uid(), doc,
@@ -27113,7 +27146,7 @@ function mqStuck(){
 async function mediaQClean(){
   const bad = mqStuck();
   if (!bad.length){ toast('✓ ' + t('mq_clean_none')); return; }
-  if (!confirm(t('mq_clean_q').replace('{N}', bad.length))) return;
+  if (!(await askYes(t('mq_clean_q').replace('{N}', bad.length), { danger: true }))) return;
   for (const x of bad) await mediaQDel(x.qid);
   toast('🗑 ' + t('mq_clean_done').replace('{N}', bad.length));
 }
@@ -27803,7 +27836,7 @@ async function mediaDropJob(jobId){
 async function mediaDelete(id){
   if (!isAdmin()) return false;
   const own = (state.data.media || []).find(m => m.id === id);
-  if (!confirm(t('media_del_q') + '?')) return false;
+  if (!(await askYes(t('media_del_q') + '?', { danger: true, okIcon: 'trash' }))) return false;
   const token = await mediaJwt();
   const r = await fetch(mediaFN() + '/media-delete', { method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -28188,6 +28221,12 @@ function mediaLimitsCardHtml(){
     <div class="qty-line"><span class="name">${t('media_lim_file')}</span>
       ${orgStepperHtml('media_max_file', o.media_max_file ?? 20, 1, 50)}</div>
     <div class="tiny">${t('media_lim_hint')}</div>
+    ${(!HAS_SB || 'media_mb_photo' in o) ? `<div style="font-weight:800;margin:10px 0 4px" id="media-mb">${t('media_mb_card')}</div>
+    <div class="qty-line"><span class="name">${t('media_mb_photo')}</span>${orgStepperHtml('media_mb_photo', o.media_mb_photo ?? 8, 1, 50)}</div>
+    <div class="qty-line"><span class="name">${t('media_mb_video')}</span>${orgStepperHtml('media_mb_video', o.media_mb_video ?? 120, 10, 500, 10)}</div>
+    <div class="qty-line"><span class="name">${t('media_mb_file')}</span>${orgStepperHtml('media_mb_file', o.media_mb_file ?? 25, 1, 100)}</div>
+    <div class="qty-line"><span class="name">${t('media_mb_inv')}</span>${orgStepperHtml('media_mb_invoice', o.media_mb_invoice ?? 20, 1, 50)}</div>
+    <div class="tiny">${t('media_mb_hint')}</div>` : ''}
     <label class="chk-line" style="margin-top:8px"><input type="checkbox" ${o.media_lock_approved !== false ? 'checked' : ''} onchange="App.setOrgFlag('media_lock_approved', this.checked)"> ${t('media_lock_chk')}</label>
     <div class="tiny">${t('media_lock_hint')}</div>
   </div>`;
@@ -28635,7 +28674,7 @@ const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
 const MEDIA_FN_VER = '1.08.12';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
-const MEDIA_FN_MIN = { 'media-begin': '1.09.40', 'media-commit': '1.09.10', 'media-health': '1.09.10',   // v1.09.10: папка заблокированного сотрудника
+const MEDIA_FN_MIN = { 'media-begin': '1.09.42', 'media-commit': '1.09.10', 'media-health': '1.09.10',   // v1.09.10: папка заблокированного сотрудника
                        'media-put': '1.09.40',      // v1.09.40: докачка только в сессию своего файла (media-begin пишет upload_id)
                        'media-delete': '1.09.40' };   // v1.09.40: помощник с общим доступом убирает PDF в архив; своя версия в ver
 const MEDIA_FN_MIN_DEF = '1.07.72';
@@ -29227,7 +29266,7 @@ function dftNorm(res){   // ответ supabase-js → общий вид; «0 с
 /* ---------- режим: включает только админ, на срок ---------- */
 async function dftSetMode(on, hours){
   if (!isAdmin()) return;
-  if (on && !confirm(t('dft_on_q'))){ render(); return; }
+  if (on && !(await askYes(t('dft_on_q')))){ render(); return; }
   const org = state.data.org_settings;
   if (HAS_SB){
     if (!dftSchemaOk()){ toast('⚠ ' + t('dft_need_sql'), 'err'); render(); return; }
@@ -30507,9 +30546,9 @@ function bkImportPick(){
   if (!HAS_SB){ toast(t('bk_demo_imp'), 'err'); return; }
   const inp = document.createElement('input');
   inp.type = 'file'; inp.accept = 'application/json,.json';
-  inp.onchange = () => {
+  inp.onchange = async () => {
     const f = inp.files && inp.files[0]; if (!f) return;
-    if (!confirm(t('bk_confirm'))) return;
+    if (!(await askYes(t('bk_confirm'), { danger: true }))) return;
     bkImportFile(f);
   };
   inp.click();
@@ -32223,7 +32262,7 @@ async function accMarkAll(status){
   if (!(isAdmin() || isAcc())) return;
   const rows = accDocs().filter(r => (r.acc_status || '') !== status);
   if (!rows.length){ toast(t('acc_nothing'), 'inf'); return; }
-  if (!confirm(t('acc_mark_q').replace('{N}', rows.length).replace('{S}', accStName(status)))) return;
+  if (!(await askYes(t('acc_mark_q').replace('{N}', rows.length).replace('{S}', accStName(status))))) return;
   let n = 0;
   for (const r of rows){ if (await accMarkOne(r.kind, r.id, status, null)) n++; }
   toast('✓ ' + t('acc_marked') + ': ' + n);

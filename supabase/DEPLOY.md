@@ -1,5 +1,10 @@
 # TechLog · развёртывание серверной части (Supabase)
 
+> **v1.09.42.** База: `update-to-1_09_42.sql` (после 1.09.40) или `full-install-1_09_42.sql` — размер файлов в настройках
+> (`org_settings.media_mb_*`), архивные пометки у `equipment_stock`, `doc_shares`, `vehicles.service_due_mi`. Передеплоить
+> `media-begin` (читает размер из настроек). `media-commit`, `media-health`, `media-view`, `media-oauth` изменились только
+> версией (у каждой своя в `ver`) — передеплой по желанию.
+>
 > **v1.09.40 (сентябрь 2026).** База: `update-to-1_09_40.sql` (после 1.09.38) или `full-install-1_09_40.sql`.
 > Edge Functions передеплоить: `push`, `media-begin`, `media-put`, `media-delete` — **после** SQL (media-put сверяет
 > сессию загрузки с колонкой `media.upload_id`, которую пишет новая media-begin). Для Dashboard — копии из

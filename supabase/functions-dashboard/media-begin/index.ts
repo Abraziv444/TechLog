@@ -1,7 +1,7 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_VER,
          PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, dirFor, ymDir, techDirLabel } from "./google.ts";
 
-const BEGIN_VER = "1.09.40";         // v1.09.40: upload_id для media-put
+const BEGIN_VER = "1.09.42";         // v1.09.40: upload_id для media-put; v1.09.42: размер файла — из настроек
 
 /* v1.07.64: max — это дефолт; действующий лимит на документ админ задаёт
    в настройках (org_settings.media_max_photo / media_max_video). Проверка
@@ -63,7 +63,9 @@ Deno.serve(async (req) => {
     const isRep = doc === "rep" || (!!repair_id && !job_id);   // v1.08.48: медиа у ремонта
     const lim = LIMITS[kind as "photo" | "video" | "file" | "invoice"];
     if (!lim) return jres({ error: "BAD_KIND" }, 400);
-    if (!Number.isFinite(size) || size <= 0 || size > lim.bytes)
+    /* v1.09.42 (п. 51): предел размера задаёт админ (org_settings.media_mb_*); здесь — только грубая страховка,
+       настоящая проверка — ниже, после чтения настроек */
+    if (!Number.isFinite(size) || size <= 0 || size > 600_000_000)
       return jres({ error: "TOO_BIG", max: lim.bytes }, 413);
 
     // права: если RLS не отдал документ — доступа нет; логику не дублируем.
@@ -110,6 +112,14 @@ Deno.serve(async (req) => {
           org = (q3.data ?? null) as Record<string, unknown> | null;
         } else org = (q2.data ?? null) as Record<string, unknown> | null;
       } else org = (q.data ?? null) as Record<string, unknown> | null;
+    }
+    /* v1.09.42 (п. 51): размер файла из настроек; колонок нет (SQL 1.09.42 не выполнен) — прежние LIMITS */
+    {
+      const col = ({ photo: "media_mb_photo", video: "media_mb_video", file: "media_mb_file", invoice: "media_mb_invoice" } as Record<string, string>)[kind];
+      const mb = await s.from("org_settings").select(col).eq("id", "org").maybeSingle();
+      const v = !mb.error && mb.data ? Number((mb.data as Record<string, unknown>)[col]) : NaN;
+      const maxBytes = Number.isFinite(v) && v > 0 ? v * 1_000_000 : lim.bytes;
+      if (size > maxBytes) return jres({ error: "TOO_BIG", max: maxBytes }, 413);
     }
     const maxCount = kind === "video" ? Number(org?.media_max_video ?? LIMITS.video.max)
       : kind === "file" ? Number(org?.media_max_file ?? LIMITS.file.max)

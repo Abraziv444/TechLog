@@ -89,9 +89,7 @@ hr.sep{border:none;border-top:2px solid var(--line-soft);margin:12px 0}
   display:grid;place-items:center;font-weight:900;color:var(--blue);
 }
 /* v1.07.08: палитра ролей — сотрудник синий, менеджер красный, админ фиолетовый */
-.avatar.role-tech{border-color:var(--blue);color:var(--blue)}
-.avatar.role-manager{border-color:var(--red);color:var(--red)}
-.avatar.role-admin{border-color:var(--purple);color:var(--purple)}
+/* v1.09.42 (п. 52): цветные рамки аватара по ролям убраны — их перекрывает общее правило ниже */
 .login-pill{
   margin-top:-7px;background:var(--bg);border:2px solid var(--line);
   border-radius:999px;padding:1px 7px;font-size:.6rem;color:var(--dim);
@@ -463,7 +461,6 @@ html:not(.tl-desktop) .item.clicky > .right{min-height:46px}
 .demo-user:active{transform:translateY(2px)}
 .demo-user .avatar{width:40px;height:40px}
 .role-tag{font-size:.62rem;font-weight:900;text-transform:uppercase;border-radius:8px;padding:2px 8px}
-.rt-admin{background:var(--yellow);color:#4a3800}
 .rt-manager{background:var(--purple);color:#2e0b4d}
 .rt-tech{background:var(--blue);color:#04314A}
 
@@ -3514,3 +3511,7 @@ html.tl-desktop .dft-panel { bottom: 14px; }
 /* поиск: забранный пикап; документооборот: «завис» */
 .srch-row.srch-done{opacity:.7}
 .dfl-stuck{margin-left:4px}
+
+/* v1.09.42 (п. 42): вопрос в окне приложения поверх открытого окна */
+.overlay.ask-top{z-index:1150;background:rgba(5,10,13,.55)}
+.overlay.ask-top .modal{max-width:440px}

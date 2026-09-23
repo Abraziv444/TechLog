@@ -354,7 +354,7 @@ console.log('\n— архив-корзина и сверка (v1.07.88) —');
   t('экран архива есть', /function viewArchive/.test(src) && /screen === 'archive'/.test(src));
   t('архивные уходят из рабочих списков', /function liveJobs/.test(src) && /scopeFilter\(liveJobs\(\)/.test(src));
   t('пикапы уезжают за своей работой', /const dead = new Set\(archJobs\(\)/.test(src));
-  t('кнопка «Удалить» в документе шлёт в архив', /if \(!confirm\(t\('arch_q'\)\)\) return;\s*\n\s*localStorage\.removeItem/.test(src));
+  t('кнопка «Удалить» в документе шлёт в архив', /if \(!\(await askYes\(t\('arch_q'\)[^\n]*\)\)\) return;\s*\n\s*localStorage\.removeItem/.test(src));   /* v1.09.42: вопрос — окно приложения */
   t('удалить навсегда — только админ и только из архива',
     /if \(!isAdmin\(\)\)\{ toast\('⚠ ' \+ t\('arch_only_admin'\)/.test(src) && /!isArch\(row\)/.test(src));
   t('файлы переезжают в архив и обратно', /mediaMoveJob\(id, 'archive'\)/.test(src) && /mediaMoveJob\(id, 'restore'\)/.test(src));
@@ -410,7 +410,7 @@ console.log('\n— качество снимка (v1.07.91) —');
   t('предупреждение о мелком кадре', /M_SMALL_MP/.test(src) && /cam_small/.test(src));
   t('в карточке видно режим и качество', /cam_mode_now/.test(src) && /cam_quality_now/.test(src));
   t('кнопка возврата к полному качеству', /cam_switch_best/.test(src));
-  t('camFix спрашивает, а не молчит', /if \(confirm\(t\('cam_nocam_hint'\)/.test(src));
+  t('camFix спрашивает, а не молчит', /if \(await askYes\(t\('cam_nocam_hint'\)/.test(src));   /* v1.09.42 */
   t('диагностика печатает режим съёмки', /съёмка: \$\{camMode\(\) === 'quick'/.test(src));
   t('ключи в обоих языках', ['cam_small','cam_mode_now','cam_mode_soft','cam_mode_best','cam_switch_best']
     .every(k => (k in T.DICT.ru) && (k in T.DICT.en)));
@@ -922,9 +922,10 @@ console.log('\n— пуши, время, поиск, оптимизация (v1.
   t('tplOn: выключается чекбоксом', T.tplOn() === false);
   T.state.data.org_settings.tpl_on = orgSaved;
   const vSvc = { service_due_mi: 46000, last_odo: 45700 };
-  t('vehServiceLine: жёлтая «до ТО 300 mi»', /300/.test(T.vehServiceLine(vSvc)));
+  /* v1.09.42 (п. 53): запасная строка «ТО на пробеге» по vehicles.service_due_mi убрана — ТО по видам (1.09.38) */
+  t('vehServiceLine: старое поле service_due_mi больше не показывается', T.vehServiceLine(vSvc) === '');
   vSvc.last_odo = 46200;
-  t('vehServiceLine: красная просрочка', /200/.test(T.vehServiceLine(vSvc)));
+  t('vehServiceLine: и при просрочке по старому полю — пусто', T.vehServiceLine(vSvc) === '');
 }
 
 console.log('\n— имена корневых папок Диска (v1.08.36) —');
