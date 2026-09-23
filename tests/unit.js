@@ -332,7 +332,7 @@ console.log('\n— конструктор нумерации (v1.07.86) —');
 console.log('\n— инвойсы по папкам сотрудников (v1.07.87) —');
 {
   const src = fs.readFileSync(ROOT + '/app.js', 'utf8');
-  t('галочка в карточке Диска (нередактируемая с v1.08.12)', /gd_inv_by_tech\) \? 'checked'/.test(src));
+  t('галочка в карточке Диска (нередактируемая с v1.08.12; v1.09.41 — строка текста вместо мёртвой галочки)', /gd_inv_tech_line/.test(src) && !/<input type="checkbox" disabled \$\{\(\(state\.data\.org_settings \|\| \{\}\)\.gd_inv_by_tech\)/.test(src));
   t('тултип у галочки и кнопка ⓘ',
     /title="\$\{esc\(t\('gd_inv_tech_tip'\)\)\}"/.test(src) && /toastInfo\('gd_inv_tech_tip'\)/.test(src));
   t('живой пример пути', /function gdInvPathSample/.test(src));
@@ -1589,7 +1589,7 @@ console.log('\n— v1.08.51: учёба —');
     && src.includes('class="banner b-pk clicky ${over?\'b-red\':\'\'}" role="button" tabindex="0"') && src.includes('onclick="App.pkDueModal()"')
     && src.includes('function pkDueModal(){') && src.includes('function pkDueOpen(jobId, ev){') && src.includes('function bannerKey(e){')
     && src.includes('pickupModal, pkDueModal, pkDueOpen, bannerKey,')
-    && (src.match(/\(p\.technician_id === state\.user\.id \|\| isPlacementSharedWithMe\(p\)\) && pkPending\(p\)/g) || []).length === 2
+    && (src.match(/const mine = visiblePlacements\(\)\.filter\(pkPending\);/g) || []).length === 2   /* v1.09.41: баннер и окно — по фильтру «Мои / Все» */
     && ['pkd_title', 'pkd_today', 'pkd_over', 'pkd_addr', 'pkd_units', 'pkd_days', 'pkd_open', 'pkd_hint', 'pkd_empty', 'pkd_banner_open'].every(k => (src.match(new RegExp('\\b' + k + ': \'', 'g')) || []).length === 2));
   t('v1.08.88: «Проверить связь» в настройках открывает netModal (одна модалка), строка домена вместо сайта Cloudflare, «Копировать лог», img-проба',
     src.includes('onclick="App.netModal()">${ic(\'wifi\')} ${t(\'net_check_btn\')} · ${netPillHtml()}') && !/onclick="App\.netCheck\(\)"/.test(src)
@@ -1871,7 +1871,7 @@ console.log('\n— v1.08.51: учёба —');
     && fs.readFileSync(path.join(ROOT, 'supabase/update-to-1_08_71.sql'), 'utf8').includes('media_lock_approved boolean not null default true')
     && fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_08_71.sql'), 'utf8').includes('media_lock_approved')
     && fs.readFileSync(path.join(ROOT, 'supabase/functions/media-delete/index.ts'), 'utf8').includes('LOCKED_APPROVED')
-    && fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/google.ts'), 'utf8').match(/FN_VER = "1\.(08\.(7[1-9]|[89]\d)|09\.\d\d)"/) && src.includes("'media-delete': '1.08.71'"));   /* v1.09.10: FN_VER двинулся дальше */
+    && fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/google.ts'), 'utf8').match(/FN_VER = "1\.(08\.(7[1-9]|[89]\d)|09\.\d\d)"/) && /'media-delete': '1\.(08\.(7[1-9]|[89]\d)|09\.\d\d)'/.test(src));   /* v1.09.10: FN_VER двинулся дальше; v1.09.40: минимум media-delete — не ниже 1.08.71 */
   t('v1.08.71: полная проверка Диска — кнопка в карточке Диска и функция gdFullTest в App',
     src.includes('App.gdFullTest()') && src.includes('async function gdFullTest()') && src.includes("kind === 'invoice' ? M_INV_MAX"));
   t('v1.08.70: разбор комбо-пунктов — «1 и 3», «все», «ни один», просто число, обычный текст',
@@ -2156,7 +2156,7 @@ console.log('\n— v1.09.01: справочник «Трекеры Bouncie» —
     .every(k => T.DICT.ru[k] && T.DICT.en[k] && T.DICT.ru[k] !== T.DICT.en[k]) && !/IMEI/.test(T.DICT.ru.veh_hint) && !/IMEI/.test(T.DICT.en.veh_hint));
   t('v1.09.01: таблица bn_devices в TABLES, DB_NEED_COLS и RPC bn_devices_sync в диагностике, действие bn_dev_sync в журнале системы',
     T.TABLES.includes('bn_devices') && T.DB_NEED_COLS.some(x => x[0] === 'bn_devices' && x[1] === 'checked_at') && T.DB_NEED_RPCS.includes('bn_devices_sync')
-    && src.includes("'bn_dev_sync'];         // v1.09.01") && src.includes("audit('bn_dev_sync', 'bn_device', 'sync',"));
+    && /'bn_dev_sync',[\s\S]{0,1500}?\];\s+\/\/ v1\.09\.01/.test(src) && src.includes("audit('bn_dev_sync', 'bn_device', 'sync',"));   /* v1.09.41: список системных действий дополнен */
   t('v1.09.01: вкладка «Трекеры Bouncie» только у админа, после «Автомобили»; карточка машины — выпадающий список трекеров вместо поля IMEI',
     src.includes("['trackers', t('d_trackers'), isAdmin()],   // v1.09.01") && src.includes("vehicles: dirVehicles, trackers: dirTrackers,")
     && src.includes('${vehTrackerSelHtml(v)}') && !src.includes('<input id="veh-imei"') && src.includes('onchange="App.vehDevPick(this.value)"')
@@ -2406,7 +2406,7 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   await (async () => {
     const f0 = w.fetch, resp = (status, body) => ({ status, ok: status < 400, json: async () => body });
     const probe = async (impl, name) => { w.fetch = impl; try{ return await T.fnProbe(name); } finally { w.fetch = f0; } };
-    const a = await probe(async () => resp(200, { fn: 'push', ver: '1.09.23' }), 'push');
+    const a = await probe(async () => resp(200, { fn: 'push', ver: (T.SRV_FNS.find(f => f.name === 'push') || {}).min }), 'push');   // v1.09.40: минимум push поднят
     const b = await probe(async () => resp(200, { fn: 'push', ver: '1.09.10' }), 'push');
     const c = await probe(async () => resp(404, {}), 'bouncie');
     const d = await probe(async (u, o) => { if (o && o.mode === 'no-cors') return { type: 'opaque', status: 0 }; throw new TypeError('Failed to fetch'); }, 'bouncie');
@@ -2464,10 +2464,10 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
     src.includes("if (/\\/functions\\/v1\\/(?!dft(\\?|$))/.test(u)) dftNetLog(u, init, pr);") && src.includes("window.fetch = fetch0;") && src.includes("if (ct && !/json|text|javascript/i.test(ct)){") && src.includes("const inQ = () => ctQOf(J).filter(x => x.kind === 'invoice');"));
   t('v1.09.33: демо-зеркало — заявка на продление и решение по ней: одобрение создаёт продление, отклонение — нет', (() => { const D = T.state.data, s0 = { jobs: D.jobs, pl: D.placements, ex: D.ext_requests, prof: D.profiles, u: T.state.user };
     try{ D.profiles = [{ id: 'tw', role: 'tech', display_name: 'W' }, { id: 'mm', role: 'manager', display_name: 'M' }]; T.state.user = D.profiles[0]; T.DFT.owner = 'tw';
-      D.jobs = [{ id: 'tj', is_test: true, technician_id: 'tw', status: 'draft', helper_ids: [], form_data: {} }]; D.placements = [{ id: 'p1', job_id: 'tj', equipment_type_id: 'e1', qty: 2, days: 1, due_date: '2026-09-22', picked_up: false, superseded: false }]; D.ext_requests = [];
+      D.jobs = [{ id: 'tj', is_test: true, technician_id: 'tw', status: 'draft', helper_ids: [], form_data: {} }]; D.placements = [{ id: 'p1', job_id: 'tj', equipment_type_id: 'e1', qty: 2, days: 1, due_date: '2099-01-10', picked_up: false, superseded: false }];   /* v1.09.39: срок в будущем — тест не зависит от сегодняшней даты */ D.ext_requests = [];
       const c = T.dftDemoExec('tw', 'ext_req_create', { job_id: 'tj', days: 4 }); if (!c.ok) return false; const no = T.dftDemoExec('mm', 'rpc', { fn: 'decide_ext_request', args: { p_id: c.data.id, p_ok: false } });
       const c2 = T.dftDemoExec('tw', 'ext_req_create', { job_id: 'tj', days: 4 }); const ok2 = T.dftDemoExec('mm', 'rpc', { fn: 'decide_ext_request', args: { p_id: c2.data.id, p_ok: true } });
-      const ext = D.placements.find(p => p.ext_of === 'p1'); return no.ok && D.ext_requests[0].status === 'rejected' && ok2.ok && !!ext && ext.qty === 2 && ext.due_date === '2026-09-26' && D.placements.find(p => p.id === 'p1').superseded === true && T.dftDemoExec('tw', 'rpc', { fn: 'decide_ext_request', args: { p_id: c2.data.id, p_ok: true } }).error.message === 'FORBIDDEN'; }
+      const ext = D.placements.find(p => p.ext_of === 'p1'); return no.ok && D.ext_requests[0].status === 'rejected' && ok2.ok && !!ext && ext.qty === 2 && ext.due_date === '2099-01-14' && D.placements.find(p => p.id === 'p1').superseded === true && T.dftDemoExec('tw', 'rpc', { fn: 'decide_ext_request', args: { p_id: c2.data.id, p_ok: true } }).error.message === 'FORBIDDEN'; }
     finally { D.jobs = s0.jobs; D.placements = s0.pl; D.ext_requests = s0.ex; D.profiles = s0.prof; T.state.user = s0.u; } })());
 
   /* ---------- v1.09.32 ---------- */
@@ -3285,7 +3285,7 @@ console.log('\n— v1.09.10: история треков, папка забло�
     && mh.includes('.eq("kind", "tech").eq("key", uid)') && mh.includes('split(BLOCKED_SUFFIX).join("")'));
   t('v1.09.10: приложение зовёт переименование после блокировки и разблокировки; минимум версий функций поднят',
     src.includes('staffDirRename(uid_, want);') && src.includes("'/media-health?tech_dir=' + encodeURIComponent(uid_)")
-    && src.includes("'media-begin': '1.09.10', 'media-commit': '1.09.10', 'media-health': '1.09.10'"));
+    && /'media-begin': '1\.09\.(1\d|[2-9]\d)', 'media-commit': '1\.09\.(1\d|[2-9]\d)', 'media-health': '1\.09\.(1\d|[2-9]\d)'/.test(src));   // v1.09.40: не ниже 1.09.10
   t('v1.09.10: карта — вкладка «Треки» по праву трека, день/неделя, выбор машин; старый «трек дня» ведёт сюда',
     src.includes("${bnCanTrack() ? `<button class=\"tabbtn ${state.mapTrk?'active':''}\" onclick=\"App.trkMode()\">") && src.includes('function trkControlsHtml(){')
     && src.includes('function trkLegendHtml(){') && src.includes('function trkDraw(){') && src.includes("'?tracks=1&from=' + r.from + '&to=' + r.to")

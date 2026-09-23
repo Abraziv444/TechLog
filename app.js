@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.38';
-const DB_SQL_FILE = 'full-install-1_09_38.sql';
+const APP_VERSION = '1.09.41';
+const DB_SQL_FILE = 'full-install-1_09_40.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -819,6 +819,34 @@ const I18N = {
     rep_reset_done: 'Апрув снят: документ изменён и вернулся в черновик',
     rep_unsent: 'Документ изменён после отправки — вернулся в черновик',
     rep_no_rights: 'Апрув ставит администратор (и менеджер, если это разрешено в настройках)',
+    rep_no_edit: 'Сохранять может автор документа, менеджер или админ',
+    rep_ro_note: 'Документ открыт только для просмотра: править и сохранять его может автор, менеджер или админ',
+    tab_rep_screen: 'Ремонт', tab_mycar_help: 'Моя машина',
+    pickups_all: 'Пикапы',
+    dfl_stuck_chip: 'завис', dfl_stuck_line: 'Из них висят дольше двух дней: {N}',
+    apv_ext: 'Продления сверх лимита', apv_ro_note: 'Апрув ставит согласующий (админ или менеджер с правом апрува) — у вас список только для просмотра',
+    dfl_s_ext: 'Продления сверх лимита', dfl_h_ext: 'Сотрудник просит продлить аренду дольше лимита — решает менеджер',
+    nt_tab: 'Блоки Note', nt_title_l: 'Название блока', nt_body_l: 'Текст блока', nt_empty: 'Готовых блоков нет — добавьте первый',
+    ew_repair: 'Ремонтная работа (первой в справочнике ремонта, в Бухгалтерии — категория «Ремонт»)',
+    car_no_via_veh: 'Номер машины сохраняется в карточке автомобиля («Автомобили») — номер у водителя меняется вместе с ней',
+    gd_inv_tech_line: 'Инвойсы на Диске раскладываются по папкам сотрудников',
+    docs_props_reps: 'Пропозалы и ремонт',
+    mc_no_trk: 'Топливо и время обновления приходят с трекера — они видны, если админ открыл вам доступ к трекеру',
+    ch_found_loaded: 'Ищется среди загруженных сообщений. Чтобы искать дальше в прошлое, откройте переписку и нажмите «Показать более ранние».',
+    srch_arch: 'в архиве', srch_pk_done: 'забран — откроется история задачи',
+    acc_bill_extra: 'Со счётом клиенту (налог и доставка)',
+    prop_price_hidden: 'Цены пропозала скрыты настройкой — суммы видит и правит только админ',
+    prop_pdf_hidden: 'PDF пропозала с ценами — только у админа, пока включено «Скрывать цены пропозала для всех»',
+    rep_pdf_hidden: 'Суммы ремонта скрыты от работников — PDF и печать недоступны',
+    dir_in_use_t: 'Удалить нельзя',
+    dir_in_use_h: 'Строка используется в документах. Удаление стёрло бы связи или сами документы (история, пикапы, склад). Переименуйте строку или оставьте как есть.',
+    dir_in_use_srv: 'Сервер не дал удалить: строка используется в документах',
+    du_cx: 'комплексов', du_jobs: 'задач', du_pl: 'пикапов', du_prop: 'пропозалов', du_rep: 'ремонтов', du_moves: 'движений склада',
+    del_q_t: 'Удалить безвозвратно?',
+    del_q_h: 'Строка справочника удаляется из базы. В документах она не используется.',
+    cx_add_rights: 'Добавить комплекс может менеджер или админ',
+    pk_done_b: 'Забрано',
+    invd_retry: 'PDF на Диске будет перенесён в архив, когда появится связь',
     rep_no_create: 'Создание документов ремонта отключено администратором',
     rep_need_appr: 'Сначала нужен апрув документа',
     rep_to_inv: 'Перенести суммы в инвойс', rep_moved: 'Сумма ремонта добавлена в инвойс',
@@ -1200,7 +1228,7 @@ const I18N = {
     gd_folder_unknown: 'папка появится после первой загрузки',
     sb_total: 'Всего оборудования', sb_free: 'На хранении', sb_rented: 'В аренде',
     sb_pending: 'Ожидают вывоза', sb_with_tech: 'На руках', sb_broken: 'Поломано',
-    sb_hist: 'История остатков', sb_hist_h: 'Строка пишется раз в сутки в 10:00 по местному времени.',
+    sb_hist: 'История остатков', sb_hist_h: 'Строка пишется раз в сутки — в час из настроек склада, по поясу фирмы.',
     sb_hist_none: 'Пока пусто: первая строка появится в 10:00.',
     sb_neg: 'Свободный остаток ушёл в минус — проверьте общее количество и незакрытые пикапы.',
     sb_return: 'Вернул на склад', sb_return_all: 'Вернуть всё на склад',
@@ -1248,7 +1276,7 @@ const I18N = {
     ch_block_hint: 'Документ связан цепочкой. Удалить его можно только вместе с зависимыми документами: одной кнопкой всё уходит в архив, а из архива навсегда удаляет администратор.',
     ch_block_btn: 'В архив вместе с цепочкой',
     ch_block_admin_only: 'Отправить цепочку в архив может администратор.',
-    ch_block_locked: 'заблокирована к правке — цепочку может архивировать менеджер или админ',
+    ch_block_locked: 'заблокирована к правке — задачу в цепочке может архивировать админ (основной исполнитель — только свой черновик без номера)',
     ch_block_pk: 'Активных пикапов и продлений: {N} — они уйдут в архив вместе с задачей, оборудование числится на объекте до вывоза.',
     ch_block_prop_keep: 'Связь с пропозалом сохранится и будет видна в архиве.',
     ch_block_show: 'Показать цепочку',
@@ -2307,6 +2335,34 @@ const I18N = {
     rep_reset_done: 'Approval reset: the document changed and went back to draft',
     rep_unsent: 'Document changed after sending — back to draft',
     rep_no_rights: 'Approval is for admin (and manager, if allowed in settings)',
+    rep_no_edit: 'Only the document author, a manager or the admin can save it',
+    rep_ro_note: 'This document is view-only: the author, a manager or the admin can edit and save it',
+    tab_rep_screen: 'Repairs', tab_mycar_help: 'My car',
+    pickups_all: 'Pickups',
+    dfl_stuck_chip: 'stuck', dfl_stuck_line: 'Of these, stuck for more than two days: {N}',
+    apv_ext: 'Extensions over the limit', apv_ro_note: 'Approval is set by an approver (the admin or a manager with the approval right) — this list is view-only for you',
+    dfl_s_ext: 'Extensions over the limit', dfl_h_ext: 'A worker asks to extend a rental beyond the limit — a manager decides',
+    nt_tab: 'Note blocks', nt_title_l: 'Block name', nt_body_l: 'Block text', nt_empty: 'No ready-made blocks yet — add the first one',
+    ew_repair: 'Repair work (first in the repair catalog, “Repair” category in Accounting)',
+    car_no_via_veh: 'The car number is saved in the vehicle card (“Vehicles”) — the driver’s number changes with it',
+    gd_inv_tech_line: 'Invoices on Drive are sorted into per-staff folders',
+    docs_props_reps: 'Proposals and repairs',
+    mc_no_trk: 'Fuel and update time come from the tracker — they are shown once the admin gives you tracker access',
+    ch_found_loaded: 'Searching the loaded messages only. To search further back, open the conversation and tap “Show earlier”.',
+    srch_arch: 'archived', srch_pk_done: 'picked up — the job history opens',
+    acc_bill_extra: 'Billed to client (tax and freight)',
+    prop_price_hidden: 'Proposal prices are hidden by a setting — only the admin sees and edits amounts',
+    prop_pdf_hidden: 'The proposal PDF with prices is admin-only while “Hide proposal prices for everyone” is on',
+    rep_pdf_hidden: 'Repair amounts are hidden from workers — PDF and print are unavailable',
+    dir_in_use_t: 'Cannot delete',
+    dir_in_use_h: 'This row is used in documents. Deleting it would wipe links or the documents themselves (history, pickups, stock). Rename it or leave it as is.',
+    dir_in_use_srv: 'The server refused: this row is used in documents',
+    du_cx: 'complexes', du_jobs: 'jobs', du_pl: 'pickups', du_prop: 'proposals', du_rep: 'repairs', du_moves: 'stock moves',
+    del_q_t: 'Delete permanently?',
+    del_q_h: 'The directory row is removed from the database. No documents use it.',
+    cx_add_rights: 'A manager or the admin can add a complex',
+    pk_done_b: 'Picked up',
+    invd_retry: 'The PDF on Drive will be moved to the archive once the connection is back',
     rep_no_create: 'Creating repair documents is disabled by the admin',
     rep_need_appr: 'The document has to be approved first',
     rep_to_inv: 'Move amounts to invoice', rep_moved: 'Repair amount added to the invoice',
@@ -2688,7 +2744,7 @@ const I18N = {
     gd_folder_unknown: 'the folder appears after the first upload',
     sb_total: 'Equipment total', sb_free: 'In storage', sb_rented: 'On rent',
     sb_pending: 'Pending pickup', sb_with_tech: 'On hand', sb_broken: 'Broken',
-    sb_hist: 'Stock history', sb_hist_h: 'A row is written once a day at 10:00 local time.',
+    sb_hist: 'Stock history', sb_hist_h: 'A row is written once a day — at the hour set for the stock snapshot, in the company time zone.',
     sb_hist_none: 'Empty so far: the first row appears at 10:00.',
     sb_neg: 'Free stock went negative — check the total and the open pickups.',
     sb_return: 'Returned to warehouse', sb_return_all: 'Return everything',
@@ -2736,7 +2792,7 @@ const I18N = {
     ch_block_hint: 'This document is part of a chain. It can only be deleted together with its dependent documents: one button sends the whole chain to the archive, and only an admin purges the archive.',
     ch_block_btn: 'Archive with the chain',
     ch_block_admin_only: 'Only an administrator can archive this chain.',
-    ch_block_locked: 'is edit-locked — a manager or admin can archive the chain',
+    ch_block_locked: 'is edit-locked — the job in the chain can be archived by the admin (the main performer — only an unnumbered draft of their own)',
     ch_block_pk: 'Active pickups and extensions: {N} — they go to the archive with the job; the equipment stays assigned to the site until collected.',
     ch_block_prop_keep: 'The proposal link is kept and remains visible in the archive.',
     ch_block_show: 'Show the chain',
@@ -3608,6 +3664,11 @@ function deepLinkChat(url){
 }
 function deepLinkApply(url){
   if (/[?&]pushtest=/.test(String(url || ''))){ try{ history.replaceState(history.state, '', location.pathname); }catch(e){} if (state.user){ foldSet('push', true); state.screen = 'settings'; render(); } return true; }   // v1.09.22
+  if (/[?&]mycar=1/.test(String(url || '')) && state.user){          // v1.09.40: пуш «Пора на ТО» (veh_maint_check) ведёт в «Мою машину»
+    if (state.screen === 'job' && jobDraft && jobDirty()) return false;
+    try{ history.replaceState(history.state, '', location.pathname); }catch(e){}
+    closeModal(); state.screen = 'mycar'; render(); return true;
+  }
   const dc = deepLinkChat(url);
   if (dc && state.user){
     if (state.screen === 'job' && jobDraft && jobDirty()){ toast('ℹ ' + t('ch_open_later'), 'inf'); return false; }
@@ -4388,8 +4449,8 @@ function chFoundHtml(q){
   if (q.length < 2) return '';
   const hits = chRows().filter(m => String(m.body || '').toLowerCase().includes(q) || String(m.doc_title || '').toLowerCase().includes(q))
     .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 25);
-  if (!hits.length) return `<div class="ch-sec">${t('ch_found')}</div><div class="tiny" style="padding:6px 4px">${t('ch_found_none')}</div>`;
-  return `<div class="ch-sec">${t('ch_found')} · ${hits.length}</div>` + hits.map(m => { const k = chThreadOf(m), body = String(m.body || m.doc_title || ''), i = body.toLowerCase().indexOf(q), from = Math.max(0, i - 24);
+  if (!hits.length) return `<div class="ch-sec">${t('ch_found')}</div><div class="tiny" style="padding:6px 4px">${t('ch_found_none')}</div><div class="tiny ch-found-note" style="padding:2px 4px 6px">${t('ch_found_loaded')}</div>`;
+  return `<div class="ch-sec">${t('ch_found')} · ${hits.length}</div>` + `<div class="tiny ch-found-note" style="padding:2px 4px 6px">${t('ch_found_loaded')}</div>` + hits.map(m => { const k = chThreadOf(m), body = String(m.body || m.doc_title || ''), i = body.toLowerCase().indexOf(q), from = Math.max(0, i - 24);
     return `<button type="button" class="ch-th ch-hit" onclick="App.chGoMsg('${k}','${m.id}')"><span class="grow"><b>${esc(chIsCh(k) || chIsG(k) ? chName(k) : shortName(profName(k)))}</b>
       <span class="tiny">${esc(shortName(profName(m.from_user)).split(' ')[0])}: ${from ? '…' : ''}${esc(body.slice(from, i))}<mark>${esc(body.slice(i, i + q.length))}</mark>${esc(body.slice(i + q.length, i + q.length + 40))}</span></span>
       <span class="ch-th-r"><span class="tiny">${fmtDM(chDayOf(m.created_at))}</span></span></button>`; }).join('');
@@ -5673,6 +5734,23 @@ function docsEquipCardHtml(){
         <input type="checkbox" ${org.pdf_approved_mark!==false?'checked':''} onchange="App.setOrgFlag('pdf_approved_mark', this.checked)"> ${t('pdf_appr_chk')}</label>
     </div>
     ${lockRowHtml(org)}
+    <div style="font-weight:900;margin:12px 0 6px" id="docs-pr-h">${ic('note')} ${t('docs_props_reps')}</div>
+    <div class="set-opts" id="docs-pr">
+      <label class="opt ${org.prop_mgr_create ? 'on' : ''}" id="opt-prop-mgr">
+        <input type="checkbox" ${org.prop_mgr_create ? 'checked' : ''} onchange="App.setOrgFlag('prop_mgr_create', this.checked)"> ${t('prop_mgr')}</label>
+      <label class="opt ${propSendOn() ? 'on' : ''}" id="opt-prop-send">
+        <input type="checkbox" ${propSendOn() ? 'checked' : ''} onchange="App.setOrgFlag('prop_send_on', this.checked)"> ${t('prop_send_chk')}</label>
+      <div class="tiny gd-hint">${t('prop_mgr_h')}</div>
+      <label class="opt ${org.prop_hide_prices !== false ? 'on' : ''}" id="opt-prop-hide">
+        <input type="checkbox" ${org.prop_hide_prices !== false ? 'checked' : ''} onchange="App.setOrgFlag('prop_hide_prices', this.checked)"> ${t('prop_hide')}</label>
+      <div class="tiny gd-hint">${t('prop_hide_h')}</div>
+      <label class="opt ${org.rep_all_create !== false ? 'on' : ''}" id="opt-rep-all">
+        <input type="checkbox" ${org.rep_all_create !== false ? 'checked' : ''} onchange="App.setOrgFlag('rep_all_create', this.checked)"> ${t('rep_all_create')}</label>
+      <div class="tiny gd-hint">${t('rep_all_create_h')}</div>
+      <label class="opt ${org.rep_hide_prices ? 'on' : ''}" id="opt-rep-hide">
+        <input type="checkbox" ${org.rep_hide_prices ? 'checked' : ''} onchange="App.setOrgFlag('rep_hide_prices', this.checked)"> ${t('rep_hide')}</label>
+      <div class="tiny gd-hint">${t('rep_hide_h')}</div>
+    </div>
   </div>`;
 }
 /* v1.09.03 · замок правки старых задач: галочка «включено/выключено» + срок.
@@ -6582,6 +6660,7 @@ async function netBack(){
   }
   NET.offAt = 0;
   try{ if (typeof mediaQ !== 'undefined' && mediaQ.length) mediaFlush(); }catch(e){}
+  invArchFlush().catch(e => dlog('⛔ invArchFlush:', e));   // v1.09.40
 }
 /* Тост «сохранено на устройстве» — не чаще раза в 6 с (одно сохранение
    задачи — это несколько строк: jobs + placements). */
@@ -6918,6 +6997,7 @@ const DB_NEED_COLS = [
   ['bn_trips',      'started_at'],   // v1.09.10: история треков машин
   ['work_types',    'preset'],       // v1.09.08: стандартные галочки вида работы
   ['bn_devices',    'checked_at'],
+  ['media',         'upload_id'],     // v1.09.40: сессия загрузки для media-put
   ['org_settings',  'tz'],            // v1.09.38: пояс фирмы
   ['maint_types',   'interval_mi'],   // v1.09.38: справочник ТО
   ['vehicle_maint', 'last_mi'],
@@ -7949,7 +8029,7 @@ function pickupsOn(dateISO){
 function myDueCount(){
   if (!state.data) return { due: 0, over: 0 };
   const today = todayISO();
-  const mine = state.data.placements.filter(p => (p.technician_id === state.user.id || isPlacementSharedWithMe(p)) && pkPending(p));
+  const mine = visiblePlacements().filter(pkPending);   // v1.09.40 (п. 37): тот же фильтр «Мои / Все», что у списка и счётчика дня
   return { due: mine.filter(p=>p.due_date===today).length, over: mine.filter(p=>p.due_date<today).length };
 }
 function checkPickupBanner(withToast){
@@ -8527,14 +8607,24 @@ const JR_DOC_ACTIONS = ['job_create','job_update','job_done','job_reopen','job_a
   'proposal_create','proposal_update','proposal_delete','proposal_link','proposal_unlink',
   'doc_translate','job_archive','job_restore','proposal_archive','proposal_restore','job_cancel',
   'repair_create','repair_update','repair_archive','repair_restore','repair_delete',   // v1.08.30
-  'repair_approve_reset','repair_to_invoice'];
+  'repair_approve_reset','repair_to_invoice',
+  /* v1.09.40 (п. 32): действия, которые писались, но не находились фильтром */
+  'job_assign','job_clone','job_wt_change','day_move','board_order','route_opt','approve_resum',
+  'pickup_archive','pickup_note','cx_add_map','doc_share','chat_del',
+  'acc_mark','acc_pay_add','acc_pay_del'];
 const JR_TECH_ACTIONS = ['user_register','user_create','user_block','user_unblock','role_change',
   'name_change','jr_archive','tv_cleanup',   // v1.08.46 · v1.08.48
   'password_change','password_reset','car_no_set','org_toggle','org_set','stock_set',
   'equip_take','equip_return','equip_repair','equip_repair_back','equip_intake','equip_writeoff',   // v1.08.27
   'backup_export','backup_restore',
   'veh_save','veh_del',   // v1.08.32
-  'bn_dev_sync'];         // v1.09.01
+  'bn_dev_sync',
+  /* v1.09.40 (п. 32): системные — доступы, 2FA, пуши, сессии, ТВ, машины, настройки, учёба, чат-ключи */
+  'stock_return','stock_return_all','doc_rights','staff_flag','sess_kill','mfa_on','mfa_off',
+  'push_sub','push_resub','push_test','tv_decide','trk_label','veh_maint','veh_note','veh_service','mt_save','mt_del',
+  'org_tz','org_office','wt_checklist','acc_rates','acc_map','backup_admin','backup_auto',
+  'dft_on','dft_off','dft_run','study_start','study_test','study_read',
+  'chat_group','chat_group_del','chat_group_role','chat_key_mode','chat_key_new','chat_key_rewrap','chat_org_key'];         // v1.09.01
 const JR_TECH_SET = new Set(JR_TECH_ACTIONS);
 
 async function loadJournal(reset){
@@ -8712,7 +8802,7 @@ function viewJournal(){
   const profs = state.data.profiles || [];
   const roleOf = id => (profs.find(p => p.id === id) || {}).role || 'tech';
   const rowsHtml = (jr.rows || []).map(r => {
-    const when = String(r.at || '').slice(5, 16).replace('T', ' ');
+    const when = r.at ? tsISO(r.at).slice(5) + ' ' + fmtHM(r.at) : '';   // v1.09.40: пояс фирмы, а не UTC
     const job = r.entity === 'job' ? state.data.jobs.find(x => x.id === r.entity_id) : null;
     const lbl = t('act_' + r.action);
     return `<div class="rowline jr-row">
@@ -9104,7 +9194,7 @@ function viewTabbar(){
      подпись обрезается и не выходит за свою кнопку. */
   /* v1.09.02: личные настройки — подписи (авто/показать/скрыть) и число рядов
      нижнего меню. «Тесная» раскладка теперь считается по пунктам В РЯДУ. */
-  /* v1.09.17: с «Сообщениями» у админа 17 пунктов — в один ряд на телефоне кнопка выходила 23 px (меньше пальца).
+  /* v1.09.40: с «Поиском», «Учёбой» и «Моей машиной» у админа до 19 пунктов. v1.09.17: с «Сообщениями» у админа 17 пунктов — в один ряд на телефоне кнопка выходила 23 px (меньше пальца).
      Пока человек сам не выбирал число рядов, тесное меню встаёт в 2 ряда само; явный выбор (в т. ч. «1») главнее. */
   let rowsN = menuRows();
   if (rowsN === 1 && !menuRowsSet() && tabbarIsBottom() && items.length > 12 && ((window.innerWidth || 400) / items.length) < 27) rowsN = 2;
@@ -9123,15 +9213,22 @@ function viewTabbar(){
 }
 
 /* ---------------- Неделя ПН–ПТ ---------------- */
+/* v1.09.40 (п. 41): на Доске точки и «!» в ленте недели — по всем сотрудникам Доски, а не по фильтру «Мои / Все» Главной */
+function weekScope(iso){
+  if (state.screen !== 'board' || !isManager()) return { js: jobsOn(iso), pk: pickupsOn(iso) };
+  const hid = state.user.role === 'manager' ? hiddenSetFor(state.user.id) : new Set(), today = todayISO();
+  return { js: liveJobs().filter(j => j.date === iso && !hid.has(j.technician_id)).sort(jobSortCmp),
+           pk: (state.data.placements || []).filter(p => pkPending(p) && !hid.has(p.technician_id) && (p.due_date === iso || (iso === today && p.due_date < today))) };
+}
 function viewWeek(bare){   // v1.09.12: bare — главная: кнопки «сегодня» и «перенести день» стоят в строке дня
   const days = [];
   const today = todayISO();
   for (let i=0;i<7;i++){
     const iso = addDaysISO(state.weekStart, i);
     const d = parseISO(iso);
-    const dayJobs = jobsOn(iso);
+    const sc = weekScope(iso), dayJobs = sc.js;    // v1.09.40 (п. 41)
     const jobDots = dayJobs.slice(0,4).map(j => wtById(j.work_type_id)?.color || '#888');
-    const hasPk = pickupsOn(iso).some(p=>!p.picked_up);
+    const hasPk = sc.pk.some(p=>!p.picked_up);
     if (hasPk) jobDots.unshift('#8AA0AB');
     const hasIssue = dayJobs.some(j => jobIssues(j).length);
     days.push(`
@@ -9290,12 +9387,13 @@ function dflCollect(){
     denied: dfReqs().filter(r => r.status === 'denied' && r.user_id === me && dflDays(r.decided_at) < 7),
     /* v1.09.29: «правили после апрува» — по ревизии, которую сервер запомнил в момент апрува (approved_rev), а не по часам устройств */
     sumDiff: (appr || wide) ? jobs.filter(j => j.status === 'approved' && j.approved_total != null && j.approved_rev != null && (+j.rev || 0) > +j.approved_rev && Math.abs(+j.approved_total - +j.total) > 0.009) : [],
-    orphan: isAdmin() ? jobs.filter(j => j.status !== 'approved' && j.technician_id && blocked.has(j.technician_id)) : []
+    orphan: isAdmin() ? jobs.filter(j => j.status !== 'approved' && j.technician_id && blocked.has(j.technician_id)) : [],
+    exts: isManager() ? (state.data.ext_requests || []).filter(r => r.status === 'pending') : []   // v1.09.40 (п. 34)
   };
   out.stuck = out.returned.concat(out.reopened).filter(j => dflDays(j.updated_at) >= 2);
   /* сколько требует МОЕГО действия — это число на значке меню */
   out.mineN = out.problems.length + out.returned.filter(mine).length + out.reopened.filter(mine).length + out.denied.length
-            + (appr ? out.waiting.filter(j => !(j.technician_id === me && jobMode(j).selfAppr)).length + out.reqs.length : 0) + out.orphan.length;
+            + (appr ? out.waiting.filter(j => !(j.technician_id === me && jobMode(j).selfAppr)).length + out.reqs.length : 0) + out.orphan.length + out.exts.length;
   return out;
 }
 /* счётчик зовётся из меню при КАЖДОЙ отрисовке — считаем не чаще раза в 1,5 с; любая запись документа и правка списка отказов сбрасывают кэш */
@@ -9334,14 +9432,23 @@ function viewDocflow(){
       ${appr ? `<button class="btn btn-green sm" data-net="1" onclick="${stop}App.dfReqDecide('${r.id}', true)">${t('df_req_grant')}</button>
       <button class="btn btn-ghost sm" data-net="1" onclick="${stop}App.dfReqDecide('${r.id}', false)">${t('df_req_deny')}</button>` : ic('chev_r')}</div>`; });
   const dn = c.denied.map(r => { const j = (state.data.jobs || []).find(x => x.id === r.doc_id); return j ? dflJobCard(j, t('df_req_was_denied') + (r.answer ? ': ' + esc(r.answer) : '')) : ''; }).filter(Boolean);
-  const total = c.problems.length + c.returned.length + c.reopened.length + c.noTr.length + c.waiting.length + c.reqs.length + dn.length + c.sumDiff.length + c.orphan.length;
+  const total = c.problems.length + c.returned.length + c.reopened.length + c.noTr.length + c.waiting.length + c.reqs.length + dn.length + c.sumDiff.length + c.orphan.length + c.exts.length;
+  /* v1.09.40 (п. 39): «зависли дольше двух дней» — метка на строке и итог под заголовком */
+  const stuckIds = new Set(c.stuck.map(j => j.id));
+  const stuckChip = j => stuckIds.has(j.id) ? ` <span class="chip bad dfl-stuck">${ic('clock')} ${t('dfl_stuck_chip')}</span>` : '';
+  const exH = c.exts.map(r => `<div class="rowline dfl-row" data-ext="${r.id}"><span class="mx">${ic('box')}</span>
+      <div class="grow"><b>Unit ${esc(r.unit || '—')}</b> · ${esc(r.cx || '')}<div class="tiny">${esc(r.eq || '')} · +${r.days} ${t('days')} · ${esc(shortName(profName(r.requested_by)))}</div></div>
+      <button class="btn btn-green sm" data-net="1" onclick="App.extReqDecide('${r.id}', true)">${ic('check')} ${t('ext_req_ok')}</button>
+      <button class="btn btn-ghost sm" data-net="1" onclick="App.extReqDecide('${r.id}', false)">${ic('close')}</button></div>`);
   return `<div class="section-title">${ic('clipboard')} ${t('tab_docflow')} <span class="hint">${total}</span>${helpBtn('docflow')}</div>
     <div class="tiny" style="margin-bottom:6px">${t('dfl_hint')}</div>
     ${total ? '' : `<div class="list-empty" id="dfl-empty">${ic('check')}<div>${t('dfl_empty')}</div></div>`}
     ${sec('problems', 'warn', t('dfl_s_problems'), t('dfl_h_problems'), pr)}
+    ${c.stuck.length ? `<div class="tiny dfl-stuck-line" style="margin-bottom:6px">${ic('clock')} ${t('dfl_stuck_line').replace('{N}', c.stuck.length)}</div>` : ''}
     ${sec('reqs', 'pencil', t('df_reqs'), '', rq)}
-    ${sec('returned', 'refresh', t('dfl_s_returned'), '', c.returned.map(j => dflJobCard(j, esc(String(j.return_note).slice(0, 90)) + (dflDays(j.updated_at) ? ' · ' + dflDays(j.updated_at) + ' ' + t('dfl_days') : ''))))}
-    ${sec('reopened', 'pencil', t('dfl_s_reopened'), t('dfl_h_reopened'), c.reopened.map(j => dflJobCard(j, (j.acc_status ? t('dfl_acc') + ': ' + esc(j.acc_status) + ' · ' : '') + (dflDays(j.updated_at) ? dflDays(j.updated_at) + ' ' + t('dfl_days') : t('today')))))}
+    ${sec('ext', 'box', t('dfl_s_ext'), t('dfl_h_ext'), exH)}
+    ${sec('returned', 'refresh', t('dfl_s_returned'), '', c.returned.map(j => dflJobCard(j, esc(String(j.return_note).slice(0, 90)) + (dflDays(j.updated_at) ? ' · ' + dflDays(j.updated_at) + ' ' + t('dfl_days') : '') + stuckChip(j))))}
+    ${sec('reopened', 'pencil', t('dfl_s_reopened'), t('dfl_h_reopened'), c.reopened.map(j => dflJobCard(j, (j.acc_status ? t('dfl_acc') + ': ' + esc(j.acc_status) + ' · ' : '') + (dflDays(j.updated_at) ? dflDays(j.updated_at) + ' ' + t('dfl_days') : t('today')) + stuckChip(j))))}
     ${sec('notr', 'globe', t('dfl_s_notr'), t('dfl_h_notr'), c.noTr.map(j => dflJobCard(j, t('tr_no_tr') + ': ' + trMiss('job', j).length)))}
     ${sec('waiting', 'check', t('dfl_s_waiting'), appr ? '' : t('dfl_h_waiting'), c.waiting.map(j => dflJobCard(j, dflDays(j.updated_at) ? dflDays(j.updated_at) + ' ' + t('dfl_days') : '')))}
     ${sec('denied', 'close', t('dfl_s_denied'), '', dn)}
@@ -9354,7 +9461,11 @@ function apvCollect(){
   const reps = (state.data.repairs || []).filter(r => r.status === 'sent' && !isArch(r));
   const props = (state.data.proposals || []).filter(p => p.status === 'sent' && !p.is_test);
   const reqs = canApprove() ? dfReqs().filter(r => r.status === 'pending') : [];   // v1.09.25: запросы на правку
-  return { jobs, reps, props, reqs, n: jobs.length + reps.length + props.length + reqs.length };
+  /* v1.09.40 (п. 34): заявки на продление сверх лимита решает менеджер — они тоже «ждут вас» */
+  const exts = isManager() ? (state.data.ext_requests || []).filter(r => r.status === 'pending') : [];
+  /* п. 35: в числе на баннере — только то, что этот человек сам может решить */
+  const n = (canApprove() ? jobs.length + reps.length + props.length + reqs.length : 0) + exts.length;
+  return { jobs, reps, props, reqs, exts, n };
 }
 function apvCan(){ return isAdmin() || isManager(); }
 function apvRow(icon, title, sub, open){
@@ -9367,7 +9478,8 @@ function apvRow(icon, title, sub, open){
 function viewApprovals(){
   try{ dfLoad(); }catch(e){}
   if (!apvCan()) return `<div class="list-empty">${t('no_access')}</div>`;
-  const { jobs, reps, props, n } = apvCollect();
+  const { jobs, reps, props, exts } = apvCollect();
+  const n = jobs.length + reps.length + props.length + exts.length, appr = canApprove();
   const who = id => shortName((state.data.profiles.find(p => p.id === id) || {}).display_name || '—');
   const cxN = id => (cxById(id) || {}).abbr || (cxById(id) || {}).name || '—';
   const block = (title, rows) => rows.length
@@ -9387,7 +9499,9 @@ function viewApprovals(){
     `App.openProposal('${pp.id}')`));
   return `<div class="section-title">${ic('check')} ${t('apv_title')} <span class="hint">${n}</span></div>
     <div class="tiny" style="margin-bottom:6px">${t('apv_hint')}</div>
+    ${appr ? '' : `<div class="banner b-yellow" id="apv-ro" style="margin:4px 0 8px">${ic('lock')} ${t('apv_ro_note')}</div>`}
     ${n ? '' : `<div class="list-empty">${t('apv_empty')}</div>`}
+    ${exts.length ? `<div id="apv-ext">${extReqStripHtml(t('apv_ext'))}</div>` : ''}
     ${apvReqsHtml()}${block(t('apv_jobs'), jH)}${block(t('apv_reps'), rH)}${block(t('apv_props'), pH)}`;
 }
 
@@ -9523,7 +9637,7 @@ function viewHome(){
     + `<div id="day-list" style="${q?'display:none':''}">`
     + (myOnHandQty() ? `<div class="sb-onhand">${ic('box')} ${t('sb_on_hand')}: <b>${myOnHandQty()}</b>
         ${onHandBtnHtml('sm')}</div>` : '')
-    + (pkGroups.length ? `<div class="section-title">${t('pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
+    + (pkGroups.length ? `<div class="section-title" id="pk-title">${t(isManager() && !state.filterMine ? 'pickups_all' : 'pickups_today')} <span class="hint">${fmtDM(iso)}</span></div>` + pkHtml : '')
     + (jobs.length ? `<div class="section-title">${t('jobs')}</div>` + jobsHtml : '')
     + pkDoneHtml + empty
     + `<button class="btn btn-green" style="margin-top:12px" onclick="App.addTaskModal()">${ic('plus')} ${t('add_task')}</button>
@@ -9935,6 +10049,44 @@ function sectionFaqHtml(key){
       <li><b>The priority triangle comes in two kinds.</b> ${faqTriDemo()} <b>Red</b>: the card is pinned first in the day and the ▲▼ arrows cannot move it — for emergencies and overdue pickups. <b>Yellow</b>: just an "important" mark, the card stays in the common order and moves freely. Tapping the triangle opens the kind picker and a question mark with an explanation. The arrows move a card within its own group: red ones do not mix with regular ones.</li>
     </ul>`);
 
+  /* v1.09.40 (п. 19): справка экрана «Ремонт» — ключ repairs занят справкой секции бланка инвойса */
+  S.rep_screen = H(`
+    <h4>${ic('toolbox')} Ремонт</h4>
+    <ul>
+      <li>Документ ремонтных (отделочных) работ — REP. Создаётся из задачи, из пропозала или сам по себе; кто может создавать — решает админ (Настройки документов → «Пропозалы и ремонт»).</li>
+      <li>Внутри: работы из справочника ремонта и свои строки, материалы, фото «до / после», налог и доставка. «Всего» в PDF = работы + материалы + налог + доставка — эту же сумму ждёт Бухгалтерия.</li>
+      <li>Статусы: черновик → «Отправлен» (ждёт решения) → «Апрув» или «Отклонён». Апрув ставит согласующий. Правка апрувленного документа сотрудником возвращает его в черновик.</li>
+      <li>Править и сохранять может автор, менеджер или админ. Помощник из бригады открывает документ только для просмотра.</li>
+      <li>Если админ скрыл суммы от работников, сотрудник видит прочерки, а PDF и печать ему недоступны.</li>
+      <li>«Печать» открывает окно предпросмотра, оттуда — системная печать или «Скачать PDF».</li>
+    </ul>`,
+  `
+    <h4>${ic('toolbox')} Repairs</h4>
+    <ul>
+      <li>The repair (finishing) works document — REP. Created from a job, from a proposal or on its own; who may create it is set by the admin (Document settings → “Proposals and repairs”).</li>
+      <li>Inside: works from the repair catalog and custom rows, materials, before/after photos, tax and freight. The PDF “Total” = works + materials + tax + freight — Accounting expects the same amount.</li>
+      <li>Statuses: draft → “Sent” (awaiting a decision) → “Approved” or “Declined”. An approver approves. A worker editing an approved document returns it to draft.</li>
+      <li>The author, a manager or the admin can edit and save. A crew helper opens the document view-only.</li>
+      <li>If the admin hid amounts from workers, a worker sees dashes, and PDF and print are unavailable.</li>
+      <li>“Print” opens the preview window, then the system print or “Download PDF”.</li>
+    </ul>`);
+  /* v1.09.40 (п. 48): справка «Моей машины» */
+  S.mycar_help = H(`
+    <h4>${ic('car')} Моя машина</h4>
+    <ul>
+      <li>Машина, за которой вы закреплены водителем (Справочники → «Автомобили»): номер, VIN, трекер, пробег, Check Engine.</li>
+      <li>Топливо и время последнего обновления приходят с трекера Bouncie — они видны, если админ открыл вам доступ к трекеру; иначе стоят прочерки.</li>
+      <li>ТО: сколько осталось до следующего обслуживания по каждому виду ТО. Когда пробег подходит к сроку, приходит пуш «Пора на ТО» — нажатие открывает этот экран.</li>
+      <li>Заметки по машине видят водитель, менеджер и админ.</li>
+    </ul>`,
+  `
+    <h4>${ic('car')} My car</h4>
+    <ul>
+      <li>The vehicle you are assigned to as driver (Directories → “Vehicles”): number, VIN, tracker, mileage, Check Engine.</li>
+      <li>Fuel and last update time come from the Bouncie tracker — shown once the admin gives you tracker access; otherwise dashes.</li>
+      <li>Service: how much is left until the next service of each type. When mileage nears the due point, a “Service due” push arrives — tapping it opens this screen.</li>
+      <li>Vehicle notes are visible to the driver, a manager and the admin.</li>
+    </ul>`);
   S.proposals = H(`
     <h4>${ic('note')} Пропозалы</h4>
     <ul>
@@ -10330,7 +10482,8 @@ function mapPickRun(i){
       <span class="dot" style="background:var(--green)"></span>
       <div class="grow"><b>${ic('check', 'color:var(--green)')} ${t('map_found_pt')}</b>
         <div class="tiny">${esc(g.display_name||'')}</div></div>
-      <button class="btn btn-green sm" onclick="App.addCxFromMap(${i})">${t('map_add_cx')}</button>
+      ${isManager() ? `<button class="btn btn-green sm" id="map-add-cx" onclick="App.addCxFromMap(${i})">${t('map_add_cx')}</button>`
+        : `<span class="tiny" id="map-add-cx-no">${t('cx_add_rights')}</span>`}
     </div>`;
 }
 function autoAbbr(name){
@@ -10341,6 +10494,8 @@ function autoAbbr(name){
 }
 function addCxModal(i){
   const g = geoResults[i]; if (!g) return;
+  if (!isManager()){ toast('ℹ ' + t('cx_add_rights'), 'inf'); return; }   // v1.09.40: комплекс пишут A и M, контрагента — только A
+  const tempCp = state.data.counterparties.some(c => c.name === TEMP_CP_NAME);
   const nm = (g.display_name||'').split(',')[0].trim();
   const cps = state.data.counterparties;
   openModal(`
@@ -10353,8 +10508,8 @@ function addCxModal(i){
       <select id="ncx-cp" onchange="document.getElementById('ncx-newcp-row').style.display = this.value==='__new' ? '' : 'none'">
         <option value="">${t('cx_no_bind')}</option>
         ${cps.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
-        <option value="__temp">${t('cx_temp_cp')}</option>
-        <option value="__new">${ic('plus')} ${t('cx_new_cp')}</option>
+        ${isAdmin() || tempCp ? `<option value="__temp">${t('cx_temp_cp')}</option>` : ''}
+        ${isAdmin() ? `<option value="__new">${ic('plus')} ${t('cx_new_cp')}</option>` : ''}
       </select></div>
     <div class="form-row" id="ncx-newcp-row" style="display:none"><span class="lbl">${t('cx_new_cp_name')}</span>
       <input id="ncx-newcp"></div>
@@ -10364,15 +10519,18 @@ function addCxModal(i){
 }
 async function saveCxFromMapRun(i){
   const g = geoResults[i]; if (!g) return;
+  if (!isManager()) return;
   const name = ($('#ncx-name')?.value || '').trim(); if (!name){ toast('⚠', 'err'); return; }
   const addr = ($('#ncx-addr')?.value || '').trim();
   let cpId = $('#ncx-cp')?.value || '';
   if (cpId === '__new'){
+    if (!isAdmin()){ toast('⛔ ' + t('cx_add_rights'), 'err'); return; }
     const nn = ($('#ncx-newcp')?.value || '').trim(); if (!nn){ toast('⚠', 'err'); return; }
     const cp = { id: uid(), name: nn, abbr: autoAbbr(nn), notes: '' };
     state.data.counterparties.push(cp); await dbUpsert('counterparties', cp); cpId = cp.id;
   } else if (cpId === '__temp'){
     let cp = state.data.counterparties.find(c => c.name === TEMP_CP_NAME);
+    if (!cp && !isAdmin()){ toast('⛔ ' + t('cx_add_rights'), 'err'); return; }
     if (!cp){ cp = { id: uid(), name: TEMP_CP_NAME, abbr: 'TMP', notes: '' };
       state.data.counterparties.push(cp); await dbUpsert('counterparties', cp); }
     cpId = cp.id;
@@ -10822,7 +10980,7 @@ function pickupModal(jobId, dateISO, ev){
    считает плашка (myDueCount): свои и те, которыми поделились. */
 function pkDueRows(){
   const today = todayISO();
-  const mine = (state.data.placements || []).filter(p => (p.technician_id === state.user.id || isPlacementSharedWithMe(p)) && pkPending(p));
+  const mine = visiblePlacements().filter(pkPending);   // v1.09.40 (п. 37): = баннер
   return { today, due: mine.filter(p => p.due_date === today), over: mine.filter(p => p.due_date < today) };
 }
 function pkDueGroups(rows, byDue){
@@ -11567,9 +11725,12 @@ async function dfReqDecide(id, grant){
   let answer = '';
   if (!grant){ answer = prompt(t('df_req_deny_ph'), ''); if (answer === null) return; answer = String(answer).trim(); }
   if (HAS_SB){
+    const j0 = jobById(q.doc_id), prevSt = j0 ? { status: j0.status || 'draft', approved_total: j0.approved_total, total: j0.total } : null;
     const { error } = await state.sb.rpc('doc_request_decide', { p_id: id, p_grant: !!grant, p_answer: answer });
     if (error){ toast('⚠ ' + rpcFail(error, 'doc_request_decide'), 'err'); await dfLoad(true); render(); return; }
     await jobRefetch(q.doc_id, true); await dfLoad(true);
+    /* v1.09.40: статус сменила функция базы, а не обычная запись — правило «PDF на Диске следует за статусом» зовём сами */
+    if (grant && prevSt){ const jn = jobById(q.doc_id); if (jn) invDriveOnStatus(prevSt, jn); }
   } else {
     const j = (state.data.jobs || []).find(x => x.id === q.doc_id), body = j ? 'Unit ' + (j.unit_number || '—') + ' · ' + fmtDM(j.date) + ' · ' + shortName(state.user.display_name || '') + (answer ? ' · ' + answer : '') : '';
     Object.assign(q, { status: grant ? 'granted' : 'denied', answer, decided_by: state.user.id, decided_at: new Date().toISOString() });
@@ -11742,7 +11903,7 @@ function ntfMsgsHtml(){
 }
 function ntfOpen(id){
   const n = dfNotices().find(x => x.id === id); if (!n) return;
-  if (deepLinkDoc(n.url || '') || deepLinkDay(n.url || '')) deepLinkApply(n.url);
+  if (deepLinkDoc(n.url || '') || deepLinkDay(n.url || '') || /[?&]mycar=1/.test(n.url || '')) deepLinkApply(n.url);
 }
 function ntfMarkRead(){
   const un = dfNotices().filter(n => !n.read_at); if (!un.length) return;
@@ -12361,11 +12522,11 @@ function wtChangeDo(id, reset){
   toast('✓ ' + t('wt_changed') + ' · ' + t(reset ? 'wt_changed_std' : 'wt_changed_keep'));
 }
 function jobClose(){
-  if (!jobDraft || !jobMode(jobDraft).edit || !jobDirty()){ localStorage.removeItem('techlog_draft'); App.go('home'); return; }   // v1.09.25: просмотр закрывается без вопросов
+  if (!jobDraft || !jobMode(jobDraft).edit || !jobDirty()){ localStorage.removeItem('techlog_draft'); navBack(); return; }   // v1.09.25: просмотр закрывается без вопросов; v1.09.40 (п. 38): назад по истории экранов
   docCloseModal('App.jobSaveClose()', 'App.jobDrop()');
 }
 async function jobSaveClose(){ closeModal(); await saveJob(true); }
-function jobDrop(){ closeModal(); localStorage.removeItem('techlog_draft'); jobDraft = null; App.go('home'); }
+function jobDrop(){ closeModal(); localStorage.removeItem('techlog_draft'); jobDraft = null; navBack(); }
 function docCloseModal(saveCall, dropCall){
   openModal(`${modalHead(t('doc_unsaved_t'), 'warn')}
     <div class="tiny" style="margin-bottom:10px">${t('doc_unsaved')}</div>
@@ -12597,7 +12758,7 @@ async function saveJob(goHome){
   pbPing(true);   // v1.08.33: назначение/апрув/пикапы — разослать сразу
   toast('✓ ' + t('saved'));
   try{ if (typeof CT2 !== 'undefined' && CT2.running && CT2.st && CT2.st.phase === 'save-wait') CT2.saved = Date.now(); }catch(e){}   // v1.08.80
-  if (goHome !== false){ jlStop(); state.screen = 'home'; state.selDate = j.date; state.weekStart = mondayOf(j.date); }
+  if (goHome !== false){ jlStop(); state.selDate = j.date; state.weekStart = mondayOf(j.date); navBack(); maybeApplyPendingUpdate(); return; }   // v1.09.40 (п. 38): на экран, откуда открыли
   render();
   maybeApplyPendingUpdate();
 }
@@ -12802,7 +12963,7 @@ function reportRows(dateISO){
   return byCx;
 }
 function viewPickupsReport(){
-  if (!isManager()) return `<div class="list-empty">${t('no_access')}</div>`;
+  if (!isManager() && !isAcc()) return `<div class="list-empty">${t('no_access')}</div>`;
   if (!state.reportDate) state.reportDate = todayISO();
   const dateISO = state.reportDate;
   const byCx = reportRows(dateISO);
@@ -12846,7 +13007,6 @@ function viewPickupsReport(){
   }).join('');
 
   return `
-  <div class="section-title">${t('report_title')}</div>
   <div class="card">
     <div class="form-row"><span class="lbl">${t('report_date')}</span>
       <input type="date" value="${dateISO}" onchange="App.setReportDate(this.value)"></div>
@@ -12936,8 +13096,30 @@ async function invDrvArchive(j, why){
   const b = await r.json().catch(() => ({}));
   if (!r.ok || !b.ok){ const e = b.error === 'NOT_ARCHIVED' ? t('invd_old_fn') : (b.error || ('HTTP ' + r.status)); throw new Error(e); }
   const at = new Date().toISOString(); act.forEach(m => { m.archived_at = at; }); saveLocal();
-  audit('inv_archive', 'job', j.id, { files: b.files, moved: b.moved, why });
+  /* v1.09.40: запись «inv_archive» в журнал делает сама функция media-delete — вторую не пишем */
   return b.files || act.length;
+}
+/* v1.09.40: перенос PDF в архив не теряется без связи — встаёт в очередь на устройстве и повторяется при возврате сети */
+const INVARCH_KEY = 'techlog_invarch_q';
+function invArchQ(){ try{ const a = JSON.parse(localStorage.getItem(INVARCH_KEY) || '[]'); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+function invArchQSet(a){ try{ if (a.length) localStorage.setItem(INVARCH_KEY, JSON.stringify(a.slice(-50))); else localStorage.removeItem(INVARCH_KEY); }catch(e){} }
+function invArchQAdd(jobId, why){ const a = invArchQ().filter(x => x.id !== jobId); a.push({ id: jobId, why, at: Date.now(), n: 0 }); invArchQSet(a); }
+function invArchRetryable(e){ return !/FORBIDDEN|NO_ACCESS|UNAUTHORIZED|NOT_ARCHIVED/.test(String((e && e.message) || e)); }
+let _invArchBusy = false;
+async function invArchFlush(){
+  if (!HAS_SB || _invArchBusy || !state.user || netOff()) return 0;
+  const a = invArchQ(); if (!a.length) return 0;
+  _invArchBusy = true; const left = []; let done = 0;
+  try{
+    for (const x of a){
+      const j = jobById(x.id);
+      if (!j || j.archived_at || j.status === 'approved') continue;   // документ снова апрувлен или удалён — переносить нечего
+      try{ await invDrvArchive(j, x.why); done++; dlog('инвойс на Диске: перенос в архив выполнен повторно · ' + x.id.slice(0, 8)); }
+      catch(e){ if (invArchRetryable(e) && x.n < 30) left.push({ ...x, n: x.n + 1 }); else dlog('⛔ инвойс на Диске (повтор):', e); }
+    }
+  } finally { invArchQSet(left); _invArchBusy = false; }
+  if (done && state.screen === 'job') render();
+  return done;
 }
 async function invDriveOnStatus(prev, j){
   if (!HAS_SB || !prev || !j || j.is_test || j.archived_at) return;
@@ -12948,7 +13130,11 @@ async function invDriveOnStatus(prev, j){
     if (plan === 'archive'){ if (await invDrvArchive(j, 'draft')) toast('🗂 ' + t('invd_arch'), 'inf'); }
     else if (plan === 'upload'){ if (await invDrvUpload(j, j.status === 'approved')) toast('☁ ' + t('invd_up'), 'inf'); }
     else if (plan === 'replace'){ await invDrvArchive(j, 'price'); if (await invDrvUpload(j, true)) toast('☁ ' + t('invd_repl'), 'inf', 6000); }
-  }catch(e){ dlog('⛔ инвойс на Диске:', e); toast('⚠ ' + t('invd_fail').replace('{E}', errStr(e)), 'err', 8000); }
+  }catch(e){
+    dlog('⛔ инвойс на Диске:', e);
+    if ((plan === 'archive' || plan === 'replace') && invArchRetryable(e) && (netOff() || mIsNetErr(e))){ invArchQAdd(j.id, plan === 'archive' ? 'draft' : 'price'); toast('ℹ ' + t('invd_retry'), 'inf', 6000); }
+    else toast('⚠ ' + t('invd_fail').replace('{E}', errStr(e)), 'err', 8000);
+  }
   if (state.screen === 'job') render();
 }
 function invOnDrive(jobId){
@@ -13052,7 +13238,7 @@ function viewArchive(){
       <span class="chip ${rl.length ? 'warn' : 'ok'}">${rl.length}</span></div>
     <div class="tiny" style="margin-bottom:6px">${t('act_rep_reset_h')}</div>
     ${rl.map(r => { const h = (r.hist || [])[0] || {}; const cx = cxById(r.complex_id) || {};
-      return `<div class="rowline"><div class="grow"><b>R-${r.no ?? '·'}</b> · ${esc(cx.abbr || cx.name || '—')}${
+      return `<div class="rowline"><div class="grow"><b>${esc(repNo(r))}</b> · ${esc(cx.abbr || cx.name || '—')}${
         r.unit_number ? ` · Unit <b>${esc(r.unit_number)}</b>` : ''}
         <div class="tiny">${t('rep_h_reset')} — ${esc(h.by_name || profName(h.by) || '—')}, ${
           esc(String(h.at || '').slice(0, 16).replace('T', ' '))}</div></div>
@@ -13237,6 +13423,7 @@ function viewDirs(){
     ['extraworks', t('d_extraworks'), isAdmin()],
     ['sizes', t('d_sizes'), isAdmin()],
     ['products', t('d_products'), isAdmin()],
+    ['notes', t('nt_tab'), isAdmin()],          // v1.09.40 (п. 28): готовые блоки «Note» для пропозала и ремонта
   ].filter(x=>x[2]);
   /* v1.09.09: порядок вкладок задаёт админ (org_settings.dir_order, общий для всех); чего в
      списке нет — идёт следом в исходном порядке. Справочник по умолчанию — личный выбор
@@ -13254,7 +13441,7 @@ function viewDirs(){
   </div>`;
   const body = { staff: dirStaff, vehicles: dirVehicles, trackers: dirTrackers, maint: dirMaint, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
                  equipment: dirEquipment, aux: dirAux, price: dirPrice,
-                 extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts }[state.dirTab]();
+                 extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts, notes: dirNotes }[state.dirTab]();
   /* v1.07.78: карусель кнопок уезжает вбок, и после выбора было не видно,
      какой справочник открыт. Название выбранного — отдельной строкой. */
   const cur = (tabs.find(x => x[0] === state.dirTab) || [,''])[1];
@@ -13267,6 +13454,35 @@ function viewDirs(){
   return `<div class="section-title">${t('dirs')}${helpBtn('dirs')}</div>` + nav + curHead + body;
 }
 
+/* v1.09.40 (п. 28): справочник готовых блоков «Note» (таблица note_templates, пишет админ) */
+function dirNotes(){
+  const list = [...(state.data.note_templates || [])].sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  return `<div class="card" id="nt-dir">` + (list.map(n => `
+    <div class="rowline"><div class="grow"><b>${esc(n.title || '—')}</b>
+      <div class="tiny">${esc(String(n.body || '').slice(0, 140))}${String(n.body || '').length > 140 ? '…' : ''}</div></div>
+      <button class="btn btn-ghost sm" onclick="App.ntEdit('${n.id}')">${t('edit')}</button></div>`).join('')
+    || `<div class="list-empty">${t('nt_empty')}</div>`) + `</div>
+    <button class="btn btn-green" id="nt-add" onclick="App.ntEdit()">${ic('plus')} ${t('add')}</button>`;
+}
+function ntEdit(id){
+  if (!isAdmin()) return;
+  const n = id ? (state.data.note_templates || []).find(x => x.id === id) : null;
+  const row = n || { id: uid(), title: '', body: '', sort: (state.data.note_templates || []).length };
+  openModal(`${modalHead(t('nt_tab'), 'note')}
+    <div class="form-row"><span class="lbl">${t('nt_title_l')}</span><input id="nt-title" maxlength="80" value="${esc(row.title || '')}"></div>
+    <div class="form-row"><span class="lbl">${t('nt_body_l')}</span><textarea id="nt-body" rows="6" style="width:100%">${esc(row.body || '')}</textarea></div>
+    <button class="btn btn-green" id="nt-save" onclick="App.ntSave('${row.id}', ${+row.sort || 0})">${ic('save')} ${t('save')}</button>
+    ${n ? `<button class="btn btn-red" style="margin-top:8px" onclick="App.delRow('note_templates','${row.id}')">${t('delete')}</button>` : ''}`);
+}
+async function ntSave(id, sort){
+  if (!isAdmin()) return;
+  const title = (($('#nt-title') || {}).value || '').trim(), body = (($('#nt-body') || {}).value || '').trim();
+  if (!title || !body){ toast('⚠ ' + t('nt_title_l') + ' / ' + t('nt_body_l'), 'err'); return; }
+  if (!state.data.note_templates) state.data.note_templates = [];
+  const prev = state.data.note_templates.find(x => x.id === id);
+  await dbUpsert('note_templates', { id, title, body, sort, created_at: (prev && prev.created_at) || new Date().toISOString() });
+  closeModal(); toast('✓ ' + t('saved')); render();
+}
 function dirCounterparties(){
   const list = state.data.counterparties;
   return `<div class="card">` + (list.map(c => `
@@ -13311,6 +13527,7 @@ function dirComplexes(){
           <div class="grow"><b>${esc(cx.name)}</b> ${warnTriHtml()}
             <div class="tiny">${esc(cx.address||'')}</div>
             <div class="tiny">${t('cx_no_owner')}</div></div>
+          ${isManager() ? `<button class="btn btn-ghost sm cx-orphan-edit" onclick="App.editCxModal('${cx.id}')">${t('edit')}</button>` : ''}
         </div>`).join('')}
     </div>` : '';
   const blocks = orphanBlock + state.data.counterparties.map(cp => `
@@ -13648,7 +13865,7 @@ function editCxModal(id, cpId){
   openModal(`
     ${modalHead(t('complex'))}
     <div class="form-row"><span class="lbl">${t('counterparty')}</span>
-      <select id="cx-cp">${state.data.counterparties.map(c=>`<option value="${c.id}" ${c.id===cx.counterparty_id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+      <select id="cx-cp">${cx.counterparty_id ? '' : `<option value="" selected>— ${esc(t('cx_no_bind'))} —</option>`}${state.data.counterparties.map(c=>`<option value="${c.id}" ${c.id===cx.counterparty_id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
     <div class="form-row"><span class="lbl">${t('name')}</span><input id="cx-name" value="${esc(cx.name)}"></div>
     <div class="form-row"><span class="lbl">${t('abbr')}</span><input id="cx-abbr" maxlength="4" value="${esc(cx.abbr||'')}"></div>
     <div class="form-row"><span class="lbl">${t('address')}</span><input id="cx-addr" value="${esc(cx.address||'')}"></div>
@@ -13682,7 +13899,7 @@ async function saveCx(id){
   const access = $('#cx-code').value.trim();
   const callbox = $('#cx-callbox').value.trim();
   const gate = $('#pc-gate').value === '1';
-  const row = { id, counterparty_id: $('#cx-cp').value, name: $('#cx-name').value.trim(),
+  const row = { id, counterparty_id: $('#cx-cp').value || null, name: $('#cx-name').value.trim(),
     abbr: $('#cx-abbr').value.trim().toUpperCase(), address: $('#cx-addr').value.trim(),
     access_code: old.access_code || '', callbox_code: old.callbox_code || '', callbox_gate: !!old.callbox_gate,
     lat: isNaN(latV) ? null : latV, lng: isNaN(lngV) ? null : lngV };
@@ -13799,9 +14016,47 @@ async function setStdPrice(id, v){
   const pr = state.data.price_list.find(x=>x.id===id); if (!pr) return;
   await dbUpsert('price_list', { ...pr, price: parseFloat(v)||0 }); toast('✓ ' + t('saved'));
 }
+/* v1.09.40: строку, на которую ссылаются документы, не удаляем — каскады базы стёрли бы
+   комплексы, пикапы, движения склада или ссылки в документах. Считаем по всем данным,
+   включая архив; последнее слово — за триггером базы (dir_del_guard, IN_USE). */
+const DIR_GUARD = ['counterparties', 'complexes', 'work_types', 'equipment_types'];
+function dirUsage(table, id){
+  const d = state.data || {}, out = [];
+  const n = (arr, f) => (arr || []).filter(f).length;
+  const add = (k, v) => { if (v) out.push([k, v]); };
+  if (table === 'counterparties'){
+    add('du_cx', n(d.complexes, x => x.counterparty_id === id));
+    ['jobs', 'placements', 'proposals', 'repairs'].forEach((tb, i) => add(['du_jobs', 'du_pl', 'du_prop', 'du_rep'][i], n(d[tb], x => x.counterparty_id === id)));
+  } else if (table === 'complexes'){
+    ['jobs', 'placements', 'proposals', 'repairs'].forEach((tb, i) => add(['du_jobs', 'du_pl', 'du_prop', 'du_rep'][i], n(d[tb], x => x.complex_id === id)));
+  } else if (table === 'work_types'){
+    add('du_jobs', n(d.jobs, x => x.work_type_id === id));
+  } else if (table === 'equipment_types'){
+    add('du_pl', n(d.placements, x => x.equipment_type_id === id));
+    add('du_moves', n(d.equip_moves, x => x.equipment_type_id === id));
+  }
+  return out;
+}
+function dirInUseModal(use, srvMsg){
+  openModal(`${modalHead(t('dir_in_use_t'), 'warn')}
+    ${use && use.length ? `<div class="chips" id="du-list" style="margin:4px 0 8px">${use.map(([k, v]) => `<span class="chip bad">${v} ${esc(t(k))}</span>`).join(' ')}</div>` : ''}
+    ${srvMsg ? `<div class="tiny" style="margin-bottom:6px">${esc(t('dir_in_use_srv'))}${/:/.test(srvMsg) ? ' — ' + esc(String(srvMsg).split(':').slice(1).join(':').trim().slice(0, 160)) : ''}</div>` : ''}
+    <div class="tiny">${t('dir_in_use_h')}</div>
+    <button type="button" class="btn btn-ghost" style="margin-top:10px" onclick="App.closeModal()">${t('close')}</button>`);
+}
 async function delRow(table, id){
-  if (!confirm(t('confirm_del'))) return;
-  await dbDelete(table, id); closeModal(); toast('🗑 ' + t('deleted')); render();
+  const use = dirUsage(table, id);
+  if (use.length){ dirInUseModal(use); return; }
+  if (!(await askModal({ title: t('del_q_t'), text: t('del_q_h'), ok: t('delete'), okIcon: 'trash', danger: true }))) return;
+  if (HAS_SB && DIR_GUARD.includes(table)){
+    /* сначала сервер: если там есть связи, которых нет на устройстве (старые документы), строка остаётся */
+    if (netOff()){ netBlocked(); return; }
+    const { error } = await state.sb.from(table).delete().eq('id', id);
+    if (error){ if (/IN_USE/.test(errStr(error))) dirInUseModal(null, errStr(error)); else toast('⛔ ' + errStr(error), 'err'); return; }
+    const arr = tableOf(table) || []; const i = arr.findIndex(r => r.id === id); if (i >= 0) arr.splice(i, 1);
+    saveLocal();
+  } else await dbDelete(table, id);
+  closeModal(); toast('🗑 ' + t('deleted')); render();
 }
 
 /* =====================================================================
@@ -14177,7 +14432,7 @@ function jobPrintBtnHtml(j, cls){
    просмотра PDF у Chrome Android и iOS нет — «Открыть PDF» поднимает
    системный просмотрщик, «Печать» отдаёт файл в системное меню (там «Печать»).
    ===================================================================== */
-let _prJobId = null, _prUrl = '', _prBlob = null;
+let _prJobId = null, _prUrl = '', _prBlob = null, _prDoc = null, _prName = '';
 function prJob(){ return _prJobId ? state.data.jobs.find(x => x.id === _prJobId) : (jobDraft || state.data.jobs.find(x => x.id === state.jobId)); }
 function prInline(){ try{ return navigator.pdfViewerEnabled !== false && !IS_IOS && !/Android/i.test(navigator.userAgent); }catch(e){ return false; } }
 function printMenu(id){
@@ -14196,19 +14451,30 @@ function printDo(mode){
   trPdfGuard('job', j, () => {
     const doc = buildInvoicePdfDoc(false, j); if (!doc){ return; }
     if (mode === 'dl'){ closeModal(); savePdfCompat(doc, invFileName(j)); return; }
-    try{ if (_prUrl) URL.revokeObjectURL(_prUrl); }catch(e){}
-    _prBlob = doc.output('blob'); _prUrl = URL.createObjectURL(_prBlob);
-    const inl = prInline();
-    openModal(`${modalHead(t('pr_view'), 'printer')}
-      ${inl ? `<iframe class="pr-frame" id="pr-frame" title="PDF" src="${_prUrl}#toolbar=0&navpanes=0&view=FitH"></iframe>`
-            : `<div class="card pr-nofr" id="pr-nofr">${ic('printer')} ${t('pr_mobile')}</div>`}
-      <div class="pr-acts">
-        <button type="button" class="btn btn-green" id="pr-go" onclick="App.printGo()">${ic('printer')} ${t('pdf_print')}</button>
-        ${inl ? '' : `<button type="button" class="btn btn-ghost" id="pr-open" onclick="App.printOpen()">${ic('search')} ${t('pr_open')}</button>`}
-        <button type="button" class="btn btn-blue" onclick="App.printDo('dl')">${ic('download')} ${t('pr_dl')}</button>
-      </div>`);
-    const m = document.querySelector('#overlay .modal'); if (m) m.classList.add('pr-modal');
+    prShow(doc, invFileName(j));
   });
+}
+/* v1.09.40: окно «Предпросмотр и печать» — одно для инвойса, ремонта и пропозала */
+function prShow(doc, fname){
+  try{ if (_prUrl) URL.revokeObjectURL(_prUrl); }catch(e){}
+  _prDoc = doc; _prName = fname || 'document.pdf';
+  _prBlob = doc.output('blob'); _prUrl = URL.createObjectURL(_prBlob);
+  const inl = prInline();
+  openModal(`${modalHead(t('pr_view'), 'printer')}
+    ${inl ? `<iframe class="pr-frame" id="pr-frame" title="PDF" src="${_prUrl}#toolbar=0&navpanes=0&view=FitH"></iframe>`
+          : `<div class="card pr-nofr" id="pr-nofr">${ic('printer')} ${t('pr_mobile')}</div>`}
+    <div class="pr-acts">
+      <button type="button" class="btn btn-green" id="pr-go" onclick="App.printGo()">${ic('printer')} ${t('pdf_print')}</button>
+      ${inl ? '' : `<button type="button" class="btn btn-ghost" id="pr-open" onclick="App.printOpen()">${ic('search')} ${t('pr_open')}</button>`}
+      <button type="button" class="btn btn-blue" id="pr-dl2" onclick="App.printDl()">${ic('download')} ${t('pr_dl')}</button>
+    </div>`);
+  const m = document.querySelector('#overlay .modal'); if (m) m.classList.add('pr-modal');
+}
+function printDl(){ if (!_prDoc) return; closeModal(); savePdfCompat(_prDoc, _prName); }
+function docPrint(kind, id){
+  const sink = (doc, fname) => prShow(doc, fname);
+  if (kind === 'rep') makeRepairPdf(id, false, sink);
+  else if (kind === 'prop') makeProposalPdf(id, false, sink);
 }
 function printOpen(){
   if (!_prUrl) return;
@@ -14220,9 +14486,8 @@ function printGo(){
     try{ fr.contentWindow.focus(); fr.contentWindow.print(); return; }catch(e){ dlog('⚠ print frame:', e); }
   }
   /* телефон: файл → системное меню («Печать» есть в нём на Android и iOS) */
-  const j = prJob();
   try{
-    const file = new File([_prBlob], j ? invFileName(j) : 'invoice.pdf', { type: 'application/pdf' });
+    const file = new File([_prBlob], _prName || 'document.pdf', { type: 'application/pdf' });
     if (navigator.canShare && navigator.canShare({ files: [file] })){
       navigator.share({ files: [file], title: file.name }).catch(err => { if (!err || err.name !== 'AbortError'){ dlog('⚠ print share:', err); printOpen(); } });
       toast('ℹ ' + t('pr_share_hint'), 'inf'); return;
@@ -15391,7 +15656,7 @@ const App = {
   camMode(v){ camSet('mode', v); dlog('камера: режим ' + v); render(); },
   vidMode(v){ mVidModeSet(v); dlog('видео: ' + v); },              // v1.08.47
   srchTab(v){ srchTabSet(v); },                                    // v1.08.49
-  printBtn(v){ printBtnSet(v); }, jobPrint(id){ printMenu(id); }, jobPrintQuick, printMenu, printDo, printGo, printOpen, gdFullTest,   // v1.08.71
+  printBtn(v){ printBtnSet(v); }, jobPrint(id){ printMenu(id); }, jobPrintQuick, printMenu, printDo, printGo, printOpen, printDl, docPrint, ntEdit, ntSave, gdFullTest,   // v1.08.71
   regress(){ regressRun(); },                                                          // v1.08.72
   camTest(){ camTestRun(); }, camTestCopy(){ ctCopy(); }, camTestSave(){ ctSave(); }, camTestState(){ return CT; },   // v1.08.74
   camTest2(){ camTest2Run(false); }, camTest2Abort(){ camTest2Abort(); }, camTest2State(){ return CT2; }, w2All: () => w2All(),   // v1.08.80
@@ -15622,7 +15887,7 @@ const App = {
   jrRefresh(){ loadJournal(true); }, jrMore(){ loadJournal(false); },   // v1.07.18: журнал
   jrAct(v){ state.jr.act = v; loadJournal(true); },
   jrActor(v){ state.jr.actor = v; loadJournal(true); },
-  togglePriority, prioMenu, prioSet, moveJob, boardMove, setCarNo, carNoStep, restorePk, pdfPreview, pdfPrint,
+  togglePriority, prioMenu, prioSet, moveJob, moveJobDay(id, dir, iso){ return moveJob(id, dir, iso); }, boardMove, setCarNo, carNoStep, restorePk, pdfPreview, pdfPrint,
   comboFilter, comboPick, wtChecklistModal, wtChecklistSave,
   openProposal, propBack, saveProposal, delProposal, makeProposalPdf, linkProposal, linkJobFromProp,
   propField(k, v){ if (!propDraft) return;
@@ -16199,10 +16464,11 @@ function canonUrl(loc){
        когда данные уже загружены (раньше запускалось через 900 мс от старта,
        и при медленной сети документ ещё не был известен) */
     if (state.user) setTimeout(() => { pickRestore().catch(e => dlog('⛔ pickRestore:', e)); }, 400);
+    if (state.user) setTimeout(() => { invArchFlush().catch(e => dlog('⛔ invArchFlush:', e)); }, 4000);   // v1.09.40
     try{ if (state.user) setTimeout(() => ckInit(false).then(() => { if (CK.st === 'need_pw' && (state.screen === 'home' || state.screen === 'chat')) render(); }), 2500); }catch(e){}   // v1.09.21
     try{ if (state.user) setTimeout(() => pbSyncSub(false), 6000); }catch(e){}   // v1.09.22: подписка устройства сверяется с сервером
     try{ orientApply(true); }catch(e){}                                        // v1.09.13: поворот экрана — настройка устройства
-    if (state.user && (deepLinkDay(location.href) || deepLinkDoc(location.href) || deepLinkChat(location.href) || /[?&]pushtest=/.test(location.href))) setTimeout(() => { try{ deepLinkApply(location.href); }catch(e){} }, 500);   // v1.09.13: ссылка из уведомления
+    if (state.user && (deepLinkDay(location.href) || deepLinkDoc(location.href) || deepLinkChat(location.href) || /[?&](pushtest=|mycar=1)/.test(location.href))) setTimeout(() => { try{ deepLinkApply(location.href); }catch(e){} }, 500);   // v1.09.13: ссылка из уведомления
     initLaunchQueue();                                                // v1.08.79
     try{ w2Init(); }catch(e){}                                        // v1.08.80: журнал Способа 2 (перезапуск во время камеры)
     setTimeout(() => { try{ ct2Resume(); }catch(e){ dlog('⛔ ct2Resume:', e); } }, 900);   // v1.08.80: продолжить тест Способа 2
@@ -16483,7 +16749,7 @@ function stgApp(pid, cxId, jobDone, iso){
   const car = x && x.pos ? { lat: +x.pos.lat, lng: +x.pos.lng, run: !!x.run } : null;
   return stgFor(pid, cxId, jobDone, { visits: ttVisits().filter(v => v.date === iso), car, cx: cxById(cxId) });
 }
-function stgCls(st){ return st === 'here' ? ' st-here' : st === 'done' ? ' st-done' : ''; }
+function stgCls(st){ return st === 'here' ? ' stg-here' : st === 'done' ? ' stg-done' : ''; }   // v1.09.40: не st-done — это класс статуса «Выполнено» (тёмный текст)
 /* ТВ: точки дня водителя по порядку — задачи (приоритет, порядок), затем пикапы (по документу) */
 function tvVisits(){ const f = TV.feed || {}; return Array.isArray(f.site_day) ? f.site_day : (f.site_now || []).map(v => ({ ...v, left_at: null })); }
 function tvStops(pid){
@@ -16818,7 +17084,7 @@ function tvMapSync(){
   try{ tvRoutesDraw(); }catch(e){ dlog('⚠ маршруты ТВ:', e); }      // v1.09.38: офис → точки дня
   /* машины */
   const cxs = tvBy((TV.feed || {}).complexes);
-  const seen = new Set();
+  const seen = new Set(), spread = [];
   (TV.bn || []).forEach(c => {
     if (c.lat == null) return;
     const id = String(c.car_no ?? '') + '|' + String(c.driver_id ?? '');
@@ -16828,6 +17094,7 @@ function tvMapSync(){
     let m = TV.cars[id];
     if (!m){ m = L.marker([c.lat, c.lng], { icon, zIndexOffset: 500 }).addTo(TV.carLayer); TV.cars[id] = m; }
     else { m.setLatLng([c.lat, c.lng]); m.setIcon(icon); }
+    spread.push({ m, ll: [+c.lat, +c.lng], no: c.car_no });   // v1.09.39
     marks.push([c.lat, c.lng]);
     /* пунктир к первой открытой точке водителя */
     const open = c.driver_id ? tvOpenOf(c.driver_id) : { js: [], pk: [] };
@@ -16849,6 +17116,7 @@ function tvMapSync(){
     TV.fit = true;
     setTimeout(() => TV.map && TV.map.invalidateSize(), 150);
   }
+  carSpread(TV.map, spread);                             // v1.09.39: машины в одной точке — веером
 }
 /* ---------------- полный экран ---------------- */
 function tvFsGo(){
@@ -17300,7 +17568,7 @@ function noteModal(jobId){
     ${String(j.note || '').trim() ? `<div class="tiny" style="margin-bottom:2px">${t('pk_note_inv')}</div><div class="note-green" id="pk-note-inv" style="display:block;margin-bottom:10px">${esc(j.note)}</div>` : ''}
     <div class="tiny" style="margin-bottom:2px">${t('pk_note_own')}</div>
     ${dictationHTML('pk-note', src.note || '', 'pk-note-en')}
-    <div class="tiny" style="margin:6px 0 2px">${t('tr_en_lbl')}</div>
+    <div class="tiny" style="margin:6px 0 2px">EN</div>
     <textarea id="pk-note-en" class="note-ta" rows="2" placeholder="English…">${esc(src.note_en || '')}</textarea>
     <div class="tiny" style="margin-bottom:10px">${t('pk_note_hint')}</div>
     ${can ? `<button class="btn btn-green" id="pk-note-save" onclick="App.saveNote('${jobId}')">${t('save')}</button>` : ''}
@@ -17321,8 +17589,10 @@ async function saveNote(jobId){
    ===================================================================== */
 let mapObj = null;
 function cpColor(cpId){
-  const i = state.data.counterparties.findIndex(c=>c.id===cpId);
-  return PALETTE[(i>=0?i:0) % PALETTE.length];
+  /* v1.09.40 (п. 47): от постоянного id — добавили или удалили контрагента, цвета остальных не прыгают */
+  let h = 0; const s = String(cpId || '');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
 }
 /* =====================================================================
    v1.08.32: GPS-ТРЕКИНГ BOUNCIE
@@ -17618,16 +17888,60 @@ function bnStatsHtml(inner){
   return inner ? html : `<aside class="bn-stats" id="bn-stats">${html}</aside>`;
 }
 /* ---- слой машин на Leaflet-карте: маркеры двигаются без пересоздания ---- */
+/* =====================================================================
+   v1.09.39 · МАШИНЫ В ОДНОЙ ТОЧКЕ НЕ ПРЯЧУТ НОМЕРА ДРУГ ЗА ДРУГОМ.
+   Значки машин, которые на экране ближе CAR_GAP px (значок 30 px), раздвигаются веером вокруг общей точки:
+   две — влево/вправо, три и больше — по кругу. От настоящей точки к каждому значку — тонкая «ножка», в самой
+   точке — белый кружок: видно, что машины стоят вместе, и каждый номер читается. Раскладка считается в пикселях
+   экрана, поэтому при смене масштаба (zoomend) пересчитывается: отдалил — разошлись, приблизил и они разъехались
+   сами — ножки пропали. Координаты машин не меняются — только место значка на экране.
+   Общая функция для карты приложения (bnDrawCars) и карты телевизора (tvMapSync).
+   ===================================================================== */
+const CAR_GAP = 34;
+function carSpread(map, list){
+  if (!map) return;
+  map._tlCars = list || [];
+  if (!map._tlSpreadOn){ map._tlSpreadOn = true; map.on('zoomend viewreset', () => carSpreadApply(map)); }
+  carSpreadApply(map);
+}
+function carSpreadApply(map){
+  const list = map._tlCars || [];
+  if (!map._tlLegs) map._tlLegs = L.layerGroup().addTo(map);
+  map._tlLegs.clearLayers();
+  if (!map._loaded || !list.length){ list.forEach(x => x.m.setLatLng(x.ll)); return; }
+  const groups = [];
+  list.map(x => ({ x, p: map.latLngToLayerPoint(L.latLng(x.ll[0], x.ll[1])) }))
+    .sort((a, b) => (+a.x.no || 999) - (+b.x.no || 999))
+    .forEach(q => {
+      const g = groups.find(g => g.c.distanceTo(q.p) < CAR_GAP);
+      if (!g){ groups.push({ c: q.p, items: [q] }); return; }
+      g.items.push(q);
+      const n = g.items.length;
+      g.c = L.point(g.items.reduce((s, i) => s + i.p.x, 0) / n, g.items.reduce((s, i) => s + i.p.y, 0) / n);
+    });
+  for (const g of groups){
+    const n = g.items.length;
+    if (n === 1){ g.items[0].x.m.setLatLng(g.items[0].x.ll); continue; }
+    const R = n === 2 ? 20 : Math.max(24, Math.ceil(CAR_GAP / (2 * Math.sin(Math.PI / n))));
+    g.items.forEach((q, i) => {
+      const ang = n === 2 ? (i ? 0 : Math.PI) : (-Math.PI / 2 + i * 2 * Math.PI / n);
+      const ll = map.layerPointToLatLng(L.point(g.c.x + R * Math.cos(ang), g.c.y + R * Math.sin(ang)));
+      q.x.m.setLatLng(ll);
+      L.polyline([map.layerPointToLatLng(g.c), ll], { color: '#FFFFFF', weight: 2, opacity: .75, interactive: false }).addTo(map._tlLegs);
+    });
+    L.circleMarker(map.layerPointToLatLng(g.c), { radius: 4, color: '#0F171B', weight: 2, fillColor: '#FFFFFF', fillOpacity: 1, interactive: false }).addTo(map._tlLegs);
+  }
+}
 function bnDrawCars(){
   if (!window.L || !mapObj) return;
-  if (state.mapTrk && state.screen === 'map'){ if (BN.layer && BN._layerMap === mapObj) BN.layer.clearLayers(); return; }   // v1.09.10: во вкладке «Треки» — только история, без живых машин и пунктиров
-  if (!bnVisible()){ if (BN.layer && BN._layerMap === mapObj) BN.layer.clearLayers(); return; }   // v1.08.33
+  if (state.mapTrk && state.screen === 'map'){ if (BN.layer && BN._layerMap === mapObj) BN.layer.clearLayers(); carSpread(mapObj, []); return; }   // v1.09.10: во вкладке «Треки» — только история, без живых машин и пунктиров
+  if (!bnVisible()){ if (BN.layer && BN._layerMap === mapObj) BN.layer.clearLayers(); carSpread(mapObj, []); return; }   // v1.08.33
   if (!BN.layer || BN._layerMap !== mapObj){
     BN.markers = {}; BN.routes = {};
     BN.layer = L.layerGroup().addTo(mapObj);
     BN._layerMap = mapObj;
   }
-  const sel = bnSelSet(), seen = new Set();
+  const sel = bnSelSet(), seen = new Set(), spread = [];
   const byImei = {};
   Object.values(BN.live).forEach(x => { byImei[x.imei] = x; });
   for (const v of bnVehicles()){
@@ -17646,6 +17960,7 @@ function bnDrawCars(){
     let m = BN.markers[imei];
     if (!m){ m = L.marker(pos, { icon, zIndexOffset: 500 }).addTo(BN.layer); BN.markers[imei] = m; }
     else { m.setLatLng(pos); m.setIcon(icon); }
+    spread.push({ m, ll: pos, no: v.car_no });            // v1.09.39
     m.unbindPopup(); m.bindPopup(bnCarPopup(v, bv, x));
     const r = BN.routes[imei];
     if (!dim && x && x.mode === 'go' && x.dest && x.dest.pt){
@@ -17659,6 +17974,7 @@ function bnDrawCars(){
     BN.layer.removeLayer(BN.markers[imei]); delete BN.markers[imei];
     if (BN.routes[imei]){ BN.layer.removeLayer(BN.routes[imei]); delete BN.routes[imei]; }
   }
+  carSpread(mapObj, spread);                             // v1.09.39: машины в одной точке — веером
 }
 function bnCarPopup(v, bv, x){
   const st = (bv && bv.stats) || {};
@@ -18442,12 +18758,13 @@ function myCarHtml(inSettings){
       <div><span class="tiny">Check Engine</span><b>${v.mil ? `<span style="color:var(--red)">⚠ ${t('mc_mil_on')}</span>` : t('mc_mil_ok')}</b></div>
       <div><span class="tiny">${t('mc_upd')}</span><b>${upd ? trkWhen(upd) : '—'}</b></div>
     </div>
+    ${v.imei && !bnVisible() ? `<div class="tiny" id="mc-no-trk" style="margin-top:6px">${ic('lock')} ${t('mc_no_trk')}</div>` : ''}
     <div class="tiny" style="margin-top:6px;color:var(--dim)">${ic('lock')} ${t('mc_ro')}</div></div>
     <div class="card"><div class="mt-h">${ic('toolbox')} ${t('mt_title')}</div>${maint}</div>
     <div class="card">${vehNotesHtml(v, vnCanAdd(v))}</div>`;
 }
 function mcPick(id){ state.mcSel = id; render(); }
-function viewMyCar(){ return `<div class="section-title">${ic('car')} ${t('tab_mycar')}</div>${myCarHtml(false)}`; }
+function viewMyCar(){ return `<div class="section-title">${ic('car')} ${t('tab_mycar')}${helpBtn('mycar_help')}</div>${myCarHtml(false)}`; }
 
 /* ---- справочник «Автомобили» (админ) ---- */
 function vehFreeNo(exceptId){
@@ -18881,7 +19198,7 @@ async function optApplyOrder(){
   let k = 0;
   for (const p of jobsSeq){
     const j = jobById(p.jobId); if (!j) continue;
-    try{ await saveJobPatch(j, { sort_order: ++k }); }catch(e){ dlog('⛔ opt apply:', e); }
+    try{ await saveJobPatch(j, { sort_order: k++ }); }catch(e){ dlog('⛔ opt apply:', e); }
   }
   audit('route_opt', 'day', state.mapDate || state.selDate || todayISO(), { jobs: k });
   closeModal(); toast('✓ ' + t('opt_applied')); render();
@@ -18920,8 +19237,9 @@ function gmapsCx(){
    ===================================================================== */
 function repScopeJobs(){
   let js = scopeFilter(liveJobs(), 'technician_id');
-  // v1.07.10: задачи с общим доступом видны коворкеру и в отчётах
-  const shared = liveJobs().filter(j => isJobSharedWithMe(j) && !js.includes(j));
+  // v1.07.10: задачи с общим доступом видны коворкеру и в отчётах; v1.09.40 (п. 36): и всей бригаде, как на Главной
+  const me = state.user.id;
+  const shared = liveJobs().filter(j => (isJobSharedWithMe(j) || (j.helper_ids || []).includes(me)) && !js.includes(j));
   return shared.length ? js.concat(shared) : js;
 }
 function repJobs(){
@@ -18982,14 +19300,19 @@ function srchChipsSync(){
   const x = document.querySelector('.srch-chips .srch-clear');
   if (x) x.disabled = srchEmpty();
 }
+/* v1.09.40 (п. 58): номер пропозала и ремонта — везде по шаблону номера, как у инвойса */
+function propNo(p){ return (p && docNo('prop', p)) || ('P-' + ((p && p.no) ?? '·')); }
+function repNo(r){ return (r && docNo('rep', r)) || ('R-' + ((r && r.no) ?? '·')); }
 function srchDocNo(kind, x){
   if (kind === 'job') return docNo('inv', x);
-  if (kind === 'prop') return 'PROP-' + (x.no ?? '—');
-  if (kind === 'rep') return 'REP-' + (x.no ?? '—');
+  if (kind === 'prop') return propNo(x);
+  if (kind === 'rep') return repNo(x);
   return '';
 }
 function srchCanOpen(kind, x){
-  if (isManager() || isAcc()) return true;
+  if (isManager()) return true;
+  if (isAcc()) return kind !== 'prop';                 // v1.09.40 (п. 33): экран пропозалов бухгалтеру и сотруднику закрыт
+  if (kind === 'prop') return false;
   const me = state.user.id;
   if (kind === 'job') return x.technician_id === me || isJobSharedWithMe(x);
   if (kind === 'pk') return x.technician_id === me || isPlacementSharedWithMe(x);
@@ -19016,14 +19339,19 @@ function srchRows(q){
   if (S.has('job')) liveJobs().forEach(j => {
     if (unit(j) || has(docNo('inv', j)) || has(cxN(j.complex_id)) || has(j.note)) out.jobs.push(j);
   });
+  /* v1.09.40 (п. 33): помеченное на удаление (архив) в поиск не попадает — как задачи (liveJobs) */
+  const deadJob = new Set(archJobs().map(j => j.id));
   if (S.has('pk')) (state.data.placements || []).forEach(p => {
+    if (p.archived_at || deadJob.has(p.job_id)) return;
     if (unit(p) || has(cxN(p.complex_id))) out.pk.push(p);
   });
   if (S.has('prop')) (state.data.proposals || []).forEach(p => {
-    if (unit(p) || has('prop-' + (p.no ?? '')) || has(cxN(p.complex_id))) out.props.push(p);
+    if (isArch(p)) return;
+    if (unit(p) || has(propNo(p)) || has('prop-' + (p.no ?? '')) || has(cxN(p.complex_id))) out.props.push(p);
   });
   if (S.has('rep')) (state.data.repairs || []).forEach(r => {
-    if (unit(r) || has('rep-' + (r.no ?? '')) || has(cxN(r.complex_id))) out.reps.push(r);
+    if (isArch(r)) return;
+    if (unit(r) || has(repNo(r)) || has('rep-' + (r.no ?? '')) || has(cxN(r.complex_id))) out.reps.push(r);
   });
   if (S.has('cx')) (state.data.complexes || []).forEach(c => {
     if (has(c.name) || has(c.abbr) || has(c.address)) out.cx.push(c);
@@ -19046,8 +19374,9 @@ function srchLine(kind, x){
            : kind === 'pk' ? `App.searchGo('pk','${x.id}')`
            : kind === 'prop' ? `App.searchGo('prop','${x.id}')`
            : `App.searchGo('rep','${x.id}')`;
-  return `<button class="rowline srch-row" onclick="${on}">
-      ${ic(icn)}<div class="grow"><b>Unit ${esc(x.unit_number || '—')}</b> <span class="tiny">${esc(no)}</span>
+  const done = kind === 'pk' && !pkPending(x);
+  return `<button class="rowline srch-row${done ? ' srch-done' : ''}" onclick="${on}"${done ? ` title="${esc(t('srch_pk_done'))}"` : ''}>
+      ${ic(icn)}<div class="grow"><b>Unit ${esc(x.unit_number || '—')}</b> <span class="tiny">${esc(no)}</span>${done ? ` <span class="chip ok">${ic('check')} ${t('pk_done_b')}</span>` : ''}
       <div class="tiny">${fmtDMY(date)} · ${esc(cxn)}${who ? ' · ' + esc(who) : ''}</div></div>${ic('chev_r')}</button>`;
 }
 function srchRender(){
@@ -19086,8 +19415,10 @@ function searchOpen(){
 function searchGo(kind, id){
   closeModal();
   if (kind === 'job'){ openJob(id); return; }
-  if (kind === 'pk'){ const p = state.data.placements.find(x=>x.id===id); if (p) pickupModal(p.job_id, p.due_date); return; }
-  if (kind === 'prop'){ if (isAcc()){ toast(t('no_access'), 'err'); return; } if (typeof openProposal === 'function'){ openProposal(id); return; } }
+  if (kind === 'pk'){ const p = state.data.placements.find(x=>x.id===id); if (!p) return;
+    if (!pkPending(p)){ jobHistory(p.job_id); return; }             // v1.09.40 (п. 33): забранный / закрытый продлением — история задачи
+    pickupModal(p.job_id, p.due_date); return; }
+  if (kind === 'prop'){ if (!isManager()){ toast(t('no_access'), 'err'); return; } if (typeof openProposal === 'function'){ openProposal(id); return; } }
   if (kind === 'rep'){ if (isAcc()){ accDoc('rep', id); return; } if (typeof openRepair === 'function'){ openRepair(id); return; } }
   if (kind === 'cx'){ state.screen = 'dirs'; state.dirTab = 'complexes'; render(); return; }
 }
@@ -19939,7 +20270,8 @@ async function staffName(uid_, v){
    «＋» с пустого ставит первый свободный. Запись — через 600 мс после последнего
    нажатия, чтобы серия кликов не сыпала в базу и журнал по записи на клик. */
 function carNoStepHtml(u){
-  return `<span class="stepper set-step car-step" title="${t('car_no')}">
+  const viaVeh = bnVehicles().some(x => x.driver_id === u.id);
+  return `<span class="stepper set-step car-step" title="${viaVeh ? esc(t('car_no_via_veh')) : t('car_no')}">
     <button type="button" aria-label="−" onclick="App.carNoStep('${u.id}',-1)">${ic('minus')}</button>
     <input class="price-input car-inp" data-uid="${u.id}" inputmode="numeric" maxlength="2" placeholder="№"
       value="${u.car_no ?? ''}" onchange="App.setCarNo('${u.id}', this.value)">
@@ -19965,6 +20297,19 @@ async function setCarNo(uid_, v){
   if (!isAdmin()) return;
   const u = state.data.profiles.find(p => p.id === uid_); if (!u) return;
   const n = String(v).trim() === '' ? null : Math.max(1, Math.min(99, parseInt(v, 10) || 1));   // v1.08.27: номер машины 1–99
+  /* v1.09.40 (п. 29): у водителя есть машина — номер меняется в её карточке (та же RPC vehicle_save, что в «Автомобилях»),
+     профиль следует за ней; так номер в «Сотрудниках» и в «Автомобилях» не расходится */
+  const car = bnVehicles().find(x => x.driver_id === uid_);
+  if (car){
+    if (n != null && bnVehicles().some(x => x.id !== car.id && +x.car_no === n)){ toast('⚠ ' + t('veh_no_taken'), 'err'); render(); return; }
+    if (HAS_SB){
+      const { error } = await state.sb.rpc('vehicle_save', { p_id: car.id, p_make: car.make || '', p_vin: car.vin || '', p_imei: car.imei || '', p_car_no: n, p_driver: uid_ });
+      if (error){ const s = errStr(error); toast('⛔ ' + (/CAR_NO_TAKEN/.test(s) ? t('veh_no_taken') : rpcFail(error, 'vehicle_save')), 'err'); render(); return; }
+    }
+    vehApplyLocal({ ...car, car_no: n }, car.driver_id);
+    audit('veh_save', 'vehicle', car.id, { make: car.make || '', car_no: n, driver: profName(uid_) });
+    toast('✓ ' + t('saved')); render(); return;
+  }
   await dbUpsert('profiles', { ...u, car_no: n });
   audit('car_no_set', 'profile', uid_, { name: u.display_name, car_no: n });   // v1.07.25
   toast('✓ ' + t('saved'));
@@ -21392,8 +21737,8 @@ async function togglePriority(id){
   dlog('priority:', j.unit_number || id, '→', !j.priority);
   renderKeep();
 }
-async function moveJob(id, dir){
-  const iso = state.selDate;
+async function moveJob(id, dir, isoArg){
+  const iso = isoArg || state.selDate;               // v1.09.40: недельная доска передаёт дату карточки
   const order = dayTripJobIds(iso);
   const i = order.indexOf(id);
   const k = i + dir;
@@ -21440,7 +21785,7 @@ function viewBoard(){
     .filter(p => {
       if (p.blocked || hid.has(p.id) || isAccP(p)) return false;   // v1.08.39: бухгалтер на доске не нужен
       const busy = dayJobs.some(j => j.technician_id === p.id) || dayPk.some(x => x.technician_id === p.id);
-      return busy || (p.role === 'tech' && !hideEmpty);
+      return busy || (!hideEmpty && ['tech', 'manager', 'admin'].includes(p.role));   // v1.09.40 (п. 41): свободный руководитель тоже получает колонку
     })
     .sort((a,b) => (a.car_no ?? 999) - (b.car_no ?? 999) || a.display_name.localeCompare(b.display_name));
   const canOrd = boardCanReorder();
@@ -21455,8 +21800,9 @@ function viewBoard(){
     js = js.slice().sort((a, b) => at(jSeq, a.id) - at(jSeq, b.id));
     const pkE = Object.entries(byJob).sort((a, b) => at(pSeq, a[0]) - at(pSeq, b[0]));
     const edited = BRD.on && BRD.date === iso && !!BRD.order[p.id];
-    const cards = js.map((j, i) => boardJobCard(j, i, canOrd)).join('')
-                + pkE.map(([jid, arr]) => boardPkCard(jid, arr, iso, canOrd && pkE.length > 1)).join('');
+    const own = canOrd || p.id === state.user.id;       // v1.09.40 (п. 40): своё — всегда
+    const cards = js.map((j, i) => boardJobCard(j, i, own)).join('')
+                + pkE.map(([jid, arr]) => boardPkCard(jid, arr, iso, own && pkE.length > 1)).join('');
     return `<div class="bcol${edited ? ' bcol-edit' : ''}" data-tech="${p.id}">
       <div class="bcol-h">
         <span class="avatar role-${p.role}">${esc(initials(p.display_name))}</span>
@@ -21517,12 +21863,13 @@ function viewBoardWeek(){
   for (let i = 0; i < 7; i++){
     const iso = addDaysISO(state.weekStart, i);
     const d = parseISO(iso);
-    const js = jobsOn(iso).filter(j => j.technician_id === me || isJobSharedWithMe(j)).sort(jobSortCmp);
+    const js = jobsOn(iso).filter(j => j.technician_id === me || isJobSharedWithMe(j) || (j.helper_ids || []).includes(me)).sort(jobSortCmp);   // v1.09.40 (п. 36): и бригада
     const pls = pickupsOn(iso).filter(p => p.technician_id === me || isPlacementSharedWithMe(p));
     const byJob = {};
     pls.forEach(x => { (byJob[x.job_id] = byJob[x.job_id] || []).push(x); });
-    const cards = js.map((j, i2) => boardJobCard(j, i2, canReorder(j))).join('')
-                + Object.entries(byJob).map(([jid, arr]) => boardPkCard(jid, arr, iso)).join('');
+    /* v1.09.40: ▲▼ своих задач сохраняются сразу, по дате карточки (как на Главной); забранные пикапы — блёклые «✓» и открывают задачу */
+    const cards = js.map((j, i2) => boardJobCard(j, i2, canReorder(j), true)).join('')
+                + Object.entries(byJob).map(([jid, arr]) => arr.some(pkPending) ? boardPkCard(jid, arr.filter(pkPending), iso) : boardPkDoneCard(jid, arr)).join('');
     const sel = iso === state.selDate;
     days.push(`<div class="bcol ${sel ? 'bday-sel' : ''}">
       <div class="bcol-h clicky" role="button" tabindex="0" onclick="App.selDay('${iso}')">
@@ -21536,12 +21883,13 @@ function viewBoardWeek(){
   /* v1.09.05: кнопка плотности и у недельной доски; зазоры в компактном — по 6 */
   return viewWeek() + `<div class="board-tools">${densBtnHtml()}${helpBtn('board')}</div><div class="board" style="--bcolw:calc((100% - ${densIsCompact() ? 36 : 60}px)/7)">${days.join('')}</div>`;
 }
-function boardJobCard(j, idx, canOrd){
+function boardJobCard(j, idx, canOrd, wk){
   const wt = wtById(j.work_type_id), cx = cxById(j.complex_id);
   const col = (wt && wt.color) || '#8AA0AB';
+  const mv = d => wk ? `App.moveJobDay('${j.id}',${d},'${j.date}')` : `App.boardMove('${j.id}',${d})`;
   const rail = canOrd ? `<div class="rail brail" onclick="event.stopPropagation()">
-      <button class="mv" title="${t('move_up')}" onclick="App.boardMove('${j.id}',-1)">${ic('chev_u')}</button>
-      <button class="mv" title="${t('move_down')}" onclick="App.boardMove('${j.id}',1)">${ic('chev_d')}</button>
+      <button class="mv" title="${t('move_up')}" onclick="${mv(-1)}">${ic('chev_u')}</button>
+      <button class="mv" title="${t('move_down')}" onclick="${mv(1)}">${ic('chev_d')}</button>
     </div>` : '';
   const stg = stgApp(j.technician_id, j.complex_id, j.status === 'done' || j.status === 'approved', j.date);   // v1.09.38: этап водителя
   return `<div class="bjob clicky${rail ? ' has-brail' : ''}${stgCls(stg)}" style="border-left-color:${col}" onclick="App.openJob('${j.id}')">
@@ -21553,6 +21901,14 @@ function boardJobCard(j, idx, canOrd){
       <div class="tiny bwt"><span class="dotc" style="background:${col}"></span>${esc((wt && wt.name) || '')}</div>
       ${repBtnHtml(j) ? `<div class="brep">${repBtnHtml(j)}</div>` : ''}</div>
     <span class="bst st-${j.status}" title="${t('status_' + j.status)}"></span>
+  </div>`;
+}
+function boardPkDoneCard(jobId, arr){
+  const agg = {};
+  arr.forEach(p => { const e = etById(p.equipment_type_id); const k = e ? e.abbr : '?'; agg[k] = (agg[k] || 0) + (+p.qty || 1); });
+  return `<div class="bpk bpk-done clicky" data-pk="${jobId}" title="${esc(t('pk_done_b'))}" onclick="App.openJob('${jobId}')">
+    <b>${ic('check')} PU</b> ${esc(Object.entries(agg).map(([k, q]) => `${k}×${q}`).join(' '))}
+    <span class="tiny">${t('pk_done_b')}</span>
   </div>`;
 }
 function boardPkCard(jobId, arr, iso, canOrd){
@@ -21602,7 +21958,6 @@ function brdSeq(techId, kind, iso){
   return ed.filter(id => live.includes(id)).concat(live.filter(id => !ed.includes(id)));   // новое за время правки — в конец
 }
 function boardMove(id, dir, kind){
-  if (!boardCanReorder()) return;
   kind = kind === 'pk' ? 'pk' : 'job';
   const iso = state.selDate;
   if (BRD.on && BRD.date !== iso){ toast('⚠ ' + t('brd_other_day').replace('{D}', fmtDMY(BRD.date)), 'err'); return; }
@@ -21610,6 +21965,7 @@ function boardMove(id, dir, kind){
   if (kind === 'job'){ const j = state.data.jobs.find(x => x.id === id); techId = j && j.technician_id; }
   else { const p0 = state.data.placements.find(x => x.job_id === id && pkPending(x)); techId = p0 && p0.technician_id; }
   if (!techId) return;
+  if (!boardCanReorder() && techId !== state.user.id){ toast('⚠ ' + t('mv_forbid'), 'err'); return; }   // v1.09.40 (п. 40): свою колонку двигает сам
   const seq = brdSeq(techId, kind, iso).slice();
   const i = seq.indexOf(id), k = i + dir;
   if (i < 0 || k < 0 || k >= seq.length){ toast('ℹ ' + t('mv_edge'), 'inf'); return; }
@@ -21888,7 +22244,7 @@ function chainCardBody(node, i, cur, gap){
 function chainModal(kind, id){
   const list = chainOf(kind, id);
   const cur = { t: kind === 'pick' ? null : kind, id };
-  const path = list.map(x => ({ prop: 'PROP', job: 'WORK', pick: 'PICK', ext: 'LONG' })[x.t]).join(' → ');
+  const path = list.map(x => ({ prop: 'PROP', job: 'WORK', pick: 'PICK', ext: 'LONG', rep: 'REP' })[x.t] || '?').join(' → ');
   openModal(`
     ${modalHead(t('ch_title'), 'link')}
     <div class="card" style="margin-bottom:8px">
@@ -22117,7 +22473,7 @@ function propRecalc(){
   if (!propDraft) return 0;
   const s = (propDraft.items || []).reduce((n, it) => n + (+it.a || 0), 0);
   propDraft.total = s;
-  const el = $('#pr-total'); if (el) el.textContent = money(s);
+  const el = $('#pr-total'); if (el) el.textContent = propMoney(s);
   return s;
 }
 /* v1.07.98: коды позиций admin вводит в справочниках «Виды задач» и
@@ -22144,8 +22500,9 @@ function propItemsHtml(){
         oninput="App.propItem(${i},'code',this.value)">
       <textarea class="pd" rows="2" placeholder="${t('prop_desc')}"
         oninput="App.propItem(${i},'d',this.value)">${esc(it.d || '')}</textarea>
-      <input class="pa" inputmode="decimal" value="${it.a || ''}" placeholder="0"
-        oninput="App.propItem(${i},'a',this.value)">
+      ${propMoneyHidden() ? `<input class="pa" value="—" disabled title="${esc(t('prop_price_hidden'))}">`
+        : `<input class="pa" inputmode="decimal" value="${it.a || ''}" placeholder="0"
+        oninput="App.propItem(${i},'a',this.value)">`}
       <button class="btn btn-ghost sm" title="${t('delete')}" aria-label="${t('delete')}"
         onclick="App.propItemDel(${i})">${ic('close')}</button>
     </div>`).join('');
@@ -22193,7 +22550,8 @@ function viewProposalForm(){
     <div id="prop-rows">${propItemsHtml()}</div>
     <button class="btn btn-ghost sm" onclick="App.propItemAdd()">${ic('plus')} ${t('prop_add_row')}</button>
     <div class="total-bar" style="margin-top:8px"><span>${t('total')}</span>
-      <span class="sum ok" id="pr-total">${money(+p.total || 0)}</span></div>
+      <span class="sum ok" id="pr-total">${propMoney(p.total)}</span></div>
+    ${propMoneyHidden() ? `<div class="tiny" style="margin-top:6px">${ic('lock')} ${t('prop_price_hidden')}</div>` : ''}
   </div>
   <div class="card" style="margin:8px 12px">
     <div style="font-weight:900;margin-bottom:6px">${t('prop_note')}
@@ -22204,12 +22562,13 @@ function viewProposalForm(){
   <div style="margin:8px 12px">${trCardHtml('prop', p)}</div>
   ${propById(p.id) ? repPropBoxHtml(p) : ''}
   <div class="card" style="margin:8px 12px">
-    <div class="qty-line"><span class="name">${t('p_tax')}</span>
+    ${propMoneyHidden() ? `<div class="qty-line"><span class="name">${t('p_tax')}</span><span class="money">—</span></div>
+    <div class="qty-line"><span class="name">${t('p_freight')}</span><span class="money">—</span></div>` : `<div class="qty-line"><span class="name">${t('p_tax')}</span>
       <input class="price-input" inputmode="decimal" value="${p.sales_tax || ''}"
         oninput="App.propField('sales_tax', this.value)"></div>
     <div class="qty-line"><span class="name">${t('p_freight')}</span>
       <input class="price-input" inputmode="decimal" value="${p.freight || ''}"
-        oninput="App.propField('freight', this.value)"></div>
+        oninput="App.propField('freight', this.value)"></div>`}
   </div>
   ${propById(p.id) ? `<div class="card" style="margin:8px 12px">
     <div style="font-weight:900;margin-bottom:6px">${ic('link')} ${t('prop_linked')} (${linked.length})</div>
@@ -22224,9 +22583,10 @@ function viewProposalForm(){
   <div style="margin:10px 12px">
     <button class="btn btn-green" onclick="App.saveProposal()">${ic('save')} ${t('save')}</button>
     <div class="btn-rowpp" style="margin-top:8px">
-      <button class="btn btn-blue" onclick="App.makeProposalPdf('${p.id}')">${ic('download')} ${t('prop_pdf')}</button>
-      ${isAdmin() && propById(p.id) ? `<button class="btn btn-red" onclick="App.delProposal('${p.id}')">${ic('trash')} ${t('delete')}</button>` : '<span></span>'}
+      ${propMoneyHidden() ? `<span class="tiny">${ic('lock')} ${t('prop_pdf_hidden')}</span><span></span>` : `<button class="btn btn-blue" onclick="App.makeProposalPdf('${p.id}')">${ic('download')} ${t('prop_pdf')}</button>
+      <button class="btn btn-ghost" id="prop-print" onclick="App.docPrint('prop','${p.id}')">${ic('printer')} ${t('pdf_print')}</button>`}
     </div>
+    ${isAdmin() && propById(p.id) ? `<button class="btn btn-red" style="margin-top:8px" onclick="App.delProposal('${p.id}')">${ic('trash')} ${t('delete')}</button>` : ''}
   </div></div>`;
 }
 async function saveProposal(){
@@ -22283,7 +22643,7 @@ const LEGAL_DEF = 'NOTE: All invoices are due and payable upon receipt. Any bala
   + 'outstanding for a period greater than 30 days will be subject to a finance charge at '
   + "the rate of 1.5% per month. You agree to pay all legal expenses including reasonable attorney's "
   + 'fees, incurred in collection of any past due balances.';
-function makeProposalPdf(id, _go){
+function makeProposalPdf(id, _go, sink){
   /* v1.07.33: печатная форма по образцу QuickBooks-пропозала клиента:
      шапка PROPOSAL + Number/Date/Complete By/Page, блоки To/Ship To,
      сетка Customer ID / PO Number / Contact / Shipping Method (Airborne),
@@ -22291,7 +22651,8 @@ function makeProposalPdf(id, _go){
      итоги Subtotal/Sales Tax/Freight/TOTAL и юридическая приписка. */
   const p = (propDraft && propDraft.id === id) ? propDraft : propById(id);
   if (!p || !window.jspdf){ toast('⛔ PDF', 'err'); return; }
-  if (!_go){ trPdfGuard('prop', p, () => makeProposalPdf(id, true)); return; }   // v1.07.83
+  if (propMoneyHidden()){ toast('⛔ ' + t('prop_pdf_hidden'), 'err'); return; }   // v1.09.40: скрытые цены не уходят и в PDF
+  if (!_go){ trPdfGuard('prop', p, () => makeProposalPdf(id, true, sink)); return; }   // v1.07.83
   const { jsPDF } = window.jspdf;
   const doc = pdfLatinize(new jsPDF({ unit: 'mm', format: 'letter' }));   // 215.9 × 279.4
   const org = state.data.org_settings || {};
@@ -22456,7 +22817,8 @@ function makeProposalPdf(id, _go){
   const legal = String(org.legal_note || '').trim() || LEGAL_DEF;
   doc.text(doc.splitTextToSize(legal, W), L, Math.max(y + 8, 250));
 
-  savePdfCompat(doc, 'Proposal_' + (p.no ?? 'x') + '_' + (cx.abbr || '') + '.pdf');
+  const fname = 'Proposal_' + (p.no ?? 'x') + '_' + (cx.abbr || '') + '.pdf';
+  if (sink) sink(doc, fname); else savePdfCompat(doc, fname);   // v1.09.40: sink — окно «Предпросмотр и печать»
 }
 function propStripHtml(){
   const list = (state.data.proposals || []).filter(p => p.date === state.selDate);
@@ -22894,7 +23256,8 @@ function eqModal(){
       style="border-color:${et.color};${on ? `background:${et.color};color:${textColorFor(et.color)}` : ''}"
       onclick="App.eqEt('${et.id}')">${esc(et.abbr)}</button>`;
   }).join('');
-  const src = d.kind === 'repair' ? `<div class="rowline" style="margin-top:8px">
+  if (d.kind === 'repair' && stockLite()) d.src = 'stock';   // v1.09.40 (п. 43): в облегчённом режиме машины не учитываются
+  const src = d.kind === 'repair' && !stockLite() ? `<div class="rowline" style="margin-top:8px">
       <div class="grow tiny">${t('eq_src')}</div>
       <button class="btn btn-ghost sm ${d.src !== 'car' ? 'eq-on' : ''}" onclick="App.eqSrc('stock')">${t('eq_src_stock')}</button>
       <button class="btn btn-ghost sm ${d.src === 'car' ? 'eq-on' : ''}" onclick="App.eqSrc('car')">${t('eq_src_car')}</button>
@@ -22902,7 +23265,7 @@ function eqModal(){
   const note = (d.kind === 'intake' || d.kind === 'writeoff')
     ? `<input id="eq-note" placeholder="${t('eq_note')}" value="${esc(d.note || '')}" style="margin-top:8px;width:100%">` : '';
   openModal(`
-    <h3 style="margin:0 0 8px">${t('eq_' + d.kind)}</h3>
+    ${modalHead(t('eq_' + d.kind), 'box')}
     <div class="eq-ets">${chips}</div>
     ${src}
     <div class="rowline" style="margin-top:10px">
@@ -22971,9 +23334,11 @@ function repsOfJob(jobId){ return (state.data.repairs || []).filter(r => r.job_i
 function repsOfProp(pid){ return (state.data.repairs || []).filter(r => r.proposal_id === pid && !isArch(r)); }
 function repCanCreate(){ return isManager() || ((state.data.org_settings || {}).rep_all_create !== false); }
 /* Суммы видят все — пока админ не закроет их работникам в настройках */
-function repMoneyHidden(){ return !!((state.data.org_settings || {}).rep_hide_prices) && !isManager(); }
+function repMoneyHidden(){ return !!((state.data.org_settings || {}).rep_hide_prices) && !isManager() && !isAcc(); }   // v1.09.40: бухгалтер — не «работник»
 function repMoney(v){ return repMoneyHidden() ? '—' : money(+v || 0); }
 function repCanEdit(r){ return !!r && (isManager() || r.created_by === state.user.id); }
+/* v1.09.40 (п. 17): сохранённый документ, который человеку не править (помощник, чужой) — только просмотр */
+function repRo(r){ return !!r && !!repById(r.id) && !repCanEdit(r); }
 function repCanDecide(){ return canApprove(); }
 
 /* Признак «после этой задачи нужна отделка»: вид задачи, доп. работы или
@@ -23138,6 +23503,7 @@ function repKey(r){
 }
 function repDirty(){
   if (!repDraft) return false;
+  if (repRo(repDraft)) return false;                 // v1.09.40: просмотр — нечего сохранять
   const ta = $('#rep-note'); if (ta) repDraft.note = ta.value;
   const orig = repById(repDraft.id);
   return orig ? repKey(repDraft) !== repKey(orig) : true;
@@ -23238,9 +23604,9 @@ function repCrewDel(id){
 
 /* ---------- статус и апрув ---------- */
 function repStSegHtml(r){
-  const can = repCanDecide();
+  const can = repCanDecide(), ro = repRo(r);
   return ['draft', 'sent', 'approved', 'declined'].map(s => {
-    const lock = (s === 'approved' || s === 'declined') && !can;
+    const lock = ro || ((s === 'approved' || s === 'declined') && !can);
     return `<button class="${r.status === s ? 'on' : ''}" ${lock ? 'disabled title="' + t('rep_no_rights') + '"' : ''}
       onclick="App.repSetStatus('${s}')">${t('pst_' + s)}</button>`;
   }).join('');
@@ -23264,7 +23630,7 @@ function repAprInnerHtml(r){
     <div class="tiny">${who}</div>
     ${r.status === 'declined' && r.decline_reason ? `<div class="tiny" style="margin-top:4px">${ic('warn')} ${esc(r.decline_reason)}</div>` : ''}
     ${r.status === 'approved' ? `<div class="banner b-yellow" style="margin:8px 0">${ic('warn')} ${t('rep_reset_note')}</div>` : ''}
-    ${(r.status === 'draft' || r.status === 'declined') ? `<button class="btn btn-blue" style="margin-top:8px"
+    ${(r.status === 'draft' || r.status === 'declined') && !repRo(r) ? `<button class="btn btn-blue" style="margin-top:8px"
       onclick="App.repSetStatus('sent')">${ic('send')} ${t('rep_send')}</button>` : ''}
     ${can && r.status !== 'draft' ? `<div class="btn-rowpp" style="margin-top:8px">
       <button class="btn btn-green" onclick="App.repSetStatus('approved')">${ic('check')} ${t('rep_approve')}</button>
@@ -23276,6 +23642,7 @@ function repAprInnerHtml(r){
 }
 async function repSetStatus(s){
   const r = repDraft; if (!r) return;
+  if (repRo(r) && !((s === 'approved' || s === 'declined') && repCanDecide())){ toast('⛔ ' + t('rep_no_edit'), 'err'); return; }   // v1.09.40: право — до изменения
   if ((s === 'approved' || s === 'declined') && !repCanDecide()){ toast('⛔ ' + t('rep_no_rights'), 'err'); return; }
   if (s === 'declined'){ r.decline_reason = (($('#rep-why') || {}).value || '').trim(); }
   if (s === 'approved') r.decline_reason = '';
@@ -23303,12 +23670,12 @@ function viewRepairList(){
     const cx = cxById(r.complex_id) || { abbr: '—', name: '—' };
     return `<button class="rowline map-row" onclick="App.openRepair('${r.id}')">
       <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span>
-      <div class="grow"><b>R-${r.no ?? '·'}</b> · ${esc(cx.abbr || cx.name)}${r.unit_number ? ` · Unit <b>${esc(r.unit_number)}</b>` : ''}
+      <div class="grow"><b>${esc(repNo(r))}</b> · ${esc(cx.abbr || cx.name)}${r.unit_number ? ` · Unit <b>${esc(r.unit_number)}</b>` : ''}
         <div class="tiny">${fmtDMY(r.date)}${r.job_id ? ` · ${ic('link')} WORK` : ''}</div></div>
       <span class="money">${repMoney(repGrand(r))}</span>
     </button>`;
   }).join('');
-  return `<div class="prop-wrap"><div class="section-title">${t('tab_repairs')}${helpBtn('repairs')}</div>
+  return `<div class="prop-wrap"><div class="section-title">${t('tab_repairs')}${helpBtn('rep_screen')}</div>
   <div class="tabs" style="margin:0 12px 8px">${chips}</div>
   <div class="card" style="margin:0 12px">${rows || `<div class="list-empty">${t('no_items')}</div>`}</div>
   ${repCanCreate() ? `<button class="btn btn-green" style="margin:10px 12px" onclick="App.openRepair()">${ic('plus')} ${t('rep_new')}</button>`
@@ -23323,11 +23690,13 @@ function viewRepairForm(){
   const src = job ? t('rep_src_job') + ' ' + (docNo('job', job) || 'WORK')
             : prop ? t('rep_src_prop') + ' ' + (docNo('prop', prop) || ('P-' + (prop.no ?? '·')))
             : t('rep_src_self');
-  const hide = repMoneyHidden();
-  return `<div class="prop-wrap">
+  const hide = repMoneyHidden(), ro = repRo(r);
+  return `<div class="prop-wrap${ro ? ' rep-ro' : ''}">
   ${docBarHtml({ chain: `App.chain('rep','${r.id}')`, share: (state.data.repairs || []).some(x => x.id === r.id) ? `App.docShare('rep','${r.id}')` : '',
                  title: `${docNo('rep', r) || t('tab_repairs') + ' · R-' + (r.no ?? '…')}`,
-                 save: 'App.saveRepair()', close: 'App.repClose()', dirty: repDirty() })}
+                 save: ro ? '' : 'App.saveRepair()', close: 'App.repClose()', dirty: ro ? false : repDirty() })}
+  ${ro ? `<div class="banner b-yellow" id="rep-ro" style="margin:0 12px 8px">${ic('lock')} ${t('rep_ro_note')}</div>` : ''}
+  <fieldset class="rep-fs" ${ro ? 'disabled' : ''}>
   <div class="card" style="margin:0 12px">
     <div class="tiny" style="margin-bottom:8px">${ic('link')} ${esc(src)}</div>
     <div class="form-row"><span class="lbl">${t('date')}</span>
@@ -23395,6 +23764,7 @@ function viewRepairForm(){
     ${dictationHTML('rep-note', r.note || '', 'repdraft')}
   </div>
   <div style="margin:8px 12px">${trCardHtml('rep', r)}</div>
+  </fieldset>
 
   <div style="margin:8px 12px">
     <div class="tiny" style="margin:0 2px 4px">${t('rep_media_h')}</div>
@@ -23402,6 +23772,7 @@ function viewRepairForm(){
   </div>
   ${repPhotoCardHtml(r)}
 
+  <fieldset class="rep-fs" ${ro ? 'disabled' : ''}>
   <div class="card" style="margin:8px 12px">
     <div class="qty-line"><span class="name">${t('rep_works_sum')}</span><span class="money" id="rp-works">${repMoney(repWorks(r))}</span></div>
     <div class="qty-line"><span class="name">${t('rep_mats_sum')}</span><span class="money" id="rp-mats">${repMoney(repMats(r))}</span></div>
@@ -23414,6 +23785,7 @@ function viewRepairForm(){
     <div class="total-bar" style="margin-top:8px"><span>${t('rep_grand')}</span>
       <span class="sum ${r.status === 'approved' ? 'ok' : 'pend'}" id="rp-grand">${repMoney(repGrand(r))}</span></div>
   </div>
+  </fieldset>
 
   <div class="card" id="rep-apr" style="margin:8px 12px;border-color:var(--purple)">${repAprInnerHtml(r)}</div>
 
@@ -23422,23 +23794,23 @@ function viewRepairForm(){
     ${job ? `<div class="rowline"><div class="grow">WORK · ${esc((cxById(job.complex_id) || {}).abbr || '')} · Unit <b>${esc(job.unit_number || '—')}</b>
         <span class="tiny">· ${fmtDMY(job.date)}</span></div>
       <button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.openJob('${job.id}')">${ic('chev_r')}</button>
-      <button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.repUnlink('job')">${ic('close')}</button></div>` : ''}
+      ${ro ? '' : `<button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.repUnlink('job')">${ic('close')}</button>`}</div>` : ''}
     ${prop ? `<div class="rowline"><div class="grow">PROPOSAL · P-${prop.no ?? '·'}
         <span class="tiny">· ${fmtDMY(prop.date)}</span></div>
       ${isManager() ? `<button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.openProposal('${prop.id}')">${ic('chev_r')}</button>` : ''}
-      <button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.repUnlink('prop')">${ic('close')}</button></div>` : ''}
+      ${ro ? '' : `<button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.repUnlink('prop')">${ic('close')}</button>`}</div>` : ''}
     ${!job && !prop ? `<div class="tiny">—</div>` : ''}
-    ${repJobPickerHtml(r)}
-    ${repPropPickerHtml(r)}
+    ${ro ? '' : repJobPickerHtml(r)}
+    ${ro ? '' : repPropPickerHtml(r)}
   </div>
 
   <div style="margin:10px 12px">
-    <button class="btn btn-green" onclick="App.saveRepair()">${ic('save')} ${t('save')}</button>
-    <div class="btn-rowpp" style="margin-top:8px">
+    ${ro ? '' : `<button class="btn btn-green" onclick="App.saveRepair()">${ic('save')} ${t('save')}</button>`}
+    ${hide ? `<div class="tiny" style="margin-top:8px">${ic('lock')} ${t('rep_pdf_hidden')}</div>` : `<div class="btn-rowpp" style="margin-top:8px">
       <button class="btn btn-blue" onclick="App.makeRepairPdf('${r.id}')">${ic('download')} ${t('rep_pdf')}</button>
-      <button class="btn btn-ghost" onclick="App.repPrint('${r.id}')">${ic('report')} ${t('pdf_print')}</button>
+      <button class="btn btn-ghost" id="rep-print" onclick="App.repPrint('${r.id}')">${ic('printer')} ${t('pdf_print')}</button>
       <span></span>
-    </div>
+    </div>`}
     ${(r.status === 'approved' && r.job_id) ? `<button class="btn btn-ghost" style="margin-top:8px"
       onclick="App.repToInvoice('${r.id}')">${ic('receipt')} ${t('rep_to_inv')}</button>` : ''}
     ${(repById(r.id) && (isAdmin() || r.created_by === state.user.id)) ? `<button class="btn btn-red" style="margin-top:8px"
@@ -23522,7 +23894,7 @@ function repCleanItems(list){
 }
 async function saveRepair(quiet){
   const r = repDraft; if (!r) return;
-  if (repById(r.id) && !repCanEdit(r)){ toast('⛔ ' + t('rep_no_rights'), 'err'); return; }
+  if (repById(r.id) && !repCanEdit(r)){ toast('⛔ ' + t('rep_no_edit'), 'err'); return; }   // v1.09.40: дело не в апруве
   dictStop();
   r.counterparty_id = ($('#nt-cp') || {}).value || r.counterparty_id;
   r.complex_id = ($('#nt-cx') || {}).value || r.complex_id;
@@ -23611,7 +23983,7 @@ function repBoxHtml(j){
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       ${ic('toolbox')} <b>${t('rep_doc')}</b>
       ${list.map(r => `<button class="btn btn-ghost sm" onclick="App.openRepair('${r.id}')">
-        <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span> R-${r.no ?? '·'} · ${repMoney(repGrand(r))}</button>`).join('')}
+        <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span> ${esc(repNo(r))} · ${repMoney(repGrand(r))}</button>`).join('')}
       ${repCanCreate() ? `<button class="btn btn-blue sm" onclick="App.newRepairFromJob('${j.id}')">${ic('plus')} ${t('rep_new')}</button>` : ''}
     </div>
     ${need && !list.length ? `<div class="tiny" style="margin-top:4px">${ic('warn')} ${t('rep_hint_needed')}</div>` : ''}
@@ -23637,10 +24009,11 @@ function repPropBoxHtml(p){
 }
 
 /* ---------- PDF ---------- */
-function makeRepairPdf(id, _go){
+function makeRepairPdf(id, _go, sink){
   const r = (repDraft && repDraft.id === id) ? repDraft : repById(id);
   if (!r || !window.jspdf){ toast('⛔ PDF', 'err'); return; }
-  if (!_go){ trPdfGuard('rep', r, () => makeRepairPdf(id, true)); return; }
+  if (repMoneyHidden()){ toast('⛔ ' + t('rep_pdf_hidden'), 'err'); return; }   // v1.09.40
+  if (!_go){ trPdfGuard('rep', r, () => makeRepairPdf(id, true, sink)); return; }
   const { jsPDF } = window.jspdf;
   const doc = pdfLatinize(new jsPDF({ unit: 'mm', format: 'letter' }));
   const org = state.data.org_settings || {};
@@ -23795,13 +24168,10 @@ function makeRepairPdf(id, _go){
   const legal = String(org.legal_note || '').trim() || LEGAL_DEF;
   doc.text(doc.splitTextToSize(legal, W), L, Math.max(y + 8, 250));
 
-  savePdfCompat(doc, 'Repair_' + (r.no ?? 'x') + '_' + (cx.abbr || '') + '.pdf');
+  const fname = 'Repair_' + (r.no ?? 'x') + '_' + (cx.abbr || '') + '.pdf';
+  if (sink) sink(doc, fname); else savePdfCompat(doc, fname);
 }
-function repPrint(id){
-  const r = (repDraft && repDraft.id === id) ? repDraft : repById(id);
-  if (!r) return;
-  makeRepairPdf(id);
-}
+function repPrint(id){ docPrint('rep', id); }   // v1.09.40: печать, а не второе «Скачать»
 /* полоса документов ремонта на доске */
 function repStripHtml(){
   const list = (state.data.repairs || []).filter(r => !isArch(r) && r.date === state.selDate);
@@ -23940,10 +24310,10 @@ async function assignJob(id, techId){
   render();
 }
 
-function extReqStripHtml(){
+function extReqStripHtml(title){
   const list = (state.data.ext_requests || []).filter(r => r.status === 'pending');
   if (!list.length) return '';
-  return `<div class="section-title" style="margin-top:2px">${t('ext_req_title')} <span class="chip warn">${list.length}</span></div>
+  return `<div class="section-title" style="margin-top:2px">${title || t('ext_req_title')} <span class="chip warn">${list.length}</span></div>
   <div class="pstrip">${list.map(r => `
     <div class="pcard reqcard">
       <div><b>Unit ${esc(r.unit || '—')}</b> · ${esc(r.cx || '')}</div>
@@ -26769,6 +27139,9 @@ async function mPutChunk(url, range, body, viaRelay){
     headers: { Authorization: 'Bearer ' + token, 'x-tl-url': url, 'x-tl-range': range },
     body: body || undefined });
   const j = await r.json().catch(() => ({}));
+  /* v1.09.40: посредник 1.09.40 пускает только в сессию своего файла; сессия, открытая до обновления
+     (или уже закрытая), для него чужая — это сигнал открыть новую, как при мёртвой сессии Google */
+  if (j.error === 'RELAY_FORBIDDEN') return { status: 410, range: '', id: '' };
   if (!r.ok && !j.status) throw new Error(j.error || ('relay ' + r.status));
   return { status: Number(j.status) || 0, range: j.range || '', id: j.id || '' };
 }
@@ -28157,34 +28530,13 @@ function mediaSettingsCardHtml(){
       <input type="checkbox" ${gdTrimOn() ? 'checked' : ''} onchange="App.gdTrimToggle(this.checked)"> ${t('gd_trim')}</label>
     <div class="tiny gd-hint">${gdTrimOn() ? t('gd_trim_hint') : t('gd_folder_hint')}</div>
     ${gdRootsRowsHtml()}
-    ${isAdmin() ? `<label class="opt ${((state.data.org_settings || {}).prop_mgr_create) ? 'on' : ''}">
-      <input type="checkbox" ${((state.data.org_settings || {}).prop_mgr_create) ? 'checked' : ''}
-        onchange="App.setOrgFlag('prop_mgr_create', this.checked)"> ${t('prop_mgr')}</label>
-    <label class="opt ${propSendOn() ? 'on' : ''}" id="opt-prop-send">
-      <input type="checkbox" ${propSendOn() ? 'checked' : ''} onchange="App.setOrgFlag('prop_send_on', this.checked)"> ${t('prop_send_chk')}</label>
-    <div class="tiny gd-hint">${t('prop_mgr_h')}</div>
-    <label class="opt ${((state.data.org_settings || {}).prop_hide_prices !== false) ? 'on' : ''}">
-      <input type="checkbox" ${((state.data.org_settings || {}).prop_hide_prices !== false) ? 'checked' : ''}
-        onchange="App.setOrgFlag('prop_hide_prices', this.checked)"> ${t('prop_hide')}</label>
-    <div class="tiny gd-hint">${t('prop_hide_h')}</div>
-    <label class="opt ${((state.data.org_settings || {}).rep_all_create !== false) ? 'on' : ''}">
-      <input type="checkbox" ${((state.data.org_settings || {}).rep_all_create !== false) ? 'checked' : ''}
-        onchange="App.setOrgFlag('rep_all_create', this.checked)"> ${t('rep_all_create')}</label>
-    <div class="tiny gd-hint">${t('rep_all_create_h')}</div>
-    <label class="opt ${((state.data.org_settings || {}).rep_hide_prices) ? 'on' : ''}">
-      <input type="checkbox" ${((state.data.org_settings || {}).rep_hide_prices) ? 'checked' : ''}
-        onchange="App.setOrgFlag('rep_hide_prices', this.checked)"> ${t('rep_hide')}</label>
-    <div class="tiny gd-hint">${t('rep_hide_h')}</div>` : ''}
     <label class="opt ${((state.data.org_settings || {}).gd_inv_helpers) ? 'on' : ''}">
       <input type="checkbox" ${((state.data.org_settings || {}).gd_inv_helpers) ? 'checked' : ''}
         onchange="App.setOrgFlag('gd_inv_helpers', this.checked)"> ${t('inv_helpers')}</label>
     <div class="tiny gd-hint">${t('inv_helpers_h')}</div>
-    <label class="opt ${((state.data.org_settings || {}).gd_inv_by_tech) ? 'on' : ''}"
-      style="margin:6px 0 2px" title="${esc(t('gd_inv_tech_tip'))}">
-      <input type="checkbox" disabled ${((state.data.org_settings || {}).gd_inv_by_tech) ? 'checked' : ''}> ${t('gd_inv_tech')}
+    <div class="tiny gd-inv-line" style="margin:6px 0 2px">${ic('folder')} ${t('gd_inv_tech_line')}
       <button type="button" class="pri inline" title="${esc(t('gd_inv_tech_tip'))}"
-        onclick="event.preventDefault();event.stopPropagation();App.toastInfo('gd_inv_tech_tip')">${ic('help')}</button>
-    </label>
+        onclick="event.preventDefault();event.stopPropagation();App.toastInfo('gd_inv_tech_tip')">${ic('help')}</button></div>
     <div class="tiny gd-hint">${t('gd_inv_tech_ex')}: <span class="gd-mark">${esc(gdInvPathSample())}</span></div>
     <span class="gd-folder-chip" id="gd-folder-chip" style="${gdCfg.folder_id ? '' : 'display:none'}">${gdCfg.folder_id
       ? ic('folder') + ' ' + esc((gdFolders && gdFolders.root && gdFolders.root.id === gdCfg.folder_id && gdFolders.root.name) || gdCfg.folder_id)
@@ -28283,8 +28635,9 @@ const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
 const MEDIA_FN_VER = '1.08.12';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
-const MEDIA_FN_MIN = { 'media-begin': '1.09.10', 'media-commit': '1.09.10', 'media-health': '1.09.10',   // v1.09.10: папка заблокированного сотрудника
-                       'media-delete': '1.08.71' };   // v1.08.71: замок на архивацию апрувнутого документа
+const MEDIA_FN_MIN = { 'media-begin': '1.09.40', 'media-commit': '1.09.10', 'media-health': '1.09.10',   // v1.09.10: папка заблокированного сотрудника
+                       'media-put': '1.09.40',      // v1.09.40: докачка только в сессию своего файла (media-begin пишет upload_id)
+                       'media-delete': '1.09.40' };   // v1.09.40: помощник с общим доступом убирает PDF в архив; своя версия в ver
 const MEDIA_FN_MIN_DEF = '1.07.72';
 function mFnVerOk(ver, name){
   const need = (MEDIA_FN_MIN[name] || MEDIA_FN_MIN_DEF).split('.').map(Number);
@@ -28307,7 +28660,7 @@ function mFnVerOk(ver, name){
 const SRV_FNS = [
   { name: 'media-health', group: 'media' }, { name: 'media-begin', group: 'media' }, { name: 'media-put', group: 'media' }, { name: 'media-commit', group: 'media' },
   { name: 'media-view', group: 'media' }, { name: 'media-delete', group: 'media' }, { name: 'media-oauth', group: 'media' },
-  { name: 'push', min: '1.09.23', group: 'push' }, { name: 'backup', min: '1.09.19', group: 'backup' },
+  { name: 'push', min: '1.09.40', group: 'push' }, { name: 'backup', min: '1.09.19', group: 'backup' },
   { name: 'bouncie', min: '1.09.10', group: 'bouncie' }, { name: 'dft', min: '1.09.37', group: 'dft' }   // dft 1.09.37: probe — диагноз функций со стороны сервера
 ];
 /* v1.09.37: подстановка ВСЕХ вхождений {X} — String.replace со строкой меняет только первое (так уже дважды оставались «{NEW}» и «{N}») */
@@ -30885,6 +31238,7 @@ function editEwModal(id){
     <div class="form-row"><span class="lbl">${t('price_lbl')} <span class="tiny">(${t('price_per_size')} — ${t('price_size_note')})</span></span>
       <input id="ew-price" class="price-input" inputmode="decimal" value="${w.price||''}" style="width:120px"></div>
     <label class="opt ${w.needs_size?'on':''}" style="margin-bottom:8px"><input type="checkbox" id="ew-size" ${w.needs_size?'checked':''} onchange="this.closest('.opt').classList.toggle('on', this.checked)"> ${ic('ruler')} ${t('needs_size')}</label>
+    <label class="opt ${w.repair?'on':''}" style="margin-bottom:8px"><input type="checkbox" id="ew-rep" ${w.repair?'checked':''} onchange="this.closest('.opt').classList.toggle('on', this.checked)"> ${ic('toolbox')} ${t('ew_repair')}</label>
     <div class="form-row"><span class="lbl">${t('size_type')}</span>
       <select id="ew-szt">
         <option value="">—</option>
@@ -30903,6 +31257,7 @@ async function saveEw(id, sort){
     needs_size: $('#ew-size').checked,
     size_type_id: $('#ew-szt').value || null,
     price: parseFloat($('#ew-price').value) || 0,
+    repair: !!(($('#ew-rep') || {}).checked),          // v1.09.40 (п. 28)
     sort
   });
   closeModal(); toast('✓ ' + t('saved')); render();
@@ -31009,12 +31364,15 @@ function haversineMi(a, b){
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 function statScopeJobs(){
-  let js = scopeFilter(state.data.jobs, 'technician_id');
+  let js = scopeFilter(liveJobs(), 'technician_id');          // v1.09.40: помеченное на удаление в статистику не идёт
+  const me = state.user.id, crew = liveJobs().filter(j => !js.includes(j) && ((j.helper_ids || []).includes(me) || isJobSharedWithMe(j)));   // п. 36: и бригада
+  if (crew.length) js = js.concat(crew);
   if (state.statMine) js = js.filter(j => j.technician_id === state.user.id || (j.helper_ids||[]).includes(state.user.id));
   return js;
 }
 function statScopePlacements(){
-  let ps = scopeFilter(state.data.placements, 'technician_id');
+  const dead = new Set(archJobs().map(j => j.id));            // v1.09.40: без архивных пикапов и пикапов архивных задач
+  let ps = scopeFilter((state.data.placements || []).filter(p => !p.archived_at && !dead.has(p.job_id)), 'technician_id');
   if (state.statMine) ps = ps.filter(p => p.technician_id === state.user.id);
   return ps;
 }
@@ -31292,13 +31650,16 @@ function accCrewOf(kind, d){
   return out;
 }
 function accCrewNames(ids){ return ids.map(id => shortName(profName(id))).join(', ') || '—'; }
+/* v1.09.40: сколько выставлено клиенту. У ремонта в PDF «Всего» = задачи + материалы + налог + доставка —
+   долг, оплаты и отметка «оплачен» считаются от этой суммы; база для процентов (sp.total) — без налога и доставки */
+function accBill(kind, sp){ return kind === 'rep' ? accR2((+sp.total || 0) + (+sp.extra || 0)) : (+sp.total || 0); }
 function accDocRow(kind, d){
   const sp = kind === 'job' ? accSplitJob(d) : accSplitRep(d);
-  return { kind, id: d.id, doc: d, date: d.date || '', no: kind === 'job' ? docNo('inv', d) : ('REP-' + (d.no ?? '—')),
+  return { kind, id: d.id, doc: d, date: d.date || '', no: kind === 'job' ? docNo('inv', d) : repNo(d),
            cx: cxById(d.complex_id) || null, unit: d.unit_number || '', crew: accCrewOf(kind, d),
            status: d.status, note: d.note || '', note_en: d.note_en || '',
            acc_status: d.acc_status || '', acc_note: d.acc_note || '', acc_at: d.acc_at || null, acc_by: d.acc_by || null,
-           sp, total: sp.total, pay: accPay(sp), arch: !!d.archived_at, ...apFacts(kind, d, sp.total) };
+           sp, total: sp.total, bill: accBill(kind, sp), pay: accPay(sp), arch: !!d.archived_at, ...apFacts(kind, d, accBill(kind, sp)) };
 }
 function accDocs(){
   const f = accF();
@@ -31402,9 +31763,9 @@ function apFacts(kind, d, total){
 }
 function apBucket(age, due){ return due <= 0.005 ? '' : age <= 0 ? 'cur' : age <= 30 ? 'b30' : age <= 60 ? 'b60' : age <= 90 ? 'b90' : 'b90p'; }
 function apChipHtml(r){
-  if (!(r.total > 0.005)) return '';
+  if (!(r.bill > 0.005)) return '';
   if (r.paid > 0.005 && r.due <= 0.005) return `<span class="chip ok ap-chip" title="${t('ap_paid_full')}">${ic('check')} ${money(r.paid)}</span>`;
-  if (r.paid > 0.005) return `<span class="chip warn ap-chip" title="${t('ap_paid_part')}">${money(r.paid)} / ${money(r.total)}</span>`;
+  if (r.paid > 0.005) return `<span class="chip warn ap-chip" title="${t('ap_paid_part')}">${money(r.paid)} / ${money(r.bill)}</span>`;
   if (r.age > 0) return `<span class="chip bad ap-chip" title="${t('ap_due_on')} ${fmtDMY(r.dueDate)}">${t('ap_over')} ${r.age} ${t('ap_days')}</span>`;
   return '';
 }
@@ -31436,7 +31797,7 @@ function apBlockHtml(r){
   const id = 'ap-' + r.id;
   return `<div class="ap-box" id="${id}">
     <div class="ap-head"><b>${ic('receipt')} ${t('ap_title')}</b>
-      <span class="tiny">${t('acc_total')}: <b>${money(r.total)}</b> · ${t('ap_paid')}: <b>${money(r.paid)}</b> · ${t('ap_due')}: <b class="${r.due > 0.005 ? (r.age > 0 ? 'ap-bad' : '') : 'ap-ok'}">${money(r.due)}</b>${r.due > 0.005 && r.dueDate ? ` · ${t('ap_due_on')} ${fmtDMY(r.dueDate)}${r.age > 0 ? ` (${t('ap_over')} ${r.age} ${t('ap_days')})` : ''}` : ''}</span></div>
+      <span class="tiny">${t('acc_total')}: <b>${money(r.bill)}</b> · ${t('ap_paid')}: <b>${money(r.paid)}</b> · ${t('ap_due')}: <b class="${r.due > 0.005 ? (r.age > 0 ? 'ap-bad' : '') : 'ap-ok'}">${money(r.due)}</b>${r.due > 0.005 && r.dueDate ? ` · ${t('ap_due_on')} ${fmtDMY(r.dueDate)}${r.age > 0 ? ` (${t('ap_over')} ${r.age} ${t('ap_days')})` : ''}` : ''}</span></div>
     ${AP.noDb ? `<div class="banner b-yellow" style="margin:6px 0">${ic('warn')} ${t('ap_need_sql')}</div>` : ''}
     ${rows || `<div class="tiny" style="margin:4px 0">${t('ap_none')}</div>`}
     <div class="ap-form">
@@ -31467,7 +31828,7 @@ async function apAdd(kind, docId){
   /* оплачено полностью — отметка учёта «оплачен» ставится сама */
   try{
     const d = kind === 'job' ? state.data.jobs.find(x => x.id === docId) : (state.data.repairs || []).find(x => x.id === docId);
-    if (d){ const r = accDocRow(kind, d); if (r.due <= 0.005 && r.total > 0.005 && (d.acc_status || '') !== 'paid') await accMarkOne(kind, docId, 'paid', d.acc_note || ''); }
+    if (d){ const r = accDocRow(kind, d); if (r.due <= 0.005 && r.bill > 0.005 && (d.acc_status || '') !== 'paid') await accMarkOne(kind, docId, 'paid', d.acc_note || ''); }
   }catch(e){ dlog('⚠ ap auto-paid:', e); }
   toast('✓ ' + t('ap_added')); render();
 }
@@ -31493,7 +31854,7 @@ function apOpenDocs(){
 }
 function viewAccAr(){
   const f = accF();
-  const docs = apOpenDocs().filter(r => r.total > 0.005);
+  const docs = apOpenDocs().filter(r => r.bill > 0.005);
   const open = docs.filter(r => r.due > 0.005).sort((a, b) => b.age - a.age || String(a.date).localeCompare(String(b.date)));
   const B = ['cur', 'b30', 'b60', 'b90', 'b90p'];
   const byCp = {};
@@ -31536,9 +31897,9 @@ function apGoDoc(id, date){
 function apCsv(){
   const q = v => { const s = String(v == null ? '' : v); return /[",\n;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
   const n = v => (Math.round((+v || 0) * 100) / 100).toFixed(2);
-  const docs = apOpenDocs().filter(r => r.total > 0.005).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  const docs = apOpenDocs().filter(r => r.bill > 0.005).sort((a, b) => String(a.date).localeCompare(String(b.date)));
   const head = [t('date'), '№', t('counterparty'), t('d_complexes'), 'Unit', t('acc_total'), t('ap_paid'), t('ap_due'), t('ap_due_on'), t('ap_over') + ' (' + t('ap_days') + ')', t('ap_f_date') + ' (last)', t('ap_list')];
-  const lines = docs.map(r => [fmtDMY(r.date), r.no, (cpById(r.doc.counterparty_id) || {}).name || '', r.cx ? r.cx.name : '', r.unit, n(r.total), n(r.paid), n(r.due), r.dueDate ? fmtDMY(r.dueDate) : '', r.age,
+  const lines = docs.map(r => [fmtDMY(r.date), r.no, (cpById(r.doc.counterparty_id) || {}).name || '', r.cx ? r.cx.name : '', r.unit, n(r.bill), n(r.paid), n(r.due), r.dueDate ? fmtDMY(r.dueDate) : '', r.age,
     r.lastPaid ? fmtDMY(r.lastPaid) : '', apFor(r.kind, r.id).map(x => fmtDMY(x.paid_on) + ' ' + n(x.amount) + ' ' + x.method + (x.ref ? ' #' + x.ref : '')).join(' | ')].map(q).join(','));
   const blob = new Blob(['\ufeff' + [head.map(q).join(',')].concat(lines).join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'techlog-ar-aging-' + todayISO() + '.csv';
@@ -31590,7 +31951,7 @@ function accRowHtml(r, f){
       <div class="acc-c acc-c-num" data-l="${accCatName('rep')}">${accMoneyCell(r.sp.rep)}</div>
       <div class="acc-c acc-c-num" data-l="${accCatName('rent')}">${accMoneyCell(r.sp.rent)}${accRentHint(r.sp)}</div>
       <div class="acc-c acc-c-num" data-l="${accCatName('mat')}">${accMoneyCell(r.sp.mat)}</div>
-      <div class="acc-c acc-c-num acc-c-tot" data-l="${t('acc_total')}"><b class="money">${money(r.total)}</b></div>
+      <div class="acc-c acc-c-num acc-c-tot" data-l="${t('acc_total')}"><b class="money">${money(r.total)}</b>${r.bill - r.total > 0.005 ? `<div class="tiny acc-bill" title="${esc(t('acc_bill_extra'))}">${ic('receipt')} ${money(r.bill)}</div>` : ''}</div>
       <div class="acc-c acc-c-num acc-c-pay" data-l="${esc(accLabel())}"><b>${money(r.pay)}</b></div>
       <div class="acc-c acc-c-st">${statusHtml}${accStBadge(r.acc_status)}${apChipHtml(r)}</div>
       <div class="acc-c acc-c-note">${noteOn ? `<span class="acc-note-ic" title="${esc(notePrev)}">${ic('note')}</span>` : ''}<span class="sec-chev">${ic('chev_d')}</span></div>

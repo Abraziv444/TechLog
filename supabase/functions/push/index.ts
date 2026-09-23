@@ -23,11 +23,14 @@ import webpush from "npm:web-push@3.6.7";
      ?send=1                    — разобрать очередь. Авторизация: любой
        вошедший ЛИБО заголовок x-cron-key = app_secrets.push_cron_key
        (для внешнего расписания, если захочется).
+       v1.09.40: вошедший — только не заблокированный; утренняя сводка (morning=1) — только
+       расписанию и админу; обычный пользователь будит очередь не чаще раза в 15 с на всю фирму
+       (иначе ответ {ok, throttled}) — приложение и так пингует раз в ~2 минуты.
    Очередь разгребается, пока хоть кто-то из фирмы онлайн: клиент
    пингует ?send=1 раз в ~2 минуты и сразу после действий-триггеров.
    ===================================================================== */
 
-const PUSH_VER = "1.09.38";
+const PUSH_VER = "1.09.40";
 type Sb = ReturnType<typeof svc>;
 
 async function vapid(s: Sb): Promise<{ pub: string; priv: string }> {
@@ -255,17 +258,25 @@ Deno.serve(async (req) => {
 
     /* рассылка: вошедший ИЛИ cron-ключ */
     if (url.searchParams.get("send")) {
-      let allowed = req.headers.get("x-cron-key") === await cronKey(s);
-      if (!allowed) {
+      const cron = req.headers.get("x-cron-key") === await cronKey(s);
+      let admin = false;
+      if (!cron) {
         const { data: u } = await userClient(req).auth.getUser();
-        allowed = !!u?.user;
+        if (!u?.user) return jres({ error: "FORBIDDEN" }, 403);
+        const { data: pr } = await s.from("profiles").select("role, blocked").eq("id", u.user.id).maybeSingle();
+        if (!pr || (pr as any).blocked) return jres({ error: "FORBIDDEN" }, 403);
+        admin = (pr as any).role === "admin";
+        if (!admin) {
+          const { data: last } = await s.from("app_secrets").select("value").eq("key", "push_last_ping").maybeSingle();
+          const ago = last?.value ? Date.now() - Date.parse(String(last.value)) : Infinity;
+          if (ago >= 0 && ago < 15000) return jres({ ok: true, throttled: true, sent: 0 });
+        }
       }
-      if (!allowed) return jres({ error: "FORBIDDEN" }, 403);
       /* v1.09.22: отметка «кто разбудил» — для экрана «Доставка уведомлений»: расписание, толчок от базы, приложение */
       const by = req.headers.get("x-cron-key") ? (url.searchParams.get("kick") ? "push_last_kick" : "push_last_cron") : "push_last_ping";
       try { await s.from("app_secrets").upsert([{ key: by, value: new Date().toISOString() }], { onConflict: "key" }); } catch (_e) { /* не критично */ }
       let morning = 0;
-      if (url.searchParams.get("morning")) morning = await enqueueMorning(s);   // v1.09.13
+      if (url.searchParams.get("morning") && (cron || admin)) morning = await enqueueMorning(s);   // v1.09.13; v1.09.40: не от любого
       await enqueueOverdue(s);
       const r = await deliver(s);
       return jres({ ok: true, morning, ...r });

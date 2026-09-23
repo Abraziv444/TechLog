@@ -190,11 +190,11 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
     TV.bn = (TV.bn || []).filter(c => c.driver_id !== who.id).concat({ car_no: who.car_no, driver_id: who.id, run: false, lat: +s0.cx.lat, lng: +s0.cx.lng, heading: 0 });
     tvRepaint(); await new Promise(r => setTimeout(r, 300));
     const st1 = tvStops(who.id).find(s => s.cxId === s0.cxId).st;
-    const card = document.querySelector('.twg-route .tvr-s.st-here'), pin = document.querySelector('#tv-map .tvpin.st-here');
+    const card = document.querySelector('.twg-route .tvr-s.stg-here'), pin = document.querySelector('#tv-map .tvpin.stg-here');
     TV.bn = TV.bn.map(c => c.driver_id === who.id ? { ...c, lat: c.lat + 0.08, run: true } : c);
     TV.feed.site_day = (TV.feed.site_day || []).concat({ driver_id: who.id, complex_id: s0.cxId, arrived_at: new Date().toISOString(), left_at: new Date().toISOString() });
     tvRepaint(); await new Promise(r => setTimeout(r, 200));
-    const st3 = tvStops(who.id).find(s => s.cxId === s0.cxId).st, faded = !!document.querySelector('.twg-route .tvr-s.st-done');
+    const st3 = tvStops(who.id).find(s => s.cxId === s0.cxId).st, faded = !!document.querySelector('.twg-route .tvr-s.stg-done');
     TV.bn = TV.bn.map(c => c.driver_id === who.id ? { ...c, lat: +s0.cx.lat, lng: +s0.cx.lng, run: false } : c); const st4 = tvStops(who.id).find(s => s.cxId === s0.cxId).st;
     const layers = TV.routeLayer ? TV.routeLayer.getLayers().length : -1;
     return { st1, card: !!card, pin: !!pin, st3, faded, st4, layers, osrmTried: !!TV.osrm && Object.keys(TV.osrm).length > 0 }; });
@@ -207,11 +207,11 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
     if (!j) return { none: true }; const cx = cxById(j.complex_id);
     BN.live[j.technician_id] = { pos: { lat: +cx.lat, lng: +cx.lng }, run: false };
     App.go('board'); await new Promise(r => setTimeout(r, 400));
-    const here = document.querySelectorAll('.bjob.st-here').length;
+    const here = document.querySelectorAll('.bjob.stg-here').length;
     BN.live[j.technician_id] = { pos: { lat: +cx.lat + 0.1, lng: +cx.lng }, run: true };
     state.data.site_visits.push({ id: 'v-x', driver_id: j.technician_id, complex_id: j.complex_id, arrived_at: new Date().toISOString(), left_at: new Date().toISOString(), date: todayISO() });
     render(); await new Promise(r => setTimeout(r, 300));
-    return { here, done: document.querySelectorAll('.bjob.st-done').length }; });
+    return { here, done: document.querySelectorAll('.bjob.stg-done').length }; });
   t('доска менеджера: задача, у которой стоит машина, светится; после отъезда — блёклая', brd.here >= 1 && brd.done >= 1, brd);
 
   t('без ошибок страницы', !errs.length, errs);

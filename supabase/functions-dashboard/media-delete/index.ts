@@ -2,11 +2,11 @@ import { svc, userClient, driveToken, driveConfig, monthFolder, moveFile,
          CORS, jres, FN_VER, ARCHIVE_DIR, PHOTOS_DIR, FILES_DIR, INVOICES_DIR,
          folderIdOf } from "./google.ts";
 
-const DEL_VER = "1.09.38";           // v1.09.38: режим inv_archive (общий FN_VER не трогаем — иначе передеплой всех функций)
+const DEL_VER = "1.09.40";           // v1.09.40: помощник с общим доступом в inv_archive; версия функции — в ver (общий FN_VER — в lib)
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»
-    return new Response(JSON.stringify({ fn: "media-delete", ver: FN_VER, del: DEL_VER }),
+    return new Response(JSON.stringify({ fn: "media-delete", ver: DEL_VER, del: DEL_VER, lib: FN_VER }),
       { headers: { ...CORS, "Content-Type": "application/json" } });
   const sb = userClient(req);
   const { data: { user } } = await sb.auth.getUser();
@@ -50,12 +50,16 @@ Deno.serve(async (req) => {
   }
   /* v1.09.38 · ИНВОЙС ВЕРНУЛСЯ В ЧЕРНОВИК / ЦЕНА ИЗМЕНИЛАСЬ ПРИ АПРУВЕ: действующие PDF документа (kind invoice, без
      archived_at) переезжают в «Архив TechLog / Invoices / ГГГГ-ММ»; строки media остаются с archived_at — история цела.
-     Право: админ, менеджер или основной исполнитель; документ должен быть виден пользователю (RLS через его клиента). */
+     Право: админ, менеджер, основной исполнитель или (v1.09.40) помощник с «Общим доступом» — тот, кто вправе отозвать
+     документ; документ должен быть виден пользователю (RLS через его клиента). */
   if (job_id && mode === "inv_archive") {
     const { data: job } = await sb.from("jobs").select("id,technician_id,date").eq("id", job_id).maybeSingle();
     if (!job) return jres({ error: "NO_ACCESS" }, 403);
     const boss = prof?.role === "admin" || prof?.role === "manager";
-    if (!boss && (job as any).technician_id !== user.id) return jres({ error: "FORBIDDEN" }, 403);
+    if (!boss && (job as any).technician_id !== user.id) {
+      const { data: helper } = await sb.rpc("is_shared_job_helper", { p_job: job_id });
+      if (helper !== true) return jres({ error: "FORBIDDEN" }, 403);
+    }
     const { data: rows } = await s.from("media").select("id,drive_file_id")
       .eq("job_id", job_id).eq("kind", "invoice").is("archived_at", null);
     let moved = 0;

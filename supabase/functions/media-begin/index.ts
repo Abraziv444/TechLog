@@ -1,6 +1,8 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_VER,
          PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, dirFor, ymDir, techDirLabel } from "../_shared/google.ts";
 
+const BEGIN_VER = "1.09.40";         // v1.09.40: upload_id для media-put
+
 /* v1.07.64: max — это дефолт; действующий лимит на документ админ задаёт
    в настройках (org_settings.media_max_photo / media_max_video). Проверка
    именно здесь: клиент лимит только показывает, обойти его нельзя. */
@@ -49,8 +51,8 @@ function techFolderName(display: string) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
-  if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»
-    return new Response(JSON.stringify({ fn: "media-begin", ver: FN_VER }),
+  if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»; v1.09.40: своя версия в ver (общий FN_VER — в lib)
+    return new Response(JSON.stringify({ fn: "media-begin", ver: BEGIN_VER, lib: FN_VER }),
       { headers: { ...CORS, "Content-Type": "application/json" } });
   try {
     const sb = userClient(req);
@@ -244,6 +246,12 @@ Deno.serve(async (req) => {
         appProperties: { job: job_id, media: id, owner: user.id } }) });
     const upload_url = init.headers.get("Location");
     if (!upload_url) return jres({ error: "DRIVE_INIT: " + await init.text() }, 502);
+    /* v1.09.40: сессию запоминаем в строке файла — media-put пускает докачку только в неё
+       (владелец — этот пользователь, статус «загружается»). Без колонки (SQL 1.09.40 не выполнен) — не падаем. */
+    try {
+      const uid = new URL(upload_url).searchParams.get("upload_id") ?? "";
+      if (uid) await s.from("media").update({ upload_id: uid }).eq("id", id);
+    } catch (_e) { /* колонки ещё нет */ }
 
     return jres({ media_id: id, upload_url, file_name, thumb_path, seq,
       cors: !!origin });                       // диагностика: ушёл ли Origin

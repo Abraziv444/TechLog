@@ -3479,10 +3479,11 @@ html.tl-desktop .dft-panel { bottom: 14px; }
 
 /* ---------- v1.09.38 · этапы водителя: на точке — светится, пройдено — блёкло; одинаково на карте ТВ, карточках ТВ и доске ---------- */
 @keyframes stgGlow{0%,100%{box-shadow:0 0 0 2px rgba(88,204,2,.55),0 0 8px rgba(88,204,2,.55)}50%{box-shadow:0 0 0 5px rgba(88,204,2,.18),0 0 20px rgba(88,204,2,.95)}}
-.tvpin.st-here,.bjob.st-here,.bpk.st-here,.tvr-s.st-here{animation:stgGlow 1.8s ease-in-out infinite;border-color:var(--green) !important}
-.tvpin.st-done{opacity:.4;filter:grayscale(.7)}
-.bjob.st-done,.bpk.st-done,.tvr-s.st-done{opacity:.45;filter:grayscale(.5)}
-@media (prefers-reduced-motion:reduce){.tvpin.st-here,.bjob.st-here,.bpk.st-here,.tvr-s.st-here{animation:none;box-shadow:0 0 0 3px rgba(88,204,2,.6)}}
+/* v1.09.40: этапы водителя — свои классы stg-*, не st-* (st-done — значок статуса «Выполнено» с тёмным текстом) */
+.tvpin.stg-here,.bjob.stg-here,.bpk.stg-here,.tvr-s.stg-here{animation:stgGlow 1.8s ease-in-out infinite;border-color:var(--green) !important}
+.tvpin.stg-done{opacity:.4;filter:grayscale(.7)}
+.bjob.stg-done,.bpk.stg-done,.tvr-s.stg-done{opacity:.45;filter:grayscale(.5)}
+@media (prefers-reduced-motion:reduce){.tvpin.stg-here,.bjob.stg-here,.bpk.stg-here,.tvr-s.stg-here{animation:none;box-shadow:0 0 0 3px rgba(88,204,2,.6)}}
 .tv-office{background:#fff;color:#0F171B;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;border:2px solid #0F171B}
 .tv-office .ic{width:18px;height:18px}
 .twg-route .tvr{margin-bottom:8px}
@@ -3500,3 +3501,16 @@ html.tl-desktop .dft-panel { bottom: 14px; }
 .office-sub > div:first-child svg{width:18px;height:18px;vertical-align:-3px}
 .tv-legend .sw-here{background:#FF9600;box-shadow:0 0 0 2px var(--green),0 0 8px var(--green)}
 .tv-legend .sw-passed{background:#FF9600;opacity:.4}
+
+/* v1.09.40: недельная доска — забранный пикап блёклый; бухгалтерия — сумма счёта ремонта с налогом и доставкой */
+.bpk.bpk-done{opacity:.55;border-style:solid}
+.bpk.bpk-done > b{color:var(--green)}
+.acc-bill{opacity:.8;white-space:nowrap}
+
+/* v1.09.40: документ ремонта «только просмотр» — поля в fieldset[disabled] */
+.rep-fs{border:0;padding:0;margin:0;min-width:0}
+.rep-fs[disabled] input,.rep-fs[disabled] textarea,.rep-fs[disabled] select,.rep-fs[disabled] .combo-in{opacity:.75}
+.rep-fs[disabled] button{opacity:.5}
+/* поиск: забранный пикап; документооборот: «завис» */
+.srch-row.srch-done{opacity:.7}
+.dfl-stuck{margin-left:4px}
