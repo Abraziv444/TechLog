@@ -26,8 +26,9 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
   await boot('demo-admin', 'desktop');
 
   /* логотип */
-  const logo = await p.evaluate(() => { const i = document.querySelector('.topbar .logo.logo-pic img.logo-img'); return i ? { w: i.naturalWidth, src: i.getAttribute('src'), tl: !!document.querySelector('.topbar .logo span') } : null; });
-  t('в левом верхнем углу — логотип программы (картинка загружена), «TL» больше нет', logo && logo.w > 0 && /icon-192\.png$/.test(logo.src) && !logo.tl, logo);
+  /* v1.09.47: квадратик с иконкой из шапки убран по просьбе — название, версия и остальное на месте */
+  const logo = await p.evaluate(() => ({ square: !!document.querySelector('.topbar .logo, .topbar .logo-wrap'), name: ((document.querySelector('.topbar .brand .name') || {}).textContent || '').trim() }));
+  t('в шапке нет квадратика с иконкой, название программы на месте', !logo.square && /TechLog/.test(logo.name), logo);
 
   /* пояс */
   const tz = await p.evaluate(() => { const r = {}; r.def = appTZ(); r.today = todayISO() === new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());

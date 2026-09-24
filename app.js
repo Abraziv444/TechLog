@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.44';
+const APP_VERSION = '1.09.47';
 const DB_SQL_FILE = 'full-install-1_09_44.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -183,7 +183,7 @@ const I18N = {
     pkd_addr: 'адресов', pkd_units: 'единиц', pkd_days: 'дн.', pkd_open: 'Открыть пикап',
     pkd_hint: 'Ваши пикапы и те, которыми с вами поделились. Нажмите карточку — откроется пикап: что и где стоит, «Забрать», продление. Компас — маршрут до комплекса.',
     pkd_empty: 'Пикапов на сегодня и просроченных нет', pkd_banner_open: 'Показать, где какие пикапы',
-    report_title: 'Отчёт по пикапам', report_date: 'На дату', copy_report: 'Скопировать отчёт',
+ report_date: 'На дату', copy_report: 'Скопировать отчёт',
     copied: 'Скопировано', nothing_due: 'Пикапов на эту дату нет', incl_overdue: 'включая просроченные',
     dirs: 'Справочники',
     d_counterparties: 'Контрагенты', d_complexes: 'Комплексы', d_worktypes: 'Виды задач',
@@ -205,7 +205,6 @@ const I18N = {
     display_name: 'Имя (для документов)', have_acc: 'Уже есть аккаунт? Войти', no_acc: 'Нет аккаунта? Регистрация',
     role_admin: 'Админ', role_manager: 'Менеджер', role_tech: 'Сотрудник',
     saved: 'Сохранено', deleted: 'Удалено', created: 'Создано',
-    confirm_del: 'Удалить безвозвратно?',
     days: 'дн.',
     tech: 'Техник', no_access: 'Нет доступа', stats_jobs: 'задач', stats_pk: 'пикапов',
     stats_stops: 'адресов забрать', stats_pk_eq: 'единиц оборудования',
@@ -511,7 +510,7 @@ const I18N = {
     mnt_types_empty: 'Видов ТО пока нет — их заводит админ: Справочники → Виды ТО.', mnt_edit: 'Вид ТО', mnt_new: 'Новый вид ТО', mnt_name: 'Название', mnt_int: 'Интервал, mi', mnt_rem: 'Напомнить за, mi',
     mnt_active: 'Используется', mnt_inactive: 'не используется', mnt_bad: 'Нужны название и интервал от 100 до 200000 mi',
     mnt_hint: 'Пробег следующего ТО = пробег последнего ТО машины + интервал. Для отдельной машины интервал меняется галочкой «Свой интервал» в её карточке. Пуш «Пора на ТО» получают водитель и админ, когда до ТО остаётся меньше «Напомнить за».',
-    mnt_del_q: 'Удалить вид ТО «{N}»? Отметки этого ТО у всех машин тоже удалятся.', mnt_saved: 'ТО сохранено', mnt_need_sql: 'ТО и заметки появятся после обновления базы (update-to-1_09_38.sql).',
+    mnt_del_q: 'Удалить вид ТО «{N}»? Отметки этого ТО у всех машин тоже удалятся.', mnt_need_sql: 'ТО и заметки появятся после обновления базы (update-to-1_09_38.sql).',
     mc_notes: 'Заметки по машине', mc_note_ph: 'Что заметили: звук, шина, царапина…', mc_note_add: 'Добавить заметку', mc_notes_mine: 'Вы видите только свои заметки; админ и менеджер видят все.',
     mc_notes_all: 'Все заметки по машине — от всех сотрудников.', mc_notes_empty: 'Заметок пока нет', mc_note_del_q: 'Удалить заметку?', mc_note_empty: 'Напишите текст заметки',
     wk_title: 'Рабочее время для уведомлений', wk_on: 'Присылать уведомления только в рабочее время', wk_from: 'с', wk_to: 'до',
@@ -594,7 +593,6 @@ const I18N = {
     tr_pdf_hint: 'В PDF печатается только английский текст. Русский остаётся в приложении и никуда не пропадает.',
     tr_ok_all: 'Всё на английском — перевод не нужен',
     tr_all_btn: 'Перевести всё',
-    tr_en_lbl: 'EN — печатается в PDF',
     tr_no_tr: 'без перевода',
     tr_f_note: 'Заметка', tr_f_oth: 'Прочее', tr_f_ad: 'Air Duct', tr_f_item: 'Позиция',
     tr_pend_t: 'Документы без перевода',
@@ -700,7 +698,6 @@ const I18N = {
     doc_name_lock: 'Имя для документов меняет администратор: по нему названа ваша папка на Google Диске, где лежат инвойсы и вложения.',
     inv_helpers: 'Инвойсы и для коворкеров',
     inv_helpers_h: 'Снята — PDF кладётся только в папку исполнителя. Поставлена — копия ложится и в папки коворкеров, которые были на задаче.',
-    gd_inv_tech: 'Инвойсы по папкам сотрудников',
     gd_inv_tech_tip: 'Галочка снята — все инвойсы лежат в общей папке по месяцам: «Invoices / 2026-09». Галочка стоит — сначала папка исполнителя, а месяц уже внутри неё: «Invoices / Ivan P / 2026-09», и так у каждого сотрудника каждый месяц своя папка. Имя папки берётся из профиля: имя и первая буква фамилии латиницей — как подпись исполнителя в документах. Уже загруженные инвойсы остаются там, где лежали.',
     gd_inv_tech_ex: 'Пример пути',
     /* v1.07.88: архив-корзина и сверка с Диском */
@@ -818,6 +815,14 @@ const I18N = {
     rep_no_edit: 'Сохранять может автор документа, менеджер или админ',
     rep_ro_note: 'Документ открыт только для просмотра: править и сохранять его может автор, менеджер или админ',
     upd_check_title: 'Проверить обновления',
+    pf_title: 'Проверка перед тестом', pf_ok: 'Проверка перед тестом: база, функции, Google Диск и Bouncie в порядке',
+    pf_bad_q: 'Перед тестом найдено проблем: {N}. Тест, скорее всего, упадёт не из-за приложения. Всё равно запустить?',
+    pf_run_anyway: 'Запустить всё равно', pf_demo: 'Демо-режим — сервер не проверяется', pf_offline: 'Нет связи — сервер не проверить',
+    pf_db_ok: 'База: миграции на месте — колонок {C}, функций {R}', pf_db_miss: 'База отстаёт от приложения: не хватает {N} ({L}) ← выполните supabase/{F}', pf_db: 'База',
+    pf_fn_ok: 'Edge Functions: все {T} отвечают, версии свежие', pf_fn_bad: 'Edge Functions: с проблемами {N} из {T} — {L}',
+    pf_gd_ok: 'Google Диск: подключён · {A} · {U}', pf_gd_bad: 'Google Диск: {E}',
+    pf_bn_off: 'Bouncie: не настроен — проверка пропущена', pf_bn_noauth: 'Bouncie: ключи есть, но аккаунт не подключён — проверка пропущена',
+    pf_bn_ok: 'Bouncie: отвечает · машин {N}', pf_bn_nor: 'Bouncie: проверка трекеров — только у админа',
     ask_text_ok: 'Готово',
     media_mb_card: 'Размер файла, не больше (МБ)', media_mb_photo: 'Фото', media_mb_video: 'Видео', media_mb_file: 'Вложение', media_mb_inv: 'PDF-инвойс',
     media_mb_hint: 'Проверяет сервер (media-begin 1.09.42): файл больше — не загрузится. Пусто в базе — прежние 8 / 120 / 25 / 20 МБ.',
@@ -834,7 +839,7 @@ const I18N = {
     docs_props_reps: 'Пропозалы и ремонт',
     mc_no_trk: 'Топливо и время обновления приходят с трекера — они видны, если админ открыл вам доступ к трекеру',
     ch_found_loaded: 'Ищется среди загруженных сообщений. Чтобы искать дальше в прошлое, откройте переписку и нажмите «Показать более ранние».',
-    srch_arch: 'в архиве', srch_pk_done: 'забран — откроется история задачи',
+ srch_pk_done: 'забран — откроется история задачи',
     acc_bill_extra: 'Со счётом клиенту (налог и доставка)',
     prop_price_hidden: 'Цены пропозала скрыты настройкой — суммы видит и правит только админ',
     prop_pdf_hidden: 'PDF пропозала с ценами — только у админа, пока включено «Скрывать цены пропозала для всех»',
@@ -1706,7 +1711,7 @@ const I18N = {
     pkd_addr: 'addresses', pkd_units: 'units', pkd_days: 'd', pkd_open: 'Open pickup',
     pkd_hint: 'Your pickups and the ones shared with you. Tap a card to open the pickup: what stands where, “Pick up”, extension. The compass opens the route to the complex.',
     pkd_empty: 'No pickups due today or overdue', pkd_banner_open: 'Show which pickups are where',
-    report_title: 'Pickups report', report_date: 'For date', copy_report: 'Copy report',
+ report_date: 'For date', copy_report: 'Copy report',
     copied: 'Copied', nothing_due: 'No pickups for this date', incl_overdue: 'including overdue',
     dirs: 'Directory',
     d_counterparties: 'Counterparties', d_complexes: 'Complexes', d_worktypes: 'Work types',
@@ -1730,7 +1735,6 @@ const I18N = {
     display_name: 'Name (for documents)', have_acc: 'Have an account? Sign in', no_acc: 'No account? Sign up',
     role_admin: 'Admin', role_manager: 'Manager', role_tech: 'Technician',
     saved: 'Saved', deleted: 'Deleted', created: 'Created',
-    confirm_del: 'Delete permanently?',
     days: 'd.',
     tech: 'Technician', no_access: 'No access', stats_jobs: 'jobs', stats_pk: 'pickups',
     stats_stops: 'addresses to visit', stats_pk_eq: 'equipment units',
@@ -2035,7 +2039,7 @@ const I18N = {
     mnt_types_empty: 'No service types yet — the admin adds them in Directories → Service types.', mnt_edit: 'Service type', mnt_new: 'New service type', mnt_name: 'Name', mnt_int: 'Interval, mi', mnt_rem: 'Remind before, mi',
     mnt_active: 'In use', mnt_inactive: 'not in use', mnt_bad: 'A name and an interval of 100–200000 mi are required',
     mnt_hint: 'Next service mileage = the vehicle last service mileage + interval. For a single vehicle the interval is changed with "Own interval" in its card. The driver and the admin get a "Service due" push when less than "Remind before" is left.',
-    mnt_del_q: 'Delete service type "{N}"? Its records on all vehicles are deleted too.', mnt_saved: 'Service saved', mnt_need_sql: 'Service and notes appear after the database update (update-to-1_09_38.sql).',
+    mnt_del_q: 'Delete service type "{N}"? Its records on all vehicles are deleted too.', mnt_need_sql: 'Service and notes appear after the database update (update-to-1_09_38.sql).',
     mc_notes: 'Vehicle notes', mc_note_ph: 'What you noticed: a noise, a tire, a scratch…', mc_note_add: 'Add note', mc_notes_mine: 'You see only your notes; the admin and managers see all of them.',
     mc_notes_all: 'All notes on this vehicle, from every employee.', mc_notes_empty: 'No notes yet', mc_note_del_q: 'Delete the note?', mc_note_empty: 'Type the note text',
     wk_title: 'Working hours for notifications', wk_on: 'Send notifications only during working hours', wk_from: 'from', wk_to: 'to',
@@ -2117,7 +2121,6 @@ const I18N = {
     tr_pdf_hint: 'Only English is printed in the PDF. The Russian text stays in the app.',
     tr_ok_all: 'All English — no translation needed',
     tr_all_btn: 'Translate all',
-    tr_en_lbl: 'EN — goes to the PDF',
     tr_no_tr: 'not translated',
     tr_f_note: 'Note', tr_f_oth: 'Other', tr_f_ad: 'Air Duct', tr_f_item: 'Line',
     tr_pend_t: 'Documents without translation',
@@ -2218,7 +2221,6 @@ const I18N = {
     doc_name_lock: 'The document name is changed by an admin: your Google Drive folder with invoices and attachments is named after it.',
     inv_helpers: 'Invoices for coworkers too',
     inv_helpers_h: 'Unchecked — the PDF goes only to the assignee folder. Checked — a copy also lands in coworkers folders.',
-    gd_inv_tech: 'Invoices in per-staff folders',
     gd_inv_tech_tip: 'Unchecked — every invoice sits in one folder by month: «Invoices / 2026-09». Checked — the staff folder comes first and the month lives inside it: «Invoices / Ivan P / 2026-09», so every person gets a fresh folder each month. The folder name comes from the profile: first name and the first letter of the surname, in Latin — the same signature as in documents. Invoices already uploaded stay where they are.',
     gd_inv_tech_ex: 'Path example',
     tab_archive: 'Archive', tab_action: 'Action',
@@ -2335,6 +2337,14 @@ const I18N = {
     rep_no_edit: 'Only the document author, a manager or the admin can save it',
     rep_ro_note: 'This document is view-only: the author, a manager or the admin can edit and save it',
     upd_check_title: 'Check for updates',
+    pf_title: 'Pre-test check', pf_ok: 'Pre-test check: database, functions, Google Drive and Bouncie are fine',
+    pf_bad_q: 'Problems found before the test: {N}. The test will most likely fail for reasons outside the app. Run anyway?',
+    pf_run_anyway: 'Run anyway', pf_demo: 'Demo mode — the server is not checked', pf_offline: 'Offline — cannot check the server',
+    pf_db_ok: 'Database: migrations in place — columns {C}, functions {R}', pf_db_miss: 'Database is behind the app: {N} missing ({L}) ← run supabase/{F}', pf_db: 'Database',
+    pf_fn_ok: 'Edge Functions: all {T} respond, versions are current', pf_fn_bad: 'Edge Functions: problems with {N} of {T} — {L}',
+    pf_gd_ok: 'Google Drive: connected · {A} · {U}', pf_gd_bad: 'Google Drive: {E}',
+    pf_bn_off: 'Bouncie: not set up — check skipped', pf_bn_noauth: 'Bouncie: keys set but the account is not connected — check skipped',
+    pf_bn_ok: 'Bouncie: responds · vehicles {N}', pf_bn_nor: 'Bouncie: tracker check is admin-only',
     ask_text_ok: 'Done',
     media_mb_card: 'File size, max (MB)', media_mb_photo: 'Photo', media_mb_video: 'Video', media_mb_file: 'Attachment', media_mb_inv: 'PDF invoice',
     media_mb_hint: 'Checked by the server (media-begin 1.09.42): a bigger file will not upload. Empty in the database — the former 8 / 120 / 25 / 20 MB.',
@@ -2351,7 +2361,7 @@ const I18N = {
     docs_props_reps: 'Proposals and repairs',
     mc_no_trk: 'Fuel and update time come from the tracker — they are shown once the admin gives you tracker access',
     ch_found_loaded: 'Searching the loaded messages only. To search further back, open the conversation and tap “Show earlier”.',
-    srch_arch: 'archived', srch_pk_done: 'picked up — the job history opens',
+ srch_pk_done: 'picked up — the job history opens',
     acc_bill_extra: 'Billed to client (tax and freight)',
     prop_price_hidden: 'Proposal prices are hidden by a setting — only the admin sees and edits amounts',
     prop_pdf_hidden: 'The proposal PDF with prices is admin-only while “Hide proposal prices for everyone” is on',
@@ -5902,6 +5912,7 @@ try{ addEventListener('pagehide', metricsBye); }catch(e){}
 async function gdFullTest(){
   if (!HAS_SB){ toast(t('media_sb_only'), 'err'); return; }
   if (!isAdmin()) return;
+  if (!(await testPreflightGate('drive'))) return;                   // v1.09.47
   const out = [], t0 = performance.now();
   const paint = () => { const box = $('#gd-full'); if (box) box.innerHTML = out.map(x =>
     `<div class="tiny">${x.ok === null ? '…' : x.ok ? ic('check') : ic('warn')} ${esc(x.name)}${x.ms != null ? ' — ' + x.ms + ' мс' : ''}${x.extra ? ' · ' + esc(x.extra) : ''}</div>`).join(''); };
@@ -5936,7 +5947,7 @@ async function gdFullTest(){
       for (let i = 0; i < 40; i++){ g.fillStyle = `hsl(${i * 9},80%,55%)`; g.fillRect(80 + i * 26, 620, 20, 120); }
       const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .9));
       const f = new File([blob], 'selftest-photo.jpg', { type: 'image/jpeg' });
-      if (!(await mediaEnqueueFile(job.id, f, 'photo'))) throw new Error('не встало в очередь');
+      if (!(await mediaEnqueueFile(job.id, f, 'photo', 'job', { selftest: true }))) throw new Error('не встало в очередь');
       await mediaFlush(true); await waitQ(job.id);
       return { note: Math.round(blob.size / 1024) + ' КБ' };
     });
@@ -5955,7 +5966,7 @@ async function gdFullTest(){
       if (!blob.size) throw new Error('пустая запись');
       const ext = /mp4/.test(blob.type) ? 'mp4' : 'webm';
       const f = new File([blob], 'selftest-video.' + ext, { type: blob.type });
-      if (!(await mediaEnqueueFile(job.id, f, 'video'))) throw new Error('не встало в очередь');
+      if (!(await mediaEnqueueFile(job.id, f, 'video', 'job', { selftest: true }))) throw new Error('не встало в очередь');
       await mediaFlush(true); await waitQ(job.id);
       return { note: Math.round(blob.size / 1024) + ' КБ · ' + blob.type };
     });
@@ -6374,7 +6385,10 @@ function seedDemoData(){
   job1.total = calcTotal(job1.form_data, priceResolver(cp1.id, data), data);
   /* v1.07.86: сквозные номера. На сервере их выдаёт база (identity),
      в демо-режиме раздаём сами — иначе номер документа выходил бы без {SEQ}. */
-  data.jobs.forEach((j, i) => { j.no = i + 1; });
+  /* v1.09.46: демо-данные повторяют правило базы (1.09.25) — номер у задачи появляется при первой отправке на
+     согласование; черновик — без номера. Иначе демо не воспроизводит рабочие состояния, и ложную тревогу
+     «задач без номера» (1.09.44) тесты не видели. */
+  let _no = 0; data.jobs.forEach(j => { j.no = (j.status || 'draft') === 'draft' ? null : ++_no; if (j.no != null && !j.numbered_at) j.numbered_at = new Date().toISOString(); });
   data.placements.forEach((p, i) => { p.no = i + 1; });
   return data;
 }
@@ -8972,9 +8986,6 @@ function viewHeader(){
   const org = (state.data && state.data.org_settings) || {};
   return `
   <div class="topbar">
-    <div class="logo-wrap">
-      <div class="logo logo-pic clicky" role="button" tabindex="0" title="${t('tab_home')}" onclick="App.logoHome()">${logoImg()}</div>
-    </div>
     <div class="brand clicky" role="button" tabindex="0" title="${t('upd_check_title')}" onclick="App.checkVerClick()">
       <div class="name">Tech<b>Log</b><span class="name-tag">${t('app_tag')}</span></div>
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
@@ -20568,6 +20579,113 @@ function copyCxAddr(cxId){
 /* =====================================================================
    ДИАГНОСТИКА: активные проверки сервера + отчёт в консоль и на экран
    ===================================================================== */
+/* =====================================================================
+   v1.09.46 · ЛОГИКА ДАННЫХ (инварианты). Правила, которые должны выполняться всегда, — по одному на
+   каждое известное бизнес-правило. Каждое правило: что проверяет, с какой версии это правило действует,
+   насколько серьёзно (err — данные противоречат правилу, warn — подозрительно), и что делать.
+   Прогоняются в «Диагностике» (раздел «логика данных» + строка «метрики·логика» в журнале) и в
+   автотесте tests/invariants.js: на чистых данных — 0 ошибок, на каждую нарочно испорченную запись
+   своё правило обязано сработать (доля пойманных — метрика, должна быть 100 %).
+   Новое правило документа = новая строка здесь + мутация в tests/invariants.js.
+   ===================================================================== */
+function invJobLbl(j){ return j ? 'Unit ' + (j.unit_number || '—') + ' ' + (j.date ? fmtDMY(j.date) : '') : '—'; }
+function invPkLbl(p){ const j = jobById(p.job_id); return (j ? invJobLbl(j) : 'Unit ' + (p.unit_number || '—')) + ' · ' + ((etById(p.equipment_type_id) || {}).abbr || '?') + '×' + (p.qty ?? '?'); }
+const INV_RULES = [
+  /* ---- документы и номера ---- */
+  { id: 'job_sent_no_number', sev: 'err', since: '1.09.25', title: 'Задача отправлялась на согласование, а номера нет',
+    fix: 'откройте и сохраните документ — база выдаст номер', check: d => d.live.filter(j => (j.status || 'draft') !== 'draft' && j.no == null && !j.is_test), lbl: invJobLbl },
+  { id: 'job_approved_no_meta', sev: 'err', since: '1.09.25', title: 'Апрувленная задача без «кем и когда апрувлено»',
+    fix: 'снимите апрув и поставьте заново', check: d => d.live.filter(j => j.status === 'approved' && (!j.approved_at || !j.approved_by)), lbl: invJobLbl },
+  { id: 'job_draft_keeps_approval', sev: 'warn', since: '1.09.25', title: 'Черновик хранит апрувленную сумму',
+    fix: 'сохраните документ ещё раз — сумма апрува очистится', check: d => d.live.filter(j => (j.status || 'draft') === 'draft' && j.approved_total != null), lbl: invJobLbl },
+  { id: 'job_helper_is_main', sev: 'warn', since: '1.07.10', title: 'Основной исполнитель записан и в помощники',
+    fix: 'уберите его из «Кто выполнял»', check: d => d.live.filter(j => j.technician_id && (j.helper_ids || []).includes(j.technician_id)), lbl: invJobLbl },
+  { id: 'job_cx_cp_mismatch', sev: 'err', since: '1.07.54', title: 'Комплекс задачи принадлежит другому контрагенту',
+    fix: 'выберите комплекс заново — контрагент подставится сам', check: d => d.live.filter(j => { const cx = cxById(j.complex_id); return cx && cx.counterparty_id && j.counterparty_id && cx.counterparty_id !== j.counterparty_id; }), lbl: invJobLbl },
+  { id: 'job_blocked_owner', sev: 'warn', since: '1.09.25', title: 'Незавершённая задача заблокированного сотрудника',
+    fix: 'передайте её другому исполнителю (Документооборот → «Ничьи»)', check: d => { const bl = new Set(d.profiles.filter(p => p.blocked).map(p => p.id)); return d.live.filter(j => j.status !== 'approved' && bl.has(j.technician_id)); }, lbl: invJobLbl },
+  { id: 'prop_link_missing', sev: 'warn', since: '1.07.83', title: 'Задача ссылается на несуществующий пропозал',
+    fix: 'отвяжите пропозал в документе', check: d => d.live.filter(j => j.proposal_id && !d.propIds.has(j.proposal_id)), lbl: invJobLbl },
+  { id: 'rep_job_missing', sev: 'warn', since: '1.08.70', title: 'Ремонт ссылается на удалённую или архивную задачу',
+    fix: 'отвяжите задачу в документе ремонта', check: d => d.reps.filter(r => r.job_id && !d.liveIds.has(r.job_id)), lbl: r => repNo(r) },
+  /* ---- пикапы ---- */
+  { id: 'pk_of_archived_job', sev: 'err', since: '1.09.26', title: 'Ждущий пикап у архивной задачи',
+    fix: 'уберите технику из инвойса или верните задачу из архива', check: d => d.pls.filter(p => pkPending(p) && d.archIds.has(p.job_id)), lbl: invPkLbl },
+  { id: 'pk_due_before_placed', sev: 'err', since: '1.07.12', title: 'Срок пикапа раньше даты расстановки',
+    fix: 'исправьте дату или срок в документе', check: d => d.pls.filter(p => !p.archived_at && p.placed_date && p.due_date && p.due_date < p.placed_date), lbl: invPkLbl },
+  { id: 'pk_picked_no_time', sev: 'warn', since: '1.07.12', title: 'Пикап отмечен забранным без времени',
+    fix: 'нажмите «Вернуть» и «Забрать» ещё раз', check: d => d.pls.filter(p => p.picked_up && !p.picked_up_at && !p.archived_at), lbl: invPkLbl },
+  { id: 'pk_ext_orphan', sev: 'err', since: '1.07.95', title: 'Продление ссылается на несуществующий пикап',
+    fix: 'проверьте цепочку продлений в документе', check: d => d.pls.filter(p => p.ext_of && !d.plIds.has(p.ext_of)), lbl: invPkLbl },
+  { id: 'pk_qty_bad', sev: 'err', since: '1.07.12', title: 'Количество техники в пикапе не целое положительное',
+    fix: 'исправьте количество в инвойсе', check: d => d.pls.filter(p => !p.archived_at && !(Number.isInteger(+p.qty) && +p.qty > 0)), lbl: invPkLbl },
+  { id: 'ext_req_dead_job', sev: 'warn', since: '1.08.51', title: 'Заявка на продление висит у удалённой или архивной задачи',
+    fix: 'отклоните заявку', check: d => d.extReqs.filter(r => r.status === 'pending' && r.job_id && !d.liveIds.has(r.job_id)), lbl: r => 'Unit ' + (r.unit || '—') + ' · +' + (r.days || '?') },
+  { id: 'doc_req_on_draft', sev: 'warn', since: '1.09.25', title: 'Запрос на правку ждёт решения, а документ уже черновик',
+    fix: 'закройте запрос — править и так можно', check: d => d.docReqs.filter(r => r.status === 'pending' && (r.kind || 'job') === 'job' && (jobById(r.doc_id) || {}).status === 'draft'), lbl: r => invJobLbl(jobById(r.doc_id)) },
+  /* ---- деньги ---- */
+  { id: 'acc_paid_with_debt', sev: 'err', since: '1.09.40', title: 'Отмечено «оплачен», а по оплатам остался долг',
+    fix: 'внесите недостающую оплату или снимите отметку', needPay: true,
+    check: d => d.accRows.filter(r => r.acc === 'paid' && r.due > 0.005 && r.bill > 0.005), lbl: r => r.no + ' · долг ' + money(r.due) },
+  { id: 'acc_overpaid', sev: 'warn', since: '1.09.18', title: 'Оплачено больше суммы счёта',
+    fix: 'проверьте оплаты документа (дубль?)', needPay: true,
+    check: d => d.accRows.filter(r => r.paid - r.bill > 0.005), lbl: r => r.no + ' · сверх ' + money(r.paid - r.bill) },
+  /* ---- Диск ---- */
+  { id: 'inv_pdf_not_approved', sev: 'warn', since: '1.09.38', title: 'Действующий PDF-инвойс на Диске у неапрувленной задачи',
+    fix: 'откройте документ и сохраните — PDF уйдёт в архив Диска', check: d => d.live.filter(j => j.status !== 'approved' && d.media.some(m => m.job_id === j.id && m.kind === 'invoice' && !m.archived_at)), lbl: invJobLbl },
+  { id: 'media_stuck_upload', sev: 'warn', since: '1.07.72', title: 'Файл «загружается» дольше суток',
+    fix: 'устройство, с которого снимали, должно выйти в сеть; иначе удалите запись', check: d => d.media.filter(m => m.status === 'uploading' && m.created_at && Date.now() - Date.parse(m.created_at) > 864e5), lbl: m => (m.file_name || m.kind) + ' · ' + invJobLbl(jobById(m.job_id)) },
+  /* ---- люди, машины, справочники ---- */
+  { id: 'car_no_dup', sev: 'err', since: '1.08.27', title: 'Один номер машины у двух сотрудников',
+    fix: 'поправьте номер в «Автомобилях»', check: d => { const by = {}; d.profiles.filter(p => !p.blocked && p.car_no != null).forEach(p => (by[p.car_no] = by[p.car_no] || []).push(p)); return Object.values(by).filter(a => a.length > 1).map(a => a[0]); }, lbl: p => '№' + p.car_no + ' · ' + shortName(p.display_name) },
+  { id: 'car_no_vehicle_mismatch', sev: 'err', since: '1.09.41', title: 'Номер машины у водителя не совпадает с карточкой автомобиля',
+    fix: 'сохраните карточку автомобиля ещё раз', check: d => d.vehicles.filter(v => v.driver_id && d.profById[v.driver_id] && (d.profById[v.driver_id].car_no ?? null) !== (v.car_no ?? null)), lbl: v => (v.make || 'машина') + ' №' + (v.car_no ?? '—') + ' · ' + shortName(profName(v.driver_id)) },
+  { id: 'cx_no_owner', sev: 'warn', since: '1.07.54', title: 'Комплекс без контрагента',
+    fix: 'Справочники → Комплексы → «Изменить» у комплекса без владельца', check: d => d.cxs.filter(c => !c.counterparty_id), lbl: c => c.name || c.abbr || c.id },
+  /* ---- склад ---- */
+  { id: 'stock_negative', sev: 'err', since: '1.08.27', title: 'Свободный остаток на складе меньше нуля', needStock: true,
+    fix: 'проверьте журнал движений (приход не внесён?)', check: d => (d.ets || []).filter(e => (emRow(e.id).stock || 0) < 0), lbl: e => (e.abbr || e.name) + ': ' + emRow(e.id).stock },
+];
+async function invariantsRun(opts){
+  opts = opts || {};
+  const sd = state.data || {};
+  if (opts.loadPay !== false && HAS_SB && (isAdmin() || isAcc()) && !AP.at){ try{ await apLoad(); }catch(e){} }
+  const jobs = sd.jobs || [], live = jobs.filter(j => !j.archived_at);
+  const payOk = !HAS_SB || AP.at > 0;
+  const d = { live, liveIds: new Set(live.map(j => j.id)), archIds: new Set(jobs.filter(j => j.archived_at).map(j => j.id)),
+    pls: sd.placements || [], plIds: new Set((sd.placements || []).map(p => p.id)), media: sd.media || [], profiles: sd.profiles || [],
+    profById: Object.fromEntries((sd.profiles || []).map(p => [p.id, p])), vehicles: sd.vehicles || [], cxs: sd.complexes || [],
+    reps: (sd.repairs || []).filter(r => !r.archived_at), propIds: new Set((sd.proposals || []).map(p => p.id)),
+    extReqs: sd.ext_requests || [], docReqs: (typeof dfReqs === 'function' ? dfReqs() : []) || [], ets: sd.equipment_types || [], accRows: [] };
+  if (payOk && (isAdmin() || isAcc() || !HAS_SB)){
+    try{
+      live.filter(j => j.status === 'approved').forEach(j => { const r = accDocRow('job', j); d.accRows.push({ no: r.no, acc: j.acc_status || '', due: +r.due || 0, paid: +r.paid || 0, bill: +r.bill || 0 }); });
+      d.reps.filter(r => r.status === 'approved').forEach(x => { const r = accDocRow('rep', x); d.accRows.push({ no: r.no, acc: x.acc_status || '', due: +r.due || 0, paid: +r.paid || 0, bill: +r.bill || 0 }); });
+    }catch(e){ dlog('⚠ invariants acc:', e); }
+  }
+  const out = [];
+  for (const r of INV_RULES){
+    if (r.needPay && !payOk) { out.push({ rule: r, list: [], skipped: 'оплаты не загружены' }); continue; }
+    if (r.needStock && !(isManager() || isAcc() || stockVisibleAll())) { out.push({ rule: r, list: [], skipped: 'склад скрыт' }); continue; }
+    let list = [];
+    try{ list = r.check(d) || []; }catch(e){ out.push({ rule: r, list: [], error: errStr(e) }); continue; }
+    out.push({ rule: r, list });
+  }
+  const errs = out.filter(x => x.rule.sev === 'err' && x.list.length).length, warns = out.filter(x => x.rule.sev === 'warn' && x.list.length).length;
+  return { res: out, rules: INV_RULES.length, errs, warns, skipped: out.filter(x => x.skipped).length, broken: out.filter(x => x.error).length };
+}
+function invariantsLines(r){
+  const L = [];
+  r.res.forEach(x => {
+    if (x.error){ L.push(`⛔ правило «${x.rule.title}» не выполнилось: ${x.error}`); return; }
+    if (!x.list.length) return;
+    const ex = x.list.slice(0, 4).map(o => { try{ return x.rule.lbl(o); }catch(e){ return '?'; } }).join('; ');
+    L.push(`${x.rule.sev === 'err' ? '⛔' : '⚠'} ${x.rule.title}: ${x.list.length}  ← ${ex}${x.list.length > 4 ? '…' : ''} — ${x.rule.fix} [${x.rule.id}, правило с ${x.rule.since}]`);
+  });
+  const clean = r.res.filter(x => !x.list.length && !x.error && !x.skipped).length;
+  L.push(`✅ без нарушений: ${clean} из ${r.rules} правил${r.skipped ? ` · пропущено ${r.skipped} (${[...new Set(r.res.filter(x => x.skipped).map(x => x.skipped))].join(', ')})` : ''}`);
+  return L;
+}
 async function runDiagnostics(onLine){
   const L = [];
   /* v1.08.90: строки отдаются наружу по мере готовности — модалка открывается
@@ -20702,7 +20820,8 @@ async function runDiagnostics(onLine){
       put(`${mark(r.ok)} ${ic.replace('./icons/','иконка ')}: HTTP ${r.status}${!r.ok ? '  ← файл не залит на сервер — установка невозможна' : ''}`);
     }catch(e){ put(`${mark(false)} ${ic}: ${errStr(e)}`); }
   }
-  put(`${mark(!!pwaPrompt || isStandalone())} предложение установки: ${isStandalone() ? 'не нужно (уже установлено)' : pwaPrompt ? 'получено — кнопка «Установить приложение» активна' : 'ещё не поступало от браузера'}`);
+  /* v1.09.46: «не поступало» — не ошибка: браузер присылает предложение не всегда (уже установлено, iOS, Firefox, мало посещений) */
+  put(`${isStandalone() || pwaPrompt ? '✅' : 'ℹ'} предложение установки: ${isStandalone() ? 'не нужно (уже установлено)' : pwaPrompt ? 'получено — кнопка «Установить приложение» активна' : 'ещё не поступало от браузера — это не ошибка: его присылают не всегда (уже установлено, iOS, Firefox)'}`);
 
   /* v1.07.88: то, что появилось в 1.07.83…1.07.88, теперь видно в отчёте —
      иначе о переводах, нумерации, инвойсах на Диске и архиве приходилось
@@ -20720,8 +20839,17 @@ async function runDiagnostics(onLine){
     put(`${mark(!!org.doc_no_fmt || true)} номер документа: шаблон «${org.doc_no_fmt || DOC_FMT_DEF}», знаков ${docPad()}` +
         (smp ? ` · пример: ${docNo('job', smp) || '—'}` : ''));
     put(`${mark(true)} имя файла на Диске: шаблон «${org.file_name_fmt || FILE_FMT_DEF}»`);
-    const noNo = live.filter(j => j.no == null).length;
-    put(`${mark(!noNo)} задач без сквозного номера: ${noNo}${noNo ? '  ← выполните supabase/' + DB_SQL_FILE + ' (колонка jobs.no)' : ''}`);
+    /* v1.09.45: с 1.09.25 номер выдаётся при первой отправке на согласование — черновик без номера это норма,
+       а не «не выполнен SQL». Ошибка — только колонки нет вовсе или у НЕ черновика номера нет. */
+    const noCol = live.length > 0 && live.every(j => !('no' in j));
+    const drafts = live.filter(j => j.no == null && (j.status || 'draft') === 'draft').length;
+    const bad = live.filter(j => j.no == null && (j.status || 'draft') !== 'draft');
+    if (noCol) put(`${mark(false)} сквозной номер задач: колонки jobs.no нет  ← выполните supabase/${DB_SQL_FILE}`);
+    else {
+      put(`${mark(!bad.length)} задач без номера после отправки на согласование: ${bad.length}` +
+          (bad.length ? `  ← ${bad.slice(0, 5).map(j => 'Unit ' + (j.unit_number || '—') + ' ' + fmtDMY(j.date) + ' (' + (j.status || '') + ')').join(', ')}${bad.length > 5 ? '…' : ''} — откройте и сохраните документ ещё раз; если номер не появился — выполните supabase/${DB_SQL_FILE}` : ''));   /* sql-hint: номер выдаёт триггер базы jobs_before_upd — без него сохранение номер не даст */
+      put(`${mark(true)} черновиков без номера: ${drafts} — норма: номер выдаётся при первой отправке на согласование`);
+    }
     /* переводы */
     const pend = jobs.filter(j => !j.archived_at && hasCyr(j.note) && !String(j.note_en || '').trim()).length;
     put(`${mark(!pend)} заметок без английского перевода: ${pend} · напоминание ${org.tr_remind !== false ? 'вкл' : 'выкл'} · автоперевод ${org.tr_auto ? 'вкл' : 'выкл'} · интервал ${Math.round(trIntervalMs() / 60000)} мин`);
@@ -20739,6 +20867,14 @@ async function runDiagnostics(onLine){
     const lost = media.filter(m => m.__lost).length;
     put(`${mark(!lost)} записей без файла на Диске (последняя сверка): ${lost || '—'}`);
   }catch(e){ put(`${mark(false)} сводка по документам: ${errStr(e)}`); }
+
+  /* v1.09.46: логика данных — инварианты бизнес-правил (см. INV_RULES) */
+  put(''); put(`— логика данных (правил ${INV_RULES.length}) —`);
+  try{
+    const ir = await invariantsRun();
+    invariantsLines(ir).forEach(put);
+    dlog(`метрики·логика: правил ${ir.rules} · ошибок ${ir.errs} · предупреждений ${ir.warns} · пропущено ${ir.skipped}`);
+  }catch(e){ put(`⛔ логика данных: ${errStr(e)}`); }
 
   // хвост журнала
   put('');
@@ -25188,7 +25324,9 @@ async function mPrepPhoto(f, ex){
     + (orig ? ' — без пережатия' : ' — качество ' + camQual()));
   /* маленький кадр = телефон снимал в служебном режиме или ужал сам:
      виноват не сервис, и человеку стоит об этом сказать сразу */
-  if (mp < M_SMALL_MP) toast('⚠ ' + t('cam_small').replace('{MP}', mp.toFixed(1)), 'err');
+  /* v1.09.47: предупреждаем только о снимке с камеры телефона. Картинка, которую нарисовал сам тест
+     (регресс, тест Диска), и файл с диска ПК — не «кадр камеры»: на ПК без камеры это сбивало с толку */
+  if (mp < M_SMALL_MP && !(ex && ex.selftest) && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) toast('⚠ ' + t('cam_small').replace('{MP}', mp.toFixed(1)), 'err');
   return { blob: orig ? f : r.blob, thumb: r.thumb, mime: 'image/jpeg', w: r.w, h: r.h, iw: r.iw, ih: r.ih, orig, small: mp < M_SMALL_MP,
            sharp: sh && sh.ratio != null ? Math.round(sh.ratio * 100) / 100 : null,     // v1.08.74: для отчёта теста съёмки
            blur: !!(camSharpOn() && sh && sh.gStd >= M_BLUR_CONTRAST && sh.ratio < M_BLUR_RATIO) };
@@ -25265,7 +25403,7 @@ async function mediaEnqueueFile(jobId, f, kind, doc = 'job', ex){
     }
     blob = p.blob; thumb = p.thumb; mime = p.mime;
     ex = Object.assign({}, ex || {}, { w: p.w, h: p.h, iw: p.iw, ih: p.ih, orig: !!p.orig, small: !!p.small, sharp: p.sharp, src_size: f.size });   // v1.08.74
-    if (p.blur) toast('⚠ ' + t('media_blur'), 'err');
+    if (p.blur && !(ex && ex.selftest)) toast('⚠ ' + t('media_blur'), 'err');   // v1.09.47: не для картинок самого теста
   } else if (kind === 'video'){
     const dur = (await mVideoDur(f)) || (ex && +ex.dur) || 0;   // v1.08.73: запись в приложении знает длину сама
     if (dur > M_VMAX + 2){ toast('⚠ ' + t('media_vlong'), 'err'); return false; }
@@ -26109,11 +26247,73 @@ function tlogSaveNow(){
   }
 }
 function tlogSaveSoon(){ if (TLOG._t) return; TLOG._t = setTimeout(tlogSaveNow, 300); }
+/* =====================================================================
+   v1.09.47 · ПРОВЕРКА ПЕРЕД КАЖДЫМ ТЕСТОМ: миграции базы (колонки DB_NEED_COLS и функции DB_NEED_RPCS),
+   Edge Functions (ответ и версия), Google Диск (media-health: подключение, аккаунт, папка) и Bouncie (ключи,
+   подключение, список машин). Всё в порядке — тест стартует сам; есть ⛔ — окно «Запустить всё равно / Отмена».
+   Строки проверки попадают в начало отчёта теста.
+   ===================================================================== */
+const PF = { last: null };
+async function testPreflight(){
+  const L = []; let bad = 0;
+  const add = (ok, s) => { if (ok === false) bad++; L.push((ok === true ? '✅ ' : ok === false ? '⛔ ' : 'ℹ ') + s); };
+  if (!HAS_SB){ add(null, t('pf_demo')); return { lines: L, bad, at: Date.now() }; }
+  if (netOff()){ add(false, t('pf_offline')); return { lines: L, bad, at: Date.now() }; }
+  const nocol = e => /42703|column .* does not exist|schema cache/i.test(errStr(e));
+  const [db, fns, gd, bn] = await Promise.all([
+    (async () => { try{
+      const cols = await Promise.all(DB_NEED_COLS.map(async ([tb, col]) => { const { error } = await state.sb.from(tb).select(col, { head: true, count: 'exact' }).limit(0); return error && nocol(error) ? tb + '.' + col : null; }));
+      const rpcs = await Promise.all(DB_NEED_RPCS.map(async fn => { const { error } = await state.sb.rpc(fn, { tl_diag_probe: 1 }); if (!error) return null; const s = (error.hint || '') + ' ' + errStr(error); return new RegExp('public\\.' + fn + '\\(').test(s) ? null : fn + '()'; }));
+      const miss = cols.concat(rpcs).filter(Boolean);
+      return miss.length ? [false, tfill(t('pf_db_miss'), { N: miss.length, L: miss.slice(0, 6).join(', ') + (miss.length > 6 ? '…' : ''), F: DB_SQL_FILE })]
+                         : [true, tfill(t('pf_db_ok'), { C: DB_NEED_COLS.length, R: DB_NEED_RPCS.length })];
+    }catch(e){ return [false, t('pf_db') + ': ' + errStr(e)]; } })(),
+    (async () => { try{
+      const rs = await fnProbeAll(), b = rs.filter(r => !r.ok);
+      return b.length ? [false, tfill(t('pf_fn_bad'), { N: b.length, T: rs.length, L: b.map(r => r.name + ' — ' + fnStText(r)).join('; ') })] : [true, tfill(t('pf_fn_ok'), { T: rs.length })];
+    }catch(e){ return [false, 'Edge Functions: ' + errStr(e)]; } })(),
+    (async () => { try{
+      const token = await mediaJwt();
+      const r = await fetch(mediaFN() + '/media-health', { cache: 'no-store', headers: { Authorization: 'Bearer ' + token } });
+      const j = await r.json().catch(() => ({}));
+      const ok = !!(j.auth && j.auth.ok && j.drive && j.drive.ok && !(j.folder && j.folder.ok === false));
+      return ok ? [true, tfill(t('pf_gd_ok'), { A: (j.drive && j.drive.account) || '', U: j.drive ? j.drive.used_gb + ' / ' + j.drive.limit_gb + ' GB' : '' })]
+                : [false, tfill(t('pf_gd_bad'), { E: !(j.auth && j.auth.ok) ? t('gd_not_conn') : String((j.drive && j.drive.error) || (j.folder && j.folder.error) || ('HTTP ' + r.status)).slice(0, 160) })];
+    }catch(e){ return [false, 'Google Drive: ' + errStr(e)]; } })(),
+    (async () => { try{
+      if (!isAdmin()) return [null, t('pf_bn_nor')];
+      const off0 = BN.off, err0 = BN.err; BN.err = '';
+      const cfg = await bnFetch('?cfg=1');
+      if (!cfg){ const e = BN.err || ''; BN.off = off0; if (/BN_NOT_CONFIGURED/.test(e)) return [null, t('pf_bn_off')]; return [false, 'Bouncie: ' + (e || t('bn_no_resp'))]; }
+      if (!(cfg.cfg && cfg.cfg.has_auth)){ BN.err = err0; return [null, t('pf_bn_noauth')]; }
+      const j = await bnFetch('?vehicles=1');
+      BN.off = off0;
+      return j && j.vehicles ? [true, tfill(t('pf_bn_ok'), { N: j.vehicles.length })] : [false, 'Bouncie: ' + (BN.err || '?')];
+    }catch(e){ return [false, 'Bouncie: ' + errStr(e)]; } })(),
+  ]);
+  [db, fns, gd, bn].forEach(([ok, s]) => add(ok, s));
+  return { lines: L, bad, at: Date.now() };
+}
+async function testPreflightGate(kind){
+  toast('⏳ ' + t('pf_title') + '…', 'inf', 2500);
+  let pf; try{ pf = await testPreflight(); }catch(e){ pf = { lines: ['⛔ ' + t('pf_title') + ': ' + errStr(e)], bad: 1, at: Date.now() }; }
+  PF.last = { ...pf, kind };
+  dlog('проверка перед тестом (' + kind + '): ' + pf.lines.join(' | '));
+  if (!pf.bad){ toast('✓ ' + t('pf_ok'), '', 3500); return true; }
+  return await askYes(tfill(t('pf_bad_q'), { N: pf.bad }) + '\n\n' + pf.lines.join('\n'), { title: t('pf_title'), ok: t('pf_run_anyway'), okIcon: 'play', danger: true, icon: 'warn' });
+}
 function tlogStart(kind, title){
   TLOG.cur = { kind, title, ver: APP_VERSION, started: new Date().toISOString(), finished: null, aborted: false, ok: null, total: null,
     user: (state.user && (state.user.display_name || state.user.login)) || '', role: (state.user && state.user.role) || '',
     ua: navigator.userAgent, lines: [], steps: [], txt: '' };
   TLOG.active = true;
+  /* v1.09.47: проверка перед тестом — первыми строками отчёта */
+  if (PF.last && Date.now() - PF.last.at < 5 * 60e3){
+    TLOG.cur.lines.push({ time: tlogStamp(), text: '— ' + t('pf_title') + ' —', cls: '' });
+    PF.last.lines.forEach(l => TLOG.cur.lines.push({ time: tlogStamp(), text: l, cls: /^⛔/.test(l) ? 'err' : '' }));
+    TLOG.cur.preflight = { bad: PF.last.bad, lines: PF.last.lines };
+    PF.last = null;
+  }
   tlogSaveNow();
 }
 function tlogLine(text, cls){
@@ -26669,6 +26869,7 @@ async function ctStepDel(jobId){
 async function camTestRun(){
   if (CT.busy || !isAdmin()) return;
   if (!camInCan()){ toast('⚠ ' + t('cam_in_denied'), 'err'); return; }
+  if (!(await testPreflightGate('camtest'))) return;                 // v1.09.47
   CT.busy = true; CT.rows = []; CT.lines = []; CT.txt = ''; CT.t0 = performance.now();
   tlogStart('camtest', t('ct_btn'));                              // v1.08.76
   const steps = [];
@@ -26897,6 +27098,7 @@ async function camTest2Run(resume){
   if (CT2.running) return;
   if (!resume){
     if (CT.busy || !isAdmin()) return;
+    if (!(await testPreflightGate('camtest2'))) return;              // v1.09.47
     CT2.st = { started: new Date().toISOString(), jobId: null, phase: 'job', phaseLabel: '', steps: [], reloads: [], t0s: {}, srvIds: [], finished: null };
     ct2Save();
     CT.rows = []; CT.lines = []; CT.txt = ''; CT.t0 = performance.now();
@@ -29605,6 +29807,7 @@ async function dftRun(){
   if (HAS_SB && netOff()){ toast('📴 ' + t('net_off_hint'), 'err'); return; }
   if (!dftOn()){ toast('🔒 ' + t('dft_mode_off'), 'err'); return; }
   const w = document.getElementById('dft-worker'); if (w) DFT.worker = w.value;
+  if (!(await testPreflightGate('docflow'))) return;                 // v1.09.47
   DFT.jh = null; DFT.rep = null;
   Object.assign(DFT, { running: true, stop: false, next: null, rows: [], run: 'dft-' + Date.now().toString(36), owner: state.user.id, locks: {}, seq: 0, net: 0, asked: [], marks: [], jsErr: 0, toasts: [], issues: [], cur: null, finishing: false });
   tlogStart('docflow', t('dft_card'));
@@ -30129,6 +30332,7 @@ async function dftRun(){
 const RG = { busy: false, rows: [] };
 async function regressRun(){
   if (RG.busy || !isAdmin()) return;
+  if (!(await testPreflightGate('regress'))) return;                 // v1.09.47
   RG.busy = true; RG.rows = [];
   tlogStart('regress', t('rg_btn'));                              // v1.08.76
   const paint = () => { const o = $('#rg-out'); if (o) o.innerHTML = RG.rows.join(''); const b = $('#rg-btn'); if (b){ b.disabled = RG.busy; b.innerHTML = ic('play') + ' ' + (RG.busy ? t('rg_running') : t('rg_btn')); } };
@@ -30177,7 +30381,7 @@ async function regressRun(){
       const c = document.createElement('canvas'); c.width = 800; c.height = 600; const g = c.getContext('2d');
       g.fillStyle = '#58CC02'; g.fillRect(0, 0, 800, 600); g.fillStyle = '#0E2A00'; g.font = 'bold 48px sans-serif'; g.fillText('TechLog regress photo', 40, 300);
       const pb = await new Promise(r => c.toBlob(r, 'image/jpeg', .85));
-      if (!(await mediaEnqueueFile(jobId, new File([pb], 'regress-photo.jpg', { type: 'image/jpeg' }), 'photo'))) throw new Error('фото не встало в очередь');
+      if (!(await mediaEnqueueFile(jobId, new File([pb], 'regress-photo.jpg', { type: 'image/jpeg' }), 'photo', 'job', { selftest: true }))) throw new Error('фото не встало в очередь');
       let vNote = 'видео';
       if (typeof MediaRecorder !== 'undefined'){
         const vc = document.createElement('canvas'); vc.width = 320; vc.height = 240; const vg = vc.getContext('2d');
@@ -30191,7 +30395,7 @@ async function regressRun(){
         const vb = new Blob(chunks, { type: rec.mimeType || mime || 'video/webm' });
         if (vb.size){
           const ext = /mp4/.test(vb.type) ? 'mp4' : 'webm';
-          if (!(await mediaEnqueueFile(jobId, new File([vb], 'regress-video.' + ext, { type: vb.type }), 'video'))) throw new Error('видео не встало в очередь');
+          if (!(await mediaEnqueueFile(jobId, new File([vb], 'regress-video.' + ext, { type: vb.type }), 'video', 'job', { selftest: true }))) throw new Error('видео не встало в очередь');
         } else vNote = 'видео пустое — пропущено';
       } else vNote = 'видео: браузер не записывает — пропущено';
       const doc = new File([new Blob(['TechLog regress document ' + new Date().toISOString()], { type: 'text/plain' })], 'regress-doc.txt', { type: 'text/plain' });

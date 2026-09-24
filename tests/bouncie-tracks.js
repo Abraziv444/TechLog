@@ -49,7 +49,8 @@ const src = fs.readFileSync(path.join(__dirname, '..', 'supabase/functions/bounc
 const js = ts.transpileModule(src, { compilerOptions: { target: 'ES2022', module: 'None' } }).outputText;
 new Function('__g', js)(googleStub);
 const call = async (qs) => handler({ method: 'GET', url: 'https://x/functions/v1/bouncie' + qs, headers: { get: () => 'Bearer x' } });
-const day = (d) => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10);
+const NYF = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' });
+const day = (d) => NYF.format(new Date(Date.now() + d * 864e5));   // v1.09.47: день — по Нью-Йорку, как у функции (с 20:00 до 24:00 по NY дата UTC уже завтрашняя, тест «сегодня» промахивался)
 const trip = (imei, isoStart, min, mi, tx) => ({ imei, transactionId: tx, startTime: isoStart, endTime: new Date(Date.parse(isoStart) + min * 60e3).toISOString(), distance: mi, gps: '_p~iF~ps|U_ulLnnqC' });
 
 (async () => {

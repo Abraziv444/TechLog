@@ -119,7 +119,7 @@ t('нет ключей только в одном языке', miss.length === 0
  'pop_card','pop_top','pop_bottom','pop_side','pop_demo','act_doc_translate',
  'inv_drive','inv_queued','gd_inv_folder','gd_inv_hint','gd_where_inv','name_en_hint',
  'no_card','no_doc_lbl','no_file_lbl','no_pad_lbl','no_t_TECH','doc_no',
- 'gd_inv_tech','gd_inv_tech_tip','gd_inv_tech_ex']
+ 'gd_inv_tech_line','gd_inv_tech_tip','gd_inv_tech_ex']   /* v1.09.46: мёртвая подпись gd_inv_tech убрана (метрика tests/metrics.js) */
   .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
 
 console.log('\n— кириллица и текст для PDF —');
