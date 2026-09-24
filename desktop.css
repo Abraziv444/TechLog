@@ -968,3 +968,6 @@ html.tl-desktop .st-sels{ grid-template-columns:1fr 1fr }
 @media (min-width: 980px) and (hover:hover){
   html.tl-desktop .set-nav-b:hover{ color:var(--text); background:var(--panel-2); }
 }
+
+/* v1.09.44: см. styles.css — min-width:190px контейнера .info не должен доставаться фишке «Общий» (chip info) */
+html.tl-desktop .item .chip.info{ min-width:0; }

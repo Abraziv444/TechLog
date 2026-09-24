@@ -79,7 +79,7 @@ const expose = `;window.__T = {
   DF, JL, DF_REJECT, jobMode, jobOrig, meProf, dfReady, dfRejectCode, techTag, techTagAuto, canApprove, isJobSharedWithMe, crewMainCan,
   dfNotices, dfReqs, ntfUnread, chThreads, chCanPost, chMuted, chIsCh, chBoss, dfStaffLineHtml, setJobDraft: d => { jobDraft = d; },
   /* v1.09.26 */
-  jobRights, dflCollect, dfProblems, dfProblemAdd, dfProblemDrop, pkNoteOf, pkPending, dfDev, dayMoveOn, accCrewOf, archPickupsHtml,
+  jobRights, dflCollect, dfProblems, dfProblemAdd, dfProblemDrop, pkNoteOf, pkPending, dfDev, accCrewOf, archPickupsHtml,
   /* v1.09.27 */
   DFT, dftOn, dftStripTest, dftDemoExec, dftFullForm, dftNorm, dftCut, DFT_NET_RE, calcTotal, priceResolver,
   /* v1.09.31 */
@@ -543,7 +543,7 @@ console.log('\n— документ ремонтных работ (v1.08.23) —
   t('перевод видит заметку, работы и материалы', fs2.length === 3, String(fs2.length));
   fs2[1].set('Drywall installation');
   t('перевод пишется в строку работ', doc.items[0].d_en === 'Drywall installation');
-  t('ярлык документа ремонта', /^R-/.test(T.trDocLabel('rep', { no: 4, date: '2026-09-09' })),
+  t('ярлык документа ремонта — номер по шаблону (v1.09.44, п. 58)', /^REP-.*00004 · 09\/09\/2026$/.test(T.trDocLabel('rep', { no: 4, date: '2026-09-09' })),
     T.trDocLabel('rep', { no: 4, date: '2026-09-09' }));
 
   const cx = d.complexes[0];
@@ -836,7 +836,7 @@ console.log('\n— пуши, время, поиск, оптимизация (v1.
    'sec_card','mfa_on','mfa_enable','mfa_code','tt_tab','tt_title','tt_onsite','tt_now',
    'st_cfg','st_last_seen','st_sessions','st_kill','st_bn_access','st_tt_self',
    'srch_btn','srch_ph','srch_empty','opt_btn','opt_title','opt_apply','opt_open',
-   'tpl_clone','tpl_move_day','tpl_card','feat_card','abk_card','abk_now','code_remind_lbl',
+   'tpl_clone','tpl_card','feat_card','abk_card','abk_now','code_remind_lbl',
    'code_old','veh_service','veh_track','veh_mil','bn_no_access','upd_title','demo_sb_only']
     .forEach(k => t('ключ ' + k + ' в обоих языках', (k in T.DICT.ru) && (k in T.DICT.en)));
 
@@ -2580,7 +2580,7 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   t('v1.09.26: у каждого кода отказа есть текст на обоих языках', ['STALE_DOC', 'DOC_LOCKED_DONE', 'DOC_LOCKED_APPROVED', 'DOC_LOCKED_DELETE', 'FORBIDDEN_CREW', 'FORBIDDEN_APPROVE',
     'FORBIDDEN_EQUIPMENT', 'FORBIDDEN_FIELD', 'TRANSLATION_REQUIRED', 'SELF_APPROVE_OFF', 'LINK_LOCKED', 'LOCKED', 'NO_RIGHTS', 'ERROR'].every(c => T.DICT.ru['df_rej_' + c] && T.DICT.en['df_rej_' + c]));
   t('v1.09.26: архивный пикап не считается ожидающим; метка устройства постоянна; «Перенести день» выключен',
-    T.pkPending({ picked_up: false, superseded: false }) && !T.pkPending({ picked_up: false, superseded: false, archived_at: '2026-09-21' }) && T.dfDev() === T.dfDev() && T.dfDev().length >= 8 && T.dayMoveOn() === false);
+    T.pkPending({ picked_up: false, superseded: false }) && !T.pkPending({ picked_up: false, superseded: false, archived_at: '2026-09-21' }) && T.dfDev() === T.dfDev() && T.dfDev().length >= 8 && T.dayMoveOn === undefined);   /* v1.09.44: «Перенести день» удалён целиком */
   t('v1.09.26: бухгалтерия берёт бригаду заапрувленного инвойса из снимка на момент апрува',
     T.accCrewOf('job', { status: 'approved', technician_id: 'a', helper_ids: ['x'], approved_crew: { main: 'm', crew: ['h1', 'h2'] } }).join() === 'm,h1,h2'
     && T.accCrewOf('job', { status: 'done', technician_id: 'a', helper_ids: ['x'], approved_crew: { main: 'm', crew: [] } }).join() === 'a,x');

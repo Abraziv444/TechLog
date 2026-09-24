@@ -2443,7 +2443,7 @@ insert into public.org_settings (id) values ('org') on conflict (id) do nothing;
 -- ============================================================
 alter table public.media drop constraint if exists media_kind_check;
 alter table public.media add constraint media_kind_check
-  check (kind in ('photo','video','file'));
+  check (kind in ('photo','video','file','invoice'));   -- v1.09.44: сразу полный список — иначе повторный запуск на базе с PDF-инвойсами падает (23514)
 
 -- ▄▄▄▄▄▄▄▄▄▄ САМОПРОВЕРКА КОМПЛЕКТНОСТИ (v1.07.76) ▄▄▄▄▄▄▄▄▄▄
 -- Ничего не меняет: перечисляет недостающее или подтверждает готовность.

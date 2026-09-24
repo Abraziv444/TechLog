@@ -3515,3 +3515,9 @@ html.tl-desktop .dft-panel { bottom: 14px; }
 /* v1.09.42 (п. 42): вопрос в окне приложения поверх открытого окна */
 .overlay.ask-top{z-index:1150;background:rgba(5,10,13,.55)}
 .overlay.ask-top .modal{max-width:440px}
+
+/* v1.09.44 (п. 58): номер документа по шаблону длинный — фишки и строки с номером не вылезают за край */
+.chip.pr,.chip.rep{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+/* v1.09.44: фишка «Общий» имеет класс chip info — правила контейнера карточки .item .info (flex:1, на ПК min-width:190px)
+   цепляли и её: фишка раздувалась до 190 px, вытесняла вид работ и фишки PROP / REP за край строки */
+.item .chip.info{flex:0 0 auto;min-width:0}

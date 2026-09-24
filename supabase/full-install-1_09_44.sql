@@ -103,7 +103,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   login text not null,
   display_name text not null,
-  role text not null default 'tech' check (role in ('admin','manager','tech')),
+  role text not null default 'tech' check (role in ('admin','manager','tech','accountant')),   -- v1.09.42 (п. 55): роль бухгалтера — сразу в create table
   created_at timestamptz not null default now()
 );
 create unique index if not exists profiles_login_ux on public.profiles (lower(login));
@@ -10999,3 +10999,337 @@ begin
 end $$;
 
 select 'TechLog v1.09.38 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_40 ▄▄▄▄▄▄▄▄▄▄
+
+-- =====================================================================
+-- TechLog · update-to-1_09_40.sql  (после 1.09.38; идемпотентно — можно запускать повторно)
+--  Замечания по коду v1.09.38 (первый пакет):
+--  1) п. 4 — строки справочников, на которые ссылаются документы, база не даёт удалить (dir_del_guard):
+--     контрагент, комплекс, вид задачи, тип оборудования. Раньше каскад стирал комплексы, пикапы, движения склада.
+--  2) п. 5 — сотрудника с документами нельзя удалить и в панели Supabase (profile_del_guard): удаление
+--     пользователя там откатывается целиком с ошибкой USER_HAS_DOCUMENTS. Блокировка в приложении — как раньше.
+--  3) п. 9 — журнал: при прямой записи из приложения база сама ставит автора и его имя, время не может уйти
+--     в будущее или далеко в прошлое, служебные действия (роли, доступы, бухгалтерия, апрув) пишет только
+--     та роль, которой они разрешены; в details добавляется _role — роль автора на момент записи.
+--     Записи самой базы (RPC, триггеры) и Edge Functions не трогаются.
+--  4) п. 10 — пикап без исполнителя меняют админ, менеджер и основной исполнитель самой задачи (не любой сотрудник:
+--     раньше любой вошедший мог «забрать» ничейный пикап себе).
+--  5) п. 12 — media.upload_id: сессия загрузки Google Drive, открытая media-begin; media-put 1.09.40 пускает
+--     докачку только в сессию своего файла.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Справочники: удаление строки, которая используется в документах
+-- ---------------------------------------------------------------------
+create or replace function public.dir_del_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare n_cx int := 0; n_doc int := 0; n_mv int := 0;
+begin
+  if coalesce(current_setting('techlog.restore', true), '') = '1' then return old; end if;
+  if tg_table_name = 'counterparties' then
+    select count(*) into n_cx from public.complexes where counterparty_id = old.id;
+    select (select count(*) from public.jobs       where counterparty_id = old.id)
+         + (select count(*) from public.placements where counterparty_id = old.id)
+         + (select count(*) from public.proposals  where counterparty_id = old.id)
+         + (select count(*) from public.repairs    where counterparty_id = old.id) into n_doc;
+  elsif tg_table_name = 'complexes' then
+    select (select count(*) from public.jobs       where complex_id = old.id)
+         + (select count(*) from public.placements where complex_id = old.id)
+         + (select count(*) from public.proposals  where complex_id = old.id)
+         + (select count(*) from public.repairs    where complex_id = old.id) into n_doc;
+  elsif tg_table_name = 'work_types' then
+    select count(*) into n_doc from public.jobs where work_type_id = old.id;
+  elsif tg_table_name = 'equipment_types' then
+    select count(*) into n_doc from public.placements  where equipment_type_id = old.id;
+    select count(*) into n_mv  from public.equip_moves where equipment_type_id = old.id;
+  end if;
+  if n_cx + n_doc + n_mv > 0 then
+    raise exception 'IN_USE: комплексов %, документов %, движений склада %', n_cx, n_doc, n_mv using errcode = 'P0001';
+  end if;
+  return old;
+end $$;
+drop trigger if exists dir_del_guard_tg on public.counterparties;
+create trigger dir_del_guard_tg before delete on public.counterparties  for each row execute function public.dir_del_guard();
+drop trigger if exists dir_del_guard_tg on public.complexes;
+create trigger dir_del_guard_tg before delete on public.complexes       for each row execute function public.dir_del_guard();
+drop trigger if exists dir_del_guard_tg on public.work_types;
+create trigger dir_del_guard_tg before delete on public.work_types      for each row execute function public.dir_del_guard();
+drop trigger if exists dir_del_guard_tg on public.equipment_types;
+create trigger dir_del_guard_tg before delete on public.equipment_types for each row execute function public.dir_del_guard();
+
+-- ---------------------------------------------------------------------
+-- 2. Профиль сотрудника с документами не удаляется (и из панели Supabase)
+--    auth.users → profiles идёт каскадом; исключение здесь откатывает удаление пользователя целиком.
+-- ---------------------------------------------------------------------
+create or replace function public.profile_del_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare n int := 0;
+begin
+  if coalesce(current_setting('techlog.restore', true), '') = '1' then return old; end if;
+  select (select count(*) from public.jobs       where technician_id = old.id)
+       + (select count(*) from public.placements where technician_id = old.id)
+       + (select count(*) from public.repairs    where created_by    = old.id)
+       + (select count(*) from public.proposals  where created_by    = old.id)
+       + (select count(*) from public.media      where owner_id      = old.id) into n;
+  if n > 0 then
+    raise exception 'USER_HAS_DOCUMENTS: у сотрудника % документов и файлов. Не удаляйте — заблокируйте в приложении (Справочники → Сотрудники)', n
+      using errcode = 'P0001';
+  end if;
+  return old;
+end $$;
+drop trigger if exists profile_del_guard_tg on public.profiles;
+create trigger profile_del_guard_tg before delete on public.profiles for each row execute function public.profile_del_guard();
+
+-- ---------------------------------------------------------------------
+-- 3. Журнал: прямую запись приложения проверяет база
+--    Функция НЕ security definer: current_user = роль того, кто пишет. Запись из RPC/триггеров базы идёт
+--    от владельца функций, из Edge Functions — от service_role; их не трогаем.
+-- ---------------------------------------------------------------------
+create or replace function public.audit_guard()
+returns trigger language plpgsql set search_path = public as $$
+declare r text; nm text;
+begin
+  if current_user is distinct from 'authenticated' then return new; end if;
+  select p.role, p.display_name into r, nm from public.profiles p where p.id = auth.uid();
+  new.actor := auth.uid();
+  new.actor_name := coalesce(nm, new.actor_name, '');
+  -- запись из офлайн-очереди приходит позже и со своим временем; будущее и «глубокое прошлое» не принимаем
+  if new.at is null or new.at > now() + interval '10 minutes' or new.at < now() - interval '14 days' then new.at := now(); end if;
+  if new.action is null or new.action !~ '^[a-z][a-z0-9_]{1,48}$' then
+    raise exception 'AUDIT_BAD_ACTION' using errcode = 'P0001';
+  end if;
+  if new.action = any (array['user_create','role_change','user_block','user_unblock','org_tz','org_office','doc_rights',
+       'staff_flag','password_reset','sess_kill','car_no_set','veh_save','veh_del','mt_save','mt_del','bn_dev_sync',
+       'jr_archive','backup_restore'])
+     and r is distinct from 'admin' then
+    raise exception 'AUDIT_FORBIDDEN: %', new.action using errcode = 'P0001';
+  end if;
+  if new.action = any (array['acc_mark','acc_rates','acc_map','acc_pay_add','acc_pay_del'])
+     and coalesce(r, '') not in ('admin','accountant') then
+    raise exception 'AUDIT_FORBIDDEN: %', new.action using errcode = 'P0001';
+  end if;
+  if new.action = any (array['job_approve','approve_resum','edit_request_granted','edit_request_denied'])
+     and coalesce(r, '') not in ('admin','manager') then
+    raise exception 'AUDIT_FORBIDDEN: %', new.action using errcode = 'P0001';
+  end if;
+  new.details := coalesce(new.details, '{}'::jsonb) || jsonb_build_object('_role', coalesce(r, ''));
+  return new;
+end $$;
+drop trigger if exists audit_guard_tg on public.audit_log;
+create trigger audit_guard_tg before insert on public.audit_log for each row execute function public.audit_guard();
+drop trigger if exists audit_guard_tg on public.tech_log;
+create trigger audit_guard_tg before insert on public.tech_log  for each row execute function public.audit_guard();
+
+-- ---------------------------------------------------------------------
+-- 4. Пикап без исполнителя: не любой вошедший
+-- ---------------------------------------------------------------------
+create or replace function public.is_job_main(p_job uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.jobs j where j.id = p_job and j.technician_id = auth.uid())
+$$;
+revoke all on function public.is_job_main(uuid) from public, anon;
+grant execute on function public.is_job_main(uuid) to authenticated;
+
+drop policy if exists pl_upd on public.placements;
+create policy pl_upd on public.placements for update to authenticated
+  using (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+         or (technician_id is null and public.is_job_main(job_id))
+         or public.is_shared_job_helper(job_id))
+  with check (technician_id = auth.uid() or public.my_role() in ('admin','manager')
+              or (technician_id is null and public.is_job_main(job_id))
+              or public.is_shared_job_helper(job_id));
+
+-- ---------------------------------------------------------------------
+-- 5. Сессия загрузки файла — для проверки в media-put
+-- ---------------------------------------------------------------------
+alter table public.media add column if not exists upload_id text;
+create index if not exists media_upload_id_idx on public.media(upload_id) where upload_id is not null;
+
+-- ▄▄▄▄▄▄▄▄▄▄ САМОПРОВЕРКА ▄▄▄▄▄▄▄▄▄▄
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from pg_trigger where tgname = 'dir_del_guard_tg' and tgrelid = 'public.counterparties'::regclass) then miss := miss || ' dir_del_guard_tg(counterparties)'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'dir_del_guard_tg' and tgrelid = 'public.equipment_types'::regclass) then miss := miss || ' dir_del_guard_tg(equipment_types)'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'profile_del_guard_tg') then miss := miss || ' profile_del_guard_tg'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'audit_guard_tg' and tgrelid = 'public.audit_log'::regclass) then miss := miss || ' audit_guard_tg(audit_log)'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'audit_guard_tg' and tgrelid = 'public.tech_log'::regclass) then miss := miss || ' audit_guard_tg(tech_log)'; end if;
+  if to_regprocedure('public.is_job_main(uuid)') is null then miss := miss || ' is_job_main'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'media' and column_name = 'upload_id') then miss := miss || ' media.upload_id'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.40 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.40 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_42 ▄▄▄▄▄▄▄▄▄▄
+
+-- =====================================================================
+-- TechLog · update-to-1_09_42.sql  (после 1.09.40; идемпотентно — можно запускать повторно)
+--  Замечания по коду v1.09.38 (третий пакет):
+--  1) п. 51 — предельный размер файла задаёт админ в Настройках (МБ): media_mb_photo / _video / _file / _invoice.
+--     Пусто — действуют прежние значения из media-begin (8 / 120 / 25 / 20 МБ). Проверяет media-begin 1.09.42.
+--  2) п. 53 — устаревшие таблица и колонки помечены как архив (данные не трогаем): equipment_stock (остатки
+--     считаются по журналу equip_moves с v1.08.27), doc_shares (журнал «Поделиться» заменён чатом в 1.09.21),
+--     vehicles.service_due_mi / service_notified (ТО по видам из справочника с 1.09.38).
+--  3) п. 55 — проверка роли в full-install исправлена в самом create table (здесь — только сверка).
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Размер файлов
+-- ---------------------------------------------------------------------
+alter table public.org_settings add column if not exists media_mb_photo   int;
+alter table public.org_settings add column if not exists media_mb_video   int;
+alter table public.org_settings add column if not exists media_mb_file    int;
+alter table public.org_settings add column if not exists media_mb_invoice int;
+alter table public.org_settings drop constraint if exists org_settings_media_mb_chk;
+alter table public.org_settings add constraint org_settings_media_mb_chk check (
+      (media_mb_photo   is null or media_mb_photo   between 1 and 50)
+  and (media_mb_video   is null or media_mb_video   between 10 and 500)
+  and (media_mb_file    is null or media_mb_file    between 1 and 100)
+  and (media_mb_invoice is null or media_mb_invoice between 1 and 50));
+
+-- ---------------------------------------------------------------------
+-- 2. Архивные таблица и колонки (только пометка)
+-- ---------------------------------------------------------------------
+do $$ begin
+  if to_regclass('public.equipment_stock') is not null then
+    comment on table public.equipment_stock is 'АРХИВ (v1.09.42): остатки считаются по журналу equip_moves с v1.08.27; приложение таблицу не читает и не пишет, в бэкап попадает для совместимости';
+  end if;
+  if to_regclass('public.doc_shares') is not null then
+    comment on table public.doc_shares is 'АРХИВ (v1.09.42): журнал «Поделиться документом» 1.09.14, заменён чатом «Сообщения» в 1.09.21; новые строки не пишутся';
+  end if;
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'vehicles' and column_name = 'service_due_mi') then
+    comment on column public.vehicles.service_due_mi is 'АРХИВ (v1.09.42): ТО по видам — таблицы maint_types / vehicle_maint (1.09.38); колонка очищена, приложение её не показывает';
+  end if;
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'vehicles' and column_name = 'service_notified') then
+    comment on column public.vehicles.service_notified is 'АРХИВ (v1.09.42): см. vehicle_maint';
+  end if;
+end $$;
+
+-- ▄▄▄▄▄▄▄▄▄▄ САМОПРОВЕРКА ▄▄▄▄▄▄▄▄▄▄
+do $$
+declare miss text := '';
+begin
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'org_settings' and column_name = 'media_mb_invoice') then miss := miss || ' org_settings.media_mb_*'; end if;
+  if not exists (select 1 from pg_constraint where conname = 'profiles_role_check'
+                 and pg_get_constraintdef(oid) like '%accountant%') then miss := miss || ' profiles_role_check(accountant)'; end if;
+  if not exists (select 1 from pg_trigger where tgname = 'audit_guard_tg') then miss := miss || ' (сначала update-to-1_09_40.sql)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.42 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.42 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_43 ▄▄▄▄▄▄▄▄▄▄
+
+-- =====================================================================
+-- TechLog · update-to-1_09_43.sql  (после 1.09.42; идемпотентно — можно запускать повторно)
+--  Замечание по коду v1.09.38, п. 8 — база отдавала любому вошедшему больше, чем показывает приложение.
+--  1) ПРОФИЛИ. Строку профиля целиком читает только сам человек и админ. Остальные видят сотрудников через
+--     представление profiles_pub — только то, что нужно для работы: имя, логин, роль, номер машины,
+--     блокировка, сокращение для номеров документов, право апрува (кому уходят документы на согласование).
+--     Личные настройки (push_prefs), доступы (трекер, журнал времени, учёба, правка общих документов,
+--     объявления) и вид сотрудника чужим больше не отдаются. Функции базы (security definer) и Edge Functions
+--     (сервисный ключ) читают профили как раньше.
+--  2) СКЛАД. Журнал движений (equip_moves), суточные остатки (stock_daily) и старые остатки (equipment_stock)
+--     сотрудник читает только при включённой галочке «Сотрудники видят остатки склада»; иначе — только движения
+--     своей машины и свои операции. Сколько доступно для «Взять» / «В ремонт», сотрудник спрашивает у функции
+--     stock_avail() — она отдаёт только итоговые числа по типам, без журнала.
+--  Что намеренно НЕ закрыто: прайс и цены контрагентов (без них не посчитать инвойс), справочники,
+--  машины (номер, марка, VIN — VIN и так написан на машине; водителю и карте они нужны).
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Профили
+-- ---------------------------------------------------------------------
+create or replace view public.profiles_pub with (security_barrier = true) as
+  select id, login, display_name, role, created_at, car_no, blocked, tag, can_approve
+  from public.profiles;
+comment on view public.profiles_pub is 'v1.09.43: сотрудники для всех вошедших — только рабочие поля. Полную строку читают сам человек и админ (политика profiles_sel).';
+revoke all on public.profiles_pub from public, anon;
+grant select on public.profiles_pub to authenticated;
+
+drop policy if exists profiles_sel on public.profiles;
+create policy profiles_sel on public.profiles for select to authenticated
+  using (id = auth.uid() or public.my_role() = 'admin');
+
+-- ---------------------------------------------------------------------
+-- 2. Склад
+-- ---------------------------------------------------------------------
+create or replace function public.stock_visible_me()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce(public.my_role(), '') in ('admin','manager','accountant')
+      or coalesce((select stock_visible_all from public.org_settings where id = 'org'), true)
+$$;
+revoke all on function public.stock_visible_me() from public, anon;
+grant execute on function public.stock_visible_me() to authenticated;
+
+drop policy if exists em_sel on public.equip_moves;
+create policy em_sel on public.equip_moves for select to authenticated
+  using (public.stock_visible_me() or tech_id = auth.uid() or actor = auth.uid());
+
+drop policy if exists sd_sel on public.stock_daily;
+create policy sd_sel on public.stock_daily for select to authenticated
+  using (public.stock_visible_me());
+
+drop policy if exists stock_sel on public.equipment_stock;
+create policy stock_sel on public.equipment_stock for select to authenticated
+  using (public.stock_visible_me());
+
+-- сколько на складе и в ремонте по каждому типу — итог журнала, без самих строк
+create or replace function public.stock_avail()
+returns table (equipment_type_id uuid, stock int, repair int)
+language sql stable security definer set search_path = public as $$
+  select m.equipment_type_id,
+         (coalesce(sum(m.qty) filter (where m.to_loc = 'stock'), 0) - coalesce(sum(m.qty) filter (where m.from_loc = 'stock'), 0))::int,
+         (coalesce(sum(m.qty) filter (where m.to_loc = 'repair'), 0) - coalesce(sum(m.qty) filter (where m.from_loc = 'repair'), 0))::int
+  from public.equip_moves m
+  where auth.uid() is not null
+  group by m.equipment_type_id
+$$;
+revoke all on function public.stock_avail() from public, anon;
+grant execute on function public.stock_avail() to authenticated;
+
+-- ▄▄▄▄▄▄▄▄▄▄ САМОПРОВЕРКА ▄▄▄▄▄▄▄▄▄▄
+do $$
+declare miss text := '';
+begin
+  if to_regclass('public.profiles_pub') is null then miss := miss || ' profiles_pub'; end if;
+  if not exists (select 1 from pg_policy where polname = 'profiles_sel' and polrelid = 'public.profiles'::regclass
+                 and pg_get_expr(polqual, polrelid) like '%auth.uid()%') then miss := miss || ' profiles_sel'; end if;
+  if to_regprocedure('public.stock_avail()') is null then miss := miss || ' stock_avail'; end if;
+  if not exists (select 1 from pg_policy where polname = 'em_sel' and pg_get_expr(polqual, polrelid) like '%stock_visible_me%') then miss := miss || ' em_sel'; end if;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'org_settings' and column_name = 'media_mb_photo') then miss := miss || ' (сначала update-to-1_09_42.sql)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.43 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.43 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;
+
+
+-- ▄▄▄▄▄▄▄▄▄▄ ДЕЛЬТА · update-to-1_09_44 ▄▄▄▄▄▄▄▄▄▄
+
+-- =====================================================================
+-- TechLog · update-to-1_09_44.sql  (после 1.09.43; идемпотентно — можно запускать повторно)
+--  Замечание по коду v1.09.38, п. 52 (мёртвый код): функция vehicle_service_set («ТО на пробеге», 1.08.33)
+--  интерфейсом не вызывается с 1.09.38 — ТО ведётся по видам (maint_types / vehicle_maint). Удаляется.
+--  Колонки vehicles.service_due_mi / service_notified остаются в архиве (пометка 1.09.42), данные не трогаем.
+-- =====================================================================
+drop function if exists public.vehicle_service_set(uuid, int);
+
+-- ▄▄▄▄▄▄▄▄▄▄ САМОПРОВЕРКА ▄▄▄▄▄▄▄▄▄▄
+do $$
+declare miss text := '';
+begin
+  if to_regprocedure('public.vehicle_service_set(uuid,int)') is not null then miss := miss || ' vehicle_service_set ещё есть'; end if;
+  if to_regclass('public.profiles_pub') is null then miss := miss || ' (сначала update-to-1_09_43.sql)'; end if;
+  if miss <> '' then raise warning 'TechLog: НЕ ХВАТАЕТ:%  — перезапустите скрипт целиком.', miss;
+  else raise notice 'TechLog: обновление до v1.09.44 применено — всё на месте.'; end if;
+end $$;
+
+select 'TechLog v1.09.44 — скрипт выполнен. Смотрите NOTICE выше: «всё на месте» = готово.' as result;

@@ -96,7 +96,7 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
   /* ---------- SQL и функции ---------- */
   const up = fs.readFileSync(path.join(ROOT, 'supabase/update-to-1_09_42.sql'), 'utf8');
   const full = fs.readFileSync(path.join(ROOT, 'supabase/full-install-1_09_42.sql'), 'utf8');
-  t('п.51, 53: SQL — колонки media_mb_* с границами, архивные пометки; full-install заканчивается обновлением', /media_mb_invoice int/.test(up) && /org_settings_media_mb_chk/.test(up) && /comment on table public\.equipment_stock is 'АРХИВ/.test(up) && full.endsWith(up) && src.includes("const DB_SQL_FILE = 'full-install-1_09_42.sql';"));
+  t('п.51, 53: SQL — колонки media_mb_* с границами, архивные пометки; full-install заканчивается обновлением', /media_mb_invoice int/.test(up) && /org_settings_media_mb_chk/.test(up) && /comment on table public\.equipment_stock is 'АРХИВ/.test(up) && full.endsWith(up) && /const DB_SQL_FILE = 'full-install-1_09_(4[2-9]|[5-9]\d)\.sql';/.test(src));
   t('п.55: роль бухгалтера — прямо в create table profiles', /role text not null default 'tech' check \(role in \('admin','manager','tech','accountant'\)\)/.test(full));
   const fn = n => fs.readFileSync(path.join(ROOT, 'supabase/functions', n, 'index.ts'), 'utf8');
   t('п.51: media-begin берёт предел размера из org_settings.media_mb_*', /media_mb_photo/.test(fn('media-begin')) && /BEGIN_VER = "1\.09\.42"/.test(fn('media-begin')) && src.includes("'media-begin': '1.09.42'"));

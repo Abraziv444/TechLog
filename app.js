@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.42';
-const DB_SQL_FILE = 'full-install-1_09_42.sql';
+const APP_VERSION = '1.09.44';
+const DB_SQL_FILE = 'full-install-1_09_44.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -299,9 +299,6 @@ const I18N = {
     opt_tip: 'Считает объезд «ближайший сосед» от вашей машины (или первой точки) и показывает, сколько миль экономит новый порядок.',
     tpl_clone: 'Создать такую же', tpl_clone_title: 'Новая задача по образцу',
     tpl_date: 'Дата новой задачи', tpl_created: 'Создана копия задачи',
-    tpl_move_day: 'Перенести день', tpl_move_title: 'Перенос дня',
-    tpl_move_to: 'На дату', tpl_move_jobs: 'задачи', tpl_move_pk: 'пикапы (срок)',
-    tpl_moved: 'Перенесено', tpl_nothing: 'Переносить нечего',
     tpl_card: 'Шаблоны и перенос дня', tpl_on_lbl: 'Кнопки «Создать такую же» и «Перенести день»',
     tpl_tip: '«Создать такую же» копирует комплекс, юнит, тип и состав задач в новую дату. «Перенести день» двигает все черновики и несобранные пикапы дня разом (дождь, форс-мажор).',
     code_card: 'Коды доступа', code_remind_lbl: 'Напоминать о старых кодах',
@@ -325,7 +322,7 @@ const I18N = {
     abk_perm_ok: 'Вечная копия готова',
     veh_service: 'ТО на одометре, mi', veh_service_left: 'до ТО {n} mi',
     veh_service_over: 'ТО просрочено на {n} mi', veh_mil: 'Check Engine',
-    veh_fuel_low: 'мало топлива', veh_track: 'Трек дня', veh_track_off: 'Скрыть трек',
+    veh_fuel_low: 'мало топлива', veh_track: 'Трек дня',
     veh_tip: 'Поле «ТО на одометре»: когда до порога останется 500 mi, придёт пуш тем, кому включены уведомления о ТО.',
     bn_no_access: 'Трекер недоступен: доступ выдаёт админ в Штате',
     upd_title: 'Что нового (1.08.27 → 1.08.33)',
@@ -768,7 +765,6 @@ const I18N = {
     overdue_hint: 'Просроченные пикапы не входят в число «сегодня» — они показаны отдельным числом.',
     ext_rules_hint: 'Количество можно только уменьшить — продлеваем не больше, чем стоит у клиента; остаток забирается в срок. Продление — максимум {N} дн. за раз.',
     ext_max_note: 'макс {N}', restore_pk: 'Вернуть в аренду', restored: 'Возвращено в аренду',
-    mgr_approve_chk: 'Менеджер может ставить апрув инвойсов',
     eq_settings_title: 'Аренда оборудования и права',
     docs_set_card: 'Настройки документов', docs_my_title: 'Карточка работы и поиск',
     def_days_lbl: 'Аренда по умолчанию, дн.', max_ext_lbl: 'Максимум продления, дн.',
@@ -1830,9 +1826,6 @@ const I18N = {
     opt_tip: 'Runs a nearest-neighbor pass from your car (or the first stop) and shows how many miles the new order saves.',
     tpl_clone: 'Create same', tpl_clone_title: 'New job from this one',
     tpl_date: 'Date of the new job', tpl_created: 'Copy created',
-    tpl_move_day: 'Move day', tpl_move_title: 'Move the whole day',
-    tpl_move_to: 'To date', tpl_move_jobs: 'jobs', tpl_move_pk: 'pickups (due)',
-    tpl_moved: 'Moved', tpl_nothing: 'Nothing to move',
     tpl_card: 'Templates & day move', tpl_on_lbl: '“Create same” and “Move day” buttons',
     tpl_tip: '“Create same” copies the complex, unit, type and services to a new date. “Move day” shifts all drafts and pending pickups at once (rain, force-majeure).',
     code_card: 'Access codes', code_remind_lbl: 'Remind about stale codes',
@@ -1856,7 +1849,7 @@ const I18N = {
     abk_perm_ok: 'Permanent copy done',
     veh_service: 'Service at odometer, mi', veh_service_left: '{n} mi to service',
     veh_service_over: 'service overdue by {n} mi', veh_mil: 'Check Engine',
-    veh_fuel_low: 'low fuel', veh_track: 'Day track', veh_track_off: 'Hide track',
+    veh_fuel_low: 'low fuel', veh_track: 'Day track',
     veh_tip: 'When the odometer gets within 500 mi of this value, a push goes to everyone with service notifications on.',
     bn_no_access: 'Tracker unavailable: an admin grants access in Staff',
     upd_title: 'What’s new (1.08.27 → 1.08.33)',
@@ -2229,7 +2222,7 @@ const I18N = {
     gd_inv_tech_tip: 'Unchecked — every invoice sits in one folder by month: «Invoices / 2026-09». Checked — the staff folder comes first and the month lives inside it: «Invoices / Ivan P / 2026-09», so every person gets a fresh folder each month. The folder name comes from the profile: first name and the first letter of the surname, in Latin — the same signature as in documents. Invoices already uploaded stay where they are.',
     gd_inv_tech_ex: 'Path example',
     tab_archive: 'Archive', tab_action: 'Action',
-    act_title: 'Needs your action',
+    act_title: 'Needs action',
     act_meta: 'Not uploading: no counterparty or unit',
     act_meta_h: 'These documents have photos or files, but nothing goes to Drive: the path is built from counterparty, complex and unit. Fill them in and the upload resumes by itself.',
     act_meta_ok: 'Every document with files is filled in',
@@ -2289,7 +2282,6 @@ const I18N = {
     overdue_hint: 'Overdue pickups are not counted in “today” — they are shown as a separate number.',
     ext_rules_hint: 'Quantity can only be reduced — you extend no more than what is on site; the rest is picked up on time. Extension — max {N} days at once.',
     ext_max_note: 'max {N}', restore_pk: 'Return to rental', restored: 'Returned to rental',
-    mgr_approve_chk: 'Manager can approve invoices',
     eq_settings_title: 'Equipment rental & permissions',
     docs_set_card: 'Document settings', docs_my_title: 'Job card & search',
     def_days_lbl: 'Default rental, days', max_ext_lbl: 'Max extension, days',
@@ -5726,10 +5718,7 @@ function docsEquipCardHtml(){
     <div class="qty-line"><span class="name">${t('max_ext_lbl')}</span>
       ${orgStepperHtml('max_extend_days', org.max_extend_days ?? 3, 1, 30)}</div>
     <div class="set-opts">
-      ${dfReady()
-        ? `<div class="tiny df-appr-moved" id="df-appr-moved">${ic('check')} ${t('df_appr_moved')}</div>`
-        : `<label class="opt ${org.manager_can_approve?'on':''}">
-        <input type="checkbox" ${org.manager_can_approve?'checked':''} onchange="App.setOrgFlag('manager_can_approve', this.checked)"> ${t('mgr_approve_chk')}</label>`}
+      <div class="tiny df-appr-moved" id="df-appr-moved">${ic('check')} ${t('df_appr_moved')}</div>
       <label class="opt ${org.stock_visible_all!==false?'on':''}">
         <input type="checkbox" ${org.stock_visible_all!==false?'checked':''} onchange="App.setOrgFlag('stock_visible_all', this.checked)"> ${t('stock_vis_chk')}</label>
       <label class="opt ${org.allow_tech_proposal_flag!==false?'on':''}">
@@ -7095,7 +7084,8 @@ const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
   'acc_doc_mark',               // v1.08.39
   'bn_devices_sync',            // v1.09.01
   'doc_lock', 'doc_request_edit', 'doc_request_decide', 'job_fix_no', 'admin_set_doc_rights', 'admin_set_announce', 'notices_mark_read',   // v1.09.25
-  'admin_set_dft'];                                         // v1.09.27
+  'admin_set_dft',
+  'stock_avail'];                                           // v1.09.43                                         // v1.09.27
 
 const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings','study_sessions','bn_devices','maint_types','vehicle_maint','vehicle_notes','inv_drive'];   // v1.09.38: ТО и заметки по машинам   // v1.09.01: + справочник трекеров Bouncie (RLS: только админ)   // v1.08.51: + сессии учёбы (RLS: свои; админ — все)   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)   // v1.09.42 (п. 53): equipment_stock не грузится при обмене — остатки по журналу движений (в бэкапе таблица осталась)
 
@@ -7126,7 +7116,13 @@ async function sbLoadAll(){
       .then(r => ({ tb, ms: Date.now() - ts, data: r.data, error: r.error }))
       .catch(e => ({ tb, ms: Date.now() - ts, data: null, error: e }));
   });
+  /* v1.09.43 (п. 8): строку профиля целиком база отдаёт только самому человеку и админу; коллег остальные
+     видят через представление profiles_pub (рабочие поля). Склеиваем: список — из profiles_pub, своя строка — целиком.
+     Нет представления (SQL 1.09.43 не выполнен) — как раньше, из profiles. */
+  const pubQ = (state.user && state.user.role !== 'admin')
+    ? Promise.resolve(sb.from('profiles_pub').select('*')).then(r => r).catch(e => ({ error: e })) : null;
   const res = await Promise.all(reqs);
+  const pub = pubQ ? await pubQ : null;
   let okCnt = 0;
   for (const r of res){
     if (r.error && SYNC_OPT.has(r.tb) && /PGRST205|42P01|does not exist|schema cache/i.test(errStr(r.error))){ state.data[r.tb] = []; SYNC_NODB.add(r.tb); continue; }   // v1.09.38: SQL ещё не выполнен
@@ -7143,6 +7139,10 @@ async function sbLoadAll(){
     else out[r.tb] = r.data || [];
     if (r.ms > 1500) dlog('🐢 sync таблица', r.tb, 'медленно: ' + r.ms + ' мс');
   }
+  if (pub && !pub.error && Array.isArray(pub.data) && Array.isArray(out.profiles)){
+    const full = new Map(out.profiles.map(x => [x.id, x]));
+    out.profiles = pub.data.map(x => full.has(x.id) ? { ...x, ...full.get(x.id) } : x);
+  } else if (pub && pub.error && !/PGRST205|42P01|does not exist|schema cache/i.test(errStr(pub.error))) dlog('⚠ profiles_pub:', pub.error);
   out._syncMs = Date.now() - t0;
   out._syncOk = okCnt;
   out._syncFail = SYNC_ERRORS.length;
@@ -7995,9 +7995,7 @@ function editLocked(j){ const n = editLockDays(); if (!n || isManager()) return 
 function canApprove(){
   if (isAdmin()) return true;
   if (!state.user || state.user.role !== 'manager') return false;
-  const p = meProf();
-  if (HAS_SB ? dfReady() : ('can_approve' in p)) return p.can_approve === true;
-  return !!((state.data.org_settings || {}).manager_can_approve);
+  return meProf().can_approve === true;   // v1.09.44 (п. 52): право апрува только личное (с 1.09.25); общая галочка «менеджер может апрувить» удалена
 }
 function stockVisibleAll(){ return (state.data.org_settings || {}).stock_visible_all !== false; }
 function vmCur(){
@@ -8709,7 +8707,7 @@ function jrDetails(r){
   if (d.name) bits.push(d.name);
   if (Array.isArray(d.added) && d.added.length) bits.push('+ ' + d.added.join(', '));
   if (Array.isArray(d.removed) && d.removed.length) bits.push('− ' + d.removed.join(', '));
-  if (d.no != null) bits.push('P-' + d.no);
+  if (d.no != null){ const pp = r.entity === 'proposal' ? propById(r.entity_id) : null; bits.push(pp ? propNo(pp) : 'P-' + d.no); }   // v1.09.44 (п. 58)
   if (d.old != null && d.new != null) bits.push(money(+d.old||0) + ' → ' + money(+d.new||0));
   if (d.key) bits.push(d.key + (d.v != null ? '=' + d.v : (d.on != null ? (d.on ? '=on' : '=off') : '')));
   return bits.map(esc).join(' · ');
@@ -9196,7 +9194,7 @@ function viewTabbar(){
     ['stats', ICONS.stats, t('tab_stats')],
     ...(studyMenuOn() ? [['study', ic('grad'), t('tab_study')]] : []),   // v1.08.51: учёба
     ['dirs', ICONS.dirs, t('tab_dirs')],
-    ...(isManager() ? [['archive', ICONS.warn || ICONS.archive, t('tab_action')]] : []),   // v1.08.12
+    ...(isManager() ? [['archive', ICONS.warn || ICONS.archive, t('tab_action')]] : []),   // v1.08.12; v1.09.44 (п. 50): подпись — сокращение, подсказка = заголовок экрана «Требуется действие»; ключ archive не переименован — по нему сохранены личные настройки меню
     ...(isAdmin() ? [['journal', ICONS.book, t('tab_journal')]] : []),   // v1.07.18
     ...(isAdmin() ? [['acc', ic('receipt'), t('tab_acc')]] : []),        // v1.08.39: бухгалтерия
     ['faq', ICONS.q, t('tab_faq')],
@@ -9220,7 +9218,7 @@ function viewTabbar(){
     ? `<button class="tab hdr-srch" title="${esc(label)}" onclick="App.searchOpen()">${ic}<span>${label}</span></button>`
     : id === 'faq'
     ? `<button class="tab" title="${esc(label)}" onclick="App.faq()">${ic}<span>${label}</span></button>`
-    : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" title="${esc(id === 'docflow' ? t('tab_docflow') : label)}" ${id === 'chat' ? 'data-tab="chat" ' : ''}onclick="App.go('${id}')">
+    : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" title="${esc(id === 'docflow' ? t('tab_docflow') : id === 'archive' ? t('act_title') : label)}" ${id === 'chat' ? 'data-tab="chat" ' : ''}onclick="App.go('${id}')">
       ${ic}<span>${label}</span>${id === 'chat' ? (() => { const n = chUnread(); return `<i class="tab-badge" data-b="chat" ${n ? '' : 'hidden'}>${n > 99 ? '99+' : n}</i>`; })() : id === 'docflow' ? (() => { const n = dflCount(); return `<i class="tab-badge" data-b="docflow" ${n ? '' : 'hidden'}>${n > 99 ? '99+' : n}</i>`; })() : ''}
     </button>`).join('') + `</nav>`;
 }
@@ -9260,16 +9258,15 @@ function viewWeek(bare){   // v1.09.12: bare — главная: кнопки «
     <button class="wk-arrow" onclick="App.shiftWeek(1)" aria-label="next week">${ic('chev_r')}</button>
   </div>
   ${!bare && state.selDate!==today ? `<button class="today-jump" onclick="App.jumpToday()">⌂ ${t('back_today')}</button>` : ''}
-  ${!bare && isAdmin() && tplOn() && dayMoveOn() ? `<button class="today-jump tpl-move" onclick="App.tplMove()">${ic('compass')} ${t('tpl_move_day')}</button>` : ''}`;
+`;
 }
 /* v1.09.12: «⌂ сегодня» и «Перенести день» переехали в строку дня (dayBar) — под лентой
    недели теперь ОДНА строка: дата · [сегодня] [карта] [перенос] [?] */
-function dayMoveOn(){ return false; }   // v1.09.26: «Перенести день» не используется — кнопка и настройка скрыты (код оставлен)
+/* v1.09.44 (п. 52): «Перенести день» (кнопка, окно tplMoveModal / tplMoveGo) удалён — с v1.09.26 был выключен */
 function dayBarToolsHtml(){
   const today = todayISO();
   return (state.selDate !== today ? `<button type="button" class="mini-nav today-jump" onclick="App.jumpToday()" title="${t('back_today')}">⌂<span class="mn-t"> ${t('back_today')}</span></button>` : '')
-    + `<button type="button" class="mini-nav" id="day-map-btn" onclick="App.openDayMap()" title="${t('map_of_day')}">${ic('map')}<span class="mn-t"> ${t('map_of_day')}</span></button>`
-    + (isAdmin() && tplOn() && dayMoveOn() ? `<button type="button" class="mini-nav tpl-move" onclick="App.tplMove()" title="${t('tpl_move_day')}">${ic('compass')}<span class="mn-t"> ${t('tpl_move_day')}</span></button>` : '');
+    + `<button type="button" class="mini-nav" id="day-map-btn" onclick="App.openDayMap()" title="${t('map_of_day')}">${ic('map')}<span class="mn-t"> ${t('map_of_day')}</span></button>`;
 }
 
 /* =====================================================================
@@ -9937,6 +9934,7 @@ function sectionFaqHtml(key){
       <li>Цветные бейджи справа — <b>сколько единиц какого типа</b> забрать: ${faqEqLegend()}.</li>
       <li>Красный бейдж-цифра — просроченные позиции; чип «продление» — аренда продлевалась.</li>
       <li>${ic('compass')} — маршрут; ${ic('note')} — документ; <b>Забрать</b> — отметить вывоз всего юнита; блеклая карточка «${ic('check')} забрано» открывает связанный документ.</li>
+    <li><b>Порядок работ.</b> На Главной и на недельной доске ▲▼ и перетаскивание сохраняются сразу. На дневной Доске перестановки копятся до кнопки «Сохранить» — можно переставить весь день и сохранить разом. «Оптимизировать → Применить» на Карте сохраняет новый порядок сразу. Свою колонку двигает сам исполнитель, чужие — админ и менеджер с настройкой. Нумерация везде с 0.</li>
     </ul>
     ${faqStripeLegend()}
     <h4>${ic('font')} Сокращения</h4>
@@ -9968,6 +9966,7 @@ function sectionFaqHtml(key){
       <li>Colored badges on the right — <b>how many units of which type</b> to collect: ${faqEqLegend()}.</li>
       <li>A red number badge — overdue items; the "extension" chip — the rent was extended.</li>
       <li>${ic('compass')} — route; ${ic('note')} — document; <b>${t('pickup')}</b> — mark the whole unit as collected; a dimmed "${ic('check')} ${t('picked').toLowerCase()}" card opens the linked document.</li>
+    <li><b>Job order.</b> On Home and the week board, ▲▼ and drag-and-drop save at once. On the day Board, moves pile up until “Save” — rearrange the whole day and save in one go. “Optimize → Apply” on the Map saves the new order at once. A performer moves their own column; other columns — the admin and a manager with the setting. Numbering starts at 0 everywhere.</li>
     </ul>
     ${faqStripeLegend()}
     <h4>${ic('font')} Abbreviations</h4>
@@ -9998,7 +9997,8 @@ function sectionFaqHtml(key){
     <h4>${ic('dens')} Компактная плотность (v1.09.05)</h4>
     <ul><li>Кнопка ${ic('dens')} рядом с глазом (или Настройки → «${t('dens_title')}») делает доску плотной: шапка колонки — одна строка, карточка задачи — две строки («юнит · комплекс» и вид работ), пикап — одной строкой <b>PU SCR×1 BLW×3 · 09/14</b> без года. Колонка сужается до 96 px вместо 128 — на тот же экран влезает в полтора-два раза больше сотрудников; в режиме «Телефон» на экране три колонки вместо неполных двух.</li>
     <li>Выставленный приоритет ${faqTriDemo()} в узкой колонке стоит в правом нижнем углу карточки. Серый «приоритет не задан» и ▲▼ в узкой колонке спрятаны: мышью они появляются по наведению на карточку, а когда сотрудников мало и колонка шире 170 px — стоят справа всегда, в том числе для пальца.</li>
-    <li><b>Телефон в режиме «ПК»</b>: поверните телефон горизонтально — страница рисуется на холсте шириной компьютера и уменьшается под экран (Настройки → «${t('cv_title')}»), включается раскладка ПК с меню слева и доской во всю ширину, действует «минимум сотрудников на экране». Щипок увеличивает нужное место.</li></ul>`,
+    <li><b>Телефон в режиме «ПК»</b>: поверните телефон горизонтально — страница рисуется на холсте шириной компьютера и уменьшается под экран (Настройки → «${t('cv_title')}»), включается раскладка ПК с меню слева и доской во всю ширину, действует «минимум сотрудников на экране». Щипок увеличивает нужное место.</li><li><b>Порядок работ.</b> На Главной и на недельной доске ▲▼ и перетаскивание сохраняются сразу. На дневной Доске перестановки копятся до кнопки «Сохранить» — можно переставить весь день и сохранить разом. «Оптимизировать → Применить» на Карте сохраняет новый порядок сразу. Свою колонку двигает сам исполнитель, чужие — админ и менеджер с настройкой. Нумерация везде с 0.</li>
+    </ul>`,
   `
     <h4>${ic('board')} Board — the day by staff</h4>
     <ul>
@@ -10023,7 +10023,8 @@ function sectionFaqHtml(key){
     <h4>${ic('dens')} Compact density (v1.09.05)</h4>
     <ul><li>The ${ic('dens')} button next to the eye (or Settings → "${t('dens_title')}") makes the board dense: the column header is one line, a job card is two lines ("unit · complex" and the work type), a pickup is a single line <b>PU SCR×1 BLW×3 · 09/14</b> without the year. A column narrows down to 96 px instead of 128 — the same screen fits one and a half to two times more people; in "Phone" mode the screen shows three columns instead of less than two.</li>
     <li>A set priority ${faqTriDemo()} sits in the bottom right corner of the card in a narrow column. The grey "no priority" mark and ▲▼ are hidden in a narrow column: with a mouse they appear when you hover the card, and when there are few people and the column is wider than 170 px they stay on the right permanently, for a finger too.</li>
-    <li><b>A phone in "PC" mode</b>: rotate the phone to landscape — the page is drawn on a computer-wide canvas and scaled down to the screen (Settings → "${t('cv_title')}"), the PC layout with the left menu and the full-width board turns on, and "minimum staff visible" works. Pinch to zoom into any spot.</li></ul>`);
+    <li><b>A phone in "PC" mode</b>: rotate the phone to landscape — the page is drawn on a computer-wide canvas and scaled down to the screen (Settings → "${t('cv_title')}"), the PC layout with the left menu and the full-width board turns on, and "minimum staff visible" works. Pinch to zoom into any spot.</li><li><b>Job order.</b> On Home and the week board, ▲▼ and drag-and-drop save at once. On the day Board, moves pile up until “Save” — rearrange the whole day and save in one go. “Optimize → Apply” on the Map saves the new order at once. A performer moves their own column; other columns — the admin and a manager with the setting. Numbering starts at 0 everywhere.</li>
+    </ul>`);
 
   S.map = H(`
     <h4>${ic('map')} Карта апарт-комплексов</h4>
@@ -10042,6 +10043,7 @@ function sectionFaqHtml(key){
       <li>«${ic('check')} Точка найдена» → <b>Добавить как комплекс</b>: название и адрес заполнены, выберите владельца: существующий контрагент, «＋ Новый…», «⏳ Временный владелец» или «— без привязки —».</li>
       <li>Комплексы без владельца (и с временным) помечаются ${faqTriDemo()} здесь и в Справочнике — назначьте контрагента позже.</li>
       <li><b>Треугольник важности — двух видов.</b> ${faqTriDemo()} <b>красный</b>: карточка закреплена первой в дне, стрелками ▲▼ её не сдвинуть — для аварий и просроченных пикапов. <b>Жёлтый</b>: просто пометка «важное», карточка остаётся в общем порядке и двигается свободно. Нажатие на треугольник открывает выбор вида и знак вопроса с пояснением. Стрелки двигают карточку внутри своей группы: красные не смешиваются с обычными.</li>
+    <li><b>Порядок работ.</b> На Главной и на недельной доске ▲▼ и перетаскивание сохраняются сразу. На дневной Доске перестановки копятся до кнопки «Сохранить» — можно переставить весь день и сохранить разом. «Оптимизировать → Применить» на Карте сохраняет новый порядок сразу. Свою колонку двигает сам исполнитель, чужие — админ и менеджер с настройкой. Нумерация везде с 0.</li>
     </ul>`,
   `
     <h4>${ic('map')} Complexes map</h4>
@@ -10060,6 +10062,7 @@ function sectionFaqHtml(key){
       <li>"${ic('check')} ${t('map_found_pt')}" → <b>${t('map_add_cx')}</b>: the name and address are filled in, pick the owner: an existing counterparty, "＋ New…", "⏳ Temporary owner" or "— no binding —".</li>
       <li>Complexes without an owner (and with the temporary one) are flagged ${faqTriDemo()} here and in the Directory — assign a counterparty later.</li>
       <li><b>The priority triangle comes in two kinds.</b> ${faqTriDemo()} <b>Red</b>: the card is pinned first in the day and the ▲▼ arrows cannot move it — for emergencies and overdue pickups. <b>Yellow</b>: just an "important" mark, the card stays in the common order and moves freely. Tapping the triangle opens the kind picker and a question mark with an explanation. The arrows move a card within its own group: red ones do not mix with regular ones.</li>
+    <li><b>Job order.</b> On Home and the week board, ▲▼ and drag-and-drop save at once. On the day Board, moves pile up until “Save” — rearrange the whole day and save in one go. “Optimize → Apply” on the Map saves the new order at once. A performer moves their own column; other columns — the admin and a manager with the setting. Numbering starts at 0 everywhere.</li>
     </ul>`);
 
   /* v1.09.40 (п. 19): справка экрана «Ремонт» — ключ repairs занят справкой секции бланка инвойса */
@@ -11412,46 +11415,6 @@ function jobClone(srcId){
 /* перенос дня: черновики и несобранные пикапы разом (дождь). Только админ:
    RLS не даст менеджеру переписывать чужие строки, а частичный перенос
    только запутает. */
-function tplMoveModal(){
-  const iso = state.selDate;
-  const js = liveJobs().filter(j => j.date === iso && j.status === 'draft');
-  const pk = (state.data.placements || []).filter(p => pkPending(p) && p.due_date === iso);
-  openModal(`
-    ${modalHead(t('tpl_move_title'), 'compass')}
-    <div class="tiny" style="margin-bottom:6px">${fmtDMY(iso)} → ${tipQ('tpl_tip')}</div>
-    <div class="form-row"><span class="lbl">${t('tpl_move_to')}</span>
-      <input id="tplm-date" type="date" value="${addDaysISO(iso, 1)}"></div>
-    <label class="chk-line"><input type="checkbox" id="tplm-jobs" ${js.length?'checked':'disabled'}> ${t('tpl_move_jobs')} · ${js.length}</label>
-    <label class="chk-line"><input type="checkbox" id="tplm-pk" ${pk.length?'checked':'disabled'}> ${t('tpl_move_pk')} · ${pk.length}</label>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="App.closeModal()">${t('cancel')}</button>
-      <button class="btn btn-green" onclick="App.tplMoveGo()">${t('tpl_move_day')}</button>
-    </div>`);
-}
-async function tplMoveGo(){
-  if (!isAdmin()) return;
-  const iso = state.selDate;
-  const target = ($('#tplm-date') || {}).value;
-  if (!target || target === iso){ closeModal(); return; }
-  const doJobs = ($('#tplm-jobs') || {}).checked;
-  const doPk = ($('#tplm-pk') || {}).checked;
-  let n = 0;
-  if (doJobs){
-    for (const j of liveJobs().filter(x => x.date === iso && x.status === 'draft')){
-      await dbUpsert('jobs', { ...j, date: target, updated_at: new Date().toISOString() }); n++;
-    }
-  }
-  if (doPk){
-    for (const p of (state.data.placements || []).filter(x => pkPending(x) && x.due_date === iso)){
-      await dbUpsert('placements', { ...p, due_date: target }); n++;
-    }
-  }
-  if (!n){ closeModal(); toast('ℹ ' + t('tpl_nothing'), 'inf'); return; }
-  audit('day_move', 'day', iso, { to: target, n });
-  closeModal();
-  state.selDate = target; state.weekStart = mondayOf(target);
-  toast('✓ ' + t('tpl_moved') + ': ' + n); render();
-}
 /* =====================================================================
    v1.09.25 · ДОКУМЕНТООБОРОТ ИНВОЙСА
    Кто что может — решает статус документа и личные права сотрудника (их ставит админ в списке
@@ -12928,7 +12891,7 @@ async function archiveDoc(kind, id, why){
   const links = [];
   if (kind === 'rep' && row.job_id){ const lj = jobById(row.job_id); if (lj) links.push(docNo('job', lj) || ('Unit ' + (lj.unit_number || '—'))); }
   if (kind === 'job' && row.proposal_id){ const lp = propById(row.proposal_id); if (lp) links.push(docNo('prop', lp) || 'PROP'); }
-  if (kind === 'job') (state.data.repairs || []).filter(r => r.job_id === id).forEach(r => links.push(docNo('rep', r) || ('R-' + (r.no ?? '·'))));
+  if (kind === 'job') (state.data.repairs || []).filter(r => r.job_id === id).forEach(r => links.push(repNo(r)));   // v1.09.44 (п. 58)
   const note = (why || t('arch_by_hand')) + ' · ' + shortName(state.user.display_name || '') + ' · ' + fmtDMY(todayISO()) + (links.length ? ' · ' + t('arch_linked') + ': ' + links.join(', ') : '');
   const patch = { archived_at: new Date().toISOString(), archived_by: state.user.id, arch_note: note };
   { const _r = await dbUpsert(kind === 'prop' ? 'proposals' : kind === 'rep' ? 'repairs' : 'jobs', { ...row, ...patch }, { svc: ['archived_at', 'archived_by'] });
@@ -15773,7 +15736,8 @@ const App = {
   /* v1.08.26: возврат оборудования на склад */
   returnPk, returnJob, returnAllMine,
   /* v1.08.27: регистр оборудования */
-  eqOpen(kind){ const list = [...(state.data.equipment_types || [])].sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  async eqOpen(kind){ const list = [...(state.data.equipment_types || [])].sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    await stkAvLoad();                                   // v1.09.43 (п. 8)
     eqDraft = { kind, et: (list[0] || {}).id || null, qty: 1, src: 'stock', note: '' }; eqModal(); },
   eqEt(id){ if (eqDraft){ eqKeepNote(); eqDraft.et = id; eqModal(); } },
   eqAdj(dv){ if (eqDraft){ eqKeepNote(); eqDraft.qty = Math.max(1, Math.min(999, eqDraft.qty + dv)); eqModal(); } },
@@ -16163,8 +16127,6 @@ const App = {
   },
   searchGo(kind, id){ searchGo(kind, id); },
   jobClone(id){ jobClone(id); },
-  tplMove(){ tplMoveModal(); },
-  tplMoveGo(){ tplMoveGo(); },
   abkRun(){ abkRun(false); },
   /* ручки автотеста tests/v1_09_03.js: список копий без сервера, условие автозапуска */
   __test_abkList(j){ ABK.list = j; const el = $('#abk-list'); if (el) el.innerHTML = abkListHtml(j); return abkListHtml(j); },
@@ -18070,7 +18032,7 @@ function bnCarPopup(v, bv, x){
     loc.lat != null ? `<a href="${navDirUrl((+loc.lat) + ',' + (+(loc.lon ?? loc.lng)))}"
       target="_blank" rel="noopener">${t('bn_nav_to_car')} →</a>` : '',
     bnCanTrack() && v.imei ? `<a href="#" onclick="App.bnTrack('${esc(String(v.imei))}');return false">${
-      BN.track.imei === String(v.imei) ? t('veh_track_off') : ic('map') + ' ' + t('veh_track')} </a>` : ''
+      ic('map') + ' ' + t('veh_track')} </a>` : ''
   ].filter(Boolean).join('<br>');
 }
 /* v1.08.33: метка ТО по одометру */
@@ -21140,8 +21102,8 @@ function trPending(){
   return out;
 }
 function trDocLabel(kind, doc){
-  if (kind === 'rep') return 'R-' + (doc.no ?? '…') + ' · ' + fmtDMY(doc.date);
-  if (kind === 'prop') return 'P-' + (doc.no ?? '…') + ' · ' + fmtDMY(doc.date);
+  if (kind === 'rep') return repNo(doc) + ' · ' + fmtDMY(doc.date);    // v1.09.44 (п. 58)
+  if (kind === 'prop') return propNo(doc) + ' · ' + fmtDMY(doc.date);
   const cx = cxById(doc.complex_id) || {};
   return (cx.abbr || cx.name || '—') + ' · ' + (doc.unit_number || '—') + ' · ' + fmtDMY(doc.date);
 }
@@ -22082,7 +22044,9 @@ function propCanCreate(){
 function propById(id){ return (state.data.proposals || []).find(x => x.id === id); }
 function proposalChipHtml(j, short){
   const p = j && j.proposal_id ? propById(j.proposal_id) : null;
-  if (p) return ` <span class="chip pr" title="PROPOSAL">${short ? 'P' : 'P-' + (p.no ?? '·')}</span>`;
+  /* v1.09.44 (п. 58): на карточке номера нет — только вид документа; номер (по шаблону) — в подсказке.
+     Длинный номер по шаблону в карточку не помещается, а короткого «P-N» больше нигде нет. */
+  if (p) return ` <span class="chip pr" title="PROPOSAL ${esc(propNo(p))}">${short ? 'P' : 'PROP'}</span>`;
   if (j && j.has_proposal) return ` <span class="chip prq" title="${t('prop_requested')}">P?</span>`;
   return '';
 }
@@ -22294,7 +22258,7 @@ function proposalBoxHtml(j){
   if (isManager()){
     let inner;
     if (p){
-      inner = `<span class="chip pr">P-${p.no ?? '·'} · ${propMoney(p.total)}</span>
+      inner = `<span class="chip pr" title="${esc(propNo(p))}">${esc(propNo(p))} · ${propMoney(p.total)}</span>
         <button class="btn btn-ghost sm" onclick="App.openProposal('${p.id}')">↗</button>
         <button class="btn btn-ghost sm" title="${t('ch_title')}" onclick="App.chain('job','${j.id}')">${ic('link')}</button>
         <button class="btn btn-ghost sm" onclick="App.linkProposal('${j.id}', null)">${ic('close')} ${t('prop_unlink')}</button>`;
@@ -22305,7 +22269,7 @@ function proposalBoxHtml(j){
       inner = `${j.has_proposal ? `<span class="chip prq" title="${t('prop_requested')}">P?</span>` : ''}
         ${opts.length ? `<select id="jb-prop-sel" style="flex:1;min-width:130px">
           <option value="">${t('prop_pick')}</option>
-          ${opts.map(x => `<option value="${x.id}">P-${x.no ?? '·'} · ${esc(x.unit_number || '')} · ${money(+x.total || 0)}</option>`).join('')}
+          ${opts.map(x => `<option value="${x.id}">${esc(propNo(x))} · ${esc(x.unit_number || '')} · ${money(+x.total || 0)}</option>`).join('')}
         </select>
         <button class="btn btn-blue sm" onclick="App.linkProposal('${j.id}', ($('#jb-prop-sel')||{}).value)">${t('prop_link')}</button>`
         : `<span class="tiny">${t('prop_pick_none')}</span>`}
@@ -22314,7 +22278,7 @@ function proposalBoxHtml(j){
     return `<div class="card prop-box" style="margin:4px 0 0;padding:8px 10px">
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${ic('prop')} <b>PROPOSAL</b> ${inner}</div></div>`;
   }
-  if (p) return `<div class="tiny" style="margin:4px 0 0"><span class="chip pr">P-${p.no ?? '·'}</span> PROPOSAL</div>`;
+  if (p) return `<div class="tiny" style="margin:4px 0 0"><span class="chip pr">${esc(propNo(p))}</span> PROPOSAL</div>`;
   if (allowTechProposal())
     return `<label class="opt ${j.has_proposal?'on':''}" style="margin:4px 0 0">
       <input type="checkbox" ${j.has_proposal?'checked':''} onchange="App.setProposal(this.checked)"> ${t('proposal_chk')}</label>`;
@@ -22387,7 +22351,7 @@ function ntPropCardHtml(p, unitHit){
   const on = ntPropSel === p.id;
   return `<label class="opt ${on ? 'on' : ''}" style="display:flex;margin:4px 0">
     <input type="checkbox" ${on ? 'checked' : ''} onchange="App.ntPropPick('${p.id}', this.checked)">
-    <span style="flex:1;min-width:0"><b>P-${p.no ?? '·'}</b> · Unit <b>${esc(p.unit_number || '—')}</b>${unitHit ? ' ' + ic('check') : ''} · ${money(+p.total || 0)}
+    <span style="flex:1;min-width:0"><b>${esc(propNo(p))}</b> · Unit <b>${esc(p.unit_number || '—')}</b>${unitHit ? ' ' + ic('check') : ''} · ${money(+p.total || 0)}
       <span class="tiny" style="display:block">${fmtDMY(p.date)} · ${t('prop_items')}: ${(p.items || []).length} · ${t('pst_' + p.status)}</span></span></label>`;
 }
 function ntPropRefresh(){
@@ -22410,7 +22374,7 @@ function ntPropRefresh(){
     ${all.length ? `<select style="width:100%;margin:2px 0 8px" onchange="App.ntPropPick(this.value, true)">
         <option value="">${t('nt_prop_pick_any')}</option>
         ${all.map(p => { const cx = cxById(p.complex_id) || {};
-          return `<option value="${p.id}">P-${p.no ?? '·'} · ${esc(cx.abbr || cx.name || '—')} · Unit ${esc(p.unit_number || '—')} · ${money(+p.total || 0)} · ${fmtDMY(p.date)}</option>`; }).join('')}
+          return `<option value="${p.id}">${esc(propNo(p))} · ${esc(cx.abbr || cx.name || '—')} · Unit ${esc(p.unit_number || '—')} · ${money(+p.total || 0)} · ${fmtDMY(p.date)}</option>`; }).join('')}
       </select>`
       : (m.length || selTop ? '' : `<div class="tiny" style="margin:0 0 8px">${t('nt_prop_none')}</div>`)}`;
 }
@@ -22437,7 +22401,7 @@ function viewProposalList(){
     const sum = propMoney(p.total);
     return `<button class="rowline map-row" onclick="App.openProposal('${p.id}')">
       <span class="chip pst pst-${p.status}">${t('pst_' + p.status)}</span>
-      <div class="grow"><b>P-${p.no ?? '·'}</b> · ${esc(cx.abbr || cx.name)}${p.unit_number ? ` · Unit <b>${esc(p.unit_number)}</b>` : ''}
+      <div class="grow"><b>${esc(propNo(p))}</b> · ${esc(cx.abbr || cx.name)}${p.unit_number ? ` · Unit <b>${esc(p.unit_number)}</b>` : ''}
         <div class="tiny">${fmtDMY(p.date)}${linked ? ` · ${ic('link')} ${linked}` : ''}</div></div>
       <span class="money">${sum}</span>
     </button>`;
@@ -22867,7 +22831,7 @@ function propStripHtml(){
     const cx = cxById(p.complex_id) || {abbr:'—'};
     return `<div class="pcard clicky" onclick="App.openProposal('${p.id}')">
       <span class="chip pst pst-${p.status}">${t('pst_' + p.status)}</span>
-      <div><b>P-${p.no ?? '·'}</b> · ${esc(cx.abbr)}${p.unit_number ? ' · ' + esc(p.unit_number) : ''}</div>
+      <div><b>${esc(propNo(p))}</b> · ${esc(cx.abbr)}${p.unit_number ? ' · ' + esc(p.unit_number) : ''}</div>
       <div class="tiny money">${money(+p.total || 0)}</div>
     </div>`; }).join('')}</div>`;
 }
@@ -23264,9 +23228,29 @@ function eqVanSvg(intoVan){
 let eqDraft = null;
 const EQ_RPC = { take: 'take', give: 'return', unrepair: 'from_repair', intake: 'intake', writeoff: 'writeoff' };
 
+/* v1.09.43 (п. 8): при выключенной галочке «Сотрудники видят остатки склада» база отдаёт сотруднику только
+   движения его машины — сколько лежит на складе и в ремонте, приложение спрашивает у stock_avail() (итоги, без журнала) */
+const STKAV = { at: 0, m: null };
+function stkLimited(){ return HAS_SB && !!state.user && !isManager() && !isAcc() && !stockVisibleAll(); }
+async function stkAvLoad(force){
+  if (!stkLimited() || netOff()) return;
+  if (!force && STKAV.m && Date.now() - STKAV.at < 30000) return;
+  try{
+    const { data, error } = await state.sb.rpc('stock_avail');
+    if (error) throw error;
+    const m = {}; (data || []).forEach(r => { m[r.equipment_type_id] = { stock: +r.stock || 0, repair: +r.repair || 0 }; });
+    STKAV.m = m; STKAV.at = Date.now();
+  }catch(e){ dlog('⚠ stock_avail:', e); }
+}
+function emAvail(etId){
+  const em = emRow(etId);
+  if (!stkLimited() || !STKAV.m) return em;
+  const a = STKAV.m[etId] || { stock: 0, repair: 0 };
+  return { ...em, stock: a.stock, repair: a.repair };
+}
 function eqCap(){
   const d = eqDraft; if (!d || !d.et) return 0;
-  const em = emRow(d.et);
+  const em = emAvail(d.et);
   if (d.kind === 'take') return em.stock;
   if (d.kind === 'give') return myCarQty(d.et);
   if (d.kind === 'repair') return d.src === 'car' ? myCarQty(d.et) : em.stock;
@@ -23314,6 +23298,7 @@ function eqModal(){
 }
 async function equipDo(){
   const d = eqDraft; if (!d || !d.et) return;
+  STKAV.at = 0;                                          // v1.09.43: после операции итоги перечитать
   eqKeepNote();
   const cap = eqCap();
   if (d.qty < 1) return;
@@ -23828,7 +23813,7 @@ function viewRepairForm(){
         <span class="tiny">· ${fmtDMY(job.date)}</span></div>
       <button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.openJob('${job.id}')">${ic('chev_r')}</button>
       ${ro ? '' : `<button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.repUnlink('job')">${ic('close')}</button>`}</div>` : ''}
-    ${prop ? `<div class="rowline"><div class="grow">PROPOSAL · P-${prop.no ?? '·'}
+    ${prop ? `<div class="rowline"><div class="grow">PROPOSAL · ${esc(propNo(prop))}
         <span class="tiny">· ${fmtDMY(prop.date)}</span></div>
       ${isManager() ? `<button class="btn btn-ghost sm" title="${t('mq_open')}" aria-label="${t('mq_open')}" onclick="App.openProposal('${prop.id}')">${ic('chev_r')}</button>` : ''}
       ${ro ? '' : `<button class="btn btn-ghost sm" title="${t('prop_unlink')}" aria-label="${t('prop_unlink')}" onclick="App.repUnlink('prop')">${ic('close')}</button>`}</div>` : ''}
@@ -23878,7 +23863,7 @@ function repPropPickerHtml(r){
   return `<div style="display:flex;gap:6px;align-items:center;margin-top:8px">
     <select id="rep-prop-sel" style="flex:1;min-width:130px">
       <option value="">${t('rep_pick_prop')}</option>
-      ${cand.map(p => `<option value="${p.id}">P-${p.no ?? '·'} · ${fmtDMY(p.date)} · ${t('pst_' + (p.status || 'draft'))}</option>`).join('')}
+      ${cand.map(p => `<option value="${p.id}">${esc(propNo(p))} · ${fmtDMY(p.date)} · ${t('pst_' + (p.status || 'draft'))}</option>`).join('')}
     </select>
     <button class="btn btn-blue sm" onclick="App.repLinkProp()">${t('prop_link')}</button></div>`;
 }
@@ -23989,7 +23974,7 @@ function repChipHtml(j, short){
   const list = repsOfJob(j.id);
   if (list.length){
     const r = list[0];
-    return ` <span class="chip rep" title="REPAIR">${short ? 'R' : 'R-' + (r.no ?? '·')}</span>`;
+    return ` <span class="chip rep" title="REPAIR ${esc(repNo(r))}">${short ? 'R' : 'REP'}</span>`;   // v1.09.44 (п. 58): номер — в подсказке
   }
   if (needsRepair(j)) return ` <span class="chip repq" title="${t('rep_need_chip')}">R?</span>`;
   return '';
@@ -24036,7 +24021,7 @@ function repPropBoxHtml(p){
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       ${ic('toolbox')} <b>${t('rep_doc')}</b>
       ${list.map(r => `<button class="btn btn-ghost sm" onclick="App.openRepair('${r.id}')">
-        <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span> R-${r.no ?? '·'}</button>`).join('')}
+        <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span> ${esc(repNo(r))}</button>`).join('')}
       ${repCanCreate() ? `<button class="btn btn-blue sm" onclick="App.newRepairFromProp('${p.id}')">${ic('plus')} ${t('rep_new')}</button>` : ''}
     </div></div>`;
 }
@@ -24220,7 +24205,7 @@ function repStripHtml(){
     return `<div class="pcard clicky" onclick="App.openRepair('${r.id}')">
       <span class="chip pst pst-${repApprovalReset(r) ? 'declined' : r.status}">${
         repApprovalReset(r) ? t('rep_reset_chip') : t('pst_' + r.status)}</span>
-      <div><b>R-${r.no ?? '·'}</b> · ${esc(cx.abbr)}${r.unit_number ? ' · ' + esc(r.unit_number) : ''}</div>
+      <div><b>${esc(repNo(r))}</b> · ${esc(cx.abbr)}${r.unit_number ? ' · ' + esc(r.unit_number) : ''}</div>
       <div class="tiny money">${repMoney(repGrand(r))}</div>
     </div>`; }).join('')}</div>`;
 }

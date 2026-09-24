@@ -33,7 +33,7 @@ function t(name, cond, note){ if (cond){ ok++; console.log('  ✓ ' + name); } e
 
   /* ---- меню и пустой экран ---- */
   const menu = await p.evaluate(() => { const tabs = [...document.querySelectorAll('.tabbar .tab')].map(b => (b.getAttribute('onclick') || '')); const i = tabs.findIndex(x => x.includes("'docflow'"));
-    return { has: i >= 0, afterChat: i > 0 && tabs[i - 1].includes("'chat'"), badge: !!document.querySelector('.tab-badge[data-b="docflow"]'), dayMove: dayMoveOn() }; });
+    return { has: i >= 0, afterChat: i > 0 && tabs[i - 1].includes("'chat'"), badge: !!document.querySelector('.tab-badge[data-b="docflow"]'), dayMove: typeof window.dayMoveOn === 'function' ? window.dayMoveOn() : false }; });   /* v1.09.44: «Перенести день» удалён целиком */
   t('в меню — «Документооборот» сразу после «Сообщений», со счётчиком; «Перенести день» выключен', menu.has && menu.afterChat && menu.badge && menu.dayMove === false, menu);
 
   /* ---- документ с русской заметкой и техникой: на согласование без перевода не уходит ---- */

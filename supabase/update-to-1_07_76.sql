@@ -8,4 +8,4 @@
 -- ============================================================
 alter table public.media drop constraint if exists media_kind_check;
 alter table public.media add constraint media_kind_check
-  check (kind in ('photo','video','file'));
+  check (kind in ('photo','video','file','invoice'));   -- v1.09.44: сразу полный список — иначе повторный запуск на базе с PDF-инвойсами падает (23514)
