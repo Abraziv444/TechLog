@@ -209,15 +209,21 @@ async function openFirstJob(p){
   await p.evaluate(() => window.App.setLang('ru')); await p.waitForTimeout(300);
   await p.context().close();
 
-  console.log('— A. ПК 1366 px: своё значение, кнопка внизу слева, кнопка на доске, профиль сильнее устройства —');
+  /* v1.09.55: плотность переключается в шапке — «Обычный | Компактный» рядом с «Телефон | ПК» (#dens-slot);
+     кнопки внизу слева (#dsk-density) и значка на доске (#brd-dens) больше нет */
+  console.log('— A. ПК 1366 px: своё значение, переключатель в шапке, профиль сильнее устройства —');
   p = await boot(br, { w: 1366, h: 768, mode: 'desktop', ls: { techlog_density_m: 'compact' } });
   h0 = await html(p);
   t('на телефоне «компактно», в ПК-режиме — своё значение: обычная, 16 px', !/tl-compact/.test(h0.cls) && h0.fs === 16, h0);
-  t('кнопка плотности внизу слева есть, не нажата', await p.evaluate(() => { const b = document.querySelector('#dsk-density'); return !!b && !b.classList.contains('on') && b.getAttribute('aria-pressed') === 'false'; }));
-  await p.click('#dsk-density'); await p.waitForTimeout(500);
+  t('в шапке рядом с «Телефон | ПК» — «Обычный | Компактный» того же размера, выбран «Обычный»; внизу слева кнопки нет', await p.evaluate(() => {
+    const d = document.querySelector('.topbar #dens-slot'), v = document.querySelector('.topbar #vm-slot'); if (!d || !v) return false;
+    const b = [...d.querySelectorAll('button')], rd = d.getBoundingClientRect(), rv = v.getBoundingClientRect();
+    return b.length === 2 && b[0].classList.contains('on') && b[0].getAttribute('aria-pressed') === 'true' && !b[1].classList.contains('on')
+      && Math.abs(rd.width - rv.width) < 1 && Math.abs(rd.height - rv.height) < 1 && d.previousElementSibling === v && !document.querySelector('#dsk-density'); }));
+  await p.click('#dens-slot button:nth-child(2)'); await p.waitForTimeout(500);
   h1 = await html(p);
-  t('клик: tl-compact, база кегля ПК 14 px, кнопка подсвечена', /tl-compact/.test(h1.cls) && h1.fs === 14
-    && await p.evaluate(() => document.querySelector('#dsk-density').classList.contains('on')), h1);
+  t('клик: tl-compact, база кегля ПК 14 px, «Компактный» подсвечен', /tl-compact/.test(h1.cls) && h1.fs === 14
+    && await p.evaluate(() => document.querySelector('#dens-slot button:nth-child(2)').classList.contains('on')), h1);
   t('кэш ПК-режима techlog_density = compact (историческое имя ключа)', await p.evaluate(() => localStorage.getItem('techlog_density') === 'compact'));
   await go(p, 'settings');
   t('в настройках выбрана «Компактная», подпись «сейчас: режим „ПК“», строки холста нет (мышь)',
@@ -225,14 +231,13 @@ async function openFirstJob(p){
       && /ПК/.test(document.querySelector('#dens-row .d').textContent) && !document.querySelector('#cv-row')));
   await p.waitForTimeout(2600);
   pf = await me(p);
-  t('профиль: density_pc = compact (кнопка ПК-режима тоже пишет в аккаунт)', pf.density_pc === 'compact', pf);
+  t('профиль: density_pc = compact (переключатель в шапке тоже пишет в аккаунт)', pf.density_pc === 'compact', pf);
   await go(p, 'board');
-  t('на доске рядом с глазом — кнопка плотности, нажата', await p.evaluate(() => { const b = document.querySelector('.board-tools #brd-dens');
-    return !!b && b.classList.contains('on') && !!b.previousElementSibling && b.previousElementSibling.classList.contains('brd-eye'); }));
-  await p.click('#brd-dens'); await p.waitForTimeout(500);
+  t('на доске значка плотности нет — только в шапке', await p.evaluate(() => !document.querySelector('.board-tools #brd-dens') && !!document.querySelector('.topbar #dens-slot')));
+  await p.click('#dens-slot button:nth-child(1)'); await p.waitForTimeout(500);
   h1 = await html(p);
-  t('кнопка на доске вернула обычную плотность; кнопка внизу слева погасла', !/tl-compact/.test(h1.cls) && h1.fs === 16
-    && await p.evaluate(() => !document.querySelector('#dsk-density').classList.contains('on')), h1);
+  t('«Обычный» в шапке вернул обычную плотность', !/tl-compact/.test(h1.cls) && h1.fs === 16
+    && await p.evaluate(() => document.querySelector('#dens-slot button:nth-child(1)').classList.contains('on')), h1);
   /* профиль → устройство */
   await p.waitForTimeout(2600);
   await p.evaluate(() => { const d = JSON.parse(localStorage.getItem('techlog_state_v1')); const m = d.profiles.find(x => x.id === 'demo-admin');

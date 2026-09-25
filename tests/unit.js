@@ -72,7 +72,7 @@ const expose = `;window.__T = {
   /* v1.09.04: значок копирования, легенда полос в справке */
   IC, addrLineHtml, faqStripeLegend, faqStripeCard, faqStripeWts, STRIPE_PK, STRIPE_PK_DONE,
   /* v1.09.05: плотность интерфейса, холст ПК-режима */
-  densCur, densIsCompact, densPrefKey, densSyncPref, densSet, densBtnHtml, densRowHtml, canvasRowHtml, boardColsStyle, boardPkCard, fmtDMYyr, viewBoard,
+  densCur, densIsCompact, densPrefKey, densSyncPref, densSet, densSwHtml, densRowHtml, canvasRowHtml, boardColsStyle, boardPkCard, fmtDMYyr, viewBoard,
   /* v1.09.06: кнопка «назад» — история экранов */
   NAV, navTrack, navReset, navRoot, backExit, setBackExitAt: v => { backExitAt = v; },
   /* v1.09.25: документооборот инвойса */
@@ -1671,7 +1671,7 @@ console.log('\n— v1.08.51: учёба —');
   t('v1.08.95: «Настройки документов» — печать и поиск ушли из «Подсказок», общий доступ/аренда/лимиты внутри секции, отступы у галочек',
     src.includes("${fold('docs', t('docs_set_card'), 'clipboard', docsCardHtml())}")
     && !/function popCardHtml\(\)\{[\s\S]*?\n\}/.exec(src)[0].match(/App\.printBtn|App\.srchTab|App\.searchOpen/)
-    && src.includes('return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml()')
+    && src.includes('return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + histCardHtml() + mediaLimitsCardHtml()')   // v1.09.55: + предыстория юнита
     && !src.includes("fold('mlim'") && (src.match(/id="org-shared"/g) || []).length === 1
     && (src.match(/orgStepperHtml\('default_rent_days'/g) || []).length === 1
     && css.includes('.set-opts{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px;margin:10px 0}')
@@ -2771,9 +2771,10 @@ console.log('\n— v1.09.03: замок правки галочкой; бэка�
   t('v1.09.14: ссылка на документ разбирается строго (kind:uuid), кнопка «Поделиться» — у задачи, пропозала и ремонта',
     src.includes("/^(job|prop|rep):([0-9a-f-]{8,40})$/i") && ['job', 'prop', 'rep'].every(k => src.includes("App.docShare('" + k + "','")));
 
-  t('v1.09.14: режим чтения вслух встроен во все учебники и в шаблон, модуль и встраиватель на месте',
+  t('v1.09.14 · v1.09.55: режим чтения вслух подключён ко всем учебникам и к шаблону ссылкой на общий модуль, модуль и встраиватель на месте',
     (() => { const dir = ROOT + '/dictionary/books/'; const books = fs.readdirSync(dir).filter(f => /^section-[1-7]-(ru|en)\.html$/.test(f));
-      return books.length === 14 && books.every(f => { const h = fs.readFileSync(dir + f, 'utf8'); return (h.match(/<!-- tl-audio:start -->/g) || []).length === 1 && h.includes('window.__tlAudio'); })
+      return books.length === 14 && books.every(f => { const h = fs.readFileSync(dir + f, 'utf8'); return (h.match(/<!-- tl-audio:start -->/g) || []).length === 1 && h.includes('<script src="tools/audio-mode.js"></script>') && !h.includes('window.__tlAudio'); })
+        && fs.readFileSync(dir + 'tools/audio-mode.js', 'utf8').includes('window.__tlAudio')
         && fs.readFileSync(dir + 'tools/viewer.html', 'utf8').includes('<!-- tl-audio:start -->') && fs.existsSync(dir + 'tools/audio-mode.js') && fs.existsSync(dir + 'tools/inject-audio.py') && fs.existsSync(ROOT + '/tests/book-audio.js'); })());
 
   /* ---------- v1.09.13 ---------- */
@@ -2967,9 +2968,10 @@ console.log('\n— v1.09.05: компактная плотность (телеф
     && /<button class=""\s+disabled onclick="App\.canvasSet\('1920'\)">1920<\/button>/.test(cv.replace(/\s+/g, ' ').replace('class="" disabled', 'class=""  disabled'))
     && cv.includes('холст 1100 px') && cv.includes('83%'));
   delete w.TLView;
-  t('v1.09.05: кнопка плотности на доске — рядом с глазом, и у недельной доски воркера',
-    /brd-eye[\s\S]{0,400}\$\{densBtnHtml\(\)\}\$\{helpBtn\('board'\)\}/.test(src) && (src.match(/\$\{densBtnHtml\(\)\}\$\{helpBtn\('board'\)\}/g) || []).length === 2
-    && T.densBtnHtml().includes('id="brd-dens"') && T.densBtnHtml().includes('App.densToggle()'));
+  t('v1.09.55: плотность — переключатель «Обычный | Компактный» в шапке рядом с «Телефон | ПК» (#dens-slot, две кнопки App.densSet); на доске значка больше нет',
+    T.densSwHtml().includes('id="dens-slot"') && T.densSwHtml().includes("App.densSet('cozy')") && T.densSwHtml().includes("App.densSet('compact')")
+    && T.densSwHtml().includes('vm-inline') && !src.includes('densBtnHtml') && !src.includes('brd-dens')
+    && /id="vm-slot"[\s\S]{0,900}\$\{densSwHtml\(\)\}/.test(src));
   const pk = T.boardPkCard('j1', [{ due_date: '2026-01-05', equipment_type_id: T.state.data.equipment_types[0].id, qty: 2 }], '2026-09-19');
   t('v1.09.05: срок пикапа на доске — год отдельным span.yr, «просрочен» отдельным span.ov (компактная доска их прячет)',
     /01\/05<span class="yr">\/2026<\/span>/.test(pk) && /<span class="ov">[^<]+ · <\/span>/.test(pk) && T.fmtDMYyr('2026-09-06') === '09/06<span class="yr">/2026</span>'
@@ -2998,7 +3000,7 @@ console.log('\n— v1.09.05: компактная плотность (телеф
     && src.indexOf("window.addEventListener('tl:viewmode', () => { try { densSyncPref(); }") < src.indexOf("window.addEventListener('tl:viewmode', () => { try { fontSyncPref(); render(); }")
     && src.includes("window.addEventListener('tl-density', () => {"));
   /* словарь и справка */
-  const KEYS = ['dens_title', 'dens_cozy', 'dens_compact', 'dens_hint', 'dens_btn_on', 'dens_btn_off', 'dens_log_on', 'dens_log_off',
+  const KEYS = ['dens_title', 'dens_cozy', 'dens_compact', 'dens_hint', 'dens_log_on', 'dens_log_off',
     'cv_title', 'cv_d_off', 'cv_d_on', 'cv_d_wait', 'cv_d_narrow', 'cv_auto', 'cv_off', 'cv_hint'];
   t('v1.09.05: словарь ru/en — все ' + KEYS.length + ' ключей, переводы различаются',
     KEYS.every(k => T.DICT.ru[k] && T.DICT.en[k]) && KEYS.filter(k => T.DICT.ru[k] === T.DICT.en[k]).length === 0,
@@ -3008,7 +3010,7 @@ console.log('\n— v1.09.05: компактная плотность (телеф
     && (() => { T.state.lang = 'en'; const ok2 = T.sectionFaqHtml('board').includes('Compact density') && T.sectionFaqHtml('settings').includes(T.DICT.en.dens_title); T.state.lang = 'ru'; return ok2; })());
   t('v1.09.05: значки dens и monitor есть в IC; кнопка ПК-режима рисует тот же «сжать по вертикали»',
     !!T.IC.dens && !!T.IC.monitor && dskjs.includes('M12 3v5.2M9.4 5.8L12 8.4l2.6-2.6') && T.IC.dens.includes('M12 3v5.2M9.4 5.8L12 8.4l2.6-2.6'));
-  t('v1.09.05: CSS вне плотности — кнопка-значок на доске и сегмент холста', css.includes('.brd-eye.brd-dens{') && css.includes('.lang-seg.cv-seg button{') && css.includes('.lang-seg button:disabled{'));
+  t('v1.09.05: CSS вне плотности — кнопка-значок на доске и сегмент холста', css.includes('.dens-sw button.on{') && css.includes('.lang-seg.cv-seg button{') && css.includes('.lang-seg button:disabled{'));
   t('v1.09.05: матрица и ui-check умеют компактную плотность, в матрице есть телефон в ПК-режиме',
     fs.readFileSync(ROOT + '/tests/ui-matrix.js', 'utf8').includes("--dens=") && fs.readFileSync(ROOT + '/tests/ui-matrix.js', 'utf8').includes('Pixel 7 альбом ПК (холст)')
     && fs.readFileSync(ROOT + '/tests/ui-check.js', 'utf8').includes('UI_DENS'));

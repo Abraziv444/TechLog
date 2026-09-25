@@ -4,8 +4,8 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.52';
-const DB_SQL_FILE = 'full-install-1_09_44.sql';
+const APP_VERSION = '1.09.55';
+const DB_SQL_FILE = 'full-install-1_09_55.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
 const CANON_HOST = 'techlog.pro';   // v1.08.23: единый идемпотентный скрипт БД — имя в подсказках берётся отсюда
@@ -340,7 +340,7 @@ const I18N = {
     faq_btn: 'FAQ раздела',
     map_day_hint: 'Задачи и пикапы за выбранную дату',
     map_no_coords: 'без координат — откройте комплекс и нажмите «Найти по адресу»',
-    route_day_in: 'Маршрут дня в', open_in: 'Открыть в',
+    open_in: 'Открыть в',
     nav_app: 'Навигатор', nav_auto: 'Авто',
     nav_app_hint: 'Куда открывать маршруты. Авто: Карты Apple на iPhone/iPad, Google Maps на остальных.',
     dict_kbd_hint: 'Диктовка на iPhone — кнопкой 🎤 на клавиатуре',
@@ -408,7 +408,7 @@ const I18N = {
     invite_code: 'Код приглашения', invite_bad: 'Неверный код приглашения',
     login_taken_or_err: 'Логин занят или ошибка регистрации',
     back_today: 'Сегодня', navigate: 'Маршрут', copied_code: 'Код скопирован',
-    app_tag: 'учёт задач', copy_addr: 'Копировать адрес', copied_addr: 'Адрес скопирован',
+    app_tag: 'учёт работ', copy_addr: 'Копировать адрес', copied_addr: 'Адрес скопирован',
     today_tag: 'сегодня',
     st_active: 'Активен', st_blocked: 'Заблокирован', block: 'Заблокировать', unblock: 'Разблокировать',
     block_confirm: 'Заблокировать сотрудника? Он не сможет войти в приложение:',
@@ -924,6 +924,94 @@ const I18N = {
     dft_yes: 'да', dft_hdr_env: 'Среда', dft_hdr_view: 'вид', dft_hdr_set: 'Настройки', dft_hdr_fn: 'Функция', dft_hdr_left: 'остатков', dft_ctx: 'контекст', dft_ctx_scr: 'экран', dft_ctx_ban: 'плашки', dft_end_feed: 'В ленту за прогон пришло', dft_end_audit: 'Записей журнала событий с пометкой test', dft_end_asked: 'Вопросов приложения, на которые тест ответил сам', dft_end_net: 'запросов к серверу', dft_js_err: 'Ошибки JavaScript во время теста', dft_big: 'Отчёт не помещается в память браузера — скачайте его файлом сейчас: после перезагрузки останется только конец.',
     dft_a1ui: 'Создаю задачу кнопкой «Добавить задание» — без исполнителя', dft_a1as: 'Назначаю исполнителя в документе и сохраняю', dft_a2own: 'Работник сам создаёт задачу кнопкой «Добавить задание»', dft_adopt: 'Документ принят в тест (служебно: пометку «тестовый» ставит только функция)', dft_me: 'я', dft_pk_follow: 'пикапы едут за основным', dft_pk_lost: 'пикапы остались у прежнего исполнителя', dft_raw: 'запрос в обход интерфейса:', dft_service: 'служебно — пометку «тестовый» ставит только функция', dft_u_allboxes: 'все галочки бланка', dft_u_card: 'карточка задачи', dft_u_crew: 'бригада', dft_u_day: 'день', dft_u_empty: 'пусто', dft_u_menu: 'меню', dft_u_week: 'другая неделя', dft_u_expand: 'развернуть все разделы', dft_ui_avail: 'в интерфейсе ДОСТУПНО то, чего быть не должно', dft_ui_none: 'в интерфейсе нет того, что должно быть', dft_ui_noreason: 'пустая причина принята', dft_ui_notoast: 'нет поясняющей подсказки', dft_ui_off: 'элемент недоступен для нажатия', dft_ui_wait: 'не дождался',
     tab_dft: 'Тест документооборота', dft_card: 'Тест документооборота',
+    /* v1.09.53: тест «Документооборот + ремонт» — документ ремонта со всех сторон */
+    tab_dftr: 'Тест документооборота + ремонт', dftr_card: 'Тест документооборота + ремонт',
+    dftr_hint: 'Весь тест документооборота (как в соседней карточке), а после него — документ ремонта со всех сторон: все статусы (черновик, отправлен, одобрен, отклонён, отзыв, «слетел апрув», архив, удаление навсегда) и все цепочки (ремонт из инвойса, из пропозала и отдельный, привязка и отвязка, сумма в инвойс, удаление с цепочкой). Роли: работник-автор, помощник в бригаде, посторонний работник, менеджер без права апрува и с правом, админ. Своя роль — кнопками, остальные — служебной функцией.',
+    dftr_only: 'Только ремонт — без основного цикла документооборота', dftr_run: 'Запустить тест с ремонтом',
+    dftr_off: 'Режим тестирования выключен. Включает админ — в карточке «Тест документооборота», на срок.',
+    dftr_need_sql: 'Правила сервера для ремонта не установлены: выполните supabase/update-to-1_09_53.sql (docflow_v 11). Без них шаги, которые эти правила проверяют, пропускаются.',
+    dftr_hdr: 'Ремонт', dftr_mode: 'режим', dftr_m_docflow: 'документооборот', dftr_m_full: 'документооборот + ремонт', dftr_m_rep: 'только ремонт',
+    dftr_no_tab: 'вкладки «Ремонт» в меню нет — экран открыт служебно', dftr_no_r1: 'Ремонт R1 не создан — дальше документ ремонта не проверяется',
+    dftr_g_p: 'R0 · Ремонт: подготовка — инвойс с бригадой и пропозал',
+    dftr_p1: 'Инвойс для ремонта: работник — основной, второй работник — в бригаде',
+    dftr_p2: 'Одобренный пропозал к этому инвойсу и привязка (служебно)',
+    dftr_g_a: 'RA · Ремонт: создание — из инвойса, из пропозала, отдельный; привязка и отвязка',
+    dftr_a1: 'Галочка «Требуется восстановление» в инвойсе — на карточке дня значок R?',
+    dftr_a2: 'Работник создаёт ремонт из инвойса: работа из справочника и своя строка, материал, PO, срок, налог, доставка, заметка с переводом; пустая строка при сохранении убирается',
+    dftr_a3: 'Ремонт из пропозала, без инвойса: «Новый документ ремонта» в пропозале',
+    dftr_a4: 'Отдельный ремонт: «Новый документ ремонта» → контрагент, комплекс, юнит, строка → «Сохранить»; привязка инвойса подтягивает и его пропозал',
+    dftr_a4n: 'Создавать ремонт работникам запрещено админом — кнопки «Новый документ ремонта» нет',
+    dftr_a5: 'Отвязка инвойса и пропозала от ремонта и привязка снова',
+    dftr_a6: 'Ремонт без контрагента и комплекса не сохраняется — подсказка',
+    dftr_g_b: 'RB · Ремонт: статусы и согласование',
+    dftr_b1: 'Работник отправляет ремонт на апрув: «Черновик» → «Отправлен»',
+    dftr_b2: 'Отправленный ремонт — в фильтре «Отправлен», а у согласующего — в «На апруве»',
+    dftr_b3: 'Работник одобряет свой ремонт — кнопок нет, сервер отказывает',
+    dftr_b4: 'Работник отклоняет свой ремонт — сервер отказывает',
+    dftr_b5: 'Менеджер без права апрува одобряет ремонт — кнопок нет, отказ',
+    dftr_b6: 'Менеджер без права апрува отклоняет ремонт — отказ',
+    dftr_b7: 'Согласующий отклоняет ремонт с причиной — записано, кто решил',
+    dftr_b8: 'Работнику в ленту пришло «Ремонт отклонён» с причиной',
+    dftr_b9: 'В отклонённом ремонте видны статус и причина',
+    dftr_b10: 'Работник исправляет сумму и отправляет снова: «Отклонён» → «Отправлен»',
+    dftr_b11: 'Согласующему в ленту пришло «Ремонт ждёт апрува»',
+    dftr_b12: 'Работник отзывает ремонт с апрува: «Отправлен» → «Черновик»',
+    dftr_b13: 'Снова на апрув — МЕНЕДЖЕР с правом апрува одобряет',
+    dftr_b14: 'Работнику в ленту пришло «Ремонт апрувлен» (этот ремонт)',
+    dftr_b15: 'Одобренный ремонт: итог зелёный, предупреждение «правка снимет апрув», статус «Одобрен»',
+    dftr_b16: 'АДМИН передумал: «Одобрен» → «Отклонён» с причиной',
+    dftr_b17: 'Работнику в ленту пришло «Ремонт отклонён» после апрува',
+    dftr_b18: 'АДМИН одобряет из «Отклонён» — причина очищена',
+    dftr_b19: 'Согласующий одобряет СВОЙ ремонт прямо из черновика',
+    dftr_b19n: 'Менеджер без права апрува одобряет свой ремонт — кнопок нет, отказ',
+    dftr_g_c: 'RC · Ремонт: правка одобренного — апрув снимается',
+    dftr_c1: 'Правка суммы в одобренном ремонте кнопками — апрув снят сразу, «Черновик», в истории — снятие',
+    dftr_c2: '«Слетел апрув» — в списке ремонтов, а у менеджера — на доске и в «Требуется действие»',
+    dftr_c3: 'Админ правит одобренный ремонт — работнику в ленту «Апрув снят с ремонта»',
+    dftr_c4: 'Правка сметы одобренного ремонта В ОБХОД интерфейса — апрув снимает сам сервер',
+    dftr_c5: 'Переводы и пометки фото «до / после» апрув НЕ снимают',
+    dftr_c6: 'Повторное «Сохранить» без правок — ремонт остаётся «Одобрен»',
+    dftr_g_d: 'RD · Ремонт: бригада, помощник, посторонний, менеджер',
+    dftr_d1: 'Бригада ремонта: добавить второго работника и убрать',
+    dftr_d2: 'Помощник из бригады видит чужой ремонт — только просмотр',
+    dftr_d3: 'Помощник правит чужой ремонт — отказ',
+    dftr_d4: 'Посторонний работник чужой ремонт не видит',
+    dftr_d5: 'Посторонний работник правит чужой ремонт — отказ',
+    dftr_d6: 'Менеджер правит ремонт работника (PO) и отправляет на апрув',
+    dftr_d7: 'Менеджер чужой ремонт не удаляет — кнопки нет',
+    dftr_g_f: 'RF · Ремонт: PDF, фото чека, настройки',
+    dftr_f1: 'PDF ремонта со статусом документа', dftr_f1n: 'Суммы скрыты от работников — PDF ремонта недоступен',
+    dftr_f2: 'Админ: «Скрыть суммы ремонта» и «Ремонт создаёт любой сотрудник» — переключил и вернул',
+    dftr_f3: 'Фото чека в документ ремонта способом 1',
+    dftr_g_e: 'RE · Ремонт: цепочки документов, архив, удаление',
+    dftr_e1: 'Цепочка ремонта: пропозал, инвойс и все ремонты — и ремонт только из пропозала',
+    dftr_e2: 'Сумма одобренного ремонта — строкой в инвойс («Перенести суммы в инвойс»)',
+    dftr_e3: 'Повторный перенос не дублирует строку — подсказка',
+    dftr_e4: 'Сданный инвойс сумму ремонта не принимает — замок', dftr_e4a: 'Сданный инвойс: согласующий добавляет сумму ремонта',
+    dftr_e5b: 'Чужой ремонт в инвойсе: работник удалить инвойс с цепочкой не может — только админ',
+    dftr_e5: 'Удаление инвойса с ремонтом: окно цепочки → «В архив вместе с цепочкой»',
+    dftr_e5n: 'Менеджер инвойс работника не удаляет — кнопки нет (удаляет работник, служебно)',
+    dftr_e6: 'Ремонт из архива — «Вернуть из архива»', dftr_e6n: 'У работника архива нет',
+    dftr_e7: 'Автор удаляет свой ремонт — он уходит в архив с пометкой',
+    dftr_e8: 'Админ удаляет ремонт навсегда', dftr_e8n: 'Менеджер удалить навсегда не может — только вернуть',
+    dftr_e9: 'Удаление пропозала с цепочкой: инвойс и ремонты уходят в архив', dftr_e9n: 'Менеджер пропозал не удаляет — кнопки нет',
+    dftr_no_links: 'в ремонте не видно связей с инвойсом и пропозалом', dftr_from_job: '(пропозал — из инвойса)', dftr_apv: '«На апруве»',
+    dftr_no_reason: 'причины отклонения не видно', dftr_no_reset_ui: 'правка не сняла апрув в интерфейсе',
+    dftr_srv_reset: 'апрув снял сервер (в истории — «сервер»)', dftr_c5_n: 'апрув на месте', dftr_ui_only: 'проверено интерфейсом',
+    dftr_adm_money: 'админ суммы видит всегда', dftr_adm_create: 'админ создаёт ремонт всегда', dftr_restored: 'возвращено', dftr_f3_q: 'в очереди отправки',
+    rep_srv_reset: 'Сервер снял апрув: документ изменён после одобрения и вернулся в черновик',
+    /* v1.09.54: тест «Документооборот + ремонт + интерфейс» — три лога прогона */
+    tab_dftu: 'Тест документооборота + ремонт + интерфейс', dftu_card: 'Тест документооборота + ремонт + интерфейс',
+    dftu_hint: 'Всё, что делает «Тест документооборота + ремонт», и по ходу — проверка интерфейса на каждом экране и в каждом окне, куда заходит тест: кнопки наезжают друг на друга, уходят за рамку экрана, вылезают из своего блока; блоки налезают, текст обрезан, элемент прячется под шапкой или нижней панелью. После прогона — три отдельных лога.',
+    dftu_run: 'Запустить тест с проверкой интерфейса', dftu_no_mod: 'Модуль «Диагностика интерфейса» (uidiag.js) не загрузился — проверка интерфейса в этом прогоне пропускается',
+    dftu_logs_h: 'После прогона — три файла .txt: «Весь лог», «Критические» (только критические ошибки) и «Интерфейс» (съехавшие и наезжающие кнопки, кнопки за рамкой экрана). Кнопки остаются в этой карточке до следующего теста.',
+    dfu_title: 'Проверка интерфейса', dfu_three: 'Три лога прогона', dfu_log_all: 'Весь лог', dfu_log_crit: 'Критические', dfu_log_ui: 'Интерфейс',
+    dfu_no_report: 'Отчёта проверки интерфейса нет — запустите «Тест документооборота + ремонт + интерфейс»', dfu_scan: 'интерфейс', dfu_fail: 'проверка интерфейса не удалась',
+    dfu_mode: 'проверка интерфейса', dfu_ro: 'просмотр', dfu_edit: 'правка', dfu_new: 'новый', dfu_states: 'Проверено состояний экрана', dfu_ms: 'время проверки',
+    dfu_defects: 'дефектов', dfu_err: 'ошибок', dfu_warn: 'предупреждений', dfu_none: 'Дефектов интерфейса не найдено', dfu_checks: 'Проверки',
+    dfu_checks_list: 'наезд кнопок друг на друга, перекрытие элементов, налезание блоков, кнопки за рамкой экрана, вылет за правый край, кнопка вылезла из своего блока, обрезанный текст, недоступно под шапкой или нижней панелью, безопасные зоны экрана',
+    dfu_where: 'где', dfu_step: 'шаг', dfu_states_t: 'Состояния экрана', dfu_device: 'Устройство', dfu_capped: 'дальше {N} проверок за прогон не делается',
+    dfu_err_t: 'Ошибки', dfu_warn_t: 'Предупреждения', dfu_see_file: 'остальное — в файле «Интерфейс»', dfu_mode_v: 'режим', dfu_font: 'шрифт', dfu_canvas: 'холст',
     dft_hint: 'Полный цикл документа под вашей ролью: шаги вашей роли идут настоящим путём приложения, шаги остальных ролей выполняет служебная функция dft. «+» — шаг должен пройти, «−» — сервер обязан отказать. Всё тестовое удаляется в конце; отчёт с запросами и ответами сервера можно скопировать или скачать.',
     dft_on_q: 'Включить режим тестирования документооборота? Пока он включён, служебная функция может действовать от имени администратора и менеджера — только над тестовыми документами. Режим выключится сам по истечении срока.',
     dft_need_sql: 'Сначала выполните supabase/update-to-1_09_34.sql', dft_on_done: 'Режим тестирования ВКЛЮЧЁН — не забудьте выключить', dft_off_done: 'Режим тестирования выключен', dft_warn_t: 'Включён режим тестирования',
@@ -1222,7 +1310,6 @@ const I18N = {
     tv_test_on: 'Проверка ТВ-режима', tv_test_stop: 'Закончить проверку', tv_dens_t: 'Плотность ТВ-экрана', tv_dens_h: 'Общая для всех телевизоров. «Компактная» — мельче отступы и карточки, больше влезает сотрудников.', tv_dens_admin: 'Плотность ТВ меняет администратор',
     dens_title: 'Плотность интерфейса', dens_cozy: 'Обычная', dens_compact: 'Компактная',
     dens_hint: 'Личная настройка аккаунта, своя для режима «Телефон» и режима «ПК»; хранится в профиле и подхватывается на другом устройстве. «Компактная» — для небольших ноутбуков, планшетов и телефонов: на экран помещается больше. Уменьшаются не только буквы, а сами блоки — шапка, лента недели, меню, значки, отступы внутри карточек; карточка дня становится вдвое ниже, на доске помещается в полтора-два раза больше сотрудников. Оформление остаётся тем же. Размер букв по-прежнему регулируется отдельно — строкой выше. На ПК то же самое переключает кнопка внизу слева, на доске — кнопка рядом с глазом.',
-    dens_btn_on: 'Компактно: включено — нажмите, чтобы вернуть обычную плотность', dens_btn_off: 'Сделать компактнее: больше помещается на экран',
     dens_log_on: 'компактная', dens_log_off: 'обычная',
     cv_title: 'ПК-режим на маленьком экране', cv_d_off: 'на этом устройстве · сейчас раскладка телефона', cv_d_on: 'на этом устройстве · холст {W} px, масштаб {P}%',
     cv_d_wait: 'на этом устройстве · включится в режиме «ПК»', cv_d_narrow: 'на этом устройстве · экран сейчас слишком узкий — поверните телефон',
@@ -1550,7 +1637,7 @@ const I18N = {
     ext_req_done: 'Продление применено', ext_req_rej: 'Запрос отклонён',
     act_price_change: 'изменение цены', act_approve_reset: 'сброс апрува',
     act_pickup_restore: 'возврат в аренду', act_priority_set: 'приоритет',
-    act_org_toggle: 'настройка (вкл/выкл)', act_org_set: 'настройка (значение)',
+    act_org_toggle: 'настройка (вкл/выкл)', act_org_set: 'настройка (значение)', act_cx_attrs: 'характеристика апартаментов',
     act_car_no_set: 'номер машины', act_stock_set: 'склад',
     act_backup_export: 'бэкап: выгрузка', act_backup_restore: 'бэкап: загрузка',
     act_proposal_create: 'пропозал создан', act_proposal_update: 'пропозал изменён',
@@ -1634,15 +1721,15 @@ const I18N = {
     bk_log_export: '# TechLog — выгрузка бэкапа —', bk_log_import: '# TechLog — загрузка из бэкапа —',
     bk_no_table: 'таблицы нет — пропущена',
     /* v1.08.51: учёба — тесты по разделам и учебные материалы */
-    tab_study: 'Учёба', st_card: 'Учёба', st_tab_sec: 'Разделы', st_tab_mine: 'Мои результаты', st_tab_stat: 'Статистика',
-    st_test: 'Тест', st_book: 'Книга', st_materials: 'Материалы', st_no_test: 'файл теста не загружен', st_test_has: 'тест', st_book_has: 'книга', st_no_book: 'книги пока нет',
+    tab_study: 'Учёба', st_card: 'Учёба', st_tab_stat: 'Статистика',
+    st_test: 'Тест', st_book: 'Книга', st_no_test: 'файл теста не загружен', st_test_has: 'тест', st_book_has: 'книга', st_no_book: 'книги пока нет',
     st_my_res: 'Мои результаты', st_last: 'последний', st_sec_empty: 'По этому разделу попыток пока нет — нажмите «Тест».',
     st_overall: 'Общий прогресс', st_best_by_sec: 'Лучший результат по разделам',
     st_stat_tip: 'Статистика по всем сотрудникам: тесты, сдано, ответов, доля верных и неверных, время тестов и чтения. Строка сотрудника раскрывается по разделам и попыткам.', st_no_file: 'файл не найден', st_no_q: 'в файле нет вопросов',
     st_q_short: 'вопр.', st_attempts: 'попыток', st_best: 'лучший', st_read_time: 'чтение',
     st_mode: 'Режим', st_mode_learn: 'Обучение', st_mode_exam: 'Экзамен',
     st_mode_tip: 'Обучение — после каждого ответа сразу виден разбор. Экзамен — ответы без разбора, объяснения только в итогах.',
-    st_count: 'Вопросов', st_all: 'Все', st_lang: 'Язык теста', st_shuffle: 'Перемешать вопросы', st_pages: 'стр.',
+    st_count: 'Вопросов', st_all: 'Все', st_shuffle: 'Перемешать вопросы', st_pages: 'стр.',
     st_pass_lbl: 'Порог зачёта', st_start_hint: 'таймер идёт, пока экран открыт', st_begin: 'Начать',
     st_q: 'Вопрос', st_multi: 'несколько верных ответов — отметьте все', st_multi_any: 'верных ответов может быть один или несколько — отметьте все и нажмите «Проверить»',
     st_shuffle_chk: 'Перемешивать варианты ответов', st_shuffle_hint: 'Варианты идут в случайном порядке у каждого вопроса. Пункты вида «Верны варианты 1 и 3», «Все варианты верны» убираются: вопрос превращается в «отметьте все верные», а правильный ответ — сам набор верных пунктов. Без галочки варианты идут как в файле теста.', st_hint: 'Подсказка', st_hint_hide: 'Скрыть подсказку',
@@ -1655,10 +1742,9 @@ const I18N = {
     st_time: 'Время', st_avg_q: 'на вопрос', st_review: 'Разбор', st_again: 'Ещё раз', st_your: 'ваш ответ', st_hint_used: 'с подсказкой',
     st_only_wrong: 'Только ошибки', st_all_right: 'Ошибок нет', st_section: 'Раздел', st_p: 'стр.',
     st_read_done: 'Готово', st_open_tab: 'Открыть в новой вкладке', st_read_switch: 'Другой раздел',
-    st_read_hint: 'Время чтения считается, пока страница открыта; при выходе оно попадёт в вашу статистику.',
     st_read_saved: 'Чтение записано', st_reading: 'чтение',
     st_resume_t: 'Незавершённый тест', st_resume: 'Продолжить',
-    st_mine_empty: 'Пока ни одного теста. Начните с любого раздела.', st_tests: 'тестов', st_answers: 'ответов',
+    st_tests: 'тестов', st_answers: 'ответов',
     st_time_tests: 'время тестов', st_time_read: 'время чтения',
     st_people: 'сотрудников', st_passed_n: 'Сдано', st_all_time: 'всё время', st_all_sections: 'Все разделы', st_stat_empty: 'За период записей нет',
     st_denied: 'Учёба для вас пока не включена — обратитесь к администратору.',
@@ -1743,6 +1829,57 @@ const I18N = {
     tvz_dock_a: 'Полоса — первая часть (после часов)', tvz_dock_b: 'Полоса — вторая часть',
     tvz_bar_a: 'Строка статусов', tvz_bar_b: 'Строка статусов — дальше',
     tvg_all: 'Все', tvg_col: 'С колонкой', tvg_strip: 'С лентой', tvg_over: 'Поверх карты', tvg_bars: 'Со строками', tvg_screen: 'Под экран',
+    dens_sw_cozy: 'Обычный интерфейс', dens_sw_compact: 'Компактный интерфейс: мельче отступы и карточки — больше влезает на экран',
+    bnx_title: 'Bouncie: поездки не получены', bnx_intro: 'По этим машинам Bouncie не отдал поездки. Ниже — ответ Bouncie и что он значит. Остальные машины показаны как обычно.',
+    bnx_part: 'Bouncie не отдал поездки: {L}', bnx_more: 'подробнее',
+    bnx_404: 'Bouncie не знает этот трекер (404): прибор отвязан от аккаунта фирмы или заменён, либо IMEI в карточке машины введён с ошибкой. Проверьте: Справочники → «Трекеры Bouncie» → «Сверить», затем трекер в карточке машины.',
+    bnx_400: 'Bouncie отклонил запрос (400): обычно — неверный IMEI или прибор, у которого в аккаунте нет доступа к поездкам. Сверьте IMEI в карточке машины со справочником трекеров.',
+    bnx_401: 'Нет доступа к аккаунту Bouncie (401/403): вход устарел. Админ: Настройки → Интеграции → GPS-трекинг Bouncie → «Подключить Bouncie».',
+    bnx_429: 'Bouncie временно ограничил число запросов (429). Подождите минуту и нажмите «Обновить».',
+    bnx_5xx: 'Сбой на стороне Bouncie (5xx) — временный. Нажмите «Обновить» позже.',
+    bnx_db: 'Поездки не записались в базу (таблица bn_trips): выполните SQL-обновление и передеплойте функцию bouncie.',
+    bnx_cfg: 'Bouncie не настроен: нет ключей Client ID / Secret.', bnx_net: 'Связь между сервером и Bouncie не ответила — временно, повторите позже.',
+    bnx_other: 'Незнакомый ответ — отправьте этот текст разработчику (кнопка «Копировать»).',
+    bnx_diag: 'Диагностика Bouncie', bnx_diag_h: 'По шагам: функция bouncie, ключи и вход, машины в аккаунте Bouncie против справочника «Автомобили», поездки каждой машины за сегодня, запись истории треков. Ничего не меняет.',
+    bnx_fn: 'Функция bouncie', bnx_fn_fix: 'разверните Edge Function bouncie (supabase/functions-dashboard/bouncie: index.ts + google.ts)',
+    bnx_cfg_t: 'Ключи', bnx_keys_ok: 'Client ID и Secret сохранены', bnx_keys_no: 'нет Client ID / Secret — введите и нажмите «Сохранить» в карточке Bouncie',
+    bnx_auth_t: 'Вход в Bouncie', bnx_auth_ok: 'аккаунт подключён', bnx_auth_no: 'не подключён — «Подключить Bouncie»',
+    bnx_acc_t: 'Аккаунт Bouncie', bnx_acc_n: 'машин в аккаунте: {N}', bnx_no_cars: 'в справочнике «Автомобили» нет машин с трекером',
+    bnx_not_in_acc: 'трекера нет в аккаунте Bouncie — прибор отвязан, заменён или IMEI введён с ошибкой',
+    bnx_in_acc: 'трекер в аккаунте Bouncie', bnx_last: 'последние данные', bnx_stale: 'данных от прибора нет больше трёх суток — нет питания или связи',
+    bnx_dev_inactive: 'трекер помечен «неактивен» в справочнике «Трекеры Bouncie»', bnx_no_driver: 'водитель не назначен — на карте машина не привязана к сотруднику',
+    bnx_trips_ok: 'поездки за сегодня получены: {N}', bnx_trips_bad: 'поездки за сегодня не получены',
+    bnx_extra: 'в аккаунте Bouncie есть приборы без машины в справочнике ({N})',
+    bnx_tracks_t: 'История треков за сегодня', bnx_tracks_ok: 'записана без ошибок, поездок: {N}',
+    bnx_demo: 'Демо-режим: сервера нет — диагностика работает только с Supabase.',
+    bnx_sum_ok: 'Итог: всё в порядке.', bnx_sum_bad: 'Итог: проблем — {N}. Причина и что делать — в строках с ⛔.',
+    mr_show: 'Маршруты на карте', mr_tip: 'Линия каждого сотрудника по дорогам: офис → его точки дня по номерам. Дороги строит бесплатный сервер OSRM; нет связи с ним — прямые пунктирные линии. Кнопка с названием навигатора открывает те же точки в Google Maps (Карты Apple на iPhone) — для поездки. Галочка своя на каждом устройстве.',
+    mr_stops: 'точк.', mr_calc: 'считаю дороги…', mr_straight: 'по прямой', mr_from_office: 'от офиса', mr_nobody: 'Без исполнителя',
+    mr_no_office: 'Адрес офиса не задан — маршрут начинается с первой точки. Офис задаёт админ: Настройки → Режим телевизора → Офис.',
+    tvc_mroutes: 'Маршруты дня линиями на карте', tvc_car: 'Карусель сотрудников',
+    tvc_car_tip: 'Экран по очереди показывает каждого сотрудника: карта приближается к его точкам дня и маршруту от офиса, слева — карточка: статус, сегодня (задачи, пикапы, пробег, время в пути), неделя (7 дней) и месяц (с 1-го числа), разбивка по видам работ и список точек с этапами. Между сотрудниками — общий вид, если стоит галочка. Пульт телевизора: ← → — предыдущий / следующий.',
+    tvc_car_on: 'Показывать сотрудников по очереди', tvc_car_sec: 'Секунд на сотрудника', tvc_car_over: 'Между сотрудниками — общий вид',
+    tvc_car_who: 'Кого показывать', tvc_car_act: 'С задачами сегодня', tvc_car_all: 'Всех', tvc_car_pd: 'Периоды статистики в карточке:',
+    tve_today: 'Сегодня', tve_week: 'Неделя', tve_month: 'Месяц', tve_jobs: 'Задачи', tve_pk: 'Пикапы', tve_mi: 'Пробег', tve_drive: 'В пути',
+    tve_done: 'Выполнено', tve_pk_done: 'Пикапов', tve_by_wt: 'По видам работ', tve_w_s: '7 дн.', tve_m_s: 'мес.', tve_stops: 'Точки дня',
+    d_cxattrs: 'Характеристики', cxa_title: 'Характеристики апартаментов',
+    cxa_tip: 'Список задаёт админ: Справочники → «Характеристики». Со звёздочкой — обязательные: без них карточку апарт-комплекса не сохранить (галочка со звёздочкой должна стоять). Остальные — под «Дополнительно». Характеристики видны в документе задачи под адресом и на карте.',
+    cxa_more: 'Дополнительно', cxa_none: 'Своих характеристик пока нет — их задаёт админ: Справочники → «Характеристики».', cxa_miss: 'не заполнено',
+    cxa_need: 'Заполните обязательные характеристики', cxa_all: 'Все апартаменты', cxa_req: 'обязательная', cxa_opt: 'дополнительная', cxa_filled: 'заполнено',
+    cxa_empty: 'Характеристик пока нет. Например: «Лифт» (переключатель: есть / нет), «Парковка» (текст), «Ключ у консьержа» (галочка).',
+    cxa_dir_h: 'Что знать об апартаментах перед выездом: текстовое поле, галочка или переключатель (один вариант из нескольких). Обязательную нельзя оставить пустой в карточке апарт-комплекса. Характеристика — для всех апартаментов сразу или для апартаментов одного контрагента.',
+    cxa_name: 'Название', cxa_name_ph: 'Например: Лифт', cxa_name_tip: 'Можно на двух языках через «|»: «Лифт | Elevator» — в английском интерфейсе покажется английская часть.',
+    cxa_kind: 'Вид', cxa_k_text: 'Текст', cxa_k_check: 'Галочка', cxa_k_choice: 'Переключатель',
+    cxa_opts: 'Варианты (каждый с новой строки)', cxa_opts_ph: 'есть\nнет', cxa_req_chk: 'Обязательная',
+    cxa_req_h: 'Обязательную нельзя оставить пустой в карточке апарт-комплекса; у галочки — должна стоять.',
+    cxa_scope: 'Для кого', cxa_need_name: 'Введите название', cxa_need_opts: 'У переключателя нужно хотя бы два варианта',
+    cxa_del_q: 'Удалить характеристику? Уже заполненные значения останутся в апарт-комплексах, но показываться не будут.',
+    hist_line: 'Уже делали здесь:', hist_ago: '{D} дн. назад', hist_same_day: 'в тот же день', hist_n: 'документов: {N}', hist_view: 'посмотреть',
+    hist_title: 'Предыстория юнита', hist_intro: 'Та же задача в этом же юните за последние {D} дней — только работы, без цен.',
+    hist_eq: 'Оборудование', hist_extra: 'Доп. работы', hist_photos: 'фото', hist_videos: 'видео', hist_empty_doc: 'В документе ничего не отмечено.',
+    hist_set_t: 'Предыстория задачи в юните', hist_set_chk: 'Показывать предысторию (без цен)', hist_set_days: 'За сколько дней, дн.',
+    hist_set_tip: 'Открыт документ задачи — если в этом же юните эту же задачу уже делали за указанный срок, под адресом появится строка «Уже делали здесь…» с документами только для просмотра: кто, когда, что отмечено, оборудование, заметки — без цен. Работник видит так и чужие документы этого юнита.',
+    hist_set_h: 'Юнит — тот же апарт-комплекс и тот же номер («U214», «Unit 214» и «#214» — один юнит), задача — тот же вид работ. По умолчанию 60 дней — «меньше двух месяцев».',
     week_days: ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'],
     months: ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'],
   },
@@ -1957,7 +2094,7 @@ const I18N = {
     faq_btn: 'Section FAQ',
     map_day_hint: 'Jobs and pickups for the selected date',
     map_no_coords: 'no coordinates — open the complex and tap "Find by address"',
-    route_day_in: 'Day route in', open_in: 'Open in',
+    open_in: 'Open in',
     nav_app: 'Navigation app', nav_auto: 'Auto',
     nav_app_hint: 'Where routes open. Auto: Apple Maps on iPhone/iPad, Google Maps elsewhere.',
     dict_kbd_hint: 'On iPhone, dictate with the 🎤 key on the keyboard',
@@ -2533,6 +2670,94 @@ const I18N = {
     dft_yes: 'yes', dft_hdr_env: 'Environment', dft_hdr_view: 'view', dft_hdr_set: 'Settings', dft_hdr_fn: 'Function', dft_hdr_left: 'leftovers', dft_ctx: 'context', dft_ctx_scr: 'screen', dft_ctx_ban: 'banners', dft_end_feed: 'Feed rows received during the run', dft_end_audit: 'Event journal rows tagged test', dft_end_asked: 'App questions the test answered itself', dft_end_net: 'server requests', dft_js_err: 'JavaScript errors during the test', dft_big: 'The report does not fit into browser storage — download it as a file now: after a reload only its tail remains.',
     dft_a1ui: 'Creating a job with the Add job button — unassigned', dft_a1as: 'Assigning the lead in the document and saving', dft_a2own: 'The worker creates a job himself with the Add job button', dft_adopt: 'The document is adopted into the test (service call: only the function sets the test flag)', dft_me: 'me', dft_pk_follow: 'pickups follow the lead', dft_pk_lost: 'pickups stayed with the previous lead', dft_raw: 'request bypassing the UI:', dft_service: 'service call — only the function sets the test flag', dft_u_allboxes: 'every checkbox of the form', dft_u_card: 'job card', dft_u_crew: 'crew', dft_u_day: 'day', dft_u_empty: 'empty', dft_u_menu: 'menu', dft_u_week: 'another week', dft_u_expand: 'expand all sections', dft_ui_avail: 'the UI OFFERS what it must not', dft_ui_none: 'the UI lacks what it must have', dft_ui_noreason: 'an empty reason was accepted', dft_ui_notoast: 'no explaining hint', dft_ui_off: 'the element cannot be pressed', dft_ui_wait: 'timed out waiting for',
     tab_dft: 'Workflow test', dft_card: 'Workflow test',
+    /* v1.09.53: the "Workflow + repair" test — the repair document from every side */
+    tab_dftr: 'Workflow + repair test', dftr_card: 'Workflow + repair test',
+    dftr_hint: 'The whole workflow test (as in the card next to it), and after it the repair document from every side: all statuses (draft, sent, approved, declined, withdrawal, approval reset, archive, delete for good) and all chains (a repair from an invoice, from a proposal and standalone, link and unlink, the amount into the invoice, deletion with the chain). Roles: the author worker, a crew helper, an outsider worker, a manager with and without the approve right, the admin. Your own role uses the buttons, the others go through the service function.',
+    dftr_only: 'Repair only — skip the main workflow cycle', dftr_run: 'Run the test with repairs',
+    dftr_off: 'Test mode is off. The admin turns it on in the "Workflow test" card, for a period.',
+    dftr_need_sql: 'Server rules for repairs are not installed: run supabase/update-to-1_09_53.sql (docflow_v 11). Without them the steps that check these rules are skipped.',
+    dftr_hdr: 'Repair', dftr_mode: 'mode', dftr_m_docflow: 'workflow', dftr_m_full: 'workflow + repair', dftr_m_rep: 'repair only',
+    dftr_no_tab: 'no Repairs tab in the menu — the screen was opened by the service', dftr_no_r1: 'Repair R1 was not created — the repair document checks stop here',
+    dftr_g_p: 'R0 · Repair: setup — an invoice with a crew and a proposal',
+    dftr_p1: 'The invoice for repairs: the worker is the lead, the second worker is in the crew',
+    dftr_p2: 'An approved proposal for this invoice and the link (service)',
+    dftr_g_a: 'RA · Repair: creation — from an invoice, from a proposal, standalone; link and unlink',
+    dftr_a1: 'The "Restoration required" box in the invoice — the day card shows R?',
+    dftr_a2: 'The worker creates a repair from the invoice: a catalog work and a custom row, a material, PO, due date, tax, freight, a note with a translation; an empty row is dropped on save',
+    dftr_a3: 'A repair from the proposal, without an invoice: "New repair document" in the proposal',
+    dftr_a4: 'A standalone repair: "New repair document" → counterparty, complex, unit, a row → Save; linking the invoice also pulls in its proposal',
+    dftr_a4n: 'The admin forbade workers to create repairs — no "New repair document" button',
+    dftr_a5: 'Unlinking the invoice and the proposal from the repair and linking them again',
+    dftr_a6: 'A repair without a counterparty and complex is not saved — a hint',
+    dftr_g_b: 'RB · Repair: statuses and approval',
+    dftr_b1: 'The worker sends the repair for approval: Draft → Sent',
+    dftr_b2: 'The sent repair is in the Sent filter, and for an approver in Awaiting approval',
+    dftr_b3: 'The worker approves the repair they wrote — no buttons, the server refuses',
+    dftr_b4: 'The worker declines the repair they wrote — the server refuses',
+    dftr_b5: 'A manager without the approve right approves the repair — no buttons, refused',
+    dftr_b6: 'A manager without the approve right declines the repair — refused',
+    dftr_b7: 'An approver declines the repair with a reason — the decider is recorded',
+    dftr_b8: 'The worker got "Repair declined" with the reason',
+    dftr_b9: 'The declined repair shows its status and the reason',
+    dftr_b10: 'The worker fixes the amount and sends it again: Declined → Sent',
+    dftr_b11: 'The approver got "Repair awaits approval"',
+    dftr_b12: 'The worker withdraws the repair: Sent → Draft',
+    dftr_b13: 'Sent again — a MANAGER with the approve right approves',
+    dftr_b14: 'The worker got "Repair approved" (this repair)',
+    dftr_b15: 'An approved repair: a green total, the "an edit resets the approval" warning, the Approved status',
+    dftr_b16: 'The ADMIN changes the decision: Approved → Declined with a reason',
+    dftr_b17: 'The worker got "Repair declined" after the approval',
+    dftr_b18: 'The ADMIN approves from Declined — the reason is cleared',
+    dftr_b19: 'An approver approves THEIR OWN repair right from draft',
+    dftr_b19n: 'A manager without the approve right approves their own repair — no buttons, refused',
+    dftr_g_c: 'RC · Repair: editing an approved one resets the approval',
+    dftr_c1: 'Editing an amount in an approved repair with buttons — the approval resets at once, Draft, the history shows the reset',
+    dftr_c2: '"Approval reset" — in the repair list, and for a manager on the board and in Needs action',
+    dftr_c3: 'The admin edits the approved repair — the worker gets "Approval removed from the repair"',
+    dftr_c4: 'Editing the estimate of an approved repair BYPASSING the app — the server itself resets the approval',
+    dftr_c5: 'Translations and before/after photo marks do NOT reset the approval',
+    dftr_c6: 'Saving again without edits — the repair stays Approved',
+    dftr_g_d: 'RD · Repair: crew, helper, outsider, manager',
+    dftr_d1: 'The repair crew: add the second worker and remove them',
+    dftr_d2: 'A crew helper sees a repair of another author — view only',
+    dftr_d3: 'The helper edits a repair of another author — refused',
+    dftr_d4: 'An outsider worker does not see a repair of another author',
+    dftr_d5: 'An outsider worker edits a repair of another author — refused',
+    dftr_d6: 'A manager edits the repair of the worker (PO) and sends it for approval',
+    dftr_d7: 'A manager cannot delete a repair of another author — no button',
+    dftr_g_f: 'RF · Repair: PDF, receipt photo, settings',
+    dftr_f1: 'The repair PDF with the document status', dftr_f1n: 'Amounts are hidden from workers — the repair PDF is unavailable',
+    dftr_f2: 'Admin: "Hide repair amounts" and "Any employee can create a repair" — flipped and restored',
+    dftr_f3: 'A receipt photo into the repair document by way 1',
+    dftr_g_e: 'RE · Repair: document chains, archive, deletion',
+    dftr_e1: 'The repair chain: the proposal, the invoice and all repairs — including a repair made only from the proposal',
+    dftr_e2: 'The approved repair amount as a line in the invoice (Move amounts to invoice)',
+    dftr_e3: 'Moving again does not duplicate the line — a hint',
+    dftr_e4: 'A submitted invoice does not take the repair amount — locked', dftr_e4a: 'A submitted invoice: an approver adds the repair amount',
+    dftr_e5b: 'A repair of another author in the invoice: the worker cannot delete the invoice with the chain — admin only',
+    dftr_e5: 'Deleting an invoice with a repair: the chain window → Archive with the chain',
+    dftr_e5n: 'A manager does not delete an invoice of the worker — no button (the worker deletes it, service)',
+    dftr_e6: 'The repair from the archive — Restore', dftr_e6n: 'A worker has no archive',
+    dftr_e7: 'The author deletes their repair — it goes to the archive with a note',
+    dftr_e8: 'The admin deletes the repair for good', dftr_e8n: 'A manager cannot delete for good — only restore',
+    dftr_e9: 'Deleting the proposal with the chain: the invoice and repairs go to the archive', dftr_e9n: 'A manager does not delete the proposal — no button',
+    dftr_no_links: 'the repair shows no links to the invoice and proposal', dftr_from_job: '(the proposal comes from the invoice)', dftr_apv: 'Awaiting approval',
+    dftr_no_reason: 'the decline reason is not shown', dftr_no_reset_ui: 'the edit did not reset the approval in the app',
+    dftr_srv_reset: 'the server reset the approval (history: server)', dftr_c5_n: 'the approval stays', dftr_ui_only: 'checked in the app',
+    dftr_adm_money: 'the admin always sees amounts', dftr_adm_create: 'the admin can always create repairs', dftr_restored: 'restored', dftr_f3_q: 'in the upload queue',
+    rep_srv_reset: 'The server reset the approval: the document changed after approval and went back to draft',
+    /* v1.09.54: the "Workflow + repair + interface" test — three run logs */
+    tab_dftu: 'Workflow + repair + interface test', dftu_card: 'Workflow + repair + interface test',
+    dftu_hint: 'Everything the "Workflow + repair test" does, and along the way an interface check on every screen and in every window the test opens: buttons overlapping each other, going outside the screen, sticking out of their block; blocks overlapping, clipped text, an element hidden under the header or the bottom bar. After the run there are three separate logs.',
+    dftu_run: 'Run the test with interface checks', dftu_no_mod: 'The interface diagnostics module (uidiag.js) did not load — the interface check is skipped in this run',
+    dftu_logs_h: 'After the run there are three .txt files: "Full log", "Critical" (critical errors only) and "Interface" (shifted and overlapping buttons, buttons outside the screen). The buttons stay in this card until the next test.',
+    dfu_title: 'Interface check', dfu_three: 'Three run logs', dfu_log_all: 'Full log', dfu_log_crit: 'Critical', dfu_log_ui: 'Interface',
+    dfu_no_report: 'There is no interface check report — run the "Workflow + repair + interface test"', dfu_scan: 'interface', dfu_fail: 'the interface check failed',
+    dfu_mode: 'interface check', dfu_ro: 'view only', dfu_edit: 'editing', dfu_new: 'new', dfu_states: 'Screen states checked', dfu_ms: 'check time',
+    dfu_defects: 'defects', dfu_err: 'errors', dfu_warn: 'warnings', dfu_none: 'No interface defects found', dfu_checks: 'Checks',
+    dfu_checks_list: 'buttons overlapping each other, overlapping elements, overlapping blocks, buttons outside the screen, overflow past the right edge, a button sticking out of its block, clipped text, hidden under the header or the bottom bar, screen safe areas',
+    dfu_where: 'where', dfu_step: 'step', dfu_states_t: 'Screen states', dfu_device: 'Device', dfu_capped: 'no more than {N} checks per run',
+    dfu_err_t: 'Errors', dfu_warn_t: 'Warnings', dfu_see_file: 'the rest is in the Interface file', dfu_mode_v: 'mode', dfu_font: 'font', dfu_canvas: 'canvas',
     dft_hint: 'The full document cycle under your role: your own steps go the real app way, the other roles are played by the dft helper function. "+" must pass, "−" must be refused by the server. Everything created is deleted at the end; the report with server requests and answers can be copied or downloaded.',
     dft_on_q: 'Turn the workflow test mode on? While it is on, the helper function may act as the admin and a manager — on test documents only. The mode turns itself off when the period ends.',
     dft_need_sql: 'Run supabase/update-to-1_09_34.sql first', dft_on_done: 'Test mode is ON — remember to turn it off', dft_off_done: 'Test mode is off', dft_warn_t: 'Test mode is on',
@@ -2831,7 +3056,6 @@ const I18N = {
     tv_test_on: 'TV mode test', tv_test_stop: 'End the test', tv_dens_t: 'TV screen density', tv_dens_h: 'Shared by all TVs. “Compact” — smaller paddings and cards, more staff fit.', tv_dens_admin: 'The TV density is changed by the administrator',
     dens_title: 'Interface density', dens_cozy: 'Regular', dens_compact: 'Compact',
     dens_hint: 'Personal account setting, separate for «Phone» mode and «PC» mode; it lives in your profile and follows you to another device. «Compact» is for small laptops, tablets and phones: more fits on the screen. Not only the letters shrink but the blocks themselves — header, week ribbon, menu, icons, padding inside cards; a day card becomes half as tall and the board fits one and a half to two times more people. The look stays the same. Letter size is still adjusted separately — the row above. On a PC the button at the bottom left switches the same thing, on the board — the button next to the eye.',
-    dens_btn_on: 'Compact is on — press to return to regular density', dens_btn_off: 'Make it more compact: more fits on the screen',
     dens_log_on: 'compact', dens_log_off: 'regular',
     cv_title: 'PC mode on a small screen', cv_d_off: 'on this device · phone layout right now', cv_d_on: 'on this device · canvas {W} px, scale {P}%',
     cv_d_wait: 'on this device · turns on in «PC» mode', cv_d_narrow: 'on this device · the screen is too narrow right now — rotate the phone',
@@ -3157,7 +3381,7 @@ const I18N = {
     ext_req_done: 'Extension applied', ext_req_rej: 'Request rejected',
     act_price_change: 'price change', act_approve_reset: 'approve reset',
     act_pickup_restore: 'returned to rental', act_priority_set: 'priority',
-    act_org_toggle: 'setting (on/off)', act_org_set: 'setting (value)',
+    act_org_toggle: 'setting (on/off)', act_org_set: 'setting (value)', act_cx_attrs: 'apartment characteristic',
     act_car_no_set: 'vehicle #', act_stock_set: 'warehouse',
     act_backup_export: 'backup: export', act_backup_restore: 'backup: restore',
     act_proposal_create: 'proposal created', act_proposal_update: 'proposal updated',
@@ -3241,15 +3465,15 @@ const I18N = {
     bk_log_export: '# TechLog — backup export —', bk_log_import: '# TechLog — restore from backup —',
     bk_no_table: 'table missing — skipped',
     /* v1.08.51: study — section tests and study materials */
-    tab_study: 'Study', st_card: 'Study', st_tab_sec: 'Sections', st_tab_mine: 'My results', st_tab_stat: 'Statistics',
-    st_test: 'Test', st_book: 'Book', st_materials: 'Materials', st_no_test: 'test file not loaded', st_test_has: 'test', st_book_has: 'book', st_no_book: 'no book yet',
+    tab_study: 'Study', st_card: 'Study', st_tab_stat: 'Statistics',
+    st_test: 'Test', st_book: 'Book', st_no_test: 'test file not loaded', st_test_has: 'test', st_book_has: 'book', st_no_book: 'no book yet',
     st_my_res: 'My results', st_last: 'last', st_sec_empty: 'No attempts in this section yet — press “Test”.',
     st_overall: 'Overall progress', st_best_by_sec: 'Best score by section',
     st_stat_tip: 'Statistics for all staff: tests, passed, answers, share of correct and wrong, test and reading time. An employee row expands into sections and attempts.', st_no_file: 'file not found', st_no_q: 'no questions in the file',
     st_q_short: 'q.', st_attempts: 'attempts', st_best: 'best', st_read_time: 'reading',
     st_mode: 'Mode', st_mode_learn: 'Learning', st_mode_exam: 'Exam',
     st_mode_tip: 'Learning — the explanation appears right after each answer. Exam — no explanations until the results.',
-    st_count: 'Questions', st_all: 'All', st_lang: 'Test language', st_shuffle: 'Shuffle questions', st_pages: 'pp.',
+    st_count: 'Questions', st_all: 'All', st_shuffle: 'Shuffle questions', st_pages: 'pp.',
     st_pass_lbl: 'Pass mark', st_start_hint: 'the timer runs while the screen is open', st_begin: 'Start',
     st_q: 'Question', st_multi: 'several correct answers — mark all of them', st_multi_any: 'one or several answers may be correct — mark all of them and press “Check”',
     st_shuffle_chk: 'Shuffle answer options', st_shuffle_hint: 'Options come in random order for every question. Items like “Options 1 and 3 are correct” or “All of the above” are removed: the question becomes “mark all correct ones” and the right answer is the set itself. Unchecked — options go as in the test file.', st_hint: 'Hint', st_hint_hide: 'Hide hint',
@@ -3262,10 +3486,9 @@ const I18N = {
     st_time: 'Time', st_avg_q: 'per question', st_review: 'Review', st_again: 'Try again', st_your: 'your answer', st_hint_used: 'hint used',
     st_only_wrong: 'Mistakes only', st_all_right: 'No mistakes', st_section: 'Section', st_p: 'p.',
     st_read_done: 'Done', st_open_tab: 'Open in a new tab', st_read_switch: 'Another section',
-    st_read_hint: 'Reading time counts while the page is open; it goes to your statistics when you leave.',
     st_read_saved: 'Reading recorded', st_reading: 'reading',
     st_resume_t: 'Unfinished test', st_resume: 'Continue',
-    st_mine_empty: 'No tests yet. Start with any section.', st_tests: 'tests', st_answers: 'answers',
+    st_tests: 'tests', st_answers: 'answers',
     st_time_tests: 'test time', st_time_read: 'reading time',
     st_people: 'employees', st_passed_n: 'Passed', st_all_time: 'all time', st_all_sections: 'All sections', st_stat_empty: 'No records for the period',
     st_denied: 'Study is not enabled for you yet — ask the administrator.',
@@ -3350,6 +3573,57 @@ const I18N = {
     tvz_dock_a: 'Strip — first part (after the clock)', tvz_dock_b: 'Strip — second part',
     tvz_bar_a: 'Status line', tvz_bar_b: 'Status line — continued',
     tvg_all: 'All', tvg_col: 'With a column', tvg_strip: 'With a strip', tvg_over: 'Over the map', tvg_bars: 'With lines', tvg_screen: 'By screen',
+    dens_sw_cozy: 'Regular interface', dens_sw_compact: 'Compact interface: smaller paddings and cards — more fits on the screen',
+    bnx_title: 'Bouncie: trips not received', bnx_intro: 'Bouncie did not return trips for these cars. Below is the Bouncie answer and what it means. The other cars are shown as usual.',
+    bnx_part: 'Bouncie did not return trips: {L}', bnx_more: 'details',
+    bnx_404: 'Bouncie does not know this tracker (404): the device was removed from the company account or replaced, or the IMEI in the vehicle card has a typo. Check: Directory → "Bouncie trackers" → "Sync", then the tracker in the vehicle card.',
+    bnx_400: 'Bouncie rejected the request (400): usually a wrong IMEI or a device whose trips the account cannot read. Compare the IMEI in the vehicle card with the trackers directory.',
+    bnx_401: 'No access to the Bouncie account (401/403): the sign-in expired. Admin: Settings → Integrations → Bouncie GPS tracking → "Connect Bouncie".',
+    bnx_429: 'Bouncie temporarily limited the number of requests (429). Wait a minute and press "Refresh".',
+    bnx_5xx: 'A failure on the Bouncie side (5xx) — temporary. Press "Refresh" later.',
+    bnx_db: 'Trips were not written to the database (table bn_trips): run the SQL update and redeploy the bouncie function.',
+    bnx_cfg: 'Bouncie is not set up: no Client ID / Secret keys.', bnx_net: 'The link between the server and Bouncie did not answer — temporary, try again later.',
+    bnx_other: 'An unfamiliar answer — send this text to the developer ("Copy" button).',
+    bnx_diag: 'Bouncie diagnostics', bnx_diag_h: 'Step by step: the bouncie function, keys and sign-in, cars in the Bouncie account against the "Vehicles" directory, today\'s trips of every car, track history writing. Changes nothing.',
+    bnx_fn: 'bouncie function', bnx_fn_fix: 'deploy the bouncie Edge Function (supabase/functions-dashboard/bouncie: index.ts + google.ts)',
+    bnx_cfg_t: 'Keys', bnx_keys_ok: 'Client ID and Secret are saved', bnx_keys_no: 'no Client ID / Secret — enter them and press "Save" in the Bouncie card',
+    bnx_auth_t: 'Bouncie sign-in', bnx_auth_ok: 'account connected', bnx_auth_no: 'not connected — "Connect Bouncie"',
+    bnx_acc_t: 'Bouncie account', bnx_acc_n: 'cars in the account: {N}', bnx_no_cars: 'no cars with a tracker in the "Vehicles" directory',
+    bnx_not_in_acc: 'the tracker is not in the Bouncie account — the device was removed, replaced or the IMEI has a typo',
+    bnx_in_acc: 'tracker in the Bouncie account', bnx_last: 'last data', bnx_stale: 'no data from the device for more than three days — no power or no signal',
+    bnx_dev_inactive: 'the tracker is marked "inactive" in the "Bouncie trackers" directory', bnx_no_driver: 'no driver assigned — on the map the car is not tied to an employee',
+    bnx_trips_ok: 'today\'s trips received: {N}', bnx_trips_bad: 'today\'s trips not received',
+    bnx_extra: 'the Bouncie account has devices without a car in the directory ({N})',
+    bnx_tracks_t: 'Today\'s track history', bnx_tracks_ok: 'written without errors, trips: {N}',
+    bnx_demo: 'Demo mode: there is no server — the diagnostics work only with Supabase.',
+    bnx_sum_ok: 'Result: all fine.', bnx_sum_bad: 'Result: problems — {N}. The cause and what to do are in the lines with ⛔.',
+    mr_show: 'Routes on the map', mr_tip: 'Each employee\'s line along the roads: office → their stops of the day by number. Roads come from the free OSRM server; no connection to it — straight dashed lines. The button with the navigator name opens the same stops in Google Maps (Apple Maps on iPhone) — for driving. The checkbox is per device.',
+    mr_stops: 'stops', mr_calc: 'computing roads…', mr_straight: 'straight line', mr_from_office: 'from the office', mr_nobody: 'Unassigned',
+    mr_no_office: 'The office address is not set — the route starts at the first stop. The admin sets the office: Settings → TV mode → Office.',
+    tvc_mroutes: 'Day routes as lines on the map', tvc_car: 'Staff carousel',
+    tvc_car_tip: 'The screen shows every employee in turn: the map zooms to their stops of the day and the route from the office, on the left a card: status, today (jobs, pickups, miles, driving time), week (7 days) and month (from the 1st), a breakdown by work type and the list of stops with stages. Between employees — the overview, if ticked. TV remote: ← → — previous / next.',
+    tvc_car_on: 'Show employees in turn', tvc_car_sec: 'Seconds per employee', tvc_car_over: 'The overview between employees',
+    tvc_car_who: 'Who to show', tvc_car_act: 'With jobs today', tvc_car_all: 'Everyone', tvc_car_pd: 'Statistics periods on the card:',
+    tve_today: 'Today', tve_week: 'Week', tve_month: 'Month', tve_jobs: 'Jobs', tve_pk: 'Pickups', tve_mi: 'Miles', tve_drive: 'Driving',
+    tve_done: 'Done', tve_pk_done: 'Pickups', tve_by_wt: 'By work type', tve_w_s: '7 d', tve_m_s: 'mo', tve_stops: 'Stops of the day',
+    d_cxattrs: 'Characteristics', cxa_title: 'Apartment characteristics',
+    cxa_tip: 'The admin sets the list: Directory → "Characteristics". Starred ones are required: the apartment complex card cannot be saved without them (a starred checkbox must be ticked). The rest are under "More". Characteristics are shown in the job document under the address and on the map.',
+    cxa_more: 'More', cxa_none: 'No characteristics yet — the admin sets them: Directory → "Characteristics".', cxa_miss: 'not filled',
+    cxa_need: 'Fill in the required characteristics', cxa_all: 'All apartments', cxa_req: 'required', cxa_opt: 'optional', cxa_filled: 'filled',
+    cxa_empty: 'No characteristics yet. For example: "Elevator" (switch: yes / no), "Parking" (text), "Key at the concierge" (checkbox).',
+    cxa_dir_h: 'What to know about the apartments before a visit: a text field, a checkbox or a switch (one option out of several). A required one cannot be left empty in the apartment complex card. A characteristic is for all apartments at once or for the apartments of one counterparty.',
+    cxa_name: 'Name', cxa_name_ph: 'For example: Elevator', cxa_name_tip: 'Two languages via "|" (Russian | English) — the English interface shows the English part.',
+    cxa_kind: 'Kind', cxa_k_text: 'Text', cxa_k_check: 'Checkbox', cxa_k_choice: 'Switch',
+    cxa_opts: 'Options (one per line)', cxa_opts_ph: 'yes\nno', cxa_req_chk: 'Required',
+    cxa_req_h: 'A required one cannot be left empty in the apartment complex card; a checkbox must be ticked.',
+    cxa_scope: 'For whom', cxa_need_name: 'Enter a name', cxa_need_opts: 'A switch needs at least two options',
+    cxa_del_q: 'Delete the characteristic? Values already filled in stay in the apartment complexes but are no longer shown.',
+    hist_line: 'Already done here:', hist_ago: '{D} d ago', hist_same_day: 'the same day', hist_n: 'documents: {N}', hist_view: 'view',
+    hist_title: 'Unit history', hist_intro: 'The same job in this unit over the last {D} days — work only, no prices.',
+    hist_eq: 'Equipment', hist_extra: 'Extra works', hist_photos: 'photos', hist_videos: 'videos', hist_empty_doc: 'Nothing is ticked in the document.',
+    hist_set_t: 'Job history in the unit', hist_set_chk: 'Show the history (no prices)', hist_set_days: 'How many days back',
+    hist_set_tip: 'A job document is open — if the same job was already done in this unit within the set period, a line "Already done here…" appears under the address with read-only documents: who, when, what was ticked, equipment, notes — no prices. A technician sees other people\'s documents of this unit this way too.',
+    hist_set_h: 'A unit is the same apartment complex and the same number ("U214", "Unit 214" and "#214" are one unit), a job is the same work type. 60 days by default — "less than two months".',
     week_days: ['MO','TU','WE','TH','FR','SA','SU'],
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   }
@@ -3525,13 +3799,6 @@ function densSet(v){
   densSavePref(); render();
 }
 function densToggle(){ densSet(densCur() === 'compact' ? 'cozy' : 'compact'); }
-/* кнопка-значок плотности (доска, оба режима) */
-function densBtnHtml(){
-  const on = densCur() === 'compact';
-  return `<button type="button" class="brd-eye brd-dens ${on ? 'on' : ''}" id="brd-dens" aria-pressed="${on ? 'true' : 'false'}"
-    title="${esc(t(on ? 'dens_btn_on' : 'dens_btn_off'))}" aria-label="${esc(t('dens_title'))}"
-    onclick="App.densToggle()">${ic('dens')}</button>`;
-}
 /* строка настроек «Плотность интерфейса» */
 function densRowHtml(){
   const cur = densCur();
@@ -5966,7 +6233,7 @@ function lockRowHtml(org){
     <div class="tiny lock-state ${on?'on':''}" id="lock-state">${on ? ic('lock') : ''} ${state}</div>`;
 }
 function docsCardHtml(){
-  return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml()
+  return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + histCardHtml() + mediaLimitsCardHtml()
     + fold('num', t('no_card'), 'receipt', numberingCardHtml(), true)      // v1.08.97: подраздел (админ)
     + fold('org', t('org'), 'building', orgCardHtml(), true)                // v1.08.97: подраздел (админ + бухгалтер)
     + fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml() + dirTrCardHtml(), true);    // v1.09.12: переводы — подраздел «Настроек документов»; v1.09.49: + справочники
@@ -6884,7 +7151,7 @@ const NET_ONLY = new Set([
   'tvStart', 'tvNewCode', 'tvListRefresh', 'tvApprove', 'tvDeny', 'tvRevoke',
   'bnConnect', 'bnTest', 'bnSaveKeys', 'bnTrack', 'vehSave', 'vehDel', 'vehImport',
   'translateEn', 'trRun', 'trRunSel', 'trOneDoc', 'trFill', 'trPdfNow',
-  'geocodeCx', 'mapSearch', 'mapRoute', 'optRoute',
+  'geocodeCx', 'mapSearch', 'mapRouteNav', 'optRoute', 'bnDiag',
 ]);
 const NET_RE = /App\.([A-Za-z0-9_]+)\s*\(/g;
 /* Пометка серверных кнопок: по обработчику в onclick/onchange/oninput
@@ -7182,6 +7449,9 @@ function netInit(){
    приложение падало уже в бою. Список ниже держим рядом с DB_SQL_FILE:
    пополняется вместе с каждой миграцией. */
 const DB_NEED_COLS = [
+  ['complexes',     'attrs'],        // v1.09.55: характеристики апартаментов (значения)
+  ['org_settings',  'cx_attrs'],     // v1.09.55: … и их список
+  ['org_settings',  'hist_on'],      // v1.09.55: предыстория задачи в юните
   ['org_settings',  'stock_mode'],   // v1.09.09: режим склада «облегчённый / полный учёт»
   ['org_settings',  'dir_order'],    // v1.09.09: порядок вкладок справочников
   ['bn_trips',      'started_at'],   // v1.09.10: история треков машин
@@ -7276,7 +7546,8 @@ const DB_NEED_RPCS = ['link_job_proposal', 'board_job_flags', 'approve_job',
   'bn_devices_sync',            // v1.09.01
   'doc_lock', 'doc_request_edit', 'doc_request_decide', 'job_fix_no', 'admin_set_doc_rights', 'admin_set_announce', 'notices_mark_read',   // v1.09.25
   'admin_set_dft',
-  'stock_avail'];                                           // v1.09.43                                         // v1.09.27
+  'stock_avail',
+  'job_history'];                                           // v1.09.55: предыстория задачи без цен                                           // v1.09.43                                         // v1.09.27
 
 const TABLES = ['profiles','counterparties','complexes','counterparty_prices','work_types','equipment_types','aux_equipment','price_list','size_types','extra_works','product_types','hidden_staff','code_requests','complex_code_history','jobs','placements','proposals','repairs','ext_requests','media','note_templates','stock_daily','equip_moves','vehicles','site_visits','acc_settings','study_sessions','bn_devices','maint_types','vehicle_maint','vehicle_notes','inv_drive'];   // v1.09.38: ТО и заметки по машинам   // v1.09.01: + справочник трекеров Bouncie (RLS: только админ)   // v1.08.51: + сессии учёбы (RLS: свои; админ — все)   // v1.08.39: + настройки бухгалтерии (RLS: админ и бухгалтер)   // v1.08.33: + журнал времени (RLS сам решает, кому что видно)   // v1.09.42 (п. 53): equipment_stock не грузится при обмене — остатки по журналу движений (в бэкапе таблица осталась)
 
@@ -7446,10 +7717,13 @@ async function dbUpsert(table, row, opt){
       let _q = state.sb.from(table).upsert(row);
       const _back = table === 'jobs' && dfReady() && _q && typeof _q.select === 'function';   // v1.09.25: ревизию и номер читаем тем же запросом
       if (_back) _q = _q.select('id,no,rev,updated_by,updated_at,doc_no,numbered_at');
+      const _backR = table === 'repairs' && repSrvV11() && _q && typeof _q.select === 'function';   // v1.09.53: статус, решение и история ремонта — как их записал сервер
+      if (_backR) _q = _q.select('id,no,status,decided_by,decided_at,hist');
       let { data: _rows, error } = await _q;
       if (error && isNetErr(error)){ netSet(false); netSavedOffline(table); return; }   // v1.08.38: сеть пропала на ходу
       if (error && table === 'jobs'){ const _code = dfRejectCode(error); if (_code) return await dfRejected(table, row, _code, opt); }   // v1.09.25
       if (!error && _back) dfApplyBack(row, Array.isArray(_rows) ? _rows[0] : _rows);
+      if (!error && _backR) repApplyBack(row, Array.isArray(_rows) ? _rows[0] : _rows);
       if (error) {
         // v1.07.10+: БД без новых колонок — убираем их по одной и повторяем (данные не теряются)
         let clean = row, guard = 0, stripped = false;
@@ -8259,6 +8533,9 @@ const ICONS = {
   prop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.8" width="16" height="18.4" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
   phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg>',
   monitor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M9 20.5h6M12 16.5v4"/></svg>',
+  /* v1.09.55: плотность в шапке — две крупные карточки / четыре тесные строки */
+  dens_cozy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="6.6" rx="1.8"/><rect x="4" y="13.4" width="16" height="6.6" rx="1.8"/></svg>',
+  dens_compact: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 4.5h16M4 9.5h16M4 14.5h16M4 19.5h16"/></svg>',
 };
 
 /* =====================================================================
@@ -9123,9 +9400,10 @@ function render(){
   if (state.screen === 'dirs'){
     stripCenter(document.querySelector('#dir-tabs .tabbtn.active'));   // v1.09.38
   }
-  if (state.screen === 'job') bindJobForm();
+  if (state.screen === 'job'){ bindJobForm(); if (jobDraft) histLoad(jobDraft); }   // v1.09.55: предыстория юнита
   if (state.screen === 'repairs') bindRepForm();                 // v1.08.23
   if (state.screen === 'map') initMapView();
+  if (state.screen === 'study' && STUDY.read) studyFrameFit();   // v1.09.55: книга над нижним меню
   if (state.screen === 'settings') tvSettingsAfter();   // v1.08.37: список ТВ-сессий
   /* v1.08.32: статусы трекинга на карточках + фоновый опрос Bouncie */
   if (state.screen === 'map' || state.screen === 'home' || state.screen === 'board'){
@@ -9156,6 +9434,15 @@ function pageScrollTo(y, smooth){
     else window.scrollTo({ top: y, behavior: smooth ? 'smooth' : 'auto' });
   }catch(e){ if (h) h.scrollTop = y; else window.scrollTo(0, y); }
 }
+/* v1.09.55: переключатель плотности «обычный | компактный» — в шапке рядом с «Телефон | ПК», того же размера
+   (класс .vm-inline). Раньше плотность переключали кнопка внизу слева в ПК-режиме и значок на доске. */
+function densSwHtml(){
+  const c = densCur() === 'compact';
+  return `<span class="vm-inline dens-sw" id="dens-slot" role="group" aria-label="${esc(t('dens_title'))}">
+        <button class="${c ? '' : 'on'}" aria-pressed="${c ? 'false' : 'true'}" onclick="App.densSet('cozy')" aria-label="${esc(t('dens_cozy'))}" title="${esc(t('dens_sw_cozy'))}">${ICONS.dens_cozy}</button>
+        <button class="${c ? 'on' : ''}" aria-pressed="${c ? 'true' : 'false'}" onclick="App.densSet('compact')" aria-label="${esc(t('dens_compact'))}" title="${esc(t('dens_sw_compact'))}">${ICONS.dens_compact}</button>
+      </span>`;
+}
 /* v1.09.38: в углу — логотип программы (тот же, что у значка приложения), вместо зелёной плашки «TL» */
 function logoImg(){ return `<img class="logo-img" src="./icons/icon-192.png" alt="TechLog" width="44" height="44" decoding="async" draggable="false">`; }
 function viewHeader(){
@@ -9168,11 +9455,12 @@ function viewHeader(){
       <div class="sub">by ${esc(org.company_short || 'APC')} · v${APP_VERSION}</div>
     </div>
     <div class="rt-col">
-      <div class="rt-row">
+      <div class="rt-row rt-sw">
       <span class="vm-inline" id="vm-slot" role="group">
         <button class="${vmCur()==='mobile'?'on':''}" onclick="App.setVm('mobile')" aria-label="${t('vm_phone')}" title="${t('vm_phone')}">${ICONS.phone}</button>
         <button class="${vmCur()==='desktop'?'on':''}" onclick="App.setVm('desktop')" aria-label="${t('vm_pc')}" title="${t('vm_pc')}">${ICONS.monitor}</button>
       </span>
+      ${densSwHtml()}
       </div>
       <div class="rt-row rt-role">
         ${netPillHtml(1)}
@@ -10102,6 +10390,7 @@ function sectionFaqHtml(key){
   S.home = H(`
     <h4>${ic('home')} Главная — день и его задачи</h4>
     <ul>
+      <li><b>В документе задачи под адресом</b> (v1.09.55): характеристики апарт-комплекса (их список задаёт админ в Справочниках) и, если админ включил, строка «${t('hist_line')}…» — та же задача в этом юните за последние дни: кто и когда делал, что отмечено, оборудование и заметки, без цен.</li>
       <li><b>Документооборот инвойса</b> (v1.09.25). <b>Черновик</b> правит основной исполнитель (★ в бригаде), менеджер и админ; помощник — только если основной включил в документе «Общий доступ», а админ оставил помощнику галочку «правка общих» (Справочники → Сотрудники). Бригада видит документ и добавляет фото всегда. <b>«Задача выполнена»</b> отправляет документ на согласование и запирает его; ошиблись — кнопка «Отозвать из согласования» вернёт черновик. Согласующий (админ и менеджеры с галочкой «апрув») ставит апрув или жмёт «Вернуть на доработку» с причиной — её видит вся бригада. <b>После апрува</b> документ заперт: «Запросить правку» с причиной → согласующий разрешает (документ уходит в черновик, апрув снимается, на правку даются сутки даже при запрете правки старых задач) или отказывает; запросы видны в «На апруве». <b>Двое сразу</b>: сверху видно «Сейчас редактирует …» — «Запросить редактирование» предупредит коллегу, и документ откроется сам, как только освободится; если правки всё-таки пересеклись (например, без связи), приложение ничего молча не затирает, а спрашивает: открыть свежую версию или записать свои поверх. <b>Номер</b> документ получает при первом сохранении НЕ черновиком и больше не меняется; сокращение сотрудника (кусочек {TECH}) задаёт админ в списке сотрудников. Удалить НЕ черновик может только админ.</li>
       <li><b>Строка дня</b> (v1.09.12): под лентой недели одна строка — дата, «⌂ сегодня» (когда выбран другой день), «Карта этого дня» и «?»; на телефоне и в компактной плотности — значками. «Перенести день» скрыт, пока админ не включит его в Настройки → Прочие функции. Плашки «Ждут апрува» и «Пикап сегодня» стоят в одну строку. Кнопка принтера на карточке открывает выбор: «Скачать PDF» или «Предпросмотр и печать»; та же кнопка есть в шапке открытого документа.</li>
       <li><b>Лента недели</b> сверху: точки под датой — есть задачи/пикапы; клик — выбрать день, стрелки ‹ › — листать недели, «Сегодня» — вернуться.</li>
@@ -10134,6 +10423,7 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('home')} Home — the day and its tasks</h4>
     <ul>
+      <li><b>In the job document under the address</b> (v1.09.55): the apartment complex characteristics (the admin sets the list in the Directory) and, if the admin turned it on, the line "${t('hist_line')}…" — the same job in this unit over the recent days: who did it and when, what was ticked, equipment and notes, no prices.</li>
       <li><b>Invoice workflow</b> (v1.09.25). A <b>draft</b> is edited by the lead (★ in the crew), a manager and the admin; a helper edits it only when the lead turned on Shared access in the document and the admin left the helper's "edit shared" box ticked (Directories → Staff). The crew always sees the document and adds photos. <b>"Job done"</b> sends the document for approval and locks it; made a mistake — "Withdraw from approval" brings the draft back. An approver (the admin and managers ticked "approve") approves it or presses "Return for rework" with a reason the whole crew sees. <b>After approval</b> the document is locked: "Request an edit" with a reason → an approver allows it (the document returns to draft, the approval is reset, editing stays open for a day even under the old-jobs edit lock) or refuses; requests are listed in Awaiting approval. <b>Two people at once</b>: the top shows "… is editing now" — "Request editing" notifies the colleague and the document opens by itself once free; if edits still collide (offline, for instance) nothing is overwritten silently — the app asks whether to open the fresh version or write yours over it. <b>The number</b> is issued when the document is first saved as non-draft and never changes; the employee tag (the {TECH} piece) is set by the admin in the staff list. Only the admin deletes a non-draft.</li>
       <li><b>Day row</b> (v1.09.12): one row under the week ribbon — date, "⌂ today" (when another day is selected), "Map of this day" and "?"; icons only on phones and in compact density. "Move day" stays hidden until the admin enables it in Settings → Other functions. The "Awaiting approval" and "Pickups today" banners share one row. The printer button on a card offers "Download PDF" or "Preview and print"; the same button sits in the header of an open document.</li>
       <li><b>Week strip</b> on top: dots under a date — there are jobs/pickups; click to pick a day, the ‹ › arrows flip weeks, "${t('today')}" brings you back.</li>
@@ -10223,7 +10513,9 @@ function sectionFaqHtml(key){
       <li><b>${t('trh_tab')}</b> (v1.09.10, вкладка у админа и у сотрудников с правом «Трек дня»): поездки машин за <b>день</b> или <b>неделю</b> — календарь и стрелки листают период, чипы выбирают машины (все, одну или несколько), у каждой свой цвет линии. Под картой — мили, время в пути и число поездок по машинам, в неделе ещё и по дням. Поездки каждого дня сохраняются в базе, поэтому старые дни открываются сразу; «${t('trh_reload')}» перечитывает период заново. Значок трека у машины открывает эту вкладку с выбранной машиной.</li>
       <li>Точки — комплексы, цвет = контрагент; фильтр по контрагенту сверху; клик по строке списка — фокус на точке.</li>
       <li>${ic('key')} в строке — скопировать код доступа; «${ic('warn')} без координат» — у комплекса нет точки (задайте в справочнике или найдите поиском).</li>
-      <li>Режим <b>«День»</b>: пронумерованные точки задач выбранной даты и кнопка ${ic('compass')} — маршрут дня в вашем навигаторе (Apple/Google — см. Настройки). Менеджеру и админу карта дня показывает задачи <b>всех</b> сотрудников; открывается она по умолчанию на сегодня.</li>
+      <li>Режим <b>«День»</b>: пронумерованные точки задач выбранной даты. Менеджеру и админу карта дня показывает задачи <b>всех</b> сотрудников; открывается она по умолчанию на сегодня.</li>
+      <li><b>${t('mr_show')}</b> (v1.09.55): маршрут дня рисуется прямо на этой карте — у каждого сотрудника своя линия по дорогам: офис (${ICONS.home}, задаёт админ в «Режиме телевизора») → его точки по номерам. Под картой — точки, мили и время в пути по каждому и кнопка навигатора (${navName()}) — те же точки для поездки. Нет связи с сервером дорог — прямые пунктирные линии и «~ по прямой». Галочка «${t('mr_show')}» — своя на каждом устройстве.</li>
+      <li><b>Ошибки Bouncie</b> (v1.09.55): во вкладке «${t('trh_tab')}» строка «Bouncie не отдал поездки: №…» — кнопка: какие машины, что ответил Bouncie и что делать; у админа там же «${t('bnx_diag')}».</li>
       <li><b>${t('opt_btn')}</b> (v1.08.33): считает объезд «ближайший сосед» от вашей машины и показывает «сейчас X mi → оптимально Y mi, экономия Z». «${t('opt_open')}» открывает многоточечный маршрут в Google/Apple Maps; «${t('opt_apply')}» переставляет задачи дня (красные приоритеты остаются первыми).</li>
       <li><b>${t('veh_track')}</b> (v1.08.33): синяя линия реальных поездок машины за день — из попапа машины или из справочника «Автомобили». Право выдаёт админ (Штат → ${ic('gear')}).</li>
       <li>${ic('car')} <b>Машины</b> — живые позиции автопарка с трекеров Bouncie: в кружке номер машины, стрелка — курс, зелёная обводка — едет. Клик по машине: водитель, скорость, топливо, пробег за день и маршрут к ней. Чипы над картой выбирают одну или несколько машин («Все» — весь парк, остальные затемняются). Пунктир — примерный маршрут по прямой к текущей задаче; в подписи — сколько осталось, в процентах. Панель «Пробег за сегодня» — справа на ПК и под картой на телефоне; строка панели центрирует карту на машине.</li>
@@ -10242,7 +10534,9 @@ function sectionFaqHtml(key){
       <li><b>${t('trh_tab')}</b> (v1.09.10, a tab for the admin and for staff with the "Day track" right): car trips for a <b>day</b> or a <b>week</b> — the calendar and arrows move the period, chips pick the cars (all, one or several), each with its own line colour. Under the map: miles, driving time and trip count per car, per day in week mode. Every day's trips are stored in the database, so past days open at once; "${t('trh_reload')}" re-reads the period. The track icon next to a car opens this tab with that car selected.</li>
       <li>Dots — complexes, color = counterparty; counterparty filter on top; click a list row — focus on the point.</li>
       <li>${ic('key')} in a row — copy the access code; "${ic('warn')} no coordinates" — the complex has no point (set it in the Directory or find it with the search).</li>
-      <li><b>"Day"</b> mode: numbered points of the selected date's tasks and the ${ic('compass')} button — the day's route in your navigator (Apple/Google — see Settings). For managers and admins the day map shows the tasks of <b>all</b> staff; it opens on today by default.</li>
+      <li><b>"Day"</b> mode: numbered points of the selected date's tasks. For managers and admins the day map shows the tasks of <b>all</b> staff; it opens on today by default.</li>
+      <li><b>${t('mr_show')}</b> (v1.09.55): the day's route is drawn right on this map — each employee has a line along the roads: the office (${ICONS.home}, set by the admin in "TV mode") → their stops by number. Under the map: stops, miles and driving time per employee and a navigator button (${navName()}) — the same stops for the drive. No connection to the roads server — straight dashed lines and "~ straight line". The "${t('mr_show')}" checkbox is per device.</li>
+      <li><b>Bouncie errors</b> (v1.09.55): on the "${t('trh_tab')}" tab the line "Bouncie did not return trips: №…" is a button: which cars, what Bouncie answered and what to do; for the admin — "${t('bnx_diag')}" right there.</li>
       <li><b>${t('opt_btn')}</b> (v1.08.33): runs a nearest-neighbour pass from your car and shows "now X mi → optimal Y mi, saves Z". "${t('opt_open')}" opens a multi-stop route in Google/Apple Maps; "${t('opt_apply')}" reorders the day's jobs (red priorities stay first).</li>
       <li><b>${t('veh_track')}</b> (v1.08.33): a blue line of the car's real trips for the day — from the car popup or from the "${t('d_vehicles')}" directory. Access is granted by the admin (Staff → ${ic('gear')}).</li>
       <li>${ic('car')} <b>Cars</b> — live fleet positions from the Bouncie trackers: the car number in the circle, the arrow — heading, a green ring — driving. Click a car: driver, speed, fuel, today's mileage and a route to it. The chips above the map pick one or several cars ("${t('all')}" — the whole fleet, the rest are dimmed). The dashed line — an approximate straight-line route to the current task; the caption shows how much is left, in percent. The "Driven today" panel — on the right on desktop and under the map on the phone; a panel row centres the map on the car.</li>
@@ -10262,8 +10556,9 @@ function sectionFaqHtml(key){
     <ul>
       <li>Документ ремонтных (отделочных) работ — REP. Создаётся из задачи, из пропозала или сам по себе; кто может создавать — решает админ (Настройки документов → «Пропозалы и ремонт»).</li>
       <li>Внутри: работы из справочника ремонта и свои строки, материалы, фото «до / после», налог и доставка. «Всего» в PDF = работы + материалы + налог + доставка — эту же сумму ждёт Бухгалтерия.</li>
-      <li>Статусы: черновик → «Отправлен» (ждёт решения) → «Апрув» или «Отклонён». Апрув ставит согласующий. Правка апрувленного документа сотрудником возвращает его в черновик.</li>
-      <li>Править и сохранять может автор, менеджер или админ. Помощник из бригады открывает документ только для просмотра.</li>
+      <li>Статусы: черновик → «Отправлен» (ждёт решения) → «Одобрен» или «Отклонён» (с причиной). Решение принимает согласующий. Правка сметы, шапки или бригады одобренного или отправленного документа возвращает его в черновик — и в приложении, и на сервере; переводы, пометки фото «до / после» и связи с документами апрув не снимают.</li>
+      <li>События в ленте и пуши: «Ремонт ждёт апрува» — согласующим; «Ремонт апрувлен», «Ремонт отклонён» (с причиной) и «Апрув снят с ремонта» — автору и бригаде.</li>
+      <li>Править и сохранять может автор, менеджер или админ. Помощник из бригады видит документ (и без инвойса) только для просмотра.</li>
       <li>Если админ скрыл суммы от работников, сотрудник видит прочерки, а PDF и печать ему недоступны.</li>
       <li>«Печать» открывает окно предпросмотра, оттуда — системная печать или «Скачать PDF».</li>
     </ul>`,
@@ -10272,8 +10567,9 @@ function sectionFaqHtml(key){
     <ul>
       <li>The repair (finishing) works document — REP. Created from a job, from a proposal or on its own; who may create it is set by the admin (Document settings → “Proposals and repairs”).</li>
       <li>Inside: works from the repair catalog and custom rows, materials, before/after photos, tax and freight. The PDF “Total” = works + materials + tax + freight — Accounting expects the same amount.</li>
-      <li>Statuses: draft → “Sent” (awaiting a decision) → “Approved” or “Declined”. An approver approves. A worker editing an approved document returns it to draft.</li>
-      <li>The author, a manager or the admin can edit and save. A crew helper opens the document view-only.</li>
+      <li>Statuses: draft → “Sent” (awaiting a decision) → “Approved” or “Declined” (with a reason). An approver decides. Editing the estimate, header or crew of an approved or sent document returns it to draft — in the app and on the server; translations, before/after photo marks and document links do not reset the approval.</li>
+      <li>Feed events and pushes: “Repair awaits approval” goes to approvers; “Repair approved”, “Repair declined” (with the reason) and “Approval removed from the repair” go to the author and the crew.</li>
+      <li>The author, a manager or the admin can edit and save. A crew helper sees the document (even without the invoice) view-only.</li>
       <li>If the admin hid amounts from workers, a worker sees dashes, and PDF and print are unavailable.</li>
       <li>“Print” opens the preview window, then the system print or “Download PDF”.</li>
     </ul>`);
@@ -10361,6 +10657,7 @@ function sectionFaqHtml(key){
       <li>Вкладки: Сотрудники (админ), Автомобили и Трекеры Bouncie (админ), Контрагенты, Комплексы, Виды задач, Оборудование, Доп. снаряжение, PRICE, Доп. работы, Размеры, Продукты.</li>
       <li><b>Комплексы</b> сгруппированы по владельцам; группа «Без владельца» и «⏳ Временный владелец» помечены ${faqTriDemo()} — таким нужно назначить контрагента.</li>
       <li>${ic('book')} у комплекса — история кодов доступа; ${ic('pencil')} — редактирование (менеджер+).</li>
+      <li><b>${t('d_cxattrs')}</b> (v1.09.55, админ): свои характеристики апартаментов — текст, галочка или переключатель (один вариант из нескольких); обязательные и дополнительные; для всех апартаментов или для одного контрагента. Заполняются в карточке апарт-комплекса (обязательные пустыми не сохранить), видны в документе задачи под адресом, на карте и здесь, в списке комплексов; «⚠ не заполнено» — у комплекса нет обязательных.</li>
       <li>Оборудование: ${faqEqLegend()} — эти же коды и цвета на бейджах пикапов.</li>
       <li>Запросы кода от воркеров появляются входящими сверху — подтвердите или обновите код.</li>
       <li><b>Чек-лист вида задачи</b> (v1.09.16) — кнопка «Чек-лист · N» у вида задачи: настраиваемый список пунктов, который сотрудник видит и отмечает в документе этого вида. Админ добавляет, удаляет и переставляет пункты (▲▼), задаёт русский и английский текст, помечает пункт обязательным (без отметки приложение предупредит при сохранении выполненной задачи) и может скопировать список из другого вида. Отметки в уже заполненных документах при правке списка не съезжают — они привязаны к пункту, а не к его номеру.</li>
@@ -10377,6 +10674,7 @@ function sectionFaqHtml(key){
       <li>Tabs: Staff (admin), Vehicles and Bouncie trackers (admin), Counterparties, Complexes, Work types, Equipment, Extra gear, PRICE, Extra works, Sizes, Products.</li>
       <li><b>Complexes</b> are grouped by owner; the "No owner" group and "⏳ Temporary owner" are flagged ${faqTriDemo()} — those need a counterparty assigned.</li>
       <li>${ic('book')} on a complex — the access-code history; ${ic('pencil')} — editing (manager+).</li>
+      <li><b>${t('d_cxattrs')}</b> (v1.09.55, admin): your own apartment characteristics — text, a checkbox or a switch (one option out of several); required and optional; for all apartments or for one counterparty. Filled in the apartment complex card (required ones cannot be left empty), shown in the job document under the address, on the map and here in the complex list; "⚠ not filled" — the complex lacks required ones.</li>
       <li>Equipment: ${faqEqLegend()} — the same codes and colors as on the pickup badges.</li>
       <li>Code requests from workers appear as incoming items on top — confirm or update the code.</li>
       <li><b>Work type checklist</b> (v1.09.16) — the "Checklist · N" button on a work type: a configurable list the employee sees and ticks in a document of that type. The admin adds, removes and reorders items (▲▼), sets Russian and English text, marks an item required (without a tick the app warns when a done job is saved) and can copy the list from another type. Ticks in documents already filled in do not shift when the list changes — they are tied to the item, not to its number.</li>
@@ -10452,6 +10750,10 @@ function sectionFaqHtml(key){
   S.settings = H(`
     <h4>${ic('gear')} Настройки</h4>
     <ul>
+      <li><b>Шапка</b> (v1.09.55): рядом с «Телефон | ПК» — переключатель «Обычный | Компактный» того же размера (плотность интерфейса, своя для режима телефона и ПК, хранится в профиле; та же настройка — строкой в профиле ниже).</li>
+      <li><b>${t('tvc_car')}</b> и «${t('tvc_mroutes')}» (v1.09.55, «Режим телевизора»): экран по очереди показывает каждого сотрудника — карта его дня и маршрут, карточка «сегодня / неделя / месяц»; секунды, общий вид между сотрудниками, кого показывать и периоды — там же. Пульт: ← →.</li>
+      <li><b>${t('hist_set_t')}</b> (v1.09.55, «Настройки документов»): в документе задачи — строка «Уже делали здесь…» с прежними документами того же вида работ в этом юните за N дней, только работы — без цен.</li>
+      <li><b>${t('bnx_diag')}</b> (v1.09.55, «Интеграции» → Bouncie): по шагам проверяет функцию, ключи и вход, машины в аккаунте Bouncie против справочника и поездки каждой машины — видно, какая машина и почему не отдаёт данные.</li>
       <li><b>Поиск по настройкам</b> (v1.09.12): поле над разделами ищет по названию пункта, его описанию и тексту подсказки «?»; нажатие на результат раскрывает раздел и подраздел и подсвечивает пункт. Лента разделов едет за прокруткой и подсвечивает раздел, который сейчас на экране. «Переводы заметок для PDF» — подраздел «Настроек документов».</li>
       <li><b>${t('mq_ctl')}</b> (v1.09.12): по умолчанию полоска появляется, только когда что-то не отправлено; до входа не показывается. Файл ждёт, пока его документ сохранится на сервере, и не выбрасывается при отказе сервера — причина пишется словами. В окне — «Копировать» и «Скачать лог». <b>${t('net_hide_chk')}</b> — личная галочка в карточке профиля: при проблемах со связью бейдж появляется сам.</li>
       <li><b>Без сети</b> (v1.09.12): приложение запускается из кэша (библиотеки лежат в самой сборке); если токен истёк — вход по сохранённой сессии, данные с устройства, записи и файлы уходят в очередь и досылаются, когда появится связь.</li>
@@ -10483,6 +10785,10 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('gear')} Settings</h4>
     <ul>
+      <li><b>Header</b> (v1.09.55): next to "Phone | PC" — the "Regular | Compact" switch of the same size (interface density, separate for phone and PC mode, stored in the profile; the same setting is a row in the profile below).</li>
+      <li><b>${t('tvc_car')}</b> and "${t('tvc_mroutes')}" (v1.09.55, "TV mode"): the screen shows every employee in turn — the map of their day and the route, a "today / week / month" card; seconds, the overview between employees, who to show and the periods are set there. Remote: ← →.</li>
+      <li><b>${t('hist_set_t')}</b> (v1.09.55, "Document settings"): the job document shows a line "Already done here…" with earlier documents of the same work type in this unit within N days, work only — no prices.</li>
+      <li><b>${t('bnx_diag')}</b> (v1.09.55, "Integrations" → Bouncie): checks step by step the function, keys and sign-in, the cars in the Bouncie account against the directory and every car's trips — you see which car does not return data and why.</li>
       <li><b>Settings search</b> (v1.09.12): the box above the sections searches item names, descriptions and "?" hint texts; a result opens its section and sub-section and highlights the item. The section ribbon follows the scroll and highlights the section on screen. "PDF note translations" is now a sub-section of "Document settings".</li>
       <li><b>${t('mq_ctl')}</b> (v1.09.12): by default the bar shows only when something is unsent; never before sign-in. A file waits until its document is saved on the server and is not dropped when the server refuses — the reason is spelled out. The window has "Copy" and "Download log". <b>${t('net_hide_chk')}</b> — a personal checkbox in the profile card: the badge returns by itself on connection problems.</li>
       <li><b>Offline</b> (v1.09.12): the app starts from cache (libraries ship with the build); if the token has expired it signs in with the saved session, shows device data, queues records and files and sends them once the connection is back.</li>
@@ -10528,6 +10834,42 @@ function sectionFaqHtml(key){
       <li><b>Why it is not a hole.</b> Only the admin turns the mode on and only for a period (1, 4 or 24 hours) — every switch goes to the event journal and the admin sees a warning on every start. The function touches ONLY documents flagged as test; the flag is set only by the database inside the function itself — a worker cannot flag a real invoice and approve it through the function (one test step verifies exactly that). The function may stay undeployed or be deleted — the app works as before.</li>
       <li><b>Test documents</b> do not use the real numbering (their own range 90000001…), do not move stock, send no pushes, are hidden from working lists and are deleted for good at the end. If a run broke — use "Remove test leftovers". Journal rows written during the test are tagged.</li>
       <li><b>The report</b> has every step, timings and all server requests with answers ("→ / ←" are app requests, "⇒ / ⇐" are function calls). Copy, Download .txt, Share. Results are not stored in the database. "Step by step" waits for "Next" after every step.</li>
+    </ul>`);
+  /* v1.09.53: тест «Документооборот + ремонт» */
+  S.dftr = H(`
+    <h4>${ic('toolbox')} Тест документооборота + ремонт</h4>
+    <ul>
+      <li><b>Что это.</b> Тот же встроенный тест, что «Тест документооборота» (те же правила, режим, отчёт и уборка), а после основного цикла — документ ремонта со всех сторон. Галочка «Только ремонт» пропускает основной цикл.</li>
+      <li><b>Статусы.</b> Черновик → «Отправлен» → «Одобрен» или «Отклонён» (с причиной); отзыв с апрува; повторная отправка после отклонения; смена решения согласующим; «слетел апрув» после правки; архив, «Вернуть из архива», «Удалить навсегда».</li>
+      <li><b>Цепочки.</b> Ремонт из инвойса, из пропозала (без инвойса) и отдельный; привязка и отвязка инвойса и пропозала; сумма одобренного ремонта строкой в инвойс (повтор не дублирует, в сданный инвойс — только от согласующего); окно цепочки; удаление инвойса и пропозала вместе с ремонтами.</li>
+      <li><b>Роли.</b> Работник — автор, помощник в бригаде (только просмотр) и посторонний (не видит и не правит); менеджер без права апрува (правит и отправляет, но не решает) и с правом; админ. Ваша роль действует кнопками, остальные — через функцию dft; негативные шаги проверяют и отсутствие кнопки, и отказ сервера на запрос в обход интерфейса.</li>
+      <li><b>Правила сервера</b> для ремонта — в update-to-1_09_53.sql: бригада видит документ; правка сметы, шапки или бригады одобренного или отправленного ремонта снимает апрув и на сервере; переводы, пометки фото и связи апрув не снимают; события «Ремонт ждёт апрува», «Ремонт апрувлен», «Ремонт отклонён», «Апрув снят с ремонта». Без этого файла шаги, которые их проверяют, помечаются «пропущено».</li>
+    </ul>`, `
+    <h4>${ic('toolbox')} Workflow + repair test</h4>
+    <ul>
+      <li><b>What it is.</b> The same built-in test as "Workflow test" (the same rules, mode, report and cleanup), and after the main cycle the repair document from every side. The "Repair only" box skips the main cycle.</li>
+      <li><b>Statuses.</b> Draft → Sent → Approved or Declined (with a reason); withdrawal; sending again after a decline; an approver changing the decision; approval reset after an edit; archive, Restore, Delete for good.</li>
+      <li><b>Chains.</b> A repair from an invoice, from a proposal (no invoice) and standalone; linking and unlinking the invoice and the proposal; the approved repair amount as an invoice line (a repeat does not duplicate it, a submitted invoice takes it only from an approver); the chain window; deleting the invoice and the proposal together with repairs.</li>
+      <li><b>Roles.</b> A worker as the author, a crew helper (view only) and an outsider (neither sees nor edits); a manager without the approve right (edits and sends, does not decide) and with it; the admin. Your role acts with the buttons, the others through the dft function; negative steps check both the missing button and the server refusing a request that bypasses the app.</li>
+      <li><b>Server rules</b> for repairs are in update-to-1_09_53.sql: the crew sees the document; editing the estimate, header or crew of an approved or sent repair resets the approval on the server too; translations, photo marks and links do not; events "Repair awaits approval", "Repair approved", "Repair declined", "Approval removed from the repair". Without this file the steps that check them are marked skipped.</li>
+    </ul>`);
+  /* v1.09.54: тест «Документооборот + ремонт + интерфейс» */
+  S.dftu = H(`
+    <h4>${ic('layers')} Тест документооборота + ремонт + интерфейс</h4>
+    <ul>
+      <li><b>Что это.</b> Тот же прогон, что «Тест документооборота + ремонт» (все роли, все статусы и цепочки ремонта, своя роль — кнопками), а по ходу — проверка интерфейса на каждом экране и в каждом окне, куда заходит тест. Галочка «Только ремонт» пропускает основной цикл.</li>
+      <li><b>Что ищет.</b> Кнопки наезжают друг на друга; кнопка уходит за рамку экрана, хотя должна быть в поле зрения (в том числе ниже края окна без прокрутки); кнопка вылезла из своей карточки или строки; соседние блоки налезают; текст обрезан; элемент недоступен под шапкой или нижней панелью; вырезы экрана. Полосы с прокруткой (вкладки, карусели) и значки, поставленные на рамку намеренно, не считаются.</li>
+      <li><b>Когда проверяет.</b> После нажатия или ввода — если экран новый (экран, документ и его статус, окно, размер, заметно другое число кнопок) — и в конце каждого шага. Панель теста и подсказки на время проверки прячутся. Проверяется ваш экран — на телефоне и на ПК результаты разные.</li>
+      <li><b>Три лога.</b> «Весь лог» — полный журнал прогона (в конце — выжимка по интерфейсу); «Критические» — только критические ошибки прогона; «Интерфейс» — дефекты по экранам: что, где, на каком шаге, сколько раз, и список всех проверенных состояний экрана. Кнопки — в панели теста и в карточке до следующего теста.</li>
+      <li><b>На итог шагов</b> дефекты интерфейса не влияют: шаг «+» проходит, если действие сделано, а съехавшая кнопка попадает в свой лог. Тот же движок — у кнопки «Диагностика интерфейса».</li>
+    </ul>`, `
+    <h4>${ic('layers')} Workflow + repair + interface test</h4>
+    <ul>
+      <li><b>What it is.</b> The same run as the "Workflow + repair test" (all roles, all repair statuses and chains, your role with the buttons), and along the way an interface check on every screen and in every window the test opens. The "Repair only" box skips the main cycle.</li>
+      <li><b>What it looks for.</b> Buttons overlapping each other; a button going outside the screen although it must be in view (including below the window edge without scrolling); a button sticking out of its card or row; neighbouring blocks overlapping; clipped text; an element unreachable under the header or the bottom bar; screen cut-outs. Scrolling strips (tabs, carousels) and badges placed on a frame on purpose do not count.</li>
+      <li><b>When it checks.</b> After a tap or input — if the screen is new (screen, document and its status, window, size, a clearly different number of buttons) — and at the end of every step. The test panel and hints are hidden while checking. It checks your screen — phone and desktop results differ.</li>
+      <li><b>Three logs.</b> "Full log" is the whole run journal (with an interface summary at the end); "Critical" holds only critical run errors; "Interface" lists defects by screen: what, where, at which step, how many times, plus every screen state checked. The buttons are in the test panel and in the card until the next test.</li>
+      <li><b>Step results</b> are not affected by interface defects: a "+" step passes when the action is done, and a shifted button goes to its own log. The same engine powers the "Interface diagnostics" button.</li>
     </ul>`);
   S.docflow = H(`
     <h4>${ic('clipboard')} Документооборот — что с документами не так и что ждёт действия</h4>
@@ -10591,7 +10933,7 @@ function sectionFaqHtml(key){
   S.study = H(`
     <h4>${ic('grad')} Учёба</h4>
     <ul>
-      <li><b>Читать вслух</b> (v1.09.14): в шапке учебника — значок наушников. Панель внизу: «Читать / Пауза», страницы назад-вперёд, скорость ×0.6–1.8, выбор голоса. Книга читается по предложениям и сама перелистывает страницы; колонтитулы пропускаются, колонки читаются по порядку. Голос — системный синтез речи телефона: если голос языка установлен на устройстве, чтение работает без сети (Настройки телефона → Синтез речи → язык → скачать голосовые данные). Время чтения считается как обычно.</li>
+      <li><b>Читать вслух</b> (v1.09.14): в шапке учебника — значок наушников. Панель внизу: «Читать / Пауза», страницы назад-вперёд, скорость ×0.6–1.8, выбор голоса. Книга читается по предложениям и сама перелистывает страницы; колонтитулы пропускаются, колонки читаются по порядку. Голос — системный синтез речи телефона: если голос языка установлен на устройстве, чтение работает без сети (Настройки телефона → Синтез речи → язык → скачать голосовые данные). Время чтения считается как обычно. v1.09.55: панель больше не прячется под нижним меню; строка под панелью показывает, сколько голосов видит браузер, какой выбран и говорит ли движок; если синтез речи молчит — появится инструкция, что проверить в настройках телефона.</li>
       <li><b>Чипы разделов</b> сверху — восемь разделов учебника; нажатие выбирает раздел, выбор запоминается на устройстве. Ниже — карточка выбранного раздела с двумя кнопками: <b>Тест</b> и <b>Книга</b>. Кнопка блёклая — файла для раздела пока нет (тесты лежат в dictionary/tests, книги — в dictionary/books).</li>
       <li><b>Язык</b> вопросов, вариантов и объяснений — тот же, что у интерфейса: меняется в Настройках (RU / EN), отдельного переключателя в тесте нет.</li>
       <li><b>Перед тестом</b> выбирается режим: <b>Обучение</b> — разбор сразу после каждого ответа; <b>Экзамен</b> — только ответы, разбор в итогах. Число вопросов (все или часть) и перемешивание.</li>
@@ -10605,7 +10947,7 @@ function sectionFaqHtml(key){
   `
     <h4>${ic('grad')} Study</h4>
     <ul>
-      <li><b>Read aloud</b> (v1.09.14): the headphones icon in the book header. Bottom panel: Read / Pause, page back and forward, speed ×0.6–1.8, voice choice. The book is read sentence by sentence and turns pages by itself; running headers are skipped, columns are read in order. The voice is the phone's own speech synthesis: with the language voice installed on the device it works offline (phone Settings → Text-to-speech → language → download voice data). Reading time is counted as usual.</li>
+      <li><b>Read aloud</b> (v1.09.14): the headphones icon in the book header. Bottom panel: Read / Pause, page back and forward, speed ×0.6–1.8, voice choice. The book is read sentence by sentence and turns pages by itself; running headers are skipped, columns are read in order. The voice is the phone's own speech synthesis: with the language voice installed on the device it works offline (phone Settings → Text-to-speech → language → download voice data). Reading time is counted as usual. v1.09.55: the panel no longer hides under the bottom menu; the line under it shows how many voices the browser sees, which one is selected and whether the engine speaks; if speech synthesis is silent, instructions on what to check in the phone settings appear.</li>
       <li><b>Section chips</b> on top — eight textbook sections; a tap selects the section and the choice is remembered on the device. Below is the selected section's card with two buttons: <b>Test</b> and <b>Book</b>. A dimmed button means there is no file for that section yet (tests live in dictionary/tests, books in dictionary/books).</li>
       <li><b>Language</b> of questions, options and explanations is the interface language, set in Settings (RU / EN); there is no separate switch inside the test.</li>
       <li><b>Before a test</b> pick the mode: <b>Learning</b> — the explanation right after each answer; <b>Exam</b> — answers only, explanations in the results. Number of questions (all or a part) and shuffling.</li>
@@ -11121,6 +11463,13 @@ function comboPick(kind, id){
       propDraft.complex_id = id;
       if (cx && cx.counterparty_id) propDraft.counterparty_id = cx.counterparty_id;
     }
+  }
+  /* v1.09.53: форма ремонта — выбор сразу в repDraft. Раньше он жил только в скрытых полях: добавили строку или помощника —
+     перерисовка возвращала пустые контрагента и комплекс, и «Сохранить» отвечал «укажите контрагента». Смена шапки у
+     одобренного или отправленного документа снимает апрув — так же, как у сервера. */
+  if (repDraft && state.screen === 'repairs' && !$('#overlay')){
+    const cpV = ($('#nt-cp') || {}).value || '', cxV = ($('#nt-cx') || {}).value || '';
+    if (cpV !== (repDraft.counterparty_id || '') || cxV !== (repDraft.complex_id || '')){ repDraft.counterparty_id = cpV; repDraft.complex_id = cxV; repTouch(); }
   }
   if ($('#nt-prop-zone')) ntPropRefresh();   // v1.07.58: форма «Добавить задание»
 }
@@ -12340,6 +12689,8 @@ function viewJob(){
         <div class="tiny">${esc(cp.name)} · ${esc(cx.address||'')}
           <button class="mini-nav" onclick="App.navToCx('${j.complex_id}')">${ic('compass')} ${t('navigate')}</button></div>
         ${(cx.access_code||cx.callbox_code)?`<div class="tiny">${codeLineHtml(cx, true)}</div>`:''}
+        ${cxaLineHtml(cx)}
+        <div id="jb-hist">${histLineHtml(j)}</div>
         ${ttJobLine(j)}
         ${jobEditedLineHtml(j)}
         ${md.edit && wtCanChange(j)
@@ -12661,7 +13012,7 @@ function amtWrap(id, v){ return `<span class="amt" data-amt="${id}">${v>0?money(
    ===================================================================== */
 function docBarHtml(o){
   return `<div class="docbar">
-    <button type="button" class="db-back" onclick="${o.close}">${ic('arr_l')}<span>${t('back')}</span></button>
+    <button type="button" class="db-back" title="${t('back')}" aria-label="${t('back')}" onclick="${o.close}">${ic('arr_l')}<span>${t('back')}</span></button>
     <span class="db-t">${o.dirty ? '<span class="dirty-dot" title="' + t('doc_unsaved_t') + '"></span> ' : ''}${o.title || ''}</span>
     ${o.chain ? `<button type="button" class="db-chain" title="${t('ch_title')}" aria-label="${t('ch_title')}"
       onclick="${o.chain}">${ic('link')}</button>` : ''}
@@ -12669,7 +13020,7 @@ function docBarHtml(o){
       onclick="${o.share}">${ic('send')}</button>` : ''}
     ${o.print ? `<button type="button" class="db-chain db-print" id="db-print" title="${t('print_inv')}" aria-label="${t('print_inv')}"
       onclick="${o.print}">${ic('printer')}</button>` : ''}
-    ${o.save ? `<button type="button" class="db-save" onclick="${o.save}">${ic('save')}<span>${t('save')}</span></button>` : ''}
+    ${o.save ? `<button type="button" class="db-save" title="${t('save')}" aria-label="${t('save')}" onclick="${o.save}">${ic('save')}<span>${t('save')}</span></button>` : ''}
     <button type="button" class="db-x" title="${t('doc_close')}" aria-label="${t('doc_close')}" onclick="${o.close}">${ic('close')}</button>
   </div>`;
 }
@@ -13645,6 +13996,7 @@ function viewDirs(){
     ['maint', t('d_maint'), isAdmin()],         // v1.09.38: виды ТО
     ['counterparties', t('d_counterparties'), isAdmin()],
     ['complexes', t('d_complexes'), true],
+    ['cxattrs', t('d_cxattrs'), isAdmin()],     // v1.09.55: характеристики апартаментов
     ['worktypes', t('d_worktypes'), isAdmin()],
     ['equipment', t('d_equipment'), isAdmin()],
     ['aux', t('d_aux'), isAdmin()],
@@ -13668,7 +14020,7 @@ function viewDirs(){
     <button class="tabs-arr" onclick="App.dirTabsScroll(1)" aria-label="next">${ic('chev_r')}</button>
   </div>`;
   const body = { staff: dirStaff, vehicles: dirVehicles, trackers: dirTrackers, maint: dirMaint, counterparties: dirCounterparties, complexes: dirComplexes, worktypes: dirWorkTypes,
-                 equipment: dirEquipment, aux: dirAux, price: dirPrice,
+                 equipment: dirEquipment, aux: dirAux, price: dirPrice, cxattrs: dirCxAttrs,
                  extraworks: dirExtraWorks, sizes: dirSizes, products: dirProducts, notes: dirNotes }[state.dirTab]();
   /* v1.07.78: карусель кнопок уезжает вбок, и после выбора было не видно,
      какой справочник открыт. Название выбранного — отдельной строкой. */
@@ -13710,6 +14062,257 @@ async function ntSave(id, sort){
   const prev = state.data.note_templates.find(x => x.id === id);
   await dbUpsert('note_templates', { id, title, body, sort, created_at: (prev && prev.created_at) || new Date().toISOString() });
   closeModal(); toast('✓ ' + t('saved')); render();
+}
+/* =====================================================================
+   v1.09.55 · ХАРАКТЕРИСТИКИ АПАРТАМЕНТОВ (апарт-комплексов)
+   Админ ведёт список (Справочники → «Характеристики»): текстовое поле, галочка или переключатель (выбор одного
+   варианта); каждая — «обязательная» или «дополнительная», для всех апартаментов сразу или для апартаментов
+   одного контрагента. Список — org_settings.cx_attrs ([{id, name, kind: text|check|choice, opts, req, cp}]),
+   значения — complexes.attrs ({<id>: значение}). Заполняют в карточке апарт-комплекса (менеджер и админ):
+   обязательные пустыми не сохранить (у галочки «обязательная» — значит, должна стоять), дополнительные — под
+   «Дополнительно». Видны: в документе задачи под адресом, во всплывающей карточке комплекса на карте и в
+   справочнике комплексов. База: update-to-1_09_55.sql (две колонки jsonb); без неё сохраняется всё остальное.
+   ===================================================================== */
+const CXA_KINDS = ['text', 'check', 'choice'];
+function cxaDefs(){ const a = state.data && state.data.org_settings && state.data.org_settings.cx_attrs; return Array.isArray(a) ? a.filter(x => x && x.id && x.name) : []; }
+function cxaFor(cpId){ return cxaDefs().filter(d => !d.cp || d.cp === cpId); }
+function cxaFilled(d, v){ return d.kind === 'check' ? v === true : d.kind === 'choice' ? !!v && (d.opts || []).includes(v) : String(v == null ? '' : v).trim() !== ''; }
+function cxaMissing(cx){ const a = (cx && cx.attrs) || {}; return cxaFor(cx && cx.counterparty_id).filter(d => d.req && !cxaFilled(d, a[d.id])); }
+/* строка «Лифт: есть · ✓ Ключ у консьержа …» — документ задачи, справочник */
+function cxaLineHtml(cx){
+  if (!cx || !cx.id) return '';
+  const a = cx.attrs || {}, parts = cxaFor(cx.counterparty_id).map(d => {
+    const v = a[d.id];
+    if (d.kind === 'check') return v === true ? `<span class="cxa-ok">✓ ${esc(biText(d.name))}</span>` : '';
+    const s = String(v == null ? '' : v).trim();
+    return s && (d.kind !== 'choice' || (d.opts || []).includes(s)) ? `<span><span class="cxa-k">${esc(biText(d.name))}:</span> ${esc(s)}</span>` : '';
+  }).filter(Boolean);
+  const miss = isManager() ? cxaMissing(cx) : [];
+  if (!parts.length && !miss.length) return '';
+  return `<div class="tiny cxa-line">${parts.join('<span class="cxa-sep"> · </span>')}${miss.length ? ` <span class="chip warn cxa-miss" title="${esc(miss.map(d => biText(d.name)).join(', '))}">⚠ ${t('cxa_miss')}: ${miss.length}</span>` : ''}</div>`;
+}
+/* то же для всплывающей карточки Leaflet (строки) */
+function cxaPopupHtml(cx){
+  if (!cx) return '';
+  const a = cx.attrs || {};
+  const rows = cxaFor(cx.counterparty_id).map(d => { const v = a[d.id];
+    if (d.kind === 'check') return v === true ? '✓ ' + esc(biText(d.name)) : '';
+    const s = String(v == null ? '' : v).trim(); return s ? esc(biText(d.name)) + ': ' + esc(s) : ''; }).filter(Boolean);
+  return rows.length ? '<br><span style="color:#8AA0AB">' + rows.join('<br>') + '</span>' : '';
+}
+/* поля в карточке апарт-комплекса; обёртка #cxa-box есть всегда — смена контрагента перерисовывает её */
+function cxaFormHtml(cx, cpId){
+  const defs = cxaFor(cpId), vals = (cx && cx.attrs) || {};
+  if (!defs.length) return `<div class="cxa-box" id="cxa-box">${isAdmin() && !cxaDefs().length ? `<div class="tiny cxa-none">${t('cxa_none')}</div>` : ''}</div>`;
+  const fld = d => {
+    const v = vals[d.id], nm = esc(biText(d.name)) + (d.req ? ' <b class="cxa-star">*</b>' : '');
+    if (d.kind === 'check') return `<label class="chk-line cxa-f" data-a="${d.id}"><input type="checkbox" data-cxa="${d.id}" ${v === true ? 'checked' : ''}> ${nm}</label>`;
+    if (d.kind === 'choice') return `<div class="form-row cxa-f" data-a="${d.id}"><span class="lbl">${nm}</span><div class="lang-seg sm cxa-seg" data-cxa="${d.id}">${(d.opts || []).map(o =>
+      `<button type="button" class="${v === o ? 'on' : ''}" data-v="${esc(o)}" onclick="App.cxaPick(this)">${esc(o)}</button>`).join('')}</div></div>`;
+    return `<div class="form-row cxa-f" data-a="${d.id}"><span class="lbl">${nm}</span><input data-cxa="${d.id}" maxlength="200" value="${esc(v == null ? '' : String(v))}"></div>`;
+  };
+  const req = defs.filter(d => d.req), opt = defs.filter(d => !d.req);
+  return `<div class="cxa-box" id="cxa-box">
+    <div class="cxa-h">${ic('clipboard')} ${t('cxa_title')} ${tipQ('cxa_tip')}</div>
+    ${req.map(fld).join('')}
+    ${opt.length ? `<details class="cxa-more"${!req.length || opt.some(d => cxaFilled(d, vals[d.id])) ? ' open' : ''}><summary>${t('cxa_more')} · ${opt.length}</summary>${opt.map(fld).join('')}</details>` : ''}
+  </div>`;
+}
+function cxaCollect(){
+  const out = {};
+  document.querySelectorAll('#cxa-box [data-cxa]').forEach(el => {
+    const id = el.dataset.cxa;
+    if (el.type === 'checkbox') out[id] = !!el.checked;
+    else if (el.classList.contains('cxa-seg')){ const b = el.querySelector('button.on'); out[id] = b ? b.dataset.v : ''; }
+    else out[id] = String(el.value || '').trim();
+  });
+  return out;
+}
+function cxaPick(b){ const on = b.classList.contains('on'); b.parentElement.querySelectorAll('button').forEach(x => x.classList.remove('on')); if (!on) b.classList.add('on'); }
+function cxaCpChange(cxId){
+  const box = document.getElementById('cxa-box'); if (!box) return;
+  const base = cxById(cxId) || {}, cx = { ...base, attrs: { ...(base.attrs || {}), ...cxaCollect() } };
+  box.outerHTML = cxaFormHtml(cx, (($('#cx-cp') || {}).value) || null);
+}
+function cxaFilledCount(d){
+  const list = state.data.complexes.filter(cx => !d.cp || cx.counterparty_id === d.cp);
+  return list.filter(cx => cxaFilled(d, (cx.attrs || {})[d.id])).length + '/' + list.length;
+}
+/* справочник «Характеристики» (админ) */
+function dirCxAttrs(){
+  const defs = cxaDefs();
+  const scope = d => d.cp ? esc((cpById(d.cp) || {}).name || '?') : t('cxa_all');
+  return `<div class="tiny" style="margin-bottom:8px">${t('cxa_dir_h')}</div><div class="card" id="cxa-dir">` + (defs.map((d, i) => `
+    <div class="rowline cxa-row">
+      <span class="cxa-kind" title="${esc(t('cxa_k_' + d.kind))}">${ic(d.kind === 'check' ? 'check' : d.kind === 'choice' ? 'layers' : 'pencil')}</span>
+      <div class="grow"><b>${esc(biText(d.name))}</b> <span class="chip ${d.req ? 'warn' : ''}">${t(d.req ? 'cxa_req' : 'cxa_opt')}</span>
+        <div class="tiny">${t('cxa_k_' + d.kind)}${d.kind === 'choice' ? ': ' + esc((d.opts || []).join(' / ')) : ''} · ${scope(d)} · ${t('cxa_filled')}: ${cxaFilledCount(d)}</div></div>
+      <button type="button" class="icon-btn sm" aria-label="▲" ${i ? '' : 'disabled'} onclick="App.cxaMove('${d.id}',-1)">${ic('chev_u')}</button>
+      <button type="button" class="icon-btn sm" aria-label="▼" ${i < defs.length - 1 ? '' : 'disabled'} onclick="App.cxaMove('${d.id}',1)">${ic('chev_d')}</button>
+      <button class="btn btn-ghost sm" onclick="App.cxaEdit('${d.id}')">${t('edit')}</button></div>`).join('') || `<div class="list-empty">${t('cxa_empty')}</div>`) + `</div>
+    <button class="btn btn-green" id="cxa-add" onclick="App.cxaEdit()">${ic('plus')} ${t('add')}</button>`;
+}
+function cxaEdit(id){
+  if (!isAdmin()) return;
+  const d = (id && cxaDefs().find(x => x.id === id)) || { id: 'a' + uid().replace(/-/g, '').slice(0, 12), name: '', kind: 'text', opts: [], req: false, cp: null };
+  openModal(`${modalHead(t('cxa_title'), 'clipboard')}
+    <div class="form-row"><span class="lbl">${t('cxa_name')} ${tipQ('cxa_name_tip')}</span><input id="cxa-name" maxlength="80" value="${esc(d.name)}" placeholder="${esc(t('cxa_name_ph'))}"></div>
+    <div class="form-row"><span class="lbl">${t('cxa_kind')}</span>
+      <div class="lang-seg" id="cxa-kind" data-k="${d.kind}">${CXA_KINDS.map(k => `<button type="button" class="${d.kind === k ? 'on' : ''}" data-k="${k}" onclick="App.cxaKind('${k}')">${t('cxa_k_' + k)}</button>`).join('')}</div></div>
+    <div class="form-row" id="cxa-opts-row"${d.kind === 'choice' ? '' : ' hidden'}><span class="lbl">${t('cxa_opts')}</span>
+      <textarea id="cxa-opts" rows="4" style="width:100%" placeholder="${esc(t('cxa_opts_ph'))}">${esc((d.opts || []).join('\n'))}</textarea></div>
+    <label class="chk-line"><input type="checkbox" id="cxa-req" ${d.req ? 'checked' : ''}> ${t('cxa_req_chk')}</label>
+    <div class="tiny" style="margin:-2px 0 8px 26px">${t('cxa_req_h')}</div>
+    <div class="form-row"><span class="lbl">${t('cxa_scope')}</span><select id="cxa-cp"><option value="">${t('cxa_all')}</option>${state.data.counterparties.map(c =>
+      `<option value="${c.id}" ${d.cp === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div>
+    <button class="btn btn-green" id="cxa-save" onclick="App.cxaSave('${d.id}')">${ic('save')} ${t('save')}</button>
+    ${id ? `<button class="btn btn-red" style="margin-top:8px" onclick="App.cxaDel('${d.id}')">${t('delete')}</button>` : ''}`);
+}
+function cxaKind(k){
+  const seg = document.getElementById('cxa-kind'); if (!seg || !CXA_KINDS.includes(k)) return;
+  seg.dataset.k = k; seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+  const row = document.getElementById('cxa-opts-row'); if (row) row.hidden = k !== 'choice';
+}
+async function cxaSave(id){
+  if (!isAdmin()) return;
+  const name = String(($('#cxa-name') || {}).value || '').trim().slice(0, 80);
+  const kind = ((document.getElementById('cxa-kind') || {}).dataset || {}).k || 'text';
+  const opts = [...new Set(String(($('#cxa-opts') || {}).value || '').split('\n').map(s => s.trim().slice(0, 40)).filter(Boolean))].slice(0, 12);
+  if (!name){ toast('⚠ ' + t('cxa_need_name'), 'err'); return; }
+  if (kind === 'choice' && opts.length < 2){ toast('⚠ ' + t('cxa_need_opts'), 'err'); return; }
+  const defs = cxaDefs().slice(), i = defs.findIndex(x => x.id === id);
+  const row = { id, name, kind: CXA_KINDS.includes(kind) ? kind : 'text', opts: kind === 'choice' ? opts : [], req: !!(($('#cxa-req') || {}).checked), cp: (($('#cxa-cp') || {}).value) || null };
+  if (i >= 0) defs[i] = row; else defs.push(row);
+  await dbSaveOrg({ ...state.data.org_settings, cx_attrs: defs });
+  audit('cx_attrs', 'org', id, { name, kind: row.kind, req: row.req, cp: row.cp ? (cpById(row.cp) || {}).name || row.cp : '' });
+  closeModal(); toast('✓ ' + t('saved')); render();
+}
+async function cxaDel(id){
+  if (!isAdmin() || !(await askYes(t('cxa_del_q'), { danger: true, okIcon: 'trash' }))) return;
+  const d = cxaDefs().find(x => x.id === id);
+  await dbSaveOrg({ ...state.data.org_settings, cx_attrs: cxaDefs().filter(x => x.id !== id) });   // значения в комплексах не трогаем — вернули характеристику, вернулись и они
+  audit('cx_attrs', 'org', id, { del: true, name: d && d.name });
+  closeModal(); toast('✓ ' + t('deleted')); render();
+}
+async function cxaMove(id, dir){
+  if (!isAdmin()) return;
+  const defs = cxaDefs().slice(), i = defs.findIndex(x => x.id === id), k = i + (dir > 0 ? 1 : -1);
+  if (i < 0 || k < 0 || k >= defs.length) return;
+  [defs[i], defs[k]] = [defs[k], defs[i]];
+  await dbSaveOrg({ ...state.data.org_settings, cx_attrs: defs }); render();
+}
+
+/* =====================================================================
+   v1.09.55 · ПРЕДЫСТОРИЯ ЗАДАЧИ В ЮНИТЕ — БЕЗ ЦЕН
+   Админ включает: Настройки → Настройки документов → «Предыстория задачи в юните». Открыт документ задачи —
+   если в этом же юните (тот же апарт-комплекс и номер юнита; «U214», «Unit 214» и «#214» — один юнит) эту же
+   задачу (тот же вид работ) уже делали не раньше чем N дней назад (по умолчанию 60 — «меньше двух месяцев»),
+   под адресом появляется строка «Уже делали…»; по нажатию — окно с этими документами только для просмотра:
+   дата, кто делал, статус, отмеченные работы, оборудование, Other services, доп. работы, заметка, число фото —
+   БЕЗ ЦЕН. Чужие документы работнику напрямую не видны (правила базы), поэтому их отдаёт функция базы
+   job_history(p_job): только к документу, который человек сам видит, только тот же юнит и вид работ, только при
+   включённой настройке и не больше пяти; суммы сервер вырезает сам (fd_noprice). Документ ещё не сохранён на
+   сервере — предыстория появится после сохранения. В демо — из загруженных данных.
+   ===================================================================== */
+const HIST = {};
+function histOn(){ return ((state.data && state.data.org_settings) || {}).hist_on === true; }
+function histDays(){ const v = +(((state.data && state.data.org_settings) || {}).hist_days); return v >= 7 && v <= 365 ? Math.round(v) : 60; }
+function unitKey(s){ return String(s == null ? '' : s).toLowerCase().replace(/^\s*(unit|u|#|№)\s*/, '').replace(/[^a-z0-9а-яё]/g, ''); }
+function histKey(j){ return [j.id, j.date, j.complex_id, unitKey(j.unit_number), j.work_type_id, histDays()].join('|'); }
+function fdNoPrice(fd){
+  const o = JSON.parse(JSON.stringify(fd || {}));
+  if (Array.isArray(o.others)) o.others = o.others.map(x => { if (x && typeof x === 'object'){ delete x.amount; delete x.price; delete x.total; } return x; });
+  if (Array.isArray(o.extra)) o.extra = o.extra.map(x => { if (x && typeof x === 'object'){ delete x.price; delete x.amount; delete x.total; } return x; });
+  return o;
+}
+function histLocal(j){
+  const lo = addDaysISO(j.date, -histDays()), uk = unitKey(j.unit_number);
+  const media = state.data.media || [];
+  return liveJobs().filter(h => h.id !== j.id && h.complex_id === j.complex_id && h.work_type_id === j.work_type_id && unitKey(h.unit_number) === uk
+      && h.date >= lo && h.date <= j.date && (h.date < j.date || String(h.created_at || '') < String(j.created_at || '')))
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.created_at || '').localeCompare(String(a.created_at || '')))
+    .slice(0, 5).map(h => ({ id: h.id, date: h.date, status: h.status, no: h.no, doc_no: docNo('job', h) || '', unit: h.unit_number, work_type_id: h.work_type_id,
+      technician_id: h.technician_id, tech_name: profName(h.technician_id), helpers: (h.helper_ids || []).map(profName), note: h.note || '',
+      form_data: fdNoPrice(h.form_data), photos: media.filter(m => m.job_id === h.id && m.kind === 'photo').length, videos: media.filter(m => m.job_id === h.id && m.kind === 'video').length }));
+}
+async function histLoad(j){
+  if (!j || !histOn() || !j.complex_id || !j.work_type_id || !unitKey(j.unit_number)) return;
+  const key = histKey(j), c = HIST[j.id];
+  if (c && c.key === key && (c.busy || Date.now() - c.at < 5 * 60000)) return;
+  HIST[j.id] = { key, at: Date.now(), rows: c && c.key === key ? c.rows : null, busy: true };
+  let rows = [], err = '';
+  try{
+    if (!HAS_SB) rows = histLocal(j);
+    else {
+      const { data, error } = await state.sb.rpc('job_history', { p_job: j.id });
+      if (error) throw error;
+      rows = Array.isArray(data) ? data : [];
+    }
+  }catch(e){ err = errStr(e); dlog('⚠ предыстория задачи: ' + (/job_history/.test(err) && /find|exist/i.test(err) ? 'нет функции job_history — выполните update-to-1_09_55.sql' : err)); }
+  HIST[j.id] = { key, at: Date.now(), rows, err };
+  histPaint(j.id);
+}
+function histPaint(jobId){
+  const el = document.getElementById('jb-hist');
+  if (!el || !jobDraft || jobDraft.id !== jobId) return;
+  const h = histLineHtml(jobDraft); if (el.innerHTML !== h) el.innerHTML = h;
+}
+function histLineHtml(j){
+  if (!j || !histOn()) return '';
+  const c = HIST[j.id]; if (!c || c.key !== histKey(j) || !c.rows || !c.rows.length) return '';
+  const h = c.rows[0], days = Math.max(0, Math.round((parseISO(j.date) - parseISO(h.date)) / 86400000));
+  return `<button type="button" class="hist-line" onclick="App.histOpen('${j.id}')">${ic('clock')} <b>${t('hist_line')}</b>
+    ${esc(tfill(t(days ? 'hist_ago' : 'hist_same_day'), { D: days }))} · ${fmtDMY(h.date)} · ${esc(shortName(h.tech_name || '—'))}${c.rows.length > 1 ? ' · ' + esc(tfill(t('hist_n'), { N: c.rows.length })) : ''}
+    <u>${t('hist_view')}</u></button>`;
+}
+function histOpen(jobId){
+  const c = HIST[jobId]; if (!c || !c.rows || !c.rows.length) return;
+  openModal(`${modalHead(t('hist_title'), 'clock')}
+    <div class="tiny" style="margin-bottom:8px">${esc(tfill(t('hist_intro'), { D: histDays() }))}</div>
+    ${c.rows.map(histDocHtml).join('')}`);
+}
+/* документ из предыстории — только работы, никаких сумм */
+function histDocHtml(h){
+  const fd = h.form_data || {};
+  const flags = [['vacant', 'Vacant'], ['occupied', 'Occupied'], ['emergency', 'Emergency call'], ['no_water', 'No water'], ['second_call', 'Second call'], ['f_proposal', 'Proposal']].filter(([k]) => fd[k] === true).map(([, l]) => l);
+  const secs = WT_BOXES.map(([sec, title, ks]) => {
+    const on = ks.filter(([k]) => fd[sec] && fd[sec][k]).map(([, l]) => l);
+    const add = [];
+    if (sec === 'steam' && on.length && +fd.steam.rooms > 1) add.push('Rooms ' + fd.steam.rooms);
+    if (sec === 'other' && on.length && +fd.other.rooms > 1) add.push('Rooms ' + fd.other.rooms);
+    if (sec === 'airduct' && on.length && +fd.airduct.bedrooms > 1) add.push('Bedrooms ' + fd.airduct.bedrooms);
+    if (sec === 'wetvac' && fd.wetvac && fd.wetvac.areas){ const ar = Object.keys(fd.wetvac.areas).filter(k => fd.wetvac.areas[k]).map(k => k.toUpperCase()); if (ar.length) add.push(ar.join(', ')); }
+    return on.length ? `<div class="hist-sec"><b>${esc(title)}:</b> ${esc(on.concat(add).join(', '))}</div>` : '';
+  }).join('');
+  const pad = fd.pad && fd.pad.on ? `<div class="hist-sec"><b>Pad:</b> ${esc([fd.pad.size || '', fd.pad.all_unit ? 'All unit' : (+fd.pad.rooms ? 'rooms ' + fd.pad.rooms : '')].filter(Boolean).join(' · '))}</div>` : '';
+  const eq = Object.entries(fd.equipment || {}).filter(([, e]) => e && +e.qty > 0).map(([id, e]) => (e.qty + '×' + ((etById(id) || {}).abbr || '?') + ' · ' + Math.max(1, +e.days || 1) + ' ' + t('days')));
+  const others = (fd.others || []).map(o => String((o && o.desc) || '').trim()).filter(Boolean);
+  const extra = (fd.extra || []).map(it => it && it.name ? extraItemTextEn(it) : '').filter(Boolean);
+  const media = [h.photos ? h.photos + ' ' + t('hist_photos') : '', h.videos ? h.videos + ' ' + t('hist_videos') : ''].filter(Boolean).join(' · ');
+  const crew = [h.tech_name].concat(h.helpers || []).filter(Boolean).join(', ');
+  const empty = !flags.length && !secs && !pad && !eq.length && !others.length && !extra.length && !String(h.note || '').trim();
+  return `<div class="hist-doc">
+    <div class="hist-h"><b>${fmtDMY(h.date)}</b>${h.doc_no ? ` <span class="tiny">${esc(h.doc_no)}</span>` : ''} <span class="badge-status st-${esc(h.status || 'draft')}">${t('status_' + (h.status || 'draft'))}</span></div>
+    <div class="tiny">${ic('crew')} ${esc(crew || '—')}${media ? ' · ' + ic('camera') + ' ' + esc(media) : ''}</div>
+    ${flags.length ? `<div class="tiny hist-flags">${esc(flags.join(' · '))}</div>` : ''}
+    ${secs}${pad}
+    ${eq.length ? `<div class="hist-sec"><b>${t('hist_eq')}:</b> ${esc(eq.join(', '))}</div>` : ''}
+    ${others.length ? `<div class="hist-sec"><b>Other services:</b> ${esc(others.join('; '))}</div>` : ''}
+    ${extra.length ? `<div class="hist-sec"><b>${t('hist_extra')}:</b> ${esc(extra.join('; '))}</div>` : ''}
+    ${String(h.note || '').trim() ? `<div class="hist-note">${esc(h.note)}</div>` : ''}
+    ${empty ? `<div class="tiny">${t('hist_empty_doc')}</div>` : ''}
+  </div>`;
+}
+/* строка в «Настройках документов» (админ) */
+function histCardHtml(){
+  if (!isAdmin()) return '';
+  const org = state.data.org_settings || {}, on = org.hist_on === true;
+  return `<div class="card" id="hist-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('clock')} ${t('hist_set_t')} ${tipQ('hist_set_tip')}</div>
+    <div class="set-opts"><label class="opt ${on ? 'on' : ''}"><input type="checkbox" id="hist-on" ${on ? 'checked' : ''} onchange="App.setOrgFlag('hist_on', this.checked)"> ${t('hist_set_chk')}</label></div>
+    <div class="qty-line"><span class="name">${t('hist_set_days')}</span>${orgStepperHtml('hist_days', histDays(), 7, 365, 1, !on)}</div>
+    <div class="tiny">${t('hist_set_h')}</div>
+  </div>`;
 }
 function dirCounterparties(){
   const list = state.data.counterparties;
@@ -13767,7 +14370,7 @@ function dirComplexes(){
           <div class="grow"><b>${esc(cx.name)}</b>${codeOldChip(cx)}
             <div class="tiny">${esc(cx.address||'')}</div>
             <div class="tiny">${codeLineHtml(cx, true)}
-              ${(()=>{ const m=lastCodeMeta(cx.id); return m?` · <span style="color:var(--dim-2)">${t('last_code_upd')} ${fmtDMY(String(m.date).slice(0,10))}</span>`:''; })()}</div></div>
+              ${(()=>{ const m=lastCodeMeta(cx.id); return m?` · <span style="color:var(--dim-2)">${t('last_code_upd')} ${fmtDMY(String(m.date).slice(0,10))}</span>`:''; })()}</div>${cxaLineHtml(cx)}</div>
           <button class="btn btn-ghost sm" title="${t('history')}" onclick="App.codeHistory('${cx.id}')">${ic('book')}</button>
           ${canEdit
             ? `<button class="btn btn-ghost sm" onclick="App.editCxModal('${cx.id}')">${t('edit')}</button>`
@@ -14109,7 +14712,7 @@ function editCxModal(id, cpId){
   openModal(`
     ${modalHead(t('complex'))}
     <div class="form-row"><span class="lbl">${t('counterparty')}</span>
-      <select id="cx-cp">${cx.counterparty_id ? '' : `<option value="" selected>— ${esc(t('cx_no_bind'))} —</option>`}${state.data.counterparties.map(c=>`<option value="${c.id}" ${c.id===cx.counterparty_id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
+      <select id="cx-cp" onchange="App.cxaCpChange('${cx.id}')">${cx.counterparty_id ? '' : `<option value="" selected>— ${esc(t('cx_no_bind'))} —</option>`}${state.data.counterparties.map(c=>`<option value="${c.id}" ${c.id===cx.counterparty_id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></div>
     <div class="form-row"><span class="lbl">${t('name')}</span><input id="cx-name" value="${esc(cx.name)}"></div>
     <div class="form-row"><span class="lbl">${t('abbr')}</span><input id="cx-abbr" maxlength="4" value="${esc(cx.abbr||'')}"></div>
     <div class="form-row"><span class="lbl">${t('address')}</span><input id="cx-addr" value="${esc(cx.address||'')}"></div>
@@ -14133,6 +14736,7 @@ function editCxModal(id, cpId){
       <button class="btn btn-blue sm" onclick="App.geocodeCx()">${ic('pin')} ${t('geocode')}</button>
       <button class="btn btn-ghost sm" onclick="App.gmapsCx()">${ic('map')} ${t('open_in')} ${navName()}</button>
     </div>
+    ${cxaFormHtml(cx, cx.counterparty_id)}
     <button class="btn btn-green" onclick="App.saveCx('${cx.id}')">${t('save')}</button>
     ${id?`<button class="btn btn-red" style="margin-top:8px" onclick="App.delRow('complexes','${cx.id}')">${t('delete')}</button>`:''}
   `);
@@ -14148,6 +14752,14 @@ async function saveCx(id){
     access_code: old.access_code || '', callbox_code: old.callbox_code || '', callbox_gate: !!old.callbox_gate,
     lat: isNaN(latV) ? null : latV, lng: isNaN(lngV) ? null : lngV };
   if (!row.name) return;
+  /* v1.09.55: характеристики — значения из карточки; обязательные не пустые */
+  if (document.getElementById('cxa-box')){
+    const attrs = { ...(old.attrs || {}), ...cxaCollect() };
+    const miss = cxaFor(row.counterparty_id).filter(d => d.req && !cxaFilled(d, attrs[d.id]));
+    document.querySelectorAll('#cxa-box .cxa-f').forEach(el => el.classList.toggle('cxa-bad', miss.some(d => d.id === el.dataset.a)));
+    if (miss.length){ toast('⚠ ' + t('cxa_need') + ': ' + miss.map(d => biText(d.name)).join(', '), 'err'); return; }
+    row.attrs = attrs;
+  } else if (old.attrs) row.attrs = old.attrs;
   const codesChanged = access !== (old.access_code||'') || callbox !== (old.callbox_code||'') || gate !== !!old.callbox_gate;
   if (isAdmin()){
     row.access_code = access; row.callbox_code = callbox; row.callbox_gate = gate;
@@ -15607,11 +16219,28 @@ function studyReadHtml(){
       <select class="st-read-sel" title="${t('st_read_switch')}" aria-label="${t('st_read_switch')}" onchange="App.studyReadSwitch(this.value)">${opts}</select>
       <span class="st-timer" title="${t('st_read_time')}">${ic('clock')} <span id="st-timer">${fmtMsShort(stClockMs(rd.clock))}</span></span>
       <a class="icon-btn" href="${url}" target="_blank" rel="noopener" title="${t('st_open_tab')}" aria-label="${t('st_open_tab')}">${ic('share')}</a>
-      <button class="btn btn-ghost sm" onclick="App.studyReadClose()">${ic('close')} ${t('st_read_done')}</button>
+      ${helpBtn('study')}
+      <button class="btn btn-ghost sm st-read-done" onclick="App.studyReadClose()" title="${t('st_read_done')}" aria-label="${t('st_read_done')}">${ic('close')}<span>${t('st_read_done')}</span></button>
     </div>
     ${frame}
   </div>`;
 }
+/* v1.09.55: рамка учебника кончается НАД нижним меню. Высота была calc(100dvh - 240px): с меню в два ряда
+   (и с крупным шрифтом) низ книги уходил под меню — вместе с панелью «Читать вслух», которая живёт у нижнего
+   края книги: кнопки, выбор голоса и строка с подсказками прятались, и чтение вслух «не работало». */
+function studyFrameFit(){
+  try{
+    const f = document.querySelector('.st-read .st-frame'); if (!f) return;
+    let bottom = window.innerHeight || document.documentElement.clientHeight || 0;
+    const tb = document.querySelector('.tabbar');
+    if (tb){ const r = tb.getBoundingClientRect(); if (r.height && r.width > r.height && r.top > bottom / 2) bottom = Math.min(bottom, r.top); }   // полоса снизу, а не колонка ПК
+    const top = f.getBoundingClientRect().top + pageScrollY();
+    const h = Math.max(300, Math.floor(bottom - top - 8));
+    if (Math.abs((parseFloat(f.style.height) || 0) - h) > 1) f.style.height = h + 'px';
+  }catch(e){}
+}
+let _stFitT = 0;
+window.addEventListener('resize', () => { clearTimeout(_stFitT); _stFitT = setTimeout(() => { if (state.screen === 'study' && STUDY.read) studyFrameFit(); }, 120); });
 /* ---------- экран ---------- */
 function viewStudy(){
   if (!studyAllowed()){
@@ -15620,7 +16249,7 @@ function viewStudy(){
   studyCatLoad(false); studyRunRestore();
   const head = `<div class="section-title">${ic('grad')} ${t('tab_study')}${helpBtn('study')}</div>`;
   if (STUDY.run) { studyResumeAll(); setTimeout(studyTickStart, 0); return head + studyRunHtml(); }
-  if (STUDY.read) { studyResumeAll(); setTimeout(studyTickStart, 0); return head + studyReadHtml(); }
+  if (STUDY.read) { studyResumeAll(); setTimeout(studyTickStart, 0); return studyReadHtml(); }   // v1.09.55: книге — весь экран, «?» — в строке книги
   studyPauseAll();
   /* v1.08.56: по образцу — чипы разделов сверху, две кнопки «Тест» и «Книга»,
      результаты и статистика прямо на экране, без вкладок и лишних кнопок */
@@ -15890,7 +16519,7 @@ const App = {
   /* v1.08.37: режим телевизора */
   tvStart, tvCancel, tvNewCode, tvFsGo, tvFsExit,
   tvListRefresh, tvApprove, tvDeny, tvRevoke,
-  tvcFlag, tvcMode, tvcStep, tvcMove, tvcSwap, tvcReset,
+  tvcFlag, tvcMode, tvcStep, tvcMove, tvcSwap, tvcReset, tvcCar, tvcCarSec,   // v1.09.55: карусель
   tvcDragStart, tvcOver, tvcLeave, tvcDrop,
   tvMenuSet, tvPrevSet, tvSimSet, tvPrevApply, tvBarMin, tvcPreset, tvcPreview, tvcLay, tvcShare, tvcFlip, tvcScale,   // v1.09.51
   tvcProfSave, tvcProfApply, tvcProfUpd, tvcProfDel, tvcAutoOn, tvcAutoSet, tvcGalF,   // v1.09.52: фильтр галереи
@@ -16049,7 +16678,7 @@ const App = {
   mapToggleDay(v){ state.mapDay = v; if (v && !state.mapDate) state.mapDate = state.selDate; render(); },
   mapSetDate(v){ state.mapDate = v; render(); },
   mapFocus(lat,lng){ if (mapObj){ mapObj.setView([lat,lng], 15); pageScrollTo(0, true); } },
-  mapRoute,
+  mapRouteNav, mapRoutesSet,   // v1.09.55: маршруты дня — на карте приложения
   geocodeCx, gmapsCx,
   dictToggle, dictLang(l){ state.dictLang = l; localStorage.setItem('techlog_dictlang', l); document.querySelectorAll('.dict-row .lang-seg button').forEach(b=>b.classList.toggle('on', b.textContent === (l==='ru-RU'?'RU':'EN'))); },
   noteModal, saveNote, auxToggle, sectionHelp: sectionHelpModal,
@@ -16069,12 +16698,13 @@ const App = {
   trNeedGo, eqRoWhy, dfProblemOpen, dfProblemRetry, dfProblemDiscard,   // v1.09.26
   dftRun, dftNext, dftStop, dftSetMode, dftCleanup, dftAdminWarn,       // v1.09.27
   dftIssuesSave,                                                        // v1.09.35
+  dftUiSave,                                                            // v1.09.54: лог «Интерфейс»
   fnCheckRun, fnCheckText,                                              // v1.09.36
   jobWithdraw, jobReturnModal, jobReturnGo, jobEditReqModal, jobEditReqGo, dfReqDecide, dfConflictFresh, dfConflictMine, jlAsk, crewMain, dfTagSet, dfRightSet, dfAnnounceSet, ntfOpen,   // v1.09.25
   chGroupNew, chgPick, chGroupCreate, chGroupInfo, chGroupRename, chGroupAdd, chGroupKick, chGroupDelete, chGroupRoleSet, chMuteToggle, chGoMsg, chForward, chForwardGo,
   chMenu, chReply, chEdit, chCtxOff, chCopy, chReact, chJump, chMore, chImgPick, chImgOff, chImgOpen,
   chOpen, chBack, chQ, chInput, chKey, chImp, chAttach, chDocOpen, chPick, chPickList(q){ return chPickListHtml(q); }, chSend, chDel,
-  clEdAdd, clEdDel, clEdMove, clEdCopy, apAdd, apDel, apCsv, apGoDoc, pdTest, pdRefresh, ckPwModal, ckPwGo, ckModeModal, ckModeGo, ckHelp, docShare, dsPick, dsCopy, dsSys, dsSend, boardOrderSave, boardOrderCancel, staffKindSet, orientSet, densSet, densToggle, canvasSet, mqLogDownload, mqLogCopy, netHideSet, trkLabel, trkLabelSave, tzSet, wkSet, wkDay, trkMkCar, officeFind, mtModal, mtSave, mtDel, vnAdd, vnDel, myCarMenuSet, mcPick,   // v1.09.38
+  clEdAdd, clEdDel, clEdMove, clEdCopy, apAdd, apDel, apCsv, apGoDoc, pdTest, pdRefresh, ckPwModal, ckPwGo, ckModeModal, ckModeGo, ckHelp, docShare, dsPick, dsCopy, dsSys, dsSend, boardOrderSave, boardOrderCancel, staffKindSet, orientSet, densSet, densToggle, canvasSet, mqLogDownload, mqLogCopy, netHideSet, trkLabel, trkLabelSave, cxaPick, cxaCpChange, cxaEdit, cxaKind, cxaSave, cxaDel, cxaMove, histOpen, trkErrs, bnErrText, bnDiag, bnDiagText, tzSet, wkSet, wkDay, trkMkCar, officeFind, mtModal, mtSave, mtDel, vnAdd, vnDel, myCarMenuSet, mcPick,   // v1.09.38
    setSearch, setSearchClear, setSearchGo,                                          // v1.09.05: плотность интерфейса, холст ПК-режима
   navStack(){ return NAV.stack.map(x => x.s); }, back(){ return backPressed(); },   // v1.09.06: история экранов; то же, что системная «назад» (без выхода)
   menuLabels(v){ menuLabelsSet(v); }, menuRowsStep,                                  // v1.09.02
@@ -16140,7 +16770,7 @@ const App = {
   translateEn: translateToEn,
   /* v1.07.83: двуязычные заметки */
   trSet(kind, id, v){
-    const doc = kind === 'prop' ? propDraft : jobDraft;
+    const doc = kind === 'prop' ? propDraft : kind === 'rep' ? repDraft : jobDraft;   // v1.09.53: перевод ремонта писался в черновик инвойса
     if (!doc) return;
     const f = trFieldById(kind, doc, id); if (!f) return;
     f.set(String(v || ''));
@@ -16301,7 +16931,7 @@ const App = {
        по «＋» на нетронутой настройке прыгал бы от min, а не от видимого */
     const DEF = { default_rent_days: 3, max_extend_days: 3, edit_lock_days: 0,
                   media_max_photo: 30, media_max_video: 5, media_max_file: 20,
-                  tr_interval_min: 60, code_remind_months: 12 };   // v1.08.33
+                  tr_interval_min: 60, code_remind_months: 12, hist_days: 60 };   // v1.08.33 · v1.09.55
     const cur = +((state.data.org_settings || {})[key] ?? (DEF[key] ?? 0));
     App.setOrgNum(key, cur + d * (+step || 1), min, max);
   },
@@ -16793,6 +17423,8 @@ const TV = { screen: null, key: '', code: '', feed: null, bn: null, bnOff: false
              tm: {}, fsBound: false };
 const TV_WIDGETS = ['cards', 'route', 'workers', 'chDay', 'chWeek', 'chMi'];   // v1.09.38: + маршруты (этапы водителей)
 const TVDEF = { map: 1, cardJobs: 1, cardPk: 1, route: 1, workers: 1, chDay: 1, chWeek: 0, chMi: 1,
+  mapRoutes: 1,                                          // v1.09.55: маршруты дня линиями на карте — своя галочка, не зависит от блока «Маршруты»
+  car: { on: 0, sec: 15, over: 1, who: 'active', d: 1, w: 1, m: 1 },   // v1.09.55: карусель сотрудников (общая настройка, не часть варианта раскладки)
   wMode: 'auto', wTotal: 10, wScreen: 6,
   lay: 'classic', share: 62, flip: 0, scale: 100,        // v1.09.51: шаблон раскладки, доля карты (% экрана), зеркало, масштаб (%)
   zones: { rail: ['cards', 'route', 'workers'], bottom: ['chDay', 'chWeek', 'chMi'] } };
@@ -16875,6 +17507,10 @@ function tvCfgNorm(c){
   out.flip = out.flip ? 1 : 0;
   out.scale = Math.max(50, Math.min(200, Math.round(+out.scale) || 100));
   out.dens = out.dens === 'compact' ? 'compact' : 'cozy';
+  out.mapRoutes = c.mapRoutes === 0 ? 0 : 1;                                   // v1.09.55
+  const cc = (c.car && typeof c.car === 'object') ? c.car : {};
+  out.car = { on: cc.on ? 1 : 0, sec: Math.max(5, Math.min(120, Math.round(+cc.sec) || 15)), over: cc.over === 0 ? 0 : 1,
+    who: cc.who === 'all' ? 'all' : 'active', d: cc.d === 0 ? 0 : 1, w: cc.w === 0 ? 0 : 1, m: cc.m === 0 ? 0 : 1 };
   out.preset = typeof out.preset === 'string' ? out.preset.slice(0, 40) : '';
   const pids = new Set();                                 // id профиля попадает в onclick — только буквы, цифры, «_» и «-», без повторов
   out.profiles = (Array.isArray(c.profiles) ? c.profiles : []).filter(p => p && p.id && p.cfg && typeof p.cfg === 'object')
@@ -16944,6 +17580,7 @@ function tvGoOn(){
 }
 function tvTimersOn(){
   if (!TV.tm.clk) TV.tm.clk = setInterval(tvClockTick, 5000);
+  if (!TV.tm.car) TV.tm.car = setInterval(tvCarTick, 1000);                    // v1.09.55: карусель сотрудников
   if (HAS_SB){
     if (!TV.tm.feed) TV.tm.feed = setInterval(() => tvFeedTick(false), TV_FEED_MS);
     if (!TV.tm.bn) TV.tm.bn = setInterval(() => tvBnTick(false), TV_BN_MS);
@@ -16953,7 +17590,8 @@ function tvStop(toLogin){
   for (const k of Object.keys(TV.tm)){ if (TV.tm[k]){ clearInterval(TV.tm[k]); TV.tm[k] = 0; } }
   if (TV.map){ try{ TV.map.remove(); }catch(e){} }
   Object.assign(TV, { screen: null, key: '', code: '', feed: null, bn: null, bnOff: false,
-    map: null, pins: {}, cars: {}, routes: {}, fit: false, routeLayer: null, eff: null, geo: null, effKey: '', mapSz: null });   // v1.09.51
+    map: null, pins: {}, cars: {}, routes: {}, fit: false, routeLayer: null, eff: null, geo: null, effKey: '', mapSz: null,   // v1.09.51
+    focus: null, carI: 0, carT0: 0 });                                                          // v1.09.55: карусель
   tvBodyClass(false); if (!TV.test) tvDensApply(false);
   if (toLogin !== false){ state.screen = 'login'; render(); }
 }
@@ -17144,8 +17782,9 @@ function tvRoutesDraw(){
   TV.routeLayer.clearLayers();
   const off = tvOffice();
   if (off) L.marker([off.lat, off.lng], { icon: L.divIcon({ className: '', iconSize: null, html: `<div class="map-pin tv-office" title="${esc(off.addr)}">${ICONS.home}</div>` }), zIndexOffset: 300 }).addTo(TV.routeLayer);
-  if ((TV.eff || tvCfg()).route === 0) return;   // v1.09.51: действующий вариант (у «HD 720/768» маршрутов нет)
+  if (!tvMapRoutesOn()) return;                  // v1.09.55: своя галочка «Маршруты дня на карте» (раньше линии шли за блоком «Маршруты»)
   tvWorkersAll().forEach((p, i) => {
+    if (TV.focus && p.id !== TV.focus) return;   // v1.09.55: карусель — только маршрут показанного сотрудника
     const st = tvStops(p.id).filter(s => s.cx && s.cx.lat != null);
     if (!st.length) return;
     const pts = (off ? [[off.lat, off.lng]] : []).concat(st.map(s => [+s.cx.lat, +s.cx.lng]));
@@ -17154,6 +17793,124 @@ function tvRoutesDraw(){
     if (geo === undefined) tvOsrm(key, pts);
     const col = TRKH_COLORS[i % TRKH_COLORS.length], kk = Math.max(1, (TV.geo && TV.geo.k) || 1);   // v1.09.51: толщина — в масштабе экрана
     L.polyline(Array.isArray(geo) ? geo : pts, Array.isArray(geo) ? { color: col, weight: 4 * kk, opacity: .75 } : { color: col, weight: 3 * kk, opacity: .6, dashArray: '4 8' }).addTo(TV.routeLayer);
+  });
+}
+/* =====================================================================
+   v1.09.55 · КАРУСЕЛЬ СОТРУДНИКОВ НА ТВ
+   Настройки → Режим телевизора → «Карусель сотрудников» (админ). Экран по очереди показывает каждого
+   сотрудника: карта приближается к его точкам дня (номера — его порядок объезда, этапы «впереди / на точке /
+   пройдено»), его маршрут от офиса и его машина; слева на карте — карточка: статус, сегодня (задачи
+   выполнено из всего, пикапы, пробег и время в пути), неделя (7 дней) и месяц (с 1-го числа) — выполнено
+   задач, пикапов, миль, разбивка по видам работ и список точек. Между сотрудниками — общий вид (галочка).
+   Секунд на сотрудника — 5…120; кого показывать — «с задачами сегодня» или всех; какие периоды — галочки.
+   Пульт телевизора: ← → — предыдущий / следующий. Данные недели и месяца присылает tv_feed (stat_month,
+   emp_wt, emp_pk, emp_mi — update-to-1_09_55.sql); на старой базе колонки показывают «—».
+   ===================================================================== */
+function tvMapRoutesOn(){ return (TV.eff || tvCfg()).mapRoutes !== 0; }
+function tvCarCfg(cfg){ return ((cfg || TV.eff || tvCfg()).car) || { ...TVDEF.car }; }
+function tvCarSlides(cfg){
+  const c = tvCarCfg(cfg); if (!c.on) return [];
+  let people = tvWorkersAll();
+  if (c.who !== 'all') people = people.filter(p => tvStops(p.id).length || (TV.bn || []).some(x => x.driver_id === p.id && x.run));
+  const ids = people.map(p => p.id);
+  if (!ids.length) return [];
+  return c.over ? [''].concat(ids) : ids;
+}
+function tvCarTick(){
+  if (TV.screen !== 'on') return;
+  const cfg = TV.eff || tvEffCfg(), c = tvCarCfg(cfg), G = TV.geo;
+  if (!c.on || !G || !G.map){ if (TV.focus){ TV.focus = null; TV.carI = 0; tvCarApply(); } return; }
+  if (!TV.carT0){ TV.carT0 = Date.now(); tvCarBarPaint(); return; }
+  if (Date.now() - TV.carT0 >= c.sec * 1000) tvCarNext(1);
+}
+function tvCarNext(d){
+  const sl = tvCarSlides(TV.eff || tvEffCfg());
+  if (!sl.length){ TV.carI = 0; TV.carT0 = Date.now(); if (TV.focus){ TV.focus = null; tvCarApply(); } else tvCarBarPaint(); return; }
+  const cur = sl.indexOf(TV.focus || '');                    // показанного больше нет в списке — с начала (или с конца при «назад»)
+  TV.carI = cur < 0 ? (d > 0 ? 0 : sl.length - 1) : ((cur + d) % sl.length + sl.length) % sl.length;
+  TV.focus = sl[TV.carI] || null; TV.carT0 = Date.now();
+  tvCarApply();
+}
+function tvCarApply(){
+  TV.fit = false;
+  const wrap = document.querySelector('.tvwrap'); if (wrap) wrap.classList.toggle('tv-car-emp', !!TV.focus);
+  tvEmpPaint(); tvCarBarPaint();
+  if (TV.map) tvMapSync();
+}
+function tvEmpBox(G){
+  G = G || TV.geo; if (!G || !G.map) return 'display:none';
+  const m = Math.round(12 * G.k), w = Math.round(Math.min(440 * G.k, G.map.w * 0.46));
+  return `left:${m}px;top:${m + Math.round(6 * G.k)}px;bottom:${m}px;width:${w}px`;
+}
+function tvFocusPad(){
+  const G = TV.geo, k = (G && G.k) || 1, e = Math.round(40 * k), W = (G && G.map && G.map.w) || 1200, H = (G && G.map && G.map.h) || 700;
+  const pw = G && G.map ? Math.round(Math.min(440 * k, G.map.w * 0.46)) + Math.round(12 * k) : 0;
+  return { paddingTopLeft: [Math.min(pw + e, W * 0.62), Math.min(e, H * 0.3)], paddingBottomRight: [Math.min(e, W * 0.2), Math.min(e, H * 0.3)] };
+}
+function tvEmpPaint(){
+  const el = document.getElementById('tv-emp'); if (!el) return;
+  const want = !!TV.focus; if (el.hidden === want) el.hidden = !want;
+  const box = tvEmpBox(); if (el.getAttribute('style') !== box) el.setAttribute('style', box);
+  const inn = el.querySelector('.tve-in'); if (inn) inn.innerHTML = want ? tvEmpHtml(TV.focus) : '';
+}
+function tvCarBarHtml(cfg){
+  const c = tvCarCfg(cfg); if (!c.on) return '';
+  return `<div class="tv-carbar" id="tv-carbar">${tvCarBarInner(cfg)}</div>`;
+}
+function tvCarBarInner(cfg){
+  const c = tvCarCfg(cfg), sl = tvCarSlides(cfg); if (!sl.length) return '';
+  const i = Math.max(0, sl.indexOf(TV.focus || '')), left = TV.carT0 ? Math.max(0, c.sec * 1000 - (Date.now() - TV.carT0)) : c.sec * 1000;
+  return `<i class="tvcb-run" style="animation-duration:${(left / 1000).toFixed(1)}s"></i><span class="tvcb-dots">${sl.map((id, k) => `<b class="${k === i ? 'on' : ''}${id ? '' : ' all'}"></b>`).join('')}</span>`;
+}
+function tvCarBarPaint(){
+  const cfg = TV.eff || tvEffCfg(), el = document.getElementById('tv-carbar');
+  if (!tvCarCfg(cfg).on){ if (el) el.remove(); return; }
+  if (!el){ const box = document.querySelector('.tvwrap .tva-map'); if (box) box.insertAdjacentHTML('beforeend', tvCarBarHtml(cfg)); return; }
+  el.innerHTML = tvCarBarInner(cfg);                     // новая полоска — анимация начинается заново
+}
+/* точки одного сотрудника в его порядке объезда (для карты карусели) */
+function tvFocusItems(pid){
+  return { pts: tvStops(pid).filter(s => s.cx && s.cx.lat != null).map(s => ({ num: s.no, kind: s.kind, cx: s.cx, color: s.kind === 'pk' ? '#8AA0AB' : s.color, st: s.st })), done: [] };
+}
+function tvEmpHtml(pid){
+  const f = TV.feed || {}, cfg = TV.eff || tvEffCfg(), c = tvCarCfg(cfg);
+  const p = (f.profiles || []).find(x => x.id === pid) || { id: pid, name: '—' };
+  const st = tvWorkerStatus(p), car = tvCarOf(pid), stops = tvStops(pid);
+  const jobs = (f.jobs || []).filter(j => j.technician_id === pid), jd = jobs.filter(j => j.done).length;
+  const pkN = stops.filter(s => s.kind === 'pk').length;
+  const one = (arr) => (arr || []).find(x => x.id === pid) || null;
+  const W = one(f.stat_week), Mo = one(f.stat_month), PK = one(f.emp_pk), MI = one(f.emp_mi), has = k => Array.isArray(f[k]);
+  const fmtH = m => m == null ? '—' : Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+  const mi = v => v == null ? '—' : (+v).toFixed(+v >= 100 ? 0 : 1) + ' ' + t('bn_mi');
+  const num = (k, o, fld) => has(k) ? ((o && o[fld]) || 0) : '—';
+  const col = (on, title, rows) => on ? `<div class="tve-col"><div class="tve-ch">${title}</div>${rows.map(r => `<div class="tve-kv"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>` : '';
+  const cols = col(c.d, t('tve_today'), [[t('tve_jobs'), `${jd} / ${jobs.length}`], [t('tve_pk'), pkN], [t('tve_mi'), car && car.mi != null ? mi(car.mi) : '—'], [t('tve_drive'), car && car.min != null ? fmtH(car.min) : '—']])
+    + col(c.w, t('tve_week'), [[t('tve_done'), W ? W.n : 0], [t('tve_pk_done'), num('emp_pk', PK, 'w')], [t('tve_mi'), has('emp_mi') ? mi(MI ? MI.w : 0) : '—']])
+    + col(c.m, t('tve_month'), [[t('tve_done'), num('stat_month', Mo, 'n')], [t('tve_pk_done'), num('emp_pk', PK, 'm')], [t('tve_mi'), has('emp_mi') ? mi(MI ? MI.m : 0) : '—']]);
+  const wts = tvBy(f.work_types);
+  const wtRows = (f.emp_wt || []).filter(x => x.id === pid).map(x => ({ ...(wts[x.wt] || { name: '?', color: '#8B9AA3' }), w: +x.w || 0, m: +x.m || 0 }))
+    .filter(x => (c.w && x.w) || (c.m && x.m)).sort((a, b) => (c.m ? b.m - a.m : 0) || b.w - a.w).slice(0, 5);
+  const wt = (c.w || c.m) && wtRows.length ? `<div class="tve-wt"><div class="tve-wtr tve-wth"><span class="nm">${t('tve_by_wt')}</span>${c.w ? `<b>${t('tve_w_s')}</b>` : ''}${c.m ? `<b>${t('tve_m_s')}</b>` : ''}</div>
+      ${wtRows.map(x => `<div class="tve-wtr"><i class="wt-dot" style="background:${x.color}"></i><span class="nm" style="color:${x.color}">${esc(x.name)}</span>${c.w ? `<b>${x.w}</b>` : ''}${c.m ? `<b>${x.m}</b>` : ''}</div>`).join('')}</div>` : '';
+  const cx = s => esc((s.cx && (s.cx.abbr || s.cx.name)) || '—');
+  const sl = tvCarSlides(cfg).filter(Boolean), pos = sl.indexOf(pid);
+  return `<div class="tve-h"><span class="bn-sno${st.run ? ' run' : ''}">${carNoSvg(p.car_no)}</span>
+      <div class="grow"><b class="tve-nm">${esc(p.name)}</b><div class="st-line ${st.cls}">${st.html}</div></div>
+      ${pos >= 0 ? `<span class="tve-pos">${pos + 1} / ${sl.length}</span>` : ''}</div>
+    ${cols ? `<div class="tve-cols">${cols}</div>` : ''}
+    ${wt}
+    <div class="tve-stops"><div class="tve-ch">${ic('compass')} ${t('tve_stops')} · ${stops.length}</div>
+      ${stops.length ? stops.map(s => `<div class="tvr-s${stgCls(s.st)}" style="border-left-color:${s.color}" title="${esc(t('stg_' + s.st))}">
+        <span class="tvr-no">${s.no}</span><span class="tvr-t"><b>${s.kind === 'pk' ? ic('box') + ' ' : ''}Unit ${esc(s.unit || '—')}</b><span class="tiny">${cx(s)}${s.kind === 'pk' ? ' · ' + t('tv_pickup_w') + ' ×' + s.n : s.wt ? ' · ' + esc(s.wt) : ''}</span></span>
+        ${s.st === 'here' ? `<span class="tvr-live">${t('stg_here')}</span>` : ''}</div>`).join('') : `<div class="tiny">${t('tv_route_none')}</div>`}</div>`;
+}
+/* пульт телевизора: ← → листают карусель */
+function tvCarKeys(){
+  if (TV.keysBound) return; TV.keysBound = true;
+  document.addEventListener('keydown', e => {
+    if (TV.screen !== 'on' || !tvCarCfg().on) return;
+    if (e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName || '')) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){ e.preventDefault(); tvCarNext(e.key === 'ArrowRight' ? 1 : -1); }
   });
 }
 /* ---- офис (админ, «Режим телевизора») ---- */
@@ -17303,7 +18060,7 @@ function viewTv(){
         <div class="tv-clock"><div class="hm" id="tv-clk">${tvHM()}</div>
           <div class="dt" id="tv-dte">${t('week_days')[(d.getDay() + 6) % 7]}, ${d.getDate()} ${t('months')[d.getMonth()]}</div></div>
       </div>`;
-  const cls = 'tvwrap tvl-' + G.lay + (G.flip ? ' tvl-flip' : '') + (G.port ? ' tvl-port' : '') + (G.map ? '' : ' nomap') + (s.sim ? ' tv-sim' : '');
+  const cls = 'tvwrap tvl-' + G.lay + (G.flip ? ' tvl-flip' : '') + (G.port ? ' tvl-port' : '') + (G.map ? '' : ' nomap') + (s.sim ? ' tv-sim' : '') + (TV.focus && G.map ? ' tv-car-emp' : '');
   return `<div class="${cls}" style="--tvk:${G.k.toFixed(3)};${s.sim ? tvSimStyle(s) : ''}">
     ${G.map ? `<div class="tva tva-map tv-mapbox" style="${st(G.map)}">
       <div id="tv-map"></div>
@@ -17316,6 +18073,8 @@ function viewTv(){
         <span><span class="car-sw"></span>${t('tv_legend_car')}</span>
       </div>
       <button class="tv-fsbtn" onclick="App.tvFsGo()">${ic('fs')} ${t('tv_fs')}</button>
+      ${tvCarBarHtml(cfg)}
+      <div class="tv-emp" id="tv-emp" style="${tvEmpBox(G)}"${TV.focus ? '' : ' hidden'}><div class="tve-in tvzm">${TV.focus ? tvEmpHtml(TV.focus) : ''}</div></div>
     </div>` : ''}
     ${G.tick ? `<div class="tva tva-tick" style="${st(G.tick)}"><div class="tv-tick tvzm" id="tv-tick"></div></div>` : ''}
     ${G.h ? `<div class="tva tva-h" style="${st(G.h)}"><div class="tv-rail tvzm dir-col tv-hcard">${head}</div></div>` : ''}
@@ -17370,6 +18129,7 @@ function tvTest(){
   Object.assign(TV, { test: true, key: 'test', feed: tvTestFeed(), bn: tvTestBn(), screen: 'on', fit: false });
   render();
   if (!TV.tm.clk) TV.tm.clk = setInterval(tvClockTick, 5000);
+  if (!TV.tm.car) TV.tm.car = setInterval(tvCarTick, 1000);                    // v1.09.55
   if (!TV.tm.test) TV.tm.test = setInterval(() => { if (!TV.test) return; TV.feed = tvTestFeed(); TV.bn = tvTestBn(); tvRepaint(); }, TV_FEED_MS);
 }
 function tvTestStop(){
@@ -17381,6 +18141,7 @@ function tvTestStop(){
 }
 function tvAfterRender(){
   tvBodyClass(true); tvDensApply(true);                  // v1.09.09: плотность ТВ
+  tvCarKeys();                                           // v1.09.55: пульт листает карусель
   tvResizeBind();                                        // v1.09.51: окно / поворот экрана — пересчитать раскладку
   if (TV.screen !== 'on') return;
   /* v1.09.51: перерисовка (другой вариант, разрешение, размер окна) не пересоздаёт карту — тот же контейнер
@@ -17423,6 +18184,7 @@ function tvRepaint(){
   if (zb) tvZoneFill(zb, cfg, G.b ? idsB : [], G.dirB);
   tvFitWorkers(cfg);
   tvClockTick();
+  tvEmpPaint();                                          // v1.09.55: карусель — данные сотрудника свежие
   if (cfg.map !== 0 && G.map) tvMapSync(); else if (TV.map){ try{ TV.map.remove(); }catch(e){} TV.map = null; TV.routeLayer = null; }
   if (TV.test) tvShareShow();
 }
@@ -17449,7 +18211,7 @@ function tvMapSync(){
     TV.pinLayer = L.layerGroup().addTo(TV.map);
     TV.carLayer = L.layerGroup().addTo(TV.map);
   }
-  const { pts, done } = tvDayItems();
+  const { pts, done } = TV.focus ? tvFocusItems(TV.focus) : tvDayItems();   // v1.09.55: карусель — точки одного сотрудника, его нумерация
   TV.pinLayer.clearLayers();
   const marks = [];
   pts.forEach(p => {
@@ -17468,6 +18230,7 @@ function tvMapSync(){
   const seen = new Set(), spread = [];
   (TV.bn || []).forEach(c => {
     if (c.lat == null) return;
+    if (TV.focus && c.driver_id !== TV.focus) return;   // v1.09.55: карусель — только его машина
     const id = String(c.car_no ?? '') + '|' + String(c.driver_id ?? '');
     seen.add(id);
     const icon = L.divIcon({ className: '', iconSize: null,
@@ -17491,8 +18254,9 @@ function tvMapSync(){
     TV.carLayer.removeLayer(TV.cars[id]); delete TV.cars[id];
     if (TV.routes[id]){ TV.carLayer.removeLayer(TV.routes[id]); delete TV.routes[id]; }
   }
+  if (TV.focus){ const off = tvOffice(); if (off && tvMapRoutesOn()) marks.push([off.lat, off.lng]); }   // v1.09.55: маршрут сотрудника — от офиса
   if (!TV.fit){
-    if (marks.length) TV.map.fitBounds(marks, { ...tvFitPad(), maxZoom: 13, animate: false });   // v1.09.51: поля в масштабе экрана; у «панелей поверх» точки не под панелями;
+    if (marks.length) TV.map.fitBounds(marks, { ...(TV.focus ? tvFocusPad() : tvFitPad()), maxZoom: TV.focus ? 14 : 13, animate: false });   // v1.09.51: поля в масштабе экрана; у «панелей поверх» точки не под панелями;
     /* v1.09.52: без анимации — Leaflet молча пропускает новую подгонку, пока идёт анимация прежней (быстрая смена раскладки) */
     else TV.map.setView([33.79, -84.39], 10);          /* Атланта */
     TV.fit = true;
@@ -17551,8 +18315,33 @@ function tvDemoFeed(){
     site_day: (d.site_visits || []).filter(v => v.date === iso).map(v => ({ driver_id: v.driver_id, complex_id: v.complex_id, arrived_at: v.arrived_at, left_at: v.left_at })),   // v1.09.38
     office: (d.org_settings || {}).office_lat != null ? { lat: d.org_settings.office_lat, lng: d.org_settings.office_lng, addr: d.org_settings.office_addr || '' } : null,
     stat_day: Object.entries(day).map(([id, n]) => ({ id, n })),
-    stat_week: Object.entries(week).map(([id, n]) => ({ id, n }))
+    stat_week: Object.entries(week).map(([id, n]) => ({ id, n })),
+    ...tvDemoEmp(d, iso)                                  // v1.09.55: карусель — неделя и месяц по сотруднику
   };
+}
+/* v1.09.55: то же, что tv_feed (stat_month, emp_wt, emp_pk, emp_mi), — из загруженных данных (демо и «Проверить ТВ-режим») */
+function tvDemoEmp(d, iso){
+  const wk = addDaysISO(iso, -6), ms = iso.slice(0, 8) + '01', lo = wk < ms ? wk : ms;
+  const doneSt = (j) => j.status === 'done' || j.status === 'approved';
+  const month = {}, wt = {}, pk = {};
+  (d.jobs || []).forEach(j => {
+    if (!doneSt(j) || j.archived_at || !j.date || j.date < lo || j.date > iso || !j.technician_id) return;
+    if (j.date >= ms) month[j.technician_id] = (month[j.technician_id] || 0) + 1;
+    const k = j.technician_id + '|' + (j.work_type_id || ''), x = wt[k] = wt[k] || { id: j.technician_id, wt: j.work_type_id || null, w: 0, m: 0 };
+    if (j.date >= wk) x.w++; if (j.date >= ms) x.m++;
+  });
+  const seen = new Set();
+  (d.placements || []).forEach(p => {
+    if (!p.picked_up || p.superseded || !p.picked_up_at) return;
+    const day = String(p.picked_up_at).slice(0, 10), who = p.picked_up_by || p.technician_id;
+    if (!who || day < lo || day > iso || seen.has(who + '|' + p.job_id + '|' + (day >= wk ? 'w' : 'm'))) return;
+    seen.add(who + '|' + p.job_id + '|' + (day >= wk ? 'w' : 'm'));
+    const x = pk[who] = pk[who] || { id: who, w: 0, m: 0 };
+    if (day >= wk) x.w++; if (day >= ms) x.m++;
+  });
+  const out = { stat_month: Object.entries(month).map(([id, n]) => ({ id, n })), emp_wt: Object.values(wt), emp_pk: Object.values(pk) };
+  if (!HAS_SB) out.emp_mi = (d.vehicles || []).filter(v => v.driver_id).map((v, i) => ({ id: v.driver_id, w: Math.round((96 + i * 37.5) * 10) / 10, m: Math.round((412 + i * 121.4) * 10) / 10 }));   // демо: пробег условный
+  return out;
 }
 function tvDemoBn(){
   const d = state.data;
@@ -17734,10 +18523,13 @@ function tvCfgCardHtml0(){
   ${chk('cardJobs', t('tvc_cjobs'))}
   ${chk('cardPk', t('tvc_cpk'))}
   ${chk('route', t('tvc_route'))}
+  ${chk('mapRoutes', t('tvc_mroutes'))}
   ${chk('workers', t('tvc_workers'))}
   ${chk('chDay', t('tvc_chday'))}
   ${chk('chWeek', t('tvc_chweek'))}
   ${chk('chMi', t('tvc_chmi'))}
+  <hr class="sep">
+  ${tvCarCardHtml(cfg)}
   <hr class="sep">
   <div style="font-weight:900;margin-bottom:4px">${t('tv_workers')}</div>
   <div class="qty-line"><span class="name">${t('tvc_wmode')}</span>
@@ -17774,6 +18566,37 @@ function tvCfgCardHtml0(){
   <hr class="sep">
   ${fold('tvprof', t('tvc_prof') + (cfg.profiles.length ? ' · ' + cfg.profiles.length : ''), 'save', tvProfHtml(true, true), true)}
   ${fold('tvauto', t('tvc_res') + (cfg.auto.on ? ' · ✓' : ''), 'monitor', tvAutoHtml(true), true)}`;
+}
+/* v1.09.55: настройки карусели сотрудников */
+function tvCarCardHtml(cfg){
+  const c = cfg.car, ad = isAdmin() ? '' : ' disabled';
+  const ck = (k, lbl) => `<label class="chk-line"><input type="checkbox" ${c[k] ? 'checked' : ''}${ad} onchange="App.tvcCar('${k}', this.checked ? 1 : 0)"> ${lbl}</label>`;
+  return `<div style="font-weight:900;margin-bottom:2px">${ic('crew')} ${t('tvc_car')} ${tipQ('tvc_car_tip')}</div>
+  ${ck('on', t('tvc_car_on'))}
+  <div class="tvc-car${c.on ? '' : ' off'}">
+    <div class="qty-line"><span class="name">${t('tvc_car_sec')}</span>
+      <span class="stepper set-step">
+        <button type="button" aria-label="−"${ad} onclick="App.tvcCarSec(-5)">${ic('minus')}</button>
+        <input class="price-input" inputmode="numeric" value="${c.sec}"${ad} onchange="App.tvcCarSec(0, this.value)">
+        <button type="button" aria-label="+"${ad} onclick="App.tvcCarSec(5)">${ic('plus')}</button>
+      </span></div>
+    ${ck('over', t('tvc_car_over'))}
+    <div class="qty-line"><span class="name">${t('tvc_car_who')}</span>
+      <div class="lang-seg sm"><button class="${c.who !== 'all' ? 'on' : ''}"${ad} onclick="App.tvcCar('who','active')">${t('tvc_car_act')}</button><button class="${c.who === 'all' ? 'on' : ''}"${ad} onclick="App.tvcCar('who','all')">${t('tvc_car_all')}</button></div></div>
+    <div class="tiny" style="margin:6px 0 2px">${t('tvc_car_pd')}</div>
+    <div class="tvc-car-pd">${ck('d', t('tve_today'))}${ck('w', t('tve_week'))}${ck('m', t('tve_month'))}</div>
+  </div>`;
+}
+function tvcCar(k, v){
+  const cfg = tvCfg(), c = { ...cfg.car };
+  if (k === 'who') c.who = v === 'all' ? 'all' : 'active'; else if (['on', 'over', 'd', 'w', 'm'].includes(k)) c[k] = v ? 1 : 0; else return;
+  cfg.car = c; tvcSave(cfg, { car: k });
+  if (TV.test){ TV.carT0 = 0; TV.focus = null; TV.carI = 0; }
+}
+function tvcCarSec(d, raw){
+  const cfg = tvCfg(), c = { ...cfg.car };
+  c.sec = Math.max(5, Math.min(120, (raw != null ? (Math.round(+raw) || 15) : c.sec) + (d || 0)));
+  cfg.car = c; tvcSave(cfg, { car: 'sec' });
 }
 let tvDragId = null;
 function tvcSave(cfg, ex){
@@ -18956,7 +19779,7 @@ function polyDecode(str){
    машины свой цвет; в списке под картой — мили, время в пути и число поездок по машинам,
    в режиме недели — и по дням. Право — «Трек дня» у сотрудника (админу всегда).
    ===================================================================== */
-const TRKH = { mode: 'day', date: '', sel: null, trips: [], key: '', loading: false, err: '', note: '' };
+const TRKH = { mode: 'day', date: '', sel: null, trips: [], key: '', loading: false, err: '', note: '', errs: [] };   // v1.09.55: errs — разобранные ошибки Bouncie по машинам
 const TRKH_COLORS = ['#3B82F6', '#FF9600', '#58CC02', '#CE82FF', '#FF4B4B', '#2EC4B6', '#FFC800', '#8AA0AB', '#F472B6', '#A3E635'];
 function trkCars(){ return bnVehicles().filter(v => v.imei).sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999)); }
 function trkColor(imei){ const i = trkCars().findIndex(v => String(v.imei) === String(imei)); return TRKH_COLORS[(i < 0 ? 0 : i) % TRKH_COLORS.length]; }
@@ -18989,14 +19812,17 @@ function trkReload(){ trkLoad(true); }
 async function trkLoad(force){
   const r = trkRange(), key = r.from + '|' + r.to;
   if (!force && key === TRKH.key && !TRKH.err) return;
-  TRKH.loading = true; TRKH.err = ''; TRKH.note = ''; if (state.screen === 'map' && state.mapTrk) render();
+  TRKH.loading = true; TRKH.err = ''; TRKH.note = ''; TRKH.errs = []; if (state.screen === 'map' && state.mapTrk) render();
   let trips = [];
   try{
     if (HAS_SB){
       const j = await bnFetch('?tracks=1&from=' + r.from + '&to=' + r.to + (force ? '&refresh=1' : ''));
       if (!j) throw new Error(/NEED_SQL/.test(BN.err || '') ? t('trh_need_sql') : (BN.err || t('bn_no_access')));
       trips = (j.trips || []).map(x => ({ imei: String(x.imei), day: x.day, s: x.s, e: x.e, mi: +x.mi || 0, pts: polyDecode(x.gps || '') }));
-      if ((j.errors || []).length) TRKH.note = t('trh_part') + ' ' + j.errors.length;
+      if ((j.errors || []).length){                        // v1.09.55: какие машины и что ответил Bouncie — в окно и в журнал
+        TRKH.errs = j.errors.map(bnErrParse); TRKH.note = t('trh_part') + ' ' + j.errors.length;
+        TRKH.errs.forEach(x => dlog('⚠ bouncie треки ' + r.from + '…' + r.to + ': ' + bnCarLabel(x.imei) + ' (IMEI ' + x.imei + ') — ' + bnErrShort(x)));
+      }
     } else trips = trkDemoTrips(r.from, r.to);
   }catch(e){ TRKH.err = errStr(e); dlog('⛔ tracks:', e); }
   TRKH.trips = trips.filter(x => x.pts.length > 1); TRKH.key = key; TRKH.loading = false;
@@ -19048,7 +19874,7 @@ function trkLegendHtml(){
   if (TRKH.loading) return `<div class="list-empty">${ic('sync')} ${t('trh_loading')}</div>`;
   if (TRKH.err) return `<div class="list-empty" style="color:var(--red)">${ic('warn')} ${esc(TRKH.err)}</div>`;
   const vis = TRKH.trips.filter(x => trkSelHas(x.imei));
-  if (!vis.length) return `<div class="list-empty">${t('trh_empty')}</div>`;
+  if (!vis.length) return `<div class="list-empty">${t('trh_empty')}</div>${trkErrNoteHtml()}`;
   const mins = x => Math.max(0, Math.round((Date.parse(x.e) - Date.parse(x.s)) / 60000));
   const rows = trkCars().filter(v => trkSelHas(v.imei)).map(v => {
     const tr = vis.filter(x => x.imei === String(v.imei)); if (!tr.length) return '';
@@ -19062,7 +19888,7 @@ function trkLegendHtml(){
   const tot = vis.reduce((a, x) => a + x.mi, 0);
   return `<div class="card trk-list">${rows}
     <div class="rowline trk-row"><div class="grow"><b>${t('trh_total')}</b></div><div class="trk-sum"><b>${tot.toFixed(1)}</b> ${t('bn_mi')}<div class="tiny">${vis.length} ${t('bn_trips')}</div></div></div>
-    ${TRKH.note ? `<div class="tiny gd-hint">${ic('warn')} ${esc(TRKH.note)}</div>` : ''}</div>`;
+    ${trkErrNoteHtml()}</div>`;
 }
 /* линии на карте; возвращает точки для подбора границ */
 function trkDraw(){
@@ -19132,6 +19958,7 @@ function bnCardHtml(){
     </div>
     ${status}${body}
     <button class="btn btn-green" style="margin-top:8px" onclick="App.bnTest()">${ic('flask')} ${t('bn_test')}</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="App.bnDiag()">${ic('steth')} ${t('bnx_diag')}</button>
     <div id="bn-health" class="tiny" style="margin-top:8px"></div>
     <details style="margin-top:8px"><summary class="tiny">${t('gd_help')}</summary>
       <div class="tiny" style="margin-top:6px;line-height:1.5">${(state.lang || 'ru') !== 'en' ? `
@@ -19203,6 +20030,129 @@ async function bnReveal(){
     if (j && j.secrets) bnCfg.secret = j.secrets.client_secret || '';
   }
   bnShow.sec = !bnShow.sec; render();
+}
+/* =====================================================================
+   v1.09.55 · ДИАГНОСТИКА BOUNCIE
+   «Часть машин Bouncie не отдал, ошибок: N» было только числом. Теперь строка — кнопка: какие машины
+   (номер, модель, водитель, IMEI), что ответил Bouncie и что это значит; каждая ошибка пишется в журнал.
+   «Диагностика Bouncie» (Настройки → Интеграции → GPS-трекинг Bouncie, и из того же окна) проходит всю цепочку
+   по шагам: функция bouncie → ключи и вход → машины в аккаунте Bouncie против справочника «Автомобили» →
+   поездки КАЖДОЙ машины за сегодня (отдельный запрос — видно, какая именно падает и с каким кодом) →
+   запись истории треков. Ничего не меняет, итог — в журнал и в буфер кнопкой «Копировать».
+   Функция bouncie не менялась: ошибки приходят строкой «IMEI: BOUNCIE_404: …» — их и разбираем.
+   ===================================================================== */
+const BNDX = { busy: false, lines: [], at: 0 };
+function bnErrParse(e){
+  if (e && typeof e === 'object') return { imei: String(e.imei || ''), http: +e.http || null, code: String(e.code || ''), msg: String(e.msg || e.message || '') };
+  const s = String(e == null ? '' : e), i = s.indexOf(': ');
+  const imei = i > 0 && /^\d{6,20}$/.test(s.slice(0, i).trim()) ? s.slice(0, i).trim() : '';
+  const rest = imei ? s.slice(i + 2) : s;
+  const m = /^(BOUNCIE_(\d{3})|BOUNCIE_AUTH|BN_NOT_[A-Z_]+|bn_trips)(?::\s*|\s+|$)([\s\S]*)$/.exec(rest);
+  return { imei, http: m && m[2] ? +m[2] : null, code: m ? m[1] : '', msg: (m ? m[3] : rest).trim() };
+}
+function bnErrShort(x){ return [x.code, x.msg].filter(Boolean).join(' · ').slice(0, 300) || '—'; }
+/* что значит ответ и что делать */
+function bnErrWhy(x){
+  const c = x.code || '', h = x.http, m = x.msg || '';
+  if (h === 404 || /not\s*found/i.test(m)) return t('bnx_404');
+  if (h === 401 || h === 403 || /BOUNCIE_AUTH|BN_NOT_CONNECTED/.test(c)) return t('bnx_401');
+  if (h === 429) return t('bnx_429');
+  if (h >= 500) return t('bnx_5xx');
+  if (h === 400) return t('bnx_400');
+  if (/bn_trips/.test(c)) return t('bnx_db');
+  if (/BN_NOT_CONFIGURED/.test(c)) return t('bnx_cfg');
+  if (/fetch|network|timeout|abort|ECONN/i.test(m)) return t('bnx_net');
+  return t('bnx_other');
+}
+function bnCarByImei(imei){ return bnVehicles().find(v => String(v.imei) === String(imei)) || null; }
+function bnCarLabel(imei){
+  const v = bnCarByImei(imei), d = bnDevByImei(imei), out = [];
+  if (v && v.car_no != null) out.push('№' + v.car_no);
+  const nm = (v && v.make) || (d && bnDevLabel(d)) || ''; if (nm) out.push(nm);
+  if (v && v.driver_id) out.push(shortName(profName(v.driver_id)));
+  return out.join(' · ') || ('IMEI ' + imei);
+}
+function trkErrNoteHtml(){
+  const list = TRKH.errs || [];
+  if (!list.length) return TRKH.note ? `<div class="tiny gd-hint">${ic('warn')} ${esc(TRKH.note)}</div>` : '';
+  const who = list.map(x => bnCarLabel(x.imei).split(' · ')[0]).join(', ');
+  return `<button type="button" class="tiny gd-hint bnx-note" onclick="App.trkErrs()">${ic('warn')} ${esc(tfill(t('bnx_part'), { L: who }))} · <u>${t('bnx_more')}</u></button>`;
+}
+function bnErrsText(list){
+  return 'TechLog ' + APP_VERSION + ' · Bouncie · ' + new Date().toLocaleString() + '\n'
+    + list.map(x => bnCarLabel(x.imei) + ' (IMEI ' + (x.imei || '?') + ')\n  ' + bnErrShort(x) + '\n  → ' + bnErrWhy(x)).join('\n');
+}
+function trkErrs(){
+  const list = TRKH.errs || []; if (!list.length) return;
+  BNDX.errText = bnErrsText(list);
+  openModal(`${modalHead(t('bnx_title'), 'car')}
+    <div class="tiny" style="margin-bottom:8px">${t('bnx_intro')}</div>
+    ${list.map(x => `<div class="bnx-row"><div><b>${esc(bnCarLabel(x.imei))}</b> <span class="tiny">IMEI ${esc(x.imei || '?')}</span></div>
+      <div class="bnx-code">${esc(bnErrShort(x))}</div><div class="tiny bnx-why">${esc(bnErrWhy(x))}</div></div>`).join('')}
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="App.copyText(App.bnErrText())">${ic('copy')} ${t('tl_copy')}</button>
+      ${isAdmin() ? `<button class="btn btn-blue" onclick="App.bnDiag()">${ic('flask')} ${t('bnx_diag')}</button>` : ''}
+    </div>`);
+}
+function bnErrText(){ return BNDX.errText || ''; }
+function bnDiagText(){ return 'TechLog ' + APP_VERSION + ' · ' + t('bnx_diag') + ' · ' + new Date(BNDX.at || Date.now()).toLocaleString() + '\n' + BNDX.lines.join('\n'); }
+async function bnDiag(){
+  if (!isAdmin() || BNDX.busy) return;
+  BNDX.busy = true; BNDX.lines = []; BNDX.at = Date.now();
+  openModal(`${modalHead(t('bnx_diag'), 'flask')}
+    <div class="tiny" style="margin-bottom:6px">${t('bnx_diag_h')}</div>
+    <pre class="diag-pre bnx-pre" id="bnx-pre">…</pre>
+    <div class="modal-actions"><button class="btn btn-ghost" id="bnx-copy" disabled onclick="App.copyText(App.bnDiagText())">${ic('copy')} ${t('tl_copy')}</button></div>`);
+  let bad = 0;
+  const L = (s, isBad) => { if (isBad) bad++; BNDX.lines.push(s); const el = document.getElementById('bnx-pre'); if (el) el.textContent = BNDX.lines.join('\n'); };
+  try{
+    if (!HAS_SB){ L('ℹ ' + t('bnx_demo')); return; }
+    BN.off = false; BN.pauseUntil = 0; BN.netFails = 0;
+    /* 1. функция */
+    const pr = await fnProbe('bouncie');
+    L((pr.ok ? '✅ ' : '⛔ ') + t('bnx_fn') + ': ' + fnStText(pr), !pr.ok);
+    if (pr.st === 'missing' || pr.st === 'net'){ L('   → ' + t('bnx_fn_fix')); return; }
+    /* 2. ключи и вход */
+    const cfg = await bnFetch('?cfg=1');
+    if (!cfg || !cfg.cfg){ L('⛔ ' + t('bnx_cfg_t') + ': ' + (BN.err || '?'), true); return; }
+    const c = cfg.cfg;
+    L((c.client_id && c.has_secret ? '✅ ' : '⛔ ') + t('bnx_cfg_t') + ': ' + t(c.client_id && c.has_secret ? 'bnx_keys_ok' : 'bnx_keys_no'), !(c.client_id && c.has_secret));
+    L((c.has_auth ? '✅ ' : '⛔ ') + t('bnx_auth_t') + ': ' + (c.has_auth ? t('bnx_auth_ok') + (c.account ? ' · ' + c.account : '') : t('bnx_auth_no')), !c.has_auth);
+    if (!c.client_id || !c.has_auth) return;
+    /* 3. машины в аккаунте Bouncie */
+    const vj = await bnFetch('?vehicles=1');
+    if (!vj || !Array.isArray(vj.vehicles)){ const x = bnErrParse(BN.err || '?'); L('⛔ ' + t('bnx_acc_t') + ': ' + bnErrShort(x) + '\n   → ' + bnErrWhy(x), true); return; }
+    const acc = vj.vehicles;
+    L('✅ ' + t('bnx_acc_t') + ': ' + tfill(t('bnx_acc_n'), { N: acc.length }));
+    /* 4. каждая машина справочника: есть ли в аккаунте, живой ли прибор, отдаёт ли поездки */
+    const cars = bnVehicles().filter(v => v.imei).slice().sort((a, b) => (a.car_no ?? 999) - (b.car_no ?? 999));
+    if (!cars.length) L('⚠ ' + t('bnx_no_cars'));
+    for (const v of cars){
+      const imei = String(v.imei).trim(), bx = acc.find(x => String(x.imei) === imei), d = bnDevByImei(imei);
+      const lu = bx && bx.stats && bx.stats.lastUpdated, ageH = lu ? (Date.now() - Date.parse(lu)) / 3600000 : null;
+      L('— ' + bnCarLabel(imei) + ' · IMEI ' + imei);
+      if (!bx) L('   ⛔ ' + t('bnx_not_in_acc'), true);
+      else L('   ' + (ageH != null && ageH > 72 ? '⚠ ' + t('bnx_stale') : '✅ ' + t('bnx_in_acc')) + (lu ? ' · ' + t('bnx_last') + ' ' + fmtDMY(lu.slice(0, 10)) + ' ' + fmtHM(lu) : ''));
+      if (d && !bnDevActive(d)) L('   ⚠ ' + t('bnx_dev_inactive'));
+      if (!v.driver_id) L('   ⚠ ' + t('bnx_no_driver'));
+      const j = await bnFetch('?track=1&imei=' + encodeURIComponent(imei) + '&date=' + todayISO());
+      if (j && Array.isArray(j.trips)) L('   ✅ ' + tfill(t('bnx_trips_ok'), { N: j.trips.length }));
+      else { const x = bnErrParse(BN.err || '?'); L('   ⛔ ' + t('bnx_trips_bad') + ': ' + bnErrShort(x) + '\n      → ' + bnErrWhy(x), true); }
+    }
+    const extra = acc.filter(x => !cars.some(v => String(v.imei).trim() === String(x.imei)));
+    if (extra.length) L('ℹ ' + tfill(t('bnx_extra'), { N: extra.length }) + ': ' + extra.map(x => (x.nickName || [x.model && x.model.make, x.model && x.model.name].filter(Boolean).join(' ') || 'IMEI') + ' (' + x.imei + ')').join(', '));
+    /* 5. история треков за сегодня — тот же путь, что вкладка «Треки» */
+    const tj = await bnFetch('?tracks=1&from=' + todayISO() + '&to=' + todayISO() + '&refresh=1');
+    if (!tj){ const x = bnErrParse(BN.err || '?'); L('⛔ ' + t('bnx_tracks_t') + ': ' + bnErrShort(x) + '\n   → ' + (/NEED_SQL/.test(BN.err || '') ? t('trh_need_sql') : bnErrWhy(x)), true); }
+    else if ((tj.errors || []).length) tj.errors.map(bnErrParse).forEach(x => L('⛔ ' + t('bnx_tracks_t') + ': ' + bnCarLabel(x.imei) + ' — ' + bnErrShort(x) + '\n   → ' + bnErrWhy(x), true));
+    else L('✅ ' + t('bnx_tracks_t') + ': ' + tfill(t('bnx_tracks_ok'), { N: (tj.trips || []).length }));
+  }catch(e){ L('⛔ ' + errStr(e), true); }
+  finally{
+    L(bad ? tfill(t('bnx_sum_bad'), { N: bad }) : t('bnx_sum_ok'));
+    BNDX.busy = false;
+    const b = document.getElementById('bnx-copy'); if (b) b.disabled = false;
+    dlog('bouncie: диагностика —\n' + BNDX.lines.join('\n'));
+  }
 }
 /* =====================================================================
    v1.09.01: СПРАВОЧНИК «ТРЕКЕРЫ BOUNCIE»
@@ -19849,7 +20799,7 @@ function mapDayItems(){
       const eq = list.map(p => `${p.qty}×${(etById(p.equipment_type_id)||{abbr:'?'}).abbr}`).join(' ');
       pts.push({ num: pkNum[jobId], lat:+cx.lat, lng:+cx.lng, color: over ? '#FF4B4B' : '#8AA0AB',
         label: `${t('pickup')} Unit ${p0.unit_number||'—'} · ${eq}`, cx, kind:'pickup', jobId,
-        who: shortName(profName(p0.technician_id)) });
+        who: shortName(profName(p0.technician_id)), tech: p0.technician_id || '' });
     }
   });
   jobs.forEach(j => {
@@ -19858,7 +20808,7 @@ function mapDayItems(){
       const wt = wtById(j.work_type_id) || {color:'#888', name:''};
       pts.push({ num: jobNum[j.id], lat:+cx.lat, lng:+cx.lng, color: wt.color,
         label: `Unit ${j.unit_number||'—'} · ${wt.name}`, cx, kind:'job', jobId: j.id, prio: !!prioHard(j),
-        who: shortName(profName(j.technician_id)) });
+        who: shortName(profName(j.technician_id)), tech: j.technician_id || '' });
     }
   });
   pts.sort((a,b)=>a.num-b.num);
@@ -19913,13 +20863,14 @@ function viewMap(){
     ${state.mapDay && !state.mapTrk ? `
       <div class="form-row" style="margin-top:8px"><span class="lbl">${t('map_day_hint')}</span>
         <input type="date" value="${state.mapDate || state.selDate}" onchange="App.mapSetDate(this.value)"></div>
-      ${day.pts.length ? `<button class="btn btn-blue sm" onclick="App.mapRoute()">${ic('compass')} ${t('route_day_in')} ${navName()}</button>` : ''}
+      ${day.pts.length ? `<label class="chk-line mr-chk"><input type="checkbox" ${mapRoutesOn() ? 'checked' : ''} onchange="App.mapRoutesSet(this.checked)"> ${ic('compass')} ${t('mr_show')} ${tipQ('mr_tip')}</label>` : ''}
       ${day.pts.length >= 2 ? `<button class="btn btn-ghost sm" onclick="App.optRoute()">${ic('compass')} ${t('opt_btn')}</button>` : ''}` : ''}
     ${state.mapTrk ? '' : bnChipsHtml()}
   </div>
   <div class="map-flex">
     <div class="map-main">
       <div id="map" class="map-box"></div>
+      ${state.mapDay && !state.mapTrk ? mapRoutesSumHtml() : ''}
       ${legend}
       ${!state.mapDay && noCoords.length ? `<div class="tiny" style="margin-top:6px">${ic('warn')} ${noCoords.length} · ${t('map_no_coords')}</div>` : ''}
     </div>
@@ -19955,18 +20906,19 @@ function initMapView(){
     Object.values(byCx).forEach(g => {
       g.items.sort((a,b)=>(a.num||0)-(b.num||0));
       const cx = g.cx;
-      const html = `<b>${esc(cx.name)}</b><br>${esc(cx.address||'')}${cx.access_code?'<br>'+ic('key')+' '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?ic('gate')+' ':ic('callbox')+' ')+esc(cx.callbox_code):''}<hr style="margin:4px 0">` +
+      const html = `<b>${esc(cx.name)}</b><br>${esc(cx.address||'')}${cx.access_code?'<br>'+ic('key')+' '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?ic('gate')+' ':ic('callbox')+' ')+esc(cx.callbox_code):''}${cxaPopupHtml(cx)}<hr style="margin:4px 0">` +
         g.items.map(i=>`<b>#${i.num}</b> <span style="color:${i.color}">${i.kind==='job'?ic('wrench'):ic('box')}</span> ${esc(i.label)}${i.who ? ' · <span style="color:#8AA0AB">' + esc(i.who) + '</span>' : ''}`).join('<br>') + `<br>${gm(cx)}`;
       const numTxt = g.items.map(i=>i.num).join('·');
       mk(+cx.lat, +cx.lng, g.items.find(i=>i.kind==='job')?.color || g.items[0].color, html, numTxt);
     });
+    if (!state.mapTrk) mapRoutesDraw().forEach(p => marks.push(p));   // v1.09.55: маршруты дня — прямо на этой карте
   } else {
     state.data.complexes
       .filter(cx => (!state.mapCp || cx.counterparty_id === state.mapCp) && cx.lat != null && cx.lng != null)
       .forEach(cx => {
         const cp = cpById(cx.counterparty_id) || {name:''};
         mk(+cx.lat, +cx.lng, cpColor(cx.counterparty_id),
-          `<b>${esc(cx.name)}</b> (${esc(cx.abbr||'')})<br>${esc(cp.name)}<br>${esc(cx.address||'')}${cx.access_code?'<br>'+ic('key')+' '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?ic('gate')+' ':ic('callbox')+' ')+esc(cx.callbox_code):''}<br>${gm(cx)}`);
+          `<b>${esc(cx.name)}</b> (${esc(cx.abbr||'')})<br>${esc(cp.name)}<br>${esc(cx.address||'')}${cx.access_code?'<br>'+ic('key')+' '+esc(cx.access_code):''}${cx.callbox_code?'<br>'+(cx.callbox_gate?ic('gate')+' ':ic('callbox')+' ')+esc(cx.callbox_code):''}${cxaPopupHtml(cx)}<br>${gm(cx)}`);
       });
   }
   /* v1.08.32: машины Bouncie — свой слой поверх задач; выбранные машины
@@ -20083,12 +21035,94 @@ async function optApplyOrder(){
   audit('route_opt', 'day', state.mapDate || state.selDate || todayISO(), { jobs: k });
   closeModal(); toast('✓ ' + t('opt_applied')); render();
 }
-function mapRoute(){
-  const { pts } = mapDayItems();
-  const uniq = [];
-  pts.forEach(p => { const k = p.lat.toFixed(5)+','+p.lng.toFixed(5); if (!uniq.includes(k)) uniq.push(k); });
-  if (!uniq.length) return;
-  window.open(navRouteUrl(uniq), '_blank', 'noopener'); // v1.07.21: мультистоп в Apple Maps (iOS 18.4+) или Google Maps
+/* =====================================================================
+   v1.09.55 · МАРШРУТЫ ДНЯ НА КАРТЕ ПРИЛОЖЕНИЯ
+   Раньше «Маршрут дня» только открывал Google Maps (Карты Apple на iPhone). Теперь на «Карте дня» у каждого
+   сотрудника — своя линия по дорогам: офис (если задан в «Режиме телевизора») → его точки в порядке номеров,
+   цвет — как у машины во вкладке «Треки». Дороги строит тот же бесплатный OSRM, что и маршруты на ТВ (один
+   запрос на набор точек, ответ запоминается); нет связи с ним — прямые пунктирные линии и «~ по прямой».
+   Под картой — сводка: точки, мили и время в пути по каждому сотруднику и кнопка навигатора (Google Maps /
+   Карты Apple) — ехать по-прежнему удобнее с навигатором. Показ маршрутов выключается галочкой (своя на
+   каждом устройстве). Работник видит свой маршрут, менеджер и админ — всех, как точки на карте дня.
+   ===================================================================== */
+const MROUTE = { layer: null, osrm: {}, on: null };
+function mapRoutesOn(){ if (MROUTE.on == null){ try{ MROUTE.on = localStorage.getItem('techlog_map_routes') !== '0'; }catch(e){ MROUTE.on = true; } } return MROUTE.on; }
+function mapRoutesSet(on){ MROUTE.on = !!on; try{ localStorage.setItem('techlog_map_routes', on ? '1' : '0'); }catch(e){} render(); }
+function mapOffice(){ const o = (state.data && state.data.org_settings) || {}; const lat = +o.office_lat, lng = +o.office_lng;
+  return o.office_lat != null && o.office_lng != null && isFinite(lat) && isFinite(lng) && (lat || lng) ? { lat, lng, addr: o.office_addr || '' } : null; }
+/* по сотруднику: офис → его точки дня по номерам (соседние точки одного комплекса — одна остановка) */
+function mapDayRoutes(){
+  const { pts } = mapDayItems(), by = {};
+  pts.forEach(p => { const k = p.tech || '_'; (by[k] = by[k] || []).push(p); });
+  const prof = id => (state.data.profiles || []).find(x => x.id === id) || {};
+  const techs = Object.keys(by).sort((a, b) => (prof(a).car_no ?? 999) - (prof(b).car_no ?? 999) || String(profName(a)).localeCompare(String(profName(b))));
+  const off = mapOffice();
+  return techs.map((tid, i) => {
+    const stops = [];
+    by[tid].slice().sort((a, b) => a.num - b.num).forEach(p => { const k = p.lat.toFixed(5) + ',' + p.lng.toFixed(5);
+      if (!stops.length || stops[stops.length - 1].k !== k) stops.push({ k, lat: p.lat, lng: p.lng, nums: [p.num] }); else stops[stops.length - 1].nums.push(p.num); });
+    const path = (off ? [[off.lat, off.lng]] : []).concat(stops.map(s => [s.lat, s.lng]));
+    return { tid, color: TRKH_COLORS[i % TRKH_COLORS.length], stops, path, key: path.map(q => q[0].toFixed(5) + ',' + q[1].toFixed(5)).join(';'),
+      off: !!off, car: prof(tid).car_no, name: tid === '_' ? t('mr_nobody') : profName(tid) };
+  }).filter(r => r.path.length >= 2);
+}
+async function mapOsrm(r){
+  if (r.key in MROUTE.osrm) return;
+  MROUTE.osrm[r.key] = null;                                           // в пути — второй запрос не шлём
+  try{
+    const res = await fetch('https://router.project-osrm.org/route/v1/driving/' + r.path.map(p => (+p[1]).toFixed(6) + ',' + (+p[0]).toFixed(6)).join(';') + '?overview=full&geometries=geojson');
+    const j = await res.json(), rt = j && j.routes && j.routes[0], c = rt && rt.geometry && rt.geometry.coordinates;
+    MROUTE.osrm[r.key] = Array.isArray(c) && c.length > 1 ? { geo: c.map(x => [x[1], x[0]]), mi: (+rt.distance || 0) / 1609.344, min: Math.round((+rt.duration || 0) / 60) } : false;
+  }catch(e){ MROUTE.osrm[r.key] = false; dlog('⚠ маршрут дня: дороги (OSRM) не получены — прямые линии · ' + errStr(e)); }
+  if (state.screen === 'map' && state.mapDay && !state.mapTrk){ mapRoutesDraw(); mapRoutesSumPaint(); }
+}
+function mapRouteMiStraight(r){ let d = 0; for (let i = 1; i < r.path.length; i++) d += bnMiP({ lat: r.path[i - 1][0], lng: r.path[i - 1][1] }, { lat: r.path[i][0], lng: r.path[i][1] }) || 0; return d; }
+/* линии на карте; возвращает точки (с офисом) для подбора границ */
+function mapRoutesDraw(){
+  if (!window.L || !mapObj) return [];
+  if (MROUTE.layer){ try{ MROUTE.layer.remove(); }catch(e){} MROUTE.layer = null; }
+  if (!mapRoutesOn()) return [];
+  const rs = mapDayRoutes(); if (!rs.length) return [];
+  MROUTE.layer = L.layerGroup().addTo(mapObj);
+  const off = mapOffice(), all = [];
+  if (off){ L.marker([off.lat, off.lng], { icon: L.divIcon({ className: '', iconSize: null, html: `<div class="map-pin map-office" title="${esc(off.addr)}">${ICONS.home}</div>` }), zIndexOffset: 300 })
+    .bindPopup(`<b>${esc(t('office_title'))}</b>${off.addr ? '<br>' + esc(off.addr) : ''}`).addTo(MROUTE.layer); all.push([off.lat, off.lng]); }
+  rs.forEach(r => {
+    const o = MROUTE.osrm[r.key];
+    if (o === undefined) mapOsrm(r);
+    const road = !!(o && o.geo), line = road ? o.geo : r.path;
+    L.polyline(line, { color: '#0F171B', weight: road ? 8 : 6, opacity: .45, interactive: false }).addTo(MROUTE.layer);
+    L.polyline(line, road ? { color: r.color, weight: 5, opacity: .9 } : { color: r.color, weight: 4, opacity: .85, dashArray: '6 9' })
+      .bindPopup(`<b>${r.car != null ? '№' + r.car + ' · ' : ''}${esc(r.name)}</b><br>${mapRouteInfo(r)}`).addTo(MROUTE.layer);
+    r.path.forEach(p => all.push(p));
+  });
+  return all;
+}
+function mapRouteInfo(r){
+  const o = MROUTE.osrm[r.key];
+  const d = o && o.geo ? `${o.mi.toFixed(1)} ${t('bn_mi')} · ${Math.floor(o.min / 60)}:${String(o.min % 60).padStart(2, '0')}`
+    : o === false || o === undefined && !navigator.onLine ? `~${mapRouteMiStraight(r).toFixed(1)} ${t('bn_mi')} ${t('mr_straight')}` : t('mr_calc');
+  return `${r.stops.length} ${t('mr_stops')} · ${d}${r.off ? ' · ' + t('mr_from_office') : ''}`;
+}
+function mapRoutesSumHtml(){
+  if (!mapRoutesOn()) return '';
+  const rs = mapDayRoutes();
+  if (!rs.length) return !mapOffice() && mapDayItems().pts.length ? `<div class="card mr-sum" id="mr-sum"><div class="tiny mr-note">${t('mr_no_office')}</div></div>` : '';   // одна точка без офиса — линии нет, объясняем почему
+  return `<div class="card mr-sum" id="mr-sum">${rs.map(r => `<div class="rowline mr-row">
+      <span class="mr-sw" style="--c:${r.color}"></span>
+      <div class="grow"><b>${r.car != null ? '№' + r.car + ' · ' : ''}${esc(shortName(r.name))}</b><div class="tiny">${mapRouteInfo(r)}</div></div>
+      <button type="button" class="btn btn-ghost sm" title="${esc(t('open_in') + ' ' + navName())}" onclick="App.mapRouteNav('${esc(r.tid)}')">${ic('compass')} ${esc(navName())}</button></div>`).join('')}
+    ${mapOffice() ? '' : `<div class="tiny mr-note">${t('mr_no_office')}</div>`}</div>`;
+}
+function mapRoutesSumPaint(){
+  const el = document.getElementById('mr-sum'); if (!el) return;
+  const box = document.createElement('div'); box.innerHTML = mapRoutesSumHtml();
+  const nu = box.firstElementChild; if (nu) el.replaceWith(nu); else el.remove();
+}
+/* навигатор по точкам одного сотрудника — старт от места, где стоит телефон */
+function mapRouteNav(tid){
+  const r = mapDayRoutes().find(x => x.tid === tid); if (!r || !r.stops.length) return;
+  window.open(navRouteUrl(r.stops.map(s => s.k)), '_blank', 'noopener');
 }
 
 /* Геокодинг адреса комплекса (Nominatim / OpenStreetMap) */
@@ -22202,7 +23236,7 @@ async function trOneDoc(kind, id){
 }
 /* Перевод незаполненных EN-полей открытого черновика (кнопка «Перевести всё») */
 async function trFillDraft(kind){
-  const doc = kind === 'prop' ? propDraft : jobDraft;
+  const doc = kind === 'prop' ? propDraft : kind === 'rep' ? repDraft : jobDraft;   // v1.09.53
   if (!doc || trBusy) return;
   if (!trMiss(kind, doc).length){ toast('✓ ' + t('tr_nothing')); return; }
   trBusy = true; toast('🌐 ' + t('translating'), 'inf');
@@ -22869,7 +23903,7 @@ function viewBoard(){
     <button type="button" class="brd-eye ${hideEmpty ? '' : 'on'}" aria-pressed="${hideEmpty ? 'false' : 'true'}"
       title="${hideEmpty ? t('b_free_off') : t('b_free_on')}"
       onclick="App.boardHideEmpty(${hideEmpty ? 'false' : 'true'})">${ic(hideEmpty ? 'eye_off' : 'eye')}
-      <span>${hideEmpty ? t('b_free_off') : t('b_free_on')}</span></button>${densBtnHtml()}${helpBtn('board')}</div>`;
+      <span>${hideEmpty ? t('b_free_off') : t('b_free_on')}</span></button>${helpBtn('board')}</div>`;
   return viewWeek() + brdEditBarHtml() + extReqStripHtml() + propStripHtml() + repStripHtml() + freeJobsStripHtml() + tools
        + `<div class="board"${boardColsStyle(staff.length)}>${cols}</div>`;
 }
@@ -22932,7 +23966,7 @@ function viewBoardWeek(){
   }
   /* вся неделя на экране: 7 равных колонок (60px = шесть зазоров по 10) */
   /* v1.09.05: кнопка плотности и у недельной доски; зазоры в компактном — по 6 */
-  return viewWeek() + `<div class="board-tools">${densBtnHtml()}${helpBtn('board')}</div><div class="board" style="--bcolw:calc((100% - ${densIsCompact() ? 36 : 60}px)/7)">${days.join('')}</div>`;
+  return viewWeek() + `<div class="board-tools">${helpBtn('board')}</div><div class="board" style="--bcolw:calc((100% - ${densIsCompact() ? 36 : 60}px)/7)">${days.join('')}</div>`;
 }
 function boardJobCard(j, idx, canOrd, wk){
   const wt = wtById(j.work_type_id), cx = cxById(j.complex_id);
@@ -23129,6 +24163,8 @@ function chainOf(kind, id){
   } else { job = (state.data.jobs || []).find(j => j.id === id); }
   if (job && job.proposal_id) prop = propById(job.proposal_id);
   if (prop) out.push({ t: 'prop', o: prop });
+  /* v1.09.53: ремонт, созданный прямо из пропозала (без инвойса), — сразу за пропозалом; раньше в цепочке его не было вовсе */
+  if (prop) (state.data.repairs || []).filter(r => r.proposal_id === prop.id && !r.job_id && !isArch(r)).forEach(r => out.push({ t: 'rep', o: r }));
 
   /* v1.08.15: пропозал в цепочке всегда один, а задач по нему может быть
      несколько — каждый исполнитель заполняет свой инвойс. Показываем все. */
@@ -23262,7 +24298,7 @@ function chainCardBody(node, i, cur, gap){
               : node.t === 'job' ? (no || ((cx.abbr || cx.name || '—') + ' · ' + (o.unit_number || '—')))
               : (et.abbr || et.name || '—') + ' × ' + (+o.qty || 1);
   const sub = (node.t === 'prop' || node.t === 'rep') ? fmtDMY(o.date) + ' · ' + t('pst_' + (o.status || 'draft'))
-            : node.t === 'job' ? fmtDMY(o.date) + ' · ' + t('st_' + (o.status || 'draft'))
+            : node.t === 'job' ? fmtDMY(o.date) + ' · ' + t('status_' + (o.status || 'draft'))   // v1.09.54: было st_ — сырой ключ
             : fmtDMY(o.date) + ' → ' + fmtDMY(o.due_date) +
               (o.superseded ? ' · ' + t('ch_closed') : '');
   const open = node.t === 'prop' ? `App.openProposal('${o.id}')`
@@ -24743,7 +25779,7 @@ function viewRepairList(){
   const rows = list.map(r => {
     const cx = cxById(r.complex_id) || { abbr: '—', name: '—' };
     return `<button class="rowline map-row" onclick="App.openRepair('${r.id}')">
-      <span class="chip pst pst-${r.status}">${t('pst_' + r.status)}</span>
+      <span class="chip pst pst-${repApprovalReset(r) ? 'declined' : r.status}">${repApprovalReset(r) ? t('rep_reset_chip') : t('pst_' + r.status)}</span>
       <div class="grow"><b>${esc(repNo(r))}</b> · ${esc(cx.abbr || cx.name)}${r.unit_number ? ` · Unit <b>${esc(r.unit_number)}</b>` : ''}
         <div class="tiny">${fmtDMY(r.date)}${r.job_id ? ` · ${ic('link')} WORK` : ''}</div></div>
       <span class="money">${repMoney(repGrand(r))}</span>
@@ -25025,6 +26061,17 @@ async function repToInvoice(id){
   toast('✓ ' + t('rep_moved')); render();
 }
 
+/* v1.09.53: ответ сервера на сохранение ремонта — номер, статус, решение и история, как их записал сервер: сторож снимает апрув
+   с правки одобренного документа (в том числе пришедшей в обход приложения), а решение (decided_by) пишет по входу */
+function repApplyBack(row, b){
+  if (!row || !b || b.id !== row.id) return;
+  const was = row.status, F = ['no', 'status', 'decided_by', 'decided_at', 'hist'];
+  F.forEach(k => { if (b[k] !== undefined) row[k] = b[k]; });
+  if (repDraft && repDraft.id === row.id) F.forEach(k => { if (b[k] !== undefined) repDraft[k] = JSON.parse(JSON.stringify(b[k])); });
+  if (was !== row.status && row.status === 'draft' && ((row.hist || [])[0] || {}).srv) toast('⚠ ' + t('rep_srv_reset'), 'inf', 6000);
+  saveLocal();
+}
+
 /* ---------- крючки в других экранах ---------- */
 function repChipHtml(j, short){
   const list = repsOfJob(j.id);
@@ -25272,7 +26319,7 @@ function bindRepForm(){
   repFormBound = true;
   $('#app').addEventListener('input', e => {
     if (state.screen !== 'repairs' || !repDraft) return;
-    if (e.target && e.target.id === 'rep-note') repDraft.note = e.target.value;
+    if (e.target && e.target.id === 'rep-note'){ const v = e.target.value; if (v !== (repDraft.note || '')){ repDraft.note = v; repTouch(); } }   // v1.09.53: заметку видел согласующий
   });
 }
 
@@ -27271,6 +28318,7 @@ function tlogText(c){
   L.push('', `--- ${t('tl_sec_log')} ---`);
   c.lines.forEach(l => L.push(`${l.time}  ${l.text}`));
   if (c.issues){ L.push('', `--- ${t('dfi_title')} ---`); L.push(dftIssuesText(c, ['crit', 'err', 'warn']).split('\n').slice(3).join('\n').trim() || t('dfi_none')); }   // v1.09.35
+  if (c.ui){ L.push('', `--- ${t('dfu_title')} ---`); L.push(dftUiText(c, true)); }   // v1.09.54: выжимка; подробно — в логе «Интерфейс»
   if (c.steps.length){
     L.push('', `--- ${t('tl_sec_steps')} ---`);
     c.steps.forEach(s => L.push(`${s.ok === null ? '…' : s.ok ? '✓' : '✗'} ${s.name} — ${s.ms} ms${s.extra ? ' · ' + s.extra : ''}`));
@@ -27337,7 +28385,7 @@ function tlogBtnsHtml(style){
     ${tlogCanShare() ? `<button class="btn btn-blue sm" onclick="App.tlogShare()">${ic('share')} ${t('tl_share')}</button>` : ''}
     <button class="btn btn-ghost sm" onclick="App.tlogCopy()">${ic('copy')} ${t('tl_copy')}</button>
     <button class="btn btn-ghost sm" onclick="App.tlogShow()">${ic('receipt')} ${t('tl_show')}</button>
-  </div>${(() => { const c = tlogGet(); return c && c.kind === 'docflow' ? dftIssuesBtnsHtml(c) : ''; })()}`;
+  </div>${(() => { const c = tlogGet(); return ((c && c.kind === 'docflow' ? dftIssuesBtnsHtml(c) : '') || (c && /^docflow_(rep|ui)$/.test(c.kind) ? dftIssuesBtnsHtml(c) : '')) + (c && c.kind === 'docflow_ui' ? dftUiBtnsHtml(c) : ''); })()}`;   /* v1.09.53: и у теста с ремонтом; v1.09.54: три лога у теста с интерфейсом */
 }
 /* блок «последний тест» для карточек настроек */
 function tlogCardHtml(){
@@ -30232,6 +31280,8 @@ function dgsCardHtml(){
     + (isManager() ? fold('fnc', t('fn_card'), 'flask', fnCardHtml(), true) : '')   // v1.09.36: функции сервера
     + fold('uid', t('dg_ui'), 'layers', uiDiagCardHtml(), true)
     + ((adm || dftOn()) ? fold('dft', t('dft_card'), 'flask', dftCardHtml(), true) : '')   // v1.09.27: тест документооборота
+    + ((adm || dftOn()) ? fold('dftr', t('dftr_card'), 'toolbox', dftrCardHtml(), true) : '')   // v1.09.53: тест документооборота + ремонт
+    + ((adm || dftOn()) ? fold('dftu', t('dftu_card'), 'layers', dftuCardHtml(), true) : '')   // v1.09.54: + проверка интерфейса, три лога
     + (adm ? fold('diag', t('diag_card'), 'flask', diagCardHtml(), true)
            + fold('bkp', t('bk_card'), 'save', backupCardHtml(), true)
            + fold('abk', t('abk_card'), 'save', abkCardHtml(), true) : '');
@@ -30442,14 +31492,15 @@ async function dftCleanup(all){
 }
 function dftPurgeLocal(ids){
   const d = state.data, dead = new Set(ids || (d.jobs || []).filter(j => j.is_test).map(j => j.id));
+  const deadR = new Set((d.repairs || []).filter(r => r.is_test || dead.has(r.job_id)).map(r => r.id)), gone = [...dead, ...deadR];   // v1.09.53: и лента тестовых ремонтов
   d.jobs = (d.jobs || []).filter(j => !dead.has(j.id) && !(ids ? false : j.is_test));
   d.placements = (d.placements || []).filter(p => !dead.has(p.job_id));
   d.proposals = (d.proposals || []).filter(p => !p.is_test);
   d.repairs = (d.repairs || []).filter(r => !r.is_test && !dead.has(r.job_id));   // v1.09.30
   if (d.ext_requests) d.ext_requests = d.ext_requests.filter(r => !dead.has(r.job_id));
   if (d.doc_requests) d.doc_requests = d.doc_requests.filter(r => !dead.has(r.doc_id));
-  if (d.notices) d.notices = d.notices.filter(n => ![...dead].some(id => String(n.url || '').includes(id)));
-  DF.reqs = DF.reqs.filter(r => !dead.has(r.doc_id)); DF.notices = DF.notices.filter(n => ![...dead].some(id => String(n.url || '').includes(id)));
+  if (d.notices) d.notices = d.notices.filter(n => !gone.some(id => String(n.url || '').includes(id)));
+  DF.reqs = DF.reqs.filter(r => !dead.has(r.doc_id)); DF.notices = DF.notices.filter(n => !gone.some(id => String(n.url || '').includes(id)));
   try{ pendingSave(pendingLoad().filter(it => !(it.payload && (it.payload.is_test === true || dead.has(it.payload.id) || dead.has(it.payload.job_id))))); }catch(e){}   // v1.09.32: и из очереди досыла
   try{ dfProblemsSave(dfProblems().filter(x => !dead.has(x.doc_id))); }catch(e){}
   DFT.left = 0; saveLocal();
@@ -30482,6 +31533,182 @@ function dftCardHtml(){
   </div>`;
 }
 
+/* ---------- v1.09.53: карточка «Тест документооборота + ремонт» — тот же прогон, режимы 'full' и 'rep' ---------- */
+function dftrCardHtml(){
+  if (!isAdmin() && !dftOn()) return '';
+  const on = dftOn(), st = DFT.status, techs = (st && st.actors && st.actors.techs) || [], tech = state.user.role === 'tech';
+  if ((!st || Date.now() - DFT.statusAt > 20000) && !foldOpen('dft')) dftStatusLoad().then(() => { if (state.screen === 'settings' && !DFT.running) render(); }).catch(() => {});
+  return `<div class="card" id="dftr-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('dftr_card')} ${helpBtn('dftr')}</div>
+    <div class="tiny" style="margin-bottom:8px">${t('dftr_hint')}</div>
+    ${!on ? `<div class="banner b-ds" id="dftr-off" style="margin-bottom:8px">${ic('lock')}<div class="grow tiny">${t('dftr_off')}</div></div>` : ''}
+    ${!dftSchemaOk() ? `<div class="banner b-yellow">${ic('warn')} ${t('dft_need_sql')}</div>` : !dftRepSrvOk() ? `<div class="banner b-yellow" id="dftr-nosql">${ic('warn')} ${t('dftr_need_sql')}</div>` : ''}
+    ${on ? `${st && st.ok === false ? `<div class="banner b-yellow">${ic('warn')} ${t('dft_no_fn')} · ${esc(dftErrOf(st))}</div>` : ''}
+      ${!tech || techs.length ? `<div class="qty-line"><span class="name">${t(tech ? 'dft_worker2' : 'dft_worker')}</span>
+        <select id="dftr-worker" class="role-sel" onchange="DFT.worker = this.value">${tech ? `<option value="">— ${t('dft_none')} —</option>` : ''}${techs.map(p => `<option value="${p.id}" ${DFT.worker === p.id ? 'selected' : ''}>${esc(shortName(p.name))}</option>`).join('')}</select></div>` : ''}
+      <label class="opt ${DFT.repOnly ? 'on' : ''}" style="margin:6px 0"><input type="checkbox" id="dftr-only" ${DFT.repOnly ? 'checked' : ''} onchange="DFT.repOnly = this.checked"> ${t('dftr_only')}</label>
+      <label class="opt ${DFT.stepMode ? 'on' : ''}" style="margin:0 0 6px"><input type="checkbox" id="dftr-stepmode" ${DFT.stepMode ? 'checked' : ''} onchange="DFT.stepMode = this.checked"> ${t('dft_stepmode')}</label>
+      <label class="opt ${DFT.wide ? 'on' : ''}" style="margin:0 0 6px"><input type="checkbox" id="dftr-wide" ${DFT.wide ? 'checked' : ''} onchange="DFT.wide = this.checked"> ${t('dft_wide')}</label>
+      <label class="opt ${DFT.noMedia ? '' : 'on'}" style="margin:0 0 6px"><input type="checkbox" id="dftr-media" ${DFT.noMedia ? '' : 'checked'} onchange="DFT.noMedia = !this.checked"> ${t('dft_media_chk')}</label>
+      <button class="btn btn-green" id="dftr-run" ${DFT.running ? 'disabled' : ''} onclick="App.dftRun(DFT.repOnly ? 'rep' : 'full')">${ic('play')} ${DFT.running ? t('rg_running') : t('dftr_run')}</button>` : ''}
+    ${tlogCardHtml()}
+  </div>`;
+}
+
+/* =====================================================================
+   v1.09.54 · ТЕСТ «ДОКУМЕНТООБОРОТ + РЕМОНТ + ИНТЕРФЕЙС»
+   ---------------------------------------------------------------------
+   Третья карточка в «Диагностике». Прогон тот же, что у «Теста документооборота + ремонт» (все роли, все статусы и
+   цепочки, своя роль — кнопками), а по ходу — проверка интерфейса на КАЖДОМ экране и в каждом окне, куда тест заходит:
+   кнопки наезжают друг на друга, уходят за рамку экрана (должны быть в поле зрения), вылезают из своего блока,
+   блоки налезают, текст обрезан, элемент недоступен под шапкой или нижней панелью. Движок — тот же, что у кнопки
+   «Диагностика интерфейса» (uidiag.js, быстрый набор UIDiag.quick). Экран проверяется после нажатия или ввода, если
+   он новый (экран, документ и его статус, окно, размер, заметно другое число кнопок), и в конце каждого шага.
+   Дефекты склеиваются (×N, где и на каком шаге впервые). После прогона — три отдельных лога: весь, критические
+   ошибки и интерфейс. На функциональный итог шагов дефекты интерфейса не влияют — у них свой отчёт.
+   ===================================================================== */
+const DFTU = { on: false, sigs: new Set(), defects: new Map(), states: [], scans: 0, ms: 0, busy: false, env: null, capped: 0, u0: null };
+const DFTU_MAX = 260;             // проверок за прогон не больше: прогон не должен растягиваться на минуты
+function dftUiOk(){ return !!(window.UIDiag && typeof window.UIDiag.quick === 'function'); }
+/* где мы — словами человека: экран, документ и его статус, открытое окно */
+function dftUiWhere(){
+  const scr = state.screen, st = x => t('pst_' + x) !== 'pst_' + x ? t('pst_' + x) : x;
+  let w = t('tab_' + scr) !== 'tab_' + scr ? t('tab_' + scr) : scr;
+  try{
+    if (scr === 'job' && jobDraft){ const md = jobMode(jobDraft), o = jobOrig(jobDraft);
+      const js = (o && o.status) || 'draft'; w = 'WORK · ' + t('status_' + js) + ' · ' + (md.edit ? t('dfu_edit') : t('dfu_ro')); }
+    else if (scr === 'repairs') w = repDraft ? 'REP · ' + st(repDraft.status || 'draft') + (repRo(repDraft) ? ' · ' + t('dfu_ro') : repById(repDraft.id) ? '' : ' · ' + t('dfu_new')) : t('tab_repairs') + ' · ' + (state.repDocFilter || 'all');
+    else if (scr === 'proposals') w = propDraft ? 'PROPOSAL · ' + st(propDraft.status || 'draft') : t('tab_proposals');
+    else if (scr === 'chat') w = t('tab_chat') + (CH.thread ? ' · ' + CH.thread : '');
+    else if (scr === 'home') w += ' · ' + fmtDM(state.selDate);
+  }catch(e){}
+  const ov = [...document.querySelectorAll('.overlay')].reverse().find(o => o.offsetParent !== null || getComputedStyle(o).position === 'fixed');
+  const h = ov && ov.querySelector('h3, .ask-text');
+  if (ov) w += ' · ▣ ' + ((h && h.textContent) || '').trim().replace(/\s+/g, ' ').slice(0, 48);
+  return w;
+}
+/* дождаться, пока доиграют анимации (окно всплывает, панель выезжает) — иначе рамки меряются на лету */
+async function dftUiSettle(){
+  const t0 = performance.now();
+  try{ while (performance.now() - t0 < 700){ const a = (document.getAnimations ? document.getAnimations() : []).filter(x => x.playState === 'running' && !(x.effect && x.effect.getTiming && x.effect.getTiming().iterations === Infinity));
+    if (!a.length) break; await U.sleep(50); } }catch(e){}
+  await U.sleep(20);
+}
+async function dftUiProbe(why){
+  if (!DFTU.on || DFTU.busy || !dftUiOk()) return null;
+  DFTU.busy = true;
+  try{
+    const where = dftUiWhere(), n = document.querySelectorAll('#app button, #app [onclick], #app input, #app select, .overlay button, .overlay [onclick], .overlay input').length;
+    const sig = where.replace(/\d+/g, '#') + '|' + innerWidth + '×' + innerHeight + '|' + Math.round(Math.log2(n + 1) * 2);
+    if (DFTU.sigs.has(sig)) return null;
+    if (DFTU.scans >= DFTU_MAX){ DFTU.capped++; return null; }
+    DFTU.sigs.add(sig);
+    await dftUiSettle();
+    const t0 = performance.now(); let r;
+    try{ r = window.UIDiag.quick(where); }
+    catch(e){ dftLog('   ▦ ' + t('dfu_fail') + ': ' + errStr(e), 'err'); return null; }
+    const ms = Math.round(performance.now() - t0); DFTU.scans++; DFTU.ms += ms;
+    if (!DFTU.env && r.env){ const e = r.env; DFTU.env = [e.device, e.view + ' (' + e.ratio + ')', e.orient, 'dpr ' + e.dpr, t('dfu_mode_v') + ' ' + e.mode, t('dfu_font') + ' ' + e.font + 'px', e.dens, e.canvas ? t('dfu_canvas') + ' ' + e.canvas : '', e.zoom !== 1 ? '×' + e.zoom : ''].filter(Boolean).join(' · '); }
+    const found = [];
+    (r.checks || []).forEach(c => (c.items || []).forEach(i => { if (i.level === 'err' || i.level === 'warn') found.push({ id: c.id, title: c.title, level: i.level, msg: String(i.msg || '') }); }));
+    const step = DFT.cur ? DFT.cur.name : '', now = tlogStamp(), nE = found.filter(x => x.level === 'err').length;
+    DFTU.states.push({ at: now, where: where.slice(0, 140), step: dftCut(step, 90), n: found.length, e: nE, ms, why: why || '' });
+    const base = where.replace(/\d+/g, '#');
+    found.forEach(f => { const key = f.id + '|' + f.msg.replace(/\d+(\.\d+)?/g, '#') + '|' + base, x = DFTU.defects.get(key);
+      if (x){ x.n++; x.last = now; if (f.level === 'err') x.level = 'err'; if (step && !x.steps.includes(step) && x.steps.length < 4) x.steps.push(step); return; }
+      DFTU.defects.set(key, { id: f.id, title: f.title, level: f.level, msg: f.msg.slice(0, 400), where: where.slice(0, 140), n: 1, first: now, last: now, steps: step ? [dftCut(step, 90)] : [] }); });
+    dftLog('   ▦ ' + t('dfu_scan') + ': ' + dftCut(where, 90) + ' — ' + (found.length ? DFT_SEV.crit + nE + ' ' + DFT_SEV.warn + (found.length - nE) : '✓') + ' · ' + ms + ' ms', nE ? 'err' : 'dim',
+      '   ▦ ' + t('dfu_scan') + ': ' + where + ' — ' + (found.length ? found.map(f => (f.level === 'err' ? '⛔ ' : '⚠ ') + f.title + ': ' + dftCut(f.msg, 220)).join(' | ') : '✓') + ' · ' + ms + ' ms');
+    return found;
+  } finally { DFTU.busy = false; }
+}
+/* включить: нажатия, ввод и галочки теста после себя проверяют экран */
+function dftUiStart(){
+  Object.assign(DFTU, { on: dftUiOk(), sigs: new Set(), defects: new Map(), states: [], scans: 0, ms: 0, busy: false, env: null, capped: 0 });
+  if (!DFTU.on){ dftIssue('warn', t('dftu_no_mod')); dftLog('⚠ ' + t('dftu_no_mod'), 'err'); return; }
+  const u0 = DFTU.u0 = { click: U.click, type: U.type, check: U.check };
+  U.click = async function(sel, what){ const el = await u0.click.call(U, sel, what); await dftUiProbe('☛'); return el; };
+  U.type = async function(sel, val, what){ const el = await u0.type.call(U, sel, val, what); await dftUiProbe('⌨'); return el; };
+  U.check = async function(sel, on, what){ const r = await u0.check.call(U, sel, on, what); await dftUiProbe('☛'); return r; };
+}
+function dftUiStop(){
+  if (DFTU.u0){ Object.assign(U, DFTU.u0); DFTU.u0 = null; }
+  const on = DFTU.on; DFTU.on = false; if (!on && !DFTU.scans) return null;
+  const defs = [...DFTU.defects.values()].sort((a, b) => (a.level === b.level ? 0 : a.level === 'err' ? -1 : 1) || b.n - a.n).slice(0, 300);
+  return { scans: DFTU.scans, ms: Math.round(DFTU.ms), capped: DFTU.capped, env: DFTU.env, states: DFTU.states.slice(0, 300), defects: defs,
+    err: defs.filter(d => d.level === 'err').length, warn: defs.filter(d => d.level === 'warn').length };
+}
+/* лог «Интерфейс» (short — выжимка для общего лога) */
+function dftUiText(c, short){
+  c = c || tlogGet(); const u = c && c.ui; if (!u) return t('dfu_no_report');
+  const L = [];
+  if (!short){
+    L.push(`TechLog ${c.ver || APP_VERSION} — ${c.title || c.kind} · ${t('dfu_title')}`);
+    L.push(`${t('tl_started')} ${new Date(c.started).toLocaleString()} · ${c.user || '—'} (${c.role || '—'})${c.finished ? ' · ' + (c.ok === c.total ? '✓ ' : '⚠ ') + c.ok + ' / ' + c.total : ''}`);
+  }
+  if (u.env) L.push(t('dfu_device') + ': ' + u.env);
+  L.push(`${t('dfu_states')}: ${u.scans} · ${t('dfu_ms')} ${(u.ms / 1000).toFixed(1)} s · ${t('dfu_defects')}: ${u.defects.length} — ${DFT_SEV.crit} ${t('dfu_err')} ${u.err} · ${DFT_SEV.warn} ${t('dfu_warn')} ${u.warn}`
+    + (u.capped ? ' · ' + t('dfu_capped').replace('{N}', DFTU_MAX) : ''));
+  if (!short) L.push(t('dfu_checks') + ': ' + t('dfu_checks_list'));
+  L.push('');
+  if (!u.defects.length) L.push('✓ ' + t('dfu_none'));
+  const one = (d, i) => { L.push(`${i + 1}. [${d.title}] ${d.msg}${d.n > 1 ? '  ×' + d.n : ''}`);
+    L.push(`   ${t('dfu_where')}: ${d.where} · ${d.first}${d.n > 1 ? ' … ' + d.last : ''}${d.steps.length ? ' · ' + t('dfu_step') + ': ' + d.steps.join(' | ') : ''}`); };
+  [['err', t('dfu_err_t'), DFT_SEV.crit], ['warn', t('dfu_warn_t'), DFT_SEV.warn]].forEach(([lv, title, ic2]) => {
+    const xs = u.defects.filter(d => d.level === lv); if (!xs.length) return;
+    L.push(`${ic2} ${title.toUpperCase()} (${xs.length})`); (short ? xs.slice(0, 15) : xs).forEach(one);
+    if (short && xs.length > 15) L.push('   … ' + t('dfu_see_file')); L.push(''); });
+  if (!short && u.states.length){
+    L.push(`--- ${t('dfu_states_t')} (${u.states.length}) ---`);
+    u.states.forEach(s => L.push(`${s.at}  ${s.where} — ${s.n ? DFT_SEV.crit + s.e + ' ' + DFT_SEV.warn + (s.n - s.e) : '✓'} · ${s.ms} ms${s.step ? ' · ' + t('dfu_step') + ' «' + s.step + '»' : ''}`)); }
+  return L.join('\n').trim();
+}
+function dftUiSave(){
+  const c = tlogGet(); if (!c || !c.ui){ toast('⚠ ' + t('dfu_no_report'), 'err'); return; }
+  const name = tlogFileName(c).replace(/\.txt$/, '') + '-interface.txt';
+  dlTextFile(name, dftUiText(c)); toast('✓ ' + name);
+}
+/* три лога прогона — весь, критические, интерфейс: в панели теста и в карточке, пока не запущен следующий тест */
+function dftUiBtnsHtml(c){
+  c = c || tlogGet(); if (!c || !c.ui) return '';
+  const nC = (c.issues || []).filter(i => i.sev === 'crit').length, u = c.ui, nU = (u.defects || []).length;
+  return `<div class="tl-acts dfu-acts" id="dfu-acts"><b class="tiny" style="flex-basis:100%">${t('dfu_three')}</b>
+    <button class="btn btn-green sm" id="dfu-log" onclick="App.tlogSave()">${ic('download')} ${t('dfu_log_all')}</button>
+    <button class="btn ${nC ? 'btn-red' : 'btn-ghost'} sm" id="dfu-crit" onclick="App.dftIssuesSave('crit')">${DFT_SEV.crit} ${t('dfu_log_crit')} (${nC})</button>
+    <button class="btn ${u.err ? 'btn-red' : nU ? 'btn-blue' : 'btn-ghost'} sm" id="dfu-ui" onclick="App.dftUiSave()">${ic('layers')} ${t('dfu_log_ui')} (${nU})</button>
+  </div>`;
+}
+/* ---------- карточка ---------- */
+function dftuCardHtml(){
+  if (!isAdmin() && !dftOn()) return '';
+  const on = dftOn(), st = DFT.status, techs = (st && st.actors && st.actors.techs) || [], tech = state.user.role === 'tech';
+  if ((!st || Date.now() - DFT.statusAt > 20000) && !foldOpen('dft') && !foldOpen('dftr')) dftStatusLoad().then(() => { if (state.screen === 'settings' && !DFT.running) render(); }).catch(() => {});
+  return `<div class="card" id="dftu-card">
+    <div style="font-weight:900;margin-bottom:6px">${ic('layers')} ${t('dftu_card')} ${helpBtn('dftu')}</div>
+    <div class="tiny" style="margin-bottom:8px">${t('dftu_hint')}</div>
+    ${!dftUiOk() ? `<div class="banner b-yellow" id="dftu-nomod" style="margin-bottom:8px">${ic('warn')} ${t('dftu_no_mod')}</div>` : ''}
+    ${!on ? `<div class="banner b-ds" id="dftu-off" style="margin-bottom:8px">${ic('lock')}<div class="grow tiny">${t('dftr_off')}</div></div>` : ''}
+    ${!dftSchemaOk() ? `<div class="banner b-yellow">${ic('warn')} ${t('dft_need_sql')}</div>` : !dftRepSrvOk() ? `<div class="banner b-yellow">${ic('warn')} ${t('dftr_need_sql')}</div>` : ''}
+    ${on ? `${st && st.ok === false ? `<div class="banner b-yellow">${ic('warn')} ${t('dft_no_fn')} · ${esc(dftErrOf(st))}</div>` : ''}
+      ${!tech || techs.length ? `<div class="qty-line"><span class="name">${t(tech ? 'dft_worker2' : 'dft_worker')}</span>
+        <select id="dftu-worker" class="role-sel" onchange="DFT.worker = this.value">${tech ? `<option value="">— ${t('dft_none')} —</option>` : ''}${techs.map(p => `<option value="${p.id}" ${DFT.worker === p.id ? 'selected' : ''}>${esc(shortName(p.name))}</option>`).join('')}</select></div>` : ''}
+      <label class="opt ${DFT.uiRepOnly ? 'on' : ''}" style="margin:6px 0"><input type="checkbox" id="dftu-only" ${DFT.uiRepOnly ? 'checked' : ''} onchange="DFT.uiRepOnly = this.checked"> ${t('dftr_only')}</label>
+      <label class="opt ${DFT.stepMode ? 'on' : ''}" style="margin:0 0 6px"><input type="checkbox" id="dftu-stepmode" ${DFT.stepMode ? 'checked' : ''} onchange="DFT.stepMode = this.checked"> ${t('dft_stepmode')}</label>
+      <label class="opt ${DFT.wide ? 'on' : ''}" style="margin:0 0 6px"><input type="checkbox" id="dftu-wide" ${DFT.wide ? 'checked' : ''} onchange="DFT.wide = this.checked"> ${t('dft_wide')}</label>
+      <label class="opt ${DFT.noMedia ? '' : 'on'}" style="margin:0 0 6px"><input type="checkbox" id="dftu-media" ${DFT.noMedia ? '' : 'checked'} onchange="DFT.noMedia = !this.checked"> ${t('dft_media_chk')}</label>
+      <div class="tiny" style="margin:2px 0 8px">${t('dftu_logs_h')}</div>
+      <button class="btn btn-green" id="dftu-run" ${DFT.running ? 'disabled' : ''} onclick="App.dftRun(DFT.uiRepOnly ? 'ui_rep' : 'ui')">${ic('play')} ${DFT.running ? t('rg_running') : t('dftu_run')}</button>` : ''}
+    ${tlogCardHtml()}
+  </div>`;
+}
+
+/* v1.09.53: «что видел согласующий» у ремонта — как rep_content_key на сервере: шапка, смета, бригада, заметка
+   (без переводов, пометок фото, истории, связей с документами и архива) */
+function dftRepKey(r){
+  const rows = l => (Array.isArray(l) ? l : []).map(e => [+e.q || 0, String(e.code || '').toUpperCase(), String(e.d || ''), +e.a || 0]);
+  return JSON.stringify([r.date || null, r.counterparty_id || null, r.complex_id || null, r.unit_number || '', r.po_number || '', r.complete_by || null, r.note || '',
+    +r.sales_tax || 0, +r.freight || 0, +r.total || 0, r.helper_ids || [], rows(r.items), rows(r.materials)]);
+}
 /* ---------- демо: правила сервера, повторённые здесь (только чтобы проверять сам сценарий) ---------- */
 function dftDemoExec(actorId, op, args){
   const d = state.data, A = (d.profiles || []).find(p => p.id === actorId), fail = (c, det) => ({ ok: false, error: { message: c, details: det || null } });
@@ -30567,24 +31794,41 @@ function dftDemoExec(actorId, op, args){
     if (!x.is_test){ if (x.status !== 'draft' || x.created_by !== state.user.id || !/^DFTEST/.test(x.unit_number || '') || Date.parse(x.created_at) < Date.now() - 6e5) return fail('DFT_ADOPT_DENIED'); Object.assign(x, { is_test: true, test_owner: owner, test_run: args.run || '' }); }
     return { ok: true, data: JSON.parse(JSON.stringify(x)) };
   }
+  /* v1.09.53: ремонт — как dft_exec, repairs_guard и repairs_push_tg_fn из update-to-1_09_53.sql */
   if (op === 'rep_create'){
-    const row = args.row || {}; if (row.created_by && row.created_by !== actorId) return fail('RLS_DENIED'); if (row.job_id && !(getJob(row.job_id) || {}).is_test) return fail('DFT_NOT_TEST_DOC');
-    if ((row.status === 'approved' || row.status === 'declined') && !appr) row.status = 'draft';
-    const r = { id: row.id || uid(), no: 90000000 + (++DFT.seq), date: row.date || todayISO(), counterparty_id: row.counterparty_id || null, complex_id: row.complex_id || null, unit_number: row.unit_number || 'DFTEST', job_id: row.job_id || null, proposal_id: null,
-      helper_ids: row.helper_ids || [], items: row.items || [], materials: row.materials || [], note: row.note || '', note_en: row.note_en || '', total: +row.total || 0, status: row.status || 'draft', hist: [], decline_reason: '', created_by: actorId,
-      decided_by: null, decided_at: null, photos: { before: [], after: [] }, is_test: true, test_owner: owner, test_run: args.run || '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    const row = args.row || {}; if (row.created_by && row.created_by !== actorId) return fail('RLS_DENIED');
+    if (row.job_id && !(getJob(row.job_id) || {}).is_test) return fail('DFT_NOT_TEST_DOC');
+    if (row.proposal_id && !((d.proposals || []).find(p => p.id === row.proposal_id) || {}).is_test) return fail('DFT_NOT_TEST_DOC');
+    const r = { id: row.id || uid(), no: 90000000 + (++DFT.seq), date: row.date || todayISO(), counterparty_id: row.counterparty_id || null, complex_id: row.complex_id || null, unit_number: row.unit_number || 'DFTEST',
+      job_id: row.job_id || null, proposal_id: row.proposal_id || null, helper_ids: row.helper_ids || [], items: row.items || [], materials: row.materials || [], note: row.note || '', note_en: row.note_en || '',
+      po_number: row.po_number || '', complete_by: row.complete_by || null, sales_tax: +row.sales_tax || 0, freight: +row.freight || 0, photos: row.photos || { before: [], after: [] }, hist: row.hist || [],
+      total: +row.total || 0, status: (row.status === 'approved' || row.status === 'declined') && !appr ? 'draft' : (row.status || 'draft'), decline_reason: '', created_by: actorId,
+      decided_by: null, decided_at: null, is_test: true, test_owner: owner, test_run: args.run || '', created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
     (d.repairs = d.repairs || []).push(r); return { ok: true, data: JSON.parse(JSON.stringify(r)) };
   }
   if (op === 'rep_get' || op === 'rep_update'){
     const old = (d.repairs || []).find(r => r.id === args.id); if (!old) return fail('NOT_FOUND'); if (!old.is_test) return fail('DFT_NOT_TEST_DOC');
-    if (op === 'rep_get') return { ok: true, data: JSON.parse(JSON.stringify(old)) };
+    if (op === 'rep_get'){      /* строгий rep_get — видимость как у политики rep_sel для того, от чьего имени запрос */
+      const jv = old.job_id ? getJob(old.job_id) : null, canJob = !!jv && (jv.technician_id === actorId || role === 'admin' || role === 'manager' || (jv.shared_with_helpers && (jv.helper_ids || []).includes(actorId) && org.allow_shared_jobs !== false));
+      if (args.strict && !(role === 'admin' || role === 'manager' || role === 'accountant' || old.created_by === actorId || (old.helper_ids || []).includes(actorId) || canJob)) return fail('RLS_DENIED');
+      return { ok: true, data: JSON.parse(JSON.stringify(old)) };
+    }
     if (!(role === 'admin' || role === 'manager' || old.created_by === actorId)) return fail('RLS_DENIED');
-    const nw = { ...old, ...(args.patch || {}), is_test: true, test_owner: old.test_owner, test_run: old.test_run, updated_at: new Date().toISOString() };
+    const p = args.patch || {}, isT = (list, id) => !!((list || []).find(x => x.id === id) || {}).is_test;
+    if (p.job_id && !isT(d.jobs, p.job_id)) return fail('DFT_NOT_TEST_DOC'); if (p.proposal_id && !isT(d.proposals, p.proposal_id)) return fail('DFT_NOT_TEST_DOC');
+    const nw = { ...old }; ['date', 'counterparty_id', 'complex_id', 'unit_number', 'items', 'materials', 'note', 'note_en', 'po_number', 'complete_by', 'sales_tax', 'freight', 'photos', 'total', 'status', 'decline_reason',
+      'decided_by', 'decided_at', 'hist', 'helper_ids', 'job_id', 'proposal_id', 'archived_at', 'archived_by', 'arch_note'].forEach(k => { if (k in p) nw[k] = p[k]; });
+    nw.updated_at = new Date().toISOString();
     if (nw.status !== old.status && (nw.status === 'approved' || nw.status === 'declined') && !appr) return fail('FORBIDDEN_APPROVE');
-    if (nw.status !== old.status && (nw.status === 'approved' || nw.status === 'declined')){ nw.decided_by = actorId; nw.decided_at = new Date().toISOString(); }
-    const n2 = (uid_, title) => { if (uid_ && uid_ !== actorId && uid_ === owner) (d.notices = d.notices || []).push({ id: uid(), user_id: uid_, kind: 'approve', title, body: 'REP-' + nw.no + ' · Unit ' + nw.unit_number, url: './?doc=rep:' + nw.id, actor: actorId, created_at: new Date().toISOString(), read_at: null }); };
-    if (old.status !== 'approved' && nw.status === 'approved') [nw.created_by].concat(nw.helper_ids || []).forEach(x => n2(x, 'Ремонт апрувлен'));
-    else if (old.status === 'approved' && nw.status !== 'approved') [nw.created_by].concat(nw.helper_ids || []).forEach(x => n2(x, 'Апрув снят с ремонта'));
+    if ((old.status === 'approved' || old.status === 'sent') && nw.status === old.status && dftRepKey(nw) !== dftRepKey(old)){      /* правка того, что видел согласующий, снимает апрув — как сторож на сервере */
+      nw.status = 'draft'; nw.hist = [{ at: new Date().toISOString(), by: actorId, by_name: A.display_name || '', act: 'reset', from: old.status, to: old.decided_by || null, srv: true }].concat(Array.isArray(nw.hist) ? nw.hist : []).slice(0, 40); }
+    if (nw.status !== old.status){ if (nw.status === 'approved' || nw.status === 'declined'){ nw.decided_by = actorId; nw.decided_at = new Date().toISOString(); } else { nw.decided_by = null; nw.decided_at = null; } }
+    const body = 'REP-' + nw.no + ' · Unit ' + (nw.unit_number || '—'), crew = [...new Set([nw.created_by].concat(nw.helper_ids || []).filter(Boolean))];
+    const n2 = (uid_, title, b) => { if (uid_ && uid_ !== actorId && uid_ === owner) (d.notices = d.notices || []).push({ id: uid(), user_id: uid_, kind: 'approve', title, body: b || body, url: './?doc=rep:' + nw.id, actor: actorId, created_at: new Date().toISOString(), read_at: null }); };
+    if (old.status !== 'approved' && nw.status === 'approved') crew.forEach(x => n2(x, 'Ремонт апрувлен'));
+    else if (nw.status === 'declined' && old.status !== 'declined') crew.forEach(x => n2(x, 'Ремонт отклонён', body + (nw.decline_reason ? ' · ' + String(nw.decline_reason).slice(0, 160) : '')));
+    else if (old.status === 'approved' && nw.status !== 'approved') crew.forEach(x => n2(x, 'Апрув снят с ремонта'));
+    else if (nw.status === 'sent' && old.status !== 'sent') approvers().forEach(x => n2(x, 'Ремонт ждёт апрува'));
     d.repairs[d.repairs.indexOf(old)] = nw; return { ok: true, data: JSON.parse(JSON.stringify(nw)) };
   }
   if (op === 'ext_req_create'){
@@ -30729,15 +31973,18 @@ function dftPaint(){
 }
 function dftNext(){ if (DFT.next){ const f = DFT.next; DFT.next = null; dftPaint(); f(); } }
 function dftStop(){ DFT.stop = true; dftNext(); toast('⏹ ' + t('dft_stopping'), 'inf'); }
-async function dftRun(){
+async function dftRun(mode){
   if (DFT.running) return;
   if (HAS_SB && netOff()){ toast('📴 ' + t('net_off_hint'), 'err'); return; }
   if (!dftOn()){ toast('🔒 ' + t('dft_mode_off'), 'err'); return; }
-  const w = document.getElementById('dft-worker'); if (w) DFT.worker = w.value;
-  if (!(await testPreflightGate('docflow'))) return;                 // v1.09.47
-  DFT.jh = null; DFT.rep = null;
-  Object.assign(DFT, { running: true, stop: false, next: null, rows: [], run: 'dft-' + Date.now().toString(36), owner: state.user.id, locks: {}, seq: 0, net: 0, asked: [], marks: [], jsErr: 0, toasts: [], issues: [], cur: null, finishing: false });
-  tlogStart('docflow', t('dft_card'));
+  /* v1.09.53: режим — 'docflow' (карточка «Тест документооборота»), 'full' (документооборот + ремонт) или 'rep' (только ремонт);
+     v1.09.54: 'ui' и 'ui_rep' — то же, что 'full' и 'rep', плюс проверка интерфейса по ходу (третья карточка, три лога) */
+  const UI = mode === 'ui' || mode === 'ui_rep', M = mode === 'ui' ? 'full' : mode === 'ui_rep' ? 'rep' : (mode === 'full' || mode === 'rep' ? mode : 'docflow');
+  const w = document.getElementById(M === 'docflow' ? 'dft-worker' : UI ? 'dftu-worker' : 'dftr-worker') || document.getElementById('dft-worker'); if (w) DFT.worker = w.value;
+  if (!(await (M === 'docflow' ? testPreflightGate('docflow') : UI ? testPreflightGate('docflow_ui') : testPreflightGate('docflow_rep')))) return;                 // v1.09.47
+  DFT.jh = null; DFT.rep = null; DFT.rs = null; DFT.rsnap = null;
+  Object.assign(DFT, { mode: M, ui: UI, running: true, stop: false, next: null, rows: [], run: 'dft-' + Date.now().toString(36), owner: state.user.id, locks: {}, seq: 0, net: 0, asked: [], marks: [], jsErr: 0, toasts: [], issues: [], cur: null, finishing: false });
+  if (M === 'docflow') tlogStart('docflow', t('dft_card')); else if (UI) tlogStart('docflow_ui', t('dftu_card') + (M === 'rep' ? ' · ' + t('dftr_m_rep') : '')); else tlogStart('docflow_rep', t('dftr_card') + (M === 'rep' ? ' · ' + t('dftr_m_rep') : ''));
   const scr0 = state.screen, confirm0 = window.confirm, prompt0 = window.prompt; let promptAns = '';
   /* v1.09.29: вопросы приложения, на которые тест отвечает сам, — в отчёт; ошибки кода во время теста — тоже */
   window.confirm = q => { DFT.asked.push(String(q)); dftLog('   ? ' + dftCut(q, 200) + ' → ' + t('dft_yes'), 'ui'); return true; };
@@ -30748,20 +31995,22 @@ async function dftRun(){
   const fetch0 = window.fetch; window.fetch = function(input, init){ const pr = fetch0.apply(this, arguments); try{ const u = typeof input === 'string' ? input : ((input && input.url) || ''); if (/\/functions\/v1\/(?!dft(\?|$))/.test(u)) dftNetLog(u, init, pr); }catch(e){} return pr; };
   try{ closeModal(); }catch(e){}
   dftPanelOpen();
-  const hd = document.getElementById('dft-head'); if (hd) hd.textContent = shortName(state.user.display_name || '') + ' · ' + t('role_' + state.user.role) + ' · ' + DFT.run + (HAS_SB ? '' : ' · demo');
+  if (M !== 'docflow'){ const pb = document.querySelector('#dft-panel .dft-ph b'); if (pb) pb.innerHTML = UI ? ic('layers') + ' ' + esc(t('dftu_card')) : ic('toolbox') + ' ' + esc(t('dftr_card')); }   // v1.09.53; v1.09.54
+  if (UI) dftUiStart();   // v1.09.54: нажатия и ввод теста после себя проверяют экран
+  const hd = document.getElementById('dft-head'); if (hd) hd.textContent = shortName(state.user.display_name || '') + ' · ' + t('role_' + state.user.role) + ' · ' + DFT.run + (HAS_SB ? '' : ' · demo') + (M === 'docflow' ? '' : ' · ' + t('dftr_m_' + M));
   const out = [], sleep = U.sleep, n0 = new Set(dfNotices().map(n => n.id));
   { const o = state.data.org_settings || {};      // шапка отчёта: всё, от чего зависят ожидания шагов
-    dftLog(t('dft_hdr_env') + ': app ' + APP_VERSION + ' · db docflow_v=' + (o.docflow_v ?? '—') + ' · ' + (HAS_SB ? 'Supabase' : 'demo') + ' · ' + t('dft_hdr_view') + '=' + vmCur() + '/' + densCur() + ' · lang=' + (state.lang || 'ru') + ' · ' + (netOff() ? 'offline' : 'online') + ' · dev=' + dfDev(), 'grp');
+    dftLog(t('dft_hdr_env') + ': app ' + APP_VERSION + ' · db docflow_v=' + (o.docflow_v ?? '—') + ' · ' + (HAS_SB ? 'Supabase' : 'demo') + ' · ' + t('dft_hdr_view') + '=' + vmCur() + '/' + densCur() + ' · lang=' + (state.lang || 'ru') + ' · ' + (netOff() ? 'offline' : 'online') + ' · dev=' + dfDev() + ' · ' + t('dftr_mode') + '=' + t('dftr_m_' + M) + (UI ? ' + ' + t('dfu_mode') + (DFTU.on ? '' : ' (—)') : ''), 'grp');
     dftLog(t('dft_hdr_push') + ': Notification=' + (typeof Notification !== 'undefined' ? Notification.permission : 'нет') + ' · ' + t('dft_wide') + '=' + (DFT.wide ? t('dft_yes') : 'нет') + ' · ' + t('dft_media_chk') + '=' + (DFT.noMedia ? 'нет' : t('dft_yes')), 'grp');
     dftLog(t('dft_hdr_set') + ': self_approve=' + (o.self_approve === true) + ' · mgr_link_locked=' + (o.mgr_link_locked === true) + ' · allow_shared_jobs=' + (o.allow_shared_jobs !== false) + ' · edit_lock_days=' + (+o.edit_lock_days || 0)
       + ' · prop_send_on=' + (o.prop_send_on === true) + ' · max_extend_days=' + maxExtendDays() + ' · doc_no_fmt=' + docFmt() + ' · pdf_marks=' + (o.pdf_draft_mark !== false) + '/' + (o.pdf_approved_mark !== false) + ' · dft_until=' + (o.dft_until || '—'), 'grp'); }
-  const snapIds = () => [['J', J], ['J2', J2], ['JA', JA], ['J3', J3], ['JH', DFT.jh ? DFT.jh() : '']].filter(x => x[1]);
+  const snapIds = () => [['J', J], ['J2', J2], ['JA', JA], ['J3', J3], ['JH', DFT.jh ? DFT.jh() : ''], ['JR', DFT.rs ? DFT.rs.JR : ''], ['JD', DFT.rs ? DFT.rs.JD : '']].filter(x => x[1]);   // v1.09.53: + инвойсы теста ремонта
   const snap = () => snapIds().map(([k, id]) => { const j = (state.data.jobs || []).find(x => x.id === id); if (!j) return k + ': —';
       const pl = (state.data.placements || []).filter(p => p.job_id === id), rq = dfReqs().filter(r => r.doc_id === id);
       return k + ': ' + (j.archived_at ? 'АРХИВ ' : '') + j.status + ' rev=' + (j.rev ?? '—') + ' №' + (j.no ?? '—') + (j.doc_no ? ' «' + j.doc_no + '»' : '') + ' $' + (+j.total || 0) + (j.approved_total != null ? ' апрув $' + j.approved_total : '')
         + (j.return_note ? ' возврат«' + dftCut(j.return_note, 40) + '»' : '') + (j.edit_open_until ? ' окно→' + dfWhen(j.edit_open_until) : '') + ' осн=' + (shortName(profName(j.technician_id)) || '—') + ' бриг=' + (j.helper_ids || []).length + (j.shared_with_helpers ? '+общ' : '')
         + ' · пикапы ждут/продл/архив/забр=' + pl.filter(pkPending).length + '/' + pl.filter(p => p.ext_of).length + '/' + pl.filter(p => p.archived_at).length + '/' + pl.filter(p => p.picked_up).length
-        + (rq.length ? ' · запросы ' + rq.map(r => r.status).join(',') : ''); }).join(' ‖ ');
+        + (rq.length ? ' · запросы ' + rq.map(r => r.status).join(',') : ''); }).concat(DFT.rsnap ? [DFT.rsnap()].filter(Boolean) : []).join(' ‖ ');   // v1.09.53: + ремонты
   const ctx = () => { const ov = document.querySelector('#overlay h3'), md = (state.screen === 'job' && jobDraft) ? jobMode(jobDraft) : null;
     return t('dft_ctx') + ': ' + t('dft_ctx_scr') + '=' + state.screen + (ov ? ' · ▣ ' + (ov.textContent || '').trim().slice(0, 60) : '') + (md ? ' · mode=' + (md.edit ? 'edit' : 'ro:' + md.why) + ' appr=' + md.appr : '')
       + ' · ' + t('dft_ctx_ban') + '=[' + [...document.querySelectorAll('.df-ban[id]')].map(x => x.id).join(',') + '] · toast=«' + dftCut(U.toast(), 120) + '»'; };
@@ -30775,6 +32024,7 @@ async function dftRun(){
     try{ const r = await fn(); out[i].ok = true; out[i].extra = (r && r.note) || (typeof r === 'string' ? r : ''); }
     catch(e){ if (e && e.skip){ out[i].ok = null; out[i].extra = t('dft_skipped') + ': ' + e.message; dftIssue('warn', t('dfi_skip') + ': ' + kind + ' ' + name + ' — ' + e.message); }
       else { out[i].ok = false; out[i].extra = errStr(e); let cx = ''; try{ cx = ctx(); dftLog('   ✗ ' + cx, 'err'); }catch(e2){} dftIssue('crit', t('dfi_fail') + ': ' + kind + ' ' + name + ' — ' + errStr(e), cx + (function(){ try{ return '\n' + snap(); }catch(e3){ return ''; } })()); } }
+    if (DFTU.on){ try{ await dftUiProbe('∎'); }catch(e){} }   // v1.09.54: экран в конце шага
     DFT.cur = null;
     out[i].ms = Math.round(performance.now() - a);
     try{ const sn = snap(); if (sn) dftLog('   ∑ ' + dftCut(sn, 300), 'dim', '   ∑ ' + sn); }catch(e){}
@@ -30798,7 +32048,9 @@ async function dftRun(){
   /* ---- действия в интерфейсе ---- */
   const ui = {
     async reset(){ for (let i = 0; i < 4 && document.getElementById('overlay'); i++){ const b = U.q('#overlay .back-x'); if (b){ b.click(); await sleep(150); } else { closeModal(); } }
-      if (state.screen === 'job'){ const x = U.q('.db-x'); if (x){ x.click(); await sleep(200); const dr = U.q('[onclick="App.jobDrop()"]'); if (dr){ dr.click(); await sleep(150); } } } jlStop(); },
+      if (state.screen === 'job'){ const x = U.q('.db-x'); if (x){ x.click(); await sleep(200); const dr = U.q('[onclick="App.jobDrop()"]'); if (dr){ dr.click(); await sleep(150); } } }
+      if (state.screen === 'repairs' && repDraft){ const x = U.q('.db-x'); if (x){ x.click(); await sleep(200); const dr = U.q('[onclick="App.repDrop()"]'); if (dr){ dr.click(); await sleep(150); } } if (repDraft){ repDraft = null; render(); } }   // v1.09.53
+      jlStop(); },
     async tab(name){ await ui.reset(); await U.click(`.tabbar .tab[onclick="App.go('${name}')"]`, t('dft_u_menu') + ' → ' + name); await sleep(220); if (state.screen === name) render(); await sleep(120); },
     async goDay(iso){ await ui.tab('home'); for (let i = 0; i < 10; i++){ const c = U.q(`.day-cell[onclick="App.selDay('${iso}')"]`); if (c){ if (state.selDate !== iso){ dftLog('   ☛ ' + t('dft_u_day') + ' ' + fmtDM(iso), 'ui'); c.click(); await sleep(220); } return; }
       await U.click(iso < state.weekStart ? '.wk-arrow[aria-label="prev week"]' : '.wk-arrow[aria-label="next week"]', t('dft_u_week')); } throw new Error(t('dft_ui_wait') + ': ' + iso); },
@@ -30854,6 +32106,7 @@ async function dftRun(){
     await step('·', t('dft_s_clean0'), async () => { if (HAS_SB){ const r = await dftCall('cleanup', {}); okR(r); dftPurgeLocal(); return { note: String(r.deleted || 0) }; } const mine = state.data.jobs.filter(j => j.is_test && j.test_owner === state.user.id); dftPurgeLocal(mine.map(j => j.id)); return { note: String(mine.length) }; });
     await step('·', t('dft_s_begin'), async () => { if (HAS_SB) okR(await dftCall('begin', { run: DFT.run })); else audit('dft_run', 'org', 'org', { run: DFT.run, role: state.user.role }); });
 
+    if (M !== 'rep'){   /* v1.09.53: основной цикл документооборота — во всех режимах, кроме «Только ремонт» */
     G(t('dft_g_a'));
     if (state.user.role !== 'tech'){
       await step('+', t('dft_a1ui'), async () => { J = await ui.createTask(Y, 'DFTEST', ''); must(jobDraft.technician_id == null, 'technician_id'); return { note: t('nt_tech_none') }; });
@@ -31211,6 +32464,9 @@ async function dftRun(){
     if (HAS_SB) await step('−', t('dft_h4'), async () => { const real = (state.data.jobs || []).find(j => !j.is_test); if (!real) throw SKIP(t('dft_no_real'));
       const a = errR(await dftCall('exec', { as: 'admin', op: 'job_get', args: { id: real.id } }), 'DFT_NOT_TEST_DOC'); errR(await dftCall('exec', { as: 'admin', op: 'rpc', args: { fn: 'approve_job', args: { p_job: real.id, p_total: 1 } } }), 'DFT_NOT_TEST_DOC');
       errR(await dftCall('exec', { as: 'self', op: 'job_adopt', args: { id: real.id } }), ['DFT_ADOPT_DENIED', 'DFT_NOT_YOUR_RUN']); return a; });
+    }
+    /* v1.09.53: документ ремонта со всех сторон — в режимах «документооборот + ремонт» и «только ремонт» */
+    if (M !== 'docflow') await dftRepSuite({ step, G, SKIP, need, okR, errR, upd, rpc, isMe, first, mineOf, cx, cp, wt, must, absent, present, ui, adopt, W });
   }catch(e){ dftLog('⛔ ' + errStr(e), 'err'); }
   finally{
     try{ await ui.reset(); }catch(e){}
@@ -31225,27 +32481,410 @@ async function dftRun(){
         rows.forEach(x => { dftLog('   ✉ ' + x.title + ' → ' + (x.to || '—') + ' · ' + (x.sent_at ? 'отправлен' : x.err ? 'ОШИБКА: ' + x.err : 'в очереди'), x.err ? 'neterr' : 'net');
           if (x.err && !x.sent_at) dftIssue('err', t('dfi_push_err') + ': «' + x.title + '» → ' + (x.to || '—') + ' · ' + x.err); else if (!x.sent_at) dftIssue('warn', t('dfi_push_q') + ': «' + x.title + '» → ' + (x.to || '—')); }); const sent = rows.filter(x => x.sent_at).length, bad = rows.filter(x => x.err && !x.sent_at).length;
         must(rows.length > 0, t('dft_push_none')); must(sent > 0 || !bad, t('dft_push_bad') + ': ' + dftCut(rows.filter(x => x.err).map(x => x.err).slice(0, 2), 200)); return { note: t('dft_push_q') + ' ' + rows.length + ' · ' + t('dft_push_s') + ' ' + sent + (bad ? ' · ' + t('dft_push_e') + ' ' + bad : '') }; }).catch(() => {});
-    if (!DFT.noMedia) await step('·', t('dft_i_media'), async () => { let n = 0; for (const id of [J, J2, JA, J3].filter(Boolean)){ const has = (state.data.media || []).some(m => m.job_id === id) || ctQOf(id).length; if (has){ await mediaDropJob(id); n++; } } return { note: String(n) }; }).catch(() => {});
-    try{ await step('·', t('dft_i1'), async () => { let n = 0; if (HAS_SB){ const r = await dftCall('cleanup', { run: DFT.run }); okR(r); n = r.deleted || 0; const st = await dftStatusLoad(true); if (st && st.mine) throw new Error(t('dft_left') + ' ' + st.mine); }
+    if (!DFT.noMedia) await step('·', t('dft_i_media'), async () => { let n = 0; const rs = DFT.rs || {}; for (const id of [J, J2, JA, J3, rs.JR, rs.JD].filter(Boolean)){ const has = (state.data.media || []).some(m => m.job_id === id) || ctQOf(id).length; if (has){ await mediaDropJob(id); n++; } }
+      for (const id of [rs.R1, rs.R2, rs.R3, rs.R5, rs.RD, rs.RD2].filter(Boolean)){ if ((state.data.media || []).some(m => m.repair_id === id) || mediaQ.some(x => x.repair_id === id)){ await mediaDropRepair(id); n++; } }   // v1.09.53: и файлы тестовых ремонтов
+      return { note: String(n) }; }).catch(() => {});
+    if (M !== 'docflow') try{ await dftRepOrphans(); }catch(e){ dftLog('⚠ ' + errStr(e), 'err'); }   // v1.09.53: созданное кнопками, но не принятое в тест
+    try{ await step('·', t('dft_i1'), async () => { let n = 0; if (HAS_SB){ const r = await dftCall('cleanup', { run: DFT.run }); okR(r); n = r.deleted || 0; const st = await dftStatusLoad(true); if (st && st.mine) throw new Error(t('dft_left') + ' ' + st.mine);
+        if (M !== 'docflow'){ const lr = await state.sb.from('repairs').select('id').eq('test_run', DFT.run).limit(5); if ((lr.data || []).length) throw new Error(t('dft_left') + ' · REP ' + lr.data.length); } }   // v1.09.53
       else { const ids = state.data.jobs.filter(j => j.is_test && j.test_run === DFT.run).map(j => j.id); n = ids.length; dftPurgeLocal(ids); state.data.proposals = state.data.proposals.filter(p => !p.is_test); }
       dftPurgeLocal(); if (state.data.jobs.some(j => j.is_test)) throw new Error(t('dft_left')); return { note: t('dft_deleted') + ' ' + n }; }); }catch(e){}
     DFT.finishing = true; await sleep(300);   // ответы на последние запросы успевают попасть в проблемы
     window.removeEventListener('error', onErr); window.removeEventListener('unhandledrejection', onErr); window.fetch = fetch0;
     DFT.stepMode = sm; window.confirm = confirm0; window.prompt = prompt0; DFT.running = false; DFT.next = null;
+    if (!UI && DFTU.u0) dftUiStop();   // v1.09.54: страховка — драйвер кнопок всегда возвращается к обычному
     const okN = out.filter(x => x.ok === true).length, badN = out.filter(x => x.ok === false).length + (DFT.jsErr ? 1 : 0), skipN = out.filter(x => x.ok === null).length;
     if (DFT.jsErr) tlogStep({ name: '· ' + t('dft_js_err'), ok: false, ms: 0, extra: String(DFT.jsErr) });
     dftLog('', ''); dftLog(`${t('dft_total')}: ✓ ${okN} · ✗ ${badN} · – ${skipN} · ${Math.round((performance.now() - T0) / 1000)} s`, badN ? 'err' : '');
     { const is = DFT.issues || [], k = x => is.filter(i => i.sev === x).length;
       dftLog(t('dfi_title') + ': ' + DFT_SEV.crit + ' ' + t('dfi_crit') + ' ' + k('crit') + ' · ' + DFT_SEV.err + ' ' + t('dfi_err') + ' ' + k('err') + ' · ' + DFT_SEV.warn + ' ' + t('dfi_warn') + ' ' + k('warn') + ' · ' + DFT_SEV.exp + ' ' + t('dfi_exp') + ' ' + k('exp'), k('crit') ? 'err' : 'grp');
       if (TLOG.cur) TLOG.cur.issues = is.map(i => ({ ...i })); }
+    if (UI){ const u = dftUiStop(); if (TLOG.cur) TLOG.cur.ui = u || { scans: 0, ms: 0, capped: 0, env: null, states: [], defects: [], err: 0, warn: 0 };   // v1.09.54
+      const uu = (TLOG.cur && TLOG.cur.ui) || {}; dftLog(t('dfu_title') + ': ' + t('dfu_states') + ' ' + (uu.scans || 0) + ' · ' + t('dfu_defects') + ' ' + ((uu.defects || []).length) + ' — ' + DFT_SEV.crit + ' ' + (uu.err || 0) + ' · ' + DFT_SEV.warn + ' ' + (uu.warn || 0), uu.err ? 'err' : 'grp'); }
     DFT.finishing = false;
     tlogEnd(okN, okN + badN);
-    const bar = document.getElementById('dft-bar'); if (bar) bar.innerHTML = `<div class="grow"><b id="dft-sum" class="${badN ? 'dft-bad' : ''}">${badN ? '⚠' : '✓'} ${okN} / ${okN + badN}${skipN ? ' · ' + t('dft_skipped') + ' ' + skipN : ''}</b></div>${tlogBtnsHtml('')}
-      ${dftIssuesBtnsHtml(TLOG.cur)}<button class="btn btn-ghost sm" id="dft-close" onclick="document.getElementById('dft-panel').remove()">${t('doc_close')}</button>${TLOG.cur && TLOG.cur.big ? `<div class="tiny dft-bad" id="dft-big" style="flex-basis:100%">${t('dft_big')}</div>` : ''}`;
+    const bar = document.getElementById('dft-bar'); if (bar) bar.innerHTML = `<div class="grow"><b id="dft-sum" class="${badN ? 'dft-bad' : ''}">${badN ? '⚠' : '✓'} ${okN} / ${okN + badN}${skipN ? ' · ' + t('dft_skipped') + ' ' + skipN : ''}${UI && TLOG.cur && TLOG.cur.ui ? ' · ▦ ' + TLOG.cur.ui.defects.length : ''}</b></div>${tlogBtnsHtml('')}
+      <button class="btn btn-ghost sm" id="dft-close" onclick="document.getElementById('dft-panel').remove()">${t('doc_close')}</button>${TLOG.cur && TLOG.cur.big ? `<div class="tiny dft-bad" id="dft-big" style="flex-basis:100%">${t('dft_big')}</div>` : ''}`;
     if (TLOG.cur && TLOG.cur.big) toast('⚠ ' + t('dft_big'), 'err', 12000);
     const pn = document.getElementById('dft-panel'); if (pn) pn.classList.remove('min');
     state.screen = scr0; render();
   }
+}
+
+/* =====================================================================
+   v1.09.53 · ТЕСТ «ДОКУМЕНТООБОРОТ + РЕМОНТ» — документ ремонта со всех сторон
+   ---------------------------------------------------------------------
+   Настройки → Диагностика → «Тест документооборота + ремонт». Весь тест документооборота (как в соседней карточке),
+   а после него — документ ремонта целиком:
+   · все статусы: черновик → отправлен → одобрен / отклонён; отзыв с апрува; смена решения; «апрув слетел» после правки;
+     архив, «Вернуть из архива», «Удалить навсегда»;
+   · все цепочки: ремонт из инвойса, из пропозала и отдельный; привязка и отвязка инвойса и пропозала; сумма ремонта строкой
+     в инвойс (повтор не дублирует, в сданный инвойс — только согласующий); окно цепочки; удаление инвойса и пропозала
+     вместе с ремонтами;
+   · все роли: работник — автор, помощник в бригаде и посторонний; менеджер без права апрува; менеджер с правом; админ.
+   Правило то же, что у теста документооборота: всё, что роли ведущего доступно в интерфейсе, тест делает кнопками и полями;
+   шаги других ролей и «запросы в обход интерфейса» — служебной функцией dft. Галочка «Только ремонт» пропускает основной
+   цикл документооборота. Правила сервера для ремонта — update-to-1_09_53.sql (docflow_v ≥ 11); без него шаги, которые
+   проверяют эти правила, помечаются «пропущено» с подсказкой.
+   ===================================================================== */
+function repSrvV11(){ return +(((state.data || {}).org_settings || {}).docflow_v) >= 11; }
+function dftRepSrvOk(){ return !HAS_SB || repSrvV11(); }
+/* ремонт или пропозал, созданный в прогоне кнопками, но не принятый в тест (шаг сорвался между «Сохранить» и приёмом), —
+   принимаем в тест, чтобы уборка его убрала и рабочие списки остались чистыми */
+async function dftRepOrphans(){
+  const t0 = (TLOG.cur && TLOG.cur.started) || '', me = state.user.id;
+  const mine = list => (list || []).filter(x => !x.is_test && x.created_by === me && /^DFTEST/.test(x.unit_number || '') && String(x.created_at || '') >= t0);
+  for (const [op, list] of [['rep_adopt', state.data.repairs], ['prop_adopt', state.data.proposals]]) for (const x of mine(list)){
+    const r = HAS_SB ? await dftCall('exec', { as: 'self', op, args: { run: DFT.run, id: x.id } }) : dftDemoExec(me, op, { run: DFT.run, id: x.id });
+    dftLog('   ' + t('dft_service') + ': ' + op + ' · ' + (x.unit_number || '') + ' → ' + (r && r.ok ? 'ok' : dftErrOf(r)), r && r.ok ? 'net' : 'neterr');
+    if (r && r.ok) Object.assign(x, { is_test: true, test_owner: DFT.owner, test_run: DFT.run });
+  }
+}
+async function dftRepSuite(X){
+  const { step, G, SKIP, need, okR, errR, upd, rpc, isMe, first, cx, cp, wt, must, absent, present, ui, adopt, W } = X;
+  const sleep = U.sleep, today = todayISO(), srvOk = dftRepSrvOk(), D = DFT.rs = {};
+  const who = k => dftWho(k) || {}, raw = k => isMe(k) ? t('dft_raw') : '';
+  const ME = ['W', 'MGR', 'APR', 'ADM'].find(isMe) || 'W', APX = () => first('APR', 'ADM');
+  const needSrv = () => { if (!srvOk) throw SKIP(t('dftr_need_sql')); };
+  const exec = (k, op, args) => dftExec(k, op, args);
+  const rowsOf = (r, k) => (r && (k === 'mat' ? r.materials : r.items)) || [];
+  /* запись ушла на сервер: пока upsert в пути, сервер ещё не знает правку (живой прогон — сеть не мгновенная) */
+  const flushed = (tb, id) => U.wait(() => !(HAS_SB && PEND_FLY.has(tb + ':' + id)), 20000, tb + ' ↑');
+  /* подсказка «⚠ Апрув снят», которую шаг и проверяет, — ожидаемая: в проблемы прогона не идёт (в памяти теста остаётся) */
+  const expToast = async fn => { DFT.selfToast = true; try{ return await fn(); } finally { DFT.selfToast = false; } };
+  { const o = state.data.org_settings || {};
+    dftLog(t('dftr_hdr') + ': rep_all_create=' + (o.rep_all_create !== false) + ' · rep_hide_prices=' + !!o.rep_hide_prices + ' · rep_kind_only=' + (o.rep_kind_only === true)
+      + ' · ' + t('tab_repairs') + '=' + (repTabOn() ? t('dft_yes') : 'нет') + ' · docflow_v=' + (o.docflow_v ?? '—') + (srvOk ? '' : ' · ⚠ ' + t('dftr_need_sql')), 'grp');
+    if (!srvOk) dftIssue('warn', t('dftr_need_sql')); }
+  /* ---- что видит ведущий (его правила доступа) и что на самом деле на сервере ---- */
+  const loc = id => (state.data.repairs || []).find(r => r.id === id) || null;
+  const pull = async id => { if (!HAS_SB) return loc(id); let row = null;
+    try{ const x = await state.sb.from('repairs').select('*').eq('id', id).maybeSingle(); row = x.data || null; }catch(e){}
+    const arr = state.data.repairs || (state.data.repairs = []), i = arr.findIndex(r => r.id === id);
+    if (row){ if (i >= 0) arr[i] = row; else arr.push(row); } else if (i >= 0) arr.splice(i, 1); return row; };
+  const srv = async id => { if (!HAS_SB) return loc(id); const g = await dftCall('exec', { as: 'self', op: 'rep_get', args: { run: DFT.run, id } }); return g.ok ? g.data : null; };
+  const propPull = async id => { if (!HAS_SB) return propById(id); let row = null;
+    try{ const x = await state.sb.from('proposals').select('*').eq('id', id).maybeSingle(); row = x.data || null; }catch(e){}
+    const arr = state.data.proposals || (state.data.proposals = []), i = arr.findIndex(p => p.id === id);
+    if (row){ if (i >= 0) arr[i] = row; else arr.push(row); } else if (i >= 0) arr.splice(i, 1); return row; };
+  const jobSrv = async id => HAS_SB ? ((await dftCall('exec', { as: 'self', op: 'job_get', args: { id } })) || {}).data || null : (state.data.jobs || []).find(j => j.id === id) || null;
+  const adoptR = async id => { if (HAS_SB) okR(await dftCall('exec', { as: 'self', op: 'rep_adopt', args: { run: DFT.run, id } })); else okR(dftDemoExec(state.user.id, 'rep_adopt', { run: DFT.run, id }));
+    const f = { is_test: true, test_owner: DFT.owner, test_run: DFT.run }, x = loc(id); if (x) Object.assign(x, f); if (repDraft && repDraft.id === id) Object.assign(repDraft, f); if (HAS_SB) await pull(id); };
+  const hE = (k, act) => ({ at: new Date().toISOString(), by: who(k).id, by_name: who(k).name || '', act });
+  /* статус «от имени» роли так же, как это делает приложение (с записью в истории) */
+  const svcSet = async (k, id, st, why, extra) => { const cur = await srv(id);
+    const patch = { status: st, hist: [hE(k, st === 'draft' ? 'reset' : st)].concat((cur && cur.hist) || []).slice(0, 40),
+      ...(st === 'declined' ? { decline_reason: why || '' } : st === 'approved' ? { decline_reason: '' } : {}), ...(extra || {}) };
+    return okR(await exec(k, 'rep_update', { id, patch })); };
+  const feedHasWith = async (title, part) => { if (HAS_SB){ DF.at = 0; await dfLoad(true); } await ui.tab('chat'); if (CH.thread !== 'ntf') await U.click('#ch-ths .ch-th[data-k="ntf"]', t('ch_ntf')); await sleep(300);
+    const okk = [...document.querySelectorAll('#ch-msgs .ntf-row')].some(r => (r.textContent || '').includes(title) && (!part || (r.textContent || '').includes(part)));
+    const bk = U.q('.ch-back, [onclick="App.chBack()"]'); if (bk){ bk.click(); await sleep(150); }
+    must(okk, t('dft_no_notice') + ' «' + title + (part ? ' · ' + part : '') + '»'); return { note: '«' + title + '»' + (part ? ' · ' + part : '') }; };
+  /* ---- действия в форме ремонта ---- */
+  const R = {
+    async close(){ if (!(state.screen === 'repairs' && repDraft)) return; const x = U.q('.db-x'); if (x){ x.click(); await sleep(250); } const dr = U.q('[onclick="App.repDrop()"]'); if (dr){ dr.click(); await sleep(200); } },
+    async list(){ await R.close();
+      if (U.has(`.tabbar .tab[onclick="App.go('repairs')"]`)) await ui.tab('repairs');
+      else { await ui.reset(); dftLog('   ' + t('dft_service') + ': ' + t('tab_repairs') + ' — ' + t('dftr_no_tab'), 'net'); repDraft = null; state.screen = 'repairs'; render(); await sleep(250); }
+      if ((state.repDocFilter || 'all') !== 'all') await U.click(`[onclick="App.repDocFilter('all')"]`, t('all')); },
+    async open(id){ if (HAS_SB) await pull(id); await R.list(); await U.click(`[onclick="App.openRepair('${id}')"]`, 'REP ' + (repNo(loc(id)) || ''));
+      await U.wait(() => repDraft && repDraft.id === id, 6000, 'REP'); await sleep(250); },
+    async save(){ const id = (repDraft || {}).id; await U.click('.db-save', t('save')); await sleep(300); if (id) await flushed('repairs', id); await sleep(400); },
+    rows(kind){ return [...document.querySelectorAll(`#rep-rows-${kind === 'mat' ? 'mat' : 'work'} > .prop-row`)]; },
+    sel(kind, n){ return `#rep-rows-${kind === 'mat' ? 'mat' : 'work'} > div.prop-row:nth-of-type(${n})`; },
+    async addRow(kind, d, a){ await U.click(`[onclick="App.repItemAdd('${kind}')"]`, t('prop_add_row') + (kind === 'mat' ? ' · ' + t('rep_mats') : ''));
+      const n = R.rows(kind).length; if (d != null) await U.type(R.sel(kind, n) + ' .pd', d, t('prop_desc')); if (a != null && !repMoneyHidden()) await U.type(R.sel(kind, n) + ' .pa', String(a), '$'); return n; },
+    async setAmt(kind, match, a){ const i = R.rows(kind).findIndex(r => String((r.querySelector('.pd') || {}).value || '').includes(match)); must(i >= 0, 'row «' + match + '»');
+      await U.type(R.sel(kind, i + 1) + ' .pa', String(a), '$ · ' + match); },
+    async setStatus(st, why, id){
+      if (st === 'declined' && why != null && U.has('#rep-why')) await U.type('#rep-why', why, t('rep_why'));
+      const card = { sent: `#rep-apr [onclick="App.repSetStatus('sent')"]`, approved: `#rep-apr .btn-green[onclick="App.repSetStatus('approved')"]`, declined: `#rep-apr .btn-red[onclick="App.repSetStatus('declined')"]` }[st];
+      const lbl = { sent: t('rep_send'), approved: t('rep_approve'), declined: t('rep_decline') }[st];
+      if (card && U.has(card)) await U.click(card, lbl); else await U.click(`#rep-st button[onclick="App.repSetStatus('${st}')"]`, t('prop_status') + ' → ' + t('pst_' + st));
+      await U.wait(() => (loc(id) || {}).status === st, 8000, t('pst_' + st)); await sleep(200); await flushed('repairs', id); await sleep(300); },
+  };
+  /* одно действие со статусом — от имени любой роли: своя — кнопками, чужая — через функцию */
+  const setBy = async (k, id, st, why) => { need(k); if (isMe(k)){ await R.open(id); await R.setStatus(st, why, id); await R.close(); } else await svcSet(k, id, st, why);
+    const r = await srv(id); must(r && r.status === st, 'REP ' + t('prop_status') + ' = ' + (r && r.status) + ' ≠ ' + st); if (HAS_SB) await pull(id); return r; };
+  const noDecideUI = async id => { await R.open(id); const seg = document.querySelector(`#rep-st button[onclick="App.repSetStatus('approved')"]`);
+    must(seg && seg.disabled, t('dft_ui_avail') + ': ' + t('pst_approved')); absent(`#rep-apr .btn-green[onclick="App.repSetStatus('approved')"]`, t('rep_approve'));
+    absent(`#rep-apr .btn-red[onclick="App.repSetStatus('declined')"]`, t('rep_decline')); await R.close(); };
+  const newRep = async () => { await R.list(); await U.click('[onclick="App.openRepair()"]', t('rep_new')); await U.wait(() => repDraft && !repById(repDraft.id), 6000, 'REP'); await sleep(200); return repDraft.id; };
+  const dayCard = async id => { await ui.goDay(today); if (!U.has(`.item.clicky[data-drag-id="${id}"]`) && U.has('[onclick="App.setMine(false)"]')) await U.click('[onclick="App.setMine(false)"]', t('all')); };
+  const openProp = async id => { propDraft = null; await propPull(id); await ui.tab('proposals'); if ((state.propFilter || 'all') !== 'all') await U.click(`[onclick="App.propFilter('all')"]`, t('all'));
+    await U.click(`[onclick="App.openProposal('${id}')"]`, 'PROPOSAL'); await U.wait(() => propDraft && propDraft.id === id, 6000, 'PROPOSAL'); await sleep(250); };
+  DFT.rsnap = () => ['R1', 'R2', 'R3', 'R5', 'RD'].filter(k => D[k]).map(k => { const r = loc(D[k]); if (!r) return k + ': —';
+    const h = (r.hist || [])[0] || {};
+    return k + ': ' + (r.archived_at ? 'АРХИВ ' : '') + r.status + ' №' + (r.no ?? '—') + ' $' + repGrand(r) + (r.job_id ? ' +WORK' : '') + (r.proposal_id ? ' +PROP' : '')
+      + ' бриг=' + (r.helper_ids || []).length + (r.decided_by ? ' решил=' + (shortName(profName(r.decided_by)) || '?') : '') + (h.act ? ' ист=' + h.act + (h.srv ? '·сервер' : '') : ''); }).join(' ‖ ');
+  const w2 = () => dftWho('W2');
+
+  /* ---------------- R0 · подготовка: инвойс работника с бригадой и пропозал к нему ---------------- */
+  G(t('dftr_g_p'));
+  await step('·', t('dftr_p1'), async () => { if (!W) throw SKIP(t('dft_no_worker'));
+    if (isManager()){ D.JR = await ui.createTask(today, 'DFTEST-R', ''); await ui.closeDoc(); await adopt(D.JR);
+      await ui.openDoc(D.JR); await U.type('#jb-tech', W.id, t('b_assign') + ' → ' + W.name); await sleep(300);
+      if (w2()){ await U.type('#crew-sel', w2().id, t('dft_u_crew') + ' + ' + w2().name); await sleep(250); } await ui.save(); await ui.closeDoc(); }
+    else { const d = okR(await exec(first('MGR', 'APR', 'ADM'), 'job_create', { row: { technician_id: W.id, technician_name: W.name, helper_ids: w2() ? [w2().id] : [],
+        counterparty_id: cx.counterparty_id || null, complex_id: cx.id, work_type_id: wt.id, unit_number: 'DFTEST-R', date: today } })); D.JR = d.id; }
+    const j = await dftPull(D.JR); must(j && j.technician_id === W.id && (!w2() || (j.helper_ids || []).includes(w2().id)), dftCut({ t: j && j.technician_id, h: j && j.helper_ids }, 140));
+    return { note: 'JR · ' + W.name + (w2() ? ' + ' + w2().name : '') + (isManager() ? ' · ☛' : ' · ⇒ ' + first('MGR', 'APR', 'ADM')) }; });
+  await step('·', t('dftr_p2'), async () => { if (!D.JR) throw SKIP('JR'); const k = first('MGR', 'APR', 'ADM');
+    const d = okR(await exec(k, 'prop_create', { row: { complex_id: cx.id, counterparty_id: cx.counterparty_id || null, unit_number: 'DFTEST-RP', status: 'approved', items: [{ q: 1, d: 'Drywall repair (test proposal)', a: 120 }], total: 120 } })); D.PR = d.id;
+    okR(await rpc(first('ADM', 'APR', 'MGR'), 'link_job_proposal', { p_job: D.JR, p_prop: D.PR })); await propPull(D.PR);
+    must((await dftPull(D.JR)).proposal_id === D.PR, 'proposal_id'); return { note: 'PR · ' + k + ' → JR' }; });
+
+  /* ---------------- RA · создание: из инвойса, из пропозала, отдельный; привязка и отвязка ---------------- */
+  G(t('dftr_g_a'));
+  await step('+', t('dftr_a1'), async () => { if (!D.JR) throw SKIP('JR'); await ui.openDoc(D.JR); await U.check('input[onchange="App.setNeedsRepair(this.checked)"]', true, t('rep_flag')); await ui.save(); await ui.closeDoc();
+    must((await dftPull(D.JR)).needs_repair === true, 'needs_repair'); await dayCard(D.JR); present(`.item.clicky[data-drag-id="${D.JR}"] .chip.repq`, 'R?'); return { note: 'R? · ' + t('rep_flag') }; });
+  await step('+', t('dftr_a2'), async () => { if (!D.JR) throw SKIP('JR'); let cat = 0;
+    if (isMe('W')){ await ui.openDoc(D.JR); await U.click(`[onclick="App.newRepairFromJob('${D.JR}')"]`, t('rep_new')); await U.wait(() => repDraft && !repById(repDraft.id), 6000, 'REP'); D.R1 = repDraft.id;
+      await U.click(`[onclick="App.repCatModal('work')"]`, t('rep_add_work')); await sleep(250);
+      const opt = U.q(`#overlay [onclick^="App.repCatAdd('work',"]`); if (opt){ dftLog('   ☛ ' + t('rep_cat') + ' → ' + dftCut((opt.textContent || '').trim(), 50), 'ui'); opt.click(); await sleep(300); cat = 1; } else await ui.reset();
+      await R.addRow('work', 'Patch drywall (test)', 40); await R.addRow('mat', 'Joint compound (test)', 15);
+      await U.type(`input[oninput="App.repField('po_number', this.value)"]`, 'DFT-PO-R1', 'PO Number');
+      await U.type(`input[onchange="App.repField('complete_by', this.value || null)"]`, addDaysISO(today, 3), t('prop_complete'));
+      if (!repMoneyHidden()){ await U.type(`input[oninput="App.repField('sales_tax', this.value)"]`, '3.5', t('p_tax')); await U.type(`input[oninput="App.repField('freight', this.value)"]`, '5', t('p_freight')); }
+      await U.type('#rep-note', 'ремонт после вырезки стены — тест', t('prop_note'));
+      await R.addRow('work', null, null);                                     /* пустая строка: при сохранении убирается */
+      await ui.typeTr('note', 'repair after the wall cut-out — test');
+      await R.save(); must(repById(D.R1), 'REP'); await adoptR(D.R1); await R.close(); }
+    else { const j = (state.data.jobs || []).find(x => x.id === D.JR) || {};
+      const d = okR(await exec('W', 'rep_create', { row: { job_id: D.JR, proposal_id: D.PR, complex_id: j.complex_id || cx.id, counterparty_id: j.counterparty_id || cx.counterparty_id || null,
+        unit_number: j.unit_number || 'DFTEST-R', date: j.date || today, helper_ids: [W.id].concat(w2() ? [w2().id] : []),
+        items: [{ q: 1, code: '', d: 'Patch drywall (test)', d_en: '', a: 40 }], materials: [{ q: 1, code: '', d: 'Joint compound (test)', d_en: '', a: 15 }], total: 55,
+        po_number: 'DFT-PO-R1', complete_by: addDaysISO(today, 3), sales_tax: 3.5, freight: 5, note: 'ремонт после вырезки стены — тест', note_en: 'repair after the wall cut-out — test',
+        hist: [hE('W', 'created')] } })); D.R1 = d.id; if (HAS_SB) await pull(D.R1); }
+    const r = await srv(D.R1), j = await dftPull(D.JR);
+    must(r && r.is_test && r.job_id === D.JR && r.status === 'draft' && r.created_by === W.id && (r.helper_ids || []).includes(W.id) && (!w2() || (r.helper_ids || []).includes(w2().id))
+      && r.unit_number === j.unit_number && r.complex_id === j.complex_id, dftCut(r && { job: r.job_id === D.JR, st: r.status, by: r.created_by === W.id, crew: r.helper_ids, unit: r.unit_number }, 200));
+    must(rowsOf(r, 'work').length === 1 + cat && rowsOf(r, 'mat').length === 1 && Math.abs(+r.total - (repWorks(r) + repMats(r))) < 0.01, dftCut({ w: rowsOf(r, 'work').length, m: rowsOf(r, 'mat').length, total: r.total }, 120));
+    if (isMe('W') || srvOk) must(r.proposal_id === D.PR && r.po_number === 'DFT-PO-R1' && ((r.hist || []).slice(-1)[0] || {}).act === 'created', dftCut({ p: r.proposal_id, po: r.po_number, h: (r.hist || []).slice(-1)[0] }, 160));
+    if (isMe('W')) must(/wall cut-out/.test(r.note_en || '') && +r.sales_tax === (repMoneyHidden() ? 0 : 3.5) && r.complete_by === addDaysISO(today, 3), dftCut({ en: r.note_en, tax: r.sales_tax, cb: r.complete_by }, 160));
+    if (!isMe('W')){ await R.open(D.R1); const tx = (document.querySelector('.prop-wrap') || {}).textContent || ''; await R.close();
+      must(tx.includes(t('rep_src_job')) && tx.includes('WORK ·') && (!srvOk || tx.includes('PROPOSAL ·')), t('dftr_no_links')); }
+    return { note: 'R1 · ' + repNo(r) + ' · $' + repGrand(r) + (cat ? ' · ' + t('rep_cat') : '') + (isMe('W') ? ' · ☛' : ' · ⇒ W') }; });
+  await step(isManager() ? '+' : '·', t('dftr_a3'), async () => { if (!D.PR) throw SKIP('PR');
+    if (isManager()){ await openProp(D.PR);
+      await U.click(`[onclick="App.newRepairFromProp('${D.PR}')"]`, t('rep_new')); await U.wait(() => repDraft && repDraft.proposal_id === D.PR && !repById(repDraft.id), 6000, 'REP'); D.R2 = repDraft.id; D.R2by = ME;
+      await R.addRow('work', 'Paint the patched wall (test)', 25); await R.save(); must(repById(D.R2), 'REP'); await adoptR(D.R2); await R.close(); propDraft = null; }
+    else { const k = first('APR', 'ADM', 'MGR'); need(k);
+      const d = okR(await exec(k, 'rep_create', { row: { proposal_id: D.PR, complex_id: cx.id, counterparty_id: cx.counterparty_id || null, unit_number: 'DFTEST-RP', helper_ids: [who(k).id],
+        items: [{ q: 1, d: 'Paint the patched wall (test)', a: 25 }], total: 25, hist: [hE(k, 'created')] } })); D.R2 = d.id; D.R2by = k; }
+    const r = await srv(D.R2); must(r && r.is_test && !r.job_id && r.status === 'draft' && (!(isManager() || srvOk) || r.proposal_id === D.PR), dftCut(r && { job: r.job_id, p: r.proposal_id, s: r.status }, 120));
+    if (isManager()) must(r.created_by === state.user.id && (r.helper_ids || []).join() === state.user.id && r.complex_id === (propById(D.PR) || {}).complex_id, dftCut({ by: r.created_by, crew: r.helper_ids }, 120));
+    return { note: 'R2 · ' + (isManager() ? '☛ PROPOSAL → ' + t('rep_new') : '⇒ ' + D.R2by) }; });
+  await step(repCanCreate() ? '+' : '−', t(repCanCreate() ? 'dftr_a4' : 'dftr_a4n'), async () => { await R.list();
+    if (!repCanCreate()){ absent('[onclick="App.openRepair()"]', t('rep_new')); must(((document.querySelector('.prop-wrap') || {}).textContent || '').includes(t('rep_no_create')), t('rep_no_create')); return { note: t('rep_no_create') }; }
+    if (!D.JR) throw SKIP('JR');
+    D.R3 = await newRep();
+    await U.type('#cb-cp .combo-in', cp.name || '', t('counterparty')); await U.click('#cb-cp-list .combo-opt:not(.dim)', cp.name || '');
+    await U.type('#cb-cx .combo-in', cx.name || '', t('complex')); await U.click('#cb-cx-list .combo-opt:not(.dim)', cx.name || '');
+    await U.type(`.prop-wrap input[oninput="App.repField('unit_number', this.value)"]`, 'DFTEST-R3', t('unit'));
+    await R.addRow('work', 'Replace baseboard (test)', 30); must(repDraft.counterparty_id === cp.id && repDraft.complex_id === cx.id, t('counterparty') + ' / ' + t('complex') + ' ≠ ' + dftCut([repDraft.counterparty_id, repDraft.complex_id], 90));
+    await R.save(); must(repById(D.R3), 'REP'); await adoptR(D.R3);
+    await U.type('#rep-job-sel', D.JR, t('prop_pick_job')); await U.click('[onclick="App.repLinkJob()"]', t('prop_link') + ' · WORK'); await R.save(); await R.close();
+    const r = await srv(D.R3); must(r && r.job_id === D.JR && r.proposal_id === D.PR && r.created_by === state.user.id && r.unit_number === 'DFTEST-R3' && r.complex_id === cx.id, dftCut(r && { j: r.job_id === D.JR, p: r.proposal_id === D.PR, u: r.unit_number }, 140));
+    return { note: 'R3 → WORK · PROPOSAL ' + t('dftr_from_job') }; });
+  await step('+', t('dftr_a5'), async () => { if (!D.R3) throw SKIP('R3'); await R.open(D.R3);
+    await U.click(`[onclick="App.repUnlink('prop')"]`, t('prop_unlink') + ' · PROPOSAL'); await U.click(`[onclick="App.repUnlink('job')"]`, t('prop_unlink') + ' · WORK'); await R.save();
+    let r = await srv(D.R3); must(r && !r.job_id && !r.proposal_id, 'unlink: ' + dftCut({ j: r && r.job_id, p: r && r.proposal_id }, 100));
+    await U.type('#rep-prop-sel', D.PR, t('rep_pick_prop')); await U.click('[onclick="App.repLinkProp()"]', t('prop_link') + ' · PROPOSAL');
+    await U.type('#rep-job-sel', D.JR, t('prop_pick_job')); await U.click('[onclick="App.repLinkJob()"]', t('prop_link') + ' · WORK'); await R.save(); await R.close();
+    r = await srv(D.R3); must(r.job_id === D.JR && r.proposal_id === D.PR, 'relink'); return { note: t('prop_unlink') + ' ×2 → ' + t('prop_link') + ' ×2' }; });
+  await step('−', t('dftr_a6'), async () => { if (!repCanCreate()) throw SKIP(t('rep_no_create')); const id = await newRep(); await R.addRow('work', 'No counterparty (test)', 1);
+    U.clearToasts(); await U.click('.db-save', t('save')); await sleep(500); const tx = U.toast(); await R.close();
+    must(!repById(id) && tx.includes(t('prop_need_cpcx').slice(0, 18)), t('dft_ui_notoast') + ' · ' + dftCut(tx, 80)); return { note: '→ ' + t('prop_need_cpcx') }; });
+
+  /* ---------------- RB · статусы и согласование ---------------- */
+  G(t('dftr_g_b'));
+  if (!D.R1){ dftIssue('crit', t('dftr_no_r1')); throw new Error(t('dftr_no_r1')); }
+  await step('+', t('dftr_b1'), async () => { const r = await setBy('W', D.R1, 'sent'); must(!r.decided_by, 'decided_by'); return { note: isMe('W') ? '☛ ' + t('rep_send') : '⇒ W' }; });
+  await step('+', t('dftr_b2'), async () => { await R.list(); await U.click(`[onclick="App.repDocFilter('sent')"]`, t('pst_sent')); present(`[onclick="App.openRepair('${D.R1}')"]`, 'R1 · ' + t('pst_sent'));
+    await U.click(`[onclick="App.repDocFilter('all')"]`, t('all')); let where = t('tab_repairs') + ' · ' + t('pst_sent');
+    if (canApprove()){ await ui.tab('home'); await U.click('.banner.b-apv', t('dftr_apv')); await sleep(300); present(`[onclick="App.openRepair('${D.R1}')"]`, t('dftr_apv')); where += ' · ' + t('dftr_apv'); }
+    return { note: where }; });
+  await step('−', t('dftr_b3'), async () => { if (isMe('W')) await noDecideUI(D.R1); return errR(await exec('W', 'rep_update', { id: D.R1, patch: { status: 'approved' } }), 'FORBIDDEN_APPROVE', raw('W')); });
+  await step('−', t('dftr_b4'), async () => errR(await exec('W', 'rep_update', { id: D.R1, patch: { status: 'declined', decline_reason: 'сам себе — тест' } }), 'FORBIDDEN_APPROVE', raw('W')));
+  await step('−', t('dftr_b5'), async () => { need('MGR'); if (isMe('MGR')) await noDecideUI(D.R1); return errR(await exec('MGR', 'rep_update', { id: D.R1, patch: { status: 'approved' } }), 'FORBIDDEN_APPROVE', raw('MGR')); });
+  await step('−', t('dftr_b6'), async () => { need('MGR'); return errR(await exec('MGR', 'rep_update', { id: D.R1, patch: { status: 'declined', decline_reason: 'не моё — тест' } }), 'FORBIDDEN_APPROVE', raw('MGR')); });
+  await step('+', t('dftr_b7'), async () => { need('APR'); const r = await setBy('APR', D.R1, 'declined', 'нет фото «до» — тест');
+    must(/нет фото/.test(r.decline_reason || '') && r.decided_by === who('APR').id, dftCut({ why: r.decline_reason, by: shortName(profName(r.decided_by)) }, 120)); return { note: who('APR').name }; });
+  if (isMe('W')) await step('+', t('dftr_b8'), async () => { needSrv(); need('APR'); return feedHasWith('Ремонт отклонён', 'нет фото'); });
+  await step('+', t('dftr_b9'), async () => { await R.open(D.R1); const tx = (document.getElementById('rep-apr') || {}).textContent || '', chip = U.has('#rep-apr .chip.pst-declined'); await R.close();
+    must(/нет фото «до»/.test(tx) && chip, t('dftr_no_reason')); return { note: '«нет фото «до» — тест»' }; });
+  await step('+', t('dftr_b10'), async () => {
+    if (isMe('W')){ await R.open(D.R1); await R.setAmt('work', 'Patch drywall', 45); must(repDraft.status === 'declined', 'status'); await R.setStatus('sent', null, D.R1); await R.close(); }
+    else { const cur = await srv(D.R1); const items = (cur.items || []).map(it => /Patch drywall/.test(it.d || '') ? { ...it, a: 45 } : it); await svcSet('W', D.R1, 'sent', null, { items, total: repSum(items) + repSum(cur.materials) }); }
+    const r = await srv(D.R1); must(r.status === 'sent' && !r.decided_by && rowsOf(r, 'work').some(it => +it.a === 45), dftCut({ s: r.status, by: r.decided_by }, 100)); if (HAS_SB) await pull(D.R1);
+    return { note: '$40 → $45 · ' + t('pst_declined') + ' → ' + t('pst_sent') }; });
+  if (canApprove() && !isMe('W')) await step('+', t('dftr_b11'), async () => { needSrv(); return feedHasWith('Ремонт ждёт апрува', 'DFTEST-R'); });
+  await step('+', t('dftr_b12'), async () => { const r = await setBy('W', D.R1, 'draft'); const h = (r.hist || [])[0] || {};
+    must(!r.decided_by && h.act === 'reset', 'hist=' + dftCut(h, 100)); return { note: t('pst_sent') + ' → ' + t('pst_draft') + ' (' + t('rep_h_reset') + ')' }; });
+  await step('+', t('dftr_b13'), async () => { need('APR'); await setBy('W', D.R1, 'sent'); const r = await setBy('APR', D.R1, 'approved'); must(r.decided_by === who('APR').id, 'decided_by'); return { note: who('APR').name }; });
+  if (isMe('W')) await step('+', t('dftr_b14'), async () => { need('APR'); return feedHasWith('Ремонт апрувлен', 'Unit DFTEST-R'); });
+  await step('+', t('dftr_b15'), async () => { await R.open(D.R1); present('#rp-grand.ok', t('rep_grand')); present('#rep-apr .banner.b-yellow', t('rep_reset_note')); present('#rep-apr .chip.pst-approved', t('pst_approved')); await R.close();
+    return { note: t('rep_reset_note').slice(0, 60) + '…' }; });
+  await step('+', t('dftr_b16'), async () => { need('ADM'); const r = await setBy('ADM', D.R1, 'declined', 'смета не та — тест'); must(r.decided_by === who('ADM').id, 'decided_by'); return { note: t('pst_approved') + ' → ' + t('pst_declined') }; });
+  if (isMe('W')) await step('+', t('dftr_b17'), async () => { need('ADM'); return srvOk ? feedHasWith('Ремонт отклонён', 'смета не та') : ui.feedHas('Апрув снят с ремонта'); });
+  await step('+', t('dftr_b18'), async () => { need('ADM'); const r = await setBy('ADM', D.R1, 'approved'); must(r.decided_by === who('ADM').id && !r.decline_reason, dftCut({ by: r.decided_by, why: r.decline_reason }, 100)); return { note: t('pst_declined') + ' → ' + t('pst_approved') }; });
+  { const k2 = isManager() ? ME : (D.R2by || 'APR'), can2 = k2 !== 'MGR' && k2 !== 'W';
+    await step(can2 ? '+' : '−', t(can2 ? 'dftr_b19' : 'dftr_b19n'), async () => { if (!D.R2) throw SKIP('R2'); need(k2);
+      if (!can2){ if (isMe(k2)) await noDecideUI(D.R2); return errR(await exec(k2, 'rep_update', { id: D.R2, patch: { status: 'approved' } }), 'FORBIDDEN_APPROVE', raw(k2)); }
+      if (isMe(k2)){ await R.open(D.R2); await U.click(`#rep-st button[onclick="App.repSetStatus('approved')"]`, t('prop_status') + ' → ' + t('pst_approved')); await U.wait(() => (loc(D.R2) || {}).status === 'approved', 8000, t('pst_approved')); await flushed('repairs', D.R2); await sleep(300); await R.close(); }
+      else await svcSet(k2, D.R2, 'approved');
+      const r = await srv(D.R2); must(r.status === 'approved' && r.created_by === r.decided_by, dftCut({ s: r.status, c: r.created_by, d: r.decided_by }, 120));
+      return { note: who(k2).name + ' · ' + t('pst_draft') + ' → ' + t('pst_approved') }; }); }
+
+  /* ---------------- RC · правка одобренного: апрув снимается ---------------- */
+  G(t('dftr_g_c'));
+  await step('+', t('dftr_c1'), async () => { const r0 = await srv(D.R1); must(r0.status === 'approved', 'status=' + r0.status); await R.open(D.R1); U.clearToasts();
+    await expToast(() => R.setAmt('work', 'Patch drywall', 50)); await sleep(200); const tx = U.toast(), st = repDraft.status; await R.save(); await R.close();
+    must(st === 'draft' && tx.includes(t('rep_reset_done').slice(0, 12)), t('dftr_no_reset_ui') + ' · ' + dftCut(tx, 80));
+    const r = await srv(D.R1), h = (r.hist || [])[0] || {}; must(r.status === 'draft' && !r.decided_by && h.act === 'reset' && h.from === 'approved', dftCut({ s: r.status, h }, 160));
+    return { note: '$45 → $50 · ' + t('rep_reset_done') }; });
+  await step('+', t('dftr_c2'), async () => { const where = [t('tab_repairs')];
+    await R.list(); present(`[onclick="App.openRepair('${D.R1}')"] .chip.pst-declined`, t('rep_reset_chip'));
+    if (isManager()){ await ui.goDay((loc(D.R1) || {}).date || today); await ui.tab('board'); await sleep(300); present(`.pcard[onclick="App.openRepair('${D.R1}')"] .chip.pst-declined`, t('rep_reset_chip')); where.push(t('tab_board'));
+      await ui.tab('archive'); await sleep(300); present(`[onclick="App.openRepair('${D.R1}')"]`, t('act_rep_reset')); where.push(t('act_rep_reset')); }
+    return { note: t('rep_reset_chip') + ' · ' + where.join(' · ') }; });
+  if (isMe('W')) await step('+', t('dftr_c3'), async () => { need('ADM', 'APR'); await setBy('W', D.R1, 'sent'); await setBy('APR', D.R1, 'approved');
+    const cur = await srv(D.R1), items = (cur.items || []).map(it => /Patch drywall/.test(it.d || '') ? { ...it, a: 52 } : it);
+    await svcSet('ADM', D.R1, 'draft', null, { items, total: repSum(items) + repSum(cur.materials) }); must((await srv(D.R1)).status === 'draft', 'status'); if (HAS_SB) await pull(D.R1);
+    return feedHasWith('Апрув снят с ремонта', 'Unit DFTEST-R'); });
+  await step('+', t('dftr_c4'), async () => { needSrv(); need('APR'); await setBy('W', D.R1, 'sent'); await setBy(APX(), D.R1, 'approved');
+    const cur = await srv(D.R1), items = (cur.items || []).map(it => /Patch drywall/.test(it.d || '') ? { ...it, a: +it.a + 7 } : it);
+    okR(await exec('W', 'rep_update', { id: D.R1, patch: { items, total: repSum(items) + repSum(cur.materials) } }));
+    const r = await srv(D.R1), h = (r.hist || [])[0] || {}; if (HAS_SB) await pull(D.R1);
+    must(r.status === 'draft' && !r.decided_by && h.act === 'reset' && h.srv === true && h.from === 'approved', dftCut({ s: r.status, h }, 180)); return { note: t('dftr_srv_reset') + (isMe('W') ? ' · ' + t('dft_raw') : '') }; });
+  await step('+', t('dftr_c5'), async () => { needSrv(); need('APR'); await setBy('W', D.R1, 'sent'); await setBy(APX(), D.R1, 'approved');
+    const cur = await srv(D.R1), items = (cur.items || []).map(it => ({ ...it, d_en: 'EN · ' + (it.d || '') }));
+    okR(await exec('W', 'rep_update', { id: D.R1, patch: { photos: { before: ['dft-before'], after: ['dft-after'] }, note_en: 'repair after the wall cut-out — test (EN)', items } }));
+    const r = await srv(D.R1); if (HAS_SB) await pull(D.R1); must(r.status === 'approved' && r.decided_by, 'status=' + r.status); return { note: t('dftr_c5_n') }; });
+  await step('+', t('dftr_c6'), async () => { if (HAS_SB) needSrv(); const r0 = await srv(D.R1); if (r0.status !== 'approved') throw SKIP('status=' + r0.status);
+    await R.open(D.R1); await R.save(); await R.close(); const r = await srv(D.R1); if (HAS_SB) await pull(D.R1); must(r.status === 'approved', 'status=' + r.status); return { note: t('save') + ' → ' + t('pst_approved') }; });
+
+  /* ---------------- RD · бригада, помощник, посторонний, менеджер ---------------- */
+  G(t('dftr_g_d'));
+  await step('+', t('dftr_d1'), async () => { if (!D.R3) throw SKIP('R3'); need('W2'); const x = w2(); await R.open(D.R3);
+    await U.type('#rep-crew-sel', x.id, t('add_helper') + ' + ' + x.name); await sleep(250); await R.save(); let r = await srv(D.R3); must((r.helper_ids || []).includes(x.id), 'helper_ids +');
+    await U.click(`[onclick="App.repCrewDel('${x.id}')"]`, '✕ ' + x.name); await R.save(); await R.close(); r = await srv(D.R3); must(!(r.helper_ids || []).includes(x.id), 'helper_ids −');
+    return { note: '+ ' + x.name + ' → ✕' }; });
+  const mkR5 = async () => { if (D.R5) return; const d = okR(await exec('W2', 'rep_create', { row: { complex_id: cx.id, counterparty_id: cx.counterparty_id || null, unit_number: 'DFTEST-R5', helper_ids: [w2().id, W.id],
+    items: [{ q: 1, d: 'Helper view (test)', a: 10 }], total: 10, hist: [hE('W2', 'created')] } })); D.R5 = d.id; };
+  await step('+', t('dftr_d2'), async () => { need('W2'); needSrv(); await mkR5();
+    if (isMe('W')){ if (HAS_SB) await syncNow(true); await R.list(); present(`[onclick="App.openRepair('${D.R5}')"]`, 'R5'); await R.open(D.R5);
+      present('#rep-ro', t('rep_ro_note')); absent('.db-save', t('save')); absent(`#rep-apr [onclick="App.repSetStatus('sent')"]`, t('rep_send')); absent(`[onclick="App.delRepair('${D.R5}')"]`, t('delete'));
+      must((document.querySelector('fieldset.rep-fs') || {}).disabled === true, 'fieldset'); await R.close(); return { note: t('rep_ro_note').slice(0, 50) + '…' }; }
+    okR(await exec('W', 'rep_get', { id: D.R5, strict: true })); return { note: 'W · rep_get strict ✓' }; });
+  await step('−', t('dftr_d3'), async () => { need('W2'); await mkR5(); return errR(await exec('W', 'rep_update', { id: D.R5, patch: { note: 'помощник правит — тест' } }), 'RLS_DENIED', raw('W')); });
+  await step('−', t('dftr_d4'), async () => { if (!D.R2) throw SKIP('R2');
+    if (isMe('W')){ if (HAS_SB) await syncNow(true); await R.list(); absent(`[onclick="App.openRepair('${D.R2}')"]`, 'R2'); }
+    else needSrv();
+    return errR(await exec('W', 'rep_get', { id: D.R2, strict: true }), 'RLS_DENIED', raw('W')); });
+  await step('−', t('dftr_d5'), async () => { if (!D.R2) throw SKIP('R2'); return errR(await exec('W', 'rep_update', { id: D.R2, patch: { note: 'посторонний правит — тест' } }), 'RLS_DENIED', raw('W')); });
+  await step('+', t('dftr_d6'), async () => { need('MGR');
+    if (isMe('MGR')){ await R.open(D.R1); await expToast(() => U.type(`input[oninput="App.repField('po_number', this.value)"]`, 'DFT-PO-MGR', 'PO Number')); await R.setStatus('sent', null, D.R1); await R.close(); }
+    else await svcSet('MGR', D.R1, 'sent', null, srvOk ? { po_number: 'DFT-PO-MGR' } : { note: 'менеджер уточнил — тест' });
+    const r = await srv(D.R1); if (HAS_SB) await pull(D.R1); must(r.status === 'sent' && (r.po_number === 'DFT-PO-MGR' || /менеджер уточнил/.test(r.note || '')), dftCut({ s: r.status, po: r.po_number }, 100));
+    return { note: who('MGR').name + ' · PO → ' + t('pst_sent') }; });
+  if (isManager() && !isAdmin()) await step('−', t('dftr_d7'), async () => { await R.open(D.R1); absent(`[onclick="App.delRepair('${D.R1}')"]`, t('delete')); await R.close(); return { note: t('dftr_ui_only') }; });
+
+  /* ---------------- RF · PDF, фото чека, настройки ремонта ---------------- */
+  G(t('dftr_g_f'));
+  await step(repMoneyHidden() ? '−' : '+', t(repMoneyHidden() ? 'dftr_f1n' : 'dftr_f1'), async () => { const r0 = (HAS_SB ? await pull(D.R1) : null) || loc(D.R1);
+    if (repMoneyHidden()){ await R.open(D.R1); absent(`[onclick="App.makeRepairPdf('${D.R1}')"]`, t('rep_pdf')); must(((document.querySelector('.prop-wrap') || {}).textContent || '').includes(t('rep_pdf_hidden')), t('rep_pdf_hidden')); await R.close(); return { note: t('rep_pdf_hidden') }; }
+    if (!window.jspdf) throw SKIP('jsPDF'); let got = null; makeRepairPdf(D.R1, true, (doc, fname) => { got = { doc, fname }; }); must(got && got.doc, 'PDF');
+    const st = String(r0.status || '').toUpperCase(), txt = got.doc.output(); must(got.doc.getNumberOfPages() >= 1 && txt.includes(st), 'Status ' + st);
+    return { note: got.fname + ' · ' + got.doc.getNumberOfPages() + ' p. · ' + st }; });
+  if (!DFT.noMedia) await step('+', t('dftr_f3'), async () => { if (!camInCan()) throw SKIP(t('cam_in_denied')); const id = D.R1; if (mediaFree(id, 'photo', 'rep') <= 0) throw SKIP(t('dft_m_limit'));
+    const inQ = () => mediaQ.filter(x => x.doc === 'rep' && x.repair_id === id && x.kind === 'photo').length, onSrv = () => (state.data.media || []).filter(m => m.repair_id === id && m.kind === 'photo');
+    await R.open(id); CAMIN.noFallback = true;
+    try{ await camInOpen(id, 'photo', 'rep'); const v = document.querySelector('#camin video'); await U.wait(() => v && v.videoWidth > 0, 15000, t('dft_m_prev'));
+      dftLog('   ☛ ' + t('dft_m_shot') + ' 1 · ' + t('rep_receipt'), 'ui'); await camInShot(); await U.wait(() => !CAMIN.busy, 20000, t('dft_m_shot')); await sleep(400); camInClose(true); }
+    finally { CAMIN.noFallback = false; try{ if (CAMIN.el) camInClose(true); }catch(e){} }
+    await U.wait(() => (inQ() + onSrv().length) >= 1 && !(mPrepN.get(id) > 0), 60000, t('dft_m_queue')); await R.close(); D.media = true;
+    if (!HAS_SB) return { note: t('dftr_f3_q') + ' · ' + t('ct_demo') };
+    const t0 = performance.now(); mediaFlush(true).catch(() => {}); for (;;){ if (!inQ()) break; if (performance.now() - t0 > 120000) throw new Error(t('dft_m_queue')); if (!_mediaBusy && Math.round((performance.now() - t0) / 500) % 20 === 19) mediaFlush(true).catch(() => {}); await sleep(500); }
+    try{ await syncNow(true); }catch(e){} await U.wait(() => onSrv().some(m => m.drive_file_id), 20000, 'Drive');
+    return { note: t('rep_receipt') + ' · drive ' + String(onSrv()[0].drive_file_id).slice(0, 8) + '…' }; });
+  if (isAdmin()) await step('+', t('dftr_f2'), async () => { const o0 = state.data.org_settings, h0 = !!o0.rep_hide_prices, a0 = o0.rep_all_create !== false;
+    try{ await ui.setOrgBox('opt-rep-hide', !h0); must(!!state.data.org_settings.rep_hide_prices === !h0, 'rep_hide_prices'); must(!repMoneyHidden(), t('dftr_adm_money'));
+      await ui.setOrgBox('opt-rep-all', !a0); must((state.data.org_settings.rep_all_create !== false) === !a0, 'rep_all_create'); must(repCanCreate(), t('dftr_adm_create')); }
+    finally { try{ await ui.setOrgBox('opt-rep-hide', h0); await ui.setOrgBox('opt-rep-all', a0); }catch(e){ dftLog('⚠ ' + t('dft_restore_fail') + ': rep_hide_prices / rep_all_create', 'err'); } }
+    must(!!state.data.org_settings.rep_hide_prices === h0 && (state.data.org_settings.rep_all_create !== false) === a0, t('dft_restore_fail')); return { note: 'rep_hide_prices · rep_all_create → ' + t('dftr_restored') }; });
+
+  /* ---------------- RE · цепочки документов, архив, удаление ---------------- */
+  G(t('dftr_g_e'));
+  await step('+', t('dftr_e1'), async () => { await R.open(D.R1); await U.click(`[onclick="App.chain('rep','${D.R1}')"]`, t('ch_title')); await sleep(300);
+    const tx = ((document.querySelector('#overlay .card .tiny') || {}).textContent || '').trim(), nRep = (tx.match(/REP/g) || []).length; await ui.reset(); await R.close();
+    const exp = [D.R1, D.R3, D.R2].filter(id => id && loc(id) && !loc(id).archived_at).length;          /* все ремонты цепочки, которые ведущий видит, — и ремонт только из пропозала */
+    must(/PROP/.test(tx) && /WORK/.test(tx) && nRep === exp, tx + ' · REP ×' + nRep + ' ≠ ' + exp); return { note: tx }; });
+  await step('+', t('dftr_e2'), async () => { need('APR'); if ((await srv(D.R1)).status !== 'approved') await setBy(APX(), D.R1, 'approved');
+    const j0 = await dftPull(D.JR), r = (HAS_SB ? await pull(D.R1) : null) || loc(D.R1), amt = repGrand(r);
+    await R.open(D.R1); U.clearToasts(); await U.click(`[onclick="App.repToInvoice('${D.R1}')"]`, t('rep_to_inv')); await sleep(500); await flushed('jobs', D.JR); await sleep(300); await R.close();
+    const j1 = await dftPull(D.JR), line = (((j1 || {}).form_data || {}).others || []).find(o => String(o.desc || '').includes('REP-' + r.no));
+    must(line && Math.abs(+line.amount - amt) < 0.01 && /Repair/.test(line.desc_en || '') && +j1.total > +j0.total, dftCut({ line, t: [j0.total, j1 && j1.total] }, 200));
+    return { note: 'REP-' + r.no + ' · $' + amt + ' → WORK $' + j0.total + ' → $' + j1.total }; });
+  await step('−', t('dftr_e3'), async () => { const cnt = j => (((j || {}).form_data || {}).others || []).filter(o => /REP-/.test(o.desc || '')).length, n0 = cnt(await dftPull(D.JR));
+    await R.open(D.R1); U.clearToasts(); await U.click(`[onclick="App.repToInvoice('${D.R1}')"]`, t('rep_to_inv')); await sleep(600); const tx = U.toast(); await R.close();
+    const n1 = cnt(await dftPull(D.JR)); must(n1 === n0 && tx.includes(t('rep_already_moved').slice(0, 14)), dftCut({ n0, n1, tx }, 140)); return { note: '→ ' + t('rep_already_moved') }; });
+  await step(canApprove() ? '+' : '−', t(canApprove() ? 'dftr_e4a' : 'dftr_e4'), async () => { if (!D.R3) throw SKIP('R3'); need('APR');
+    if (isMe('W')){ await ui.openDoc(D.JR); await U.check('#jb-done', true, t('job_done_chk')); await ui.save(); await ui.closeDoc(); } else okR(await upd('W', D.JR, { status: 'done' }));
+    must((await dftPull(D.JR)).status === 'done', 'JR ' + t('status_done')); await setBy(ME, D.R3, 'sent'); await setBy(canApprove() ? ME : APX(), D.R3, 'approved');
+    const cnt = j => (((j || {}).form_data || {}).others || []).filter(o => /REP-/.test(o.desc || '')).length, n0 = cnt(await dftPull(D.JR)), r3 = loc(D.R3) || await srv(D.R3);
+    await R.open(D.R3); U.clearToasts(); await U.click(`[onclick="App.repToInvoice('${D.R3}')"]`, t('rep_to_inv')); await sleep(500); await flushed('jobs', D.JR); await sleep(300); const tx = U.toast(); await R.close();
+    const j1 = await dftPull(D.JR), n1 = cnt(j1);
+    if (canApprove()){ must(n1 === n0 + 1 && (j1.form_data.others || []).some(o => String(o.desc || '').includes('REP-' + r3.no)) && j1.status === 'done', dftCut({ n0, n1, st: j1.status }, 120)); return { note: 'REP-' + r3.no + ' → WORK (' + t('status_done') + ')' }; }
+    must(n1 === n0 && /🔒/.test(tx), dftCut({ n0, n1, tx }, 140)); return { note: '→ ' + dftCut(tx.replace(/^🔒\s*/, ''), 70) }; });
+  /* инвойс JD работника с ремонтом RD — удаление вместе с цепочкой */
+  const mkJD = async () => { if (D.JD) return;
+    const dj = okR(await exec(first('MGR', 'APR', 'ADM'), 'job_create', { row: { technician_id: W.id, technician_name: W.name, complex_id: cx.id, counterparty_id: cx.counterparty_id || null, work_type_id: wt.id, unit_number: 'DFTEST-RD', date: today } }));
+    D.JD = dj.id; await dftPull(D.JD);
+    if (isMe('W')){ await ui.openDoc(D.JD); await U.click(`[onclick="App.newRepairFromJob('${D.JD}')"]`, t('rep_new')); await U.wait(() => repDraft && !repById(repDraft.id), 6000, 'REP'); D.RD = repDraft.id;
+      await R.addRow('work', 'Chain delete (test)', 20); await R.save(); await adoptR(D.RD); await R.close(); }
+    else { const d = okR(await exec('W', 'rep_create', { row: { job_id: D.JD, complex_id: cx.id, counterparty_id: cx.counterparty_id || null, unit_number: 'DFTEST-RD', helper_ids: [W.id], items: [{ q: 1, d: 'Chain delete (test)', a: 20 }], total: 20 } })); D.RD = d.id; if (HAS_SB) await pull(D.RD); } };
+  if (isMe('W')) await step('−', t('dftr_e5b'), async () => { need('MGR'); await mkJD();
+    const d = okR(await exec('MGR', 'rep_create', { row: { job_id: D.JD, complex_id: cx.id, counterparty_id: cx.counterparty_id || null, unit_number: 'DFTEST-RD', helper_ids: [who('MGR').id], items: [{ q: 1, d: 'Manager row (test)', a: 5 }], total: 5 } }));
+    D.RD2 = d.id; if (HAS_SB) await pull(D.RD2);
+    await ui.openDoc(D.JD); await U.click('.btn-red[onclick*="deleteJob"]', t('delete')); await sleep(500);
+    present(`#overlay [onclick*="App.chain('job','${D.JD}')"]`, t('ch_block_show')); absent('[onclick^="App.chainArchive("]', t('ch_block_btn'));
+    must(((document.getElementById('overlay') || {}).textContent || '').includes(t('ch_block_admin_only').slice(0, 20)), t('ch_block_admin_only')); await ui.reset(); await ui.closeDoc();
+    okR(await exec('MGR', 'rep_update', { id: D.RD2, patch: { archived_at: new Date().toISOString(), archived_by: who('MGR').id, arch_note: 'Убран менеджером перед удалением инвойса — тест' } })); if (HAS_SB) await pull(D.RD2);
+    return { note: t('ch_block_admin_only').slice(0, 50) + '…' }; });
+  await step(isAdmin() || isMe('W') ? '+' : '−', t(isAdmin() || isMe('W') ? 'dftr_e5' : 'dftr_e5n'), async () => { await mkJD();
+    await ui.openDoc(D.JD);
+    if (!(isAdmin() || isMe('W'))){ absent('.btn-red[onclick*="deleteJob"]', t('delete')); await ui.closeDoc();
+      okR(await exec('W', 'rep_update', { id: D.RD, patch: { archived_at: new Date().toISOString(), archived_by: W.id, arch_note: 'В архив вместе с инвойсом DFTEST-RD — тест' } }));
+      okR(await upd('W', D.JD, { archived_at: new Date().toISOString(), archived_by: W.id, arch_note: 'тест удаления' })); if (HAS_SB) await pull(D.RD);
+      return { note: t('dftr_ui_only') + ' · ⇒ W' }; }
+    await U.click('.btn-red[onclick*="deleteJob"]', t('delete')); await sleep(500); present(`#overlay [onclick*="App.chain('job','${D.JD}')"]`, t('ch_block_show'));
+    await U.click('[onclick^="App.chainArchive("]', t('ch_block_btn')); await U.wait(() => state.screen !== 'job' || !jobDraft, 15000, t('delete')); await sleep(400);
+    const rd = await srv(D.RD), jd = await jobSrv(D.JD); if (HAS_SB) await pull(D.RD);
+    must(rd && rd.archived_at && rd.arch_note && jd && jd.archived_at, dftCut({ rd: rd && rd.arch_note, jd: jd && jd.archived_at }, 180));
+    return { note: t('ch_block_btn') + ' · ' + dftCut(rd.arch_note, 70) }; });
+  await step(isManager() ? '+' : '−', t(isManager() ? 'dftr_e6' : 'dftr_e6n'), async () => { if (!D.RD) throw SKIP('RD');
+    if (!isManager()){ absent(`.tabbar .tab[onclick="App.go('archive')"]`, t('tab_action')); return { note: t('dftr_ui_only') }; }
+    if (HAS_SB) await pull(D.RD); await ui.tab('archive'); await sleep(300); present(`[onclick="App.unarchive('rep','${D.RD}')"]`, t('arch_back'));
+    await U.click(`[onclick="App.unarchive('rep','${D.RD}')"]`, t('arch_back')); await sleep(300); await flushed('repairs', D.RD); await sleep(300);
+    const r = await srv(D.RD); must(r && !r.archived_at, 'archived_at'); if (HAS_SB) await pull(D.RD); return { note: t('arch_back') }; });
+  await step('+', t('dftr_e7'), async () => { if (!D.R3) throw SKIP('R3'); await R.open(D.R3); await U.click(`[onclick="App.delRepair('${D.R3}')"]`, t('delete')); await U.wait(() => !repDraft, 15000, t('delete')); await sleep(400);
+    const r = await srv(D.R3); must(r && r.archived_at && r.archived_by === state.user.id && r.arch_note, dftCut({ a: r && r.archived_at, by: r && r.archived_by }, 100)); if (HAS_SB) await pull(D.R3);
+    return { note: t('arch_to') + ' · ' + dftCut(r.arch_note, 70) }; });
+  if (isManager()) await step(isAdmin() ? '+' : '−', t(isAdmin() ? 'dftr_e8' : 'dftr_e8n'), async () => { if (!D.R3) throw SKIP('R3'); if (HAS_SB) await pull(D.R3); await ui.tab('archive'); await sleep(300);
+    if (!isAdmin()){ absent(`[onclick="App.purgeDoc('rep','${D.R3}')"]`, t('arch_purge')); present(`[onclick="App.unarchive('rep','${D.R3}')"]`, t('arch_back')); return { note: t('arch_only_admin') }; }
+    await U.click(`[onclick="App.purgeDoc('rep','${D.R3}')"]`, t('arch_purge')); await sleep(600);
+    const c0 = DFT.cur; DFT.cur = { ...c0, kind: '−' }; let g = { ok: true };   /* NOT_FOUND — ожидаемый ответ: документа больше нет */
+    try{ for (let i = 0; i < 20 && g.ok; i++){ if (i) await sleep(500); g = HAS_SB ? await dftCall('exec', { as: 'self', op: 'rep_get', args: { id: D.R3 } }) : { ok: !!loc(D.R3) }; } } finally { DFT.cur = c0; }
+    must(!g.ok, t('dft_not_purged')); D.R3 = ''; return { note: t('arch_purge') }; });
+  if (isManager()) await step(isAdmin() ? '+' : '−', t(isAdmin() ? 'dftr_e9' : 'dftr_e9n'), async () => { if (!D.PR) throw SKIP('PR'); await openProp(D.PR);
+    if (!isAdmin()){ absent(`[onclick="App.delProposal('${D.PR}')"]`, t('delete')); propDraft = null; await ui.reset(); render(); return { note: t('dftr_ui_only') }; }
+    await U.click(`[onclick="App.delProposal('${D.PR}')"]`, t('delete')); await sleep(500); await U.click('[onclick^="App.chainArchive("]', t('ch_block_btn')); await U.wait(() => !propDraft, 20000, t('ch_block_btn')); await sleep(500);
+    const arch = []; for (const id of [D.R1, D.R2].filter(Boolean)){ const r = await srv(id); arch.push(!!(r && r.archived_at)); }
+    const jr = await jobSrv(D.JR), pr = HAS_SB ? ((await state.sb.from('proposals').select('archived_at').eq('id', D.PR).maybeSingle()) || {}).data : propById(D.PR);
+    must(arch.length && arch.every(Boolean) && jr && jr.archived_at && pr && pr.archived_at, dftCut({ arch, jr: jr && jr.archived_at, pr: pr && pr.archived_at }, 160));
+    return { note: 'PROP + WORK + REP ×' + arch.length + ' → ' + t('arch_title') }; });
 }
 
 /* =====================================================================

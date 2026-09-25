@@ -1,4 +1,13 @@
 /* ============ TechLog · Duolingo-style dark ============ */
+/* v1.09.55: Nunito лежит в vendor/fonts (переменная толщина 400–900, кириллица и латиница отдельно —
+   браузер качает только нужный файл). Раньше шрифт шёл с fonts.googleapis.com: без сети и в первые
+   секунды запуска надписи рисовались системным шрифтом. Лицензия — vendor/fonts/OFL-Nunito.txt. */
+@font-face{ font-family:"Nunito"; font-style:normal; font-weight:400 900; font-display:swap;
+  src:url("./vendor/fonts/nunito-cyrillic.woff2") format("woff2");
+  unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116; }
+@font-face{ font-family:"Nunito"; font-style:normal; font-weight:400 900; font-display:swap;
+  src:url("./vendor/fonts/nunito-latin.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
 :root{
   --bg:#0F171B;
   --panel:#17232A;
@@ -1965,6 +1974,12 @@ select:disabled{opacity:.55;cursor:default}
 }
 .docbar .db-chain:hover{color:var(--blue)}
 @media (max-width:640px){ .chain-arr{flex-direction:row;gap:6px} }
+/* v1.09.54: цепочка документов на телефоне — поворачивается только значок стрелки, а не вся строка: повёрнутая на 90°
+   строка шириной с экран вставала поперёк и налезала подписью «в тот же день» на соседние карточки (нашла проверка интерфейса) */
+@media (max-width:640px){
+  .chain-arr{ transform:none; align-self:center; justify-content:center }
+  .chain-arr svg{ transform:rotate(90deg) }
+}
 
 /* v1.08.17: два вида приоритета — красный (закреплён первым) и жёлтый (метка) */
 .pri.on.hard .tri{color:var(--red)}
@@ -2657,7 +2672,22 @@ html.tl-offline .net-login-note{ display:flex }
 .st-read-h .st-read-sel{ flex:1 1 150px;min-width:0;width:auto;padding:7px 30px 7px 10px;font-weight:900;font-size:.95rem;
   appearance:none;-webkit-appearance:none;background:var(--panel-2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238AA0AB' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 8px center/16px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis }
-.st-frame{ width:100%;height:calc(100dvh - 240px);min-height:380px;border:2px solid var(--line);border-radius:var(--r-sm);background:#fff }
+.st-frame{ width:100%;height:calc(100dvh - 240px);min-height:300px;border:2px solid var(--line);border-radius:var(--r-sm);background:#fff }
+/* v1.09.55: строка книги — в один ряд: «Готово» на телефоне — значком, «?» справки — здесь же */
+.st-read-h{ flex-wrap:nowrap; }
+.st-read-h .st-timer{ flex:0 0 auto; }
+.st-read-h .help-btn, .st-read-h .faq-i{ flex:0 0 auto; margin-left:0; }
+.st-read-h .st-read-done{ flex:0 0 auto; width:auto; gap:4px; padding-left:10px; padding-right:10px; }
+@media (max-width:520px){
+  .st-read-h{ gap:5px; }
+  .st-read-h .st-sec-dot{ display:none; }                      /* номер и цвет раздела и так в выборе раздела */
+  .st-read-h .st-read-done span{ display:none; }
+  .st-read-h .st-read-done{ width:36px; min-width:36px; height:36px; padding:0; }
+  .st-read-h .icon-btn{ width:36px; height:36px; min-width:36px; }
+  .st-read-h .faq-i{ width:30px; height:30px; min-width:30px; }
+  .st-read-h .st-timer{ padding:3px 7px; gap:3px; font-size:.84rem; }
+  .st-read-h .st-read-sel{ padding-left:8px; }
+}
 .st-sels{ display:grid;gap:6px;grid-template-columns:minmax(0,1fr);margin-top:6px } .st-sels select{ min-width:0 }
 
 /* ============ v1.08.56: учёба по образцу — чипы разделов, KPI-плитки, без вкладок ============ */
@@ -2898,16 +2928,14 @@ html.tl-pop-bottom .mq-mini{bottom:calc(env(safe-area-inset-bottom,0px) + 82px +
 
 /* =====================================================================
    v1.09.05 · ПЛОТНОСТЬ ИНТЕРФЕЙСА. Сама компактная вёрстка — в compact.css;
-   здесь только то, что видно в ЛЮБОЙ плотности: кнопка-значок на доске,
-   строка холста ПК-режима в настройках, год в сроке пикапа.
+   здесь только то, что видно в ЛЮБОЙ плотности: строка холста ПК-режима в
+   настройках, год в сроке пикапа. v1.09.55: значок плотности на доске убран —
+   переключатель «Обычный | Компактный» живёт в шапке (.dens-sw).
    ===================================================================== */
-.brd-eye.brd-dens{padding:0;width:36px;justify-content:center;flex:0 0 auto}
-.brd-eye.brd-dens.on{border-color:var(--blue);color:var(--blue)}
 .lang-seg.cv-seg{max-width:100%}
 .lang-seg.cv-seg button{flex:1 0 auto;font-variant-numeric:tabular-nums}
 .lang-seg button:disabled{opacity:.35;cursor:default}
 @media (pointer: coarse){
-  .brd-eye.brd-dens{width:40px}
   .lang-seg.cv-seg button{padding:9px 10px}
 }
 
@@ -2932,6 +2960,9 @@ input:placeholder-shown + .inpx-x{ display:none }
 .wt-change{ display:inline-flex;align-items:center;gap:5px;padding:2px 8px;margin:1px 0 1px -8px;border:1.6px dashed currentColor;
   border-radius:9px;background:transparent;font-size:.75rem;font-weight:800;cursor:pointer;text-align:left }
 .wt-change .ic{ width:12px;height:12px;opacity:.8 }
+/* v1.09.54: кнопка вида задачи — над расширенной зоной нажатия кода доступа (#1150) строкой выше: на телефоне
+   верх «STEAM CLEAN» ловился кодом доступа (нашла проверка интерфейса) */
+.wt-change{ position:relative }
 .wt-change:hover{ background:rgba(255,255,255,.05) }
 /* Other services: строки, инструменты, переводы под спойлером */
 .oth-line{ align-items:center;border-left:3px solid transparent;padding-left:4px;margin-left:-7px }
@@ -3097,6 +3128,13 @@ html.tl-compact:not(.tl-desktop) .inv-sec{margin-bottom:4px}
 
 /* ===== v1.09.14: поделиться документом, журнал пересылок ===== */
 .docbar .db-share{flex:none}
+/* v1.09.54: шапка документа на узком телефоне — «Назад» и «Сохранить» только значками (подписи — в подсказке):
+   раньше на экране 390px номер документа сжимался до нуля, а крестик «Закрыть» уходил за правый край (нашла проверка интерфейса) */
+@media (max-width: 560px){
+  html:not(.tl-desktop) .docbar{ gap:6px }
+  html:not(.tl-desktop) .docbar .db-back, html:not(.tl-desktop) .docbar .db-save{ padding:0 10px }
+  html:not(.tl-desktop) .docbar .db-back span, html:not(.tl-desktop) .docbar .db-save span{ display:none }
+}
 .banner.b-ds{border-color:var(--blue);background:rgba(28,176,246,.09);color:var(--blue)}
 .ds-chips{display:flex;flex-wrap:wrap;gap:6px}
 .ds-chip{cursor:pointer;min-height:32px;padding:4px 10px;font:inherit;font-weight:800;font-size:.8rem}
@@ -3672,3 +3710,126 @@ html.tl-tv #dsk-density, html.tl-tv #dsk-menu-pin, html.tl-tv #dsk-jobbar, html.
 /* колонка со сжатыми плитками и маршрутами: плитки — по содержимому, остаток колонки — маршрутам (раньше пустота в карточке сотрудников) */
 .tv-rail.dir-col #tv-zrail:has(> .twg-route) > .twg-workers:has(> .twtiles), #tv-zrail2:has(> .twg-route) > .twg-workers:has(> .twtiles){ flex:0 1 auto; min-height:0 }
 .tv-rail.dir-col #tv-zrail:has(> .twg-workers > .twtiles) > .twg-route, #tv-zrail2:has(> .twg-workers > .twtiles) > .twg-route{ flex:1 1 0; max-height:none; min-height:28% }
+
+/* =====================================================================
+   v1.09.55 · ШАПКА БЕЗ ПУСТОТ
+   Слева — название в три тесные строки: «Tech Log», «учёт работ», «by APC · vX».
+   Их высота совпадает с правой колонкой (две строки: переключатели и связь+роль),
+   поэтому под названием не остаётся пустого поля, а подпись «учёт работ» видна
+   на любом телефоне (раньше до 400 px она пряталась). Где места хватает (ширина
+   названия от 210 px — ПК, планшет), подпись встаёт в строку рядом с названием.
+   Справа в первой строке — два переключателя одного размера: «Телефон | ПК»
+   и «Обычный | Компактный».
+   ===================================================================== */
+.topbar .brand{ container-type:inline-size; container-name:brand; }
+.brand .name{ display:flex; flex-wrap:wrap; align-items:baseline; column-gap:.26em; row-gap:0;
+  line-height:1.02; overflow:hidden; white-space:nowrap; }
+.brand .name .name-tag{ display:block; flex:0 0 100%; min-width:0; margin-top:2px;
+  font-size:.66rem; font-weight:800; line-height:1.2; letter-spacing:.3px; color:var(--dim);
+  overflow:hidden; text-overflow:ellipsis; }
+.brand .sub{ margin-top:1px; line-height:1.25; }
+@container brand (min-width: 210px){
+  .brand .name .name-tag{ flex:0 1 auto; margin:0 0 0 .45em; }
+}
+/* переключатели — пара одинаковых пилюль, прижаты вправо */
+.rt-row.rt-sw{ gap:6px; justify-content:flex-end; }
+.rt-row .vm-inline{ margin-left:0; flex:0 0 auto; }
+@media (pointer: coarse){
+  /* две пилюли в строку: кнопка 34 px, недостающую высоту добирает прозрачное поле (±12 px) */
+  .rt-row .vm-inline button{ width:34px; }
+}
+.dens-sw button.on{ background:var(--blue); color:#04314A; }
+
+/* v1.09.55 · Bouncie: ошибка поездок — кнопка «подробнее», окно по машинам, пошаговая диагностика */
+button.bnx-note{ display:block; width:100%; text-align:left; background:none; border:0; padding:6px 0 0; color:var(--yellow); cursor:pointer; font:inherit; font-size:.78rem; }
+button.bnx-note u{ color:var(--blue); }
+.bnx-row{ padding:8px 0; border-bottom:1px solid var(--line-soft); }
+.bnx-row:last-of-type{ border-bottom:0; }
+.bnx-code{ font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.74rem; color:var(--text); background:var(--panel-2); border-radius:8px; padding:5px 8px; margin:5px 0; overflow-wrap:anywhere; white-space:pre-wrap; }
+.bnx-why{ color:var(--yellow); }
+.bnx-pre{ max-height:52vh; overflow:auto; white-space:pre-wrap; }
+
+/* v1.09.55 · маршруты дня на карте приложения */
+.mr-chk{ margin-top:8px; }
+.mr-sum{ padding:6px 12px; margin-top:8px; }
+.mr-row{ align-items:center; gap:10px; }
+.mr-row .btn{ flex:0 0 auto; width:auto; }
+.mr-sw{ width:22px; height:6px; border-radius:3px; background:var(--c); flex:0 0 auto; box-shadow:0 0 0 2px #0F171B; }
+.mr-note{ margin:4px 0 2px; }
+.map-pin.map-office{ background:#F1F7FB; color:#0F171B; display:grid; place-items:center; }
+.map-pin.map-office svg{ width:14px; height:14px; }
+
+/* =====================================================================
+   v1.09.55 · ТВ: карусель сотрудников — карточка слева на карте и полоска времени сверху
+   ===================================================================== */
+.tv-emp{ position:absolute; z-index:920; }
+.tv-emp[hidden]{ display:none !important; }
+.tv-emp .tve-in.tvzm{ height:auto; max-height:100%; }
+.tv-emp .tve-in{ background:rgba(15,23,27,.9); border:2px solid var(--line); border-radius:var(--r); padding:12px 14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.55); display:flex; flex-direction:column; gap:10px; overflow:hidden; }
+.tve-h{ display:flex; align-items:center; gap:10px; }
+.tve-h .bn-sno svg{ width:40px; height:40px; }
+.tve-h .grow{ min-width:0; }
+.tve-nm{ display:block; font-size:1.25rem; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tve-h .st-line{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.84rem; }
+.tve-pos{ flex:0 0 auto; font-size:.72rem; font-weight:900; color:var(--dim); border:2px solid var(--line); border-radius:999px; padding:2px 8px; }
+.tve-cols{ display:grid; grid-template-columns:repeat(auto-fit, minmax(7.5rem, 1fr)); gap:8px; }
+.tve-col{ background:var(--panel-2); border:2px solid var(--line); border-radius:12px; padding:8px 10px; min-width:0; }
+.tve-ch{ font-size:.7rem; font-weight:900; letter-spacing:.4px; text-transform:uppercase; color:var(--dim); margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+.tve-ch svg{ width:14px; height:14px; }
+.tve-kv{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; font-size:.8rem; }
+.tve-kv span{ color:var(--dim); white-space:nowrap; }
+.tve-kv b{ font-size:1rem; white-space:nowrap; }
+.tve-wt{ display:flex; flex-direction:column; gap:3px; }
+.tve-wtr{ display:grid; grid-template-columns:12px 1fr 3.2rem 3.2rem; align-items:center; gap:6px; font-size:.82rem; }
+.tve-wtr .nm{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:800; }
+.tve-wtr b{ text-align:right; }
+.tve-wth{ grid-template-columns:1fr 3.2rem 3.2rem; color:var(--dim); font-size:.7rem; font-weight:900; text-transform:uppercase; letter-spacing:.4px; }
+.tve-stops{ display:flex; flex-direction:column; gap:5px; min-height:0; overflow:hidden; }
+/* полоска времени карусели и точки-слайды */
+.tv-carbar{ position:absolute; left:0; right:0; top:0; height:6px; z-index:930; background:rgba(0,0,0,.35); pointer-events:none; }
+.tv-carbar .tvcb-run{ position:absolute; left:0; top:0; bottom:0; width:100%; background:var(--blue); transform-origin:left center; animation:tvcbRun linear forwards; }
+@keyframes tvcbRun{ from{ transform:scaleX(0) } to{ transform:scaleX(1) } }
+.tv-carbar .tvcb-dots{ position:absolute; right:10px; top:10px; display:flex; gap:5px; zoom:var(--tvk,1); }
+.tv-carbar .tvcb-dots b{ width:8px; height:8px; border-radius:50%; background:rgba(241,247,251,.35); }
+.tv-carbar .tvcb-dots b.all{ border-radius:2px; }
+.tv-carbar .tvcb-dots b.on{ background:var(--blue); box-shadow:0 0 0 2px rgba(28,176,246,.35); }
+/* показан сотрудник: легенда общей карты и панели «поверх карты» уступают место его карточке */
+.tvwrap.tv-car-emp .tv-legend{ display:none; }
+.tvwrap.tv-car-emp.tvl-hud > .tva-a, .tvwrap.tv-car-emp.tvl-hud > .tva-b, .tvwrap.tv-car-emp.tvl-hud2 > .tva-a, .tvwrap.tv-car-emp.tvl-hud2 > .tva-b,
+.tvwrap.tv-car-emp.tvl-corners > .tva-a, .tvwrap.tv-car-emp.tvl-corners > .tva-a2, .tvwrap.tv-car-emp.tvl-corners > .tva-b, .tvwrap.tv-car-emp.tvl-corners > .tva-h{ visibility:hidden; }
+@media (prefers-reduced-motion:reduce){ .tv-carbar .tvcb-run{ animation:none; transform:none; opacity:.4 } }
+/* настройки карусели */
+.tvc-car.off{ opacity:.55; }
+.tvc-car-pd{ display:flex; flex-wrap:wrap; gap:0 16px; }
+
+/* v1.09.55 · характеристики апартаментов */
+.cxa-line{ display:flex; flex-wrap:wrap; gap:2px 0; margin-top:2px; }
+.cxa-line .cxa-k{ color:var(--dim); }
+.cxa-line .cxa-ok{ color:var(--green); }
+.cxa-line .cxa-sep{ color:var(--dim-2); white-space:pre; }
+.cxa-line .cxa-miss{ margin-left:6px; }
+.cxa-box{ margin:4px 0 10px; }
+.cxa-box:empty{ display:none; }
+.cxa-h{ font-weight:900; margin:4px 0 6px; display:flex; align-items:center; gap:6px; }
+.cxa-star{ color:var(--orange); }
+.cxa-seg{ width:auto; flex-wrap:wrap; }
+.cxa-seg button{ flex:0 0 auto; min-width:52px; }
+.cxa-f.cxa-bad input:not([type=checkbox]), .cxa-f.cxa-bad .cxa-seg{ border-color:var(--red); box-shadow:0 0 0 2px rgba(255,75,75,.25); }
+.chk-line.cxa-f.cxa-bad{ color:var(--red); }
+.cxa-more > summary{ cursor:pointer; font-weight:800; color:var(--blue); margin:6px 0; }
+.cxa-none{ margin:4px 0; }
+.cxa-row .cxa-kind{ width:28px; height:28px; border-radius:8px; background:var(--panel-2); display:grid; place-items:center; color:var(--blue); flex:0 0 auto; }
+.cxa-row .icon-btn.sm{ width:32px; height:32px; flex:0 0 auto; }
+/* v1.09.55 · предыстория задачи в юните */
+.hist-line{ display:block; width:100%; text-align:left; margin-top:6px; padding:6px 10px; border-radius:10px; border:2px dashed var(--purple);
+  background:rgba(206,130,255,.08); color:var(--text); font:inherit; font-size:.8rem; cursor:pointer; }
+.hist-line b{ color:var(--purple); }
+.hist-line u{ color:var(--blue); }
+.hist-doc{ border:2px solid var(--line); border-radius:12px; padding:10px 12px; margin:0 0 10px; background:var(--panel-2); }
+.hist-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.hist-h .badge-status{ position:static; margin-left:auto; }
+.hist-sec{ font-size:.84rem; margin-top:4px; }
+.hist-sec b{ color:var(--dim); font-weight:800; }
+.hist-flags{ margin-top:4px; color:var(--yellow); }
+.hist-note{ margin-top:6px; padding:6px 8px; border-radius:8px; background:var(--panel); white-space:pre-wrap; font-size:.84rem; }

@@ -424,7 +424,9 @@
   }
   try { window.addEventListener('tl-density', function () { applyDensity(); }); } catch (e) {}
   function buildDensity() {
-    var need = isDesk() && wide(980);
+    /* v1.09.55: плотность переключается в шапке («Обычный | Компактный» рядом с «Телефон | ПК») —
+       отдельная кнопка внизу слева больше не строится; оставшуюся от прежней версии убираем */
+    var need = false;
     if (!need) { if (densBtn) { densBtn.remove(); densBtn = null; } return; }
     if (densBtn && document.contains(densBtn)) { applyDensity(); return; }
     densBtn = document.createElement('button');

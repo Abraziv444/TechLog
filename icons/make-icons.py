@@ -7,20 +7,33 @@ make-icons.py — иконка TechLog (v1.08.68): тёмный скруглён
 icon-maskable-512 (без скругления, всё важное в безопасной зоне 80 %),
 favicon-64 и apple-touch-icon-180.
 
+v1.09.55: надпись — тем же шрифтом, что «Tech Log» в шапке приложения: Nunito Black
+(толщина 900) из vendor/fonts/nunito-latin.woff2 — один файл и для приложения, и для
+значка. Раньше значок рисовался Poppins Bold и на заставке при входе выглядел чужим.
+
   python3 icons/make-icons.py          # из корня репозитория
-Нужны: pillow, шрифт Poppins Bold (лежит в /usr/share/fonts/truetype/google-fonts
-или укажите путь в FONT).
+Нужны: pillow (FreeType с поддержкой WOFF2 и переменных шрифтов — так собраны колёса pillow).
+Другой шрифт — путь в переменной FONT (толщина 900 ставится, если у шрифта есть ось wght).
 """
 import os, sys
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONT = os.environ.get('FONT') or next((p for p in (
-    '/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf',
-    os.path.join(HERE, 'Poppins-Bold.ttf'),
+    os.path.join(HERE, '..', 'vendor', 'fonts', 'nunito-latin.woff2'),
     '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf') if os.path.exists(p)), None)
 if not FONT:
-    sys.exit('нет шрифта: положите Poppins-Bold.ttf в icons/ или задайте FONT=…')
+    sys.exit('нет шрифта: нужен vendor/fonts/nunito-latin.woff2 или путь в FONT=…')
+
+
+def font(size):
+    """Шрифт надписи; у переменного Nunito — толщина 900 (Black), как у «Tech Log» в шапке."""
+    f = ImageFont.truetype(FONT, size)
+    try:
+        f.set_variation_by_axes([900])
+    except Exception:
+        pass
+    return f
 
 BG_TOP, BG_BOT = (28, 43, 51), (15, 23, 27)          # --panel-2 → --bg
 GREEN, GREEN_DK = (88, 204, 2), (63, 154, 2)          # --green / --green-dk
@@ -76,7 +89,7 @@ def draw_icon(size=512, rounded=True, scale=1.0):
 
     # надпись: Tech (белый) / Log (синий) — по базовым линиям, чтобы строки
     # стояли ровно независимо от внутренних отступов шрифта
-    f1 = ImageFont.truetype(FONT, round(142 * S))
+    f1 = font(round(150 * S))
     x = 58 * S
     ld.text((x, 292 * S), 'Tech', font=f1, fill=WHITE + (255,), anchor='ls')
     ld.text((x, 428 * S), 'Log', font=f1, fill=BLUE + (255,), anchor='ls')

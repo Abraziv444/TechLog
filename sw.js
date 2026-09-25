@@ -1,5 +1,5 @@
 /* TechLog service worker */
-const VERSION = '1.09.52';
+const VERSION = '1.09.55';
 const CACHE = 'techlog-' + VERSION;
 const CDN_CACHE = 'techlog-cdn-v1';
 const ASSETS = [
@@ -27,6 +27,8 @@ const ASSETS = [
   './vendor/images/marker-icon.png',
   './vendor/images/marker-icon-2x.png',
   './vendor/images/marker-shadow.png',
+  './vendor/fonts/nunito-cyrillic.woff2',   // v1.09.55: свой шрифт — офлайн и с первой секунды
+  './vendor/fonts/nunito-latin.woff2',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

@@ -507,7 +507,7 @@ html.tl-desktop.tl-compact .day-cell{ padding:4px 2px 10px; }
 @media (min-width:980px){
   /* шапка: пилюля режима, связь и роль — в ОДНУ строку, шапка 52px вместо 82 */
   html.tl-desktop.tl-compact .topbar{ padding:6px 20px; margin-bottom:8px; }
-  html.tl-desktop.tl-compact .rt-col{ flex-direction:row-reverse; align-items:center; gap:8px; }
+  html.tl-desktop.tl-compact .rt-col{ flex-direction:row; align-items:center; gap:8px; }   /* v1.09.55: переключатели, связь, роль — как в обычной */
 
   /* левое меню: 16 пунктов влезают в 768px без прокрутки; ширина колонки
      прежняя — на неё завязаны полоса body (128px) и расчёт доски в desktop.js */

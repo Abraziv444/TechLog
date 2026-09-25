@@ -11,9 +11,10 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="64x64" href="./icons/favicon-64.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon-180.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<!-- v1.09.55: шрифт Nunito — свой (vendor/fonts), а не с Google Fonts: заставка, шапка и значок приложения
+     одним шрифтом с первой секунды и без сети. Сами правила @font-face — в начале styles.css. -->
+<link rel="preload" href="./vendor/fonts/nunito-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./vendor/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
 <!-- v1.09.12: библиотеки лежат в vendor/ и кэшируются service worker'ом — приложение запускается без сети.
      Раньше supabase-js, jsPDF и Leaflet шли с CDN и офлайн не поднимались («Не удалось запустить»). -->
 <link rel="stylesheet" href="./vendor/leaflet.css">

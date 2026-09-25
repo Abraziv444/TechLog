@@ -22,7 +22,7 @@
   'use strict';
 
   var LS_ON = 'techlog_uidiag';
-  var SELF = '#uidiag-fab,#uidiag-modal,#uidiag-flash,#uidiag-style';
+  var SELF = '#uidiag-fab,#uidiag-modal,#uidiag-flash,#uidiag-style,#dft-panel';   // v1.09.54: + панель теста документооборота
 
   /* ------------------------------------------------------------------
      0. РЕЕСТРЫ. Ставятся до всех остальных скриптов приложения.
@@ -97,6 +97,7 @@
       c_paint: 'Вес отрисовки', c_safe: 'Безопасные зоны экрана',
       c_media: 'Фото, видео и вложения',
       c_feat: 'Новые модули: номера, переводы, Диск, архив',
+      c_touch: 'Наезд кнопок друг на друга', c_offscreen: 'Кнопки за рамкой экрана', c_escape: 'Кнопка вылезла из своего блока',
       env: 'Устройство', all_title: 'Отчёт по всем экранам', walking: 'Обхожу экраны…',
       matrix: 'Матрица устройств', matrix_go: 'Гоняю размеры…',
       matrix_t: 'Матрица устройств',
@@ -122,6 +123,7 @@
       c_paint: 'Paint weight', c_safe: 'Screen safe areas',
       c_media: 'Photos, video and attachments',
       c_feat: 'New modules: numbers, translations, Drive, archive',
+      c_touch: 'Buttons overlapping each other', c_offscreen: 'Buttons outside the screen', c_escape: 'Button sticking out of its block',
       env: 'Device', all_title: 'Report for every screen', walking: 'Walking the screens…',
       matrix: 'Device matrix', matrix_go: 'Running sizes…',
       matrix_t: 'Device matrix',
@@ -223,11 +225,29 @@
   function floating(el) {
     var n2 = el, hop = 0;
     while (n2 && n2.nodeType === 1 && hop++ < 6) {
-      var pos = getComputedStyle(n2).position;
-      if (pos === 'fixed' || pos === 'sticky') return true;
+      var cs = getComputedStyle(n2), pos = cs.position;
+      if (pos === 'fixed') return true;
+      if (pos === 'sticky' && stuck(n2, cs)) return true;
       n2 = n2.parentElement;
     }
     return false;
+  }
+  /* v1.09.54: липкий блок прилип к своему краю? Меню разделов настроек у конца страницы выталкивается своим контейнером
+     вверх и едет вместе со страницей — это уже не «плавающая панель», а содержимое (под шапкой ему и место) */
+  function stuck(n2, cs) {
+    var r = n2.getBoundingClientRect(), sc = n2.parentElement, t = parseFloat(cs.top), b = parseFloat(cs.bottom);
+    while (sc && sc !== document.body && sc !== document.documentElement && !/auto|scroll|hidden/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
+    var box0 = sc && sc !== document.body && sc !== document.documentElement ? sc.getBoundingClientRect() : { top: 0, bottom: innerHeight };
+    if (!isNaN(t) && Math.abs(r.top - (box0.top + t)) <= 1.5) return true;
+    if (!isNaN(b) && Math.abs(box0.bottom - b - r.bottom) <= 1.5) return true;
+    return false;
+  }
+  var POPS = '#toasts,.mq-pop,.overlay,.modal,.combo-list,.tl-dd,#dsk-cal,#tl-tip-pop';
+  /* v1.09.54: крестик очистки выпадающего списка / поля ввода ставится на правый край своего поля по замыслу (v1.08.46) */
+  var ADORN = '.selx-x,.inpx-x';
+  function adornOf(x, field) {
+    var b = x && x.closest ? x.closest(ADORN) : null;
+    return !!(b && field && b.previousElementSibling === field);
   }
   function inView(r) { return r.b > 0 && r.t < innerHeight && r.r > 0 && r.l < innerWidth; }
   /* v1.08.69: на телефоне прокручивается #app, а не окно — все проходы по
@@ -289,7 +309,8 @@
           if (!top || isSelf(top)) return;
           if (top === el || el.contains(top)) return;
           /* всплывашки живут поверх страницы по определению */
-          if (top.closest && top.closest('#toasts,.mq-pop,.overlay,.modal')) return;
+          if (top.closest && top.closest(POPS)) return;   // v1.09.54: + открытый список, календарь, подсказка
+          if (adornOf(top, el)) return;                  // v1.09.54: крестик очистки на своём поле
           if (floating(top) && !floating(el)) return;   // проехали под шапкой/панелью — норма
           if (top.contains(el)) { bad++; by = by || top; return; }   // pointer-events / нулевая зона
           bad++; by = by || top;
@@ -308,11 +329,12 @@
   }
 
   /* --- 2. налезание соседних блоков в обычном потоке -------------------- */
-  function checkFlow() {
+  function checkFlow(root) {
     /* v1.08.50: значок «руль с номером» — два слоя <text> (размытый ореол
        + чёткая цифра) поверх пути руля; слои НАМЕРЕННО совпадают. Всё, что
-       внутри .carno-ic, для проверки потока — один элемент. */
-    var items = [], parents = qsa('#app *').filter(function (p) {
+       внутри .carno-ic, для проверки потока — один элемент.
+       v1.09.54: root — корень проверки (открытое окно вместо страницы). */
+    var items = [], parents = qsa((root || '#app') + ' *').filter(function (p) {
       return p.children.length > 1 && !isSelf(p) && !p.closest('.carno-ic'); });
     parents.slice(0, 400).forEach(function (p) {
       var kids = [].slice.call(p.children).filter(function (k) {
@@ -359,9 +381,9 @@
   }
 
   /* --- 4. обрезанный текст --------------------------------------------- */
-  function checkClip() {
+  function checkClip(root) {
     var items = [];
-    qsa('#app *').forEach(function (el) {
+    qsa((root || '#app') + ' *').forEach(function (el) {
       if (items.length > 14 || !visible(el)) return;
       if (/INPUT|TEXTAREA|SELECT|SVG|PATH/.test(el.tagName)) return;
       if (el.classList.contains('fade-clip') || el.closest('.board,.tabs,.week,.tabbar')) return;
@@ -1323,6 +1345,170 @@
     return mk('media', T('c_media'), items);
   }
 
+
+  /* ------------------------------------------------------------------
+     v1.09.54 · ТО, ЧТО ВИДИТ ЧЕЛОВЕК: кнопки наезжают друг на друга, уходят
+     за рамку экрана, вылезают из своего блока. Эти три проверки и быстрый
+     набор quick() гоняет «Тест документооборота + ремонт + интерфейс» на
+     каждом экране и в каждом окне по ходу прогона.
+     ------------------------------------------------------------------ */
+  /* целиком за краем обрезающего предка (укатилось в карусели) — его не видно, это не дефект */
+  function hiddenByParent(el) {
+    try {
+      var r = el.getBoundingClientRect(), p = el.parentElement;
+      while (p && p !== document.body) {
+        var cs = getComputedStyle(p);
+        if (/auto|scroll|hidden/.test(cs.overflowX + cs.overflowY)) {
+          var pr = p.getBoundingClientRect();
+          if (r.right <= pr.left + 1 || r.left >= pr.right - 1 || r.bottom <= pr.top + 1 || r.top >= pr.bottom - 1) return true;
+        }
+        p = p.parentElement;
+      }
+    } catch (e) {}
+    return false;
+  }
+  /* внутри полосы с горизонтальной прокруткой (вкладки, карусели, доска): уезжать за край — её замысел */
+  function inScroller(el, axis, stop) {
+    var p = el.parentElement, hop = 0;
+    while (p && p.nodeType === 1 && hop++ < 14) {
+      var cs = getComputedStyle(p), o = axis === 'x' ? cs.overflowX : cs.overflowY;
+      if (/auto|scroll/.test(o) && (axis === 'x' ? p.scrollWidth > p.clientWidth + 1 : p.scrollHeight > p.clientHeight + 1)) return true;
+      if (p === stop) break;
+      p = p.parentElement;
+    }
+    return false;
+  }
+  /* слой элемента: ближайший предок (или он сам) с position absolute / fixed / sticky. Сравниваем только элементы
+     одного слоя — выпадающий список, закреплённая шапка, крестик внутри поля лежат поверх по замыслу */
+  function layerOf(el) {
+    var n2 = el, hop = 0;
+    while (n2 && n2.nodeType === 1 && hop++ < 16) {
+      if (/absolute|fixed|sticky/.test(css(n2, 'position'))) return n2;
+      n2 = n2.parentElement;
+    }
+    return null;
+  }
+  var SKIPZ = '.leaflet-container,.stepper,.carno-ic';
+  /* закреплено намертво (position: fixed — окно, нижняя панель): со страницей не прокручивается.
+     Липкое (sticky) едет вместе со своим блоком — его низ достаётся прокруткой страницы */
+  function fixedOf(el) {
+    var n2 = el, hop = 0;
+    while (n2 && n2.nodeType === 1 && hop++ < 16) { if (css(n2, 'position') === 'fixed') return true; n2 = n2.parentElement; }
+    return false;
+  }
+  /* выдвижная панель, спрятанная за край (меню ПК уезжает влево, остаётся язычок): её кнопки за экраном по замыслу */
+  function inDrawer(el) {
+    var n2 = el, hop = 0, W = document.documentElement.clientWidth || innerWidth;
+    while (n2 && n2.nodeType === 1 && hop++ < 16) {
+      if (css(n2, 'position') === 'fixed') {
+        var b = box(n2), out = Math.max(0, -b.l) + Math.max(0, b.r - W);
+        return b.w > 0 && out > b.w * 0.3;
+      }
+      n2 = n2.parentElement;
+    }
+    return false;
+  }
+
+  /* --- наезд кнопок друг на друга (частичный — центр кнопки при этом свободен и checkCover его не видит) --- */
+  /* рамки элемента построчно: ссылка, перенесённая на две строки, — это две рамки, а не общий прямоугольник с пустотой */
+  function rectsOf(el) {
+    var c = clipped(el), rs = el.getClientRects ? [].slice.call(el.getClientRects()) : [];
+    if (rs.length < 2) return [c];
+    return rs.map(function (x) {
+      var r = { t: Math.max(x.top, c.t), b: Math.min(x.bottom, c.b), l: Math.max(x.left, c.l), r: Math.min(x.right, c.r) };
+      r.w = r.r - r.l; r.h = r.b - r.t; return r;
+    }).filter(function (r) { return r.w >= 4 && r.h >= 4; });
+  }
+  function checkTouch() {
+    var items = [], seen = {};
+    var els = hits().filter(function (el) { return !el.closest(SKIPZ) && !hiddenByParent(el); });
+    var bx = els.map(rectsOf), ly = els.map(layerOf);
+    for (var i = 0; i < els.length; i++) {
+      for (var j = i + 1; j < els.length; j++) {
+        if (ly[i] !== ly[j]) continue;
+        var a = els[i], b = els[j];
+        if (a.contains(b) || b.contains(a) || adornOf(a, b) || adornOf(b, a)) continue;   // крестик очистки на своём поле — по замыслу
+        var best = null;
+        bx[i].forEach(function (ra) { bx[j].forEach(function (rb) {
+          var ox = Math.min(ra.r, rb.r) - Math.max(ra.l, rb.l), oy = Math.min(ra.b, rb.b) - Math.max(ra.t, rb.t);
+          if (ox > 4 && oy > 4 && (!best || ox * oy > best.ox * best.oy)) best = { ox: ox, oy: oy, small: Math.min(ra.w * ra.h, rb.w * rb.h) };   /* до 4px — соприкосновение полей, не наезд */
+        }); });
+        if (!best) continue;
+        var k = pathOf(a) + '|' + pathOf(b); if (seen[k]) continue; seen[k] = 1;
+        items.push({ level: best.ox * best.oy > best.small * 0.2 ? 'err' : 'warn', msg: pathOf(a) + '  ×  ' + pathOf(b) + '  (' + Math.round(best.ox) + '×' + Math.round(best.oy) + 'px)', el: a });
+        if (items.length > 14) return mk('touch', T('c_touch'), items);
+      }
+    }
+    return mk('touch', T('c_touch'), items);
+  }
+
+  /* --- кнопки за рамкой экрана: должны быть в поле зрения, а уехали за край --- */
+  function checkOffscreen() {
+    var items = [], W = document.documentElement.clientWidth || innerWidth, H = innerHeight;
+    var ov = qsa('.overlay').filter(visible)[0];
+    hits().forEach(function (el) {
+      if (items.length > 14 || el.closest(SKIPZ) || hiddenByParent(el) || inScroller(el, 'x') || inDrawer(el)) return;
+      var r = box(el); if (r.w < 2 || r.h < 2) return;
+      var inOv = !!(ov && ov.contains(el)), fix = inOv || fixedOf(el);
+      var outR = r.r - W, outL = -r.l;
+      if (outR > 2 || outL > 2) {
+        var full = r.l >= W - 1 || r.r <= 1;
+        if (full && !fix) return;                   // целиком за экраном вне окна — спрятано намеренно (поле выбора файла и т.п.)
+        var d = outR > 2 ? 'правее края на ' + Math.round(outR) : 'левее края на ' + Math.round(outL);
+        items.push({ level: (full || Math.max(outR, outL) > r.w / 2) ? 'err' : 'warn', msg: d + 'px (экран ' + W + 'px): ' + pathOf(el), el: el });
+        return;
+      }
+      /* окно и закреплённые панели не прокручиваются со страницей: что ниже или выше экрана — не достать */
+      if (fix && (r.b > H + 2 || r.t < -2) && !inScroller(el, 'y', inOv ? ov : null)) {
+        var dv = r.b > H + 2 ? 'ниже края на ' + Math.round(r.b - H) : 'выше края на ' + Math.round(-r.t);
+        items.push({ level: (r.t >= H - 1 || r.b <= 1) ? 'err' : 'warn', msg: dv + 'px, прокрутки нет (экран ' + H + 'px): ' + pathOf(el), el: el });
+      }
+    });
+    return mk('offscreen', T('c_offscreen'), items);
+  }
+
+  /* --- кнопка вылезла из своего блока (карточка, строка, панель): «съехала» --- */
+  var FRAME = '.card,.banner,.rowline,.docbar,.prop-row,.form-row,.qty-line,.btn-rowpp,.btn-row3,.tl-acts,.dft-bar,.pcard,.item,.dict-row,.crew-box,.lang-seg,.tabs,.tr-row,.rep-ph,.chip-tech';
+  function checkEscape() {
+    var items = [];
+    hits().forEach(function (el) {
+      if (items.length > 14 || el.closest(SKIPZ) || hiddenByParent(el) || inScroller(el, 'x')) return;
+      if (/absolute|fixed/.test(css(el, 'position'))) return;          // значки и крестики ставятся на рамку намеренно
+      var fr = el.parentElement && el.parentElement.closest(FRAME);
+      if (!fr || !visible(fr)) return;
+      /* выпадающий список, всплывающая подсказка: между кнопкой и блоком — слой поверх (absolute / fixed), он и висит за рамкой */
+      for (var up = el.parentElement; up && up !== fr; up = up.parentElement) if (/absolute|fixed/.test(css(up, 'position'))) return;
+      var r = box(el), f = box(fr), W = document.documentElement.clientWidth || innerWidth;
+      if (r.w < 2 || r.h < 2 || r.r > W + 2 || r.l < -2) return;      // за рамкой экрана — это уже checkOffscreen
+      /* вылет меряем в долях самой кнопки: значок «?» высотой 24px, выступающий из строки на 5px, — приём вёрстки, а не сдвиг */
+      var side = [['справа', r.r - f.r, r.w], ['слева', f.l - r.l, r.w], ['снизу', r.b - f.b, r.h], ['сверху', f.t - r.t, r.h]]
+        .sort(function (a, b) { return b[1] / b[2] - a[1] / a[2]; })[0];
+      if (side[1] <= 4 || side[1] <= side[2] * 0.25) return;
+      var fn = pathOf(fr).split(' ▸ ').pop();
+      items.push({ level: side[1] > side[2] / 2 ? 'err' : 'warn', msg: 'вылезла из «' + fn + '» ' + side[0] + ' на ' + Math.round(side[1]) + 'px: ' + pathOf(el), el: el });
+    });
+    return mk('escape', T('c_escape'), items);
+  }
+
+  /* --- быстрый набор: синхронно, без тяжёлых замеров (прокрутка, крупный шрифт, узкий экран, хранилище).
+     Панель теста и подсказки на время проверки прячутся: они плавают поверх и частью экрана не являются. --- */
+  var QUIET = '#dft-panel,#toasts,#uidiag-fab';
+  function quick(label) {
+    var hid = qsa(QUIET).map(function (el) { var v = el.style.visibility; el.style.visibility = 'hidden'; return [el, v]; });
+    var ov = qsa('.overlay').filter(visible)[0], root = ov ? (ov.id ? '#' + ov.id : '.overlay') : '#app';
+    var checks = [];
+    try {
+      [checkCover, checkTouch, function flow() { return checkFlow(root); }, checkOverflow, checkOffscreen, checkEscape,
+       function clip() { return checkClip(root); }, checkBars, checkSafe].forEach(function (f) {
+        try { checks.push(f()); }
+        catch (e) { checks.push(mk('?', f.name || '?', [{ level: 'warn', msg: 'проверка упала: ' + (e && e.message), el: null }])); }
+      });
+    } finally { hid.forEach(function (x) { x[0].style.visibility = x[1]; }); }
+    var errors = 0, warns = 0;
+    checks.forEach(function (c) { c.items.forEach(function (i) { if (i.level === 'err') errors++; else if (i.level === 'warn') warns++; }); });
+    return { screen: label || '', w: innerWidth, h: innerHeight, ts: new Date().toISOString(), errors: errors, warns: warns, checks: checks, env: envInfo() };
+  }
+
   /* ------------------------------------------------------------------
      3. ЗАПУСК
      ------------------------------------------------------------------ */
@@ -1331,7 +1517,7 @@
     var fab = document.getElementById('uidiag-fab');
     if (fab) fab.style.visibility = 'hidden';
     var checks = [];
-    var sync = [checkCover, checkFlow, checkOverflow, checkClip, checkHit, checkBars,
+    var sync = [checkCover, checkTouch, checkFlow, checkOverflow, checkOffscreen, checkEscape, checkClip, checkHit, checkBars,   // v1.09.54: + наезд, за рамкой экрана, вылезла из блока
                 checkSafe, checkTab, checkText, checkNarrow, checkI18n,
                 checkContrast, checkHandlers, checkDom, checkPaint, checkLayers, checkMedia,
                 checkFeat];                       // v1.07.88: новые модули
@@ -1936,6 +2122,8 @@
       });
       window.UIDiag = {
         run: run, open: open, close: close, openAll: openAll, runAll: runAll,
+        /* v1.09.54: быстрая синхронная проверка экрана (тест документооборота + интерфейс); quickJson — без DOM-узлов */
+        quick: quick, quickJson: function (label) { return JSON.parse(JSON.stringify(quick(label), function (k, v) { return k === 'el' ? undefined : v; })); },
         /* сериализуемый отчёт по всем экранам — для автотестов */
         jsonAll: function (opts) { return runAll(null, opts).then(function (a) { return JSON.parse(JSON.stringify(a, function (k, v) { return k === 'el' ? undefined : v; })); }); },
         textAll: function () { return ALL ? allText(ALL) : ''; },

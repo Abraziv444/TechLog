@@ -80,8 +80,8 @@
     left:16px; right:auto; top:50%; bottom:auto;
     transform:translateY(-50%);
     width:96px; max-width:none;
-    /* v1.08.45: снизу-слева живёт кнопка плотности (#dsk-density) — колонка
-       меню не должна на неё наезжать, даже когда пунктов много */
+    /* v1.08.45: снизу-слева жила кнопка плотности (#dsk-density; v1.09.55 — переехала в шапку);
+       отступ снизу оставлен — под ним поповеры и полоска отправки */
     max-height:calc(100dvh - 128px); overflow:auto;
     flex-direction:column; justify-content:flex-start; gap:6px;
     padding:12px 8px;
@@ -971,3 +971,26 @@ html.tl-desktop .st-sels{ grid-template-columns:1fr 1fr }
 
 /* v1.09.44: см. styles.css — min-width:190px контейнера .info не должен доставаться фишке «Общий» (chip info) */
 html.tl-desktop .item .chip.info{ min-width:0; }
+
+/* v1.09.54: табличка очереди отправки («N ждут отправки», 6 секунд после изменения) на ПК — правее меню: слева внизу она
+   закрывала пункт «Настройки» меню (и перехватывала нажатие — табличка кликабельна). Нашла проверка интерфейса. */
+html.tl-desktop #tl-net{ left:124px; bottom:16px; }
+
+/* v1.09.54: меню разделов настроек — ниже шапки (45) и выезжающего меню (46) по слоям. В невысоком окне (ниже ~780px) у конца
+   страницы контейнер выталкивает липкое меню вверх, и с z-index 60 оно ложилось ПОВЕРХ шапки с логотипом, а в узком окне —
+   поверх выехавшего левого меню. Теперь уходит под шапку, как остальная страница (нашла проверка интерфейса). */
+html.tl-desktop .set-nav{ z-index:30; }
+
+/* =====================================================================
+   v1.09.55 · ШАПКА ПК В ОДНУ СТРОКУ: название (подпись «учёт работ» рядом),
+   дальше — «Телефон | ПК», «Обычный | Компактный», связь, роль и аватар.
+   ===================================================================== */
+@media (min-width: 980px){
+  html.tl-desktop .rt-col{ flex-direction:row; align-items:center; gap:10px; }
+  html.tl-desktop .rt-row{ gap:8px; }
+  /* логин — слева от аватара, а не под ним: шапка ниже на полтора десятка пикселей */
+  html.tl-desktop .avatar-wrap{ flex-direction:row-reverse; align-items:center; gap:8px; }
+  html.tl-desktop .avatar-wrap .avatar{ width:clamp(38px,2.5em,52px); height:clamp(38px,2.5em,52px); }
+  html.tl-desktop .login-pill{ margin-top:0; }
+  html.tl-desktop .topbar{ padding-top:10px; padding-bottom:10px; }
+}
