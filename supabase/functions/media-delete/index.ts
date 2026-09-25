@@ -1,8 +1,8 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, moveFile,
-         CORS, jres, FN_VER, ARCHIVE_DIR, PHOTOS_DIR, FILES_DIR, INVOICES_DIR,
+         CORS, jres, FN_VER, ARCHIVE_DIR, PHOTOS_DIR, FILES_DIR, INVOICES_DIR, rootFolder, archiveFolder,
          folderIdOf } from "../_shared/google.ts";
 
-const DEL_VER = "1.09.40";           // v1.09.40: помощник с общим доступом в inv_archive; версия функции — в ver (общий FN_VER — в lib)
+const DEL_VER = "1.09.50";           // v1.09.40: помощник с общим доступом в inv_archive; версия функции — в ver (общий FN_VER — в lib)
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (new URL(req.url).searchParams.get("ping"))      // v1.07.72: «кто ты»
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     return jres({ ok: true, files: rows?.length ?? 0, trashed });
   }
   /* v1.09.38 · ИНВОЙС ВЕРНУЛСЯ В ЧЕРНОВИК / ЦЕНА ИЗМЕНИЛАСЬ ПРИ АПРУВЕ: действующие PDF документа (kind invoice, без
-     archived_at) переезжают в «Архив TechLog / Invoices / ГГГГ-ММ»; строки media остаются с archived_at — история цела.
+     archived_at) переезжают в «Deleted documents / Invoices / ГГГГ-ММ» (раньше «Архив TechLog»); строки media остаются с archived_at — история цела.
      Право: админ, менеджер, основной исполнитель или (v1.09.40) помощник с «Общим доступом» — тот, кто вправе отозвать
      документ; документ должен быть виден пользователю (RLS через его клиента). */
   if (job_id && mode === "inv_archive") {
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       const t = await driveToken();
       const cfg = await driveConfig();
       const ym = String((job as any).date ?? "").slice(0, 7) || "old";
-      const dest = await monthFolder(t, await monthFolder(t, await monthFolder(t, cfg.gd_folder_id, ARCHIVE_DIR), INVOICES_DIR), ym);
+      const dest = await monthFolder(t, await monthFolder(t, await archiveFolder(t, await rootFolder(t)), INVOICES_DIR), ym);   // v1.09.50
       for (const m of rows) if (m.drive_file_id && dest && await moveFile(t, m.drive_file_id, dest)) moved++;
       await s.from("media").update({ archived_at: new Date().toISOString() }).in("id", rows.map((r) => r.id));
     }
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     return jres({ ok: true, files: rows?.length ?? 0, moved, ver: DEL_VER });
   }
   /* v1.07.88 · АРХИВ (корзина). Документ, помеченный на удаление, не теряет
-     файлы: они переезжают в папку «Архив TechLog / <документ>» на Диске.
+     файлы: они переезжают в папку «Deleted documents / <документ>» (раньше «Архив TechLog») на Диске.
      Вернуть документ из архива — файлы едут обратно в рабочие папки.
      Насовсем (в корзину Google Диска) файлы уходят только режимом purge,
      то есть только из архива приложения. */
@@ -112,11 +112,11 @@ Deno.serve(async (req) => {
         if (!m.drive_file_id) continue;
         let dest = "";
         if (mode === "archive") {
-          dest = await monthFolder(t, await monthFolder(t, cfg.gd_folder_id, ARCHIVE_DIR), tag);
+          dest = await monthFolder(t, await archiveFolder(t, await rootFolder(t)), tag);   // v1.09.50
         } else {
           const root = m.kind === "invoice"
-            ? (invRoot || await monthFolder(t, cfg.gd_folder_id, INVOICES_DIR))
-            : await monthFolder(t, cfg.gd_folder_id, m.kind === "file" ? FILES_DIR : PHOTOS_DIR);
+            ? (invRoot || await monthFolder(t, await rootFolder(t), INVOICES_DIR))
+            : await monthFolder(t, await rootFolder(t), m.kind === "file" ? FILES_DIR : PHOTOS_DIR);
           dest = await monthFolder(t, root, ym);
         }
         if (dest && await moveFile(t, m.drive_file_id, dest)) moved++;

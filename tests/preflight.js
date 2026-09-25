@@ -66,4 +66,9 @@ if (ts){
     const m = out.match(/Итог: ✓ (\d+) · ✗ (\d+)/); t(`Bouncie офлайн (bouncie-tracks.js): ${m ? m[1] + ' ✓ / ' + m[2] + ' ✗' : '?'}`, m && m[2] === '0', out.split('\n').filter(l => /✗/.test(l)).slice(0, 3));
   }catch(e){ const out = String(e.stdout || ''); const m = out.match(/Итог: ✓ (\d+) · ✗ (\d+)/); t(`Bouncie офлайн (bouncie-tracks.js): ${m ? m[1] + ' ✓ / ' + m[2] + ' ✗' : 'не запустился'}`, false, out.split('\n').filter(l => /✗/.test(l)).slice(0, 3)); }
 }
+if (ts){
+  try{ const out = cp.execSync('node ' + path.join(__dirname, 'drive-root.js'), { encoding: 'utf8', env: process.env, timeout: 60000 });
+    const m = out.match(/Итог: ✓ (\d+) · ✗ (\d+)/); t(`Google Диск офлайн (drive-root.js — корень и папки): ${m ? m[1] + ' ✓ / ' + m[2] + ' ✗' : '?'}`, m && m[2] === '0', out.split('\n').filter(l => /✗/.test(l)).slice(0, 3));
+  }catch(e){ const out = String(e.stdout || ''); t('Google Диск офлайн (drive-root.js)', false, out.split('\n').filter(l => /✗/.test(l)).slice(0, 3).join(' | ') || String(e.message).slice(0, 200)); }
+}
 console.log(`\nПРОВЕРКА ПЕРЕД ТЕСТАМИ: ${ok} ✓ / ${bad} ✗`); process.exit(bad ? 1 : 0);

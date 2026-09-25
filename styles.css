@@ -3521,3 +3521,154 @@ html.tl-desktop .dft-panel { bottom: 14px; }
 /* v1.09.44: фишка «Общий» имеет класс chip info — правила контейнера карточки .item .info (flex:1, на ПК min-width:190px)
    цепляли и её: фишка раздувалась до 190 px, вытесняла вид работ и фишки PROP / REP за край строки */
 .item .chip.info{flex:0 0 auto;min-width:0}
+
+/* =====================================================================
+   v1.09.51 · ТВ: ВАРИАНТЫ РАСКЛАДКИ. Зона экрана — блок .tva с координатами
+   в px (tvGeom в app.js); внутри — .tvzm с zoom: var(--tvk): всё, кроме самой
+   карты, масштабируется от Full HD (4K — вдвое крупнее, 1366×768 — мельче).
+   Шаблоны: .tvl-classic / -side / -strip / -hud / -twin / -ticker; .tvl-flip —
+   зеркально; .tvl-port — вертикальный экран. Направление блоков в зоне —
+   .dir-col / .dir-row (ставит JS). На проверке .tv-sim — кадр выбранного
+   разрешения, уменьшенный под окно.
+   ===================================================================== */
+.tvwrap{ display:block; position:relative; width:100%; height:100vh; height:100dvh; padding:0; gap:0; overflow:hidden; box-sizing:border-box }
+html.tl-tv.tl-compact .tvwrap{ padding:0; gap:0 }
+.tvwrap > .tva{ position:absolute; min-width:0; min-height:0; box-sizing:border-box }
+.tvwrap .tvzm{ zoom:var(--tvk,1); width:100%; height:100%; box-sizing:border-box; min-width:0; min-height:0; overflow:hidden }
+.tvwrap > .tv-mapbox{ isolation:isolate; flex:none }
+.tvwrap > .tva-a, .tvwrap > .tva-b, .tvwrap > .tva-tick{ z-index:2 }
+/* всё, что нарисовано поверх карты, — тоже в масштабе экрана */
+.tvwrap .tv-legend, .tvwrap .tv-fsbtn, .tvwrap .map-pin.tvpin, .tvwrap .map-car.tvcar, .tvwrap .tv-office, .tvwrap .leaflet-control-attribution{ zoom:var(--tvk,1) }
+.tvwrap .tv-legend{ flex-wrap:wrap; max-width:calc(100% - 24px) }
+/* колонка (dir-col) и лента (dir-row) */
+.tv-rail.dir-row{ flex-direction:row }
+.tv-rail.dir-row > .tv-head{ flex:1.1 1 0; flex-direction:column; align-items:flex-start; justify-content:space-between; min-width:0; gap:6px }
+.tv-rail.dir-row > .tv-head .tv-clock{ margin-left:0; text-align:left }
+.tv-rail.dir-row > .tv-head .who b{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.tv-rail.dir-row > .tv-head > *{ max-width:100% }
+.tv-rail.dir-row > .tv-head .who{ width:100% }
+.tv-rail.dir-row #tv-zrail{ flex-direction:row }
+.tv-rail.dir-row #tv-zrail > *{ min-width:0 }
+.tv-rail.dir-col #tv-zrail > .twg-route{ flex:0 1 auto; max-height:45%; overflow:hidden }   /* маршрутов много — не больше половины колонки, остальное сотрудникам */
+.tv-rail.dir-col #tv-zrail > .twg-workers{ flex:1 1 0; min-height:30% }
+.tv-rail.dir-col #tv-zrail > .twg:not(.twg-workers):not(.twg-route){ flex:0 1 auto; overflow:hidden }
+.tv-bottom.dir-col{ flex-direction:column }
+.tv-bottom.dir-col > .twg{ flex:1 1 0; min-height:0 }
+.tv-bottom.dir-col > .tv-stats{ flex:0 0 auto }
+.tv-bottom.dir-row > *{ min-width:0 }
+.tv-bottom.dir-row > .tv-stats{ align-content:start }
+.tvwrap .twg{ overflow:hidden }
+/* строка сотрудника: имя и статус тянутся, пробег — справа; «сегодня: ✓ N» — одной строкой */
+.tvwrap .bn-srow.tvw .grow{ flex:1 1 auto }
+.tvwrap .bn-srow.tvw .st-line{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.tvwrap .bn-srow.tvw .tv-done b{ display:inline }
+/* сводка и плитки подстраиваются под ширину зоны */
+.tvwrap .tv-stats.stats-day{ grid-template-columns:repeat(auto-fit, minmax(10.5rem, 1fr)) }
+.tvwrap .tv-stats.stats-day.one{ grid-template-columns:1fr }
+.tvwrap .twtiles{ grid-template-columns:repeat(auto-fill, minmax(11rem, 1fr)) }
+/* «Поверх карты»: карта от края до края, зоны — полупрозрачные панели */
+.tvl-hud > .tva-map.tv-mapbox{ border:0; border-radius:0 }
+.tvl-hud .tv-rail, .tvl-hud .tv-bottom{ background:rgba(11,17,20,.74); border:2px solid rgba(58,74,82,.9); border-radius:var(--r); padding:10px; box-shadow:0 10px 30px rgba(0,0,0,.5) }
+.tvl-hud .twg, .tvl-hud .tv-head{ background:rgba(23,35,42,.84) }
+.tvl-hud .tv-legend{ top:12px; bottom:auto }
+.tvl-hud.tvl-flip .tv-legend{ left:auto; right:12px }
+.tvl-hud .tv-fsbtn{ top:18px; bottom:auto }
+/* «Только карта»: строка со счётчиками и часами */
+.tv-tick{ display:flex; align-items:center; gap:14px; background:var(--panel); border:2px solid var(--line); border-radius:var(--r); padding:6px 16px }
+.tv-tick .logo{ width:42px; height:42px; margin:0; flex:0 0 auto }
+.tv-tick .who{ min-width:0; flex:0 1 auto }
+.tv-tick .who b{ font-size:1rem; white-space:nowrap }
+.tv-tick .who .tiny{ white-space:nowrap }
+.tt-chips{ display:flex; gap:10px; flex:1; min-width:0; overflow:hidden; justify-content:center }
+.tt-chip{ display:inline-flex; align-items:baseline; gap:7px; background:var(--panel-2); border:2px solid var(--line-soft); border-radius:12px;
+  padding:3px 12px; white-space:nowrap; font-weight:800; font-size:.8rem; color:var(--dim) }
+.tt-chip b{ font-size:1.35rem; color:var(--text); font-weight:900; font-variant-numeric:tabular-nums }
+.tt-chip.ok b, .tt-chip.go b{ color:var(--green) }
+.tt-chip.bad b{ color:var(--red) }
+.tv-tick .tv-clock{ margin-left:auto; display:flex; align-items:baseline; gap:10px; flex:0 0 auto }
+.tv-tick .tv-clock .hm{ font-size:1.8rem }
+/* проверка: кадр выбранного разрешения и полоска сверху */
+.tvwrap.tv-sim{ box-shadow:0 0 0 2px #2A3A42, 0 20px 60px rgba(0,0,0,.6) }
+.tv-testbar{ left:12px; right:12px; top:12px; margin:0 auto; width:fit-content; transform:none; z-index:1300; max-width:calc(100vw - 24px) }
+/* плавающие кнопки ПК-режима (плотность, закрепить меню, панель документа) на экране ТВ не нужны */
+html.tl-tv #dsk-density, html.tl-tv #dsk-menu-pin, html.tl-tv #dsk-jobbar, html.tl-tv #dsk-periods, html.tl-tv #dsk-pdfpane{ display:none !important }
+.tv-testbar .tvt-more{ display:contents }
+.tv-testbar.min .tvt-more{ display:none }
+.tv-testbar select{ font:inherit; font-size:12px; font-weight:700; padding:3px 6px; border-radius:8px; background:var(--panel-2); color:var(--text);
+  border:2px solid var(--line); max-width:230px; height:auto; min-height:0; width:auto; margin:0 }
+.tvt-share{ font-weight:900; color:var(--green); white-space:nowrap }
+.tv-testbar .tvt-min{ padding:4px 6px !important }
+/* настройки: готовые варианты, схема, профили, правила по разрешению */
+.tvg-h{ display:flex; align-items:center; gap:8px }
+.tvg-h .ic, .tvg-h svg{ width:18px; height:18px }
+.tvg-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px; margin-bottom:4px }
+.tvg-card{ display:flex; flex-direction:column; gap:6px; background:var(--panel-2); border:2px solid var(--line); border-radius:14px; padding:10px; min-width:0 }
+.tvg-card.on{ border-color:var(--green) }
+.tvg-pic{ display:flex; justify-content:center; align-items:center; background:#070C0E; border-radius:10px; padding:6px }
+.tvg-pic svg{ display:block; max-width:100%; height:auto }
+.tvg-card .tvg-pic{ height:104px }
+.tvg-card .tvg-pic svg{ width:auto; height:100%; max-height:92px }
+.tvg-n{ display:flex; align-items:center; gap:6px; flex-wrap:wrap }
+.tvg-n .chip{ margin:0 }
+.tvg-d{ min-height:2.5em }
+.tvg-tags{ display:flex; flex-wrap:wrap; gap:4px }
+.tvg-tags .chip{ margin:0; font-size:.68rem }
+.tvg-tags .tvg-sh{ color:var(--green); border-color:var(--green) }
+.tvg-btns{ display:flex; flex-wrap:wrap; gap:6px; margin-top:auto }
+.tvg-btns .btn{ width:auto; flex:1 1 100px; margin:0; min-width:0; padding-left:8px; padding-right:8px; font-size:.8rem; white-space:nowrap }
+.tvg-live{ display:flex; align-items:center; gap:10px; margin:2px 0 8px }
+.tvg-live .tvg-pic{ flex:0 0 auto }
+.tvz-note{ margin:6px 0 0; color:var(--orange) }
+.tvp-new{ display:flex; gap:6px; margin:6px 0 8px }
+.tvp-new input{ flex:1; min-width:0 }
+.tvp-new .btn{ width:auto; margin:0; white-space:nowrap }
+.tvp-row{ display:flex; align-items:center; gap:10px; border-top:1px solid var(--line-soft); padding:8px 0 }
+.tvp-row:first-child{ border-top:0 }
+.tvp-row.on > .grow > b{ color:var(--green) }
+.tvp-row .grow{ flex:1; min-width:0 }
+.tvp-row .grow b{ overflow-wrap:anywhere }
+.tvp-pic svg{ display:block }
+.tvp-btns{ display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; flex:0 0 auto }
+.tvp-btns .btn{ width:auto; margin:0 }
+.tvau.off{ opacity:.55 }
+.tvau .form-row select{ max-width:100% }
+@media (max-width:520px){ .tvp-row{ flex-wrap:wrap } .tvp-btns{ width:100% } .tvg-grid{ grid-template-columns:1fr } }
+/* ---------- v1.09.52 · ещё шесть шаблонов ----------
+   hud2 / corners / dock — карта на весь экран, блоки полупрозрачно поверх; bars / lshape / frame — со строкой счётчиков */
+.tvl-hud2 > .tva-map.tv-mapbox, .tvl-corners > .tva-map.tv-mapbox, .tvl-dock > .tva-map.tv-mapbox{ border:0; border-radius:0 }
+.tvl-hud2 .tv-rail, .tvl-hud2 .tv-bottom, .tvl-dock .tv-rail{ background:rgba(11,17,20,.74); border:2px solid rgba(58,74,82,.9);
+  border-radius:var(--r); padding:10px; box-shadow:0 10px 30px rgba(0,0,0,.5) }
+.tvl-hud2 .twg, .tvl-hud2 .tv-head, .tvl-dock .twg, .tvl-dock .tv-head{ background:rgba(23,35,42,.84) }
+/* «острова»: каждая карточка — сама себе остров, без общей подложки (карта видна между ними и под короткими карточками) */
+.tvl-corners .tv-rail, .tvl-corners .tv-bottom{ background:none; border:0; padding:0; box-shadow:none }
+.tvl-corners .twg, .tvl-corners .tv-head, .tvl-corners .dcard{ background:rgba(17,27,33,.9) }
+.tv-hcard > .tv-head{ height:100%; box-sizing:border-box }
+/* «док»: в низкой полосе без строки «обновлено» — место плиткам */
+.tvl-dock .tva-a .twg-workers .tv-upd{ display:none }
+/* второй остров справа — те же правила колонки, что у #tv-zrail */
+#tv-zrail2{ display:flex; flex-direction:column; gap:10px; flex:1; min-height:0; overflow:hidden }
+#tv-zrail2 > .twg-workers{ flex:1 1 0; min-height:30% }
+#tv-zrail2 > .twg-route{ flex:0 1 auto; max-height:45%; overflow:hidden }
+#tv-zrail2 > .twg:not(.twg-workers):not(.twg-route), #tv-zrail2 > .tv-stats{ flex:0 1 auto; overflow:hidden }
+/* легенда и кнопка «На весь экран» — там, где их не закроют панели */
+.tvl-hud2 .tv-legend, .tvl-corners .tv-legend{ left:50%; transform:translateX(-50%); top:12px; bottom:auto }
+.tvl-dock .tv-legend{ top:12px; bottom:auto }
+.tvl-dock .tv-fsbtn{ top:18px; bottom:auto }
+.tvl-dock.tvl-flip .tv-legend{ top:auto; bottom:12px }
+.tvl-dock.tvl-flip .tv-fsbtn{ top:auto; bottom:22px }
+/* «две строки»: внизу — только плитки сотрудников, без заголовка и итога (счётчики — в верхней строке) */
+.tvl-bars .tva-a .twg-workers .twg-h, .tvl-bars .tva-a .twg-workers .tv-stot, .tvl-bars .tva-a .twg-workers .tv-upd{ display:none }
+.tvl-bars .tva-a .twg-workers{ padding:8px 10px; justify-content:center }
+/* фильтр галереи по типу раскладки */
+.tvg-f{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px }
+.tvg-fb{ font:inherit; font-size:.8rem; font-weight:800; padding:5px 11px; border-radius:999px; border:2px solid var(--line); background:var(--panel-2);
+  color:var(--dim); cursor:pointer; line-height:1.2 }
+.tvg-fb span{ opacity:.7; margin-left:3px }
+.tvg-fb.on{ color:var(--green); border-color:var(--green) }
+/* плитки не влезли — последняя «+N ещё» (tvTilesTrim) */
+.twtile.tw-more{ justify-content:center; align-items:baseline; gap:6px; color:var(--dim); font-weight:900; border-style:dashed }
+.twtile.tw-more b{ font-size:1.05rem; color:var(--text) }
+.twtile.tw-more span{ font-size:.75rem }
+/* колонка со сжатыми плитками и маршрутами: плитки — по содержимому, остаток колонки — маршрутам (раньше пустота в карточке сотрудников) */
+.tv-rail.dir-col #tv-zrail:has(> .twg-route) > .twg-workers:has(> .twtiles), #tv-zrail2:has(> .twg-route) > .twg-workers:has(> .twtiles){ flex:0 1 auto; min-height:0 }
+.tv-rail.dir-col #tv-zrail:has(> .twg-workers > .twtiles) > .twg-route, #tv-zrail2:has(> .twg-workers > .twtiles) > .twg-route{ flex:1 1 0; max-height:none; min-height:28% }

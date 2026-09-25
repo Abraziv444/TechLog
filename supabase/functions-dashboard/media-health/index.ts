@@ -1,8 +1,8 @@
 import { svc, userClient, driveToken, monthFolder, CORS, jres, FN_VER,
-         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, ymDir, techDirLabel, BLOCKED_SUFFIX } from "./google.ts";
+         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, ymDir, techDirLabel, BLOCKED_SUFFIX, stripBlocked, rootFolder, rootFolderInfo, ARCHIVE_DIR, ROOT_DIR } from "./google.ts";
 
 /* v1.09.42 (п. 56): у каждой функции своя версия в ver — «Функции сервера» видят старую копию даже без правки общего google.ts (общий FN_VER — в lib) */
-const HEALTH_VER = "1.09.42";
+const HEALTH_VER = "1.09.50";
 
 /* v1.07.64 · три режима:
    ?cfg=1     — только конфиг без секретов (быстро, для отрисовки карточки);
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     const t = await driveToken();
     let renamed = 0; const errs: string[] = [];
     for (const d of dirs ?? []) {
-      const base = String(d.name ?? "").split(BLOCKED_SUFFIX).join("").trim() || "—";
+      const base = stripBlocked(String(d.name ?? "")) || "—";   // v1.09.50: и старый «Заблокирован», и новый «(blocked)»
       const want = techDirLabel(base, pr.blocked === true);
       if (want === d.name) continue;
       try {
@@ -345,26 +345,19 @@ Deno.serve(async (req) => {
       free_pct: q.free };
     if (r.cfg) (r.cfg as Record<string, unknown>).account = about.user?.emailAddress ?? "";
 
-    // доступна ли папка приложению?
-    let reachable = false, rootName = "";
-    if (folder) {
-      const chk = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${folder}?fields=id,name,trashed`,
-        { headers: { Authorization: `Bearer ${t}` } });
-      if (chk.ok) { const f = await chk.json(); reachable = !f.trashed; rootName = f.name ?? ""; }
-    }
-    if (!reachable) {                     // папка сделана руками в Диске — создаём свою
-      const mkf = await (await fetch("https://www.googleapis.com/drive/v3/files", {
-        method: "POST", headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "TechLog Archive",
-          mimeType: "application/vnd.google-apps.folder" }) })).json();
-      if (mkf.id) {
-        folder = mkf.id; rootName = "TechLog Archive";
-        await s.from("app_secrets").upsert({ key: "gd_folder_id", value: folder });
-        if (r.cfg) (r.cfg as Record<string, unknown>).folder_id = folder;
-        r.folder = { ok: true, created: true, id: folder, name: rootName };
-      } else r.folder = { ok: false, error: JSON.stringify(mkf).slice(0, 200) };
-    } else r.folder = { ok: true, id: folder, name: rootName };
+    /* v1.09.50: корень — общий rootFolder(): нет ссылки, папку удалили или она недоступна приложению — находит
+       или создаёт «TechLog Archive» и запоминает ссылку; русское имя корня меняет на английское */
+    let rootName = "";
+    try {
+      folder = await rootFolder(t);
+      const info = rootFolderInfo();
+      const f = await (await fetch(`https://www.googleapis.com/drive/v3/files/${folder}?fields=id,name&supportsAllDrives=true`,
+        { headers: { Authorization: `Bearer ${t}` } })).json();
+      rootName = f.name ?? ROOT_DIR;
+      if (r.cfg) (r.cfg as Record<string, unknown>).folder_id = folder;
+      r.folder = { ok: true, id: folder, name: rootName, created: info.created, renamed: info.renamed,
+        url: `https://drive.google.com/drive/folders/${folder}`, archive_dir: ARCHIVE_DIR };
+    } catch (e) { r.folder = { ok: false, error: String((e as Error)?.message ?? e).slice(0, 200) }; }
 
     /* v1.07.78: наглядно, куда что ложится. Админ видит в настройках две
        строки с иконкой папки и её именем — как в самом Google Диске;

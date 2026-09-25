@@ -1,4 +1,4 @@
-import { svc, userClient, CORS, jres, driveToken, driveConfig, monthFolder } from "../_shared/google.ts";
+import { svc, userClient, CORS, jres, driveToken, driveConfig, monthFolder , rootFolder } from "../_shared/google.ts";
 
 /* =====================================================================
    v1.08.33 · BACKUP — SQL-бэкап данных в Google Drive.
@@ -48,7 +48,7 @@ import { svc, userClient, CORS, jres, driveToken, driveConfig, monthFolder } fro
    значении — папка Files внутри корневой gd_folder_id). Права: админ.
    ===================================================================== */
 
-const BK_VER = "1.09.19";
+const BK_VER = "1.09.50";   // v1.09.50: корень Диска создаётся сам
 type Sb = ReturnType<typeof svc>;
 
 const TABLES = [
@@ -221,8 +221,8 @@ const nyHM = (d = new Date()) => d.toLocaleTimeString("en-GB",
   { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false }).replace(":", "");
 
 async function ensureBackupFolder(t: string): Promise<string> {
-  const cfg = await driveConfig();
-  const rootId = cfg.gd_folder_id.match(/[-\w]{20,}/)?.[0] ?? cfg.gd_folder_id;
+  await driveConfig();
+  const rootId = await rootFolder(t);                     // v1.09.50
   return await monthFolder(t, rootId, "TechLog Backups");   // найти/создать по имени
 }
 
@@ -329,8 +329,8 @@ Deno.serve(async (req) => {
         const { data: org } = await s.from("org_settings")
           .select("gd_files_folder").limit(1).maybeSingle();
         const filesRoot = String(org?.gd_files_folder ?? "").match(/[-\w]{20,}/)?.[0] || "";
-        const cfg = await driveConfig();
-        const rootId = cfg.gd_folder_id.match(/[-\w]{20,}/)?.[0] ?? cfg.gd_folder_id;
+        await driveConfig();
+        const rootId = await rootFolder(t);               // v1.09.50
         const parent = filesRoot || await monthFolder(t, rootId, "Files");
         const folder = await monthFolder(t, parent, "journals");   // найти/создать по имени
         const up = await upload(t, folder, name, text, "text/plain");

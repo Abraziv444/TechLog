@@ -1,8 +1,8 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, dirFor, ymDir,
-         folderIdOf, INVOICES_DIR, CORS, jres, FN_VER, techDirLabel } from "../_shared/google.ts";
+         folderIdOf, INVOICES_DIR, CORS, jres, FN_VER, techDirLabel , rootFolder } from "../_shared/google.ts";
 
 /* v1.09.42 (п. 56): у каждой функции своя версия в ver — «Функции сервера» видят старую копию даже без правки общего google.ts (общий FN_VER — в lib) */
-const COMMIT_VER = "1.09.42";
+const COMMIT_VER = "1.09.50";
 
 /* v1.08.13: имя папки сотрудника — как в media-begin */
 function techDirName(display: string) {
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
           if (ids.length) {
             const cfg = await driveConfig();
             const root = folderIdOf(String(o.data?.gd_inv_folder ?? "")) ||
-                         await monthFolder(t, cfg.gd_folder_id, INVOICES_DIR);
+                         await monthFolder(t, await rootFolder(t), INVOICES_DIR);   // v1.09.50
             const ymd = ymDir(String(j.data?.date ?? ""));
             const pr = await s.from("profiles").select("id,display_name,blocked").in("id", ids);
             for (const h of (pr.data ?? [])) {

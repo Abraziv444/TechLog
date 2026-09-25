@@ -361,7 +361,7 @@ console.log('\n— архив-корзина и сверка (v1.07.88) —');
   t('сверка: что есть на Диске', /function mediaChips/.test(src) && /function auditListModal/.test(src));
   t('опрос Диска', /media-health\?audit=1/.test(src));
   const g = fs.readFileSync(ROOT + '/supabase/functions/_shared/google.ts', 'utf8');
-  t('папка «Архив TechLog»', /ARCHIVE_DIR = "Архив TechLog"/.test(g) && /export async function moveFile/.test(g));
+  t('папка удалённых документов — «Deleted documents» (v1.09.50; старая «Архив TechLog» переименовывается)', /ARCHIVE_DIR = "Deleted documents"/.test(g) && /LEGACY_ARCHIVE_DIRS = \["Архив TechLog"\]/.test(g) && /export async function moveFile/.test(g));
   const md = fs.readFileSync(ROOT + '/supabase/functions/media-delete/index.ts', 'utf8');
   t('media-delete умеет archive/restore', /mode === "archive" \|\| mode === "restore"/.test(md));
   t('сервер не даёт стереть неархивное', /NOT_ARCHIVED/.test(md));
@@ -3172,7 +3172,7 @@ console.log('\n— v1.09.08: стандартные галочки вида за
     ('wt_tip' in T.DICT.ru) && ('wt_tip' in T.DICT.en) && /OTHER/.test(T.DICT.ru.wt_tip) && /\{WT\}/.test(T.DICT.ru.wt_tip)
     && src.includes("${t('work_type')} ${tipQ('wt_tip')}</span>") && (src.match(/tipQ\('wt_tip'\)/g) || []).length >= 3);
   t('v1.09.08: справочник — сетка стандартных галочек, сохранение не теряет остальные поля вида',
-    src.includes('data-wtbox="${sec}.${k}"') && src.includes("const row = { ...(wtById(id) || {}), id, name: $('#wt-name').value.trim(), color: $('#wt-color-v').value, preset,"));
+    src.includes('data-wtbox="${sec}.${k}"') && src.includes("const row = { ...(wtById(id) || {}), id, name: clJoin($('#wt-name').value, (($('#wt-name-en') || {}).value || '')), color: $('#wt-color-v').value, preset,"));   /* v1.09.49: название — RU и EN отдельными полями */
   t('v1.09.08: демо — вид OTHER', /name: 'OTHER', color: '#8AA0AB'/.test(src));
   /* Other services */
   t('v1.09.08: Other services — строки, инструменты, шаблоны и переводы внутри раздела',
@@ -3280,10 +3280,10 @@ console.log('\n— v1.09.10: история треков, папка забло�
         === fs.readFileSync(ROOT + '/supabase/functions/' + f + '/index.ts', 'utf8').replace('from "../_shared/google.ts"', 'from "./google.ts"'))
     && fs.readdirSync(ROOT + '/supabase/functions-dashboard').every(d => { const g = ROOT + '/supabase/functions-dashboard/' + d + '/google.ts'; return !fs.existsSync(g) || fs.readFileSync(g, 'utf8') === gs; }));
   t('v1.09.10: папка заблокированного — суффикс общий, учитывается в media-begin / media-commit, переименование по ID папки в media-health',
-    gs.includes('export const BLOCKED_SUFFIX = " Заблокирован";') && gs.includes('export function techDirLabel(base: string, blocked: unknown)') && gs.includes('FN_VER = "1.09.10"')
+    gs.includes('export const BLOCKED_SUFFIX = " (blocked)";') && gs.includes('LEGACY_BLOCKED_SUFFIXES = [" Заблокирован"]') && gs.includes('export function techDirLabel(base: string, blocked: unknown)') && /FN_VER = "1\.09\.\d\d"/.test(gs)   /* v1.09.50: суффикс по-английски */
     && (mb.match(/techDirLabel\(techFolderName\(techName\), techBlocked\)/g) || []).length === 2 && mb.includes('.select("display_name,blocked")')
     && mc.includes('techDirLabel(techDirName(String(h.display_name ?? "")), h.blocked)') && mh.includes('if (url.searchParams.get("tech_dir")) {')
-    && mh.includes('.eq("kind", "tech").eq("key", uid)') && mh.includes('split(BLOCKED_SUFFIX).join("")'));
+    && mh.includes('.eq("kind", "tech").eq("key", uid)') && mh.includes('stripBlocked(String(d.name ?? ""))'));
   t('v1.09.10: приложение зовёт переименование после блокировки и разблокировки; минимум версий функций поднят',
     src.includes('staffDirRename(uid_, want);') && src.includes("'/media-health?tech_dir=' + encodeURIComponent(uid_)")
     && /'media-begin': '1\.09\.(1\d|[2-9]\d)', 'media-commit': '1\.09\.(1\d|[2-9]\d)', 'media-health': '1\.09\.(1\d|[2-9]\d)'/.test(src));   // v1.09.40: не ниже 1.09.10

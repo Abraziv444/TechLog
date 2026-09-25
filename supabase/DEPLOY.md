@@ -5,6 +5,12 @@
 > `23514: check constraint "media_kind_check" … is violated by some row`. Во всех `full-install-*.sql` и
 > `update-to-1_07_76.sql` список теперь сразу полный (с `invoice`). Проверка: `tests/full-install-rerun.sql`.
 >
+> **v1.09.50 — Google Диск без ручной папки.** Ссылку на корневую папку можно не вписывать: при первой выгрузке или
+> проверке приложение найдёт или создаст на Диске «TechLog Archive» и запомнит её (`app_secrets.gd_folder_id`). Русское имя
+> корня меняется на английское, «Архив TechLog» — на «Deleted documents» (те же папки, файлы на месте). Передеплоить:
+> `media-begin`, `media-commit`, `media-delete`, `media-health`, `backup`. Остальные функции тоже содержат обновлённый
+> общий `google.ts`, но работают и без передеплоя. База не менялась.
+>
 > **v1.09.44.** База: `update-to-1_09_44.sql` (после 1.09.43) или `full-install-1_09_44.sql` — удаляет неиспользуемую
 > функцию `vehicle_service_set`. Edge Functions не менялись. Порядок обычный: SQL, затем публикация (в любом порядке безопасно).
 >

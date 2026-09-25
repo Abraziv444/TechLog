@@ -4,7 +4,7 @@
    ===================================================================== */
 'use strict';
 
-const APP_VERSION = '1.09.47';
+const APP_VERSION = '1.09.52';
 const DB_SQL_FILE = 'full-install-1_09_44.sql';
 /* v1.08.44: приложение живёт на своём домене. Меняется домен — меняется
    только эта строка; CNAME в корне архива держит привязку GitHub Pages. */
@@ -719,10 +719,10 @@ const I18N = {
     act_queue: 'Не отправленные фото и видео',
     act_queue_h: 'Файлы ждут связи. Отправка возобновится сама, а здесь можно посмотреть очередь и повторить вручную.',
     arch_title: 'Архив документов',
-    arch_hint: 'Сюда попадают документы, помеченные на удаление. Их файлы на Диске переезжают в папку «Архив TechLog», из рабочих папок ничего не пропадает. Насовсем документ и его файлы удаляются только отсюда.',
+    arch_hint: 'Сюда попадают документы, помеченные на удаление. Их файлы на Диске переезжают в папку «Deleted documents» (в корневой папке «TechLog Archive»), из рабочих папок ничего не пропадает. Насовсем документ и его файлы удаляются только отсюда.',
     arch_to: 'В архив', arch_back: 'Вернуть из архива', arch_purge: 'Удалить навсегда',
     arch_empty: 'Архив пуст',
-    arch_q: 'Пометить документ на удаление? Он уйдёт в архив, файлы на Диске — в папку «Архив TechLog». Вернуть можно оттуда же.',
+    arch_q: 'Пометить документ на удаление? Он уйдёт в архив, файлы на Диске — в папку «Deleted documents» (в корневой папке «TechLog Archive»). Вернуть можно оттуда же.',
     arch_purge_q: 'Удалить навсегда? Документ исчезнет из базы, файлы уйдут в корзину Google Диска (30 дней на передумать). Действие необратимо.',
     arch_by: 'в архиве с', arch_who: 'отправил',
     arch_moved: 'файлов перенесено',
@@ -815,6 +815,18 @@ const I18N = {
     rep_no_edit: 'Сохранять может автор документа, менеджер или админ',
     rep_ro_note: 'Документ открыт только для просмотра: править и сохранять его может автор, менеджер или админ',
     upd_check_title: 'Проверить обновления',
+    fu_btn: 'Принудительно обновить', fu_title: 'Принудительное обновление',
+    dtr_title: 'Справочники без английского', dtr_none: 'В справочниках всё переведено на английский',
+    dtr_line: 'Названия видов задач: {W} · пунктов чек-листов: {C}', dtr_btn: 'Перевести справочники',
+    dtr_hint: 'Переводятся только пустые английские части (русский текст не меняется), через тот же сервис, что и документы. Проверьте результат в «Справочники → Виды задач».',
+    dtr_done: 'Переведено: названий {W}, пунктов чек-листов {C}', dtr_fail: 'Перевод остановился: {E}', dtr_run: 'Перевожу справочники…',
+    wt_name_ru: 'Название (RU)', wt_name_en: 'Название (EN, для английского интерфейса)', wt_no_en: 'нет EN',
+    cl_tr_btn: 'Перевести пустые EN', cl_tr_done: 'Заполнено английских строк: {N} — проверьте и сохраните', cl_tr_none: 'Пустых английских строк нет',
+    cl_no_en: 'без EN',
+    fu_hint: 'Удаляет сохранённую копию приложения на этом устройстве и скачивает всё с сайта заново. Вход, данные и неотправленные фото не трогаются.',
+    fu_q: 'На сайте версия {S}, у вас {C}. Приложение сотрёт свою копию на этом устройстве и загрузится с сайта заново. Вход, данные и неотправленные фото останутся. Продолжить?',
+    fu_site_down: 'Сайт приложения сейчас не отдаёт version.json ({E}). Если стереть копию сейчас, приложение не откроется, пока сайт не заработает. Всё равно сбросить?',
+    fu_go: 'Обновить', fu_run: 'Стираю копию приложения и загружаю заново…', fu_done: 'Обновлено принудительно: v{V}',
     pf_title: 'Проверка перед тестом', pf_ok: 'Проверка перед тестом: база, функции, Google Диск и Bouncie в порядке',
     pf_bad_q: 'Перед тестом найдено проблем: {N}. Тест, скорее всего, упадёт не из-за приложения. Всё равно запустить?',
     pf_run_anyway: 'Запустить всё равно', pf_demo: 'Демо-режим — сервер не проверяется', pf_offline: 'Нет связи — сервер не проверить',
@@ -1206,7 +1218,7 @@ const I18N = {
     doc_save_close: 'Сохранить и закрыть', doc_close_nosave: 'Закрыть без сохранения',
     font_title: 'Размер шрифта', font_hint: 'Личная настройка аккаунта, своя для каждого режима: размер, выбранный в режиме «Телефон», не меняет размер в режиме «ПК» и наоборот. Значение хранится в профиле — на другом телефоне или другом компьютере подхватится само. Меняет весь интерфейс: списки, документы, кнопки.',
     font_mode_ph: 'сейчас: режим «Телефон»', font_mode_pc: 'сейчас: режим «ПК»',
-    tv_test_btn: 'Проверить ТВ-режим на этом экране', tv_test_h: 'Открывает настоящий ТВ-экран на ваших данных — без кода и без отдельной ТВ-сессии. Разверните окно или нажмите «На весь экран», чтобы увидеть ровно то, что будет на телевизоре. Сверху полоска проверки: плотность и «Закончить проверку».',
+    tv_test_btn: 'Проверить ТВ-режим на этом экране', tv_test_h: 'Открывает настоящий ТВ-экран на ваших данных — без кода и без отдельной ТВ-сессии. Разверните окно или нажмите «На весь экран», чтобы увидеть ровно то, что будет на телевизоре. Сверху полоска проверки: вариант раскладки, разрешение телевизора (кадр уменьшается под окно), доля карты, плотность и «Закончить проверку».',
     tv_test_on: 'Проверка ТВ-режима', tv_test_stop: 'Закончить проверку', tv_dens_t: 'Плотность ТВ-экрана', tv_dens_h: 'Общая для всех телевизоров. «Компактная» — мельче отступы и карточки, больше влезает сотрудников.', tv_dens_admin: 'Плотность ТВ меняет администратор',
     dens_title: 'Плотность интерфейса', dens_cozy: 'Обычная', dens_compact: 'Компактная',
     dens_hint: 'Личная настройка аккаунта, своя для режима «Телефон» и режима «ПК»; хранится в профиле и подхватывается на другом устройстве. «Компактная» — для небольших ноутбуков, планшетов и телефонов: на экран помещается больше. Уменьшаются не только буквы, а сами блоки — шапка, лента недели, меню, значки, отступы внутри карточек; карточка дня становится вдвое ниже, на доске помещается в полтора-два раза больше сотрудников. Оформление остаётся тем же. Размер букв по-прежнему регулируется отдельно — строкой выше. На ПК то же самое переключает кнопка внизу слева, на доске — кнопка рядом с глазом.',
@@ -1462,7 +1474,9 @@ const I18N = {
     gd_show: 'Показать', gd_hide: 'Скрыть', gd_copy: 'Копировать',
     gd_reveal_err: 'Не удалось получить значение с сервера',
     gd_folder_ph: 'вставьте ссылку целиком — возьмём ID',
-    gd_folder_hint: 'Откройте папку архива на Диске и вставьте сюда адрес целиком: drive.google.com/drive/folders/<b class="gd-mark">1AbC…XyZ</b>?usp=sharing — приложение само возьмёт выделенную часть.',
+    gd_folder_hint: 'Можно оставить пустым: приложение само создаст на Диске папку «TechLog Archive», запомнит её ссылку и будет складывать всё туда (если папку удалить — создаст заново). Хотите другую — откройте её на Диске и вставьте адрес целиком: drive.google.com/drive/folders/<b class="gd-mark">1AbC…XyZ</b>?usp=sharing. Папка должна быть создана этим приложением или доступна ему, иначе приложение заведёт свою и покажет её ссылку здесь.',
+    gd_root_created: 'Папка «{N}» создана на Диске автоматически — ссылка сохранена', gd_root_renamed: 'Корневая папка на Диске переименована по-английски: «{N}»',
+    gd_root_open: 'Открыть папку на Диске',
     gd_space: 'Свободно на Диске',
     gd_probe: 'Сквозная проверка загрузки', gd_p_thumb: 'Запись миниатюры в хранилище',
     gd_p_session: 'Сессия загрузки в Google', gd_p_direct: 'Заливка из браузера напрямую',
@@ -1656,6 +1670,79 @@ const I18N = {
     st_admin_hint: 'Статистика по всем сотрудникам — экран «Учёба» → «Статистика». Файлы тестов: dictionary/tests, учебники: dictionary/books.',
     st_access: 'Учёба доступна', st_h: 'ч', st_m: 'мин', st_s: 'с',
     act_study_start: 'начат тест', act_study_test: 'тест завершён', act_study_read: 'открыт учебник',
+    /* v1.09.51: варианты раскладки ТВ-экрана, доля карты, профили, разрешения, кнопка «ТВ» в меню */
+    tab_tv: 'ТВ', tv_menu_chk: 'Кнопка «ТВ» в меню',
+    tv_menu_tip: 'Личная настройка администратора и менеджера. Кнопка открывает проверку ТВ-режима на этом экране: любой готовый вариант, профиль или разрешение телевизора — на ваших данных, без кода. Выход — «Закончить проверку» или системная «назад». Когда проверка не нужна, снимите галочку.',
+    tvc_gal: 'Готовые варианты', tvc_gal_tip: 'Вариант — набор настроек целиком: шаблон, доля карты, масштаб, плотность, какие блоки показывать и в каком порядке. После «Применить» всё можно подправить ниже и сохранить как свой профиль.',
+    tvc_gal_h: 'Во всех вариантах основную площадь занимает карта. «Посмотреть» — открыть на этом экране на ваших данных, «Применить» — отправить на все телевизоры.',
+    tvc_gal_hm: 'Во всех вариантах основную площадь занимает карта. «Посмотреть» — открыть вариант на этом экране на ваших данных.',
+    tvc_look: 'Посмотреть', tvc_apply: 'Применить', tvc_on: 'на ТВ', tvc_on_mod: 'на ТВ, изменён', tvc_map_pct: 'карта {N}%',
+    tvc_applied: 'На телевизоры отправлено: «{N}»',
+    tvc_mgr_note: 'Сейчас на телевизорах: «{N}». Менять раскладку телевизоров может администратор; здесь любой вариант можно посмотреть на своём экране.',
+    tvc_lay_t: 'Раскладка',
+    tvc_lay_tip: 'Шаблон — где стоят карта и блоки. Доля карты — сколько процентов площади экрана она занимает (у шаблона «панели поверх» — видимая часть). Масштаб 100% — пропорционально экрану: телевизор любого разрешения выглядит как Full HD той же раскладки, сама карта остаётся чёткой.',
+    tvc_tpl: 'Шаблон',
+    tvl_classic: 'Классика: колонка и полоса под картой', tvl_side: 'Карта и колонка', tvl_strip: 'Карта и лента блоков',
+    tvl_hud: 'Карта на весь экран, панели поверх', tvl_twin: 'Карта в центре, колонки по бокам', tvl_ticker: 'Только карта и строка',
+    tvc_share: 'Карта занимает, % экрана',
+    tvc_share_tip: 'От 50 до 90%. Колонки и полосы не становятся уже, чем нужно для читаемых блоков, поэтому у некоторых шаблонов предел ниже 90% — фактическая доля написана строкой ниже.',
+    tvc_share_now: 'На экране 1920×1080 карта займёт {N}% площади', tvc_share_max: 'больше этот шаблон не даёт — блокам нужно место',
+    tvc_flip: 'Зеркально: колонка слева, карта справа', tvc_flip_v: 'Зеркально: лента или строка сверху, карта снизу',
+    tvc_scale: 'Масштаб, %', tvc_scale_s: 'масштаб {N}%',
+    tvc_scale_tip: '100% — как на Full HD при любом разрешении: на 4K всё вдвое крупнее, на HD — мельче. 120–130% — для простых HD-телевизоров и вертикальных экранов, 80–90% — чтобы на большом экране поместилось больше строк.',
+    tvc_scheme_h: 'Схема раскладки на экране 16:9, зелёное — карта.',
+    tvc_ticker_note: 'В шаблоне «Только карта» блоки не показываются: счётчики дня и часы — в строке над картой.',
+    tvz_col_top: 'Колонка — сверху', tvz_col_bot: 'Колонка — ниже', tvz_strip_a: 'Лента — первая часть (после часов)', tvz_strip_b: 'Лента — вторая часть',
+    tvz_hud_r: 'Панель справа', tvz_hud_l: 'Панель слева', tvz_hud_b: 'Панель снизу',
+    tvz_twin_r: 'Колонка справа (с часами)', tvz_twin_l: 'Колонка слева (с часами)', tvz_twin_l2: 'Колонка слева', tvz_twin_r2: 'Колонка справа',
+    tvz_off: 'В этом шаблоне не показывается', tvz_left: 'Левая колонка',
+    tvc_prof: 'Профили ручной настройки',
+    tvc_prof_tip: 'Профиль хранит раскладку целиком: шаблон, долю карты, зеркало, масштаб, плотность, блоки, их порядок и вид списка сотрудников. Профиль можно применить на все телевизоры, посмотреть на своём экране и назначить экранам нужного разрешения. До 12 профилей.',
+    tvc_prof_ph: 'Название, например «Офис 55″»', tvc_prof_save: 'Сохранить текущую', tvc_prof_saved: 'Профиль сохранён',
+    tvc_prof_need: 'Введите название профиля', tvc_prof_none: 'Профилей пока нет. Настройте раскладку и сохраните её под своим названием.',
+    tvc_prof_upd: 'Перезаписать текущей раскладкой', tvc_prof_upd_q: 'Перезаписать профиль «{N}» текущей раскладкой?',
+    tvc_prof_del_q: 'Удалить профиль «{N}»? Правила «под разрешение», которые на него ссылались, вернутся к основной раскладке.',
+    tvc_prof_max: 'Не больше 12 профилей — удалите ненужный',
+    tvc_res: 'Под разрешение экрана',
+    tvc_res_tip: 'Телевизор сам определяет разрешение и соотношение сторон и берёт вариант из этой таблицы. Экраны Full HD 16:9 и 16:10 (и все, у кого выбрано «Основная раскладка») показывают основную раскладку.',
+    tvc_res_on: 'Подбирать вариант по экрану телевизора', tvc_res_main: 'Основная раскладка', tvc_res_gone: '(профиль удалён)',
+    tvc_res_here: 'Этот экран: {S} — {C}', tvc_res_h: 'Проверить на своём экране: кнопка проверки ТВ → список разрешений в полоске сверху.',
+    tvcl_portrait: 'Вертикальный (9:16)', tvcl_wide: 'Ультраширокий (21:9 и шире)', tvcl_square: 'Почти квадратный (4:3, 5:4)',
+    tvcl_small: 'Низкое разрешение (720p, 768p)', tvcl_big: '4K и QHD', tvcl_normal: 'Full HD 16:9 / 16:10 — основная раскладка',
+    tvsc_fhd: 'Full HD 16:9', tvsc_hd: 'HD 720/768', tvsc_uhd: '4K · QHD', tvsc_wide: '21:9', tvsc_port: 'вертикальный 9:16', tvsc_sq: '4:3 · 5:4', tvsc_any: 'любой экран',
+    tvp_classic: 'Классика', tvp_classic_d: 'Карта, справа сводка, маршруты и сотрудники, под картой графики.',
+    tvp_focus: 'Карта и колонка', tvp_focus_d: 'Без графиков: вся высота — карте, справа сводка, сотрудники и маршруты.',
+    tvp_panorama: 'Панорама', tvp_panorama_d: 'Карта во всю ширину, под ней лента: часы, сводка, сотрудники, маршруты, график.',
+    tvp_hud: 'Во весь экран', tvp_hud_d: 'Карта от края до края, блоки — полупрозрачной панелью поверх неё.',
+    tvp_ticker: 'Только карта', tvp_ticker_d: 'Карта и тонкая строка: задачи, пикапы, кто в пути и на объектах, часы.',
+    tvp_dispatch: 'Диспетчер', tvp_dispatch_d: 'Рядом с картой — маршруты водителей по точкам и сотрудники плитками.',
+    tvp_summary: 'Итоги дня', tvp_summary_d: 'Карта и лента со сводкой и тремя графиками: задачи за день, за неделю, мили.',
+    tvp_twin: 'Ультраширокий 21:9', tvp_twin_d: 'Карта в центре, слева сводка и графики, справа маршруты и сотрудники.',
+    tvp_tower: 'Вертикальный ТВ', tvp_tower_d: 'Для повёрнутого экрана: карта сверху, блоки двумя столбцами снизу, текст крупнее.',
+    tvp_hd: 'HD 720/768', tvp_hd_d: 'Для простых телевизоров: крупный текст, компактно, только сводка и сотрудники.',
+    tvp_k4: '4K / большой экран', tvp_k4_d: 'Все блоки и графики, до 16 сотрудников, текст чуть мельче — помещается больше.',
+    tvt_as_tv: 'Как на ТВ: {N}', tvt_prev_t: 'Вариант раскладки для просмотра', tvt_sim_t: 'Разрешение экрана для просмотра',
+    tvt_sim_win: 'Это окно {S}', tvt_share: 'карта {N}% экрана', tvt_apply: 'Применить на все ТВ', tvt_min: 'Свернуть / развернуть полоску',
+    tvt_run: 'в пути', tvt_site: 'на объектах', tvt_mi: 'миль сегодня',
+    /* v1.09.52: ещё 10 вариантов раскладки и 6 шаблонов, фильтр галереи */
+    tvl_hud2: 'Карта на весь экран, две панели по бокам', tvl_corners: 'Карта на весь экран, карточки по углам', tvl_dock: 'Карта на весь экран, полоса снизу',
+    tvl_bars: 'Карта между двумя строками', tvl_lshape: 'Строка сверху и колонка', tvl_frame: 'Строка сверху, колонка и полоса под картой',
+    tvp_side_l: 'Колонка слева', tvp_side_l_d: 'Как «Карта и колонка», но колонка слева — если справа от телевизора окно или проход.',
+    tvp_pano_top: 'Лента сверху', tvp_pano_top_d: 'Блоки лентой над картой, карта внизу — удобно, если телевизор висит высоко.',
+    tvp_hud2: 'Две панели поверх', tvp_hud2_d: 'Карта на весь экран; слева маршруты и графики, справа сводка и сотрудники — полупрозрачно.',
+    tvp_corners: 'Острова', tvp_corners_d: 'Карта на весь экран, блоки — отдельными карточками по углам, между ними видна карта.',
+    tvp_dock: 'Док снизу', tvp_dock_d: 'Карта на весь экран, внизу полупрозрачная полоса: часы, сводка, сотрудники, маршруты.',
+    tvp_clock: 'Карта и часы', tvp_clock_d: 'Только карта и маленькая карточка с часами в углу — для большого экрана в зале или на складе.',
+    tvp_bars: 'Две строки', tvp_bars_d: 'Сверху строка со счётчиками и часами, снизу строка статусов сотрудников, карта между ними.',
+    tvp_lshape: 'Г-образная', tvp_lshape_d: 'Строка со счётчиками сверху и колонка сотрудников и маршрутов справа.',
+    tvp_frame: 'Рамка', tvp_frame_d: 'Строка со счётчиками сверху, справа сотрудники и маршруты, под картой три графика.',
+    tvp_tower_top: 'Вертикальный: блоки сверху', tvp_tower_top_d: 'Для повёрнутого экрана: блоки двумя столбцами сверху, карта снизу.',
+    tvz_hud_r2: 'Панель справа (с часами)', tvz_hud_l2: 'Панель слева (с часами)',
+    tvz_isl_r: 'Карточки справа: первый блок — вверху, остальные — внизу', tvz_isl_l: 'Карточки слева: первый блок — вверху, остальные — внизу',
+    tvz_isl_bl: 'Карточка слева внизу', tvz_isl_br: 'Карточка справа внизу',
+    tvz_dock_a: 'Полоса — первая часть (после часов)', tvz_dock_b: 'Полоса — вторая часть',
+    tvz_bar_a: 'Строка статусов', tvz_bar_b: 'Строка статусов — дальше',
+    tvg_all: 'Все', tvg_col: 'С колонкой', tvg_strip: 'С лентой', tvg_over: 'Поверх карты', tvg_bars: 'Со строками', tvg_screen: 'Под экран',
     week_days: ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'],
     months: ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'],
   },
@@ -2241,10 +2328,10 @@ const I18N = {
     act_queue: 'Photos and videos not sent',
     act_queue_h: 'Files are waiting for a connection. Sending resumes on its own; here you can look at the queue and retry.',
     arch_title: 'Archive of documents',
-    arch_hint: 'Documents marked for deletion land here. Their Drive files move to the «Архив TechLog» folder — nothing disappears from the working folders. A document and its files are deleted for good only from here.',
+    arch_hint: 'Documents marked for deletion land here. Their Drive files move to the «Deleted documents» folder (inside the «TechLog Archive» root) — nothing disappears from the working folders. A document and its files are deleted for good only from here.',
     arch_to: 'To archive', arch_back: 'Restore', arch_purge: 'Delete for good',
     arch_empty: 'The archive is empty',
-    arch_q: 'Mark the document for deletion? It goes to the archive and its Drive files move to «Архив TechLog». You can restore it from there.',
+    arch_q: 'Mark the document for deletion? It goes to the archive and its Drive files move to «Deleted documents». You can restore it from there.',
     arch_purge_q: 'Delete for good? The document disappears from the database and the files go to the Google Drive trash (30 days to change your mind). This cannot be undone.',
     arch_by: 'archived', arch_who: 'by',
     arch_moved: 'files moved',
@@ -2337,6 +2424,18 @@ const I18N = {
     rep_no_edit: 'Only the document author, a manager or the admin can save it',
     rep_ro_note: 'This document is view-only: the author, a manager or the admin can edit and save it',
     upd_check_title: 'Check for updates',
+    fu_btn: 'Force update', fu_title: 'Force update',
+    dtr_title: 'Directories without English', dtr_none: 'Directories are fully translated into English',
+    dtr_line: 'Work type names: {W} · checklist items: {C}', dtr_btn: 'Translate directories',
+    dtr_hint: 'Only empty English parts are translated (the Russian text is not changed), via the same service as documents. Check the result in “Directories → Work types”.',
+    dtr_done: 'Translated: names {W}, checklist items {C}', dtr_fail: 'Translation stopped: {E}', dtr_run: 'Translating directories…',
+    wt_name_ru: 'Name (RU)', wt_name_en: 'Name (EN, for the English interface)', wt_no_en: 'no EN',
+    cl_tr_btn: 'Translate empty EN', cl_tr_done: 'English lines filled: {N} — check and save', cl_tr_none: 'No empty English lines',
+    cl_no_en: 'no EN',
+    fu_hint: 'Deletes the saved copy of the app on this device and downloads everything from the site again. Sign-in, data and unsent photos are kept.',
+    fu_q: 'The site has version {S}, you have {C}. The app will erase its copy on this device and load from the site again. Sign-in, data and unsent photos stay. Continue?',
+    fu_site_down: 'The app site does not serve version.json right now ({E}). If you erase the copy now, the app will not open until the site works again. Reset anyway?',
+    fu_go: 'Update', fu_run: 'Erasing the app copy and loading again…', fu_done: 'Force-updated: v{V}',
     pf_title: 'Pre-test check', pf_ok: 'Pre-test check: database, functions, Google Drive and Bouncie are fine',
     pf_bad_q: 'Problems found before the test: {N}. The test will most likely fail for reasons outside the app. Run anyway?',
     pf_run_anyway: 'Run anyway', pf_demo: 'Demo mode — the server is not checked', pf_offline: 'Offline — cannot check the server',
@@ -2728,7 +2827,7 @@ const I18N = {
     doc_save_close: 'Save and close', doc_close_nosave: 'Close without saving',
     font_title: 'Font size', font_hint: 'Personal account setting, separate for each mode: the size chosen in «Phone» mode does not change the size in «PC» mode and vice versa. The value lives in your profile, so another phone or another computer picks it up. It changes the whole interface: lists, documents, buttons.',
     font_mode_ph: 'now: «Phone» mode', font_mode_pc: 'now: «PC» mode',
-    tv_test_btn: 'Try TV mode on this screen', tv_test_h: 'Opens the real TV screen on your data — no code, no separate TV session. Maximise the window or press “Full screen” to see exactly what the TV will show. The test bar on top has the density switch and “End the test”.',
+    tv_test_btn: 'Try TV mode on this screen', tv_test_h: 'Opens the real TV screen on your data — no code, no separate TV session. Maximise the window or press “Full screen” to see exactly what the TV will show. The test bar on top has the layout, the TV resolution (the frame shrinks to fit the window), the map share, the density switch and “End the test”.',
     tv_test_on: 'TV mode test', tv_test_stop: 'End the test', tv_dens_t: 'TV screen density', tv_dens_h: 'Shared by all TVs. “Compact” — smaller paddings and cards, more staff fit.', tv_dens_admin: 'The TV density is changed by the administrator',
     dens_title: 'Interface density', dens_cozy: 'Regular', dens_compact: 'Compact',
     dens_hint: 'Personal account setting, separate for «Phone» mode and «PC» mode; it lives in your profile and follows you to another device. «Compact» is for small laptops, tablets and phones: more fits on the screen. Not only the letters shrink but the blocks themselves — header, week ribbon, menu, icons, padding inside cards; a day card becomes half as tall and the board fits one and a half to two times more people. The look stays the same. Letter size is still adjusted separately — the row above. On a PC the button at the bottom left switches the same thing, on the board — the button next to the eye.',
@@ -2982,7 +3081,9 @@ const I18N = {
     gd_show: 'Show', gd_hide: 'Hide', gd_copy: 'Copy',
     gd_reveal_err: 'Could not fetch the value from the server',
     gd_folder_ph: 'paste the whole link — we take the ID',
-    gd_folder_hint: 'Open the archive folder in Drive and paste the whole address here: drive.google.com/drive/folders/<b class="gd-mark">1AbC…XyZ</b>?usp=sharing — the app extracts the highlighted part itself.',
+    gd_folder_hint: 'You can leave it empty: the app creates a «TechLog Archive» folder in Drive itself, remembers its link and stores everything there (if the folder is deleted, it creates it again). Want another one — open it in Drive and paste the whole address: drive.google.com/drive/folders/<b class="gd-mark">1AbC…XyZ</b>?usp=sharing. The folder must be created by or shared with this app, otherwise the app sets up its own and shows its link here.',
+    gd_root_created: 'Folder «{N}» was created in Drive automatically — the link is saved', gd_root_renamed: 'The Drive root folder was renamed to English: «{N}»',
+    gd_root_open: 'Open the folder in Drive',
     gd_space: 'Drive free space',
     gd_probe: 'End-to-end upload test', gd_p_thumb: 'Thumbnail written to storage',
     gd_p_session: 'Google upload session', gd_p_direct: 'Direct upload from the browser',
@@ -3176,6 +3277,79 @@ const I18N = {
     st_admin_hint: 'Statistics for all staff — Study → Statistics. Test files: dictionary/tests, textbooks: dictionary/books.',
     st_access: 'Study available', st_h: 'h', st_m: 'min', st_s: 's',
     act_study_start: 'test started', act_study_test: 'test finished', act_study_read: 'textbook opened',
+    /* v1.09.51: TV screen layouts, map share, profiles, resolutions, the “TV” menu button */
+    tab_tv: 'TV', tv_menu_chk: '“TV” button in the menu',
+    tv_menu_tip: 'A personal setting of the administrator and the manager. The button opens the TV mode test on this screen: any ready-made layout, profile or TV resolution — on your data, without a code. Exit — “End the test” or the system “back”. Untick it when the test is no longer needed.',
+    tvc_gal: 'Ready-made layouts', tvc_gal_tip: 'A layout is a whole set of settings: template, map share, scale, density, which blocks to show and in what order. After “Apply” everything can be adjusted below and saved as your own profile.',
+    tvc_gal_h: 'In every layout the map takes most of the screen. “Preview” opens it on this screen with your data, “Apply” sends it to all TVs.',
+    tvc_gal_hm: 'In every layout the map takes most of the screen. “Preview” opens a layout on this screen with your data.',
+    tvc_look: 'Preview', tvc_apply: 'Apply', tvc_on: 'on TV', tvc_on_mod: 'on TV, modified', tvc_map_pct: 'map {N}%',
+    tvc_applied: 'Sent to the TVs: “{N}”',
+    tvc_mgr_note: 'On the TVs now: “{N}”. The TV layout is changed by the administrator; here you can preview any layout on your own screen.',
+    tvc_lay_t: 'Layout',
+    tvc_lay_tip: 'The template decides where the map and the blocks go. Map share — what percentage of the screen area the map takes (for “panels on top” — the visible part). Scale 100% is proportional to the screen: a TV of any resolution looks like Full HD with the same layout, while the map itself stays sharp.',
+    tvc_tpl: 'Template',
+    tvl_classic: 'Classic: a column and a strip under the map', tvl_side: 'Map and a column', tvl_strip: 'Map and a strip of blocks',
+    tvl_hud: 'Full-screen map, panels on top', tvl_twin: 'Map in the centre, columns on both sides', tvl_ticker: 'Map only with a line',
+    tvc_share: 'Map takes, % of the screen',
+    tvc_share_tip: 'From 50 to 90%. Columns and strips never get narrower than readable blocks need, so some templates stop below 90% — the actual share is written in the line below.',
+    tvc_share_now: 'On a 1920×1080 screen the map will take {N}% of the area', tvc_share_max: 'this template cannot give more — the blocks need room',
+    tvc_flip: 'Mirrored: the column on the left, the map on the right', tvc_flip_v: 'Mirrored: the strip or line on top, the map below',
+    tvc_scale: 'Scale, %', tvc_scale_s: 'scale {N}%',
+    tvc_scale_tip: '100% looks like Full HD at any resolution: on 4K everything is twice as large, on HD — smaller. 120–130% suits simple HD TVs and portrait screens, 80–90% fits more rows on a large screen.',
+    tvc_scheme_h: 'The layout on a 16:9 screen, green is the map.',
+    tvc_ticker_note: 'The “Map only” template shows no blocks: the day counters and the clock are in the line above the map.',
+    tvz_col_top: 'Column — top', tvz_col_bot: 'Column — below', tvz_strip_a: 'Strip — first part (after the clock)', tvz_strip_b: 'Strip — second part',
+    tvz_hud_r: 'Right panel', tvz_hud_l: 'Left panel', tvz_hud_b: 'Bottom panel',
+    tvz_twin_r: 'Right column (with the clock)', tvz_twin_l: 'Left column (with the clock)', tvz_twin_l2: 'Left column', tvz_twin_r2: 'Right column',
+    tvz_off: 'Not shown in this template', tvz_left: 'Left column',
+    tvc_prof: 'Manual setting profiles',
+    tvc_prof_tip: 'A profile keeps the whole layout: template, map share, mirror, scale, density, the blocks, their order and the staff list view. A profile can be applied to all TVs, previewed on your screen and assigned to screens of a given resolution. Up to 12 profiles.',
+    tvc_prof_ph: 'Name, e.g. “Office 55″”', tvc_prof_save: 'Save the current one', tvc_prof_saved: 'Profile saved',
+    tvc_prof_need: 'Enter a profile name', tvc_prof_none: 'No profiles yet. Tune the layout and save it under your own name.',
+    tvc_prof_upd: 'Overwrite with the current layout', tvc_prof_upd_q: 'Overwrite the “{N}” profile with the current layout?',
+    tvc_prof_del_q: 'Delete the “{N}” profile? Resolution rules that pointed to it go back to the main layout.',
+    tvc_prof_max: 'At most 12 profiles — delete one you do not need',
+    tvc_res: 'By screen resolution',
+    tvc_res_tip: 'The TV detects its resolution and aspect ratio by itself and takes the layout from this table. Full HD 16:9 and 16:10 screens (and every class set to “Main layout”) show the main layout.',
+    tvc_res_on: 'Pick the layout by the TV screen', tvc_res_main: 'Main layout', tvc_res_gone: '(profile deleted)',
+    tvc_res_here: 'This screen: {S} — {C}', tvc_res_h: 'To check on your screen: the TV test button → the resolution list in the bar on top.',
+    tvcl_portrait: 'Portrait (9:16)', tvcl_wide: 'Ultrawide (21:9 and wider)', tvcl_square: 'Nearly square (4:3, 5:4)',
+    tvcl_small: 'Low resolution (720p, 768p)', tvcl_big: '4K and QHD', tvcl_normal: 'Full HD 16:9 / 16:10 — the main layout',
+    tvsc_fhd: 'Full HD 16:9', tvsc_hd: 'HD 720/768', tvsc_uhd: '4K · QHD', tvsc_wide: '21:9', tvsc_port: 'portrait 9:16', tvsc_sq: '4:3 · 5:4', tvsc_any: 'any screen',
+    tvp_classic: 'Classic', tvp_classic_d: 'The map; the summary, routes and staff on the right; charts under the map.',
+    tvp_focus: 'Map and column', tvp_focus_d: 'No charts: the full height goes to the map, the summary, staff and routes on the right.',
+    tvp_panorama: 'Panorama', tvp_panorama_d: 'A full-width map with a strip below: clock, summary, staff, routes, a chart.',
+    tvp_hud: 'Full screen', tvp_hud_d: 'The map from edge to edge, the blocks in a translucent panel on top of it.',
+    tvp_ticker: 'Map only', tvp_ticker_d: 'The map and a thin line: jobs, pickups, who is on the road and on site, the clock.',
+    tvp_dispatch: 'Dispatcher', tvp_dispatch_d: 'Next to the map — the drivers’ routes stop by stop and the staff as tiles.',
+    tvp_summary: 'Day summary', tvp_summary_d: 'The map and a strip with the summary and three charts: jobs today, this week, miles.',
+    tvp_twin: 'Ultrawide 21:9', tvp_twin_d: 'The map in the centre, the summary and charts on the left, routes and staff on the right.',
+    tvp_tower: 'Portrait TV', tvp_tower_d: 'For a rotated screen: the map on top, blocks in two columns below, larger text.',
+    tvp_hd: 'HD 720/768', tvp_hd_d: 'For simple TVs: large text, compact, only the summary and the staff.',
+    tvp_k4: '4K / large screen', tvp_k4_d: 'All blocks and charts, up to 16 staff, slightly smaller text — more fits.',
+    tvt_as_tv: 'As on the TV: {N}', tvt_prev_t: 'Layout to preview', tvt_sim_t: 'Screen resolution to preview',
+    tvt_sim_win: 'This window {S}', tvt_share: 'map {N}% of the screen', tvt_apply: 'Apply to all TVs', tvt_min: 'Collapse / expand the bar',
+    tvt_run: 'on the road', tvt_site: 'on site', tvt_mi: 'miles today',
+    /* v1.09.52: 10 more layouts and 6 templates, gallery filter */
+    tvl_hud2: 'Full-screen map, two side panels', tvl_corners: 'Full-screen map, cards in the corners', tvl_dock: 'Full-screen map, a strip at the bottom',
+    tvl_bars: 'Map between two lines', tvl_lshape: 'A line on top and a column', tvl_frame: 'A line on top, a column and a strip under the map',
+    tvp_side_l: 'Column on the left', tvp_side_l_d: 'Like “Map and column”, but the column is on the left — when there is a window or a passage to the right of the TV.',
+    tvp_pano_top: 'Strip on top', tvp_pano_top_d: 'The blocks in a strip above the map, the map below — handy when the TV hangs high.',
+    tvp_hud2: 'Two panels on top', tvp_hud2_d: 'A full-screen map; routes and charts on the left, the summary and staff on the right — translucent.',
+    tvp_corners: 'Islands', tvp_corners_d: 'A full-screen map, the blocks as separate cards in the corners, the map visible between them.',
+    tvp_dock: 'Bottom dock', tvp_dock_d: 'A full-screen map with a translucent strip at the bottom: clock, summary, staff, routes.',
+    tvp_clock: 'Map and clock', tvp_clock_d: 'Only the map and a small clock card in the corner — for a big screen in a hall or a warehouse.',
+    tvp_bars: 'Two lines', tvp_bars_d: 'A line with counters and the clock on top, a line of staff statuses at the bottom, the map between them.',
+    tvp_lshape: 'L-shape', tvp_lshape_d: 'A line with counters on top and a column of staff and routes on the right.',
+    tvp_frame: 'Frame', tvp_frame_d: 'A line with counters on top, staff and routes on the right, three charts under the map.',
+    tvp_tower_top: 'Portrait: blocks on top', tvp_tower_top_d: 'For a rotated screen: blocks in two columns on top, the map below.',
+    tvz_hud_r2: 'Right panel (with the clock)', tvz_hud_l2: 'Left panel (with the clock)',
+    tvz_isl_r: 'Cards on the right: the first block on top, the rest at the bottom', tvz_isl_l: 'Cards on the left: the first block on top, the rest at the bottom',
+    tvz_isl_bl: 'Card at the bottom left', tvz_isl_br: 'Card at the bottom right',
+    tvz_dock_a: 'Strip — first part (after the clock)', tvz_dock_b: 'Strip — second part',
+    tvz_bar_a: 'Status line', tvz_bar_b: 'Status line — continued',
+    tvg_all: 'All', tvg_col: 'With a column', tvg_strip: 'With a strip', tvg_over: 'Over the map', tvg_bars: 'With lines', tvg_screen: 'By screen',
     week_days: ['MO','TU','WE','TH','FR','SA','SU'],
     months: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   }
@@ -5516,6 +5690,9 @@ function pwaCardHtml(){
     <div class="d">TechLog v${APP_VERSION}${state.lastUpdCheck ? ' · ' + t('upd_last') + ' ' + state.lastUpdCheck : ''}${state.updAvail ? ' · ' + ic('upload') + ' ' + t('upd_found') + ': ' + state.updAvail : ''}</div>
     ${/android/i.test(navigator.userAgent) ? `<div class="tiny">${t('ver_android_note')}</div>` : ''}</div>
     <button class="btn btn-ghost sm" onclick="App.updCheck()">${ic('refresh')} ${t('upd_check')}</button></div>
+  <div class="settings-row" id="fu-row"><div class="grow" style="flex:1"><b>${t('fu_title')}</b>
+    <div class="d">${t('fu_hint')}</div></div>
+    <button class="btn btn-ghost sm" id="fu-btn" onclick="App.forceUpdate()">${ic('download')} ${t('fu_btn')}</button></div>
 </div>`;
 }
 function featCardHtml(){
@@ -5792,7 +5969,7 @@ function docsCardHtml(){
   return docsMyCardHtml() + docsSharedCardHtml() + docsEquipCardHtml() + mediaLimitsCardHtml()
     + fold('num', t('no_card'), 'receipt', numberingCardHtml(), true)      // v1.08.97: подраздел (админ)
     + fold('org', t('org'), 'building', orgCardHtml(), true)                // v1.08.97: подраздел (админ + бухгалтер)
-    + fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml(), true);    // v1.09.12: переводы — подраздел «Настроек документов»
+    + fold('tr', t('tr_set_card'), 'globe', trSettingsCardHtml() + dirTrCardHtml(), true);    // v1.09.12: переводы — подраздел «Настроек документов»; v1.09.49: + справочники
 }
 /* v1.08.98 · раздел «Интеграции» (админ): подразделы «Настройка Google Drive»
    (бывшая «Фото и видео → Google Drive») и «GPS-трекинг Bouncie». Ключи
@@ -9208,6 +9385,7 @@ function viewTabbar(){
     ...(isManager() ? [['archive', ICONS.warn || ICONS.archive, t('tab_action')]] : []),   // v1.08.12; v1.09.44 (п. 50): подпись — сокращение, подсказка = заголовок экрана «Требуется действие»; ключ archive не переименован — по нему сохранены личные настройки меню
     ...(isAdmin() ? [['journal', ICONS.book, t('tab_journal')]] : []),   // v1.07.18
     ...(isAdmin() ? [['acc', ic('receipt'), t('tab_acc')]] : []),        // v1.08.39: бухгалтерия
+    ...(tvMenuOn() ? [['tv', ic('tv'), t('tab_tv')]] : []),             // v1.09.51: проверка ТВ-режима на своём экране (личная галочка админа/менеджера)
     ['faq', ICONS.q, t('tab_faq')],
     ['settings', ICONS.gear, t('tab_settings')],
   ];
@@ -9229,6 +9407,8 @@ function viewTabbar(){
     ? `<button class="tab hdr-srch" title="${esc(label)}" onclick="App.searchOpen()">${ic}<span>${label}</span></button>`
     : id === 'faq'
     ? `<button class="tab" title="${esc(label)}" onclick="App.faq()">${ic}<span>${label}</span></button>`
+    : id === 'tv'
+    ? `<button class="tab tab-tv" title="${esc(t('tv_test_btn'))}" onclick="App.tvTest()">${ic}<span>${label}</span></button>`
     : `<button class="tab ${state.screen===id || (id==='home'&&state.screen==='job') ? 'active':''}" title="${esc(id === 'docflow' ? t('tab_docflow') : id === 'archive' ? t('act_title') : label)}" ${id === 'chat' ? 'data-tab="chat" ' : ''}onclick="App.go('${id}')">
       ${ic}<span>${label}</span>${id === 'chat' ? (() => { const n = chUnread(); return `<i class="tab-badge" data-b="chat" ${n ? '' : 'hidden'}>${n > 99 ? '99+' : n}</i>`; })() : id === 'docflow' ? (() => { const n = dflCount(); return `<i class="tab-badge" data-b="docflow" ${n ? '' : 'hidden'}>${n > 99 ? '99+' : n}</i>`; })() : ''}
     </button>`).join('') + `</nav>`;
@@ -9785,7 +9965,7 @@ async function checkVerClick(){
       try{ await netPing(); }catch(_e){}
       if (netState() === 'on')
         msg = t('upd_fail_host').replace('{ms}',
-          NET.ping != null ? NET.ping + ' ' + t('net_ms') : 'ok');
+          NET.ping != null ? NET.ping + ' ' + t('net_ms') : 'ok') + ' · ' + t('fu_btn') + ': ' + t('settings') + ' → ' + t('version');
     }
     toast('⚠ ' + msg, 'err');
   }
@@ -10276,6 +10456,7 @@ function sectionFaqHtml(key){
       <li><b>${t('mq_ctl')}</b> (v1.09.12): по умолчанию полоска появляется, только когда что-то не отправлено; до входа не показывается. Файл ждёт, пока его документ сохранится на сервере, и не выбрасывается при отказе сервера — причина пишется словами. В окне — «Копировать» и «Скачать лог». <b>${t('net_hide_chk')}</b> — личная галочка в карточке профиля: при проблемах со связью бейдж появляется сам.</li>
       <li><b>Без сети</b> (v1.09.12): приложение запускается из кэша (библиотеки лежат в самой сборке); если токен истёк — вход по сохранённой сессии, данные с устройства, записи и файлы уходят в очередь и досылаются, когда появится связь.</li>
       <li><b>Меню разделов</b> (v1.09.09): на ПК — столбец слева, на телефоне — лента под шапкой; нажатие прокручивает к разделу и раскрывает его. <b>${t('tv_test_btn')}</b> — в «Режиме телевизора»: настоящий ТВ-экран на ваших данных без кода, сверху полоска проверки (плотность, «На весь экран», «${t('tv_test_stop')}»). «${t('tv_dens_t')}» — общая для всех телевизоров.</li>
+      <li><b>${t('tvc_gal')}</b> (v1.09.51–1.09.52, раздел «${t('tvc_card')}»): ${TV_PRESETS.length} вариантов — ${TV_PRESETS.map(p => t('tvp_' + p.id)).join(', ')}; во всех основную площадь занимает карта. Над галереей — фильтр: ${TV_GRPS.map(g => '«' + t('tvg_' + g) + '»').join(', ')}. «${t('tvc_look')}» открывает вариант на вашем экране, «${t('tvc_apply')}» (админ) отправляет его на все телевизоры. В блоке «${t('tvc_lay_t')}» — шаблон, «${t('tvc_share')}» (50–90%, строкой ниже — фактическая доля на Full HD), зеркало и «${t('tvc_scale')}» (100% — пропорционально экрану: 4K выглядит как Full HD, только чётче). «${t('tvc_prof')}» — своя раскладка под названием (до 12), применяется одним нажатием. «${t('tvc_res')}» — телевизор сам берёт вариант для вертикального, ультраширокого, почти квадратного, HD- и 4K-экрана. <b>${t('tv_menu_chk')}</b> — личная галочка админа и менеджера: кнопка в меню открывает проверку ТВ на этом экране; в полоске проверки — вариант, разрешение, доля карты и у админа «${t('tvt_apply')}». Менеджеру раздел показывает проверку, кнопку в меню и просмотр вариантов.</li>
       <li><b>${t('push_pop_card')}</b> (v1.09.00) — один раздел: Push-уведомления этого устройства и всплывающие подсказки (где показывать, полоска отправки).</li>
       <li><b>${t('push_card')}</b> (v1.08.33): кнопка подписывает ЭТО устройство (нажмите на каждом телефоне/ПК); галочки — что присылать: задача, пикап, апрув, просрочка, снятие апрува, плюс ошибки машин и ТО при доступе. iPhone: сначала «На экран Домой» (iOS 16.4+). Доставка идёт, пока кто-то из фирмы онлайн; после действий уходит сразу.</li>
       <li><b>${t('sec_card')}</b> (v1.08.33): необязательная 2FA (TOTP) — QR в приложение-аутентификатор, код из 6 цифр; при входе после пароля спросим код. Отключается в любой момент (потребуется код).</li>
@@ -10306,6 +10487,7 @@ function sectionFaqHtml(key){
       <li><b>${t('mq_ctl')}</b> (v1.09.12): by default the bar shows only when something is unsent; never before sign-in. A file waits until its document is saved on the server and is not dropped when the server refuses — the reason is spelled out. The window has "Copy" and "Download log". <b>${t('net_hide_chk')}</b> — a personal checkbox in the profile card: the badge returns by itself on connection problems.</li>
       <li><b>Offline</b> (v1.09.12): the app starts from cache (libraries ship with the build); if the token has expired it signs in with the saved session, shows device data, queues records and files and sends them once the connection is back.</li>
       <li><b>Section menu</b> (v1.09.09): a column on the left on a PC, a strip under the header on a phone; a tap scrolls to the section and opens it. <b>${t('tv_test_btn')}</b> — under "TV mode": the real TV screen on your data without a code, with a test bar on top (density, "Full screen", "${t('tv_test_stop')}"). "${t('tv_dens_t')}" is shared by all TVs.</li>
+      <li><b>${t('tvc_gal')}</b> (v1.09.51–1.09.52, the “${t('tvc_card')}” section): ${TV_PRESETS.length} layouts — ${TV_PRESETS.map(p => t('tvp_' + p.id)).join(', ')}; in every one the map takes most of the screen. A filter above the gallery: ${TV_GRPS.map(g => '“' + t('tvg_' + g) + '”').join(', ')}. “${t('tvc_look')}” opens a layout on your screen, “${t('tvc_apply')}” (admin) sends it to all TVs. The “${t('tvc_lay_t')}” block has the template, “${t('tvc_share')}” (50–90%, the line below shows the actual share on Full HD), the mirror and “${t('tvc_scale')}” (100% is proportional to the screen: 4K looks like Full HD, only sharper). “${t('tvc_prof')}” — your own layout under a name (up to 12), applied with one tap. “${t('tvc_res')}” — the TV picks the layout for portrait, ultrawide, nearly square, HD and 4K screens by itself. <b>${t('tv_menu_chk')}</b> — a personal checkbox of the admin and the manager: the menu button opens the TV test on this screen; the test bar has the layout, the resolution, the map share and, for the admin, “${t('tvt_apply')}”. For the manager the section shows the test, the menu button and layout previews.</li>
       <li><b>${t('push_pop_card')}</b> (v1.09.00) — one section: this device's push notifications and the pop-up messages (where to show them, the upload bar).</li>
       <li><b>${t('push_card')}</b> (v1.08.33): the button subscribes THIS device (press it on every phone/PC); the checkboxes pick what to send: task, pickup, approval, overdue, approval reset, plus vehicle alerts and service when you have access. iPhone: "Add to Home Screen" first (iOS 16.4+). Delivery runs while someone from the company is online; after an action it goes out at once.</li>
       <li><b>${t('sec_card')}</b> (v1.08.33): optional 2FA (TOTP) — a QR code for an authenticator app, a 6-digit code; at sign-in we ask for the code after the password. Can be turned off at any time (a code is required).</li>
@@ -12112,7 +12294,7 @@ function viewJob(){
       <div style="font-weight:900;margin-bottom:6px">${ic('toolbox')} ${t('aux_needed')} <span class="tiny" style="font-weight:400">· ${t('aux_take_hint')}</span></div>
       <div class="opt-grid">${auxList.map(a=>`
         <button type="button" class="opt ${auxTake[a.id]?'on':''}" data-aux="${a.id}"
-          onclick="App.auxToggle('${a.id}')"><span class="aux-mk">${auxTake[a.id]?ic('chk_on'):ic('chk_off')}</span> ${esc(a.name)}</button>`).join('')}
+          onclick="App.auxToggle('${a.id}')"><span class="aux-mk">${auxTake[a.id]?ic('chk_on'):ic('chk_off')}</span> ${esc(biText(a.name))}</button>`).join('')}
       </div>
     </div>` : '';
 
@@ -13614,9 +13796,9 @@ function dirWorkTypes(){
   return `<div class="card">` + list.map(w => `
     <div class="rowline">
       <span class="icon-circle" style="background:${w.color};color:${textColorFor(w.color)}">●</span>
-      <div class="grow"><b style="color:${w.color}">${esc(biText(w.name))}</b>
-        ${w.needs_aux?`<div class="tiny">${ic('toolbox')} ${(w.aux_ids||[]).map(id=>esc((state.data.aux_equipment.find(a=>a.id===id)||{}).name||'')).join(' · ')}</div>`:''}</div>
-      <button class="btn btn-ghost sm wt-cl-btn" title="${t('cl_dir_t')}" onclick="App.wtChecklistModal('${w.id}')">${ic('clipboard')} <span class="wt-cl-l">${t('cl_short')}</span> · ${clItems(w).length}</button>
+      <div class="grow"><b style="color:${w.color}">${esc(biText(w.name))}</b>${needsTr(clSplit(w.name || '')[0], clSplit(w.name || '')[1]) ? ` <span class="chip warn wt-no-en">${t('wt_no_en')}</span>` : ''}
+        ${w.needs_aux?`<div class="tiny">${ic('toolbox')} ${(w.aux_ids||[]).map(id=>esc(biText((state.data.aux_equipment.find(a=>a.id===id)||{}).name||''))).join(' · ')}</div>`:''}</div>
+      <button class="btn btn-ghost sm wt-cl-btn" title="${t('cl_dir_t')}" onclick="App.wtChecklistModal('${w.id}')">${ic('clipboard')} <span class="wt-cl-l">${t('cl_short')}</span> · ${clItems(w).length}${clNoEn(w) ? ` <span class="chip warn cl-no-en">${clNoEn(w)} ${t('cl_no_en')}</span>` : ''}</button>
       <button class="btn btn-ghost sm" onclick="App.editWtModal('${w.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
     <button class="btn btn-green" onclick="App.editWtModal()">${ic('plus')} ${t('add')}</button>`;
@@ -13644,6 +13826,7 @@ function clItems(wt){
   });
   return out;
 }
+function clNoEn(wt){ return clItems(wt).filter(it => { const [ru, en] = clSplit(it.t); return needsTr(ru, en); }).length; }   // v1.09.49
 function clSplit(txt){ const k = String(txt).indexOf('|'); return k < 0 ? [String(txt).trim(), ''] : [txt.slice(0, k).trim(), txt.slice(k + 1).trim()]; }
 function clJoin(ru, en){ ru = String(ru || '').trim(); en = String(en || '').trim(); return en ? (ru || en) + ' | ' + en : ru; }
 /* отметки документа → набор id (старые, по номеру строки, читаются по текущему списку) */
@@ -13682,6 +13865,7 @@ function wtChecklistModal(wtId){
     <div id="cl-ed" class="cl-ed">${clEdRowsHtml()}</div>
     ${isAdmin() ? `<div class="cl-tools">
       <button type="button" class="btn btn-blue sm" id="cl-add" onclick="App.clEdAdd()">${ic('plus')} ${t('cl_add')}</button>
+      <button type="button" class="btn btn-ghost sm" id="cl-tr" onclick="App.clEdTranslate()">${ic('globe')} ${t('cl_tr_btn')}</button>
       ${others.length ? `<select id="cl-copy" aria-label="${t('cl_copy')}" onchange="App.clEdCopy(this.value); this.value=''"><option value="">${t('cl_copy')}…</option>${others.map(x => `<option value="${x.id}">${esc(biText(x.name))} · ${clItems(x).length}</option>`).join('')}</select>` : ''}
     </div>
     <button type="button" class="btn btn-green" id="cl-save" style="margin-top:10px;width:100%" onclick="App.wtChecklistSave('${w.id}')">${ic('save')} ${t('save')}</button>` : ''}`);
@@ -13693,6 +13877,20 @@ function clEdAdd(){
   CLED.items.push({ id: 'c' + uid().replace(/-/g, '').slice(0, 10), ru: '', en: '', req: false });
   clEdPaint();
   const rows = document.querySelectorAll('#cl-ed .cl-ru'); const last = rows[rows.length - 1]; if (last){ last.focus(); try{ last.scrollIntoView({ block: 'nearest' }); }catch(e){} }
+}
+/* v1.09.49: перевод пустых английских строк чек-листа тем же сервисом, что и документы; админ проверяет и сохраняет */
+async function clEdTranslate(){
+  if (!isAdmin()) return; clEdPull();
+  const todo = CLED.items.filter(it => needsTr(it.ru, it.en));
+  if (!todo.length){ toast('ℹ ' + t('cl_tr_none'), 'inf'); return; }
+  if (netOff()){ netBlocked(); return; }
+  const b = $('#cl-tr'); if (b) b.disabled = true;
+  let n = 0;
+  try{
+    for (const it of todo){ it.en = await trApi(it.ru); n++; clEdPaint(); if (n < todo.length) await trSleep(TR_PAUSE); }
+    toast('✓ ' + tfill(t('cl_tr_done'), { N: n }));
+  }catch(e){ toast('⚠ ' + tfill(t('dtr_fail'), { E: errStr(e) }), 'err', 7000); }
+  finally{ const b2 = $('#cl-tr'); if (b2) b2.disabled = false; }
 }
 function clEdDel(n){ if (!isAdmin()) return; clEdPull(); CLED.items.splice(n, 1); clEdPaint(); }
 function clEdMove(n, d){
@@ -13767,7 +13965,7 @@ function dirEquipment(){
 
 function dirAux(){
   return `<div class="card">` + state.data.aux_equipment.map(a => `
-    <div class="rowline"><div class="grow">${ic('toolbox')} ${esc(a.name)}</div>
+    <div class="rowline"><div class="grow">${ic('toolbox')} ${esc(biText(a.name))}</div>
       <button class="btn btn-ghost sm" onclick="App.editAuxModal('${a.id}')">${t('edit')}</button>
     </div>`).join('') + `</div>
     <button class="btn btn-green" onclick="App.editAuxModal()">${ic('plus')} ${t('add')}</button>`;
@@ -13983,7 +14181,8 @@ function editWtModal(id){
   const w = id ? wtById(id) : { id: uid(), name:'', color: PALETTE[0], needs_aux: false, aux_ids: [], sort: state.data.work_types.length+1 };
   openModal(`
     ${modalHead(t('work_type'))}
-    <div class="form-row"><span class="lbl">${t('name')}</span><input id="wt-name" value="${esc(biText(w.name))}"></div>
+    <div class="form-row"><span class="lbl">${t('wt_name_ru')}</span><input id="wt-name" value="${esc(clSplit(w.name || '')[0])}"></div>
+    <div class="form-row"><span class="lbl">${t('wt_name_en')}</span><input id="wt-name-en" value="${esc(clSplit(w.name || '')[1])}" placeholder="English…"></div>
     <div class="form-row"><span class="lbl">${t('item_code')}</span>
       <input id="wt-code" maxlength="10" placeholder="TMM" value="${esc(w.code || '')}"
         style="width:120px;text-transform:uppercase"></div>
@@ -13992,7 +14191,7 @@ function editWtModal(id){
     <label class="opt" style="margin-bottom:8px"><input type="checkbox" id="wt-aux" ${w.needs_aux?'checked':''}> ${t('needs_aux')}</label>
     <div class="form-row"><span class="lbl">${t('d_aux')}</span>
       <div class="opt-grid">${state.data.aux_equipment.map(a=>`
-        <label class="opt ${(w.aux_ids||[]).includes(a.id)?'on':''}"><input type="checkbox" data-wtaux="${a.id}" ${(w.aux_ids||[]).includes(a.id)?'checked':''}> ${esc(a.name)}</label>`).join('')}
+        <label class="opt ${(w.aux_ids||[]).includes(a.id)?'on':''}"><input type="checkbox" data-wtaux="${a.id}" ${(w.aux_ids||[]).includes(a.id)?'checked':''}> ${esc(biText(a.name))}</label>`).join('')}
       </div></div>
     ${id ? `<button type="button" class="btn btn-ghost" id="wt-cl-open" style="margin:4px 0 8px;width:100%" onclick="App.wtChecklistModal('${w.id}')">${ic('clipboard')} ${t('cl_dir_t')} · ${clItems(w).length}</button>` : `<div class="tiny" style="margin:4px 0 8px">${t('cl_after_save')}</div>`}
     <div style="font-weight:800;margin:8px 0 2px">${ic('clipboard')} ${t('wt_preset_t')} ${tipQ('wt_tip')}</div>
@@ -14009,7 +14208,9 @@ function editWtModal(id){
 async function saveWt(id, sort){
   const aux_ids = [...document.querySelectorAll('[data-wtaux]:checked')].map(x=>x.dataset.wtaux);
   const preset = [...document.querySelectorAll('[data-wtbox]:checked')].map(x => x.dataset.wtbox);   // v1.09.08
-  const row = { ...(wtById(id) || {}), id, name: $('#wt-name').value.trim(), color: $('#wt-color-v').value, preset,
+  /* v1.09.49: название хранится как «RU | EN» (biText показывает нужную половину). Раньше поле показывало одну половину
+     и сохраняло её как всё название — после любой правки вида задачи английское название пропадало */
+  const row = { ...(wtById(id) || {}), id, name: clJoin($('#wt-name').value, (($('#wt-name-en') || {}).value || '')), color: $('#wt-color-v').value, preset,
     code: (($('#wt-code') || {}).value || '').trim().toUpperCase(),   // v1.07.98
     needs_aux: $('#wt-aux').checked, aux_ids, sort };
   if (!row.name) return;
@@ -14221,7 +14422,7 @@ function viewSettings(){
   ${isAdmin() ? `
   ${fold('intg', t('intg_card'), 'link', intgCardHtml())}
   ${fold('tvc', t('tvc_card'), 'tv', tvModeHtml())}
-  ` : ''}
+  ` : isManager() ? fold('tvc', t('tvc_card'), 'tv', tvMgrHtml()) : ''}
 
   ${fold('misc', t('misc_card'), 'gear', miscCardHtml())}
 
@@ -14272,7 +14473,7 @@ function setIdxBuild(){
   };
   const prof = document.getElementById('set-profile');
   if (prof) scan(prof, 'profile', t('set_nav_profile'));
-  const secs = { docs: docsCardHtml, ck: ckCardHtml, push: () => pbCardHtml() + wkCardHtml() + pdCardHtml() + popCardHtml(), cam: camCardHtml, mycar: () => myCarHtml(true), study: studyCardHtml, dgs: dgsCardHtml, intg: intgCardHtml, tvc: tvModeHtml, misc: miscCardHtml };
+  const secs = { docs: docsCardHtml, ck: ckCardHtml, push: () => pbCardHtml() + wkCardHtml() + pdCardHtml() + popCardHtml(), cam: camCardHtml, mycar: () => myCarHtml(true), study: studyCardHtml, dgs: dgsCardHtml, intg: intgCardHtml, tvc: () => isAdmin() ? tvModeHtml() : tvMgrHtml(), misc: miscCardHtml };
   _foldForce = true;
   try{
     settingsNavItems().forEach(([k, lbl]) => {
@@ -14357,7 +14558,8 @@ function settingsNavItems(){
   if (!isAcc()) it.push(['mycar', t('mc_title'), 'car']);   // v1.09.38
   if (!isAcc()) it.push(['study', t('st_card'), 'grad']);
   it.push(['dgs', t('dgs_card'), 'steth']);
-  if (isAdmin()) it.push(['intg', t('intg_card'), 'link'], ['tvc', t('tvc_card'), 'tv']);
+  if (isAdmin()) it.push(['intg', t('intg_card'), 'link']);
+  if (isManager()) it.push(['tvc', t('tvc_card'), 'tv']);   // v1.09.51: менеджеру — проверка ТВ, кнопка в меню и просмотр вариантов
   it.push(['misc', t('misc_card'), 'gear']);
   return it;
 }
@@ -14706,6 +14908,39 @@ async function applyUpdateNow(){
   location.reload();
 }
 
+/* v1.09.48: ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ (Настройки → Версия). Сначала спрашиваем сайт, какая там версия: если сайт
+   недоступен, стирать копию опасно — приложение не откроется до его возвращения (спрашиваем отдельно, по умолчанию «нет»).
+   Затем свежие файлы тянутся с сайта в обход кэша (cache: 'reload' обновляет и кэш браузера — GitHub Pages держит
+   файлы до 10 минут), стираются кэши techlog-*, снимается service worker, страница перезагружается.
+   localStorage и IndexedDB (вход, данные, очередь фото и записей) не трогаются. */
+const FU_FILES = ['./index.html', './app.js', './sw.js', './styles.css', './desktop.css', './compact.css', './ui.js', './viewmode.js',
+                  './desktop.js', './uidiag.js', './uishots.js', './proposal-tips.js', './manifest.webmanifest', './version.json'];
+async function forceUpdate(){
+  let site = null, err = '';
+  try{
+    const r = await fetch('./version.json?fu=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) err = 'HTTP ' + r.status;
+    else { try{ site = (await r.json()).version || null; }catch(e){ err = t('upd_fail_json'); } }
+  }catch(e){ err = errStr(e); }
+  if (!site){
+    if (!(await askYes(tfill(t('fu_site_down'), { E: err || '?' }), { title: t('fu_title'), ok: t('fu_go'), danger: true, icon: 'warn' }))) return;
+  } else if (!(await askYes(tfill(t('fu_q'), { S: site, C: APP_VERSION }), { title: t('fu_title'), ok: t('fu_go'), okIcon: 'download', icon: 'download' }))) return;
+  toast('🧹 ' + t('fu_run'), 'inf', 8000);
+  try{ saveLocalNow(); }catch(e){}
+  if (site){ await Promise.all(FU_FILES.map(f => fetch(f + (f.includes('?') ? '&' : '?') + 'fu=' + Date.now(), { cache: 'reload' }).catch(() => null)
+                                               .then(() => fetch(f, { cache: 'reload' }).catch(() => null)))); }
+  try{ const keys = await caches.keys(); await Promise.all(keys.filter(k => k.startsWith('techlog-')).map(k => caches.delete(k))); }catch(e){}
+  try{ const regs = navigator.serviceWorker ? await navigator.serviceWorker.getRegistrations() : []; await Promise.all(regs.map(r => r.unregister())); }catch(e){}
+  try{ sessionStorage.setItem('techlog_updated', '1'); sessionStorage.setItem('techlog_fu', JSON.stringify({ from: APP_VERSION, to: site, at: Date.now() })); }catch(e){}
+  dlog('принудительное обновление: v' + APP_VERSION + ' → ' + (site || '?'));
+  location.reload();
+}
+function forceUpdateAfter(){
+  let fu = null; try{ fu = JSON.parse(sessionStorage.getItem('techlog_fu') || 'null'); sessionStorage.removeItem('techlog_fu'); }catch(e){}
+  if (!fu) return;
+  dlog('принудительное обновление: было v' + fu.from + ', стало v' + APP_VERSION + (fu.to && fu.to !== APP_VERSION ? ' (на сайте ' + fu.to + ' — браузер ещё отдаёт старые файлы, повторите через пару минут)' : ''));
+  setTimeout(() => toast('✓ ' + tfill(t('fu_done'), { V: APP_VERSION }), fu.to && fu.to !== APP_VERSION ? 'err' : '', 5000), 800);
+}
 function initSW(){
   if (!('serviceWorker' in navigator)) return;
   /* v1.07.50: без этого браузер при reg.update() мог взять sw.js из
@@ -15657,6 +15892,8 @@ const App = {
   tvListRefresh, tvApprove, tvDeny, tvRevoke,
   tvcFlag, tvcMode, tvcStep, tvcMove, tvcSwap, tvcReset,
   tvcDragStart, tvcOver, tvcLeave, tvcDrop,
+  tvMenuSet, tvPrevSet, tvSimSet, tvPrevApply, tvBarMin, tvcPreset, tvcPreview, tvcLay, tvcShare, tvcFlip, tvcScale,   // v1.09.51
+  tvcProfSave, tvcProfApply, tvcProfUpd, tvcProfDel, tvcAutoOn, tvcAutoSet, tvcGalF,   // v1.09.52: фильтр галереи
   go(s){
     dictStop();
     if (state.screen === 'study' && s !== 'study'){ studyPauseAll(); if (STUDY.read) studyReadClose(true); }   // v1.08.51
@@ -15791,6 +16028,8 @@ const App = {
   statRange(f, to){ state.statFrom = f; state.statTo = to; render(); },
   statFrom(v){ state.statFrom = v; render(); }, statTo(v){ state.statTo = v; render(); },
   statMine(v){ state.statMine = v; render(); },
+  forceUpdate, // v1.09.48
+  clEdTranslate, dirTranslate, // v1.09.49
   async updCheck(){
     await checkForUpdate('вручную', true);
     if (state.updAvail){ toast('⬆ ' + t('upd_found') + ': ' + state.updAvail, 'inf'); await applyUpdateNow(); return; }
@@ -16402,6 +16641,7 @@ async function backPressed(){
     if (bx) bx.click(); else closeModal();
     return 'modal';
   }
+  if (TV.test && TV.screen){ tvTestStop(); return 'tv-test'; }   // v1.09.51: проверка ТВ-режима — «назад» заканчивает её и возвращает на экран, откуда пришли
   if (!state.user) return backExit();
   /* 2 · внутри экрана */
   if (state.screen === 'job' && jobDraft){
@@ -16509,6 +16749,7 @@ function canonUrl(loc){
        когда данные уже загружены (раньше запускалось через 900 мс от старта,
        и при медленной сети документ ещё не был известен) */
     if (state.user) setTimeout(() => { pickRestore().catch(e => dlog('⛔ pickRestore:', e)); }, 400);
+    try{ forceUpdateAfter(); }catch(e){}                                 // v1.09.48
     if (state.user) setTimeout(() => { invArchFlush().catch(e => dlog('⛔ invArchFlush:', e)); }, 4000);   // v1.09.40
     try{ if (state.user) setTimeout(() => ckInit(false).then(() => { if (CK.st === 'need_pw' && (state.screen === 'home' || state.screen === 'chat')) render(); }), 2500); }catch(e){}   // v1.09.21
     try{ if (state.user) setTimeout(() => pbSyncSub(false), 6000); }catch(e){}   // v1.09.22: подписка устройства сверяется с сервером
@@ -16553,7 +16794,52 @@ const TV = { screen: null, key: '', code: '', feed: null, bn: null, bnOff: false
 const TV_WIDGETS = ['cards', 'route', 'workers', 'chDay', 'chWeek', 'chMi'];   // v1.09.38: + маршруты (этапы водителей)
 const TVDEF = { map: 1, cardJobs: 1, cardPk: 1, route: 1, workers: 1, chDay: 1, chWeek: 0, chMi: 1,
   wMode: 'auto', wTotal: 10, wScreen: 6,
+  lay: 'classic', share: 62, flip: 0, scale: 100,        // v1.09.51: шаблон раскладки, доля карты (% экрана), зеркало, масштаб (%)
   zones: { rail: ['cards', 'route', 'workers'], bottom: ['chDay', 'chWeek', 'chMi'] } };
+/* ---- v1.09.51 · варианты раскладки ТВ (подробности — у tvGeom) ---- */
+const TV_LAYS = ['classic', 'side', 'strip', 'hud', 'twin', 'ticker', 'hud2', 'corners', 'dock', 'bars', 'lshape', 'frame'];   // v1.09.52: + 6 шаблонов
+const TV_FLOAT = ['hud', 'hud2', 'corners', 'dock'];     // карта на весь экран, блоки — полупрозрачно поверх неё
+const TV_GRPS = ['col', 'strip', 'over', 'bars', 'screen'];   // v1.09.52: фильтр галереи: с колонкой, с лентой, поверх карты, со строками, под экран
+const TV_LAYOUT_KEYS = ['lay', 'share', 'flip', 'scale', 'dens', 'map', 'cardJobs', 'cardPk', 'route', 'workers', 'chDay', 'chWeek', 'chMi', 'wMode', 'wTotal', 'wScreen', 'zones'];
+const TV_SHARE_MIN = 50, TV_SHARE_MAX = 90, TV_PROF_MAX = 12;
+const TV_SCR_CLS = ['portrait', 'wide', 'square', 'small', 'big'];          // классы экрана для правил «под разрешение»; остальные — «обычный» Full HD
+const TV_AUTO_DEF = { portrait: 'p:tower', wide: 'p:twin', square: 'p:panorama', small: 'p:hd', big: '' };
+const TV_WW = { head: 1.1, cards: 2, workers: 2.2, route: 2, chDay: 1.2, chWeek: 1.2, chMi: 1.2 };   // доли ширины блоков в ленте
+const TV_WW_LAY = { dock: { workers: 3 } };              // v1.09.52: в низкой полосе «дока» сотрудникам — шире, плитки в 3 колонки
+const TV_SIMS = [[1280, 720], [1366, 768], [1920, 1080], [2560, 1080], [2560, 1440], [3840, 2160], [1080, 1920], [1024, 768]];
+const TV_PRESETS = (() => {
+  const Z = (rail, bottom) => ({ rail, bottom }), CH0 = { chDay: 0, chWeek: 0, chMi: 0 }, CHZ = ['chDay', 'chWeek', 'chMi'];
+  const ALL = { map: 1, cardJobs: 1, cardPk: 1, route: 1, workers: 1, wMode: 'auto', dens: 'cozy', scale: 100, flip: 0 };
+  const ZD = Z(['cards', 'route', 'workers'], CHZ), ZP = Z(['cards', 'workers'], ['route', 'chDay', 'chWeek', 'chMi']);
+  return [
+    /* с колонкой */
+    { id: 'classic',  grp: 'col',    scr: ['fhd', 'hd'],   cfg: { ...ALL, lay: 'classic', share: 62, chDay: 1, chWeek: 0, chMi: 1, zones: ZD } },
+    { id: 'focus',    grp: 'col',    scr: ['fhd', 'hd'],   cfg: { ...ALL, lay: 'side', share: 74, ...CH0, zones: Z(['cards', 'workers', 'route'], CHZ) } },
+    { id: 'side_l',    grp: 'col',    scr: ['fhd', 'hd'],   cfg: { ...ALL, lay: 'side', flip: 1, share: 72, ...CH0, zones: Z(['cards', 'workers', 'route'], CHZ) } },   // v1.09.52
+    { id: 'dispatch', grp: 'col',    scr: ['fhd'],         cfg: { ...ALL, lay: 'side', share: 66, cardJobs: 0, cardPk: 0, ...CH0, wMode: 'compact', zones: Z(['route', 'workers', 'cards'], CHZ) } },
+    /* с лентой */
+    { id: 'panorama', grp: 'strip',  scr: ['fhd', 'sq'],   cfg: { ...ALL, lay: 'strip', share: 70, chDay: 1, chWeek: 0, chMi: 0, zones: ZP } },
+    { id: 'pano_top',  grp: 'strip',  scr: ['fhd', 'sq'],   cfg: { ...ALL, lay: 'strip', flip: 1, share: 70, chDay: 1, chWeek: 0, chMi: 0, zones: ZP } },   // v1.09.52
+    { id: 'summary',  grp: 'strip',  scr: ['fhd', 'uhd'],  cfg: { ...ALL, lay: 'strip', share: 62, route: 0, workers: 0, chDay: 1, chWeek: 1, chMi: 1, zones: Z(['cards'], ['chDay', 'chWeek', 'chMi', 'route', 'workers']) } },
+    /* поверх карты */
+    { id: 'hud',      grp: 'over',   scr: ['fhd', 'uhd'],  cfg: { ...ALL, lay: 'hud', share: 76, ...CH0, zones: ZD } },
+    { id: 'hud2',     grp: 'over',   scr: ['wide', 'uhd'], cfg: { ...ALL, lay: 'hud2', share: 70, chDay: 1, chWeek: 0, chMi: 1, zones: Z(['cards', 'workers'], ['route', 'chDay', 'chMi', 'chWeek']) } },   // v1.09.52
+    { id: 'corners',  grp: 'over',   scr: ['fhd', 'uhd'],  cfg: { ...ALL, lay: 'corners', share: 76, ...CH0, zones: ZP } },       // v1.09.52: сводка — справа сверху, сотрудники — справа снизу, маршруты — слева снизу
+    { id: 'dock',     grp: 'over',   scr: ['fhd', 'wide'], cfg: { ...ALL, lay: 'dock', share: 72, ...CH0, zones: Z(['cards', 'workers', 'route'], CHZ) } },                             // v1.09.52
+    { id: 'clock',    grp: 'over',   scr: ['any'],         cfg: { ...ALL, lay: 'corners', share: 90, cardJobs: 0, cardPk: 0, route: 0, workers: 0, ...CH0, zones: ZD } },               // v1.09.52
+    /* со строками */
+    { id: 'ticker',   grp: 'bars',   scr: ['any'],         cfg: { ...ALL, lay: 'ticker', share: 90, ...CH0, zones: ZD } },
+    { id: 'bars',     grp: 'bars',   scr: ['any'],         cfg: { ...ALL, lay: 'bars', share: 78, cardJobs: 0, cardPk: 0, route: 0, ...CH0, wMode: 'compact', zones: Z(['workers', 'cards', 'route'], CHZ) } },   // v1.09.52
+    { id: 'lshape',   grp: 'bars',   scr: ['fhd', 'wide'], cfg: { ...ALL, lay: 'lshape', share: 66, cardJobs: 0, cardPk: 0, ...CH0, zones: Z(['workers', 'route', 'cards'], CHZ) } },   // v1.09.52
+    { id: 'frame',    grp: 'bars',   scr: ['fhd', 'uhd'],  cfg: { ...ALL, lay: 'frame', share: 60, cardJobs: 0, cardPk: 0, chDay: 1, chWeek: 1, chMi: 1, zones: Z(['workers', 'route', 'cards'], CHZ) } },   // v1.09.52
+    /* под экран */
+    { id: 'twin',     grp: 'screen', scr: ['wide'],        cfg: { ...ALL, lay: 'twin', share: 60, chDay: 1, chWeek: 1, chMi: 1, zones: Z(['route', 'workers'], ['cards', 'chDay', 'chWeek', 'chMi']) } },
+    { id: 'tower',    grp: 'screen', scr: ['port'],        cfg: { ...ALL, lay: 'strip', share: 58, scale: 130, chDay: 1, chWeek: 0, chMi: 0, zones: ZP } },
+    { id: 'tower_top', grp: 'screen', scr: ['port'],        cfg: { ...ALL, lay: 'strip', flip: 1, share: 58, scale: 130, chDay: 1, chWeek: 0, chMi: 0, zones: ZP } },   // v1.09.52
+    { id: 'hd',       grp: 'screen', scr: ['hd'],          cfg: { ...ALL, lay: 'side', share: 70, scale: 120, dens: 'compact', route: 0, ...CH0, wMode: 'compact', zones: ZD } },
+    { id: 'k4',       grp: 'screen', scr: ['uhd'],         cfg: { ...ALL, lay: 'classic', share: 64, scale: 85, chDay: 1, chWeek: 1, chMi: 1, wTotal: 16, wScreen: 10, zones: ZD } }
+  ];
+})();
 
 function tvBodyClass(on){
   try{
@@ -16565,7 +16851,12 @@ function tvBodyClass(on){
 /* Раскладка: org_settings.tv в приложении, feed.tv на телевизоре */
 function tvCfgParse(src){
   let c = {};
-  try{ c = JSON.parse(src || '') || {}; }catch(e){ c = {}; }
+  try{ c = (src && typeof src === 'object') ? src : (JSON.parse(src || '') || {}); }catch(e){ c = {}; }
+  return tvCfgNorm(c);
+}
+/* v1.09.51: разбор объекта раскладки — тот же для org_settings.tv, готовых вариантов и профилей */
+function tvCfgNorm(c){
+  if (!c || typeof c !== 'object') c = {};
   const out = { ...TVDEF, ...c };
   const z = { rail: [], bottom: [] };
   const seen = new Set();
@@ -16579,6 +16870,20 @@ function tvCfgParse(src){
   out.wTotal = Math.max(1, Math.min(20, +out.wTotal || TVDEF.wTotal));
   out.wScreen = Math.max(1, Math.min(10, +out.wScreen || TVDEF.wScreen));
   if (!['auto', 'full', 'compact'].includes(out.wMode)) out.wMode = 'auto';
+  if (!TV_LAYS.includes(out.lay)) out.lay = 'classic';
+  out.share = Math.max(TV_SHARE_MIN, Math.min(TV_SHARE_MAX, Math.round(+out.share) || TVDEF.share));
+  out.flip = out.flip ? 1 : 0;
+  out.scale = Math.max(50, Math.min(200, Math.round(+out.scale) || 100));
+  out.dens = out.dens === 'compact' ? 'compact' : 'cozy';
+  out.preset = typeof out.preset === 'string' ? out.preset.slice(0, 40) : '';
+  const pids = new Set();                                 // id профиля попадает в onclick — только буквы, цифры, «_» и «-», без повторов
+  out.profiles = (Array.isArray(c.profiles) ? c.profiles : []).filter(p => p && p.id && p.cfg && typeof p.cfg === 'object')
+    .map(p => ({ id: String(p.id).replace(/[^\w-]/g, '').slice(0, 24), name: String(p.name || '').trim().slice(0, 40) || '—', at: String(p.at || '').slice(0, 30), cfg: tvLayoutPick(p.cfg) }))
+    .filter(p => p.id && !pids.has(p.id) && pids.add(p.id)).slice(0, TV_PROF_MAX);
+  const a = (c.auto && typeof c.auto === 'object') ? c.auto : {};
+  out.auto = { on: a.on ? 1 : 0 };
+  for (const k of TV_SCR_CLS) out.auto[k] = typeof a[k] === 'string' ? a[k].slice(0, 40) : TV_AUTO_DEF[k];
+  delete out._rule;
   return out;
 }
 function tvCfg(){
@@ -16648,7 +16953,7 @@ function tvStop(toLogin){
   for (const k of Object.keys(TV.tm)){ if (TV.tm[k]){ clearInterval(TV.tm[k]); TV.tm[k] = 0; } }
   if (TV.map){ try{ TV.map.remove(); }catch(e){} }
   Object.assign(TV, { screen: null, key: '', code: '', feed: null, bn: null, bnOff: false,
-    map: null, pins: {}, cars: {}, routes: {}, fit: false });
+    map: null, pins: {}, cars: {}, routes: {}, fit: false, routeLayer: null, eff: null, geo: null, effKey: '', mapSz: null });   // v1.09.51
   tvBodyClass(false); if (!TV.test) tvDensApply(false);
   if (toLogin !== false){ state.screen = 'login'; render(); }
 }
@@ -16839,7 +17144,7 @@ function tvRoutesDraw(){
   TV.routeLayer.clearLayers();
   const off = tvOffice();
   if (off) L.marker([off.lat, off.lng], { icon: L.divIcon({ className: '', iconSize: null, html: `<div class="map-pin tv-office" title="${esc(off.addr)}">${ICONS.home}</div>` }), zIndexOffset: 300 }).addTo(TV.routeLayer);
-  if (tvCfg().route === 0) return;
+  if ((TV.eff || tvCfg()).route === 0) return;   // v1.09.51: действующий вариант (у «HD 720/768» маршрутов нет)
   tvWorkersAll().forEach((p, i) => {
     const st = tvStops(p.id).filter(s => s.cx && s.cx.lat != null);
     if (!st.length) return;
@@ -16847,8 +17152,8 @@ function tvRoutesDraw(){
     if (pts.length < 2) return;
     const key = pts.map(q => q[0].toFixed(5) + ',' + q[1].toFixed(5)).join(';'), geo = (TV.osrm || {})[key];
     if (geo === undefined) tvOsrm(key, pts);
-    const col = TRKH_COLORS[i % TRKH_COLORS.length];
-    L.polyline(Array.isArray(geo) ? geo : pts, Array.isArray(geo) ? { color: col, weight: 4, opacity: .75 } : { color: col, weight: 3, opacity: .6, dashArray: '4 8' }).addTo(TV.routeLayer);
+    const col = TRKH_COLORS[i % TRKH_COLORS.length], kk = Math.max(1, (TV.geo && TV.geo.k) || 1);   // v1.09.51: толщина — в масштабе экрана
+    L.polyline(Array.isArray(geo) ? geo : pts, Array.isArray(geo) ? { color: col, weight: 4 * kk, opacity: .75 } : { color: col, weight: 3 * kk, opacity: .6, dashArray: '4 8' }).addTo(TV.routeLayer);
   });
 }
 /* ---- офис (админ, «Режим телевизора») ---- */
@@ -16914,11 +17219,11 @@ function tvCardsHtml(cfg){
     </div>` : '';
   return `<div class="tv-stats stats-day${(cfg.cardJobs && cfg.cardPk) ? '' : ' one'}">${cj}${cp}</div>`;
 }
-function tvWorkersHtml(cfg){
+function tvWorkersHtml(cfg, force){
   if (!cfg.workers) return '';
   const all = tvWorkersAll();
   const list = all.slice(0, cfg.wTotal);
-  const compact = cfg.wMode === 'compact' || (cfg.wMode === 'auto' && list.length > cfg.wScreen);
+  const compact = force || cfg.wMode === 'compact' || (cfg.wMode === 'auto' && list.length > cfg.wScreen);   // v1.09.51: force — строки не влезли по высоте (tvFitWorkers)
   const dayN = {}; (TV.feed && TV.feed.stat_day || []).forEach(x => { dayN[x.id] = x.n; });
   let totMi = 0, hasMi = false;
   (TV.bn || []).forEach(c => { if (c.mi != null){ totMi += c.mi; hasMi = true; } });
@@ -16951,7 +17256,7 @@ function tvChartHtml(cfg, key){
     chWeek: { t: t('tv_ch_week'), c: 'var(--blue)', v: p => (TV.feed && TV.feed.stat_week || []).find(x => x.id === p.id)?.n || 0, f: v => v },
     chMi: { t: t('tv_ch_mi'), c: 'var(--orange)', v: p => { const c = tvCarOf(p.id); return c && c.mi != null ? c.mi : null; }, f: v => v.toFixed(1) }
   }[key];
-  const rows = tvWorkersAll().slice(0, tvCfg().wTotal)
+  const rows = tvWorkersAll().slice(0, cfg.wTotal)   // v1.09.51: сколько сотрудников — из действующего варианта
     .map(p => ({ n: shortName(p.name), v: conf.v(p) }))
     .filter(r => r.v != null).sort((a, b) => b.v - a.v).slice(0, 8);
   if (!rows.length) return `<div class="twg"><div class="twg-h">${ic('chart')} ${conf.t}</div><div class="tiny">${t('day_empty')}</div></div>`;
@@ -16986,42 +17291,43 @@ function viewTvWait(){
   </div>`;
 }
 function viewTv(){
-  const cfg = tvCfg();
-  const d = tzD();
-  return `<div class="tvwrap${cfg.map ? '' : ' nomap'}">
-    <div class="tv-left">
-      <div class="tv-mapbox">
-        <div id="tv-map"></div>
-        <div class="tv-legend">
-          <span><span class="sw" style="background:#FF9600"></span>${t('tv_legend_job')}</span>
-          <span><span class="sw" style="background:#8AA0AB"></span>${t('tv_legend_pk')}</span>
-          <span><span class="sw sw-done"></span>${t('tv_legend_done')}</span>
-          <span><span class="sw sw-here"></span>${t('stg_here')}</span>
-          <span><span class="sw sw-passed"></span>${t('stg_done')}</span>
-          <span><span class="car-sw"></span>${t('tv_legend_car')}</span>
-        </div>
-        <button class="tv-fsbtn" onclick="App.tvFsGo()">${ic('fs')} ${t('tv_fs')}</button>
-      </div>
-      <div class="tv-bottom" id="tv-zbot"></div>
-    </div>
-    <div class="tv-rail">
-      <div class="tv-head">
+  /* v1.09.51: раскладка — по варианту (готовый, профиль, правило «под разрешение» или своя), зоны — блоки
+     с координатами из tvGeom; внутри зон всё в масштабе экрана (zoom = --tvk), карта — в родном разрешении */
+  const cfg = tvEffCfg(), s = tvScr(), G = tvGeom(cfg, s.w, s.h), d = tzD();
+  TV.eff = cfg; TV.geo = G; TV.effKey = tvLayKey(cfg);
+  const st = r => r ? `left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px` : 'display:none';
+  const head = `<div class="tv-head">
         <div class="logo logo-pic">${logoImg()}</div>
         <div class="who"><b>${esc(((state.data || {}).org_settings || {}).company_short || 'APC')} · ${t('tv_today')}</b>
           <div class="tiny">TechLog · ${t('tv_head_sub')}</div></div>
         <div class="tv-clock"><div class="hm" id="tv-clk">${tvHM()}</div>
           <div class="dt" id="tv-dte">${t('week_days')[(d.getDay() + 6) % 7]}, ${d.getDate()} ${t('months')[d.getMonth()]}</div></div>
+      </div>`;
+  const cls = 'tvwrap tvl-' + G.lay + (G.flip ? ' tvl-flip' : '') + (G.port ? ' tvl-port' : '') + (G.map ? '' : ' nomap') + (s.sim ? ' tv-sim' : '');
+  return `<div class="${cls}" style="--tvk:${G.k.toFixed(3)};${s.sim ? tvSimStyle(s) : ''}">
+    ${G.map ? `<div class="tva tva-map tv-mapbox" style="${st(G.map)}">
+      <div id="tv-map"></div>
+      <div class="tv-legend">
+        <span><span class="sw" style="background:#FF9600"></span>${t('tv_legend_job')}</span>
+        <span><span class="sw" style="background:#8AA0AB"></span>${t('tv_legend_pk')}</span>
+        <span><span class="sw sw-done"></span>${t('tv_legend_done')}</span>
+        <span><span class="sw sw-here"></span>${t('stg_here')}</span>
+        <span><span class="sw sw-passed"></span>${t('stg_done')}</span>
+        <span><span class="car-sw"></span>${t('tv_legend_car')}</span>
       </div>
-      <div id="tv-zrail"></div>
-    </div>
-    <button class="tv-x" onclick="App.tvFsExit()" aria-label="${t('tv_exit')}">${ic('close')}</button>
-    ${TV.test ? `<div class="tv-testbar">
-      <b>${ic('warn')} ${t('tv_test_on')}</b>
-      <div class="lang-seg sm"><button class="${tvDens() === 'cozy' ? 'on' : ''}" onclick="App.tvDensSet('cozy')">${t('dens_cozy')}</button><button class="${tvDens() === 'compact' ? 'on' : ''}" onclick="App.tvDensSet('compact')">${t('dens_compact')}</button></div>
-      <button class="btn btn-ghost sm" onclick="App.tvFsGo()">${ic('fs')} ${t('tv_fs')}</button>
-      <button class="btn btn-red sm" onclick="App.tvTestStop()">${ic('close')} ${t('tv_test_stop')}</button>
+      <button class="tv-fsbtn" onclick="App.tvFsGo()">${ic('fs')} ${t('tv_fs')}</button>
     </div>` : ''}
-  </div>`;
+    ${G.tick ? `<div class="tva tva-tick" style="${st(G.tick)}"><div class="tv-tick tvzm" id="tv-tick"></div></div>` : ''}
+    ${G.h ? `<div class="tva tva-h" style="${st(G.h)}"><div class="tv-rail tvzm dir-col tv-hcard">${head}</div></div>` : ''}
+    ${G.a ? `<div class="tva tva-a" style="${st(G.a)}"><div class="tv-rail tvzm dir-${G.dirA}">
+      ${G.headA ? head : ''}
+      <div id="tv-zrail"></div>
+    </div></div>` : ''}
+    ${G.a2 ? `<div class="tva tva-a2" style="${st(G.a2)}"><div class="tv-rail tvzm dir-col"><div id="tv-zrail2"></div></div></div>` : ''}
+    <div class="tva tva-b" style="${st(G.b)}"><div class="tv-bottom tvzm dir-${G.dirB}" id="tv-zbot"></div></div>
+  </div>
+  <button class="tv-x" onclick="App.tvFsExit()" aria-label="${t('tv_exit')}">${ic('close')}</button>
+  ${TV.test ? tvTestBarHtml(cfg, s) : ''}`;
 }
 /* =====================================================================
    v1.09.09 · ПРОВЕРКА ТВ-РЕЖИМА И ПЛОТНОСТЬ ТВ
@@ -17035,10 +17341,11 @@ function viewTv(){
 function tvDens(){ return tvCfg().dens === 'compact' ? 'compact' : 'cozy'; }
 function tvDensApply(on){
   try{ const h = document.documentElement;
-    const want = !!on && tvDens() === 'compact';
+    const want = !!on && tvDensEff() === 'compact';      // v1.09.51: плотность действующего варианта (у «HD 720/768» — своя)
     if (on){ if (h.classList.contains('tl-compact') !== want) h.classList.toggle('tl-compact', want); }
     else { const back = densCur() === 'compact'; if (h.classList.contains('tl-compact') !== back) h.classList.toggle('tl-compact', back); }
   }catch(e){}
+  tvFontApply(!!on);                                     // v1.09.51: свой кегль ТВ — одинаковый на телевизоре и на проверке
 }
 async function tvDensSet(v){
   if (!isAdmin()){ toast('ℹ ' + t('tv_dens_admin'), 'inf'); return; }
@@ -17059,6 +17366,7 @@ function tvTestBn(){
 function tvTest(){
   if (!state.user || !isManager()) return;
   closeModal();
+  if (!TV.test) TV.back = state.screen && state.screen !== 'login' ? state.screen : 'settings';   // v1.09.51: кнопка «ТВ» в меню — вернёмся туда же
   Object.assign(TV, { test: true, key: 'test', feed: tvTestFeed(), bn: tvTestBn(), screen: 'on', fit: false });
   render();
   if (!TV.tm.clk) TV.tm.clk = setInterval(tvClockTick, 5000);
@@ -17067,12 +17375,31 @@ function tvTest(){
 function tvTestStop(){
   if (document.fullscreenElement){ try{ document.exitFullscreen(); }catch(e){} }
   tvStop(false); TV.test = false; tvDensApply(false);
-  state.screen = 'settings'; render();
+  const back = TV.back || 'settings';
+  Object.assign(TV, { prevRef: '', sim: null, barMin: false, back: '' });   // v1.09.51: просмотр варианта и разрешения — только на время проверки
+  state.screen = back; render();
 }
 function tvAfterRender(){
   tvBodyClass(true); tvDensApply(true);                  // v1.09.09: плотность ТВ
+  tvResizeBind();                                        // v1.09.51: окно / поворот экрана — пересчитать раскладку
   if (TV.screen !== 'on') return;
+  /* v1.09.51: перерисовка (другой вариант, разрешение, размер окна) не пересоздаёт карту — тот же контейнер
+     Leaflet переезжает в новую рамку, плитки не грузятся заново; раньше новая рамка оставалась пустой */
+  const el = document.getElementById('tv-map'), mbox = () => { const b = document.querySelector('.tvwrap .tva-map'); return b ? [b.clientWidth, b.clientHeight] : null; };
+  if (TV.map){
+    const old = TV.map.getContainer();
+    if (el && old !== el) el.replaceWith(old);
+    else if (!el){ try{ TV.map.remove(); }catch(e){} TV.map = null; TV.routeLayer = null; TV.mapSz = null; }
+  }
+  /* v1.09.52: размер карты обновляем ДО перерисовки — подгонка масштаба в tvRepaint видит новую рамку
+     (раньше при смене варианта точки подгонялись под прежний размер и оставались мелкими, напр. у «Дока») */
+  if (TV.map){
+    try{ TV.map.invalidateSize(false); }catch(e){}
+    const sz = mbox(), prev = TV.mapSz;
+    if (sz && prev && (Math.abs(prev[0] - sz[0]) > 8 || Math.abs(prev[1] - sz[1]) > 8)) TV.fit = false;
+  }
   tvRepaint();
+  if (TV.map) TV.mapSz = mbox();
   if (!TV.fsBound){
     TV.fsBound = true;
     document.addEventListener('fullscreenchange', () => {
@@ -17082,17 +17409,24 @@ function tvAfterRender(){
 }
 function tvRepaint(){
   if (TV.screen !== 'on') return;
-  const cfg = tvCfg();
-  const zr = document.getElementById('tv-zrail');
-  const zb = document.getElementById('tv-zbot');
-  if (!zr || !zb) return;
-  zr.innerHTML = cfg.zones.rail.map(id => tvWidgetHtml(cfg, id)).join('');
-  zb.innerHTML = cfg.zones.bottom.map(id => tvWidgetHtml(cfg, id)).join('');
-  const wrap = document.querySelector('.tvwrap');
-  if (wrap) wrap.classList.toggle('nomap', !cfg.map);
+  const cfg = tvEffCfg();
+  /* v1.09.51: вариант сменился (новая раскладка с сервера, правило «под разрешение», просмотр) — перерисовать экран целиком */
+  if (tvLayKey(cfg) !== TV.effKey || !document.querySelector('.tvwrap')){ TV.fit = false; render(); return; }   // v1.09.52: новая раскладка — и масштаб карты под её панели
+  const G = TV.geo || tvGeom(cfg, tvScr().w, tvScr().h);
+  const tk = document.getElementById('tv-tick'); if (tk) tk.innerHTML = tvTickHtml(cfg);
+  const zr = document.getElementById('tv-zrail'), zr2 = document.getElementById('tv-zrail2'), zb = document.getElementById('tv-zbot');
+  const idsA = tvZoneIds(cfg, 'rail'), idsB = tvZoneIds(cfg, 'bottom');
+  let aIds = G.mergeB ? idsA.concat(idsB) : idsA, a2Ids = [];
+  if (G.splitA){ a2Ids = aIds.slice(G.splitA); aIds = aIds.slice(0, G.splitA); }   // v1.09.52: «острова» — верхний и нижний справа
+  if (zr) tvZoneFill(zr, cfg, aIds, G.dirA);
+  if (zr2) tvZoneFill(zr2, cfg, a2Ids, 'col');
+  if (zb) tvZoneFill(zb, cfg, G.b ? idsB : [], G.dirB);
+  tvFitWorkers(cfg);
   tvClockTick();
-  if (cfg.map) tvMapSync(); else if (TV.map){ try{ TV.map.remove(); }catch(e){} TV.map = null; }
+  if (cfg.map !== 0 && G.map) tvMapSync(); else if (TV.map){ try{ TV.map.remove(); }catch(e){} TV.map = null; TV.routeLayer = null; }
+  if (TV.test) tvShareShow();
 }
+
 function tvClockTick(){
   const el = document.getElementById('tv-clk'); if (el) el.textContent = tvHM();
   const d = tzD(); const de = document.getElementById('tv-dte');
@@ -17103,8 +17437,10 @@ function tvClockTick(){
 function tvMapSync(){
   if (!window.L){ setTimeout(tvMapSync, 200); return; }
   const el = document.getElementById('tv-map'); if (!el) return;
+  if (TV.map && TV.map.getContainer() !== el){ try{ TV.map.remove(); }catch(e){} TV.map = null; }   // v1.09.51: рамку перерисовали без переноса контейнера
   if (!TV.map){
-    TV.map = L.map('tv-map', { zoomControl: false, attributionControl: true,
+    TV.routeLayer = null; TV.mapSz = null;             // v1.09.51: слой маршрутов принадлежал прежней карте
+    TV.map = L.map(el, { zoomControl: false, attributionControl: true,
       dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false });
     TV.map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -17156,11 +17492,13 @@ function tvMapSync(){
     if (TV.routes[id]){ TV.carLayer.removeLayer(TV.routes[id]); delete TV.routes[id]; }
   }
   if (!TV.fit){
-    if (marks.length) TV.map.fitBounds(marks, { padding: [46, 46], maxZoom: 13 });
+    if (marks.length) TV.map.fitBounds(marks, { ...tvFitPad(), maxZoom: 13, animate: false });   // v1.09.51: поля в масштабе экрана; у «панелей поверх» точки не под панелями;
+    /* v1.09.52: без анимации — Leaflet молча пропускает новую подгонку, пока идёт анимация прежней (быстрая смена раскладки) */
     else TV.map.setView([33.79, -84.39], 10);          /* Атланта */
     TV.fit = true;
     setTimeout(() => TV.map && TV.map.invalidateSize(), 150);
   }
+  TV.map._tlGapK = Math.max(1, (TV.geo && TV.geo.k) || 1);   // v1.09.51: значки крупнее на 4K — и веер шире
   carSpread(TV.map, spread);                             // v1.09.39: машины в одной точке — веером
 }
 /* ---------------- полный экран ---------------- */
@@ -17380,8 +17718,14 @@ function tvCfgCardHtml0(){
     : t('tvc_rule_manual');
   const chk = (key, label) => `<label class="chk-line"><input type="checkbox" ${cfg[key] ? 'checked' : ''}
       onchange="App.tvcFlag('${key}', this.checked)"> ${label}</label>`;
+  const zt = tvZoneTitles(cfg);                          // v1.09.51: зоны называются по шаблону
   return `<button class="btn btn-blue" style="margin-bottom:6px" onclick="App.tvTest()">${ic('tv')} ${t('tv_test_btn')}</button>
   <div class="tiny" style="margin-bottom:10px">${t('tv_test_h')}</div>
+  ${tvMenuChkHtml()}
+  <hr class="sep">
+  ${tvGalleryHtml(true)}
+  <hr class="sep">
+  ${tvLayParamsHtml(cfg)}
   <div class="rowline" style="margin-bottom:8px"><div class="grow"><b>${t('tv_dens_t')}</b><div class="tiny">${t('tv_dens_h')}</div></div>
     <div class="lang-seg sm"><button class="${cfg.dens === 'compact' ? '' : 'on'}" onclick="App.tvDensSet('cozy')">${t('dens_cozy')}</button><button class="${cfg.dens === 'compact' ? 'on' : ''}" onclick="App.tvDensSet('compact')">${t('dens_compact')}</button></div></div>
   <hr class="sep">
@@ -17418,20 +17762,27 @@ function tvCfgCardHtml0(){
   <hr class="sep">
   <div style="font-weight:900">${t('tvc_layout')}</div>
   <div class="tiny">${t('tvc_layout_hint')}</div>
-  <div class="tvz-t">${t('tvc_zone_rail')}</div>
+  ${cfg.lay === 'ticker' ? `<div class="tiny tvz-note">${ic('warn')} ${t('tvc_ticker_note')}</div>` : ''}
+  <div class="tvz-t">${zt[0]}</div>
   <div class="tvz-zone" ondragover="App.tvcOver(event)" ondragleave="App.tvcLeave(event)" ondrop="App.tvcDrop(event,'rail')">
     ${cfg.zones.rail.map((id, i) => tvcItemHtml(id, 'rail', i, cfg.zones.rail.length)).join('') || `<div class="tiny">—</div>`}</div>
-  <div class="tvz-t">${t('tvc_zone_bottom')}</div>
+  <div class="tvz-t">${zt[1]}</div>
   <div class="tvz-zone" ondragover="App.tvcOver(event)" ondragleave="App.tvcLeave(event)" ondrop="App.tvcDrop(event,'bottom')">
     ${cfg.zones.bottom.map((id, i) => tvcItemHtml(id, 'bottom', i, cfg.zones.bottom.length)).join('') || `<div class="tiny">—</div>`}</div>
   <div class="tiny" style="margin-top:8px">${t('tvc_note')}</div>
-  <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.tvcReset()">${t('tvc_reset')}</button>`;
+  <button class="btn btn-ghost sm" style="margin-top:8px" onclick="App.tvcReset()">${t('tvc_reset')}</button>
+  <hr class="sep">
+  ${fold('tvprof', t('tvc_prof') + (cfg.profiles.length ? ' · ' + cfg.profiles.length : ''), 'save', tvProfHtml(true, true), true)}
+  ${fold('tvauto', t('tvc_res') + (cfg.auto.on ? ' · ✓' : ''), 'monitor', tvAutoHtml(true), true)}`;
 }
 let tvDragId = null;
-function tvcSave(cfg){
-  const org = { ...state.data.org_settings, tv: JSON.stringify(cfg) };
+function tvcSave(cfg, ex){
+  if (!isAdmin()) return;                                // v1.09.51: раскладку телевизоров пишет только админ (менеджер — смотрит)
+  const tv = JSON.stringify(tvCfgNorm(cfg));
+  const org = { ...state.data.org_settings, tv };
   dbSaveOrg(org);
-  audit('org_set', 'org', 'tv', {});
+  if (TV.test && TV.feed) TV.feed.tv = tv;               // проверка на своём экране видит правку сразу, а не через 25 с
+  audit('org_set', 'org', 'tv', ex || {});
   render();
 }
 function tvcFlag(key, on){
@@ -17458,7 +17809,7 @@ function tvcSwap(id){
   }
   tvcSave(cfg);
 }
-function tvcReset(){ tvcSave({ ...TVDEF, zones: { rail: [...TVDEF.zones.rail], bottom: [...TVDEF.zones.bottom] } }); }
+function tvcReset(){ const c = tvCfg(); tvcSave({ ...TVDEF, zones: { rail: [...TVDEF.zones.rail], bottom: [...TVDEF.zones.bottom] }, dens: 'cozy', profiles: c.profiles, auto: c.auto }); }   // v1.09.51: профили и правила «под разрешение» сброс не трогает
 function tvcDragStart(e, id){ tvDragId = id; try{ e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; }catch(x){} }
 function tvcOver(e){ e.preventDefault(); e.currentTarget.classList.add('hot'); }
 function tvcLeave(e){ e.currentTarget.classList.remove('hot'); }
@@ -17473,6 +17824,529 @@ function tvcDrop(e, zone){
     if (i >= 0) cfg.zones[z].splice(i, 1);
   }
   cfg.zones[zone].push(id); tvDragId = null; tvcSave(cfg);
+}
+
+/* =====================================================================
+   v1.09.51 · ВАРИАНТЫ РАСКЛАДКИ ТВ-ЭКРАНА, ДОЛЯ КАРТЫ, ПРОФИЛИ, РАЗРЕШЕНИЯ
+   ---------------------------------------------------------------------
+   Шаблоны (cfg.lay): classic — карта, колонка сбоку и полоса под картой;
+   side — карта и одна колонка (вторая зона — в той же колонке ниже); strip —
+   карта во всю ширину и лента блоков под ней (tvl-flip — над ней; на
+   вертикальном экране лента — два столбца); hud — карта от края до края,
+   блоки полупрозрачными панелями поверх; twin — карта в центре, колонки по
+   бокам (21:9); ticker — только карта и строка со счётчиками и часами.
+   v1.09.52: hud2 — карта на весь экран, панели слева и справа; corners — «острова»:
+   карточки по углам (часы — отдельной карточкой); dock — полупрозрачная полоса
+   снизу поверх карты; bars — строка со счётчиками сверху и строка сотрудников
+   снизу; lshape — строка сверху и колонка сбоку; frame — строка, колонка и
+   полоса под картой.
+   cfg.share — сколько процентов ПЛОЩАДИ экрана занимает карта (50…90; у hud —
+   видимая часть). Колонки не становятся уже 300 px Full HD, полосы — ниже
+   120–150 px, поэтому у части шаблонов предел меньше 90% — фактическую долю
+   показывают настройки (tvShareFor) и полоска проверки (tvShareNow).
+   Масштаб: всё, кроме самой карты, увеличивается CSS zoom = k, где
+   k = min(W/1920, H/1080) × scale% — любой экран выглядит как Full HD той же
+   композиции (4K — вдвое крупнее, 1366×768 — мельче), а карта остаётся в
+   родном разрешении экрана (плитки чёткие, на 4K видно больше улиц).
+   Готовые варианты TV_PRESETS, профили ручной настройки (cfg.profiles) и
+   правила «под разрешение» (cfg.auto) лежат в том же org_settings.tv и
+   приезжают на телевизоры внутри tv_feed — база не менялась.
+   ===================================================================== */
+function tvLayoutPick(c){
+  const o = {};
+  for (const k of TV_LAYOUT_KEYS){
+    if (!c || c[k] === undefined) continue;
+    o[k] = k === 'zones' ? { rail: ((c.zones || {}).rail || []).slice(), bottom: ((c.zones || {}).bottom || []).slice() } : c[k];
+  }
+  return o;
+}
+function tvLayKey(cfg){ return JSON.stringify([TV_LAYOUT_KEYS.map(k => cfg[k]), cfg.preset || '', cfg._rule || '']); }
+function tvLayDiff(a, b){ return JSON.stringify(TV_LAYOUT_KEYS.map(k => a[k])) !== JSON.stringify(TV_LAYOUT_KEYS.map(k => b[k])); }
+/* ссылка на вариант: 'p:<id>' — готовый, 'u:<id>' — профиль; результат — полная раскладка поверх общей */
+function tvRefCfg(ref, base){
+  base = base || tvCfg(); ref = String(ref || '');
+  let lay = null;
+  if (ref.startsWith('p:')){ const p = TV_PRESETS.find(x => x.id === ref.slice(2)); if (p) lay = p.cfg; }
+  else if (ref.startsWith('u:')){ const p = base.profiles.find(x => x.id === ref.slice(2)); if (p) lay = p.cfg; }
+  if (!lay) return null;
+  return tvCfgNorm({ ...base, ...tvLayoutPick(lay), preset: ref, profiles: base.profiles, auto: base.auto });
+}
+function tvCfgName(cfg){
+  const r = (cfg && cfg.preset) || '';
+  if (r.startsWith('p:') && TV_PRESETS.some(p => p.id === r.slice(2))) return t('tvp_' + r.slice(2));
+  if (r.startsWith('u:')){ const p = ((cfg && cfg.profiles) || tvCfg().profiles).find(x => x.id === r.slice(2)); if (p) return p.name; }
+  if (cfg && !r){ const same = TV_PRESETS.find(p => { const c = tvRefCfg('p:' + p.id, cfg); return c && !tvLayDiff(cfg, c); }); if (same) return t('tvp_' + same.id); }   // раскладка по умолчанию = «Классика»
+  return t('tvl_' + ((cfg && cfg.lay) || 'classic'));
+}
+/* экран: у телевизора — окно браузера; на проверке — выбранное разрешение (кадр уменьшается под окно) */
+function tvScr(){
+  if (TV.sim) return { w: TV.sim[0], h: TV.sim[1], dpr: 1, sim: true };
+  const w = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1920);
+  const h = Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1080);
+  return { w, h, dpr: window.devicePixelRatio || 1, sim: false };
+}
+/* класс экрана — по соотношению сторон и по физическим пикселям (у ТВ-браузеров 1920×1080 часто = 960×540 × 2) */
+function tvScrClass(w, h, dpr){
+  const r = w / h, sh = Math.min(w, h) * (dpr || 1);
+  if (h > w * 1.05) return 'portrait';
+  if (r >= 2) return 'wide';
+  if (r < 1.45) return 'square';
+  if (sh < 800) return 'small';
+  if (sh >= 1400) return 'big';
+  return 'normal';
+}
+function tvScrTag(w, h, dpr){ return { portrait: 'port', wide: 'wide', square: 'sq', small: 'hd', big: 'uhd' }[tvScrClass(w, h, dpr)] || 'fhd'; }
+/* что показывает экран: просмотр на проверке → правило «под разрешение» → общая раскладка */
+function tvEffCfg(noPrev){
+  const base = tvCfg();
+  if (!noPrev && TV.test && TV.prevRef){ const c = tvRefCfg(TV.prevRef, base); if (c) return c; }
+  if (base.auto.on){
+    const s = tvScr(), cls = tvScrClass(s.w, s.h, s.dpr);
+    if (cls !== 'normal' && base.auto[cls]){ const c = tvRefCfg(base.auto[cls], base); if (c){ c._rule = cls; return c; } }
+  }
+  return base;
+}
+function tvDensEff(){ return (TV.screen === 'on' ? (TV.eff || tvEffCfg()) : tvCfg()).dens === 'compact' ? 'compact' : 'cozy'; }
+function tvK(cfg, w, h){ return Math.max(0.25, Math.min(4, Math.min(w / 1920, h / 1080) * (cfg.scale || 100) / 100)); }
+function tvWOn(cfg, id){ return id === 'cards' ? !!(cfg.cardJobs || cfg.cardPk) : !!cfg[id]; }
+function tvZoneIds(cfg, zone){ return ((cfg.zones || {})[zone] || []).filter(id => tvWOn(cfg, id)); }
+/* Геометрия экрана W×H: прямоугольники карты (map), зоны с часами (a), второй зоны (b), строки (tick), а у «островов» —
+   карточки с часами (h) и второго острова справа (a2), в px. Всё в долях экрана и в k, поэтому та же функция рисует и
+   схему-миниатюру в настройках. headA — есть ли часы в зоне a (у шаблонов со строкой часы в строке, у островов — в h);
+   splitA — сколько первых блоков зоны a идут в верхний остров, остальные — в нижний (a2). */
+function tvGeom(cfg, W, H){
+  const k = tvK(cfg, W, H), cl = (v, a, b) => Math.max(a, Math.min(b, v));
+  const p = Math.max(2, Math.round((cfg.dens === 'compact' ? 8 : 12) * k)), g = p;
+  const S = cfg.share / 100, iw = W - 2 * p, ih = H - 2 * p, T = S * W * H;
+  const minCol = 300 * k, minB = 120 * k, minStrip = 150 * k, th = Math.max(20, Math.round(60 * k));
+  const zA = tvZoneIds(cfg, 'rail'), zB = tvZoneIds(cfg, 'bottom');
+  const R = (x, y, w, h) => ({ x: Math.round(x), y: Math.round(y), w: Math.max(0, Math.round(w)), h: Math.max(0, Math.round(h)) });
+  const out = { k, p, lay: cfg.map === 0 ? 'nomap' : cfg.lay, flip: !!cfg.flip, port: H > W, map: null, a: null, a2: null, b: null, h: null, tick: null,
+    dirA: 'col', dirB: 'row', mergeB: false, headA: true, splitA: 0 };
+  let L = out.lay;
+  if ((L === 'classic' || L === 'twin') && !zB.length) L = 'side';
+  if (L === 'hud2' && !zB.length) L = 'hud';               // v1.09.52: второй панели нечего показывать — одна панель
+  if (L === 'frame' && !zB.length) L = 'lshape';           // v1.09.52: полосы под картой нет — «Г»
+  if (L === 'twin'){
+    const mw = cl(T / ih, iw * 0.4, iw - 2 * g - 2 * minCol), rest = iw - mw - 2 * g, aw = Math.max(minCol, rest * 0.55), bw = rest - aw;
+    if (bw < minCol * 0.8) L = 'side';
+    else { out.b = R(p, p, bw, ih); out.map = R(p + bw + g, p, mw, ih); out.a = R(p + bw + g + mw + g, p, aw, ih); out.dirB = 'col'; }
+  }
+  if (L === 'nomap'){
+    if (zB.length){ const bw = (iw - g) * 0.56; out.b = R(p, p, bw, ih); out.a = R(p + bw + g, p, iw - bw - g, ih); out.dirB = 'col'; }
+    else out.a = R(p, p, iw, ih);
+  } else if (L === 'side'){
+    const mw = cl(T / ih, iw * 0.5, iw - g - minCol);
+    out.map = R(p, p, mw, ih); out.a = R(p + mw + g, p, iw - mw - g, ih); out.mergeB = true;
+  } else if (L === 'classic'){
+    let c = cl(0.62 * (1 - S) * W, minCol, iw * 0.45), mw = iw - g - c;
+    const mh = cl(T / mw, ih * 0.5, ih - g - minB);
+    if (mw * mh < T - 1){ mw = cl(T / mh, mw, iw - g - minCol); c = iw - g - mw; }
+    out.map = R(p, p, mw, mh); out.b = R(p, p + mh + g, mw, ih - mh - g); out.a = R(p + mw + g, p, c, ih);
+  } else if (L === 'strip'){
+    const mh = cl(T / iw, ih * 0.4, ih - g - minStrip), sh = ih - mh - g;
+    const my = out.flip ? p + sh + g : p, sy = out.flip ? p : p + mh + g;
+    out.map = R(p, my, iw, mh);
+    out.dirA = out.dirB = out.port ? 'col' : 'row';
+    if (zB.length){
+      const wa = out.port ? 1 : TV_WW.head + zA.reduce((s, id) => s + (TV_WW[id] || 1), 0);
+      const wb = out.port ? 1 : zB.reduce((s, id) => s + (TV_WW[id] || 1), 0);
+      const aw = (iw - g) * wa / (wa + wb);
+      out.a = R(p, sy, aw, sh); out.b = R(p + aw + g, sy, iw - aw - g, sh);
+    } else out.a = R(p, sy, iw, sh);
+  } else if (L === 'hud'){
+    out.map = R(0, 0, W, H);
+    let c = cl((1 - S) * W, minCol, W * 0.5), bh = 0;
+    if (zB.length){ c = cl(0.62 * (1 - S) * W, minCol, W * 0.45); bh = cl(((1 - S) * W * H - c * H) / Math.max(1, W - c), minB, H * 0.4); }
+    out.a = R(W - p - c, p, c, H - 2 * p);
+    if (zB.length) out.b = R(p, H - p - bh, W - 3 * p - c, bh);
+  } else if (L === 'ticker'){
+    out.tick = R(p, out.flip ? H - p - th : p, iw, th);
+    out.map = R(p, out.flip ? p : p + th + g, iw, ih - th - g);
+  } else if (L === 'lshape' || L === 'frame'){             // v1.09.52: строка со счётчиками сверху, колонка сбоку (у рамки — и полоса под картой)
+    const y0 = p + th + g, ih2 = ih - th - g;
+    out.tick = R(p, p, iw, th); out.headA = false;
+    if (L === 'lshape'){
+      const mw = cl(T / ih2, iw * 0.5, iw - g - minCol);
+      out.map = R(p, y0, mw, ih2); out.a = R(p + mw + g, y0, iw - mw - g, ih2); out.mergeB = true;
+    } else {
+      let c = cl(0.62 * (1 - S) * W, minCol, iw * 0.45), mw = iw - g - c;
+      const mh = cl(T / mw, ih2 * 0.5, ih2 - g - minB);
+      if (mw * mh < T - 1){ mw = cl(T / mh, mw, iw - g - minCol); c = iw - g - mw; }
+      out.map = R(p, y0, mw, mh); out.b = R(p, y0 + mh + g, mw, ih2 - mh - g); out.a = R(p + mw + g, y0, c, ih2);
+    }
+  } else if (L === 'bars'){                                  // v1.09.52: строка со счётчиками и строка сотрудников, карта между ними
+    out.headA = false; out.mergeB = true; out.dirA = 'row';
+    const bh = cl(ih - th - 2 * g - T / iw, 96 * k, H * 0.3), mh = ih - th - bh - 2 * g;
+    out.tick = R(p, out.flip ? p + bh + g + mh + g : p, iw, th);
+    out.map = R(p, out.flip ? p + bh + g : p + th + g, iw, mh);
+    out.a = R(p, out.flip ? p : p + th + g + mh + g, iw, bh);
+  } else if (L === 'dock'){                                  // v1.09.52: карта на весь экран, полупрозрачная полоса снизу (зеркально — сверху)
+    out.map = R(0, 0, W, H); out.mergeB = true; out.dirA = 'row';
+    const dh = cl((1 - S) * H, 150 * k, H * 0.4);
+    out.a = R(p, out.flip ? p : H - p - dh, W - 2 * p, dh);
+  } else if (L === 'hud2'){                                  // v1.09.52: карта на весь экран, панели слева и справа
+    out.map = R(0, 0, W, H);
+    const cov = (1 - S) * W, ca = cl(0.55 * cov, minCol * 0.9, W * 0.35), cb = cl(cov - ca, minCol * 0.9, W * 0.3);
+    out.a = R(W - p - ca, p, ca, H - 2 * p); out.b = R(p, p, cb, H - 2 * p); out.dirB = 'col';
+  } else if (L === 'corners'){                               // v1.09.52: «острова» — карточки по углам, между ними видна карта
+    out.map = R(0, 0, W, H); out.headA = false;
+    const hw = Math.min(420 * k, W * 0.3), hh = Math.round(92 * k);
+    out.h = R(p, p, hw, hh);
+    const nA = zA.length, hasB = zB.length > 0;
+    const hA = nA >= 2 ? 0.34 * H : 0.46 * H, hA2 = nA >= 2 ? 0.42 * H : 0, hB = 0.3 * H;
+    const den = (nA ? hA + hA2 : 0) + (hasB ? hB : 0);
+    const c = den ? cl(((1 - S) * W * H - hw * hh) / den, minCol * 0.85, W * 0.34) : 0;
+    if (nA){ out.a = R(W - p - c, p, c, hA); if (nA >= 2){ out.a2 = R(W - p - c, H - p - hA2, c, hA2); out.splitA = 1; } }
+    if (hasB){ out.b = R(p, H - p - hB, c, hB); out.dirB = 'col'; }
+  }
+  out.lay = L;
+  if (out.flip && ['side', 'classic', 'twin', 'hud', 'nomap', 'hud2', 'corners', 'lshape', 'frame'].includes(L))
+    for (const key of ['map', 'a', 'a2', 'b', 'h']) if (out[key]) out[key] = R(W - out[key].x - out[key].w, out[key].y, out[key].w, out[key].h);
+  return out;
+}
+/* видимая доля карты (% площади экрана) по геометрии — для настроек и схем */
+function tvShareFor(cfg, W, H){
+  const G = tvGeom(cfg, W, H), m = G.map; if (!m) return 0;
+  let v = m.w * m.h;
+  for (const r of [G.a, G.a2, G.b, G.h, G.tick]) if (r) v -= Math.max(0, Math.min(m.x + m.w, r.x + r.w) - Math.max(m.x, r.x)) * Math.max(0, Math.min(m.y + m.h, r.y + r.h) - Math.max(m.y, r.y));
+  return Math.round(v / (W * H) * 100);
+}
+/* то же по живому экрану (на проверке — с учётом уменьшенного кадра) */
+function tvShareNow(){
+  const w = document.querySelector('.tvwrap'), m = w && w.querySelector('.tva-map');
+  if (!w || !m) return 0;
+  const W = w.getBoundingClientRect(), M = m.getBoundingClientRect();
+  if (!W.width || !W.height) return 0;
+  let v = M.width * M.height;
+  w.querySelectorAll('.tva:not(.tva-map)').forEach(e => { if (e.style.display === 'none') return; const r = e.getBoundingClientRect();
+    v -= Math.max(0, Math.min(M.right, r.right) - Math.max(M.left, r.left)) * Math.max(0, Math.min(M.bottom, r.bottom) - Math.max(M.top, r.top)); });
+  return Math.round(v / (W.width * W.height) * 100);
+}
+function tvShareShow(){ const el = document.getElementById('tvt-share'); if (el) el.textContent = t('tvt_share').replace('{N}', tvShareNow()); }
+/* схема-миниатюра раскладки: геометрия настоящего экрана Full HD (вертикального — 1080×1920), уменьшенная до w×h; зелёное — карта */
+function tvSchemeSvg(cfg, w, h){
+  const VW = h > w ? 1080 : 1920, VH = h > w ? 1920 : 1080, sc = w / VW, G0 = tvGeom(cfg, VW, VH);
+  const S = r => r ? { x: r.x * sc, y: r.y * sc, w: r.w * sc, h: r.h * sc } : null;
+  const G = { ...G0, map: S(G0.map), a: S(G0.a), a2: S(G0.a2), b: S(G0.b), h: S(G0.h), tick: S(G0.tick) }, f = n => Math.round(n * 10) / 10;
+  const box = (r, fill, op) => (r && r.w > 1 && r.h > 1) ? `<rect x="${f(r.x)}" y="${f(r.y)}" width="${f(r.w)}" height="${f(r.h)}" rx="${f(Math.min(4, Math.max(1, Math.min(r.w, r.h) / 10)))}" fill="${fill}"${op ? ` fill-opacity="${op}"` : ''}/>` : '';
+  const blocks = (r, n, dir, head) => {
+    const cnt = n + (head ? 1 : 0);
+    if (!r || r.w < 6 || r.h < 6 || !cnt) return '';
+    const pd = Math.max(1, Math.min(r.w, r.h) * 0.07), iw = r.w - 2 * pd, ih = r.h - 2 * pd;
+    let s = '';
+    if (dir === 'row'){
+      const bw = (iw - pd * (cnt - 1)) / cnt;
+      for (let i = 0; i < cnt; i++) s += `<rect x="${f(r.x + pd + i * (bw + pd))}" y="${f(r.y + pd)}" width="${f(Math.max(0.5, bw))}" height="${f(ih)}" rx="1.2" fill="${head && !i ? '#5E7885' : '#4A5F69'}"/>`;
+    } else {
+      const hh = head ? Math.max(2, ih * 0.13) : 0, rest = ih - hh - (head ? pd : 0), bh = n ? (rest - pd * (n - 1)) / n : 0;
+      if (head) s += `<rect x="${f(r.x + pd)}" y="${f(r.y + pd)}" width="${f(iw)}" height="${f(hh)}" rx="1.2" fill="#5E7885"/>`;
+      for (let i = 0; i < n; i++) s += `<rect x="${f(r.x + pd)}" y="${f(r.y + pd + (head ? hh + pd : 0) + i * (bh + pd))}" width="${f(iw)}" height="${f(Math.max(0.5, bh))}" rx="1.2" fill="#4A5F69"/>`;
+    }
+    return s;
+  };
+  const nA = tvZoneIds(cfg, 'rail').length, nB = tvZoneIds(cfg, 'bottom').length;
+  let s = `<svg class="tvsch" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><rect x=".5" y=".5" width="${w - 1}" height="${h - 1}" rx="5" fill="#0B1114" stroke="#2A3A42"/>`;
+  if (G.map){
+    const m = G.map, P = (x, y) => f(m.x + m.w * x) + ',' + f(m.y + m.h * y);
+    s += box(m, '#1E5A45');
+    s += `<polyline points="${[P(.14, .72), P(.34, .44), P(.56, .6), P(.78, .3)].join(' ')}" fill="none" stroke="#58CC02" stroke-width="${f(Math.max(1, w / 110))}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    s += [[.34, .44], [.56, .6], [.78, .3]].map(q => `<circle cx="${f(m.x + m.w * q[0])}" cy="${f(m.y + m.h * q[1])}" r="${f(Math.max(1.3, w / 64))}" fill="#FF9600"/>`).join('');
+  }
+  const op = TV_FLOAT.includes(G.lay) ? '.88' : '', nAa = G.mergeB ? nA + nB : nA;
+  if (G.tick) s += box(G.tick, '#33474F') + blocks(G.tick, 4, 'row', true);
+  if (G.h) s += box(G.h, '#5E7885', op);
+  if (G.a) s += box(G.a, '#33474F', op) + blocks(G.a, G.splitA ? G.splitA : nAa, G.dirA, G.headA);
+  if (G.a2) s += box(G.a2, '#33474F', op) + blocks(G.a2, Math.max(0, nAa - G.splitA), 'col', false);
+  if (G.b) s += box(G.b, '#2C3E46', op) + blocks(G.b, nB, G.dirB, false);
+  return s + '</svg>';
+}
+/* зона: блоки по порядку; в ленте каждый блок получает свою долю ширины */
+function tvZoneFill(el, cfg, ids, dir){
+  const parts = ids.map(id => [id, tvWidgetHtml(cfg, id)]).filter(x => x[1]);
+  el.innerHTML = parts.map(x => x[1]).join('');
+  const ww = { ...TV_WW, ...((TV.geo && TV_WW_LAY[TV.geo.lay]) || {}) };
+  [...el.children].forEach((c, i) => { const id = parts[i] ? parts[i][0] : ''; c.dataset.wid = id; if (dir === 'row') c.style.flex = (ww[id] || 1) + ' 1 0'; });
+  if (el.id === 'tv-zrail') el.style.flex = dir === 'row' ? parts.reduce((s, x) => s + (ww[x[0]] || 1), 0) + ' 1 0' : '';
+}
+/* «Авто»: подробные строки сотрудников не влезли по высоте в этой раскладке — показываем плитки */
+function tvFitWorkers(cfg){
+  document.querySelectorAll('.tvwrap .twg-workers').forEach(el => {
+    const rows = el.querySelector('.tv-rows');
+    if (cfg.wMode === 'auto' && rows && rows.scrollHeight > rows.clientHeight + 2){
+      const box = document.createElement('div'); box.innerHTML = tvWorkersHtml(cfg, true);
+      const n = box.firstElementChild;
+      if (n){ n.style.flex = el.style.flex; n.dataset.wid = 'workers'; el.replaceWith(n); el = n; }
+    }
+    tvTilesTrim(el);
+  });
+}
+/* v1.09.52: плитки не влезли и в сжатом виде (низкая полоса, «остров») — лишние убираем, последняя видимая
+   становится «+N ещё», в заголовке — сколько сотрудников видно на самом деле (раньше обрезались молча, «10 из 10») */
+function tvTilesTrim(el){
+  const box = el && el.querySelector('.twtiles');
+  if (!box || box.scrollHeight <= box.clientHeight + 2) return;
+  const tiles = [...box.querySelectorAll('.twtile')], bot = box.getBoundingClientRect().bottom + 1;
+  const vis = tiles.filter(x => x.getBoundingClientRect().bottom <= bot).length;
+  if (!tiles.length || vis >= tiles.length) return;
+  const keep = Math.max(1, vis - 1), all = tvWorkersAll().length;
+  tiles.slice(keep).forEach(x => x.remove());
+  box.insertAdjacentHTML('beforeend', `<div class="twtile tw-more"><b>+${all - keep}</b><span>${t('tv_more')}</span></div>`);
+  const cnt = el.querySelector('.twg-h .tiny');
+  if (cnt) cnt.textContent = `${t('tv_compact')} · ${keep} ${t('tv_of')} ${all}`;
+}
+/* строка шаблона «Только карта»: счётчики дня и часы */
+function tvTickHtml(cfg){
+  const f = TV.feed || {}, jobs = f.jobs || [], done = jobs.filter(j => j.done).length;
+  const pks = f.pickups || [], stops = new Set(pks.map(p => p.job_id)).size, over = new Set(pks.filter(p => p.overdue).map(p => p.job_id)).size;
+  const cars = TV.bn || [], run = cars.filter(c => c.run).length;
+  const onsite = tvWorkersAll().filter(p => tvWorkerStatus(p).cls === 'bn-site').length;
+  let mi = 0, hasMi = false; cars.forEach(c => { if (c.mi != null){ mi += +c.mi || 0; hasMi = true; } });
+  const d = tzD(), chip = (n, l, c) => `<span class="tt-chip${c ? ' ' + c : ''}"><b>${n}</b><span>${l}</span></span>`;
+  return `<div class="logo logo-pic">${logoImg()}</div>
+    <div class="who"><b>${esc(((state.data || {}).org_settings || {}).company_short || 'APC')} · ${t('tv_today')}</b><div class="tiny">TechLog · ${t('tv_head_sub')}</div></div>
+    <div class="tt-chips">${chip(jobs.length, t('tv_jobs_l'))}${done ? chip('✓ ' + done, t('tv_legend_done'), 'ok') : ''}${chip(stops, t('tv_stops_l'))}${over ? chip(over, t('tv_over_l'), 'bad') : ''}${chip(run, t('tvt_run'), run ? 'go' : '')}${chip(onsite, t('tvt_site'))}${hasMi ? chip(mi.toFixed(0), t('tvt_mi')) : ''}</div>
+    <div class="tv-clock"><div class="hm" id="tv-clk">${tvHM()}</div>
+      <div class="dt" id="tv-dte">${t('week_days')[(d.getDay() + 6) % 7]}, ${d.getDate()} ${t('months')[d.getMonth()]}</div></div>`;
+}
+/* поля карты при подгонке масштаба: у раскладок «поверх карты» точки не прячутся под панелями и карточками */
+function tvFitPad(){
+  const G = TV.geo, k = (G && G.k) || 1, e = Math.round(46 * k), lg = Math.round(40 * k);   // lg — место под легенду и кнопку «На весь экран»
+  if (!G || !G.map || !TV_FLOAT.includes(G.lay)) return { paddingTopLeft: [e, e], paddingBottomRight: [e, e + lg] };
+  const W = G.map.w, H = G.map.h;
+  let l = e, r = e, t = e, b = e + lg;
+  if (G.lay === 'hud' || (G.lay === 'dock' && !G.flip)){ t = e + lg; b = e; }          // легенда и кнопка — сверху
+  for (const x of [G.a, G.a2, G.b, G.h]){
+    if (!x) continue;
+    if (x.w > W * 0.6 || x.h < H * 0.15){ if (x.y + x.h / 2 > H / 2) b = Math.max(b, H - x.y + e); else t = Math.max(t, x.y + x.h + e); }
+    else if (x.x + x.w / 2 > W / 2) r = Math.max(r, W - x.x + e); else l = Math.max(l, x.x + x.w + e);
+  }
+  return { paddingTopLeft: [Math.min(l, W * 0.45), Math.min(t, H * 0.45)], paddingBottomRight: [Math.min(r, W * 0.45), Math.min(b, H * 0.45)] };
+}
+/* свой кегль ТВ-экрана: ui.js ставит на <html> личный размер шрифта устройства — на телевизоре и на проверке он разный */
+function tvFontApply(on){
+  try{
+    const h = document.documentElement;
+    if (on){
+      if (TV.fs0 === undefined) TV.fs0 = h.style.fontSize || '';
+      const want = (tvDensEff() === 'compact' ? 14 : 16) + 'px';
+      if (h.style.fontSize !== want) h.style.fontSize = want;
+    } else if (TV.fs0 !== undefined){ h.style.fontSize = TV.fs0; TV.fs0 = undefined; }
+  }catch(e){}
+}
+function tvResizeBind(){
+  if (TV.rzBound) return;
+  TV.rzBound = true;
+  const go = () => { clearTimeout(TV.rzT); TV.rzT = setTimeout(() => { if (TV.screen === 'on' && (!state.user || TV.test)) render(); }, 200); };
+  window.addEventListener('resize', go);
+  window.addEventListener('tl:viewmode', () => { if (TV.screen && (!state.user || TV.test)) setTimeout(() => tvFontApply(true), 0); });
+}
+/* ---- проверка на своём экране: вариант, разрешение, доля карты ---- */
+function tvSimIdx(){ return TV.sim ? TV_SIMS.findIndex(r => r[0] === TV.sim[0] && r[1] === TV.sim[1]) + 1 : 0; }
+function tvSimLabel(r){
+  if (!r) return t('tvt_sim_win').replace('{S}', (window.innerWidth || 0) + '×' + (window.innerHeight || 0));
+  return r[0] + '×' + r[1] + ' · ' + t('tvsc_' + tvScrTag(r[0], r[1], 1));
+}
+function tvSimStyle(s){
+  const ww = window.innerWidth || s.w, wh = window.innerHeight || s.h, k = Math.min(ww / s.w, wh / s.h);
+  return `position:absolute;width:${s.w}px;height:${s.h}px;left:${Math.round((ww - s.w * k) / 2)}px;top:${Math.round((wh - s.h * k) / 2)}px;transform:scale(${k.toFixed(4)});transform-origin:0 0;`;
+}
+function tvTestBarHtml(cfg, s){
+  const base = tvCfg(), onTv = tvEffCfg(true), cur = TV.prevRef || '', si = tvSimIdx();
+  const opt = (v, l) => `<option value="${esc(v)}"${cur === v ? ' selected' : ''}>${esc(l)}</option>`;
+  const asTv = t('tvt_as_tv').replace('{N}', tvCfgName(onTv) + (onTv._rule ? ' · ' + t('tvcl_' + onTv._rule) : ''));
+  return `<div class="tv-testbar${TV.barMin ? ' min' : ''}" id="tv-testbar">
+    <b>${ic('warn')} ${t('tv_test_on')}</b>
+    <span class="tvt-more">
+      <select id="tvt-prev" title="${esc(t('tvt_prev_t'))}" onchange="App.tvPrevSet(this.value)">${opt('', asTv)}
+        <optgroup label="${esc(t('tvc_gal'))}">${TV_PRESETS.map(p => opt('p:' + p.id, t('tvp_' + p.id))).join('')}</optgroup>
+        ${base.profiles.length ? `<optgroup label="${esc(t('tvc_prof'))}">${base.profiles.map(p => opt('u:' + p.id, p.name)).join('')}</optgroup>` : ''}
+      </select>
+      <select id="tvt-sim" title="${esc(t('tvt_sim_t'))}" onchange="App.tvSimSet(this.value)">${[null].concat(TV_SIMS).map((r, i) => `<option value="${i}"${si === i ? ' selected' : ''}>${esc(tvSimLabel(r))}</option>`).join('')}</select>
+      <span class="tvt-share" id="tvt-share"></span>
+      ${cur ? '' : `<div class="lang-seg sm"><button class="${tvDens() === 'cozy' ? 'on' : ''}" onclick="App.tvDensSet('cozy')">${t('dens_cozy')}</button><button class="${tvDens() === 'compact' ? 'on' : ''}" onclick="App.tvDensSet('compact')">${t('dens_compact')}</button></div>`}
+      ${cur && isAdmin() ? `<button class="btn btn-green sm" id="tvt-apply" onclick="App.tvPrevApply()">${ic('check')} ${t('tvt_apply')}</button>` : ''}
+      <button class="btn btn-ghost sm" onclick="App.tvFsGo()">${ic('fs')} ${t('tv_fs')}</button>
+      <button class="btn btn-red sm" onclick="App.tvTestStop()">${ic('close')} ${t('tv_test_stop')}</button>
+    </span>
+    <button class="btn btn-ghost sm tvt-min" onclick="App.tvBarMin()" aria-label="${esc(t('tvt_min'))}" title="${esc(t('tvt_min'))}">${ic(TV.barMin ? 'chev_d' : 'chev_u')}</button>
+  </div>`;
+}
+function tvPrevSet(ref){ if (!TV.test) return; TV.prevRef = String(ref || ''); TV.fit = false; render(); }
+function tvSimSet(i){ if (!TV.test) return; i = +i || 0; TV.sim = i > 0 && TV_SIMS[i - 1] ? TV_SIMS[i - 1].slice() : null; TV.fit = false; render(); }
+function tvPrevApply(){
+  if (!TV.test || !TV.prevRef || !isAdmin()) return;
+  const ref = TV.prevRef, c = tvRefCfg(ref); if (!c) return;
+  TV.prevRef = '';
+  tvcSave({ ...tvCfg(), ...tvLayoutPick(c), preset: ref }, { preset: ref });
+  toast('✓ ' + t('tvc_applied').replace('{N}', tvCfgName(c)));
+}
+function tvBarMin(){ TV.barMin = !TV.barMin; render(); }
+/* ---- личная кнопка «ТВ» в меню (админ и менеджер): открывает проверку на своём экране ---- */
+function tvMenuOn(){ return !!(state.user && isManager() && state.user.push_prefs && state.user.push_prefs.menu_tv === true); }
+async function tvMenuSet(on){
+  if (!state.user || !isManager()) return;
+  const me = state.data.profiles.find(p => p.id === state.user.id); if (!me) return;
+  const prefs = { ...(me.push_prefs || {}), ...(state.user.push_prefs || {}), menu_tv: !!on };
+  me.push_prefs = prefs; state.user.push_prefs = prefs;
+  if (HAS_SB) await dbUpsert('profiles', { ...me, push_prefs: prefs }); else saveLocalNow();
+  render();
+}
+function tvMenuChkHtml(){
+  return `<label class="chk-line" id="tv-menu-row" style="margin:2px 0 4px"><input type="checkbox" id="tv-menu-chk" ${tvMenuOn() ? 'checked' : ''} onchange="App.tvMenuSet(this.checked)"> ${t('tv_menu_chk')} ${tipQ('tv_menu_tip')}</label>`;
+}
+/* ---- настройки: готовые варианты ---- */
+let _tvGalF = 'all';                                       // v1.09.52: фильтр галереи по типу раскладки (на время сеанса)
+function tvGalleryHtml(admin){
+  const base = tvCfg(), f = _tvGalF, list = TV_PRESETS.filter(p => f === 'all' || p.grp === f);
+  const n = g => g === 'all' ? TV_PRESETS.length : TV_PRESETS.filter(p => p.grp === g).length;
+  return `<div class="tvg-h"><b>${ic('layers')} ${t('tvc_gal')}</b> ${tipQ('tvc_gal_tip')}</div>
+  <div class="tiny" style="margin:2px 0 8px">${t(admin ? 'tvc_gal_h' : 'tvc_gal_hm')}</div>
+  <div class="tvg-f" id="tvg-f">${['all'].concat(TV_GRPS).map(g => `<button type="button" class="tvg-fb${f === g ? ' on' : ''}" data-g="${g}" onclick="App.tvcGalF('${g}')">${esc(t('tvg_' + g))} <span>${n(g)}</span></button>`).join('')}</div>
+  <div class="tvg-grid" id="tvg-grid">${list.map(p => tvGalCardHtml(p, base, admin)).join('')}</div>`;
+}
+function tvcGalF(g){ _tvGalF = (g === 'all' || TV_GRPS.includes(g)) ? g : 'all'; render(); }
+function tvGalCardHtml(p, base, admin){
+  const cfg = tvRefCfg('p:' + p.id, base), port = p.scr.includes('port');
+  const on = base.preset === 'p:' + p.id, mod = on && tvLayDiff(base, cfg);
+  const sh = tvShareFor(cfg, port ? 1080 : 1920, port ? 1920 : 1080);
+  return `<div class="tvg-card${on ? ' on' : ''}" data-p="${p.id}">
+    <div class="tvg-pic${port ? ' port' : ''}">${tvSchemeSvg(cfg, port ? 90 : 160, port ? 160 : 90)}</div>
+    <div class="tvg-n"><b>${esc(t('tvp_' + p.id))}</b>${on ? `<span class="chip ok">${t(mod ? 'tvc_on_mod' : 'tvc_on')}</span>` : ''}</div>
+    <div class="tiny tvg-d">${esc(t('tvp_' + p.id + '_d'))}</div>
+    <div class="tvg-tags">${p.scr.map(x => `<span class="chip">${esc(t('tvsc_' + x))}</span>`).join('')}<span class="chip tvg-sh">${t('tvc_map_pct').replace('{N}', sh)}</span></div>
+    <div class="tvg-btns"><button type="button" class="btn btn-ghost sm" onclick="App.tvcPreview('p:${p.id}')">${ic('eye')} ${t('tvc_look')}</button>${admin
+      ? `<button type="button" class="btn btn-blue sm" onclick="App.tvcPreset('${p.id}')"${on && !mod ? ' disabled' : ''}>${ic('check')} ${t('tvc_apply')}</button>` : ''}</div>
+  </div>`;
+}
+/* ---- настройки: шаблон, доля карты, зеркало, масштаб ---- */
+function tvLayParamsHtml(cfg){
+  const sh = tvShareFor(cfg, 1920, 1080), tick = cfg.lay === 'ticker';
+  const step = (fn, d, val, id, dis) => `<span class="stepper set-step">
+      <button type="button" aria-label="−" onclick="App.${fn}(-${d})"${dis ? ' disabled' : ''}>${ic('minus')}</button>
+      <input class="price-input" id="${id}" inputmode="numeric" value="${val}" onchange="App.${fn}(0, this.value)"${dis ? ' disabled' : ''}>
+      <button type="button" aria-label="+" onclick="App.${fn}(${d})"${dis ? ' disabled' : ''}>${ic('plus')}</button>
+    </span>`;
+  return `<div style="font-weight:900;margin-bottom:6px">${ic('map')} ${t('tvc_lay_t')} ${tipQ('tvc_lay_tip')}</div>
+  <div class="tvg-live"><div class="tvg-pic">${tvSchemeSvg(cfg, 160, 90)}</div><div class="tiny">${esc(tvCfgName(cfg))}<br>${t('tvc_scheme_h')}</div></div>
+  <div class="form-row"><span class="lbl">${t('tvc_tpl')}</span>
+    <select id="tvc-lay" onchange="App.tvcLay(this.value)">${TV_LAYS.map(l => `<option value="${l}"${cfg.lay === l ? ' selected' : ''}>${esc(t('tvl_' + l))}</option>`).join('')}</select></div>
+  <div class="qty-line"><span class="name">${t('tvc_share')} ${tipQ('tvc_share_tip')}</span>${step('tvcShare', 2, cfg.share, 'tvc-share', tick)}</div>
+  <div class="tiny" id="tvc-share-now" style="margin:0 0 8px">${t('tvc_share_now').replace('{N}', sh)}${!tick && sh + 2 < cfg.share ? ' · ' + t('tvc_share_max') : ''}</div>
+  <label class="chk-line"><input type="checkbox" id="tvc-flip" ${cfg.flip ? 'checked' : ''} onchange="App.tvcFlip(this.checked)"> ${t(['strip', 'ticker', 'dock', 'bars'].includes(cfg.lay) ? 'tvc_flip_v' : 'tvc_flip')}</label>
+  <div class="qty-line"><span class="name">${t('tvc_scale')} ${tipQ('tvc_scale_tip')}</span>${step('tvcScale', 5, cfg.scale, 'tvc-scale', false)}</div>`;
+}
+/* ---- настройки: профили ручной настройки ---- */
+function tvProfHtml(admin, inFold){
+  const base = tvCfg(), L = base.profiles;
+  const rows = L.map(p => {
+    const cfg = tvRefCfg('u:' + p.id, base), on = base.preset === 'u:' + p.id;
+    return `<div class="tvp-row${on ? ' on' : ''}" data-id="${esc(p.id)}">
+      <div class="tvp-pic">${tvSchemeSvg(cfg, 64, 36)}</div>
+      <div class="grow"><b>${esc(p.name)}</b>${on ? ` <span class="chip ok">${t(tvLayDiff(base, cfg) ? 'tvc_on_mod' : 'tvc_on')}</span>` : ''}
+        <div class="tiny">${esc(t('tvl_' + cfg.lay))} · ${t('tvc_map_pct').replace('{N}', tvShareFor(cfg, 1920, 1080))} · ${t('tvc_scale_s').replace('{N}', cfg.scale)}${/^\d{4}-\d\d-\d\d/.test(p.at) ? ' · ' + esc(fmtDMY(p.at.slice(0, 10))) : ''}</div></div>
+      <div class="tvp-btns">
+        <button type="button" class="btn btn-ghost sm" onclick="App.tvcPreview('u:${esc(p.id)}')" title="${esc(t('tvc_look'))}" aria-label="${esc(t('tvc_look'))}">${ic('eye')}</button>${admin ? `
+        <button type="button" class="btn btn-blue sm" onclick="App.tvcProfApply('${esc(p.id)}')">${t('tvc_apply')}</button>
+        <button type="button" class="btn btn-ghost sm" onclick="App.tvcProfUpd('${esc(p.id)}')" title="${esc(t('tvc_prof_upd'))}" aria-label="${esc(t('tvc_prof_upd'))}">${ic('refresh')}</button>
+        <button type="button" class="btn btn-ghost sm" onclick="App.tvcProfDel('${esc(p.id)}')" title="${esc(t('delete'))}" aria-label="${esc(t('delete'))}">${ic('trash')}</button>` : ''}
+      </div></div>`; }).join('');
+  return `${inFold ? `<div class="tiny" style="margin-bottom:6px">${t('tvc_prof_tip')}</div>` : `<div style="font-weight:900;margin-bottom:4px">${ic('save')} ${t('tvc_prof')} ${tipQ('tvc_prof_tip')}</div>`}
+  ${admin ? `<div class="tvp-new"><input id="tvp-name" maxlength="40" autocomplete="off" placeholder="${esc(t('tvc_prof_ph'))}" onkeydown="if(event.key==='Enter'){event.preventDefault();App.tvcProfSave()}">
+    <button type="button" class="btn btn-green sm" onclick="App.tvcProfSave()"${L.length >= TV_PROF_MAX ? ' disabled' : ''}>${ic('save')} ${t('tvc_prof_save')}</button></div>` : ''}
+  ${L.length ? `<div class="tvp-list" id="tvp-list">${rows}</div>` : `<div class="tiny">${t('tvc_prof_none')}</div>`}`;
+}
+/* ---- настройки: правила «под разрешение экрана» ---- */
+function tvAutoHtml(inFold){
+  const base = tvCfg(), a = base.auto, s = tvScr(), cls = tvScrClass(s.w, s.h, s.dpr);
+  const refs = [['', t('tvc_res_main')]].concat(TV_PRESETS.map(p => ['p:' + p.id, t('tvp_' + p.id)]), base.profiles.map(p => ['u:' + p.id, '★ ' + p.name]));
+  const sel = c => { const cur = a[c] || ''; const known = refs.some(r => r[0] === cur);
+    return `<select id="tvc-auto-${c}" onchange="App.tvcAutoSet('${c}', this.value)"${a.on ? '' : ' disabled'}>${refs.map(r => `<option value="${esc(r[0])}"${r[0] === cur ? ' selected' : ''}>${esc(r[1])}</option>`).join('')}${known ? '' : `<option value="${esc(cur)}" selected>${esc(t('tvc_res_gone'))}</option>`}</select>`; };
+  return `${inFold ? `<div class="tiny" style="margin-bottom:6px">${t('tvc_res_tip')}</div>` : `<div style="font-weight:900;margin-bottom:4px">${ic('monitor')} ${t('tvc_res')} ${tipQ('tvc_res_tip')}</div>`}
+  <label class="chk-line"><input type="checkbox" id="tvc-auto-on" ${a.on ? 'checked' : ''} onchange="App.tvcAutoOn(this.checked)"> ${t('tvc_res_on')}</label>
+  <div class="tvau${a.on ? '' : ' off'}">${TV_SCR_CLS.map(c => `<div class="form-row"><span class="lbl">${t('tvcl_' + c)}</span>${sel(c)}</div>`).join('')}</div>
+  <div class="tiny" style="margin-top:6px">${t('tvc_res_here').replace('{S}', Math.round(s.w * s.dpr) + '×' + Math.round(s.h * s.dpr)).replace('{C}', t('tvcl_' + cls))}</div>
+  <div class="tiny" style="margin-top:4px;color:var(--dim)">${t('tvc_res_h')}</div>`;
+}
+/* ---- менеджер: проверка, кнопка в меню и просмотр вариантов (раскладку телевизоров меняет админ) ---- */
+function tvMgrHtml(){
+  const base = tvCfg();
+  return `<div class="card" id="tvc-card">
+    <button class="btn btn-blue" style="margin-bottom:6px" onclick="App.tvTest()">${ic('tv')} ${t('tv_test_btn')}</button>
+    <div class="tiny" style="margin-bottom:10px">${t('tv_test_h')}</div>
+    ${tvMenuChkHtml()}
+    <hr class="sep">
+    <div class="tiny" style="margin-bottom:8px">${ic('lock')} ${t('tvc_mgr_note').replace('{N}', esc(tvCfgName(base)))}</div>
+    ${tvGalleryHtml(false)}
+    ${base.profiles.length ? '<hr class="sep">' + tvProfHtml(false) : ''}
+  </div>`;
+}
+/* ---- действия настроек (пишет админ; менеджеру — только просмотр) ---- */
+function tvcPreset(id){
+  if (!isAdmin()) return;
+  const c = tvRefCfg('p:' + id); if (!c) return;
+  tvcSave({ ...tvCfg(), ...tvLayoutPick(c), preset: 'p:' + id }, { preset: 'p:' + id });
+  toast('✓ ' + t('tvc_applied').replace('{N}', t('tvp_' + id)));
+}
+function tvcPreview(ref){ if (!state.user || !isManager()) return; TV.prevRef = String(ref || ''); tvTest(); }
+function tvcLay(v){ if (!TV_LAYS.includes(v)) return; const c = tvCfg(); c.lay = v; tvcSave(c); }
+function tvcShare(d, raw){ const c = tvCfg(); const b = raw != null ? (+raw || TVDEF.share) : c.share; c.share = Math.max(TV_SHARE_MIN, Math.min(TV_SHARE_MAX, Math.round(b + (+d || 0)))); tvcSave(c); }
+function tvcFlip(on){ const c = tvCfg(); c.flip = on ? 1 : 0; tvcSave(c); }
+function tvcScale(d, raw){ const c = tvCfg(); const b = raw != null ? (+raw || 100) : c.scale; c.scale = Math.max(50, Math.min(200, Math.round(b + (+d || 0)))); tvcSave(c); }
+function tvcProfSave(){
+  if (!isAdmin()) return;
+  const el = document.getElementById('tvp-name'), name = String((el && el.value) || '').trim().slice(0, 40);
+  if (!name){ toast('⚠ ' + t('tvc_prof_need'), 'err'); if (el) el.focus(); return; }
+  const c = tvCfg();
+  if (c.profiles.length >= TV_PROF_MAX){ toast('⚠ ' + t('tvc_prof_max'), 'err'); return; }
+  const id = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  c.profiles = c.profiles.concat({ id, name, at: new Date().toISOString(), cfg: tvLayoutPick(c) });
+  c.preset = 'u:' + id;
+  tvcSave(c, { profile: name, op: 'save' });
+  toast('✓ ' + t('tvc_prof_saved'));
+}
+function tvcProfApply(id){
+  if (!isAdmin()) return;
+  const c = tvRefCfg('u:' + id); if (!c) return;
+  tvcSave({ ...tvCfg(), ...tvLayoutPick(c), preset: 'u:' + id }, { preset: 'u:' + id });
+  toast('✓ ' + t('tvc_applied').replace('{N}', tvCfgName(c)));
+}
+async function tvcProfUpd(id){
+  if (!isAdmin()) return;
+  const c = tvCfg(), p = c.profiles.find(x => x.id === id); if (!p) return;
+  if (!(await askYes(t('tvc_prof_upd_q').replace('{N}', p.name)))) return;
+  const c2 = tvCfg();
+  c2.profiles = c2.profiles.map(x => x.id === id ? { ...x, at: new Date().toISOString(), cfg: tvLayoutPick(c2) } : x);
+  c2.preset = 'u:' + id;
+  tvcSave(c2, { profile: p.name, op: 'update' });
+  toast('✓ ' + t('tvc_prof_saved'));
+}
+async function tvcProfDel(id){
+  if (!isAdmin()) return;
+  const c = tvCfg(), p = c.profiles.find(x => x.id === id); if (!p) return;
+  if (!(await askYes(t('tvc_prof_del_q').replace('{N}', p.name), { danger: true }))) return;
+  const c2 = tvCfg();
+  c2.profiles = c2.profiles.filter(x => x.id !== id);
+  if (c2.preset === 'u:' + id) c2.preset = '';
+  for (const k of TV_SCR_CLS) if (c2.auto[k] === 'u:' + id) c2.auto[k] = '';
+  tvcSave(c2, { profile: p.name, op: 'delete' });
+}
+function tvcAutoOn(on){ const c = tvCfg(); c.auto = { ...c.auto, on: on ? 1 : 0 }; tvcSave(c); }
+function tvcAutoSet(cls, ref){ if (!TV_SCR_CLS.includes(cls)) return; const c = tvCfg(); c.auto = { ...c.auto, [cls]: String(ref || '').slice(0, 40) }; tvcSave(c); }
+/* заголовки зон конструктора — по шаблону */
+function tvZoneTitles(cfg){
+  const f = !!cfg.flip;
+  if (cfg.lay === 'side') return [t('tvz_col_top'), t('tvz_col_bot')];
+  if (cfg.lay === 'strip') return [t('tvz_strip_a'), t('tvz_strip_b')];
+  if (cfg.lay === 'hud') return [t(f ? 'tvz_hud_l' : 'tvz_hud_r'), t('tvz_hud_b')];
+  if (cfg.lay === 'twin') return [t(f ? 'tvz_twin_l' : 'tvz_twin_r'), t(f ? 'tvz_twin_r2' : 'tvz_twin_l2')];
+  if (cfg.lay === 'ticker') return [t('tvz_off'), t('tvz_off')];
+  if (cfg.lay === 'hud2') return [t(f ? 'tvz_hud_l2' : 'tvz_hud_r2'), t(f ? 'tvz_hud_r' : 'tvz_hud_l')];      // v1.09.52
+  if (cfg.lay === 'corners') return [t(f ? 'tvz_isl_l' : 'tvz_isl_r'), t(f ? 'tvz_isl_br' : 'tvz_isl_bl')];
+  if (cfg.lay === 'dock') return [t('tvz_dock_a'), t('tvz_dock_b')];
+  if (cfg.lay === 'bars') return [t('tvz_bar_a'), t('tvz_bar_b')];
+  if (cfg.lay === 'lshape') return [f ? t('tvz_left') : t('tvc_zone_rail'), t('tvz_col_bot')];
+  return [f ? t('tvz_left') : t('tvc_zone_rail'), t('tvc_zone_bottom')];
 }
 
 /* =====================================================================
@@ -17950,7 +18824,7 @@ function carSpread(map, list){
   carSpreadApply(map);
 }
 function carSpreadApply(map){
-  const list = map._tlCars || [];
+  const list = map._tlCars || [], kz = map._tlGapK || 1, GAP = CAR_GAP * kz;   // v1.09.51: на ТВ 4K значки крупнее — шаг веера тоже
   if (!map._tlLegs) map._tlLegs = L.layerGroup().addTo(map);
   map._tlLegs.clearLayers();
   if (!map._loaded || !list.length){ list.forEach(x => x.m.setLatLng(x.ll)); return; }
@@ -17958,7 +18832,7 @@ function carSpreadApply(map){
   list.map(x => ({ x, p: map.latLngToLayerPoint(L.latLng(x.ll[0], x.ll[1])) }))
     .sort((a, b) => (+a.x.no || 999) - (+b.x.no || 999))
     .forEach(q => {
-      const g = groups.find(g => g.c.distanceTo(q.p) < CAR_GAP);
+      const g = groups.find(g => g.c.distanceTo(q.p) < GAP);
       if (!g){ groups.push({ c: q.p, items: [q] }); return; }
       g.items.push(q);
       const n = g.items.length;
@@ -17967,7 +18841,7 @@ function carSpreadApply(map){
   for (const g of groups){
     const n = g.items.length;
     if (n === 1){ g.items[0].x.m.setLatLng(g.items[0].x.ll); continue; }
-    const R = n === 2 ? 20 : Math.max(24, Math.ceil(CAR_GAP / (2 * Math.sin(Math.PI / n))));
+    const R = n === 2 ? 20 * kz : Math.max(24 * kz, Math.ceil(GAP / (2 * Math.sin(Math.PI / n))));
     g.items.forEach((q, i) => {
       const ang = n === 2 ? (i ? 0 : Math.PI) : (-Math.PI / 2 + i * 2 * Math.PI / n);
       const ll = map.layerPointToLatLng(L.point(g.c.x + R * Math.cos(ang), g.c.y + R * Math.sin(ang)));
@@ -18626,7 +19500,7 @@ function vehMaintLine(v){
   for (const ty of mtTypes()){ const c = mtCalc(v, ty, vmRow(v.id, ty.id)); if (c.left == null) continue; if (!best || c.left < best.c.left) best = { ty, c }; }
   if (!best || best.c.st === 'ok') return '';
   const col = best.c.st === 'over' ? 'var(--red,#e33)' : '#B9932F';
-  return `<span style="color:${col}">🔧 ${esc(best.ty.name)}: ${esc(best.c.left <= 0 ? t('mnt_over').replace('{N}', -best.c.left) : t('mnt_left').replace('{N}', best.c.left))}</span>`;
+  return `<span style="color:${col}">🔧 ${esc(biText(best.ty.name))}: ${esc(best.c.left <= 0 ? t('mnt_over').replace('{N}', -best.c.left) : t('mnt_left').replace('{N}', best.c.left))}</span>`;
 }
 /* ---- справочник «Виды ТО» (админ) ---- */
 function dirMaint(){
@@ -18634,7 +19508,7 @@ function dirMaint(){
   return `${mtNoDb() ? `<div class="banner b-yellow">${ic('warn')} ${t('mnt_need_sql')}</div>` : ''}<div class="tiny" style="margin-bottom:8px">${t('mnt_hint')}</div>
     <div class="card">${list.map(x => `<div class="rowline${x.active === false ? ' off' : ''}">
       <span class="mt-ico">${ic('toolbox')}</span>
-      <div class="grow"><b>${esc(x.name)}</b>${x.active === false ? ` <span class="chip">${t('mnt_inactive')}</span>` : ''}
+      <div class="grow"><b>${esc(biText(x.name))}</b>${x.active === false ? ` <span class="chip">${t('mnt_inactive')}</span>` : ''}
         <div class="tiny">${esc(t('mnt_every').replace('{N}', x.interval_mi))} · ${t('mnt_rem')}: ${+x.remind_mi || 0}</div></div>
       <button class="btn btn-ghost sm" onclick="App.mtModal('${x.id}')">${t('edit')}</button></div>`).join('') || `<div class="list-empty">—</div>`}</div>
     <button class="btn btn-green" onclick="App.mtModal()">${ic('plus')} ${t('add')}</button>`;
@@ -18676,7 +19550,7 @@ function vehMaintHtml(v){
   return `<div class="mt-sec"><div class="mt-h">${ic('toolbox')} ${t('mnt_title')}${vehOdo(v) != null ? ` <span class="tiny">· ${t('mc_odo')}: ${Math.round(vehOdo(v))} ${t('bn_mi')}</span>` : ''}</div>` + types.map(ty => {
     const r = v.id ? vmRow(v.id, ty.id) : null, c = mtCalc(v, ty, r), own = !!(r && r.own_on);
     return `<div class="mt-row${own ? ' own' : ''}" data-t="${ty.id}">
-      <div class="mt-name"><b>${esc(ty.name)}</b> <span class="tiny">${esc(t('mnt_every').replace('{N}', ty.interval_mi))}</span></div>
+      <div class="mt-name"><b>${esc(biText(ty.name))}</b> <span class="tiny">${esc(t('mnt_every').replace('{N}', ty.interval_mi))}</span></div>
       <div class="mt-f"><label><span class="tiny">${t('mnt_last')}</span><input type="number" inputmode="numeric" class="mt-last" min="0" step="1" value="${r && r.last_mi != null ? Math.round(+r.last_mi) : ''}" placeholder="${vehOdo(v) != null ? Math.round(vehOdo(v)) : ''}"></label>
         <label class="mt-ownw"><span class="tiny">${t('mnt_own_mi')}</span><input type="number" inputmode="numeric" class="mt-own-mi" min="100" max="200000" step="100" value="${r && r.own_mi ? +r.own_mi : ''}" placeholder="${ty.interval_mi}"></label></div>
       <label class="chk-line mt-own"><input type="checkbox" class="mt-own-chk" ${own ? 'checked' : ''} onchange="this.closest('.mt-row').classList.toggle('own', this.checked)"> ${t('mnt_own_chk')}</label>
@@ -18761,7 +19635,7 @@ function myCarHtml(inSettings){
   const odo = vehOdo(v), fuel = typeof st.fuelLevel === 'number' ? Math.round(st.fuelLevel) : null, upd = st.lastUpdated || (dev && dev.reported_at) || null;
   const types = mtTypes();
   const maint = types.length ? types.map(ty => { const c = mtCalc(v, ty, vmRow(v.id, ty.id)); const pct = c.next != null && c.odo != null ? Math.max(0, Math.min(100, Math.round((c.odo - (c.next - c.int)) / c.int * 100))) : 0;
-      return `<div class="mc-mt st-${c.st}"><div class="mc-mt-h"><b>${esc(ty.name)}</b><span class="tiny">${esc(t('mnt_every').replace('{N}', c.int))}${vmRow(v.id, ty.id) && vmRow(v.id, ty.id).own_on ? ' · ' + t('mnt_own') : ''}</span></div>
+      return `<div class="mc-mt st-${c.st}"><div class="mc-mt-h"><b>${esc(biText(ty.name))}</b><span class="tiny">${esc(t('mnt_every').replace('{N}', c.int))}${vmRow(v.id, ty.id) && vmRow(v.id, ty.id).own_on ? ' · ' + t('mnt_own') : ''}</span></div>
         ${c.next != null ? `<div class="mc-bar"><i style="width:${pct}%"></i></div>` : ''}<div class="tiny mt-st st-${c.st}">${esc(mtStText(c))}</div></div>`; }).join('')
     : `<div class="tiny">${t('mnt_types_empty')}</div>`;
   return `${mtNoDb() ? `<div class="banner b-yellow">${ic('warn')} ${t('mnt_need_sql')}</div>` : ''}<div class="card" id="mc-card">${menuChk}${pick}
@@ -20853,6 +21727,7 @@ async function runDiagnostics(onLine){
     /* переводы */
     const pend = jobs.filter(j => !j.archived_at && hasCyr(j.note) && !String(j.note_en || '').trim()).length;
     put(`${mark(!pend)} заметок без английского перевода: ${pend} · напоминание ${org.tr_remind !== false ? 'вкл' : 'выкл'} · автоперевод ${org.tr_auto ? 'вкл' : 'выкл'} · интервал ${Math.round(trIntervalMs() / 60000)} мин`);
+    try{ const dm = dirTrMissing(); put(`${dm.total ? '⚠' : '✅'} справочники без английского: названий видов задач ${dm.names.length}, пунктов чек-листов ${dm.items}${dm.total ? '  ← Настройки документов → Переводы → «' + t('dtr_btn') + '»' : ''}`); }catch(e){}   // v1.09.49
     /* инвойсы и файлы на Диске */
     const byKind = (k) => media.filter(m => m.kind === k).length;
     /* v1.07.91: последние снимки — размер и вес, чтобы «мыло» было видно в отчёте */
@@ -21548,6 +22423,51 @@ async function trPdfNow(kind, id){
 function trPdfSkip(){ closeModal(); const go = _trGo; _trGo = null; if (go) go(); }
 
 /* ---------- карточка в настройках ---------- */
+/* v1.09.49: что в справочниках осталось без английского (названия видов задач «RU | EN» и пункты чек-листов) */
+function dirTrMissing(){
+  const wts = state.data.work_types || [];
+  const names = wts.filter(w => { const [ru, en] = clSplit(w.name || ''); return needsTr(ru, en); });
+  const items = wts.reduce((s, w) => s + clNoEn(w), 0);
+  return { names, items, total: names.length + items };
+}
+function dirTrCardHtml(){
+  if (!isAdmin()) return '';
+  const m = dirTrMissing();
+  return `<div class="card" id="dtr-card" style="margin-top:8px">
+    <div style="font-weight:900;margin-bottom:4px">${ic('globe')} ${t('dtr_title')}</div>
+    ${m.total ? `<div class="tiny" id="dtr-line">${tfill(t('dtr_line'), { W: m.names.length, C: m.items })}</div>
+      <button class="btn btn-blue sm" id="dtr-btn" style="margin-top:6px" onclick="App.dirTranslate()">${ic('globe')} ${t('dtr_btn')}</button>
+      <div class="tiny" style="margin-top:6px">${t('dtr_hint')}</div>`
+      : `<div class="tiny" id="dtr-line">${ic('check', 'color:var(--green)')} ${t('dtr_none')}</div>`}
+  </div>`;
+}
+async function dirTranslate(){
+  if (!isAdmin()) return;
+  if (netOff()){ netBlocked(); return; }
+  const b = $('#dtr-btn'); if (b) b.disabled = true;
+  toast('🌐 ' + t('dtr_run'), 'inf', 4000);
+  let W = 0, C = 0;
+  try{
+    for (const w0 of [...(state.data.work_types || [])]){
+      const w = wtById(w0.id); if (!w) continue;
+      let name = w.name, changed = false;
+      const [ru, en] = clSplit(w.name || '');
+      if (needsTr(ru, en)){ name = clJoin(ru, await trApi(ru)); W++; changed = true; await trSleep(TR_PAUSE); }
+      const list = [];
+      for (const it of clItems(w)){
+        const [r2, e2] = clSplit(it.t);
+        if (needsTr(r2, e2)){ list.push({ id: it.id, t: clJoin(r2, await trApi(r2)), req: it.req }); C++; changed = true; await trSleep(TR_PAUSE); }
+        else list.push({ id: it.id, t: it.t, req: it.req });
+      }
+      if (changed){
+        await dbUpsert('work_types', { ...w, name, checklist: Array.isArray(w.checklist) ? list : w.checklist });
+        audit('wt_checklist', 'work_type', w.id, { name: biText(name), translated: true });
+      }
+    }
+    toast('✓ ' + tfill(t('dtr_done'), { W, C }), '', 6000);
+  }catch(e){ toast('⚠ ' + tfill(t('dtr_fail'), { E: errStr(e) }) + (W + C ? ' · ' + tfill(t('dtr_done'), { W, C }) : ''), 'err', 8000); }
+  render();
+}
 function trSettingsCardHtml(){
   const o = (state.data && state.data.org_settings) || {};
   const n = trPendingCached().length;
@@ -28755,6 +29675,7 @@ function mediaSettingsCardHtml(){
     <label class="opt ${gdTrimOn() ? 'on' : ''}" style="margin:2px 0 6px">
       <input type="checkbox" ${gdTrimOn() ? 'checked' : ''} onchange="App.gdTrimToggle(this.checked)"> ${t('gd_trim')}</label>
     <div class="tiny gd-hint">${gdTrimOn() ? t('gd_trim_hint') : t('gd_folder_hint')}</div>
+    ${gdCfg.folder_id ? `<div class="tiny" style="margin-top:4px"><a href="https://drive.google.com/drive/folders/${encodeURIComponent(gdCfg.folder_id)}" target="_blank" rel="noopener" id="gd-folder-open">${ic('folder')} ${t('gd_root_open')}</a></div>` : ''}
     ${gdRootsRowsHtml()}
     <label class="opt ${((state.data.org_settings || {}).gd_inv_helpers) ? 'on' : ''}">
       <input type="checkbox" ${((state.data.org_settings || {}).gd_inv_helpers) ? 'checked' : ''}
@@ -28800,14 +29721,14 @@ function mediaSettingsCardHtml(){
         <a href="./privacy.html" target="_blank" rel="noopener">privacy.html</a> и
         <a href="./terms.html" target="_blank" rel="noopener">terms.html</a> (лежат рядом с приложением) → <b>Publish app</b> (иначе токен умрёт через 7 дней; скоуп drive.file верификации не требует).<br>
         3. Credentials → Create OAuth client ID → <b>Web application</b> → в Authorized redirect URIs вставьте адрес из поля выше.<br>
-        4. Скопируйте Client ID и Client Secret в поля, укажите ID папки архива на Диске (создайте папку, ID — в адресной строке после /folders/).<br>
+        4. Скопируйте Client ID и Client Secret в поля. Ссылку на папку можно не вписывать — приложение само создаст «TechLog Archive» и запомнит её.<br>
         5. «${t('gd_save')}» → «${t('gd_connect')}» → войдите под <b>архивным</b> Google-аккаунтом фирмы и разрешите доступ → «${t('gd_test')}».` : `
         1. console.cloud.google.com → create a project → APIs &amp; Services → Library → enable the <b>Google Drive API</b>.<br>
         2. OAuth consent screen → External → fill in the name and e-mail, and under Branding add the links
         <a href="./privacy.html" target="_blank" rel="noopener">privacy.html</a> and
         <a href="./terms.html" target="_blank" rel="noopener">terms.html</a> (they sit next to the app) → <b>Publish app</b> (otherwise the token dies after 7 days; the drive.file scope needs no verification).<br>
         3. Credentials → Create OAuth client ID → <b>Web application</b> → paste the address from the field above into Authorized redirect URIs.<br>
-        4. Copy the Client ID and Client Secret into the fields and enter the archive folder ID on Drive (create the folder; the ID is in the address bar after /folders/).<br>
+        4. Copy the Client ID and Client Secret into the fields. The folder link is optional — the app creates «TechLog Archive» itself and remembers it.<br>
         5. "${t('gd_save')}" → "${t('gd_connect')}" → sign in with the company's <b>archive</b> Google account and allow access → "${t('gd_test')}".`}
       </div>
     </details>
@@ -28861,9 +29782,9 @@ const MEDIA_FNS = ['media-health', 'media-begin', 'media-put', 'media-commit',
 const MEDIA_FN_VER = '1.08.12';
 /* v1.07.76: не каждая правка задевает все функции — у каждой свой минимум,
    и передеплоя просит только та, где код действительно поменялся. */
-const MEDIA_FN_MIN = { 'media-begin': '1.09.42', 'media-commit': '1.09.10', 'media-health': '1.09.10',   // v1.09.10: папка заблокированного сотрудника
+const MEDIA_FN_MIN = { 'media-begin': '1.09.50', 'media-commit': '1.09.50', 'media-health': '1.09.50',   // v1.09.50: корень Диска создаётся сам, имена папок — по-английски   // v1.09.10: папка заблокированного сотрудника
                        'media-put': '1.09.40',      // v1.09.40: докачка только в сессию своего файла (media-begin пишет upload_id)
-                       'media-delete': '1.09.40' };   // v1.09.40: помощник с общим доступом убирает PDF в архив; своя версия в ver
+                       'media-delete': '1.09.50' };   // v1.09.40: помощник с общим доступом убирает PDF в архив; своя версия в ver
 const MEDIA_FN_MIN_DEF = '1.07.72';
 function mFnVerOk(ver, name){
   const need = (MEDIA_FN_MIN[name] || MEDIA_FN_MIN_DEF).split('.').map(Number);
@@ -28886,7 +29807,7 @@ function mFnVerOk(ver, name){
 const SRV_FNS = [
   { name: 'media-health', group: 'media' }, { name: 'media-begin', group: 'media' }, { name: 'media-put', group: 'media' }, { name: 'media-commit', group: 'media' },
   { name: 'media-view', group: 'media' }, { name: 'media-delete', group: 'media' }, { name: 'media-oauth', group: 'media' },
-  { name: 'push', min: '1.09.40', group: 'push' }, { name: 'backup', min: '1.09.19', group: 'backup' },
+  { name: 'push', min: '1.09.40', group: 'push' }, { name: 'backup', min: '1.09.50', group: 'backup' },
   { name: 'bouncie', min: '1.09.10', group: 'bouncie' }, { name: 'dft', min: '1.09.37', group: 'dft' }   // dft 1.09.37: probe — диагноз функций со стороны сервера
 ];
 /* v1.09.37: подстановка ВСЕХ вхождений {X} — String.replace со строкой меняет только первое (так уже дважды оставались «{NEW}» и «{N}») */
@@ -29145,8 +30066,14 @@ async function mediaHealth(){
       h += row('Drive', false, esc(String(j.drive.error || '')).slice(0, 120));
     }
     if (j.folder && j.folder.id){
+      /* v1.09.50: корень мог быть создан или переименован сервером — показываем ссылку и запоминаем её в форме */
+      gdCfg.folder_id = j.folder.id;
+      const fin = document.getElementById('gd-folder'); if (fin && !fin.matches(':focus')) fin.value = j.folder.id;
+      if (j.folder.created) toast('📁 ' + tfill(t('gd_root_created'), { N: j.folder.name || 'TechLog Archive' }), '', 6000);
+      else if (j.folder.renamed) toast('📁 ' + tfill(t('gd_root_renamed'), { N: j.folder.name || 'TechLog Archive' }), '', 6000);
       h += row(t('gd_folder'), j.folder.ok !== false,
-        esc(String(j.folder.name || '')) + ' · ' + esc(String(j.folder.id || '')));
+        esc(String(j.folder.name || '')) + ' · ' + esc(String(j.folder.id || ''))
+        + ` · <a href="https://drive.google.com/drive/folders/${encodeURIComponent(j.folder.id)}" target="_blank" rel="noopener" id="gd-root-link">${t('gd_root_open')}</a>`);
       /* v1.07.78: наглядно — какая папка для фото, какая для документов */
       gdFolders = { root: { id: j.folder.id, name: j.folder.name || '', path: j.folder.name || '' },
                     photo: (j.paths && j.paths.photo) || null,
@@ -31335,7 +32262,7 @@ function extraListHtml(){
         <div class="qty-line">
           <select data-ex-prod="${i}" style="flex:1;min-width:130px">
             <option value="">${t('product')}…</option>
-            ${prods.map(p=>`<option value="${p.id}" ${it.product_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}
+            ${prods.map(p=>`<option value="${p.id}" ${it.product_id===p.id?'selected':''}>${esc(biText(p.name))}</option>`).join('')}
           </select>
           <input data-ex-qty="${i}" inputmode="numeric" value="${it.qty||1}" style="width:52px;text-align:center" title="${t('qty')}">
           <span class="tiny">×</span>
@@ -31414,7 +32341,7 @@ function dirSizes(){
   const list = [...(state.data.size_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
   return `<div class="card">` + (list.map(s => `
     <div class="rowline">
-      <div class="grow">${ic('ruler')} <b>${esc(s.name)}</b> <span class="tiny">· ${esc(s.unit)}</span></div>
+      <div class="grow">${ic('ruler')} <b>${esc(biText(s.name))}</b> <span class="tiny">· ${esc(s.unit)}</span></div>
       <button class="btn btn-ghost sm" onclick="App.editSzModal('${s.id}')">${t('edit')}</button>
     </div>`).join('') || `<div class="tiny">—</div>`) + `</div>
     <button class="btn btn-green" onclick="App.editSzModal()">${ic('plus')} ${t('add')}</button>`;
@@ -31441,7 +32368,7 @@ function dirExtraWorks(){
     const sz = szById(w.size_type_id);
     return `<div class="rowline">
       <div class="grow">${w.kind==='purchase'?ic('cart'):ic('toolbox')} <b>${esc(biText(w.name))}</b>
-        <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : t('kind_work')}${w.needs_size && sz ? ' · ' + ic('ruler') + ' ' + esc(sz.name) + ' (' + esc(sz.unit) + ')' : ''}${+w.price ? ' · ' + ic('dollar') + ' ' + money(+w.price) + (w.needs_size ? '/' + esc((sz||{}).unit||'ед.') : '') : ''}</div></div>
+        <div class="tiny">${w.kind==='purchase' ? t('kind_purchase') : t('kind_work')}${w.needs_size && sz ? ' · ' + ic('ruler') + ' ' + esc(biText(sz.name)) + ' (' + esc(sz.unit) + ')' : ''}${+w.price ? ' · ' + ic('dollar') + ' ' + money(+w.price) + (w.needs_size ? '/' + esc((sz||{}).unit||'ед.') : '') : ''}</div></div>
       <button class="btn btn-ghost sm" onclick="App.editEwModal('${w.id}')">${t('edit')}</button>
     </div>`;
   }).join('') || `<div class="tiny">—</div>`) + `</div>
@@ -31470,7 +32397,7 @@ function editEwModal(id){
     <div class="form-row"><span class="lbl">${t('size_type')}</span>
       <select id="ew-szt">
         <option value="">—</option>
-        ${sizes.map(s=>`<option value="${s.id}" ${w.size_type_id===s.id?'selected':''}>${esc(s.name)} (${esc(s.unit)})</option>`).join('')}
+        ${sizes.map(s=>`<option value="${s.id}" ${w.size_type_id===s.id?'selected':''}>${esc(biText(s.name))} (${esc(s.unit)})</option>`).join('')}
       </select></div>
     <button class="btn btn-green" onclick="App.saveEw('${w.id}', ${w.sort||0})">${t('save')}</button>
     ${id?`<button class="btn btn-red" style="margin-top:8px" onclick="App.delRow('extra_works','${w.id}')">${t('delete')}</button>`:''}
@@ -31495,7 +32422,7 @@ function dirProducts(){
   const list = [...(state.data.product_types||[])].sort((a,b)=>(a.sort||0)-(b.sort||0));
   return `<div class="card">` + (list.map(p => `
     <div class="rowline">
-      <div class="grow">${ic('cart')} <b>${esc(p.name)}</b><div class="tiny">${t('default_price')}: ${money(+p.default_price||0)}</div></div>
+      <div class="grow">${ic('cart')} <b>${esc(biText(p.name))}</b><div class="tiny">${t('default_price')}: ${money(+p.default_price||0)}</div></div>
       <button class="btn btn-ghost sm" onclick="App.editPtModal('${p.id}')">${t('edit')}</button>
     </div>`).join('') || `<div class="tiny">—</div>`) + `</div>
     <button class="btn btn-green" onclick="App.editPtModal()">${ic('plus')} ${t('add')}</button>`;

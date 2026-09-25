@@ -1,7 +1,7 @@
 import { svc, userClient, driveToken, driveConfig, monthFolder, CORS, jres, FN_VER,
-         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, dirFor, ymDir, techDirLabel } from "./google.ts";
+         PHOTOS_DIR, FILES_DIR, INVOICES_DIR, folderIdOf, dirFor, ymDir, techDirLabel , rootFolder } from "./google.ts";
 
-const BEGIN_VER = "1.09.42";         // v1.09.40: upload_id для media-put; v1.09.42: размер файла — из настроек
+const BEGIN_VER = "1.09.50";         // v1.09.40: upload_id для media-put; v1.09.42: размер файла — из настроек
 
 /* v1.07.64: max — это дефолт; действующий лимит на документ админ задаёт
    в настройках (org_settings.media_max_photo / media_max_video). Проверка
@@ -186,6 +186,7 @@ Deno.serve(async (req) => {
 
     const t = await driveToken();
     const cfg = await driveConfig();
+    const rootId = await rootFolder(t);            // v1.09.50: нет корня — создаётся сам и запоминается
     /* v1.07.81: у съёмки и у документов теперь по своей папке в архиве:
        «Photos/ГГГГ-ММ» и «Files/ГГГГ-ММ». Старые месяцы из корня архива
        переносит кнопка в настройках (media-health?migrate=1). */
@@ -212,13 +213,13 @@ Deno.serve(async (req) => {
          покажет такие документы в разделе «Действие» */
       if (!cpName || !unit) return jres({ error: "NEED_META", need: !cpName ? "counterparty" : "unit" }, 409);
       const root = folderIdOf(String(org?.gd_photo_folder ?? "")) ||
-                   await monthFolder(t, cfg.gd_folder_id, PHOTOS_DIR);
+                   await monthFolder(t, rootId, PHOTOS_DIR);
       const cpDir = await dirFor(s, t, "cp", String((job as any).counterparty_id ?? cpName), root, cpName);
       const cxDir = await dirFor(s, t, "cx", String((job as any).complex_id ?? cxName), cpDir, cxName || cpName);
       parent = await dirFor(s, t, "unit", String((job as any).complex_id ?? "") + "/" + unit, cxDir, unit);
     } else if (kind === "invoice") {
       const root = folderIdOf(String(org?.gd_inv_folder ?? "")) ||
-                   await monthFolder(t, cfg.gd_folder_id, INVOICES_DIR);
+                   await monthFolder(t, rootId, INVOICES_DIR);
       /* v1.08.25: без галочки «по сотрудникам» месяц лежит прямо в корне
          инвойсов. Раньше папка сотрудника заводилась всегда и при снятой
          галочке называлась «—». */
@@ -230,7 +231,7 @@ Deno.serve(async (req) => {
       parent = await dirFor(s, t, "ym", base + "/" + ymd, base, ymd);
     } else {
       const root = folderIdOf(String(org?.gd_files_folder ?? "")) ||
-                   await monthFolder(t, cfg.gd_folder_id, FILES_DIR);
+                   await monthFolder(t, rootId, FILES_DIR);
       const dir = techDirLabel(techFolderName(techName), techBlocked) || "—";
       const techDir = await dirFor(s, t, "tech", String((job as any).technician_id ?? dir), root, dir);
       const ymDirId = await dirFor(s, t, "ym", techDir + "/" + ymd, techDir, ymd);
